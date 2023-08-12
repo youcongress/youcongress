@@ -1,0 +1,41 @@
+<.header>
+  Listing Votings
+  <:actions>
+    <.link patch={~p"/votings/new"}>
+      <.button>New Voting</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="votings"
+  rows={@streams.votings}
+  row_click={fn {_id, voting} -> JS.navigate(~p"/votings/#{voting}") end}
+>
+  <:col :let={{_id, voting}} label="Title"><%= voting.title %></:col>
+  <:action :let={{_id, voting}}>
+    <div class="sr-only">
+      <.link navigate={~p"/votings/#{voting}"}>Show</.link>
+    </div>
+    <.link patch={~p"/votings/#{voting}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, voting}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: voting.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="voting-modal" show on_cancel={JS.patch(~p"/votings")}>
+  <.live_component
+    module={YouCongressWeb.VotingLive.FormComponent}
+    id={@voting.id || :new}
+    title={@page_title}
+    action={@live_action}
+    voting={@voting}
+    patch={~p"/votings"}
+  />
+</.modal>
