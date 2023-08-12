@@ -18,6 +18,13 @@ defmodule YouCongressWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    live "/authors", AuthorLive.Index, :index
+    live "/authors/new", AuthorLive.Index, :new
+    live "/authors/:id/edit", AuthorLive.Index, :edit
+
+    live "/authors/:id", AuthorLive.Show, :show
+    live "/authors/:id/show/edit", AuthorLive.Show, :edit
   end
 
   # Other scopes may use custom stacks.
