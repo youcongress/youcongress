@@ -43,7 +43,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       html = render(index_live)
       assert html =~ "Voting created successfully"
-      assert html =~ "some title"
+      assert html =~ "some nice title"
     end
 
     test "updates voting in listing", %{conn: conn, voting: voting} do

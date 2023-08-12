@@ -5,12 +5,12 @@ defmodule YouCongressWeb.AuthorLiveTest do
   import YouCongress.AuthorsFixtures
 
   @create_attrs %{
-    bio: "some nice bio",
-    country: "some nice country",
+    bio: "some bio",
+    country: "some country",
     is_twin: true,
-    name: "some nice name",
-    twitter_url: "some nice twitter_url",
-    wikipedia_url: "some nice wikipedia_url"
+    name: "some name",
+    twitter_url: "some twitter_url",
+    wikipedia_url: "some wikipedia_url"
   }
   @update_attrs %{
     bio: "some updated bio",

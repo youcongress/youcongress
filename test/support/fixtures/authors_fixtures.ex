@@ -11,12 +11,12 @@ defmodule YouCongress.AuthorsFixtures do
     {:ok, author} =
       attrs
       |> Enum.into(%{
-        bio: "some bio",
-        country: "some country",
+        bio: Faker.Lorem.sentence(),
+        country: Faker.Address.country(),
         is_twin: true,
-        name: "some name",
-        twitter_url: "some twitter_url",
-        wikipedia_url: "some wikipedia_url"
+        name: Faker.Person.name(),
+        twitter_url: "https://twitter.com/" <> Faker.Internet.user_name(),
+        wikipedia_url: "https://wikipedia.org/wiki/" <> Faker.Internet.user_name()
       })
       |> YouCongress.Authors.create_author()
 

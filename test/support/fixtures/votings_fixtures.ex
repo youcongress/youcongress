@@ -11,7 +11,7 @@ defmodule YouCongress.VotingsFixtures do
     {:ok, voting} =
       attrs
       |> Enum.into(%{
-        title: "some title"
+        title: Faker.Lorem.sentence()
       })
       |> YouCongress.Votings.create_voting()
 

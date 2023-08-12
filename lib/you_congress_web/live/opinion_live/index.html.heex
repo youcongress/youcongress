@@ -1,0 +1,41 @@
+<.header>
+  Listing Opinions
+  <:actions>
+    <.link patch={~p"/opinions/new"}>
+      <.button>New Opinion</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="opinions"
+  rows={@streams.opinions}
+  row_click={fn {_id, opinion} -> JS.navigate(~p"/opinions/#{opinion}") end}
+>
+  <:col :let={{_id, opinion}} label="Opinion"><%= opinion.opinion %></:col>
+  <:action :let={{_id, opinion}}>
+    <div class="sr-only">
+      <.link navigate={~p"/opinions/#{opinion}"}>Show</.link>
+    </div>
+    <.link patch={~p"/opinions/#{opinion}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, opinion}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: opinion.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="opinion-modal" show on_cancel={JS.patch(~p"/opinions")}>
+  <.live_component
+    module={YouCongressWeb.OpinionLive.FormComponent}
+    id={@opinion.id || :new}
+    title={@page_title}
+    action={@live_action}
+    opinion={@opinion}
+    patch={~p"/opinions"}
+  />
+</.modal>

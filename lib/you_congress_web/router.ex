@@ -30,6 +30,12 @@ defmodule YouCongressWeb.Router do
     live "/votings/:id/edit", VotingLive.Index, :edit
     live "/votings/:id", VotingLive.Show, :show
     live "/votings/:id/show/edit", VotingLive.Show, :edit
+
+    live "/opinions", OpinionLive.Index, :index
+    live "/opinions/new", OpinionLive.Index, :new
+    live "/opinions/:id/edit", OpinionLive.Index, :edit
+    live "/opinions/:id", OpinionLive.Show, :show
+    live "/opinions/:id/show/edit", OpinionLive.Show, :edit
   end
 
   # Other scopes may use custom stacks.
