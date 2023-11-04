@@ -5,7 +5,6 @@ defmodule YouCongress.Opinions do
 
   import Ecto.Query, warn: false
   alias YouCongress.Repo
-
   alias YouCongress.Opinions.Opinion
 
   @doc """
@@ -19,6 +18,19 @@ defmodule YouCongress.Opinions do
   """
   def list_opinions do
     Repo.all(Opinion)
+  end
+
+  @doc """
+  Returns the list of opinions for a voting.
+
+  ## Examples
+
+        iex> list_opinions("Nuclear Energy")
+        [%Opinion{}, ...]
+
+  """
+  def list_opinions(voting_id) do
+    Repo.all(Opinion, where: [voting_id: voting_id])
   end
 
   @doc """

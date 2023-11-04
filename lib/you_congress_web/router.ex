@@ -17,15 +17,13 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
-
     live "/authors", AuthorLive.Index, :index
     live "/authors/new", AuthorLive.Index, :new
     live "/authors/:id/edit", AuthorLive.Index, :edit
     live "/authors/:id", AuthorLive.Show, :show
     live "/authors/:id/show/edit", AuthorLive.Show, :edit
 
-    live "/votings", VotingLive.Index, :index
+    live "/", VotingLive.Index, :index
     live "/votings/new", VotingLive.Index, :new
     live "/votings/:id/edit", VotingLive.Index, :edit
     live "/votings/:id", VotingLive.Show, :show

@@ -56,6 +56,44 @@ defmodule YouCongress.Authors do
   end
 
   @doc """
+  Finds a author by name or creates a new one.
+
+  ## Examples
+
+      iex> find_by_name_or_create("John Doe")
+      {:ok, %Author{}}
+
+      iex> find_by_name_or_create("John Doe")
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def find_by_name_or_create(%{"name" => name} = author_data) do
+    case find_by_name(name) do
+      nil ->
+        create_author(author_data)
+
+      author ->
+        {:ok, author}
+    end
+  end
+
+  @doc """
+  Finds a author by name.
+
+  ## Examples
+
+      iex> find_by_name("John Doe")
+      %Author{}
+
+      iex> find_by_name("John Doe")
+      nil
+
+  """
+  def find_by_name(name) do
+    Repo.get_by(Author, name: name)
+  end
+
+  @doc """
   Updates a author.
 
   ## Examples
