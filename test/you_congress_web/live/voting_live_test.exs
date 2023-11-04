@@ -17,14 +17,14 @@ defmodule YouCongressWeb.VotingLiveTest do
     setup [:create_voting]
 
     test "lists all votings", %{conn: conn, voting: voting} do
-      {:ok, _index_live, html} = live(conn, ~p"/votings")
+      {:ok, _index_live, html} = live(conn, ~p"/")
 
       assert html =~ "Listing Votings"
       assert html =~ voting.title
     end
 
     test "saves new voting", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/votings")
+      {:ok, index_live, _html} = live(conn, ~p"/")
 
       assert index_live |> element("a", "New Voting") |> render_click() =~
                "New Voting"
@@ -39,7 +39,7 @@ defmodule YouCongressWeb.VotingLiveTest do
              |> form("#voting-form", voting: @create_attrs)
              |> render_submit()
 
-      # assert_patch(index_live, ~p"/votings")
+      # assert_patch(index_live, ~p"/")
 
       html = render(index_live)
       assert html =~ "Voting created successfully"
@@ -47,7 +47,7 @@ defmodule YouCongressWeb.VotingLiveTest do
     end
 
     test "updates voting in listing", %{conn: conn, voting: voting} do
-      {:ok, index_live, _html} = live(conn, ~p"/votings")
+      {:ok, index_live, _html} = live(conn, ~p"/")
 
       assert index_live |> element("#votings-#{voting.id} a", "Edit") |> render_click() =~
                "Edit Voting"
@@ -62,7 +62,7 @@ defmodule YouCongressWeb.VotingLiveTest do
              |> form("#voting-form", voting: @update_attrs)
              |> render_submit()
 
-      assert_patch(index_live, ~p"/votings")
+      assert_patch(index_live, ~p"/")
 
       html = render(index_live)
       assert html =~ "Voting updated successfully"
@@ -70,7 +70,7 @@ defmodule YouCongressWeb.VotingLiveTest do
     end
 
     test "deletes voting in listing", %{conn: conn, voting: voting} do
-      {:ok, index_live, _html} = live(conn, ~p"/votings")
+      {:ok, index_live, _html} = live(conn, ~p"/")
 
       assert index_live |> element("#votings-#{voting.id} a", "Delete") |> render_click()
       refute has_element?(index_live, "#votings-#{voting.id}")

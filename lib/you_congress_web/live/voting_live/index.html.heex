@@ -29,13 +29,13 @@
   </:action>
 </.table>
 
-<.modal :if={@live_action in [:new, :edit]} id="voting-modal" show on_cancel={JS.patch(~p"/votings")}>
+<.modal :if={@live_action in [:new, :edit]} id="voting-modal" show on_cancel={JS.patch(~p"/")}>
   <.live_component
     module={YouCongressWeb.VotingLive.FormComponent}
     id={@voting.id || :new}
     title={@page_title}
     action={@live_action}
     voting={@voting}
-    patch={~p"/votings"}
+    patch={~p"/"}
   />
 </.modal>

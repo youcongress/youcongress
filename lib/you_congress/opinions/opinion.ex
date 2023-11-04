@@ -2,10 +2,14 @@ defmodule YouCongress.Opinions.Opinion do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias YouCongress.Authors.Author
+  alias YouCongress.Votings.Voting
+
   schema "opinions" do
     field :opinion, :string
-    field :author_id, :id
-    field :voting_id, :id
+
+    belongs_to :author, Author
+    belongs_to :voting, Voting
 
     timestamps()
   end

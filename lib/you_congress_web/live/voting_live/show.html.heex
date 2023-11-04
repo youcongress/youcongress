@@ -1,20 +1,34 @@
 <.header>
-  Voting <%= @voting.id %>
-  <:subtitle>This is a voting record from your database.</:subtitle>
+  <%= @voting.title %>
   <:actions>
+    <.link phx-click="generate-opinions" phx-value-voting_id={@voting.id}>
+      <.button>Generate opinion</.button>
+    </.link>
     <.link patch={~p"/votings/#{@voting}/show/edit"} phx-click={JS.push_focus()}>
-      <.button>Edit voting</.button>
+      Edit
     </.link>
   </:actions>
 </.header>
 
-<.list>
-  <:item title="Title"><%= @voting.title %></:item>
-</.list>
+<ul>
+  <%= for opinion <- @voting.opinions do %>
+    <li>
+      <div>
+        <strong><%= opinion.author.name %></strong>, <%= opinion.author.bio %>, would say according to TwinPoll's AI:
+      </div>
+      <div><%= opinion.opinion %></div>
+    </li>
+  <% end %>
+</ul>
 
-<.back navigate={~p"/votings"}>Back to votings</.back>
+<.back navigate={~p"/"}>Back to votings</.back>
 
-<.modal :if={@live_action == :edit} id="voting-modal" show on_cancel={JS.patch(~p"/votings/#{@voting}")}>
+<.modal
+  :if={@live_action == :edit}
+  id="voting-modal"
+  show
+  on_cancel={JS.patch(~p"/votings/#{@voting}")}
+>
   <.live_component
     module={YouCongressWeb.VotingLive.FormComponent}
     id={@voting.id}

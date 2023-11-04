@@ -50,7 +50,8 @@ defmodule YouCongress.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:faker, "~> 0.17", only: :test}
+      {:faker, "~> 0.17", only: :test},
+      {:openai, "~> 0.5.4"}
     ]
   end
 

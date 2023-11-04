@@ -8,7 +8,7 @@ defmodule YouCongress.Authors.Author do
     field :country, :string
     field :twitter_url, :string
     field :wikipedia_url, :string
-    field :is_twin, :boolean, default: false
+    field :is_twin, :boolean, default: true
 
     timestamps()
   end
@@ -17,7 +17,7 @@ defmodule YouCongress.Authors.Author do
   def changeset(author, attrs) do
     author
     |> cast(attrs, [:name, :bio, :wikipedia_url, :twitter_url, :country, :is_twin])
-    |> validate_required([:name, :bio, :wikipedia_url, :twitter_url, :country, :is_twin])
+    |> validate_required([:name, :bio, :country, :is_twin])
     |> unique_constraint(:twitter_url)
     |> unique_constraint(:wikipedia_url)
   end

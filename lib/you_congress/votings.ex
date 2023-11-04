@@ -38,6 +38,20 @@ defmodule YouCongress.Votings do
   def get_voting!(id), do: Repo.get!(Voting, id)
 
   @doc """
+  Gets a single voting with a table preloaded such as opinions and authors.
+
+  Raises `Ecto.NoResultsError` if the Voting does not exist.
+
+  ## Examples
+
+      iex> get_voting!(123, include: [:opinions])
+      %Voting{}
+  """
+  def get_voting!(id, include: tables) do
+    Repo.get!(Voting, id) |> Repo.preload(tables)
+  end
+
+  @doc """
   Creates a voting.
 
   ## Examples
