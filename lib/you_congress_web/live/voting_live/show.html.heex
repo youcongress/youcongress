@@ -1,20 +1,26 @@
-<.header>
-  <%= @voting.title %>
+<.header class="pb-5">
   <:actions>
     <.link phx-click="generate-opinions" phx-value-voting_id={@voting.id}>
-      <.button>Generate opinion</.button>
+      <.button>Generate opinions</.button>
     </.link>
     <.link patch={~p"/votings/#{@voting}/show/edit"} phx-click={JS.push_focus()}>
       Edit
     </.link>
   </:actions>
 </.header>
+<h1 class="text-2xl font-bold mb-10 ">
+  <%= @voting.title %>
+</h1>
 
 <ul>
   <%= for opinion <- @voting.opinions do %>
-    <li>
+    <li class="pb-4">
       <div>
-        <strong><%= opinion.author.name %></strong>, <%= opinion.author.bio %>, would say according to TwinPoll's AI:
+        <strong><%= opinion.author.name %></strong>
+        would say according to our AI
+        <span class="text-sm">
+          (wrong? <.link class="underline" href={"/opinions/#{opinion.id}/fact-check"}>fact check this</.link>):
+        </span>
       </div>
       <div><%= opinion.opinion %></div>
     </li>

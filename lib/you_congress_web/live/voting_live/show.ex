@@ -22,19 +22,25 @@ defmodule YouCongressWeb.VotingLive.Show do
   @impl true
   @spec handle_event(binary, map, Socket.t()) :: {:noreply, Socket.t()}
   def handle_event("generate-opinions", %{"voting_id" => voting_id}, socket) do
-    send(self(), {:generate_opinion, voting_id})
-    {:noreply, put_flash(socket, :info, "Generating opinion...")}
+    send(self(), {:generate_opinion, voting_id, 3})
+    {:noreply, put_flash(socket, :info, "Generating opinions...")}
   end
 
   @impl true
-  @spec handle_info({:generate_opinion, number}, Socket.t()) :: {:noreply, Socket.t()}
-  def handle_info({:generate_opinion, voting_id}, socket) do
+  @spec handle_info({:generate_opinion, number, number}, Socket.t()) :: {:noreply, Socket.t()}
+  def handle_info({:generate_opinion, _voting_id, 0}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_info({:generate_opinion, voting_id, n}, socket) do
     {:ok, _opinion} = DigitalTwins.generate_opinion(voting_id)
 
     socket =
       socket
       |> load_voting_and_opinions(voting_id)
-      |> put_flash(:info, "Opinions generated")
+      |> put_flash(:info, "Opinion generated")
+
+    send(self(), {:generate_opinion, voting_id, n - 1})
 
     {:noreply, socket}
   end

@@ -26,7 +26,7 @@ defmodule YouCongressWeb.VotingLiveTest do
     test "saves new voting", %{conn: conn} do
       {:ok, index_live, _html} = live(conn, ~p"/")
 
-      assert index_live |> element("a", "New Voting") |> render_click() =~
+      assert index_live |> element("a", "New") |> render_click() =~
                "New Voting"
 
       assert_patch(index_live, ~p"/votings/new")
