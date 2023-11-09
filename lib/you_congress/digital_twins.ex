@@ -26,8 +26,8 @@ defmodule YouCongress.DigitalTwins do
         author_data = %{
           "name" => opinion["name"],
           "bio" => opinion["bio"],
-          "wikipedia_url" => opinion["wikipedia_url"],
-          "twitter_url" => opinion["twitter_url"],
+          "wikipedia_url" => url_or_nil(opinion["wikipedia_url"]),
+          "twitter_url" => url_or_nil(opinion["twitter_url"]),
           "country" => opinion["country"]
         }
 
@@ -43,4 +43,8 @@ defmodule YouCongress.DigitalTwins do
         {:error, "Failed to generate opinion"}
     end
   end
+
+  @spec url_or_nil(binary) :: binary | nil
+  defp url_or_nil("http" <> _ = url), do: url
+  defp url_or_nil(_), do: nil
 end
