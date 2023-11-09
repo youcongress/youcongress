@@ -16,13 +16,18 @@
   <%= for opinion <- @voting.opinions do %>
     <li class="pb-4">
       <div>
-        <strong><%= opinion.author.name %></strong>
-        would say according to our AI
+        <strong><%= opinion.author.name %></strong>,
         <span class="text-sm">
-          (wrong? <.link class="underline" href={"/opinions/#{opinion.id}/fact-check"}>fact check this</.link>):
+          <%= opinion.author.bio %>
         </span>
       </div>
-      <div><%= opinion.opinion %></div>
+      <div class="text-sm">
+        would say according to our AI (wrong? <.link
+          class="underline"
+          href={"/opinions/#{opinion.id}/fact-check"}
+        >fact check this</.link>):
+      </div>
+      <div class="pt-2"><%= opinion.opinion %></div>
     </li>
   <% end %>
 </ul>
