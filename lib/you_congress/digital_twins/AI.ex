@@ -20,21 +20,36 @@ defmodule YouCongress.DigitalTwins.AI do
 
   Topic: Nuclear energy
 
-  Write one opinions in json from a public figure who have publicly shared their views on the topic.
+  Write one opinion in json from a public figure who have publicly shared their views on the topic.
   """
 
   @answer0 """
   {
-    "name": "Elon Musk",
-    "bio": "CEO of Tesla and SpaceX",
+    "name": "Naoto Kan",
+    "bio": "Former Prime Minister of Japan",
     "agree_rate": "Strongly disagree",
     "opinion": "Nuclear energy is a dangerous and outdated technology. It produces harmful waste and poses a significant risk of accidents or terrorism. We should focus on renewable energy sources instead.",
     "year": 2013,
     "wikipedia_url": "https://en.wikipedia.org/wiki/Elon_Musk",
     "twitter_url": "https://twitter.com/elonmusk",
     "model_rate": "90%",
-    "model_opinion": "Musk has been a vocal critic of nuclear energy",
-    "country": "United States"
+    "model_opinion": "Kan became a vocal opponent of nuclear energy following the Fukushima disaster",
+    "country": "Japan"
+  }
+  """
+
+  @answer1 """
+  {
+    "name": "Angela Merkel",
+    "bio": "Chancellor of Germany",
+    "agree_rate": "Strongly agree",
+    "opinion": "Nuclear energy can play a significant role in reducing carbon emissions and ensuring a stable energy supply. However, safety and waste management must be addressed properly.",
+    "year": 2020,
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Angela_Merkel",
+    "twitter_url": "@bundeskanzlerin",
+    "model_rate": "80%",
+    "model_opinion": "Merkel supports nuclear energy in certain conditions",
+    "country": "Germany"
   }
   """
 
@@ -74,6 +89,8 @@ defmodule YouCongress.DigitalTwins.AI do
         %{role: "system", content: "You are a helpful assistant."},
         %{role: "user", content: @question0},
         %{role: "assistant", content: @answer0},
+        %{role: "user", content: @question0},
+        %{role: "assistant", content: @answer1},
         %{role: "user", content: question}
       ]
     )
