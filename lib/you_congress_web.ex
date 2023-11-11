@@ -55,6 +55,13 @@ defmodule YouCongressWeb do
         layout: {YouCongressWeb.Layouts, :app}
 
       unquote(html_helpers())
+
+      def assign_current_user(socket, nil), do: assign(socket, :current_user, nil)
+
+      def assign_current_user(socket, user_token) do
+        current_user = YouCongress.Accounts.get_user_by_session_token(user_token)
+        assign(socket, :current_user, current_user)
+      end
     end
   end
 
