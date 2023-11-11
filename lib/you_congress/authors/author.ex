@@ -1,4 +1,7 @@
 defmodule YouCongress.Authors.Author do
+  @moduledoc """
+  Defines Author schema.
+  """
   use Ecto.Schema
   import Ecto.Changeset
 

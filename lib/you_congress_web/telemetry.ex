@@ -1,4 +1,7 @@
 defmodule YouCongressWeb.Telemetry do
+  @moduledoc """
+  Defines telemetry metrics and reporters.
+  """
   use Supervisor
   import Telemetry.Metrics
 

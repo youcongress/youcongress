@@ -1,6 +1,10 @@
 defmodule YouCongress.DigitalTwins.AI do
-  @models [:"gpt-4", :"gpt-3.5-turbo"]
+  @moduledoc """
+  Generate opinions via OpenAI's API.
+  """
+  @models [:"gpt-4-1106-preview", :"gpt-4", :"gpt-3.5-turbo"]
   @token_cost %{
+    :"gpt-4-1106-preview" => %{completion_tokens: 0.03, prompt_tokens: 0.01},
     :"gpt-4" => %{completion_tokens: 0.06, prompt_tokens: 0.03},
     :"gpt-3.5-turbo" => %{completion_tokens: 0.002, prompt_tokens: 0.0015}
   }
@@ -9,7 +13,7 @@ defmodule YouCongress.DigitalTwins.AI do
   Json data:
   "name": Author name
   "bio": Author bio (max 7 words)
-  "agree_rate": Strongly agree/Agree/Abstain/Disagree/Strongly disagree
+  "agree_rate": Strongly agree/Agree/Disagree/Strongly disagree
   "opinion": Opinion that summarizes why the author agrees or disagrees
   "year": Last year the author expressed their opinion on the topic
   "wikipedia_url": Author wikipedia page URL
@@ -75,7 +79,7 @@ defmodule YouCongress.DigitalTwins.AI do
     """
     Topic: #{topic}
 
-    Write one more opinion from public figures who have publicly shared their views on the topic.
+    Write one more opinion in first person from a public figure who have publicly shared their views on the topic.
 
     Exclude opinions from: #{exclude_names}
     """
@@ -85,6 +89,7 @@ defmodule YouCongress.DigitalTwins.AI do
   defp ask_gpt(question, model) do
     OpenAI.chat_completion(
       model: model,
+      response_format: %{type: "json_object"},
       messages: [
         %{role: "system", content: "You are a helpful assistant."},
         %{role: "user", content: @question0},
