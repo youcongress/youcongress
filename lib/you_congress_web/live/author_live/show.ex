@@ -13,7 +13,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     {:noreply,
      socket
      |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:author, Authors.get_author!(id))}
+     |> assign(:author, Authors.get_author!(id, include: [votes: [:voting, :answer]]))}
   end
 
   defp page_title(:show), do: "Show Author"

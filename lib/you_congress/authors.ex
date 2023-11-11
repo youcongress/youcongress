@@ -38,6 +38,13 @@ defmodule YouCongress.Authors do
   def get_author!(id), do: Repo.get!(Author, id)
 
   @doc """
+  Gets a an author by id and includes the given tables.
+  """
+  def get_author!(id, include: tables) do
+    Repo.get!(Author, id) |> Repo.preload(tables)
+  end
+
+  @doc """
   Creates a author.
 
   ## Examples

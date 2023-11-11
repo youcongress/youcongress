@@ -13,6 +13,8 @@ defmodule YouCongress.Authors.Author do
     field :wikipedia_url, :string
     field :is_twin, :boolean, default: true
 
+    has_many :votes, YouCongress.Votes.Vote
+
     timestamps()
   end
 
