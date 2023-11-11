@@ -1,0 +1,20 @@
+<div>
+  <%= if @include_author_bio do %>
+    <div>
+      <strong><.link patch={~p"/authors/#{@author.id}"}><%= @author.name %></.link></strong>,
+      <span class="text-sm">
+        <%= @author.bio %>
+      </span>
+    </div>
+  <% end %>
+  <div class="text-sm">
+    <%= if !@include_author_bio, do: @author.name %> would <%= response(
+      assigns,
+      @vote.answer.response
+    ) %> and say according to AI (wrong? <.link
+      class="underline"
+      href={"/votes/#{@vote.id}/fact-check"}
+    >fact check this</.link>):
+  </div>
+  <div class="pt-2"><%= @vote.opinion %></div>
+</div>

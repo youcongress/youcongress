@@ -15,19 +15,13 @@
 <ul>
   <%= for vote <- @voting.votes do %>
     <li class="pb-4">
-      <div>
-        <strong><%= vote.author.name %></strong>,
-        <span class="text-sm">
-          <%= vote.author.bio %>
-        </span>
-      </div>
-      <div class="text-sm">
-        would <%= response(assigns, vote.answer.response) %> and say according to AI (wrong? <.link
-          class="underline"
-          href={"/votes/#{vote.id}/fact-check"}
-        >fact check this</.link>):
-      </div>
-      <div class="pt-2"><%= vote.opinion %></div>
+      <.live_component
+        module={YouCongressWeb.VotingLive.VoteComponent}
+        id={vote.id}
+        vote={vote}
+        author={vote.author}
+        include_author_bio={true}
+      />
     </li>
   <% end %>
 </ul>

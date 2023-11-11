@@ -1,6 +1,6 @@
 <.header>
-  Author <%= @author.id %>
-  <:subtitle>This is a author record from your database.</:subtitle>
+  <%= @author.name %>
+  <:subtitle><%= @author.bio %></:subtitle>
   <:actions>
     <.link patch={~p"/authors/#{@author}/show/edit"} phx-click={JS.push_focus()}>
       <.button>Edit author</.button>
@@ -9,13 +9,31 @@
 </.header>
 
 <.list>
-  <:item title="Name"><%= @author.name %></:item>
-  <:item title="Bio"><%= @author.bio %></:item>
-  <:item title="Wikipedia url"><%= @author.wikipedia_url %></:item>
-  <:item title="Twitter url"><%= @author.twitter_url %></:item>
+  <:item title="Wikipedia url">
+    <.link navigate={@author.wikipedia_url} target="_blank"><%= @author.wikipedia_url %></.link>
+  </:item>
+  <:item title="Twitter url">
+    <.link navigate={@author.twitter_url} target="_blank"><%= @author.twitter_url %></.link>
+  </:item>
   <:item title="Country"><%= @author.country %></:item>
-  <:item title="Is twin"><%= @author.is_twin %></:item>
 </.list>
+
+<ul class="pt-6">
+  <%= for vote <- @author.votes do %>
+    <li class="pb-4">
+      <strong>
+        <.link patch={~p"/votings/#{vote.voting.id}"}><%= vote.voting.title %></.link>
+      </strong>
+      <.live_component
+        module={YouCongressWeb.VotingLive.VoteComponent}
+        id={vote.id}
+        author={@author}
+        include_author_bio={false}
+        vote={vote}
+      />
+    </li>
+  <% end %>
+</ul>
 
 <.back navigate={~p"/authors"}>Back to authors</.back>
 
