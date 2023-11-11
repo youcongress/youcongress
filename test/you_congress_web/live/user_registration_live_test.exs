@@ -58,7 +58,7 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
     test "renders errors for duplicated email", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/sign_up")
 
-      user = user_fixture(%{email: "test@email.com"})
+      user = user_fixture(%{"email" => "test@email.com"})
 
       result =
         lv

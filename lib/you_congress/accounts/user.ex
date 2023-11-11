@@ -8,6 +8,8 @@ defmodule YouCongress.Accounts.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :naive_datetime
 
+    belongs_to :author, YouCongress.Authors.Author
+
     timestamps()
   end
 
@@ -36,7 +38,7 @@ defmodule YouCongress.Accounts.User do
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password])
+    |> cast(attrs, [:email, :password, :author_id])
     |> validate_email(opts)
     |> validate_password(opts)
   end
