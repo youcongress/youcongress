@@ -1,12 +1,12 @@
-defmodule YouCongress.Opinions.AnswersTest do
+defmodule YouCongress.Votes.AnswersTest do
   use YouCongress.DataCase
 
-  alias YouCongress.Opinions.Answers
+  alias YouCongress.Votes.Answers
 
   describe "answers" do
-    alias YouCongress.Opinions.Answers.Answer
+    alias YouCongress.Votes.Answers.Answer
 
-    import YouCongress.Opinions.AnswersFixtures
+    import YouCongress.Votes.AnswersFixtures
 
     @invalid_attrs %{
       response: nil

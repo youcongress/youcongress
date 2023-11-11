@@ -1,10 +1,10 @@
-defmodule YouCongress.Opinions.AnswersFixtures do
+defmodule YouCongress.Votes.AnswersFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `YouCongress.Opinions.Answers` context.
+  entities via the `YouCongress.Votes.Answers` context.
   """
 
-  alias YouCongress.Opinions.Answers
+  alias YouCongress.Votes.Answers
 
   @doc """
   Generate an answer.

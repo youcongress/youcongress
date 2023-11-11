@@ -1,15 +1,15 @@
-defmodule YouCongress.Opinions.Opinion do
+defmodule YouCongress.Votes.Vote do
   @moduledoc """
-  Define Opinion schema
+  Define Vote schema
   """
   use Ecto.Schema
   import Ecto.Changeset
 
   alias YouCongress.Authors.Author
-  alias YouCongress.Opinions.Answers.Answer
+  alias YouCongress.Votes.Answers.Answer
   alias YouCongress.Votings.Voting
 
-  schema "opinions" do
+  schema "votes" do
     field :opinion, :string
 
     belongs_to :author, Author
@@ -20,11 +20,10 @@ defmodule YouCongress.Opinions.Opinion do
   end
 
   @doc false
-  def changeset(opinion, attrs) do
-    opinion
+  def changeset(vote, attrs) do
+    vote
     |> cast(attrs, [:opinion, :author_id, :voting_id, :answer_id])
     |> validate_required([:opinion, :author_id, :voting_id, :answer_id])
-    |> unique_constraint(:opinion)
     |> unique_constraint(:author_id)
     |> unique_constraint(:voting_id)
     |> unique_constraint(:answer_id)

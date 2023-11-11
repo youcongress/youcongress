@@ -1,6 +1,6 @@
-defmodule YouCongress.Opinions.Answers.AnswerTest do
+defmodule YouCongress.Votes.Answers.AnswerTest do
   use ExUnit.Case
-  alias YouCongress.Opinions.Answers.Answer
+  alias YouCongress.Votes.Answers.Answer
 
   describe "changeset/2" do
     test "valid attrs" do

@@ -1,8 +1,8 @@
-defmodule YouCongress.Repo.Migrations.AddAnswerIdToOpinions do
+defmodule YouCongress.Repo.Migrations.AddAnswerIdToVotes do
   use Ecto.Migration
 
   def change do
-    alter table(:opinions) do
+    alter table(:votes) do
       add :answer_id, :integer
     end
   end

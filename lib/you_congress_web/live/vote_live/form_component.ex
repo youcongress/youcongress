@@ -1,7 +1,7 @@
-defmodule YouCongressWeb.OpinionLive.FormComponent do
+defmodule YouCongressWeb.VoteLive.FormComponent do
   use YouCongressWeb, :live_component
 
-  alias YouCongress.Opinions
+  alias YouCongress.Votes
 
   @impl true
   def render(assigns) do
@@ -9,19 +9,19 @@ defmodule YouCongressWeb.OpinionLive.FormComponent do
     <div>
       <.header>
         <%= @title %>
-        <:subtitle>Use this form to manage opinion records in your database.</:subtitle>
+        <:subtitle>Use this form to manage vote records in your database.</:subtitle>
       </.header>
 
       <.simple_form
         for={@form}
-        id="opinion-form"
+        id="vote-form"
         phx-target={@myself}
         phx-change="validate"
         phx-submit="save"
       >
         <.input field={@form[:opinion]} type="text" label="Opinion" />
         <:actions>
-          <.button phx-disable-with="Saving...">Save Opinion</.button>
+          <.button phx-disable-with="Saving...">Save Vote</.button>
         </:actions>
       </.simple_form>
     </div>
@@ -29,8 +29,8 @@ defmodule YouCongressWeb.OpinionLive.FormComponent do
   end
 
   @impl true
-  def update(%{opinion: opinion} = assigns, socket) do
-    changeset = Opinions.change_opinion(opinion)
+  def update(%{vote: vote} = assigns, socket) do
+    changeset = Votes.change_vote(vote)
 
     {:ok,
      socket
@@ -39,27 +39,27 @@ defmodule YouCongressWeb.OpinionLive.FormComponent do
   end
 
   @impl true
-  def handle_event("validate", %{"opinion" => opinion_params}, socket) do
+  def handle_event("validate", %{"vote" => vote_params}, socket) do
     changeset =
-      socket.assigns.opinion
-      |> Opinions.change_opinion(opinion_params)
+      socket.assigns.vote
+      |> Votes.change_vote(vote_params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign_form(socket, changeset)}
   end
 
-  def handle_event("save", %{"opinion" => opinion_params}, socket) do
-    save_opinion(socket, socket.assigns.action, opinion_params)
+  def handle_event("save", %{"vote" => vote_params}, socket) do
+    save_vote(socket, socket.assigns.action, vote_params)
   end
 
-  defp save_opinion(socket, :edit, opinion_params) do
-    case Opinions.update_opinion(socket.assigns.opinion, opinion_params) do
-      {:ok, opinion} ->
-        notify_parent({:saved, opinion})
+  defp save_vote(socket, :edit, vote_params) do
+    case Votes.update_vote(socket.assigns.vote, vote_params) do
+      {:ok, vote} ->
+        notify_parent({:saved, vote})
 
         {:noreply,
          socket
-         |> put_flash(:info, "Opinion updated successfully")
+         |> put_flash(:info, "Vote updated successfully")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -67,14 +67,14 @@ defmodule YouCongressWeb.OpinionLive.FormComponent do
     end
   end
 
-  defp save_opinion(socket, :new, opinion_params) do
-    case Opinions.create_opinion(opinion_params) do
-      {:ok, opinion} ->
-        notify_parent({:saved, opinion})
+  defp save_vote(socket, :new, vote_params) do
+    case Votes.create_vote(vote_params) do
+      {:ok, vote} ->
+        notify_parent({:saved, vote})
 
         {:noreply,
          socket
-         |> put_flash(:info, "Opinion created successfully")
+         |> put_flash(:info, "Vote created successfully")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->

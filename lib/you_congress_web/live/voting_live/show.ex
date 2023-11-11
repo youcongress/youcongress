@@ -16,32 +16,32 @@ defmodule YouCongressWeb.VotingLive.Show do
     {:noreply,
      socket
      |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> load_voting_and_opinions(voting_id)}
+     |> load_voting_and_votes(voting_id)}
   end
 
   @impl true
   @spec handle_event(binary, map, Socket.t()) :: {:noreply, Socket.t()}
-  def handle_event("generate-opinions", %{"voting_id" => voting_id}, socket) do
+  def handle_event("generate-votes", %{"voting_id" => voting_id}, socket) do
     voting_id = String.to_integer(voting_id)
-    send(self(), {:generate_opinion, voting_id, 3})
-    {:noreply, put_flash(socket, :info, "Generating opinions...")}
+    send(self(), {:generate_vote, voting_id, 3})
+    {:noreply, put_flash(socket, :info, "Generating votes...")}
   end
 
   @impl true
-  @spec handle_info({:generate_opinion, number, number}, Socket.t()) :: {:noreply, Socket.t()}
-  def handle_info({:generate_opinion, _voting_id, 0}, socket) do
+  @spec handle_info({:generate_vote, number, number}, Socket.t()) :: {:noreply, Socket.t()}
+  def handle_info({:generate_vote, _voting_id, 0}, socket) do
     {:noreply, socket}
   end
 
-  def handle_info({:generate_opinion, voting_id, n}, socket) do
-    {:ok, _opinion} = DigitalTwins.generate_opinion(voting_id)
+  def handle_info({:generate_vote, voting_id, n}, socket) do
+    {:ok, _vote} = DigitalTwins.generate_vote(voting_id)
 
     socket =
       socket
-      |> load_voting_and_opinions(voting_id)
-      |> put_flash(:info, "Opinion generated")
+      |> load_voting_and_votes(voting_id)
+      |> put_flash(:info, "Vote generated")
 
-    send(self(), {:generate_opinion, voting_id, n - 1})
+    send(self(), {:generate_vote, voting_id, n - 1})
 
     {:noreply, socket}
   end
@@ -52,12 +52,12 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp page_title(:show), do: "Show Voting"
   defp page_title(:edit), do: "Edit Voting"
 
-  @spec load_voting_and_opinions(Socket.t(), number) :: Socket.t()
-  defp load_voting_and_opinions(socket, voting_id) do
+  @spec load_voting_and_votes(Socket.t(), number) :: Socket.t()
+  defp load_voting_and_votes(socket, voting_id) do
     assign(
       socket,
       :voting,
-      Votings.get_voting!(voting_id, include: [opinions: [:author, :answer]])
+      Votings.get_voting!(voting_id, include: [votes: [:author, :answer]])
     )
   end
 

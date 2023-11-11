@@ -1,52 +1,52 @@
 defmodule YouCongress.DigitalTwins do
   @moduledoc """
-  Generate and create opinions and authors.
+  Generate and create votes and authors.
   """
   alias YouCongress.Authors
   alias YouCongress.DigitalTwins.AI
-  alias YouCongress.Opinions
-  alias YouCongress.Opinions.Answers.Answer
-  alias YouCongress.Opinions.Opinion
+  alias YouCongress.Votes
+  alias YouCongress.Votes.Answers.Answer
+  alias YouCongress.Votes.Vote
   alias YouCongress.Votings
 
   require Logger
 
-  @spec generate_opinion(number) :: {:ok, Opinion.t()} | {:error, String.t()}
+  @spec generate_vote(number) :: {:ok, Vote.t()} | {:error, String.t()}
   @doc """
-  Generates opinions for a voting.
+  Generates votes for a voting.
 
   ## Examples
 
-      iex> generate_opinions(voting_id)
-      [%Opinion{}, ...]
+      iex> generate_votes(voting_id)
+      [%Vote{}, ...]
 
   """
-  def generate_opinion(voting_id) do
-    voting = Votings.get_voting!(voting_id, include: [opinions: [:author]])
+  def generate_vote(voting_id) do
+    voting = Votings.get_voting!(voting_id, include: [votes: [:author]])
     topic = voting.title
     model = :"gpt-4-1106-preview"
-    exclude_names = Enum.map(voting.opinions, & &1.author.name)
+    exclude_names = Enum.map(voting.votes, & &1.author.name)
 
     case AI.generate_opinion(topic, model, exclude_names) do
-      {:ok, %{opinion: opinion}} ->
-        case Opinions.Answers.get_answer_by_response(opinion["agree_rate"]) do
+      {:ok, %{opinion: vote}} ->
+        case Votes.Answers.get_answer_by_response(vote["agree_rate"]) do
           %Answer{} = answer ->
-            create_opinion(opinion, answer, voting_id)
+            save(vote, answer, voting_id)
 
           nil ->
             Logger.error(
-              "Failed to find answer. agree_rate: #{opinion["agree_rate"]}, opinion: #{inspect(opinion)}"
+              "Failed to find answer. agree_rate: #{vote["agree_rate"]}, vote: #{inspect(vote)}"
             )
 
             {:error, "Failed to find answer"}
         end
 
       {:error, _} ->
-        {:error, "Failed to generate opinion"}
+        {:error, "Failed to generate vote"}
     end
   end
 
-  def create_opinion(opinion, answer, voting_id) do
+  def save(opinion, answer, voting_id) do
     author_data = %{
       "name" => opinion["name"],
       "bio" => opinion["bio"],
@@ -58,7 +58,7 @@ defmodule YouCongress.DigitalTwins do
 
     {:ok, author} = Authors.find_by_wikipedia_url_or_create(author_data)
 
-    Opinions.create_opinion(%{
+    Votes.create_vote(%{
       opinion: opinion["opinion"],
       author_id: author.id,
       voting_id: voting_id,

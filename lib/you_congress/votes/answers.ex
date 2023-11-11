@@ -1,12 +1,12 @@
-defmodule YouCongress.Opinions.Answers do
+defmodule YouCongress.Votes.Answers do
   @moduledoc """
   The Answers context.
   """
 
   import Ecto.Query, warn: false
 
-  alias YouCongress.Opinions.Answers.Answer
   alias YouCongress.Repo
+  alias YouCongress.Votes.Answers.Answer
 
   @basic_answer_responses [
     "Strongly agree",
