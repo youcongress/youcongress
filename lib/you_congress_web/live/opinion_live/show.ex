@@ -1,7 +1,7 @@
-defmodule YouCongressWeb.OpinionLive.Show do
+defmodule YouCongressWeb.VoteLive.Show do
   use YouCongressWeb, :live_view
 
-  alias YouCongress.Opinions
+  alias YouCongress.Votes
 
   @impl true
   def mount(_params, _session, socket) do
@@ -13,9 +13,9 @@ defmodule YouCongressWeb.OpinionLive.Show do
     {:noreply,
      socket
      |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:opinion, Opinions.get_opinion!(id))}
+     |> assign(:vote, Votes.get_vote!(id))}
   end
 
-  defp page_title(:show), do: "Show Opinion"
-  defp page_title(:edit), do: "Edit Opinion"
+  defp page_title(:show), do: "Show Vote"
+  defp page_title(:edit), do: "Edit Vote"
 end

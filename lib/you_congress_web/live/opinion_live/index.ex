@@ -1,12 +1,12 @@
-defmodule YouCongressWeb.OpinionLive.Index do
+defmodule YouCongressWeb.VoteLive.Index do
   use YouCongressWeb, :live_view
 
-  alias YouCongress.Opinions
-  alias YouCongress.Opinions.Opinion
+  alias YouCongress.Votes
+  alias YouCongress.Votes.Vote
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :opinions, Opinions.list_opinions())}
+    {:ok, stream(socket, :votes, Votes.list_votes())}
   end
 
   @impl true
@@ -16,32 +16,32 @@ defmodule YouCongressWeb.OpinionLive.Index do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
-    |> assign(:page_title, "Edit Opinion")
-    |> assign(:opinion, Opinions.get_opinion!(id))
+    |> assign(:page_title, "Edit Vote")
+    |> assign(:vote, Votes.get_vote!(id))
   end
 
   defp apply_action(socket, :new, _params) do
     socket
-    |> assign(:page_title, "New Opinion")
-    |> assign(:opinion, %Opinion{})
+    |> assign(:page_title, "New Vote")
+    |> assign(:vote, %Vote{})
   end
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "Listing Opinions")
-    |> assign(:opinion, nil)
+    |> assign(:page_title, "Listing Votes")
+    |> assign(:vote, nil)
   end
 
   @impl true
-  def handle_info({YouCongressWeb.OpinionLive.FormComponent, {:saved, opinion}}, socket) do
-    {:noreply, stream_insert(socket, :opinions, opinion)}
+  def handle_info({YouCongressWeb.VoteLive.FormComponent, {:saved, vote}}, socket) do
+    {:noreply, stream_insert(socket, :votes, vote)}
   end
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
-    opinion = Opinions.get_opinion!(id)
-    {:ok, _} = Opinions.delete_opinion(opinion)
+    vote = Votes.get_vote!(id)
+    {:ok, _} = Votes.delete_vote(vote)
 
-    {:noreply, stream_delete(socket, :opinions, opinion)}
+    {:noreply, stream_delete(socket, :votes, vote)}
   end
 end

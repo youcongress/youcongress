@@ -5,12 +5,12 @@ defmodule YouCongress.Votings.Voting do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias YouCongress.Opinions.Opinion
+  alias YouCongress.Votes.Vote
 
   schema "votings" do
     field :title, :string
 
-    has_many :opinions, Opinion
+    has_many :votes, Vote
 
     timestamps()
   end

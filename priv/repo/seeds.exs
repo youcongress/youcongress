@@ -10,7 +10,7 @@
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
 
-alias YouCongress.Opinions.Answers
+alias YouCongress.Votes.Answers
 
 Enum.each(Answers.basic_answer_responses(), fn response ->
   {:ok, _} = Answers.create_answer(%{response: response})

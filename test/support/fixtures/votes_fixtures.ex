@@ -1,18 +1,18 @@
-defmodule YouCongress.OpinionsFixtures do
+defmodule YouCongress.VotesFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `YouCongress.Opinions` context.
+  entities via the `YouCongress.Votes` context.
   """
 
   import YouCongress.AuthorsFixtures
   import YouCongress.VotingsFixtures
-  import YouCongress.Opinions.AnswersFixtures
+  import YouCongress.Votes.AnswersFixtures
 
   @doc """
-  Generate a opinion.
+  Generate a vote.
   """
-  def opinion_fixture(attrs \\ %{}) do
-    {:ok, opinion} =
+  def vote_fixture(attrs \\ %{}) do
+    {:ok, vote} =
       attrs
       |> Enum.into(%{
         opinion: Faker.Lorem.sentence(),
@@ -20,8 +20,8 @@ defmodule YouCongress.OpinionsFixtures do
         voting_id: voting_fixture().id,
         answer_id: answer_fixture().id
       })
-      |> YouCongress.Opinions.create_opinion()
+      |> YouCongress.Votes.create_vote()
 
-    opinion
+    vote
   end
 end

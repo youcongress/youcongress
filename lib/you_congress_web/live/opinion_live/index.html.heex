@@ -1,27 +1,27 @@
 <.header>
-  Listing Opinions
+  Listing Votes
   <:actions>
-    <.link patch={~p"/opinions/new"}>
-      <.button>New Opinion</.button>
+    <.link patch={~p"/votes/new"}>
+      <.button>New Vote</.button>
     </.link>
   </:actions>
 </.header>
 
 <.table
-  id="opinions"
-  rows={@streams.opinions}
-  row_click={fn {_id, opinion} -> JS.navigate(~p"/opinions/#{opinion}") end}
+  id="votes"
+  rows={@streams.votes}
+  row_click={fn {_id, vote} -> JS.navigate(~p"/votes/#{vote}") end}
 >
-  <:col :let={{_id, opinion}} label="Opinion"><%= opinion.opinion %></:col>
-  <:action :let={{_id, opinion}}>
+  <:col :let={{_id, vote}} label="Vote"><%= vote.opinion %></:col>
+  <:action :let={{_id, vote}}>
     <div class="sr-only">
-      <.link navigate={~p"/opinions/#{opinion}"}>Show</.link>
+      <.link navigate={~p"/votes/#{vote}"}>Show</.link>
     </div>
-    <.link patch={~p"/opinions/#{opinion}/edit"}>Edit</.link>
+    <.link patch={~p"/votes/#{vote}/edit"}>Edit</.link>
   </:action>
-  <:action :let={{id, opinion}}>
+  <:action :let={{id, vote}}>
     <.link
-      phx-click={JS.push("delete", value: %{id: opinion.id}) |> hide("##{id}")}
+      phx-click={JS.push("delete", value: %{id: vote.id}) |> hide("##{id}")}
       data-confirm="Are you sure?"
     >
       Delete
@@ -29,18 +29,13 @@
   </:action>
 </.table>
 
-<.modal
-  :if={@live_action in [:new, :edit]}
-  id="opinion-modal"
-  show
-  on_cancel={JS.patch(~p"/opinions")}
->
+<.modal :if={@live_action in [:new, :edit]} id="vote-modal" show on_cancel={JS.patch(~p"/votes")}>
   <.live_component
-    module={YouCongressWeb.OpinionLive.FormComponent}
-    id={@opinion.id || :new}
+    module={YouCongressWeb.VoteLive.FormComponent}
+    id={@vote.id || :new}
     title={@page_title}
     action={@live_action}
-    opinion={@opinion}
-    patch={~p"/opinions"}
+    vote={@vote}
+    patch={~p"/votes"}
   />
 </.modal>
