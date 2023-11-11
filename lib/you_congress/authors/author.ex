@@ -22,8 +22,18 @@ defmodule YouCongress.Authors.Author do
   def changeset(author, attrs) do
     author
     |> cast(attrs, [:name, :bio, :wikipedia_url, :twitter_url, :country, :is_twin])
-    |> validate_required([:name, :bio, :country, :is_twin])
-    |> unique_constraint(:twitter_url)
-    |> unique_constraint(:wikipedia_url)
+    |> validate_required([:is_twin])
+    |> validate_required_if_is_twin()
+  end
+
+  def validate_required_if_is_twin(changeset) do
+    if get_field(changeset, :is_twin) do
+      changeset
+      |> validate_required([:name, :bio, :country])
+      |> unique_constraint(:twitter_url)
+      |> unique_constraint(:wikipedia_url)
+    else
+      changeset
+    end
   end
 end

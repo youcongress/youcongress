@@ -8,14 +8,21 @@ defmodule YouCongress.AccountsFixtures do
   def valid_user_password, do: "hello world!"
 
   def valid_user_attributes(attrs \\ %{}) do
-    Enum.into(attrs, %{
-      email: unique_user_email(),
-      password: valid_user_password()
+    attrs
+    |> ensure_keys_are_strings()
+    |> Enum.into(%{
+      "email" => unique_user_email(),
+      "password" => valid_user_password()
     })
   end
 
+  @spec ensure_keys_are_strings(map) :: map
+  defp ensure_keys_are_strings(attrs) do
+    Enum.map(attrs, fn {k, v} -> {to_string(k), v} end)
+  end
+
   def user_fixture(attrs \\ %{}) do
-    {:ok, user} =
+    {:ok, %{user: user}} =
       attrs
       |> valid_user_attributes()
       |> YouCongress.Accounts.register_user()

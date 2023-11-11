@@ -7,6 +7,7 @@ defmodule YouCongress.Accounts do
   alias YouCongress.Repo
 
   alias YouCongress.Accounts.{User, UserToken, UserNotifier}
+  alias YouCongress.Authors.Author
 
   ## Database getters
 
@@ -75,9 +76,12 @@ defmodule YouCongress.Accounts do
 
   """
   def register_user(attrs) do
-    %User{}
-    |> User.registration_changeset(attrs)
-    |> Repo.insert()
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:author, Author.changeset(%Author{}, %{is_twin: false}))
+    |> Ecto.Multi.insert(:user, fn %{author: author} ->
+      User.registration_changeset(%User{}, Map.put(attrs, "author_id", author.id))
+    end)
+    |> Repo.transaction()
   end
 
   @doc """
