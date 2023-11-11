@@ -4,8 +4,9 @@ defmodule YouCongress.Opinions do
   """
 
   import Ecto.Query, warn: false
-  alias YouCongress.Repo
+
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.Repo
 
   @doc """
   Returns the list of opinions.

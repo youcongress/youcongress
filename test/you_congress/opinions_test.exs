@@ -3,14 +3,14 @@ defmodule YouCongress.OpinionsTest do
 
   import YouCongress.AuthorsFixtures
   import YouCongress.VotingsFixtures
+  import YouCongress.OpinionsFixtures
+
+  import YouCongress.Opinions.AnswersFixtures
 
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
 
   describe "opinions" do
-    alias YouCongress.Opinions.Opinion
-
-    import YouCongress.OpinionsFixtures
-
     @invalid_attrs %{opinion: nil}
 
     test "list_opinions/0 returns all opinions" do
@@ -27,7 +27,8 @@ defmodule YouCongress.OpinionsTest do
       valid_attrs = %{
         opinion: "some opinion",
         author_id: author_fixture().id,
-        voting_id: voting_fixture().id
+        voting_id: voting_fixture().id,
+        answer_id: answer_fixture().id
       }
 
       assert {:ok, %Opinion{} = opinion} = Opinions.create_opinion(valid_attrs)

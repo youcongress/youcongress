@@ -6,6 +6,7 @@ defmodule YouCongress.OpinionsFixtures do
 
   import YouCongress.AuthorsFixtures
   import YouCongress.VotingsFixtures
+  import YouCongress.Opinions.AnswersFixtures
 
   @doc """
   Generate a opinion.
@@ -16,7 +17,8 @@ defmodule YouCongress.OpinionsFixtures do
       |> Enum.into(%{
         opinion: Faker.Lorem.sentence(),
         author_id: author_fixture().id,
-        voting_id: voting_fixture().id
+        voting_id: voting_fixture().id,
+        answer_id: answer_fixture().id
       })
       |> YouCongress.Opinions.create_opinion()
 

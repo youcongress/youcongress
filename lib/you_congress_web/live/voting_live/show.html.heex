@@ -22,7 +22,7 @@
         </span>
       </div>
       <div class="text-sm">
-        would say according to our AI (wrong? <.link
+        would <%= response(assigns, opinion.answer.response) %> and say according to our AI (wrong? <.link
           class="underline"
           href={"/opinions/#{opinion.id}/fact-check"}
         >fact check this</.link>):

@@ -22,6 +22,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   @impl true
   @spec handle_event(binary, map, Socket.t()) :: {:noreply, Socket.t()}
   def handle_event("generate-opinions", %{"voting_id" => voting_id}, socket) do
+    voting_id = String.to_integer(voting_id)
     send(self(), {:generate_opinion, voting_id, 3})
     {:noreply, put_flash(socket, :info, "Generating opinions...")}
   end
@@ -53,6 +54,28 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   @spec load_voting_and_opinions(Socket.t(), number) :: Socket.t()
   defp load_voting_and_opinions(socket, voting_id) do
-    assign(socket, :voting, Votings.get_voting!(voting_id, include: [opinions: [:author]]))
+    assign(
+      socket,
+      :voting,
+      Votings.get_voting!(voting_id, include: [opinions: [:author, :answer]])
+    )
   end
+
+  defp response(assigns, response) do
+    assigns =
+      assign(assigns, color: response_color(response), response: String.downcase(response))
+
+    ~H"""
+    <span class={"#{@color} font-bold"}>
+      <%= @response %>
+    </span>
+    """
+  end
+
+  defp response_color("Agree"), do: "text-green-800"
+  defp response_color("Strongly agree"), do: "text-green-800"
+  defp response_color("Disagree"), do: "text-red-800"
+  defp response_color("Strongly disagree"), do: "text-red-800"
+  defp response_color("Abstain"), do: "text-gray-400"
+  defp response_color("N/A"), do: "text-gray-400"
 end

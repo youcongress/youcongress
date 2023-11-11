@@ -1,4 +1,7 @@
 defmodule YouCongress.Votings.Voting do
+  @moduledoc """
+  Define Voting schema
+  """
   use Ecto.Schema
   import Ecto.Changeset
 

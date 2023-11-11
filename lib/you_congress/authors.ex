@@ -68,29 +68,51 @@ defmodule YouCongress.Authors do
 
   """
   def find_by_name_or_create(%{"name" => name} = author_data) do
-    case find_by_name(name) do
-      nil ->
-        create_author(author_data)
-
-      author ->
-        {:ok, author}
+    case find_by(:name, name) do
+      nil -> create_author(author_data)
+      author -> {:ok, author}
     end
   end
 
   @doc """
-  Finds a author by name.
+  Finds a author by wikipedia url or creates a new one.
 
   ## Examples
 
-      iex> find_by_name("John Doe")
+      iex> find_by_wikipedia_url_or_create("https://en.wikipedia.org/wiki/John_Doe")
+      {:ok, %Author{}}
+
+      iex> find_by_wikipedia_url_or_create("https://en.wikipedia.org/wiki/John_Doe")
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def find_by_wikipedia_url_or_create(%{"wikipedia_url" => wikipedia_url} = author_data) do
+    case find_by(:wikipedia_url, wikipedia_url) do
+      nil -> create_author(author_data)
+      author -> {:ok, author}
+    end
+  end
+
+  @doc """
+  Finds an author by column and name.
+
+  ## Examples
+
+      iex> find_by(:name, "John Doe")
       %Author{}
 
-      iex> find_by_name("John Doe")
+      iex> find_by(:name, "John Doe")
+      nil
+
+      iex> find_by(:wikipedia_url, "https://en.wikipedia.org/wiki/John_Doe")
+      %Author{}
+
+      iex> find_by(:wikipedia_url, "https://en.wikipedia.org/wiki/John_Doe")
       nil
 
   """
-  def find_by_name(name) do
-    Repo.get_by(Author, name: name)
+  def find_by(column, name) when column in [:name, :wikipedia_url] do
+    Repo.get_by(Author, [{column, name}])
   end
 
   @doc """
