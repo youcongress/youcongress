@@ -4,5 +4,7 @@ defmodule YouCongressWeb.Layouts do
   """
   use YouCongressWeb, :html
 
+  import YouCongressWeb.TopHeaderComponent
+
   embed_templates "layouts/*"
 end

@@ -1,6 +1,8 @@
 defmodule YouCongressWeb.Router do
   use YouCongressWeb, :router
 
+  import YouCongressWeb.UserAuth
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -8,6 +10,7 @@ defmodule YouCongressWeb.Router do
     plug :put_root_layout, html: {YouCongressWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :fetch_current_user
   end
 
   pipeline :api do
@@ -55,6 +58,44 @@ defmodule YouCongressWeb.Router do
 
       live_dashboard "/dashboard", metrics: YouCongressWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
+    end
+  end
+
+  ## Authentication routes
+
+  scope "/", YouCongressWeb do
+    pipe_through [:browser, :redirect_if_user_is_authenticated]
+
+    live_session :redirect_if_user_is_authenticated,
+      on_mount: [{YouCongressWeb.UserAuth, :redirect_if_user_is_authenticated}] do
+      live "/sign_up", UserRegistrationLive, :new
+      live "/log_in", UserLoginLive, :new
+      live "/reset_password", UserForgotPasswordLive, :new
+      live "/reset_password/:token", UserResetPasswordLive, :edit
+    end
+
+    post "/log_in", UserSessionController, :create
+  end
+
+  scope "/", YouCongressWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    live_session :require_authenticated_user,
+      on_mount: [{YouCongressWeb.UserAuth, :ensure_authenticated}] do
+      live "/settings", UserSettingsLive, :edit
+      live "/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+    end
+  end
+
+  scope "/", YouCongressWeb do
+    pipe_through [:browser]
+
+    delete "/log_out", UserSessionController, :delete
+
+    live_session :current_user,
+      on_mount: [{YouCongressWeb.UserAuth, :mount_current_user}] do
+      live "/users/confirm/:token", UserConfirmationLive, :edit
+      live "/users/confirm", UserConfirmationInstructionsLive, :new
     end
   end
 end
