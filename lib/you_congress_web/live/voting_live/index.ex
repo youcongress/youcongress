@@ -5,8 +5,14 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongress.Votings.Voting
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, stream(socket, :votings, Votings.list_votings())}
+  def mount(_params, session, socket) do
+    socket =
+      socket
+      |> assign_current_user(session["user_token"])
+      |> assign_counters()
+      |> stream(:votings, Votings.list_votings())
+
+    {:ok, socket}
   end
 
   @impl true

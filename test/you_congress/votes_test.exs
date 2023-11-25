@@ -11,7 +11,7 @@ defmodule YouCongress.VotesTest do
   alias YouCongress.Votes.Vote
 
   describe "votes" do
-    @invalid_attrs %{opinion: nil}
+    @invalid_attrs %{author_id: nil}
 
     test "list_votes/0 returns all votes" do
       vote = vote_fixture()

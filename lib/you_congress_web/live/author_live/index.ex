@@ -5,8 +5,14 @@ defmodule YouCongressWeb.AuthorLive.Index do
   alias YouCongress.Authors.Author
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, stream(socket, :authors, Authors.list_authors())}
+  def mount(_params, session, socket) do
+    socket =
+      socket
+      |> assign_current_user(session["user_token"])
+      |> assign_counters()
+      |> stream(:authors, Authors.list_authors())
+
+    {:ok, socket}
   end
 
   @impl true

@@ -23,7 +23,7 @@ defmodule YouCongress.Votes.Vote do
   def changeset(vote, attrs) do
     vote
     |> cast(attrs, [:opinion, :author_id, :voting_id, :answer_id])
-    |> validate_required([:opinion, :author_id, :voting_id, :answer_id])
+    |> validate_required([:author_id, :voting_id, :answer_id])
     |> unique_constraint(:author_id)
     |> unique_constraint(:voting_id)
     |> unique_constraint(:answer_id)
