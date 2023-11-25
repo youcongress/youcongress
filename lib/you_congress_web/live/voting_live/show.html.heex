@@ -9,49 +9,85 @@
   </:actions>
 </.header>
 
+<h1 class="text-2xl font-bold">
+  <%= @voting.title %>
+</h1>
 <div class="inline-flex mb-8">
-  <h1 class="text-2xl font-bold">
-    <%= @voting.title %>
-  </h1>
-  <div class="inline-flex cursor-pointer pl-2">
+  <div class="mt-1">
+    Vote:
+  </div>
+  <div class="inline-flex cursor-pointer pl-1">
     <svg
-      class={agree_icon_mt_css(@current_user_response)}
+      class={agree_icon_mt_css(response(@current_user_vote))}
       phx-click="vote"
       phx-value-icon="tick"
       xmlns="http://www.w3.org/2000/svg"
-      height={agree_icon_size(@current_user_response)}
+      height={agree_icon_size(response(@current_user_vote))}
       viewBox="0 -960 960 960"
-      width={agree_icon_size(@current_user_response)}
+      width={agree_icon_size(response(@current_user_vote))}
     >
       <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z" />
     </svg>
     <svg
-      class={disagree_icon_mt_css(@current_user_response)}
+      class={disagree_icon_mt_css(response(@current_user_vote))}
       phx-click="vote"
       phx-value-icon="x"
       xmlns="http://www.w3.org/2000/svg"
-      height={disagree_icon_size(@current_user_response)}
+      height={disagree_icon_size(response(@current_user_vote))}
       viewBox="0 -960 960 960"
-      width={disagree_icon_size(@current_user_response)}
+      width={disagree_icon_size(response(@current_user_vote))}
     >
       <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
     </svg>
   </div>
-</div>
-
-<ul>
-  <%= for vote <- @votes do %>
-    <li class="pb-4">
-      <.live_component
-        module={YouCongressWeb.VotingLive.VoteComponent}
-        id={vote.id}
-        vote={vote}
-        author={vote.author}
-        include_author_bio={true}
-      />
-    </li>
+  <div class="mt-1 ml-1 cursor-pointer">
+    🤷‍♂️
+  </div>
+  <div class="mt-1 ml-1 cursor-pointer">
+    🤐
+  </div>
+  <%= if @current_user_vote && !@current_user_vote.direct do %>
+    <div class="mt-1 ml-2 text-sm text-gray-600">
+      via delegates
+    </div>
   <% end %>
-</ul>
+</div>
+<%= if @votes_from_delegates != [] do %>
+  <div class="mb-8">
+    <h2 class="mb-2">Opinions from your delegates:</h2>
+    <ul>
+      <%= for vote <- @votes_from_delegates do %>
+        <li class="pb-4">
+          <.live_component
+            module={YouCongressWeb.VotingLive.VoteComponent}
+            id={vote.id}
+            vote={vote}
+            author={vote.author}
+            include_author_bio={true}
+          />
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+<div>
+  <%= if @votes_from_delegates != [] do %>
+    <h2 class="mb-2">Other opinions:</h2>
+  <% end %>
+  <ul>
+    <%= for vote <- @votes_from_non_delegates do %>
+      <li class="pb-4">
+        <.live_component
+          module={YouCongressWeb.VotingLive.VoteComponent}
+          id={vote.id}
+          vote={vote}
+          author={vote.author}
+          include_author_bio={true}
+        />
+      </li>
+    <% end %>
+  </ul>
+</div>
 
 <.back navigate={~p"/"}>Back to votings</.back>
 

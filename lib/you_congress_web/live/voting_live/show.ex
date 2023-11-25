@@ -6,9 +6,11 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   alias YouCongress.DigitalTwins
   alias YouCongress.Accounts.User
+  alias YouCongress.Delegations
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
   alias YouCongress.Votes
+  alias YouCongress.Votes.Vote
   alias YouCongress.Votes.Answers
 
   @impl true
@@ -38,19 +40,24 @@ defmodule YouCongressWeb.VotingLive.Show do
       assigns: %{
         current_user: author,
         voting: voting,
-        current_user_response: current_user_response
+        current_user_vote: current_user_vote
       }
     } = socket
 
-    response = next_response(icon, current_user_response)
+    response = next_response(icon, response(current_user_vote))
     answer_id = Answers.get_basic_answer_id(response)
 
     case Votes.next_vote(%{voting_id: voting.id, answer_id: answer_id, author_id: author.id}) do
       {:ok, :deleted} ->
+        socket = load_voting_and_votes(socket, socket.assigns.voting.id)
+        %{assigns: %{current_user_vote: current_user_vote}} = socket
+
         socket =
-          socket
-          |> load_voting_and_votes(socket.assigns.voting.id)
-          |> put_flash(:info, "Your vote has been deleted.")
+          put_flash(
+            socket,
+            :info,
+            "Your direct vote has been deleted.#{extra_delete_message(response(current_user_vote))}"
+          )
 
         {:noreply, socket}
 
@@ -68,6 +75,14 @@ defmodule YouCongressWeb.VotingLive.Show do
     end
   end
 
+  defp extra_delete_message(nil), do: ""
+
+  defp extra_delete_message("Agree"),
+    do: " You now agree via your delegates."
+
+  defp extra_delete_message("Disagree"), do: " You now disagree via your delegates."
+
+  @spec next_response(binary, binary) :: binary
   defp next_response("tick", "Agree"), do: "Strongly agree"
   defp next_response("tick", "Strongly agree"), do: "Strongly agree"
   defp next_response("tick", _), do: "Agree"
@@ -75,10 +90,19 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp next_response("x", "Strongly disagree"), do: "Strongly disagree"
   defp next_response("x", _), do: "Disagree"
 
-  defp message("Strongly agree"), do: "strongly agree. Click again to delete your vote"
+  defp message("Strongly agree"), do: "strongly agree. Click again to delete your direct vote"
   defp message("Agree"), do: "agree. Click again to strongly agree"
   defp message("Disagree"), do: "disagree. Click again to strongly disagree"
-  defp message("Strongly disagree"), do: "strongly disagree. Click again to delete your vote"
+
+  defp message("Strongly disagree"),
+    do: "strongly disagree. Click again to delete your direct vote"
+
+  @spec response(%Vote{} | nil) :: binary | nil
+  defp response(nil), do: nil
+
+  defp response(vote) do
+    Answers.basic_answer_id_response_map()[vote.answer_id]
+  end
 
   @impl true
   @spec handle_info({:generate_vote, number, number}, Socket.t()) :: {:noreply, Socket.t()}
@@ -111,23 +135,31 @@ defmodule YouCongressWeb.VotingLive.Show do
     votes = Votes.list_votes_with_opinion(voting_id, include: [:author, :answer])
     %{assigns: %{current_user: current_user}} = socket
 
+    votes_from_delegates = get_votes_from_delegates(votes, current_user)
+
     socket
     |> assign(
       voting: voting,
-      votes: votes,
-      current_user_response: get_current_user_response(voting, current_user)
+      votes_from_delegates: votes_from_delegates,
+      votes_from_non_delegates: votes -- votes_from_delegates,
+      current_user_vote: get_current_user_vote(voting, current_user)
     )
     |> assign_counters()
   end
 
-  @spec get_current_user_response(%Voting{}, %User{} | nil) :: binary
-  defp get_current_user_response(_, nil), do: nil
+  @spec get_votes_from_delegates([%Vote{}], %User{} | nil) :: [%Vote{}] | []
+  defp get_votes_from_delegates(_, nil), do: []
 
-  defp get_current_user_response(voting, current_user) do
-    case Votes.get_vote(voting_id: voting.id, author_id: current_user.id) do
-      nil -> nil
-      vote -> Answers.basic_answer_id_response_map()[vote.answer_id]
-    end
+  defp get_votes_from_delegates(votes, current_user) do
+    delegate_ids = Delegations.delegate_ids_by_author_id(current_user.id)
+    Enum.filter(votes, fn vote -> vote.author_id in delegate_ids end)
+  end
+
+  @spec get_current_user_vote(%Voting{}, %User{} | nil) :: %Vote{} | nil
+  defp get_current_user_vote(_, nil), do: nil
+
+  defp get_current_user_vote(voting, current_user) do
+    Votes.get_vote(voting_id: voting.id, author_id: current_user.id)
   end
 
   def agree_icon_size("Strongly agree"), do: 36
@@ -145,41 +177,4 @@ defmodule YouCongressWeb.VotingLive.Show do
   def disagree_icon_mt_css("Strongly disagree"), do: nil
   def disagree_icon_mt_css("Disagree"), do: nil
   def disagree_icon_mt_css(_), do: "mt-1"
-
-  def agree_icon(%{current_user_response: nil} = assigns) do
-    ~H"""
-    <svg
-      class="mt-1"
-      phx-click="vote"
-      phx-value-response="Agree"
-      xmlns="http://www.w3.org/2000/svg"
-      height="24"
-      viewBox="0 -960 960 960"
-      width="24"
-    >
-      <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z" />
-    </svg>
-    """
-  end
-
-  def agree_icon(%{current_user_response: "Agree"} = assigns) do
-    ~H"""
-    <svg
-      phx-click="vote"
-      phx-value-response="Agree"
-      xmlns="http://www.w3.org/2000/svg"
-      height="32"
-      viewBox="0 -960 960 960"
-      width="32"
-    >
-      <%= agree_path(assigns) %>
-    </svg>
-    """
-  end
-
-  defp agree_path(assigns) do
-    ~H"""
-    <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z" />
-    """
-  end
 end
