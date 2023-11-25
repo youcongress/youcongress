@@ -65,9 +65,9 @@ defmodule YouCongress.Votes do
   def get_vote!(id), do: Repo.get!(Vote, id)
 
   @doc """
-  Gets a single vote by author id.
+  Gets a single vote by some options.
   """
-  @spec get_vote([]) :: %Vote{} | nil
+  @spec get_vote(%{}) :: %Vote{} | nil
   def get_vote(options) do
     Repo.get_by(Vote, options)
   end
