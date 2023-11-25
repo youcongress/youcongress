@@ -147,6 +147,13 @@ defmodule YouCongress.Votes do
     Repo.delete(vote)
   end
 
+  def delete_vote(%{voting_id: voting_id, author_id: author_id}) do
+    from(v in Vote,
+      where: v.voting_id == ^voting_id and v.author_id == ^author_id
+    )
+    |> Repo.delete_all()
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking vote changes.
 
