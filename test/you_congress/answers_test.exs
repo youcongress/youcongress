@@ -13,7 +13,7 @@ defmodule YouCongress.Votes.AnswersTest do
     }
 
     test "list_answers/0 returns all answers" do
-      assert Enum.sort(Answers.basic_answer_responses()) ==
+      assert Enum.sort(Answers.basic_responses()) ==
                Answers.list_answers()
                |> Enum.map(fn answer -> answer.response end)
                |> Enum.sort()

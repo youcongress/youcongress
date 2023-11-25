@@ -8,16 +8,27 @@ defmodule YouCongress.Votes.Answers do
   alias YouCongress.Repo
   alias YouCongress.Votes.Answers.Answer
 
-  @basic_answer_responses [
-    "Strongly agree",
-    "Agree",
-    "Abstain",
-    "N/A",
-    "Disagree",
-    "Strongly disagree"
-  ]
+  @basic_responses %{
+    1 => "Strongly agree",
+    2 => "Agree",
+    3 => "Abstain",
+    4 => "N/A",
+    5 => "Disagree",
+    6 => "Strongly disagree"
+  }
 
-  def basic_answer_responses, do: @basic_answer_responses
+  @basic_answers %{
+    "Strongly agree" => 1,
+    "Agree" => 2,
+    "Abstain" => 3,
+    "N/A" => 4,
+    "Disagree" => 5,
+    "Strongly disagree" => 6
+  }
+
+  def basic_answers, do: @basic_answers
+
+  def basic_responses, do: @basic_responses
 
   @doc """
   Returns the list of answers.
@@ -74,6 +85,10 @@ defmodule YouCongress.Votes.Answers do
   """
   def get_random_answer do
     Repo.one(from(a in Answer, order_by: [asc: fragment("RANDOM()")], limit: 1))
+  end
+
+  def get_basic_answer_id(response) do
+    @basic_answers[response]
   end
 
   @doc """

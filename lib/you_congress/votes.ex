@@ -87,6 +87,30 @@ defmodule YouCongress.Votes do
   end
 
   @doc """
+  Creates, updates or deletes a vote.
+  """
+  @spec next_vote(map) :: {:ok, %Vote{}} | {:ok, :deleted} | {:error, String.t()}
+  def next_vote(attrs) do
+    case Repo.get_by(Vote, %{voting_id: attrs[:voting_id], author_id: attrs[:author_id]}) do
+      nil ->
+        create_vote(attrs)
+
+      vote ->
+        if vote.answer_id == attrs[:answer_id] do
+          case delete_vote(vote) do
+            {:ok, _} ->
+              {:ok, :deleted}
+
+            {:error, _} ->
+              {:error, "Error deleting vote"}
+          end
+        else
+          update_vote(vote, attrs)
+        end
+    end
+  end
+
+  @doc """
   Deletes a vote.
 
   ## Examples
@@ -113,5 +137,21 @@ defmodule YouCongress.Votes do
   """
   def change_vote(%Vote{} = vote, attrs \\ %{}) do
     Vote.changeset(vote, attrs)
+  end
+
+  @doc """
+  Returns the number of votes.
+  """
+  @spec count() :: integer()
+  def count do
+    Repo.aggregate(Vote, :count, :id)
+  end
+
+  @doc """
+  Returns the number of votes of an author.
+  """
+  @spec count(list) :: integer()
+  def count(author_id: author_id) do
+    Repo.aggregate(Vote, :count, :id, where: [author_id: author_id])
   end
 end

@@ -6,7 +6,12 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
   @impl true
   def mount(_params, session, socket) do
-    {:ok, assign_current_user(socket, session["user_token"])}
+    socket =
+      socket
+      |> assign_current_user(session["user_token"])
+      |> assign_counters()
+
+    {:ok, socket}
   end
 
   @impl true
