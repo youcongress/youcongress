@@ -5,8 +5,9 @@ defmodule YouCongress.Votes do
 
   import Ecto.Query, warn: false
 
-  alias YouCongress.Repo
+  alias YouCongress.DelegationVotes
   alias YouCongress.Votes.Vote
+  alias YouCongress.Repo
 
   @doc """
   Returns the list of votes.
@@ -67,8 +68,8 @@ defmodule YouCongress.Votes do
   Gets a single vote by author id.
   """
   @spec get_vote([]) :: %Vote{} | nil
-  def get_vote(voting_id: voting_id, author_id: author_id) do
-    Repo.get_by(Vote, voting_id: voting_id, author_id: author_id)
+  def get_vote(options) do
+    Repo.get_by(Vote, options)
   end
 
   @doc """
@@ -111,8 +112,8 @@ defmodule YouCongress.Votes do
   Creates, updates or deletes a vote.
   """
   @spec next_vote(map) :: {:ok, %Vote{}} | {:ok, :deleted} | {:error, String.t()}
-  def next_vote(attrs) do
-    case Repo.get_by(Vote, %{voting_id: attrs[:voting_id], author_id: attrs[:author_id]}) do
+  def next_vote(%{voting_id: voting_id, author_id: author_id} = attrs) do
+    case Repo.get_by(Vote, %{voting_id: voting_id, author_id: author_id}) do
       nil ->
         create_vote(attrs)
 
@@ -120,12 +121,18 @@ defmodule YouCongress.Votes do
         if vote.answer_id == attrs[:answer_id] do
           case delete_vote(vote) do
             {:ok, _} ->
+              DelegationVotes.update_author_voting_delegated_votes(%{
+                author_id: author_id,
+                voting_id: voting_id
+              })
+
               {:ok, :deleted}
 
             {:error, _} ->
               {:error, "Error deleting vote"}
           end
         else
+          attrs = Map.put(attrs, :direct, true)
           update_vote(vote, attrs)
         end
     end

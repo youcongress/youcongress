@@ -20,31 +20,47 @@ defmodule YouCongress.DelegationVotes do
       if voting_id in voting_ids_with_author_direct_votes do
         :direct_vote_exists
       else
-        {in_favour, against, neutral} =
-          voting_id
-          |> votes_from_delegates(delegate_ids)
-          |> get_counters()
-
-        cond do
-          in_favour == 0 and against == 0 and neutral == 0 ->
-            delete_vote_if_exists(voting_id, author_id)
-
-          in_favour > against && in_favour > neutral ->
-            vote(voting_id, author_id, answers["Agree"])
-
-          against > in_favour && against > neutral ->
-            vote(voting_id, author_id, answers["Disagree"])
-
-          neutral > in_favour && neutral > against ->
-            vote(voting_id, author_id, answers["Neutral"])
-
-          true ->
-            delete_vote_if_exists(voting_id, author_id)
-        end
+        update_votes(voting_id, author_id, delegate_ids, answers)
       end
     end
 
     :ok
+  end
+
+  defp update_votes(voting_id, author_id, delegate_ids, answers) do
+    {in_favour, against, neutral} =
+      voting_id
+      |> votes_from_delegates(delegate_ids)
+      |> get_counters()
+
+    cond do
+      in_favour == 0 and against == 0 and neutral == 0 ->
+        delete_vote_if_exists(voting_id, author_id)
+
+      in_favour > against && in_favour > neutral ->
+        vote(voting_id, author_id, answers["Agree"])
+
+      against > in_favour && against > neutral ->
+        vote(voting_id, author_id, answers["Disagree"])
+
+      neutral > in_favour && neutral > against ->
+        vote(voting_id, author_id, answers["Neutral"])
+
+      true ->
+        delete_vote_if_exists(voting_id, author_id)
+    end
+  end
+
+  @spec update_author_voting_delegated_votes(map) :: :ok | :direct_vote_exists
+  def update_author_voting_delegated_votes(%{author_id: author_id, voting_id: voting_id}) do
+    if Votes.get_vote(%{author_id: author_id, voting_id: voting_id, direct: true}) do
+      :direct_vote_exists
+    else
+      delegate_ids = Delegations.delegate_ids_by_author_id(author_id)
+      answers = Answers.basic_response_answer_id_map()
+      update_votes(voting_id, author_id, delegate_ids, answers)
+      :ok
+    end
   end
 
   defp vote(voting_id, author_id, answer_id) do

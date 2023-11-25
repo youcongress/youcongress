@@ -14,9 +14,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
         <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
           <%= if assigns[:votes_count] && assigns[:user_votes_count] do %>
             <div>
-              <%= @votes_count %> votes (<%= @user_votes_count %> <.link href={
-                ~p"/authors/#{@current_user.id}"
-              }>yours</.link>)
+              <%= @votes_count %> votes (<.link href={~p"/authors/#{@current_user.id}"}><%= @user_votes_count %> yours</.link>)
             </div>
           <% end %>
           <div>

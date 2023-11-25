@@ -4,7 +4,7 @@
   user_votes_count={if assigns[:user_votes_count], do: @user_votes_count}
 />
 <main class="px-4 py-20 sm:px-6 lg:px-8">
-  <div class="mx-auto max-w-2xl">
+  <div class="mx-auto max-w-4xl">
     <.flash_group flash={@flash} />
     <%= @inner_content %>
   </div>
