@@ -4,6 +4,8 @@ defmodule YouCongressWeb.VotingLiveTest do
   import Phoenix.LiveViewTest
   import YouCongress.VotingsFixtures
 
+  alias YouCongress.Votings
+
   @create_attrs %{title: "some nice title"}
   @update_attrs %{title: "some updated title"}
   @invalid_attrs %{title: nil}
@@ -23,7 +25,7 @@ defmodule YouCongressWeb.VotingLiveTest do
       assert html =~ voting.title
     end
 
-    test "saves new voting", %{conn: conn} do
+    test "saves new voting and redirect to show", %{conn: conn} do
       {:ok, index_live, _html} = live(conn, ~p"/")
 
       assert index_live |> element("a", "New") |> render_click() =~
@@ -39,11 +41,9 @@ defmodule YouCongressWeb.VotingLiveTest do
              |> form("#voting-form", voting: @create_attrs)
              |> render_submit()
 
-      # assert_patch(index_live, ~p"/")
-
-      html = render(index_live)
-      assert html =~ "Voting created successfully"
-      assert html =~ "some nice title"
+      voting = Votings.get_voting!(%{title: @create_attrs[:title]})
+      voting_path = ~p"/votings/#{voting.id}"
+      assert_redirect(index_live, voting_path)
     end
 
     test "updates voting in listing", %{conn: conn, voting: voting} do
