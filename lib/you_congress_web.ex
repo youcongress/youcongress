@@ -56,19 +56,8 @@ defmodule YouCongressWeb do
 
       unquote(html_helpers())
 
-      def assign_current_user(socket, nil), do: assign(socket, :current_user, nil)
-
-      def assign_current_user(socket, user_token) do
-        current_user = YouCongress.Accounts.get_user_by_session_token(user_token)
-        assign(socket, :current_user, current_user)
-      end
-
-      def assign_counters(socket) do
-        assign(socket,
-          votes_count: YouCongress.Votes.count(),
-          user_votes_count: YouCongress.Votes.count(author_id: socket.assigns.current_user.id)
-        )
-      end
+      import YouCongressWeb.LiveHelpers,
+        only: [assign_current_user: 2, assign_counters: 1]
     end
   end
 

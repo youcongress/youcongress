@@ -150,8 +150,14 @@ defmodule YouCongress.Votes do
   @doc """
   Returns the number of votes of an author.
   """
-  @spec count(list) :: integer()
-  def count(author_id: author_id) do
-    Repo.aggregate(Vote, :count, :id, where: [author_id: author_id])
+  @spec count_by_author_id(integer | nil) :: integer() | nil
+  def count_by_author_id(nil), do: nil
+
+  def count_by_author_id(author_id) do
+    from(v in Vote,
+      where: v.author_id == ^author_id,
+      select: count(v.id)
+    )
+    |> Repo.one()
   end
 end

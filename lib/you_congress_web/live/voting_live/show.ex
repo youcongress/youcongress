@@ -108,12 +108,12 @@ defmodule YouCongressWeb.VotingLive.Show do
     voting = Votings.get_voting!(voting_id, include: [votes: [:author, :answer]])
     %{assigns: %{current_user: current_user}} = socket
 
-    assign(socket,
+    socket
+    |> assign(
       voting: voting,
-      current_user_response: get_current_user_response(voting.votes, current_user),
-      votes_count: Votes.count(),
-      user_votes_count: Votes.count(author_id: current_user.id)
+      current_user_response: get_current_user_response(voting.votes, current_user)
     )
+    |> assign_counters()
   end
 
   @spec get_current_user_response([map], map) :: binary
