@@ -7,6 +7,7 @@ defmodule YouCongress.Delegations do
   alias YouCongress.Repo
 
   alias YouCongress.Delegations.Delegation
+  alias YouCongress.DelegationVotes
 
   @doc """
   Returns the list of delegations.
@@ -19,6 +20,10 @@ defmodule YouCongress.Delegations do
   """
   def list_delegations do
     Repo.all(Delegation)
+  end
+
+  def delegate_ids_by_author_id(author_id) do
+    Repo.all(from d in Delegation, where: d.deleguee_id == ^author_id, select: d.delegate_id)
   end
 
   @doc """
@@ -50,9 +55,20 @@ defmodule YouCongress.Delegations do
 
   """
   def create_delegation(attrs \\ %{}) do
-    %Delegation{}
-    |> Delegation.changeset(attrs)
-    |> Repo.insert()
+    result =
+      %Delegation{}
+      |> Delegation.changeset(attrs)
+      |> Repo.insert()
+
+    case result do
+      {:ok, delegation} ->
+        DelegationVotes.update_author_delegated_votes(delegation.deleguee_id)
+
+        {:ok, delegation}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -86,8 +102,18 @@ defmodule YouCongress.Delegations do
   """
 
   def delete_delegation(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
-    Repo.get_by(Delegation, deleguee_id: deleguee_id, delegate_id: delegate_id)
-    |> Repo.delete()
+    result =
+      Repo.get_by(Delegation, deleguee_id: deleguee_id, delegate_id: delegate_id)
+      |> Repo.delete()
+
+    case result do
+      {:ok, delegation} ->
+        DelegationVotes.update_author_delegated_votes(deleguee_id)
+        {:ok, delegation}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   @doc """

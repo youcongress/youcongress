@@ -38,6 +38,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
           socket
           |> assign(:delegating?, false)
           |> put_flash(:info, "Delegation deleted successfully.")
+          |> assign_counters()
 
         {:noreply, socket}
 
@@ -55,6 +56,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
           socket
           |> assign(:delegating?, true)
           |> put_flash(:info, "Delegation created successfully.")
+          |> assign_counters()
 
         {:noreply, socket}
 
