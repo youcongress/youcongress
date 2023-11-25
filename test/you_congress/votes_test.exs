@@ -63,5 +63,19 @@ defmodule YouCongress.VotesTest do
       vote = vote_fixture()
       assert %Ecto.Changeset{} = Votes.change_vote(vote)
     end
+
+    test "count/0 returns the number of votes" do
+      vote_fixture()
+      vote_fixture()
+      assert Votes.count() == 2
+    end
+
+    test "count_by_author_id/1 returns the number of votes by author id" do
+      author = author_fixture()
+      vote_fixture(author_id: author.id)
+      vote_fixture()
+      vote_fixture(author_id: author.id)
+      assert Votes.count_by_author_id(author.id) == 2
+    end
   end
 end

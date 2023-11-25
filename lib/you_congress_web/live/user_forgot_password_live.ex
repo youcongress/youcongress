@@ -26,8 +26,14 @@ defmodule YouCongressWeb.UserForgotPasswordLive do
     """
   end
 
-  def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{}, as: "user"))}
+  def mount(_params, session, socket) do
+    socket =
+      socket
+      |> assign_current_user(session["user_token"])
+      |> assign_counters()
+      |> assign(form: to_form(%{}, as: "user"))
+
+    {:ok, socket}
   end
 
   def handle_event("send_email", %{"user" => %{"email" => email}}, socket) do

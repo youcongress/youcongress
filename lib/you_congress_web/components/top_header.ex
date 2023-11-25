@@ -12,7 +12,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
           </a>
         </div>
         <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
-          <%= if @votes_count do %>
+          <%= if assigns[:votes_count] && assigns[:user_votes_count] do %>
             <%= @votes_count %> votes (<%= @user_votes_count %> yours)
           <% end %>
           <%= if @current_user do %>

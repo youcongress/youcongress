@@ -1,7 +1,7 @@
 <.top_header
   current_user={@current_user}
-  votes_count={@votes_count}
-  user_votes_count={@votes_count}
+  votes_count={if assigns[:votes_count], do: @votes_count}
+  user_votes_count={if assigns[:user_votes_count], do: @user_votes_count}
 />
 <main class="px-4 py-20 sm:px-6 lg:px-8">
   <div class="mx-auto max-w-2xl">

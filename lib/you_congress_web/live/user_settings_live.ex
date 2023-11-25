@@ -73,7 +73,12 @@ defmodule YouCongressWeb.UserSettingsLive do
     """
   end
 
-  def mount(%{"token" => token}, _session, socket) do
+  def mount(%{"token" => token}, session, socket) do
+    socket =
+      socket
+      |> assign_current_user(session["user_token"])
+      |> assign_counters()
+
     socket =
       case Accounts.update_user_email(socket.assigns.current_user, token) do
         :ok ->

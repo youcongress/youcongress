@@ -8,7 +8,7 @@ defmodule YouCongress.Votes.Answers do
   alias YouCongress.Repo
   alias YouCongress.Votes.Answers.Answer
 
-  @basic_responses %{
+  @basic_answer_id_response_map %{
     1 => "Strongly agree",
     2 => "Agree",
     3 => "Abstain",
@@ -17,7 +17,7 @@ defmodule YouCongress.Votes.Answers do
     6 => "Strongly disagree"
   }
 
-  @basic_answers %{
+  @basic_response_answer_id_map %{
     "Strongly agree" => 1,
     "Agree" => 2,
     "Abstain" => 3,
@@ -26,9 +26,11 @@ defmodule YouCongress.Votes.Answers do
     "Strongly disagree" => 6
   }
 
-  def basic_answers, do: @basic_answers
+  def basic_response_answer_id_map, do: @basic_response_answer_id_map
 
-  def basic_responses, do: @basic_responses
+  def basic_answer_id_response_map, do: @basic_answer_id_response_map
+
+  def basic_responses, do: Map.keys(@basic_response_answer_id_map)
 
   @doc """
   Returns the list of answers.
@@ -88,7 +90,7 @@ defmodule YouCongress.Votes.Answers do
   end
 
   def get_basic_answer_id(response) do
-    @basic_answers[response]
+    @basic_response_answer_id_map[response]
   end
 
   @doc """
