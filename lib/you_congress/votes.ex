@@ -35,6 +35,19 @@ defmodule YouCongress.Votes do
   end
 
   @doc """
+  Returns the list of votes for a voting with opinion.
+  """
+  @spec list_votes_with_opinion(integer, Keyword.t()) :: [%Vote{}, ...]
+  def list_votes_with_opinion(voting_id, opts \\ []) do
+    include_tables = Keyword.get(opts, :include, [])
+
+    Vote
+    |> where([v], v.voting_id == ^voting_id and not is_nil(v.opinion))
+    |> preload(^include_tables)
+    |> Repo.all()
+  end
+
+  @doc """
   Gets a single vote.
 
   Raises `Ecto.NoResultsError` if the Vote does not exist.
@@ -49,6 +62,14 @@ defmodule YouCongress.Votes do
 
   """
   def get_vote!(id), do: Repo.get!(Vote, id)
+
+  @doc """
+  Gets a single vote by author id.
+  """
+  @spec get_vote([]) :: %Vote{} | nil
+  def get_vote(voting_id: voting_id, author_id: author_id) do
+    Repo.get_by(Vote, voting_id: voting_id, author_id: author_id)
+  end
 
   @doc """
   Creates a vote.

@@ -5,7 +5,9 @@ defmodule YouCongressWeb.VotingLive.Show do
   require Logger
 
   alias YouCongress.DigitalTwins
+  alias YouCongress.Accounts.User
   alias YouCongress.Votings
+  alias YouCongress.Votings.Voting
   alias YouCongress.Votes
   alias YouCongress.Votes.Answers
 
@@ -105,22 +107,26 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   @spec load_voting_and_votes(Socket.t(), number) :: Socket.t()
   defp load_voting_and_votes(socket, voting_id) do
-    voting = Votings.get_voting!(voting_id, include: [votes: [:author, :answer]])
+    voting = Votings.get_voting!(voting_id)
+    votes = Votes.list_votes_with_opinion(voting_id, include: [:author, :answer])
     %{assigns: %{current_user: current_user}} = socket
 
     socket
     |> assign(
       voting: voting,
-      current_user_response: get_current_user_response(voting.votes, current_user)
+      votes: votes,
+      current_user_response: get_current_user_response(voting, current_user)
     )
     |> assign_counters()
   end
 
-  @spec get_current_user_response([map], map) :: binary
-  defp get_current_user_response(votes, current_user) do
-    case Enum.find(votes, fn vote -> vote.author_id == current_user.id end) do
+  @spec get_current_user_response(%Voting{}, %User{} | nil) :: binary
+  defp get_current_user_response(_, nil), do: nil
+
+  defp get_current_user_response(voting, current_user) do
+    case Votes.get_vote(voting_id: voting.id, author_id: current_user.id) do
       nil -> nil
-      vote -> vote.answer.response
+      vote -> Answers.basic_answer_id_response_map()[vote.answer_id]
     end
   end
 

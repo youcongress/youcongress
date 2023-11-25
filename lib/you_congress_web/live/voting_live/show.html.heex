@@ -40,7 +40,7 @@
 </div>
 
 <ul>
-  <%= for vote <- @voting.votes do %>
+  <%= for vote <- @votes do %>
     <li class="pb-4">
       <.live_component
         module={YouCongressWeb.VotingLive.VoteComponent}
