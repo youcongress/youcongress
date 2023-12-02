@@ -12,6 +12,7 @@ defmodule YouCongress.Votes.Vote do
   schema "votes" do
     field :opinion, :string
     field :direct, :boolean, default: true
+    field :twin, :boolean, default: false
 
     belongs_to :author, Author
     belongs_to :voting, Voting
@@ -23,7 +24,7 @@ defmodule YouCongress.Votes.Vote do
   @doc false
   def changeset(vote, attrs) do
     vote
-    |> cast(attrs, [:direct, :opinion, :author_id, :voting_id, :answer_id])
+    |> cast(attrs, [:direct, :twin, :opinion, :author_id, :voting_id, :answer_id])
     |> validate_required([:author_id, :voting_id, :answer_id])
     |> unique_constraint([:author_id, :voting_id, :answer_id])
   end
