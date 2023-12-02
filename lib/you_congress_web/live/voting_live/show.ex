@@ -15,7 +15,10 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   @impl true
   def mount(_params, session, socket) do
-    {:ok, assign_current_user(socket, session["user_token"])}
+    {:ok,
+     socket
+     |> assign_current_user(session["user_token"])
+     |> assign(show_results: false)}
   end
 
   @impl true
@@ -33,6 +36,10 @@ defmodule YouCongressWeb.VotingLive.Show do
     voting_id = String.to_integer(voting_id)
     send(self(), {:generate_vote, voting_id, 3})
     {:noreply, put_flash(socket, :info, "Generating votes...")}
+  end
+
+  def handle_event("toggle-results", _, socket) do
+    {:noreply, assign(socket, :show_results, not socket.assigns.show_results)}
   end
 
   def handle_event("vote", %{"icon" => icon}, socket) do
@@ -75,12 +82,53 @@ defmodule YouCongressWeb.VotingLive.Show do
     end
   end
 
+  def handle_event("vote", %{"response" => response}, socket) do
+    %{
+      assigns: %{
+        current_user: author,
+        voting: voting,
+        current_user_vote: current_user_vote
+      }
+    } = socket
+
+    answer_id = Answers.get_basic_answer_id(response)
+
+    case Votes.next_vote(%{voting_id: voting.id, answer_id: answer_id, author_id: author.id}) do
+      {:ok, :deleted} ->
+        socket = load_voting_and_votes(socket, socket.assigns.voting.id)
+        %{assigns: %{current_user_vote: current_user_vote}} = socket
+
+        socket =
+          put_flash(
+            socket,
+            :info,
+            "Your direct vote has been deleted.#{extra_delete_message(response(current_user_vote))}"
+          )
+
+        {:noreply, socket}
+
+      {:ok, _} ->
+        socket =
+          socket
+          |> load_voting_and_votes(socket.assigns.voting.id)
+          |> put_flash(
+            :info,
+            "You are now voting #{response}. Click again to delete your direct vote."
+          )
+
+        {:noreply, socket}
+
+      {:error, error} ->
+        Logger.error("Error creating vote: #{inspect(error)}")
+        {:noreply, put_flash(socket, :error, "Error creating vote.")}
+    end
+  end
+
   defp extra_delete_message(nil), do: ""
 
-  defp extra_delete_message("Agree"),
-    do: " You now agree via your delegates."
-
+  defp extra_delete_message("Agree"), do: " You now agree via your delegates."
   defp extra_delete_message("Disagree"), do: " You now disagree via your delegates."
+  defp extra_delete_message("Abstain"), do: " You now abstain via your delegates."
 
   @spec next_response(binary, binary) :: binary
   defp next_response("tick", "Agree"), do: "Strongly agree"
@@ -136,15 +184,30 @@ defmodule YouCongressWeb.VotingLive.Show do
     %{assigns: %{current_user: current_user}} = socket
 
     votes_from_delegates = get_votes_from_delegates(votes, current_user)
+    vote_frequencies = get_vote_frequencies(voting)
 
     socket
     |> assign(
       voting: voting,
       votes_from_delegates: votes_from_delegates,
       votes_from_non_delegates: votes -- votes_from_delegates,
-      current_user_vote: get_current_user_vote(voting, current_user)
+      current_user_vote: get_current_user_vote(voting, current_user),
+      vote_frequencies: vote_frequencies
     )
     |> assign_counters()
+  end
+
+  @spec get_vote_frequencies(%Voting{}) :: %{binary => number}
+  defp get_vote_frequencies(voting) do
+    vote_frequencies =
+      Votes.count_by_response(voting.id)
+      |> Enum.into(%{})
+
+    total = Enum.sum(Map.values(vote_frequencies))
+
+    vote_frequencies
+    |> Enum.map(fn {k, v} -> {k, {v, round(v * 100 / total)}} end)
+    |> Enum.into(%{})
   end
 
   @spec get_votes_from_delegates([%Vote{}], %User{} | nil) :: [%Vote{}] | []
@@ -159,7 +222,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp get_current_user_vote(_, nil), do: nil
 
   defp get_current_user_vote(voting, current_user) do
-    Votes.get_vote(voting_id: voting.id, author_id: current_user.id)
+    Votes.get_vote([voting_id: voting.id, author_id: current_user.id], preload: :answer)
   end
 
   def agree_icon_size("Strongly agree"), do: 36
@@ -177,4 +240,10 @@ defmodule YouCongressWeb.VotingLive.Show do
   def disagree_icon_mt_css("Strongly disagree"), do: nil
   def disagree_icon_mt_css("Disagree"), do: nil
   def disagree_icon_mt_css(_), do: "mt-1"
+
+  defp response_color("Strongly agree"), do: "green"
+  defp response_color("Agree"), do: "green"
+  defp response_color("Disagree"), do: "red"
+  defp response_color("Strongly disagree"), do: "red"
+  defp response_color(_), do: "gray"
 end

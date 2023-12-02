@@ -51,7 +51,55 @@
       via delegates
     </div>
   <% end %>
+  <div class="mt-1 ml-2 text-sm cursor-pointer" phx-click="toggle-results">
+    <%= if @show_results, do: "Hide", else: "Show" %> results
+  </div>
 </div>
+<%= if @show_results do %>
+  <div class="mb-12">
+    <div class="space-y-4">
+      <span class="text-red-500"></span>
+      <span class="text-green-500"></span>
+      <span class="text-gray-500"></span>
+      <span class="bg-green-500"></span>
+      <span class="bg-red-500"></span>
+      <span class="bg-gray-500"></span>
+      <%= for response <- Answers.basic_responses() do %>
+        <% {votes, percentage} = @vote_frequencies[response] || {0, 0} %>
+        <div class="mb-2">
+          <div class="flex justify-between items-center mb-1">
+            <div
+              class="flex items-center cursor-pointer"
+              phx-click="vote"
+              phx-value-response={response}
+            >
+              <div class={"w-4 h-4 bg-#{response_color(response)}-500 rounded-full mr-2"}></div>
+              <span class={"text-#{response_color(response)}-500"}>
+                <%= if @current_user_vote && @current_user_vote.answer.response == response,
+                  do: "✓ " %><%= response %>
+                <%= if @current_user_vote && !@current_user_vote.direct && @current_user_vote.answer.response == response do %>
+                  <span class="mt-1 ml-2 text-sm text-gray-600">
+                    via delegates
+                  </span>
+                <% end %>
+              </span>
+            </div>
+            <span class={"text-#{response_color(response)}-500"}>
+              <%= "#{percentage}% (#{votes})" %>
+            </span>
+          </div>
+          <div class="w-full h-2 bar-bg rounded-full">
+            <div
+              class={"bg-#{response_color(response)}-500 h-2 rounded-full"}
+              style={"width: #{percentage || 1}%;"}
+            >
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
 <%= if @votes_from_delegates != [] do %>
   <div class="mb-8">
     <h2 class="mb-2">Opinions from your delegates:</h2>

@@ -26,11 +26,20 @@ defmodule YouCongress.Votes.Answers do
     "Strongly disagree" => 6
   }
 
+  @basic_responses [
+    "Strongly agree",
+    "Agree",
+    "Abstain",
+    "N/A",
+    "Disagree",
+    "Strongly disagree"
+  ]
+
   def basic_response_answer_id_map, do: @basic_response_answer_id_map
 
   def basic_answer_id_response_map, do: @basic_answer_id_response_map
 
-  def basic_responses, do: Map.keys(@basic_response_answer_id_map)
+  def basic_responses, do: @basic_responses
 
   @doc """
   Returns the list of answers.

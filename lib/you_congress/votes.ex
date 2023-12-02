@@ -31,8 +31,14 @@ defmodule YouCongress.Votes do
         [%Vote{}, ...]
 
   """
-  def list_votes(voting_id) do
-    Repo.all(Vote, where: [voting_id: voting_id])
+  @spec list_votes(integer, Keyword.t() | nil) :: [%Vote{}, ...]
+  def list_votes(voting_id, opts \\ []) do
+    include_tables = Keyword.get(opts, :include, [])
+
+    Vote
+    |> where([v], v.voting_id == ^voting_id)
+    |> preload(^include_tables)
+    |> Repo.all()
   end
 
   @doc """
@@ -70,6 +76,16 @@ defmodule YouCongress.Votes do
   @spec get_vote(%{}) :: %Vote{} | nil
   def get_vote(options) do
     Repo.get_by(Vote, options)
+  end
+
+  @doc """
+  Gets a single vote by some options and preload some tables.
+  """
+  @spec get_vote(%{}, Keyword.t()) :: %Vote{} | nil
+  def get_vote(options, preload: tables) do
+    Vote
+    |> Repo.get_by(options)
+    |> Repo.preload(tables)
   end
 
   @doc """
@@ -118,7 +134,7 @@ defmodule YouCongress.Votes do
         create_vote(attrs)
 
       vote ->
-        if vote.answer_id == attrs[:answer_id] do
+        if vote.answer_id == attrs[:answer_id] && vote.direct do
           case delete_vote(vote) do
             {:ok, _} ->
               DelegationVotes.update_author_voting_delegated_votes(%{
@@ -194,5 +210,18 @@ defmodule YouCongress.Votes do
       select: count(v.id)
     )
     |> Repo.one()
+  end
+
+  @doc """
+  Returns the number of votes of a voting.
+  """
+  def count_by_response(voting_id) do
+    from(v in Vote,
+      join: a in assoc(v, :answer),
+      where: v.voting_id == ^voting_id,
+      group_by: a.response,
+      select: {a.response, count(a.response)}
+    )
+    |> Repo.all()
   end
 end
