@@ -51,9 +51,11 @@
       via delegates
     </div>
   <% end %>
-  <div class="mt-1 ml-2 text-sm cursor-pointer" phx-click="toggle-results">
-    <%= if @show_results, do: "Hide", else: "Show" %> results
-  </div>
+  <%= if @current_user_vote do %>
+    <div class="mt-1 ml-2 text-sm cursor-pointer" phx-click="toggle-results">
+      <%= if @show_results, do: "Hide", else: "Show" %> results
+    </div>
+  <% end %>
 </div>
 <%= if @show_results do %>
   <div class="mb-12">
