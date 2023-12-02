@@ -62,7 +62,9 @@ defmodule YouCongress.DigitalTwins do
       opinion: opinion["opinion"],
       author_id: author.id,
       voting_id: voting_id,
-      answer_id: answer.id
+      answer_id: answer.id,
+      direct: true,
+      twin: true
     })
   end
 
