@@ -12,6 +12,24 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
     """
   end
 
+  defp response_with_s(assigns, response) do
+    assigns =
+      assign(assigns, color: response_color(response), response: with_s(response))
+
+    ~H"""
+    <span class={"#{@color} font-bold"}>
+      <%= @response %>
+    </span>
+    """
+  end
+
+  defp with_s("Agree"), do: "agrees"
+  defp with_s("Strongly agree"), do: "strongly agrees"
+  defp with_s("Disagree"), do: "disagrees"
+  defp with_s("Strongly disagree"), do: "strongly disagrees"
+  defp with_s("Abstain"), do: "abstains"
+  defp with_s("N/A"), do: raise("We should NOT display N/A in the UI.")
+
   defp response_color("Agree"), do: "text-green-800"
   defp response_color("Strongly agree"), do: "text-green-800"
   defp response_color("Disagree"), do: "text-red-800"

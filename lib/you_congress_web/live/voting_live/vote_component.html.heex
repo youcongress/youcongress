@@ -1,20 +1,34 @@
 <div>
   <%= if @include_author_bio do %>
     <div>
-      <strong><.link patch={~p"/authors/#{@author.id}"}><%= @author.name %></.link></strong>,
+      <strong><.link patch={~p"/authors/#{@author.id}"}><%= @author.name %><%= if @vote.twin, do: " AI" %></.link></strong>,
       <span class="text-sm">
         <%= @author.bio %>
       </span>
     </div>
   <% end %>
   <div class="text-sm">
-    <%= if !@include_author_bio, do: @author.name %> would <%= response(
-      assigns,
-      @vote.answer.response
-    ) %> and say according to AI (wrong? <.link
-      class="underline"
-      href={"/votes/#{@vote.id}/fact-check"}
-    >fact check this</.link>):
+    <%= if @vote.twin do %>
+      <%= if !@include_author_bio, do: "#{@author.name} AI" %> would <%= response(
+        assigns,
+        @vote.answer.response
+      ) %> and say according to AI (wrong? <.link
+        class="underline"
+        href={"/votes/#{@vote.id}/fact-check"}
+      >fact check this</.link>):
+    <% else %>
+      <%= if !@include_author_bio, do: @author.name || "Anonymous" %>
+      <%= response_with_s(
+        assigns,
+        @vote.answer.response
+      ) %>
+      <%= unless @vote.direct do %>
+        via delegates
+      <% end %>
+      <%= if @vote.opinion do %>
+        and says:
+      <% end %>
+    <% end %>
   </div>
   <div class="pt-2"><%= @vote.opinion %></div>
 </div>

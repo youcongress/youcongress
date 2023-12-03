@@ -1,24 +1,30 @@
 <.header>
-  <%= @author.name %>
+  <%= @author.name || "Anonymous" %>
   <:subtitle><%= @author.bio %></:subtitle>
   <:actions>
-    <.link phx-click="toggle-delegate" phx-value-author_id={@author.id}>
-      <.button><%= if @delegating?, do: "Remove delegate", else: "Delegate" %></.button>
-    </.link>
+    <%= if @current_user && @current_user.id != @author.id do %>
+      <.link phx-click="toggle-delegate" phx-value-author_id={@author.id}>
+        <.button><%= if @delegating?, do: "Remove delegate", else: "Delegate" %></.button>
+      </.link>
+    <% end %>
     <.link patch={~p"/authors/#{@author}/show/edit"} phx-click={JS.push_focus()}>
       <.button>Edit author</.button>
     </.link>
   </:actions>
 </.header>
 
-<.list>
-  <:item title="Wikipedia url">
-    <.link navigate={@author.wikipedia_url} target="_blank"><%= @author.wikipedia_url %></.link>
+<.list :if={@author.wikipedia_url || @author.twitter_url || @author.country}>
+  <:item :if={@author.wikipedia_url} title="Wikipedia url">
+    <.link navigate={@author.wikipedia_url} target="_blank">
+      <%= @author.wikipedia_url %>
+    </.link>
   </:item>
-  <:item title="Twitter url">
+  <:item :if={@author.twitter_url} title="Twitter url">
     <.link navigate={@author.twitter_url} target="_blank"><%= @author.twitter_url %></.link>
   </:item>
-  <:item title="Country"><%= @author.country %></:item>
+  <:item :if={@author.country} title="Country">
+    <%= @author.country %>
+  </:item>
 </.list>
 
 <ul class="pt-6">

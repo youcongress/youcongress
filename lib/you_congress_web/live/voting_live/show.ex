@@ -45,7 +45,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   def handle_event("vote", %{"icon" => icon}, socket) do
     %{
       assigns: %{
-        current_user: author,
+        current_user: current_user,
         voting: voting,
         current_user_vote: current_user_vote
       }
@@ -54,7 +54,11 @@ defmodule YouCongressWeb.VotingLive.Show do
     response = next_response(icon, response(current_user_vote))
     answer_id = Answers.get_basic_answer_id(response)
 
-    case Votes.next_vote(%{voting_id: voting.id, answer_id: answer_id, author_id: author.id}) do
+    case Votes.next_vote(%{
+           voting_id: voting.id,
+           answer_id: answer_id,
+           author_id: current_user.author_id
+         }) do
       {:ok, :deleted} ->
         socket = load_voting_and_votes(socket, socket.assigns.voting.id)
         %{assigns: %{current_user_vote: current_user_vote}} = socket
@@ -85,15 +89,18 @@ defmodule YouCongressWeb.VotingLive.Show do
   def handle_event("vote", %{"response" => response}, socket) do
     %{
       assigns: %{
-        current_user: author,
-        voting: voting,
-        current_user_vote: current_user_vote
+        current_user: current_user,
+        voting: voting
       }
     } = socket
 
     answer_id = Answers.get_basic_answer_id(response)
 
-    case Votes.next_vote(%{voting_id: voting.id, answer_id: answer_id, author_id: author.id}) do
+    case Votes.next_vote(%{
+           voting_id: voting.id,
+           answer_id: answer_id,
+           author_id: current_user.author_id
+         }) do
       {:ok, :deleted} ->
         socket = load_voting_and_votes(socket, socket.assigns.voting.id)
         %{assigns: %{current_user_vote: current_user_vote}} = socket
@@ -222,7 +229,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp get_current_user_vote(_, nil), do: nil
 
   defp get_current_user_vote(voting, current_user) do
-    Votes.get_vote([voting_id: voting.id, author_id: current_user.id], preload: :answer)
+    Votes.get_vote([voting_id: voting.id, author_id: current_user.author_id], preload: :answer)
   end
 
   def agree_icon_size("Strongly agree"), do: 36
