@@ -28,26 +28,15 @@ defmodule YouCongress.Votings do
 
       iex> get_voting!(%{title: "Yey"})
       %Voting{}
+
+      iex> get_voting!(33)
+      %Voting{}
   """
-  @spec get_voting!(%{}) :: %Voting{}
+  @spec get_voting!(%{} | integer) :: %Voting{}
   def get_voting!(options) when is_map(options) do
     Repo.get_by!(Voting, options)
   end
 
-  @doc """
-  Gets a single voting.
-
-  Raises `Ecto.NoResultsError` if the Voting does not exist.
-
-  ## Examples
-
-      iex> get_voting!(123)
-      %Voting{}
-
-      iex> get_voting!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_voting!(id), do: Repo.get!(Voting, id)
 
   @doc """
