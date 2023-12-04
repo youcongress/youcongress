@@ -224,4 +224,8 @@ defmodule YouCongress.Votes do
     )
     |> Repo.all()
   end
+
+  def public?(%Vote{} = vote) do
+    vote.answer_id not in YouCongress.Votes.Answers.private_ids()
+  end
 end

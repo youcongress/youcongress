@@ -29,18 +29,20 @@
 
 <ul class="pt-6">
   <%= for vote <- @author.votes do %>
-    <li class="pb-4">
-      <strong>
-        <.link patch={~p"/votings/#{vote.voting.id}"}><%= vote.voting.title %></.link>
-      </strong>
-      <.live_component
-        module={YouCongressWeb.VotingLive.VoteComponent}
-        id={vote.id}
-        author={@author}
-        include_author_bio={false}
-        vote={vote}
-      />
-    </li>
+    <%= if YouCongress.Votes.public?(vote) || @current_user.author_id == @author.id do %>
+      <li class="pb-4">
+        <strong>
+          <.link patch={~p"/votings/#{vote.voting.id}"}><%= vote.voting.title %></.link>
+        </strong>
+        <.live_component
+          module={YouCongressWeb.VotingLive.VoteComponent}
+          id={vote.id}
+          author={@author}
+          include_author_bio={false}
+          vote={vote}
+        />
+      </li>
+    <% end %>
   <% end %>
 </ul>
 
