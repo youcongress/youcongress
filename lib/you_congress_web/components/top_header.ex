@@ -10,6 +10,9 @@ defmodule YouCongressWeb.TopHeaderComponent do
           <a href="/">
             <img src={~p"/images/logo.svg"} width="36" />
           </a>
+          <a href="/">
+            TwinPoll
+          </a>
         </div>
         <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
           <%= if assigns[:votes_count] && assigns[:user_votes_count] do %>
