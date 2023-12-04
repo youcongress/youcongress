@@ -14,7 +14,8 @@
         @vote.answer.response
       ) %> and say according to AI (wrong? <.link
         class="underline"
-        href={"/votes/#{@vote.id}/fact-check"}
+        href="#"
+        data-confirm="This feature is coming soon! You'll be able to add real quotes."
       >fact check this</.link>):
     <% else %>
       <%= if !@include_author_bio, do: @author.name || "Anonymous" %>
