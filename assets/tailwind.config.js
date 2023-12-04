@@ -11,6 +11,15 @@ module.exports = {
     "../lib/*_web.ex",
     "../lib/*_web/**/*.*ex"
   ],
+  safelist: [
+    // Used dynamically when displaying voting results
+    "text-red-500",
+    "text-green-500",
+    "text-gray-500",
+    "bg-red-500",
+    "bg-green-500",
+    "bg-gray-500",
+  ],
   theme: {
     extend: {
       colors: {

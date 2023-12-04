@@ -60,12 +60,6 @@
 <%= if @show_results do %>
   <div class="mb-12">
     <div class="space-y-4">
-      <span class="text-red-500"></span>
-      <span class="text-green-500"></span>
-      <span class="text-gray-500"></span>
-      <span class="bg-green-500"></span>
-      <span class="bg-red-500"></span>
-      <span class="bg-gray-500"></span>
       <%= for response <- Answers.basic_responses() do %>
         <% {votes, percentage} = @vote_frequencies[response] || {0, 0} %>
         <div class="mb-2">
