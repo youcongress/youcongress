@@ -22,6 +22,14 @@ defmodule YouCongressWeb.VotingLive.FormComponent do
         <.input field={@form[:title]} type="text" label="Title" />
         <:actions>
           <.button phx-disable-with="Saving...">Save Voting</.button>
+
+          <.link
+            phx-click="delete"
+            phx-target={@myself}
+            data-confirm="Are you sure? This will permanently delete all votes and opinions in the poll."
+          >
+            Delete
+          </.link>
         </:actions>
       </.simple_form>
     </div>
@@ -35,7 +43,8 @@ defmodule YouCongressWeb.VotingLive.FormComponent do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign_form(changeset)}
+     |> assign_form(changeset)
+     |> assign(voting: voting)}
   end
 
   @impl true
@@ -50,6 +59,19 @@ defmodule YouCongressWeb.VotingLive.FormComponent do
 
   def handle_event("save", %{"voting" => voting_params}, socket) do
     save_voting(socket, socket.assigns.action, voting_params)
+  end
+
+  def handle_event("delete", _, socket) do
+    case Votings.delete_voting(socket.assigns.voting) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Voting deleted successfully")
+         |> redirect(to: ~p"/")}
+
+      {:error, _} ->
+        {:noreply, socket}
+    end
   end
 
   defp save_voting(socket, :edit, voting_params) do
