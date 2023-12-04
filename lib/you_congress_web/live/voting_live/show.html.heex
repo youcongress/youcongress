@@ -17,33 +17,47 @@
     Vote:
   </div>
   <div class="inline-flex cursor-pointer pl-1">
-    <svg
-      class={agree_icon_mt_css(response(@current_user_vote))}
-      phx-click="vote"
-      phx-value-icon="tick"
-      xmlns="http://www.w3.org/2000/svg"
-      height={agree_icon_size(response(@current_user_vote))}
-      viewBox="0 -960 960 960"
-      width={agree_icon_size(response(@current_user_vote))}
-    >
-      <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z" />
-    </svg>
-    <svg
-      class={disagree_icon_mt_css(response(@current_user_vote))}
-      phx-click="vote"
-      phx-value-icon="x"
-      xmlns="http://www.w3.org/2000/svg"
-      height={disagree_icon_size(response(@current_user_vote))}
-      viewBox="0 -960 960 960"
-      width={disagree_icon_size(response(@current_user_vote))}
-    >
-      <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
-    </svg>
+    <span title="Agree">
+      <svg
+        class={agree_icon_mt_css(response(@current_user_vote))}
+        phx-click="vote"
+        phx-value-icon="tick"
+        xmlns="http://www.w3.org/2000/svg"
+        height={agree_icon_size(response(@current_user_vote))}
+        viewBox="0 -960 960 960"
+        width={agree_icon_size(response(@current_user_vote))}
+      >
+        <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z" />
+      </svg>
+    </span>
+    <span title="Disagree">
+      <svg
+        class={disagree_icon_mt_css(response(@current_user_vote))}
+        phx-click="vote"
+        phx-value-icon="x"
+        xmlns="http://www.w3.org/2000/svg"
+        height={disagree_icon_size(response(@current_user_vote))}
+        viewBox="0 -960 960 960"
+        width={disagree_icon_size(response(@current_user_vote))}
+      >
+        <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+      </svg>
+    </span>
   </div>
-  <div class="mt-1 ml-1 cursor-pointer">
+  <div
+    class={"mt-1 ml-1 cursor-pointer#{if response(@current_user_vote) == "Abstain", do: " text-xl"}"}
+    phx-click="vote"
+    phx-value-icon="abstain"
+    title="Abstain"
+  >
     🤷‍♂️
   </div>
-  <div class="mt-1 ml-1 cursor-pointer">
+  <div
+    class={"mt-1 ml-1 cursor-pointer#{if response(@current_user_vote) == "N/A", do: " text-xl"}"}
+    phx-click="vote"
+    phx-value-icon="no-comment"
+    title="N/A"
+  >
     🤐
   </div>
   <%= if @current_user_vote && !@current_user_vote.direct do %>
