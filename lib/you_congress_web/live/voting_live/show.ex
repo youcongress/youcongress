@@ -35,7 +35,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   def handle_event("generate-votes", %{"voting_id" => voting_id}, socket) do
     voting_id = String.to_integer(voting_id)
     send(self(), {:generate_vote, voting_id, 3})
-    {:noreply, put_flash(socket, :info, "Generating votes...")}
+    {:noreply, put_flash(socket, :info, "Generating votes. Please wait one minute.")}
   end
 
   def handle_event("toggle-results", _, socket) do
