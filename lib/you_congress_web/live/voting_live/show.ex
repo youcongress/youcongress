@@ -171,6 +171,12 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   def handle_info({:generate_vote, voting_id, n}, socket) do
     {:ok, _vote} = DigitalTwins.generate_vote(voting_id)
+    %{assigns: %{current_user: current_user}} = socket
+
+    YouCongress.DelegationVotes.update_author_voting_delegated_votes(%{
+      author_id: current_user.author_id,
+      voting_id: voting_id
+    })
 
     socket =
       socket
