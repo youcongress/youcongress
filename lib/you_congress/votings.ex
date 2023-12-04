@@ -22,6 +22,19 @@ defmodule YouCongress.Votings do
   end
 
   @doc """
+  Returns the list of votings ordered by `order_by`.
+
+  ## Examples
+
+      iex> list_votings(order_by: [desc: :id])
+      [%Voting{}, ...]
+
+  """
+  def list_votings(order_by: order_by) do
+    Repo.all(from v in Voting, order_by: ^order_by)
+  end
+
+  @doc """
   Gets a voting given some params.
 
   ## Examples

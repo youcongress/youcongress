@@ -10,7 +10,7 @@ defmodule YouCongressWeb.VotingLive.Index do
       socket
       |> assign_current_user(session["user_token"])
       |> assign_counters()
-      |> stream(:votings, Votings.list_votings())
+      |> stream(:votings, Votings.list_votings(order_by: [desc: :id]))
 
     {:ok, socket}
   end
