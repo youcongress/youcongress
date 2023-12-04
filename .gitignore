@@ -35,3 +35,4 @@ you_congress-*.tar
 npm-debug.log
 /assets/node_modules/
 
+.env
