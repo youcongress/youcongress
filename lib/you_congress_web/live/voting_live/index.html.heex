@@ -1,11 +1,11 @@
-<.header>
-  Polls
-  <:actions>
-    <.link patch={~p"/votings/new"}>
-      <.button>New</.button>
-    </.link>
-  </:actions>
-</.header>
+<.live_component
+  module={YouCongressWeb.VotingLive.NewFormComponent}
+  id={:new}
+  title={@page_title}
+  action={@live_action}
+  voting={%Voting{}}
+  patch={~p"/"}
+/>
 
 <.table
   id="votings"
