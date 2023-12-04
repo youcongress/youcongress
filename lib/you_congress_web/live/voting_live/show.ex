@@ -144,9 +144,13 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp next_response("x", "Disagree"), do: "Strongly disagree"
   defp next_response("x", "Strongly disagree"), do: "Strongly disagree"
   defp next_response("x", _), do: "Disagree"
+  defp next_response("abstain", _), do: "Abstain"
+  defp next_response("no-comment", _), do: "N/A"
 
   defp message("Strongly agree"), do: "strongly agree. Click again to delete your direct vote"
   defp message("Agree"), do: "agree. Click again to strongly agree"
+  defp message("Abstain"), do: "abstain. Click again to delete your direct vote"
+  defp message("N/A"), do: "N/A. Click again to delete your direct vote"
   defp message("Disagree"), do: "disagree. Click again to strongly disagree"
 
   defp message("Strongly disagree"),
