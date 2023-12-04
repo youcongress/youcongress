@@ -41,7 +41,8 @@ defmodule YouCongress.DigitalTwins do
             {:error, "Failed to find answer"}
         end
 
-      {:error, _} ->
+      {:error, error} ->
+        Logger.error("Failed to generate vote. error: #{inspect(error)}")
         {:error, "Failed to generate vote"}
     end
   end
