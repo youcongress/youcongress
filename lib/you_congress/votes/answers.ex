@@ -35,11 +35,15 @@ defmodule YouCongress.Votes.Answers do
     "Strongly disagree"
   ]
 
+  @private_ids [4]
+
   def basic_response_answer_id_map, do: @basic_response_answer_id_map
 
   def basic_answer_id_response_map, do: @basic_answer_id_response_map
 
   def basic_responses, do: @basic_responses
+
+  def private_ids, do: @private_ids
 
   @doc """
   Returns the list of answers.
