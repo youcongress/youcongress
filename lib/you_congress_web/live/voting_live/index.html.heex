@@ -1,5 +1,5 @@
 <.header>
-  Votings
+  Polls
   <:actions>
     <.link patch={~p"/votings/new"}>
       <.button>New</.button>
@@ -12,20 +12,11 @@
   rows={@streams.votings}
   row_click={fn {_id, voting} -> JS.navigate(~p"/votings/#{voting}") end}
 >
-  <:col :let={{_id, voting}} label="Title"><%= voting.title %></:col>
+  <:col :let={{_id, voting}} label="Recent"><%= voting.title %></:col>
   <:action :let={{_id, voting}}>
     <div class="sr-only">
       <.link navigate={~p"/votings/#{voting}"}>Show</.link>
     </div>
-    <.link patch={~p"/votings/#{voting}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={{id, voting}}>
-    <.link
-      phx-click={JS.push("delete", value: %{id: voting.id}) |> hide("##{id}")}
-      data-confirm="Are you sure?"
-    >
-      Delete
-    </.link>
   </:action>
 </.table>
 

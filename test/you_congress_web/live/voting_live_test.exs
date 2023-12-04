@@ -45,36 +45,6 @@ defmodule YouCongressWeb.VotingLiveTest do
       voting_path = ~p"/votings/#{voting.id}"
       assert_redirect(index_live, voting_path)
     end
-
-    test "updates voting in listing", %{conn: conn, voting: voting} do
-      {:ok, index_live, _html} = live(conn, ~p"/")
-
-      assert index_live |> element("#votings-#{voting.id} a", "Edit") |> render_click() =~
-               "Edit Voting"
-
-      assert_patch(index_live, ~p"/votings/#{voting}/edit")
-
-      assert index_live
-             |> form("#voting-form", voting: @invalid_attrs)
-             |> render_change() =~ "can&#39;t be blank"
-
-      assert index_live
-             |> form("#voting-form", voting: @update_attrs)
-             |> render_submit()
-
-      assert_patch(index_live, ~p"/")
-
-      html = render(index_live)
-      assert html =~ "Voting updated successfully"
-      assert html =~ "some updated title"
-    end
-
-    test "deletes voting in listing", %{conn: conn, voting: voting} do
-      {:ok, index_live, _html} = live(conn, ~p"/")
-
-      assert index_live |> element("#votings-#{voting.id} a", "Delete") |> render_click()
-      refute has_element?(index_live, "#votings-#{voting.id}")
-    end
   end
 
   describe "Show" do
@@ -108,6 +78,18 @@ defmodule YouCongressWeb.VotingLiveTest do
       html = render(show_live)
       assert html =~ "Voting updated successfully"
       assert html =~ "some updated title"
+    end
+
+    test "deletes voting in listing", %{conn: conn, voting: voting} do
+      {:ok, index_live, _html} = live(conn, ~p"/votings/#{voting.id}/edit")
+
+      index_live
+      |> element("a", "Delete")
+      |> render_click()
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Votings.get_voting!(voting.id)
+      end
     end
   end
 end
