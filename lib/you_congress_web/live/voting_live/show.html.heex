@@ -66,7 +66,7 @@
     </div>
   <% end %>
   <%= if @current_user_vote do %>
-    <div class="mt-1 ml-4 text-md cursor-pointer" phx-click="toggle-results">
+    <div class="mt-1 ml-4 text-sm cursor-pointer" phx-click="toggle-results">
       <%= if @show_results, do: "Hide", else: "Show" %> results
     </div>
   <% end %>
