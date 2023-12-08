@@ -11,7 +11,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
             <img src={~p"/images/logo.svg"} width="36" />
           </a>
           <a href="/">
-            TwinPoll
+            YouCongress
           </a>
         </div>
         <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
