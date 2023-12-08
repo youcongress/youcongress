@@ -1,7 +1,7 @@
 <.header class="pb-5">
   <:actions>
     <.link phx-click="generate-votes" phx-value-voting_id={@voting.id}>
-      <.button>Generate votes</.button>
+      <.button>Generate AI votes</.button>
     </.link>
     <.link patch={~p"/votings/#{@voting}/show/edit"} phx-click={JS.push_focus()}>
       Edit
