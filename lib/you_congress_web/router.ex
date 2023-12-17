@@ -18,6 +18,13 @@ defmodule YouCongressWeb.Router do
   end
 
   scope "/", YouCongressWeb do
+    pipe_through :browser
+
+    get "/terms", PageController, :terms
+    get "/privacy-policy", PageController, :privacy_policy
+  end
+
+  scope "/", YouCongressWeb do
     pipe_through [:browser, :redirect_home_if_user_is_authenticated]
 
     get "/", PageController, :home
