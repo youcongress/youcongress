@@ -24,25 +24,32 @@ defmodule YouCongressWeb.Router do
   end
 
   scope "/", YouCongressWeb do
-    pipe_through [:browser, :require_authenticated_user]
+    pipe_through [:browser, :require_admin_user]
 
-    live "/authors", AuthorLive.Index, :index
-    live "/authors/new", AuthorLive.Index, :new
-    live "/authors/:id/edit", AuthorLive.Index, :edit
-    live "/authors/:id", AuthorLive.Show, :show
-    live "/authors/:id/show/edit", AuthorLive.Show, :edit
-
-    live "/home", VotingLive.Index, :index
     live "/votings/new", VotingLive.Index, :new
-    live "/votings/:id/edit", VotingLive.Index, :edit
-    live "/votings/:id", VotingLive.Show, :show
+    live "/votings/:id/edit", VotingLive.Show, :edit
     live "/votings/:id/show/edit", VotingLive.Show, :edit
 
-    live "/votes", VoteLive.Index, :index
+    live "/authors/new", AuthorLive.Index, :new
+    live "/authors/:id/edit", AuthorLive.Show, :edit
+    live "/authors/:id/show/edit", AuthorLive.Show, :edit
+
     live "/votes/new", VoteLive.Index, :new
-    live "/votes/:id/edit", VoteLive.Index, :edit
-    live "/votes/:id", VoteLive.Show, :show
+    live "/votes/:id/edit", VoteLive.Show, :edit
     live "/votes/:id/show/edit", VoteLive.Show, :edit
+  end
+
+  scope "/", YouCongressWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    live "/home", VotingLive.Index, :index
+    live "/votings/:id", VotingLive.Show, :show
+
+    live "/authors", AuthorLive.Index, :index
+    live "/authors/:id", AuthorLive.Show, :show
+
+    live "/votes", VoteLive.Index, :index
+    live "/votes/:id", VoteLive.Show, :show
   end
 
   # Other scopes may use custom stacks.

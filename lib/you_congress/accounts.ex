@@ -360,4 +360,7 @@ defmodule YouCongress.Accounts do
     |> User.role_changeset(%{role: role})
     |> Repo.update()
   end
+
+  def admin?(%User{role: "admin"}), do: true
+  def admin?(_), do: false
 end
