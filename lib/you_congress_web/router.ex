@@ -18,6 +18,12 @@ defmodule YouCongressWeb.Router do
   end
 
   scope "/", YouCongressWeb do
+    pipe_through [:browser, :redirect_home_if_user_is_authenticated]
+
+    get "/", PageController, :home
+  end
+
+  scope "/", YouCongressWeb do
     pipe_through [:browser, :require_authenticated_user]
 
     live "/authors", AuthorLive.Index, :index
@@ -26,7 +32,7 @@ defmodule YouCongressWeb.Router do
     live "/authors/:id", AuthorLive.Show, :show
     live "/authors/:id/show/edit", AuthorLive.Show, :edit
 
-    live "/", VotingLive.Index, :index
+    live "/home", VotingLive.Index, :index
     live "/votings/new", VotingLive.Index, :new
     live "/votings/:id/edit", VotingLive.Index, :edit
     live "/votings/:id", VotingLive.Show, :show

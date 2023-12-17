@@ -211,6 +211,19 @@ defmodule YouCongressWeb.UserAuth do
     end
   end
 
+  @doc """
+  Redirects to /home if user is authenticated.
+  """
+  def redirect_home_if_user_is_authenticated(conn, _opts) do
+    if conn.assigns[:current_user] do
+      conn
+      |> redirect(to: ~p"/home")
+      |> halt()
+    else
+      conn
+    end
+  end
+
   defp put_token_in_session(conn, token) do
     conn
     |> put_session(:user_token, token)
