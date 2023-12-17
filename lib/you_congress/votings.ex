@@ -130,4 +130,17 @@ defmodule YouCongress.Votings do
   def change_voting(%Voting{} = voting, attrs \\ %{}) do
     Voting.changeset(voting, attrs)
   end
+
+  @doc """
+  Returns the number of votings.
+
+  ## Examples
+
+      > count()
+      42
+
+  """
+  def count do
+    Repo.aggregate(Voting, :count, :id)
+  end
 end

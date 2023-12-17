@@ -18,7 +18,7 @@ defmodule YouCongressWeb.Router do
   end
 
   scope "/", YouCongressWeb do
-    pipe_through :browser
+    pipe_through [:browser, :require_authenticated_user]
 
     live "/authors", AuthorLive.Index, :index
     live "/authors/new", AuthorLive.Index, :new
