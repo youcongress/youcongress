@@ -46,7 +46,20 @@ defmodule YouCongressWeb.ConnCase do
   """
   def register_and_log_in_user(%{conn: conn}) do
     user = YouCongress.AccountsFixtures.user_fixture()
-    %{conn: log_in_user(conn, user), user: user}
+    %{conn: log_in_user(conn, user), current_user: user}
+  end
+
+  @doc """
+  Setup helper that registers and logs in admins.
+
+      setup :register_and_log_in_admin
+
+  It stores an updated connection and a registered admin in the
+  test context.
+  """
+  def register_and_log_in_admin(%{conn: conn}) do
+    user = YouCongress.AccountsFixtures.admin_fixture()
+    %{conn: log_in_user(conn, user), current_user: user}
   end
 
   @doc """
@@ -60,5 +73,18 @@ defmodule YouCongressWeb.ConnCase do
     conn
     |> Phoenix.ConnTest.init_test_session(%{})
     |> Plug.Conn.put_session(:user_token, token)
+  end
+
+  def log_in_as_admin(conn), do: log_in_as(conn, "admin")
+  @spec log_in_as_creator(Plug.Conn.t()) :: Plug.Conn.t()
+  def log_in_as_creator(conn), do: log_in_as(conn, "creator")
+  def log_in_as_user(conn), do: log_in_as(conn, "user")
+
+  def log_in_as(conn, role) do
+    {:ok, user} =
+      YouCongress.AccountsFixtures.user_fixture()
+      |> YouCongress.Accounts.update_role(role)
+
+    log_in_user(conn, user)
   end
 end

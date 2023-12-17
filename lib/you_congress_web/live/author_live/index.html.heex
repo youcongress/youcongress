@@ -1,9 +1,11 @@
 <.header>
-  Listing Authors
+  Authors
   <:actions>
-    <.link patch={~p"/authors/new"}>
-      <.button>New Author</.button>
-    </.link>
+    <%= if YouCongress.Accounts.Permissions.can_create_authors?(@current_user) do %>
+      <.link patch={~p"/authors/new"}>
+        <.button>New Author</.button>
+      </.link>
+    <% end %>
   </:actions>
 </.header>
 

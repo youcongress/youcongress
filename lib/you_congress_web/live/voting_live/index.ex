@@ -34,7 +34,7 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "Listing Votings")
+    |> assign(:page_title, "Votings")
     |> assign(:voting, nil)
   end
 

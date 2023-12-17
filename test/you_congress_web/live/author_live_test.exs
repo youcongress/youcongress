@@ -38,6 +38,8 @@ defmodule YouCongressWeb.AuthorLiveTest do
     setup [:create_author]
 
     test "lists all authors", %{conn: conn, author: author} do
+      conn = log_in_as_user(conn)
+
       {:ok, _index_live, html} = live(conn, ~p"/authors")
 
       assert html =~ "Listing Authors"
@@ -45,6 +47,8 @@ defmodule YouCongressWeb.AuthorLiveTest do
     end
 
     test "saves new author", %{conn: conn} do
+      conn = log_in_as_admin(conn)
+
       {:ok, index_live, _html} = live(conn, ~p"/authors")
 
       assert index_live |> element("a", "New Author") |> render_click() =~
@@ -68,6 +72,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
     end
 
     test "updates author in listing", %{conn: conn, author: author} do
+      conn = log_in_as_admin(conn)
       {:ok, index_live, _html} = live(conn, ~p"/authors")
 
       assert index_live |> element("#authors-#{author.id} a", "Edit") |> render_click() =~
@@ -91,6 +96,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
     end
 
     test "deletes author in listing", %{conn: conn, author: author} do
+      conn = log_in_as_admin(conn)
       {:ok, index_live, _html} = live(conn, ~p"/authors")
 
       assert index_live |> element("#authors-#{author.id} a", "Delete") |> render_click()
@@ -102,6 +108,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
     setup [:create_author]
 
     test "displays author", %{conn: conn, author: author} do
+      conn = log_in_as_user(conn)
       {:ok, _show_live, html} = live(conn, ~p"/authors/#{author}")
 
       assert html =~ "Show Author"
@@ -109,6 +116,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
     end
 
     test "updates author within modal", %{conn: conn, author: author} do
+      conn = log_in_as_admin(conn)
       {:ok, show_live, _html} = live(conn, ~p"/authors/#{author}")
 
       assert show_live |> element("a", "Edit") |> render_click() =~

@@ -509,4 +509,13 @@ defmodule YouCongress.AccountsTest do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
     end
   end
+
+  describe "update_role/2" do
+    test "sets admin role" do
+      user = user_fixture()
+      {:ok, user} = Accounts.update_role(user, "admin")
+      assert user.role == "admin"
+      assert Accounts.get_user!(user.id).role == "admin"
+    end
+  end
 end

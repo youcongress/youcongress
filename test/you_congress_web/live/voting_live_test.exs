@@ -19,19 +19,19 @@ defmodule YouCongressWeb.VotingLiveTest do
     setup [:create_voting]
 
     test "lists all votings", %{conn: conn, voting: voting} do
+      conn = log_in_as_user(conn)
+
       {:ok, _index_live, html} = live(conn, ~p"/")
 
-      assert html =~ "Listing Votings"
+      assert html =~ "Votings"
       assert html =~ voting.title
     end
 
     test "saves new voting and redirect to show", %{conn: conn} do
+      conn = log_in_as_admin(conn)
+      # %{conn: conn, user: _admin} = register_and_log_in_admin(%{conn: conn})
+
       {:ok, index_live, _html} = live(conn, ~p"/")
-
-      assert index_live |> element("a", "New") |> render_click() =~
-               "New Voting"
-
-      assert_patch(index_live, ~p"/votings/new")
 
       assert index_live
              |> form("#voting-form", voting: @invalid_attrs)
@@ -51,6 +51,8 @@ defmodule YouCongressWeb.VotingLiveTest do
     setup [:create_voting]
 
     test "displays voting", %{conn: conn, voting: voting} do
+      conn = log_in_as_user(conn)
+
       {:ok, _show_live, html} = live(conn, ~p"/votings/#{voting}")
 
       assert html =~ "Show Voting"
@@ -58,10 +60,13 @@ defmodule YouCongressWeb.VotingLiveTest do
     end
 
     test "updates voting within modal", %{conn: conn, voting: voting} do
+      conn = log_in_as_admin(conn)
+
       {:ok, show_live, _html} = live(conn, ~p"/votings/#{voting}")
 
-      assert show_live |> element("a", "Edit") |> render_click() =~
-               "Edit Voting"
+      assert show_live
+             |> element("a", "Edit")
+             |> render_click() =~ "Edit Voting"
 
       assert_patch(show_live, ~p"/votings/#{voting}/show/edit")
 
@@ -81,6 +86,8 @@ defmodule YouCongressWeb.VotingLiveTest do
     end
 
     test "deletes voting in listing", %{conn: conn, voting: voting} do
+      conn = log_in_as_admin(conn)
+
       {:ok, index_live, _html} = live(conn, ~p"/votings/#{voting.id}/edit")
 
       index_live

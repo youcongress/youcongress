@@ -354,4 +354,10 @@ defmodule YouCongress.Accounts do
       {:error, :user, changeset, _} -> {:error, changeset}
     end
   end
+
+  def update_role(user, role) do
+    user
+    |> User.role_changeset(%{role: role})
+    |> Repo.update()
+  end
 end
