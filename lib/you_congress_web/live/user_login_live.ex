@@ -7,11 +7,7 @@ defmodule YouCongressWeb.UserLoginLive do
       <.header class="text-center">
         Log in to account
         <:subtitle>
-          Don't have an account?
-          <.link navigate={~p"/sign_up"} class="font-semibold text-brand hover:underline">
-            Sign up
-          </.link>
-          for an account now.
+          Don't have an account? You'll need an invite.
         </:subtitle>
       </.header>
 

@@ -88,7 +88,6 @@ defmodule YouCongressWeb.Router do
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{YouCongressWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/sign_up", UserRegistrationLive, :new
       live "/log_in", UserLoginLive, :new
       live "/reset_password", UserForgotPasswordLive, :new
       live "/reset_password/:token", UserResetPasswordLive, :edit
