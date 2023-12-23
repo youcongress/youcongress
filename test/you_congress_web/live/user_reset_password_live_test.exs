@@ -99,20 +99,5 @@ defmodule YouCongressWeb.UserResetPasswordLiveTest do
 
       assert conn.resp_body =~ "Log in"
     end
-
-    test "redirects to password reset page when the Register button is clicked", %{
-      conn: conn,
-      token: token
-    } do
-      {:ok, lv, _html} = live(conn, ~p"/reset_password/#{token}")
-
-      {:ok, conn} =
-        lv
-        |> element(~s|main a:fl-contains("Register")|)
-        |> render_click()
-        |> follow_redirect(conn, ~p"/sign_up")
-
-      assert conn.resp_body =~ "Register"
-    end
   end
 end

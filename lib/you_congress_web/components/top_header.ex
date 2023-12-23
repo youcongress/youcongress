@@ -49,14 +49,6 @@ defmodule YouCongressWeb.TopHeaderComponent do
           <% else %>
             <div>
               <.link
-                href={~p"/sign_up"}
-                class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-              >
-                Register
-              </.link>
-            </div>
-            <div>
-              <.link
                 href={~p"/log_in"}
                 class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
               >
