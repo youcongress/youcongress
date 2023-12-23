@@ -34,8 +34,14 @@ defmodule YouCongressWeb.VotingLive.Show do
   @spec handle_event(binary, map, Socket.t()) :: {:noreply, Socket.t()}
   def handle_event("generate-votes", %{"voting_id" => voting_id}, socket) do
     voting_id = String.to_integer(voting_id)
-    send(self(), {:generate_vote, voting_id, 3})
-    {:noreply, put_flash(socket, :info, "Generating three opinions. Please wait one minute.")}
+    Task.async(fn -> create_ai_opinions(voting_id, 5, socket) end)
+
+    {:noreply,
+     put_flash(
+       socket,
+       :info,
+       "Generating five opinions. Please wait one minute and reload the page."
+     )}
   end
 
   def handle_event("toggle-results", _, socket) do
@@ -163,13 +169,12 @@ defmodule YouCongressWeb.VotingLive.Show do
     Answers.basic_answer_id_response_map()[vote.answer_id]
   end
 
-  @impl true
-  @spec handle_info({:generate_vote, number, number}, Socket.t()) :: {:noreply, Socket.t()}
-  def handle_info({:generate_vote, _voting_id, 0}, socket) do
-    {:noreply, socket}
+  @spec create_ai_opinions(number, number, Socket.t()) :: :ok
+  def create_ai_opinions(_, 0, _) do
+    :ok
   end
 
-  def handle_info({:generate_vote, voting_id, n}, socket) do
+  def create_ai_opinions(voting_id, n, socket) do
     {:ok, _vote} = DigitalTwins.generate_vote(voting_id)
     %{assigns: %{current_user: current_user}} = socket
 
@@ -178,17 +183,8 @@ defmodule YouCongressWeb.VotingLive.Show do
       voting_id: voting_id
     })
 
-    socket =
-      socket
-      |> load_voting_and_votes(voting_id)
-      |> put_flash(:info, "Vote generated")
-
-    send(self(), {:generate_vote, voting_id, n - 1})
-
-    {:noreply, socket}
+    create_ai_opinions(voting_id, n - 1, socket)
   end
-
-  def handle_info(_, socket), do: {:noreply, socket}
 
   @spec page_title(atom) :: binary
   defp page_title(:show), do: "Show Voting"
