@@ -211,6 +211,31 @@ defmodule YouCongressWeb.UserAuth do
     end
   end
 
+  def require_admin_user(conn, _opts) do
+    if YouCongress.Accounts.admin?(conn.assigns[:current_user]) do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You must be an admin to access this page.")
+      |> maybe_store_return_to()
+      |> redirect(to: ~p"/log_in")
+      |> halt()
+    end
+  end
+
+  @doc """
+  Redirects to /home if user is authenticated.
+  """
+  def redirect_home_if_user_is_authenticated(conn, _opts) do
+    if conn.assigns[:current_user] do
+      conn
+      |> redirect(to: ~p"/home")
+      |> halt()
+    else
+      conn
+    end
+  end
+
   defp put_token_in_session(conn, token) do
     conn
     |> put_session(:user_token, token)

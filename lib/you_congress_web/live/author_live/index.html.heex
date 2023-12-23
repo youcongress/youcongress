@@ -1,9 +1,11 @@
 <.header>
-  Listing Authors
+  Authors
   <:actions>
-    <.link patch={~p"/authors/new"}>
-      <.button>New Author</.button>
-    </.link>
+    <%= if YouCongress.Accounts.Permissions.can_create_authors?(@current_user) do %>
+      <.link patch={~p"/authors/new"}>
+        <.button>New Author</.button>
+      </.link>
+    <% end %>
   </:actions>
 </.header>
 
@@ -18,20 +20,6 @@
   <:col :let={{_id, author}} label="Twitter url"><%= author.twitter_url %></:col>
   <:col :let={{_id, author}} label="Country"><%= author.country %></:col>
   <:col :let={{_id, author}} label="Is twin"><%= author.is_twin %></:col>
-  <:action :let={{_id, author}}>
-    <div class="sr-only">
-      <.link navigate={~p"/authors/#{author}"}>Show</.link>
-    </div>
-    <.link patch={~p"/authors/#{author}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={{id, author}}>
-    <.link
-      phx-click={JS.push("delete", value: %{id: author.id}) |> hide("##{id}")}
-      data-confirm="Are you sure?"
-    >
-      Delete
-    </.link>
-  </:action>
 </.table>
 
 <.modal

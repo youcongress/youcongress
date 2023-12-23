@@ -2,11 +2,14 @@ defmodule YouCongress.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @user_roles ["user", "creator", "admin"]
+
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :confirmed_at, :naive_datetime
+    field :role, :string, default: "user"
 
     belongs_to :author, YouCongress.Authors.Author
 
@@ -129,6 +132,12 @@ defmodule YouCongress.Accounts.User do
   def confirm_changeset(user) do
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
     change(user, confirmed_at: now)
+  end
+
+  def role_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:role])
+    |> validate_inclusion(:role, @user_roles)
   end
 
   @doc """

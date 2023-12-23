@@ -13,6 +13,7 @@ defmodule YouCongressWeb.VoteLiveTest do
     setup [:create_vote]
 
     test "lists all votes", %{conn: conn, vote: vote} do
+      conn = log_in_as_user(conn)
       {:ok, _index_live, html} = live(conn, ~p"/votes")
 
       assert html =~ "Listing Votes"

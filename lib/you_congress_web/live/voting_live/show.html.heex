@@ -1,11 +1,15 @@
 <.header class="pb-5">
   <:actions>
-    <.link phx-click="generate-votes" phx-value-voting_id={@voting.id}>
-      <.button>Generate votes</.button>
-    </.link>
-    <.link patch={~p"/votings/#{@voting}/show/edit"} phx-click={JS.push_focus()}>
-      Edit
-    </.link>
+    <%= if YouCongress.Accounts.Permissions.can_generate_ai_votes?(@current_user) do %>
+      <.link phx-click="generate-votes" phx-value-voting_id={@voting.id}>
+        <.button>Generate AI votes</.button>
+      </.link>
+    <% end %>
+    <%= if YouCongress.Accounts.Permissions.can_edit_voting?(@voting, @current_user) do %>
+      <.link patch={~p"/votings/#{@voting}/show/edit"} phx-click={JS.push_focus()}>
+        Edit
+      </.link>
+    <% end %>
   </:actions>
 </.header>
 
@@ -66,7 +70,7 @@
     </div>
   <% end %>
   <%= if @current_user_vote do %>
-    <div class="mt-1 ml-4 text-md cursor-pointer" phx-click="toggle-results">
+    <div class="mt-1 ml-4 text-sm cursor-pointer" phx-click="toggle-results">
       <%= if @show_results, do: "Hide", else: "Show" %> results
     </div>
   <% end %>
@@ -147,7 +151,7 @@
   </ul>
 </div>
 
-<.back navigate={~p"/"}>Back to votings</.back>
+<.back navigate={~p"/"}>Back</.back>
 
 <.modal
   :if={@live_action == :edit}
