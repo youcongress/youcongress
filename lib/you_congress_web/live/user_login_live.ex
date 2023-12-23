@@ -5,7 +5,7 @@ defmodule YouCongressWeb.UserLoginLive do
     ~H"""
     <div class="mx-auto max-w-sm">
       <.header class="text-center">
-        Sign in to account
+        Log in to account
         <:subtitle>
           Don't have an account?
           <.link navigate={~p"/sign_up"} class="font-semibold text-brand hover:underline">
@@ -27,7 +27,7 @@ defmodule YouCongressWeb.UserLoginLive do
         </:actions>
         <:actions>
           <.button phx-disable-with="Signing in..." class="w-full">
-            Sign in <span aria-hidden="true">→</span>
+            Log in <span aria-hidden="true">→</span>
           </.button>
         </:actions>
       </.simple_form>

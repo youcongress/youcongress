@@ -12,7 +12,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
         <:subtitle>
           Already registered?
           <.link navigate={~p"/log_in"} class="font-semibold text-brand hover:underline">
-            Sign in
+            Log in
           </.link>
           to your account now.
         </:subtitle>
