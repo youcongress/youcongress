@@ -12,7 +12,6 @@ defmodule YouCongressWeb.UserForgotPasswordLiveTest do
       {:ok, lv, html} = live(conn, ~p"/reset_password")
 
       assert html =~ "Forgot your password?"
-      assert has_element?(lv, ~s|a[href="#{~p"/sign_up"}"]|, "Register")
       assert has_element?(lv, ~s|a[href="#{~p"/log_in"}"]|, "Log in")
     end
 

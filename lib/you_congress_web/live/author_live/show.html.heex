@@ -7,9 +7,11 @@
         <.button><%= if @delegating?, do: "Remove delegate", else: "Delegate" %></.button>
       </.link>
     <% end %>
-    <.link patch={~p"/authors/#{@author}/show/edit"} phx-click={JS.push_focus()}>
-      <.button>Edit author</.button>
-    </.link>
+    <%= if @current_user && YouCongress.Accounts.Permissions.can_edit_author?(@current_user) do %>
+      <.link patch={~p"/authors/#{@author}/show/edit"} phx-click={JS.push_focus()}>
+        <.button>Edit author</.button>
+      </.link>
+    <% end %>
   </:actions>
 </.header>
 

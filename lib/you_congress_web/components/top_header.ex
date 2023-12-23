@@ -11,7 +11,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
             <img src={~p"/images/logo.svg"} width="36" />
           </a>
           <a href="/">
-            TwinPoll
+            YouCongress
           </a>
         </div>
         <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
@@ -47,14 +47,6 @@ defmodule YouCongressWeb.TopHeaderComponent do
               </.link>
             </div>
           <% else %>
-            <div>
-              <.link
-                href={~p"/sign_up"}
-                class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-              >
-                Register
-              </.link>
-            </div>
             <div>
               <.link
                 href={~p"/log_in"}
