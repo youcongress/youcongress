@@ -2,15 +2,47 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
   use YouCongressWeb, :live_component
 
   alias YouCongress.Votings
+  alias YouCongress.Votings.TitleRewording
 
   @impl true
   def render(assigns) do
     ~H"""
     <div>
-      <.form for={@form} id="voting-form" phx-target={@myself} phx-change="validate" phx-submit="save">
+      <.form
+        for={@form}
+        id="voting-form"
+        phx-target={@myself}
+        phx-change="validate"
+        phx-submit="ai-validate"
+      >
         <div>
-          <.input field={@form[:title]} type="text" placeholder="What shall we vote?" />
-          <.button class="mt-4" phx-disable-with="Creating...">Create</.button>
+          <.input field={@form[:title]} type="text" maxlength="150" placeholder="What shall we vote?" />
+          <%= if @suggested_titles != [] do %>
+            <div>
+              <div class="py-2">How about one of these variants?</div>
+              <%= for suggested_title <- @suggested_titles do %>
+                <div class="py-2">
+                  <button
+                    phx-click="save"
+                    phx-value-suggested_title={suggested_title}
+                    phx-target={@myself}
+                    class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  >
+                    <%= suggested_title %>
+                  </button>
+                </div>
+              <% end %>
+              <.link class="py-2" phx-click="delete-suggested-titles" phx-target={@myself}>
+                Back
+              </.link>
+            </div>
+          <% else %>
+            <div>
+              <.button class="mt-4" phx-disable-with="Validating with ChatGPT. Please wait.">
+                Validate
+              </.button>
+            </div>
+          <% end %>
         </div>
       </.form>
     </div>
@@ -25,7 +57,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
      socket
      |> assign(assigns)
      |> assign_form(changeset)
-     |> assign(voting: voting)}
+     |> assign(voting: voting, suggested_titles: [])}
   end
 
   @impl true
@@ -35,14 +67,34 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
       |> Votings.change_voting(voting_params)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign_form(socket, changeset)}
+    socket =
+      socket
+      |> assign_form(changeset)
+      |> assign(suggested_titles: [])
+
+    {:noreply, socket}
   end
 
-  def handle_event("save", %{"voting" => voting_params}, socket) do
-    case Votings.create_voting(voting_params) do
-      {:ok, voting} ->
-        notify_parent({:saved, voting})
+  def handle_event("ai-validate", %{"voting" => voting}, socket) do
+    # suggested_titles = [
+    #   "Should we increase investment in nuclear energy research?",
+    #   "Shall we consider nuclear energy as a viable alternative to fossil fuels?",
+    #   "Could nuclear energy be a key solution for reducing global carbon emissions?"
+    # ]
+    # {:noreply, assign(socket, suggested_titles: suggested_titles)}
 
+    case TitleRewording.generate_rewordings(voting["title"], :"gpt-4-1106-preview") do
+      {:ok, suggested_titles, _} ->
+        {:noreply, assign(socket, suggested_titles: suggested_titles)}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Error validating the voting")}
+    end
+  end
+
+  def handle_event("save", %{"suggested_title" => suggested_title}, socket) do
+    case Votings.create_voting(%{title: suggested_title}) do
+      {:ok, voting} ->
         {:noreply,
          socket
          |> put_flash(:info, "Voting created successfully")
@@ -53,9 +105,11 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
     end
   end
 
+  def handle_event("delete-suggested-titles", _, socket) do
+    {:noreply, assign(socket, suggested_titles: [])}
+  end
+
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     assign(socket, :form, to_form(changeset))
   end
-
-  defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
 end
