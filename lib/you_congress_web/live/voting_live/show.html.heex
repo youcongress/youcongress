@@ -2,7 +2,7 @@
   <:actions>
     <%= if YouCongress.Accounts.Permissions.can_generate_ai_votes?(@current_user) do %>
       <.link phx-click="generate-votes" phx-value-voting_id={@voting.id}>
-        <.button>Generate AI votes</.button>
+        <.button>Generate AI opinions</.button>
       </.link>
     <% end %>
     <%= if YouCongress.Accounts.Permissions.can_edit_voting?(@voting, @current_user) do %>
