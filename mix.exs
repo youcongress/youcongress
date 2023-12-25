@@ -52,6 +52,7 @@ defmodule YouCongress.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:faker, "~> 0.17", only: :test},
+      {:mock, "~> 0.3.8", only: :test},
       {:openai, "~> 0.5.4"},
       {:credo, "~> 1.7.0", only: [:dev, :test]}
     ]
