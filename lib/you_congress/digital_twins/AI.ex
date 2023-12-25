@@ -57,7 +57,7 @@ defmodule YouCongress.DigitalTwins.AI do
   }
   """
 
-  @spec generate_opinion(binary, :"gpt-3.5-turbo" | :"gpt-4", [binary]) ::
+  @spec generate_opinion(binary, :"gpt-3.5-turbo" | :"gpt-4" | :"gpt-4-1106-preview", [binary]) ::
           {:ok, map} | {:error, binary}
   def generate_opinion(topic, model, exclude_names \\ []) when model in @models do
     question = get_question(topic, exclude_names)
@@ -85,7 +85,8 @@ defmodule YouCongress.DigitalTwins.AI do
     """
   end
 
-  @spec ask_gpt(binary, :"gpt-3.5-turbo" | :"gpt-4") :: {:ok, map} | {:error, binary}
+  @spec ask_gpt(binary, :"gpt-3.5-turbo" | :"gpt-4" | :"gpt-4-1106-preview") ::
+          {:ok, map} | {:error, binary}
   defp ask_gpt(question, model) do
     OpenAI.chat_completion(
       model: model,

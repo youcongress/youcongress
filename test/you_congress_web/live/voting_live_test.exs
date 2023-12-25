@@ -1,12 +1,19 @@
 defmodule YouCongressWeb.VotingLiveTest do
   use YouCongressWeb.ConnCase
 
+  import Mock
+
   import Phoenix.LiveViewTest
   import YouCongress.VotingsFixtures
 
   alias YouCongress.Votings
 
-  @create_attrs %{title: "some nice title"}
+  @create_attrs %{title: "nuclear energy"}
+  @suggested_titles [
+    "Should we increase investment in nuclear energy research?",
+    "Shall we consider nuclear energy as a viable alternative to fossil fuels?",
+    "Could nuclear energy be a key solution for reducing global carbon emissions?"
+  ]
   @update_attrs %{title: "some updated title"}
   @invalid_attrs %{title: nil}
 
@@ -27,20 +34,33 @@ defmodule YouCongressWeb.VotingLiveTest do
     end
 
     test "saves new voting and redirect to show", %{conn: conn} do
-      conn = log_in_as_admin(conn)
-      {:ok, index_live, _html} = live(conn, ~p"/home")
+      with_mock(
+        YouCongress.Votings.TitleRewording,
+        generate_rewordings: fn _, _ -> {:ok, @suggested_titles, 0} end
+      ) do
+        conn = log_in_as_admin(conn)
+        {:ok, index_live, _html} = live(conn, ~p"/home")
 
-      assert index_live
-             |> form("#voting-form", voting: @invalid_attrs)
-             |> render_change() =~ "can&#39;t be blank"
+        assert index_live
+               |> form("#voting-form", voting: @invalid_attrs)
+               |> render_change() =~ "can&#39;t be blank"
 
-      assert index_live
-             |> form("#voting-form", voting: @create_attrs)
-             |> render_submit()
+        [title1, title2, _title3] = @suggested_titles
 
-      voting = Votings.get_voting!(%{title: @create_attrs[:title]})
-      voting_path = ~p"/votings/#{voting.id}"
-      assert_redirect(index_live, voting_path)
+        assert index_live
+               |> form("#voting-form", voting: @create_attrs)
+               |> render_submit() =~ title1
+
+        response =
+          index_live
+          |> element("button", title2)
+          |> render_click()
+
+        voting = Votings.get_voting!(%{title: title2})
+        voting_path = ~p"/votings/#{voting.id}"
+
+        {_, {:redirect, %{to: ^voting_path}}} = response
+      end
     end
   end
 
