@@ -2,6 +2,9 @@ defmodule YouCongress.DigitalTwins.AI do
   @moduledoc """
   Generate opinions via OpenAI's API.
   """
+
+  @type model :: :"gpt-3.5-turbo" | :"gpt-4" | :"gpt-4-1106-preview"
+
   @models [:"gpt-4-1106-preview", :"gpt-4", :"gpt-3.5-turbo"]
   @token_cost %{
     :"gpt-4-1106-preview" => %{completion_tokens: 0.03, prompt_tokens: 0.01},
@@ -57,7 +60,7 @@ defmodule YouCongress.DigitalTwins.AI do
   }
   """
 
-  @spec generate_opinion(binary, :"gpt-3.5-turbo" | :"gpt-4" | :"gpt-4-1106-preview", [binary]) ::
+  @spec generate_opinion(binary, model, [binary]) ::
           {:ok, map} | {:error, binary}
   def generate_opinion(topic, model, exclude_names \\ []) when model in @models do
     question = get_question(topic, exclude_names)
@@ -85,7 +88,7 @@ defmodule YouCongress.DigitalTwins.AI do
     """
   end
 
-  @spec ask_gpt(binary, :"gpt-3.5-turbo" | :"gpt-4" | :"gpt-4-1106-preview") ::
+  @spec ask_gpt(binary, model) ::
           {:ok, map} | {:error, binary}
   defp ask_gpt(question, model) do
     OpenAI.chat_completion(
@@ -108,7 +111,7 @@ defmodule YouCongress.DigitalTwins.AI do
     |> String.split("\n\n")
   end
 
-  @spec get_cost(map, :"gpt-3.5-turbo" | :"gpt-4") :: number
+  @spec get_cost(map, model) :: number
   defp get_cost(data, model) do
     completion = data.usage["completion_tokens"] * @token_cost[model][:completion_tokens] / 1000
     prompt = data.usage["prompt_tokens"] * @token_cost[model][:prompt_tokens] / 1000
