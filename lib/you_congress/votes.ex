@@ -131,11 +131,13 @@ defmodule YouCongress.Votes do
   def next_vote(%{voting_id: voting_id, author_id: author_id} = attrs) do
     case Repo.get_by(Vote, %{voting_id: voting_id, author_id: author_id}) do
       nil -> create_vote(attrs)
-      vote -> delete_or_update_vote(vote, attrs)
+      vote -> delete_or_update_vote(vote, voting_id, author_id, attrs)
     end
   end
 
-  defp delete_or_update_vote(%Vote{} = vote, attrs) do
+  @spec delete_or_update_vote(Vote.t(), integer, integer, map) ::
+          {:ok, Vote.t()} | {:ok, :deleted} | {:error, String.t()}
+  defp delete_or_update_vote(%Vote{} = vote, voting_id, author_id, attrs) do
     if vote.answer_id == attrs[:answer_id] && vote.direct do
       case delete_vote(vote) do
         {:ok, _} ->
