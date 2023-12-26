@@ -3,6 +3,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
   alias YouCongress.Authors
   alias YouCongress.Delegations
+  alias Phoenix.LiveView.Socket
 
   @impl true
   def mount(_params, session, socket) do

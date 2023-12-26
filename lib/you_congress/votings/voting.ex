@@ -15,6 +15,13 @@ defmodule YouCongress.Votings.Voting do
     timestamps()
   end
 
+  @type t :: %__MODULE__{
+          title: String.t(),
+          votes: [Vote.t()],
+          inserted_at: NaiveDateTime.t(),
+          updated_at: NaiveDateTime.t()
+        }
+
   @doc false
   def changeset(voting, attrs) do
     voting

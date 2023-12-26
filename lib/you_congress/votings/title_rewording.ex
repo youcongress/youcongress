@@ -3,7 +3,7 @@ defmodule YouCongress.Votings.TitleRewording do
   Generate opinions via OpenAI's API.
   """
 
-  @type model :: :"gpt-3.5-turbo" | :"gpt-4" | :"gpt-4-1106-preview"
+  @type model_type :: :"gpt-3.5-turbo" | :"gpt-4" | :"gpt-4-1106-preview"
 
   @models [:"gpt-4-1106-preview", :"gpt-4", :"gpt-3.5-turbo"]
   @token_cost %{
@@ -35,8 +35,7 @@ defmodule YouCongress.Votings.TitleRewording do
   }
   """
 
-  @spec generate_rewordings(binary, model) ::
-          {:ok, list, map} | {:error, binary}
+  @spec generate_rewordings(binary, model_type) :: {:ok, list, number} | {:error, binary}
   def generate_rewordings(prompt, model) when model in @models do
     with {:ok, data} <- ask_gpt("Prompt: #{prompt}", model),
          content <- get_content(data),
@@ -48,7 +47,7 @@ defmodule YouCongress.Votings.TitleRewording do
     end
   end
 
-  @spec ask_gpt(binary, model) ::
+  @spec ask_gpt(binary, model_type) ::
           {:ok, map} | {:error, binary}
   defp ask_gpt(question, model) do
     OpenAI.chat_completion(
@@ -69,7 +68,7 @@ defmodule YouCongress.Votings.TitleRewording do
     |> String.split("\n\n")
   end
 
-  @spec get_cost(map, model) :: number
+  @spec get_cost(map, model_type) :: number
   defp get_cost(data, model) do
     completion = data.usage["completion_tokens"] * @token_cost[model][:completion_tokens] / 1000
     prompt = data.usage["prompt_tokens"] * @token_cost[model][:prompt_tokens] / 1000

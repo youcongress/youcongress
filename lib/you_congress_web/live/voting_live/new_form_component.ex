@@ -87,7 +87,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
       {:ok, suggested_titles, _} ->
         {:noreply, assign(socket, suggested_titles: suggested_titles)}
 
-      _ ->
+      {:error, _} ->
         {:noreply, put_flash(socket, :error, "Error validating the voting")}
     end
   end

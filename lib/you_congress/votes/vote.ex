@@ -21,6 +21,16 @@ defmodule YouCongress.Votes.Vote do
     timestamps()
   end
 
+  @type t :: %__MODULE__{
+          opinion: String.t() | nil,
+          direct: boolean(),
+          twin: boolean(),
+          author_id: integer(),
+          voting_id: integer(),
+          answer_id: integer(),
+          inserted_at: NaiveDateTime.t(),
+          updated_at: NaiveDateTime.t()
+        }
   @doc false
   def changeset(vote, attrs) do
     vote
