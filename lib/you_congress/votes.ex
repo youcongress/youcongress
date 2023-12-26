@@ -31,7 +31,7 @@ defmodule YouCongress.Votes do
         [%Vote{}, ...]
 
   """
-  @spec list_votes(integer, Keyword.t() | nil) :: [%Vote{}, ...]
+  @spec list_votes(integer, Keyword.t() | nil) :: [Vote.t(), ...]
   def list_votes(voting_id, opts \\ []) do
     include_tables = Keyword.get(opts, :include, [])
 
@@ -44,7 +44,7 @@ defmodule YouCongress.Votes do
   @doc """
   Returns the list of votes for a voting with opinion.
   """
-  @spec list_votes_with_opinion(integer, Keyword.t()) :: [%Vote{}, ...]
+  @spec list_votes_with_opinion(integer, Keyword.t()) :: [Vote.t(), ...]
   def list_votes_with_opinion(voting_id, opts \\ []) do
     include_tables = Keyword.get(opts, :include, [])
 
@@ -73,7 +73,7 @@ defmodule YouCongress.Votes do
   @doc """
   Gets a single vote by some options.
   """
-  @spec get_vote(%{}) :: %Vote{} | nil
+  @spec get_vote(%{}) :: Vote.t() | nil
   def get_vote(options) do
     Repo.get_by(Vote, options)
   end
@@ -81,7 +81,7 @@ defmodule YouCongress.Votes do
   @doc """
   Gets a single vote by some options and preload some tables.
   """
-  @spec get_vote(%{}, Keyword.t()) :: %Vote{} | nil
+  @spec get_vote(%{}, Keyword.t()) :: Vote.t() | nil
   def get_vote(options, preload: tables) do
     Vote
     |> Repo.get_by(options)
@@ -127,30 +127,31 @@ defmodule YouCongress.Votes do
   @doc """
   Creates, updates or deletes a vote.
   """
-  @spec next_vote(map) :: {:ok, %Vote{}} | {:ok, :deleted} | {:error, String.t()}
+  @spec next_vote(map) :: {:ok, Vote.t()} | {:ok, :deleted} | {:error, String.t()}
   def next_vote(%{voting_id: voting_id, author_id: author_id} = attrs) do
     case Repo.get_by(Vote, %{voting_id: voting_id, author_id: author_id}) do
-      nil ->
-        create_vote(attrs)
+      nil -> create_vote(attrs)
+      vote -> delete_or_update_vote(vote, attrs)
+    end
+  end
 
-      vote ->
-        if vote.answer_id == attrs[:answer_id] && vote.direct do
-          case delete_vote(vote) do
-            {:ok, _} ->
-              DelegationVotes.update_author_voting_delegated_votes(%{
-                author_id: author_id,
-                voting_id: voting_id
-              })
+  defp delete_or_update_vote(%Vote{} = vote, attrs) do
+    if vote.answer_id == attrs[:answer_id] && vote.direct do
+      case delete_vote(vote) do
+        {:ok, _} ->
+          DelegationVotes.update_author_voting_delegated_votes(%{
+            author_id: author_id,
+            voting_id: voting_id
+          })
 
-              {:ok, :deleted}
+          {:ok, :deleted}
 
-            {:error, _} ->
-              {:error, "Error deleting vote"}
-          end
-        else
-          attrs = Map.put(attrs, :direct, true)
-          update_vote(vote, attrs)
-        end
+        {:error, _} ->
+          {:error, "Error deleting vote"}
+      end
+    else
+      attrs = Map.put(attrs, :direct, true)
+      update_vote(vote, attrs)
     end
   end
 

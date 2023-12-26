@@ -1,4 +1,8 @@
 defmodule YouCongressWeb.TopHeaderComponent do
+  @moduledoc """
+  The top header component.
+  """
+
   use Phoenix.Component
   use YouCongressWeb, :html
 

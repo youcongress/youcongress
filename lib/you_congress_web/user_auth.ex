@@ -1,4 +1,7 @@
 defmodule YouCongressWeb.UserAuth do
+  @moduledoc """
+  Provides functions for authenticating users.
+  """
   use YouCongressWeb, :verified_routes
 
   import Plug.Conn

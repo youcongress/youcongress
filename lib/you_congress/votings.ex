@@ -45,7 +45,7 @@ defmodule YouCongress.Votings do
       iex> get_voting!(33)
       %Voting{}
   """
-  @spec get_voting!(%{} | integer) :: %Voting{}
+  @spec get_voting!(%{} | integer) :: Voting.t()
   def get_voting!(options) when is_map(options) do
     Repo.get_by!(Voting, options)
   end

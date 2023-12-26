@@ -1,4 +1,8 @@
 defmodule YouCongressWeb.Components.FooterComponent do
+  @moduledoc """
+  The footer component.
+  """
+
   use Phoenix.Component
   use YouCongressWeb, :html
 
