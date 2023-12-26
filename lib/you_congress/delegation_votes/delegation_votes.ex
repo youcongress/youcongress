@@ -1,4 +1,8 @@
 defmodule YouCongress.DelegationVotes do
+  @moduledoc """
+  The DelegationVotes context.
+  """
+
   import Ecto.Query, warn: false
   alias YouCongress.Repo
 
@@ -28,10 +32,7 @@ defmodule YouCongress.DelegationVotes do
   end
 
   defp update_votes(voting_id, author_id, delegate_ids, answers) do
-    {in_favour, against, neutral} =
-      voting_id
-      |> votes_from_delegates(delegate_ids)
-      |> get_counters()
+    {in_favour, against, neutral} = get_counters(voting_id, delegate_ids)
 
     cond do
       in_favour == 0 and against == 0 and neutral == 0 ->
@@ -76,7 +77,10 @@ defmodule YouCongress.DelegationVotes do
     Votes.delete_vote(%{voting_id: voting_id, author_id: author_id})
   end
 
-  defp get_counters(votes) do
+  @spec get_counters(integer, [integer]) :: {integer, integer, integer}
+  defp get_counters(voting_id, delegate_ids) do
+    votes = votes_from_delegates(voting_id, delegate_ids)
+
     in_favour = count(votes, ["Strongly agree", "Agree"])
     against = count(votes, ["Strongly disagree", "Disagree"])
     neutral = count(votes, ["Neutral"])

@@ -1,4 +1,8 @@
 defmodule YouCongress.Delegations.Delegation do
+  @moduledoc """
+  The Delegation schema.
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
 

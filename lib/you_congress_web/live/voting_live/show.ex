@@ -162,7 +162,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp message("Strongly disagree"),
     do: "strongly disagree. Click again to delete your direct vote"
 
-  @spec response(%Vote{} | nil) :: binary | nil
+  @spec response(Vote.t() | nil) :: binary | nil
   defp response(nil), do: nil
 
   defp response(vote) do
@@ -210,7 +210,7 @@ defmodule YouCongressWeb.VotingLive.Show do
     |> assign_counters()
   end
 
-  @spec get_vote_frequencies(%Voting{}) :: %{binary => number}
+  @spec get_vote_frequencies(Voting.t()) :: %{binary => number}
   defp get_vote_frequencies(voting) do
     vote_frequencies =
       Votes.count_by_response(voting.id)
@@ -223,7 +223,7 @@ defmodule YouCongressWeb.VotingLive.Show do
     |> Enum.into(%{})
   end
 
-  @spec get_votes_from_delegates([%Vote{}], %User{} | nil) :: [%Vote{}] | []
+  @spec get_votes_from_delegates([Vote.t()], User.t() | nil) :: [Vote.t()] | []
   defp get_votes_from_delegates(_, nil), do: []
 
   defp get_votes_from_delegates(votes, current_user) do
@@ -231,7 +231,7 @@ defmodule YouCongressWeb.VotingLive.Show do
     Enum.filter(votes, fn vote -> vote.author_id in delegate_ids end)
   end
 
-  @spec get_current_user_vote(%Voting{}, %User{} | nil) :: %Vote{} | nil
+  @spec get_current_user_vote(Voting.t(), User.t() | nil) :: Vote.t() | nil
   defp get_current_user_vote(_, nil), do: nil
 
   defp get_current_user_vote(voting, current_user) do

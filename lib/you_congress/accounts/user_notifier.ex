@@ -1,4 +1,8 @@
 defmodule YouCongress.Accounts.UserNotifier do
+  @moduledoc """
+  The UserNotifier module.
+  """
+
   import Swoosh.Email
 
   alias YouCongress.Mailer
