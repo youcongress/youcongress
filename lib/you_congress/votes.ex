@@ -73,7 +73,7 @@ defmodule YouCongress.Votes do
   @doc """
   Gets a single vote by some options.
   """
-  @spec get_vote(%{}) :: Vote.t() | nil
+  @spec get_vote(map) :: Vote.t() | nil
   def get_vote(options) do
     Repo.get_by(Vote, options)
   end
@@ -81,7 +81,7 @@ defmodule YouCongress.Votes do
   @doc """
   Gets a single vote by some options and preload some tables.
   """
-  @spec get_vote(%{}, Keyword.t()) :: Vote.t() | nil
+  @spec get_vote(Keyword.t(), Keyword.t()) :: Vote.t() | nil
   def get_vote(options, preload: tables) do
     Vote
     |> Repo.get_by(options)

@@ -20,6 +20,17 @@ defmodule YouCongress.Accounts.User do
     timestamps()
   end
 
+  @type t :: %__MODULE__{
+          email: String.t(),
+          password: String.t() | nil,
+          hashed_password: String.t(),
+          confirmed_at: NaiveDateTime.t() | nil,
+          role: String.t(),
+          author_id: integer() | nil,
+          inserted_at: NaiveDateTime.t(),
+          updated_at: NaiveDateTime.t()
+        }
+
   @doc """
   A user changeset for registration.
 
