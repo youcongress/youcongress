@@ -53,7 +53,7 @@ defmodule YouCongressWeb.VotingLive.Show do
 
     Process.send_after(self(), :reload, 1_000)
 
-    {:noreply, socket}
+    {:noreply, clear_flash(socket)}
   end
 
   def handle_event("toggle-results", _, socket) do
