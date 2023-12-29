@@ -4,7 +4,6 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   require Logger
 
-  alias YouCongress.DigitalTwins
   alias YouCongress.Accounts.User
   alias YouCongress.Delegations
   alias YouCongress.Votings
@@ -24,24 +23,37 @@ defmodule YouCongressWeb.VotingLive.Show do
   @impl true
   @spec handle_params(map, binary, Socket.t()) :: {:noreply, Socket.t()}
   def handle_params(%{"id" => voting_id}, _, socket) do
-    {:noreply,
-     socket
-     |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> load_voting_and_votes(voting_id)}
+    socket =
+      socket
+      |> assign(:page_title, page_title(socket.assigns.live_action))
+      |> load_voting_and_votes(voting_id)
+
+    if socket.assigns.voting.generating_left > 0 do
+      Process.send_after(self(), :reload, 1_000)
+    end
+
+    {:noreply, socket}
   end
 
   @impl true
   @spec handle_event(binary, map, Socket.t()) :: {:noreply, Socket.t()}
   def handle_event("generate-votes", %{"voting_id" => voting_id}, socket) do
     voting_id = String.to_integer(voting_id)
-    Task.async(fn -> create_ai_opinions(voting_id, 5, socket) end)
+    voting = Votings.get_voting!(voting_id)
 
-    {:noreply,
-     put_flash(
-       socket,
-       :info,
-       "Generating five opinions. Please wait one minute and reload the page."
-     )}
+    {:ok, _voting} =
+      Votings.update_voting(voting, %{
+        generating_opinions: true,
+        generating_left: num_gen_opinions()
+      })
+
+    %{voting_id: voting_id}
+    |> YouCongress.Workers.OpinatorWorker.new()
+    |> Oban.insert()
+
+    Process.send_after(self(), :reload, 1_000)
+
+    {:noreply, socket}
   end
 
   def handle_event("toggle-results", _, socket) do
@@ -70,8 +82,8 @@ defmodule YouCongressWeb.VotingLive.Show do
         %{assigns: %{current_user_vote: current_user_vote}} = socket
 
         socket =
-          put_flash(
-            socket,
+          socket
+          |> put_flash(
             :info,
             "Your direct vote has been deleted.#{extra_delete_message(response(current_user_vote))}"
           )
@@ -137,6 +149,19 @@ defmodule YouCongressWeb.VotingLive.Show do
     end
   end
 
+  @impl true
+  def handle_info(:reload, socket) do
+    socket = load_voting_and_votes(socket, socket.assigns.voting.id)
+
+    if socket.assigns.voting.generating_left > 0 do
+      Process.send_after(self(), :reload, 1_000)
+    end
+
+    {:noreply, socket}
+  end
+
+  def handle_info(_, socket), do: {:noreply, socket}
+
   defp extra_delete_message(nil), do: ""
 
   defp extra_delete_message("Agree"), do: " You now agree via your delegates."
@@ -169,23 +194,6 @@ defmodule YouCongressWeb.VotingLive.Show do
     Answers.basic_answer_id_response_map()[vote.answer_id]
   end
 
-  @spec create_ai_opinions(number, number, Socket.t()) :: :ok
-  def create_ai_opinions(_, 0, _) do
-    :ok
-  end
-
-  def create_ai_opinions(voting_id, n, socket) do
-    {:ok, _vote} = DigitalTwins.generate_vote(voting_id)
-    %{assigns: %{current_user: current_user}} = socket
-
-    YouCongress.DelegationVotes.update_author_voting_delegated_votes(%{
-      author_id: current_user.author_id,
-      voting_id: voting_id
-    })
-
-    create_ai_opinions(voting_id, n - 1, socket)
-  end
-
   @spec page_title(atom) :: binary
   defp page_title(:show), do: "Show Voting"
   defp page_title(:edit), do: "Edit Voting"
@@ -196,6 +204,9 @@ defmodule YouCongressWeb.VotingLive.Show do
     votes = Votes.list_votes_with_opinion(voting_id, include: [:author, :answer])
     %{assigns: %{current_user: current_user}} = socket
 
+    votes_generated = num_gen_opinions() - voting.generating_left
+    percentage = round(votes_generated * 100 / num_gen_opinions())
+
     votes_from_delegates = get_votes_from_delegates(votes, current_user)
     vote_frequencies = get_vote_frequencies(voting)
 
@@ -205,7 +216,8 @@ defmodule YouCongressWeb.VotingLive.Show do
       votes_from_delegates: votes_from_delegates,
       votes_from_non_delegates: votes -- votes_from_delegates,
       current_user_vote: get_current_user_vote(voting, current_user),
-      vote_frequencies: vote_frequencies
+      vote_frequencies: vote_frequencies,
+      percentage: percentage
     )
     |> assign_counters()
   end
@@ -259,4 +271,8 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp response_color("Disagree"), do: "red"
   defp response_color("Strongly disagree"), do: "red"
   defp response_color(_), do: "gray"
+
+  defp num_gen_opinions do
+    YouCongress.Workers.OpinatorWorker.num_gen_opinions()
+  end
 end

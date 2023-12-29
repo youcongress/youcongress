@@ -54,6 +54,7 @@ defmodule YouCongress.MixProject do
       {:faker, "~> 0.17", only: :test},
       {:mock, "~> 0.3.8", only: :test},
       {:openai, "~> 0.5.4"},
+      {:oban, "~> 2.17.1"},
       {:credo, "~> 1.7.0", only: [:dev, :test]},
       {:dialyxir, "~> 1.4.2", only: [:dev, :test], runtime: false}
     ]

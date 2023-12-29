@@ -93,8 +93,12 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
   end
 
   def handle_event("save", %{"suggested_title" => suggested_title}, socket) do
-    case Votings.create_voting(%{title: suggested_title}) do
+    case Votings.create_voting(%{title: suggested_title, user_id: socket.assigns.current_user.id}) do
       {:ok, voting} ->
+        %{voting_id: voting.id}
+        |> YouCongress.Workers.OpinatorWorker.new()
+        |> Oban.insert()
+
         {:noreply,
          socket
          |> put_flash(:info, "Voting created successfully")

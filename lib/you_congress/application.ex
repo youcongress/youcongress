@@ -17,7 +17,9 @@ defmodule YouCongress.Application do
       # Start Finch
       {Finch, name: YouCongress.Finch},
       # Start the Endpoint (http/https)
-      YouCongressWeb.Endpoint
+      YouCongressWeb.Endpoint,
+      # Oban
+      {Oban, Application.fetch_env!(:you_congress, Oban)}
       # Start a worker by calling: YouCongress.Worker.start_link(arg)
       # {YouCongress.Worker, arg}
     ]
