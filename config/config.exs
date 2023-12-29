@@ -64,6 +64,15 @@ config :openai,
   organization_key: System.get_env("OPENAI_ORGANIZATION_KEY"),
   http_options: [recv_timeout: 30_000]
 
+config :you_congress, Oban,
+  repo: YouCongress.Repo,
+  plugins: [
+    Oban.Plugins.Pruner
+  ],
+  queues: [
+    default: 10
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

@@ -13,14 +13,6 @@ defmodule YouCongress.Accounts.Permissions do
   def can_edit_voting?(_, _), do: false
 
   @doc """
-  Checks if the user can edit the given voting.
-  """
-  @spec can_create_votings?(User.t()) :: boolean()
-  def can_create_votings?(%User{role: "creator"}), do: true
-  def can_create_votings?(%User{role: "admin"}), do: true
-  def can_create_votings?(_), do: false
-
-  @doc """
   Checks if the user can generate AI votes
   """
   @spec can_generate_ai_votes?(User.t()) :: boolean()

@@ -1,16 +1,12 @@
-<%= if YouCongress.Accounts.Permissions.can_create_votings?(@current_user) do %>
-  <.live_component
-    module={YouCongressWeb.VotingLive.NewFormComponent}
-    id={:new}
-    title={@page_title}
-    action={@live_action}
-    voting={%Voting{}}
-    patch={~p"/"}
-  />
-<% else %>
-  Would you like a new voting? Follow us on Twitter/X and post your question there:
-  <.link navigate="https://twitter.com/youcongress_" target="_blank">@YouCongress_</.link>
-<% end %>
+<.live_component
+  module={YouCongressWeb.VotingLive.NewFormComponent}
+  id={:new}
+  title={@page_title}
+  action={@live_action}
+  voting={%Voting{}}
+  current_user={@current_user}
+  patch={~p"/"}
+/>
 
 <.table
   id="votings"
