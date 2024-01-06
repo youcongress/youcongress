@@ -73,6 +73,8 @@ config :you_congress, Oban,
     default: 10
   ]
 
+config :you_congress, :amplitude_api_key, System.get_env("AMPLITUDE_KEY")
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
