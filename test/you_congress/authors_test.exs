@@ -13,7 +13,7 @@ defmodule YouCongress.AuthorsTest do
       country: nil,
       is_twin: nil,
       name: nil,
-      twitter_url: nil,
+      twitter_username: nil,
       wikipedia_url: nil
     }
 
@@ -33,7 +33,7 @@ defmodule YouCongress.AuthorsTest do
         country: "some country",
         is_twin: true,
         name: "some name",
-        twitter_url: "some twitter_url",
+        twitter_username: "some twitter_username",
         wikipedia_url: "some wikipedia_url"
       }
 
@@ -42,7 +42,7 @@ defmodule YouCongress.AuthorsTest do
       assert author.country == "some country"
       assert author.is_twin == true
       assert author.name == "some name"
-      assert author.twitter_url == "some twitter_url"
+      assert author.twitter_username == "some twitter_username"
       assert author.wikipedia_url == "some wikipedia_url"
     end
 
@@ -58,7 +58,7 @@ defmodule YouCongress.AuthorsTest do
         country: "some updated country",
         is_twin: false,
         name: "some updated name",
-        twitter_url: "some updated twitter_url",
+        twitter_username: "some updated twitter_username",
         wikipedia_url: "some updated wikipedia_url"
       }
 
@@ -67,7 +67,7 @@ defmodule YouCongress.AuthorsTest do
       assert author.country == "some updated country"
       assert author.is_twin == false
       assert author.name == "some updated name"
-      assert author.twitter_url == "some updated twitter_url"
+      assert author.twitter_username == "some updated twitter_username"
       assert author.wikipedia_url == "some updated wikipedia_url"
     end
 

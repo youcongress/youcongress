@@ -52,7 +52,7 @@ defmodule YouCongress.DigitalTwins do
       "name" => opinion["name"],
       "bio" => opinion["bio"],
       "wikipedia_url" => url_or_nil(opinion["wikipedia_url"]),
-      "twitter_url" => url_or_nil(opinion["twitter_url"]),
+      "twitter_username" => opinion["twitter_username"],
       "country" => opinion["country"],
       "answer_id" => answer.id
     }

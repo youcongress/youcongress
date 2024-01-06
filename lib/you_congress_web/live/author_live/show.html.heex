@@ -15,14 +15,16 @@
   </:actions>
 </.header>
 
-<.list :if={@author.wikipedia_url || @author.twitter_url || @author.country}>
+<.list :if={@author.wikipedia_url || @author.twitter_username || @author.country}>
   <:item :if={@author.wikipedia_url} title="Wikipedia url">
     <.link navigate={@author.wikipedia_url} target="_blank">
       <%= @author.wikipedia_url %>
     </.link>
   </:item>
-  <:item :if={@author.twitter_url} title="Twitter url">
-    <.link navigate={@author.twitter_url} target="_blank"><%= @author.twitter_url %></.link>
+  <:item :if={@author.twitter_username} title="Twitter url">
+    <.link navigate={"https://twitter.com/" <> @author.twitter_username} target="_blank">
+      @<%= @author.twitter_username %>
+    </.link>
   </:item>
   <:item :if={@author.country} title="Country">
     <%= @author.country %>

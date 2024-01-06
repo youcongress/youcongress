@@ -15,7 +15,7 @@ defmodule YouCongress.AuthorsFixtures do
         country: Faker.Address.country(),
         is_twin: true,
         name: Faker.Person.name(),
-        twitter_url: "https://twitter.com/" <> Faker.Internet.user_name(),
+        twitter_username: Faker.Internet.user_name(),
         wikipedia_url: "https://wikipedia.org/wiki/" <> Faker.Internet.user_name()
       })
       |> YouCongress.Authors.create_author()
