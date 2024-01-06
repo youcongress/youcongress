@@ -76,11 +76,15 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
   end
 
   def handle_event("ai-validate", %{"voting" => voting}, socket) do
+    %{assigns: %{current_user: current_user}} = socket
+    YouCongress.Track.event("Validate New Voting", current_user)
+
     # suggested_titles = [
     #   "Should we increase investment in nuclear energy research?",
     #   "Shall we consider nuclear energy as a viable alternative to fossil fuels?",
     #   "Could nuclear energy be a key solution for reducing global carbon emissions?"
     # ]
+
     # {:noreply, assign(socket, suggested_titles: suggested_titles)}
 
     case TitleRewording.generate_rewordings(voting["title"], :"gpt-4-1106-preview") do
@@ -93,11 +97,15 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
   end
 
   def handle_event("save", %{"suggested_title" => suggested_title}, socket) do
-    case Votings.create_voting(%{title: suggested_title, user_id: socket.assigns.current_user.id}) do
+    %{assigns: %{current_user: current_user}} = socket
+
+    case Votings.create_voting(%{title: suggested_title, user_id: current_user.id}) do
       {:ok, voting} ->
         %{voting_id: voting.id}
         |> YouCongress.Workers.OpinatorWorker.new()
         |> Oban.insert()
+
+        YouCongress.Track.event("Create Voting", current_user)
 
         {:noreply,
          socket

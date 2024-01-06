@@ -12,6 +12,11 @@ defmodule YouCongressWeb.VotingLive.Index do
       |> assign_counters()
       |> stream(:votings, Votings.list_votings(order_by: [desc: :id]))
 
+    if connected?(socket) do
+      %{assigns: %{current_user: current_user}} = socket
+      YouCongress.Track.event("View Home", current_user)
+    end
+
     {:ok, socket}
   end
 

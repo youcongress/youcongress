@@ -13,20 +13,26 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Votes.Answers
 
   @impl true
-  def mount(_params, session, socket) do
-    {:ok,
-     socket
-     |> assign_current_user(session["user_token"])
-     |> assign(show_results: false)}
+  def mount(%{"id" => voting_id}, session, socket) do
+    socket =
+      socket
+      |> assign_current_user(session["user_token"])
+      |> assign(show_results: false)
+      |> load_voting_and_votes(voting_id)
+
+    %{assigns: %{current_user: current_user}} = socket
+
+    if connected?(socket) do
+      YouCongress.Track.event("View Voting", current_user)
+    end
+
+    {:ok, socket}
   end
 
   @impl true
   @spec handle_params(map, binary, Socket.t()) :: {:noreply, Socket.t()}
-  def handle_params(%{"id" => voting_id}, _, socket) do
-    socket =
-      socket
-      |> assign(:page_title, page_title(socket.assigns.live_action))
-      |> load_voting_and_votes(voting_id)
+  def handle_params(_, _, socket) do
+    socket = assign(socket, :page_title, page_title(socket.assigns.live_action))
 
     if socket.assigns.voting.generating_left > 0 do
       Process.send_after(self(), :reload, 1_000)
@@ -50,6 +56,8 @@ defmodule YouCongressWeb.VotingLive.Show do
     %{voting_id: voting_id}
     |> YouCongress.Workers.OpinatorWorker.new()
     |> Oban.insert()
+
+    YouCongress.Track.event("Generate AI opinions", socket.assigns.current_user)
 
     Process.send_after(self(), :reload, 1_000)
 

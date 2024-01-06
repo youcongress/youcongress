@@ -12,6 +12,10 @@ defmodule YouCongressWeb.AuthorLive.Show do
       |> assign_current_user(session["user_token"])
       |> assign_counters()
 
+    if connected?(socket) do
+      YouCongress.Track.event("View Author", socket.assigns.current_user)
+    end
+
     {:ok, socket}
   end
 
@@ -30,11 +34,15 @@ defmodule YouCongressWeb.AuthorLive.Show do
         %{"author_id" => author_id},
         %{assigns: %{delegating?: true}} = socket
       ) do
-    deleguee_id = socket.assigns.current_user.id
+    %{assigns: %{current_user: current_user}} = socket
+
+    deleguee_id = current_user.id
     delegate_id = String.to_integer(author_id)
 
     case Delegations.delete_delegation(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
       {:ok, _} ->
+        YouCongress.Track.event("Remove Delegate", current_user)
+
         socket =
           socket
           |> assign(:delegating?, false)
@@ -49,10 +57,13 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   def handle_event("toggle-delegate", %{"author_id" => delegate_id}, socket) do
-    deleguee_id = socket.assigns.current_user.id
+    %{assigns: %{current_user: current_user}} = socket
+    deleguee_id = current_user.id
 
     case Delegations.create_delegation(%{delegate_id: delegate_id, deleguee_id: deleguee_id}) do
       {:ok, _} ->
+        YouCongress.Track.event("Delegate", current_user)
+
         socket =
           socket
           |> assign(:delegating?, true)
