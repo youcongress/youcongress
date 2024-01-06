@@ -22,7 +22,7 @@ defmodule YouCongressWeb.AuthorLive.FormComponent do
         <.input field={@form[:name]} type="text" label="Name" />
         <.input field={@form[:bio]} type="text" label="Bio" />
         <.input field={@form[:wikipedia_url]} type="text" label="Wikipedia url" />
-        <.input field={@form[:twitter_url]} type="text" label="Twitter url" />
+        <.input field={@form[:twitter_username]} type="text" label="Twitter username" />
         <.input field={@form[:country]} type="text" label="Country" />
         <.input field={@form[:is_twin]} type="checkbox" label="Is twin" />
         <:actions>
