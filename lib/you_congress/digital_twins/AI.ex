@@ -19,7 +19,7 @@ defmodule YouCongress.DigitalTwins.AI do
   "agree_rate": Strongly agree/Agree/Disagree/Strongly disagree
   "opinion": Opinion that summarizes why the author agrees or disagrees
   "wikipedia_url": Author wikipedia page URL
-  "twitter_url": Author Twitter URL
+  "twitter_username": Author Twitter username
   "country": Author's country
 
   Topic: Nuclear energy
@@ -34,7 +34,7 @@ defmodule YouCongress.DigitalTwins.AI do
     "agree_rate": "Strongly disagree",
     "opinion": "Nuclear energy is a dangerous and outdated technology. It produces harmful waste and poses a significant risk of accidents or terrorism. We should focus on renewable energy sources instead.",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Elon_Musk",
-    "twitter_url": "https://twitter.com/elonmusk",
+    "twitter_username": "elonmusk",
     "country": "Japan"
   }
   """
@@ -46,7 +46,7 @@ defmodule YouCongress.DigitalTwins.AI do
     "agree_rate": "Strongly agree",
     "opinion": "Nuclear energy can play a significant role in reducing carbon emissions and ensuring a stable energy supply. However, safety and waste management must be addressed properly.",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Angela_Merkel",
-    "twitter_url": "@bundeskanzlerin",
+    "twitter_username": "bundeskanzlerin",
     "country": "Germany"
   }
   """
