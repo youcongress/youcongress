@@ -7,7 +7,8 @@ defmodule YouCongressWeb.TwitterLogInController do
   alias YouCongress.Authors
 
   def log_in(conn, _params) do
-    token = ExTwitter.request_token("http://localhost:4000/twitter-callback")
+    base_url = "#{conn.scheme}://#{conn.host}:#{conn.port}"
+    token = ExTwitter.request_token(base_url <> "/twitter-callback")
 
     {:ok, authenticate_url} = ExTwitter.authenticate_url(token.oauth_token)
     redirect(conn, external: authenticate_url)
