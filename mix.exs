@@ -56,7 +56,8 @@ defmodule YouCongress.MixProject do
       {:openai, "~> 0.5.4"},
       {:oban, "~> 2.17.1"},
       {:credo, "~> 1.7.0", only: [:dev, :test]},
-      {:dialyxir, "~> 1.4.2", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4.2", only: [:dev, :test], runtime: false},
+      {:extwitter, github: "youcongress/extwitter"}
     ]
   end
 

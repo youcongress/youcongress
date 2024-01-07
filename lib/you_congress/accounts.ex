@@ -28,6 +28,54 @@ defmodule YouCongress.Accounts do
   end
 
   @doc """
+  Gets a user by username.
+
+  ## Examples
+
+      iex> get_user_by_username("foo")
+      %User{}
+
+      iex> get_user_by_username("unknown")
+      nil
+
+  """
+  def get_user_by_username(username) when is_binary(username) do
+    query =
+      from u in User,
+        join: a in Author,
+        on: u.author_id == a.id,
+        where: a.twitter_username == ^username,
+        select: u,
+        preload: [author: a]
+
+    Repo.one(query)
+  end
+
+  @doc """
+  Gets a user by twitter id or username.
+
+  ## Examples
+
+      iex> get_user_by_twitter_id_or_username("123", "foo")
+      %User{}
+
+      iex> get_user_by_twitter_id_or_username("123", "unknown")
+      nil
+
+  """
+  def get_user_by_twitter_id_str_or_username(twitter_id_str, twitter_username) do
+    query =
+      from u in User,
+        join: a in Author,
+        on: u.author_id == a.id,
+        where: a.twitter_id_str == ^twitter_id_str,
+        select: u,
+        preload: [author: a]
+
+    Repo.one(query) || get_user_by_username(twitter_username)
+  end
+
+  @doc """
   Gets a user by email and password.
 
   ## Examples
@@ -75,11 +123,13 @@ defmodule YouCongress.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def register_user(attrs) do
+  def register_user(user_attrs, author_attrs \\ %{}) do
+    author_attrs = Map.put(author_attrs, :is_twin, false)
+
     Ecto.Multi.new()
-    |> Ecto.Multi.insert(:author, Author.changeset(%Author{}, %{is_twin: false}))
+    |> Ecto.Multi.insert(:author, Author.changeset(%Author{}, author_attrs))
     |> Ecto.Multi.insert(:user, fn %{author: author} ->
-      User.registration_changeset(%User{}, Map.put(attrs, "author_id", author.id))
+      User.twitter_registration_changeset(%User{}, Map.put(user_attrs, "author_id", author.id))
     end)
     |> Repo.transaction()
   end
@@ -94,7 +144,7 @@ defmodule YouCongress.Accounts do
 
   """
   def change_user_registration(%User{} = user, attrs \\ %{}) do
-    User.registration_changeset(user, attrs, hash_password: false, validate_email: false)
+    User.password_registration_changeset(user, attrs, hash_password: false, validate_email: false)
   end
 
   ## Settings
@@ -148,6 +198,12 @@ defmodule YouCongress.Accounts do
     else
       _ -> :error
     end
+  end
+
+  def update_login_with_x(%User{} = user, attrs) do
+    user
+    |> User.login_with_x_changeset(attrs)
+    |> Repo.update()
   end
 
   defp user_email_multi(user, email, context) do
@@ -365,4 +421,7 @@ defmodule YouCongress.Accounts do
 
   def admin?(%User{role: "admin"}), do: true
   def admin?(_), do: false
+
+  def in_waiting_list?(%User{role: "waiting_list"}), do: true
+  def in_waiting_list?(_), do: false
 end

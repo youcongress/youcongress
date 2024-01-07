@@ -14,4 +14,8 @@ defmodule YouCongressWeb.PageController do
   def privacy_policy(conn, _params) do
     render(conn, :privacy_policy)
   end
+
+  def waiting_list(conn, _params) do
+    render(conn, :waiting_list, layout: false)
+  end
 end
