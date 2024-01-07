@@ -30,14 +30,6 @@ defmodule YouCongressWeb.TopHeaderComponent do
             </div>
             <div>
               <.link
-                href={~p"/settings"}
-                class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-              >
-                Settings
-              </.link>
-            </div>
-            <div>
-              <.link
                 href={~p"/log_out"}
                 method="delete"
                 class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
