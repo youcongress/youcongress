@@ -13,13 +13,8 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Votes.Answers
 
   @impl true
-  def mount(%{"id" => voting_id}, session, socket) do
-    socket =
-      socket
-      |> assign_current_user(session["user_token"])
-      |> assign(show_results: false)
-      |> load_voting_and_votes(voting_id)
-
+  def mount(_, session, socket) do
+    socket = assign_current_user(socket, session["user_token"])
     %{assigns: %{current_user: current_user}} = socket
 
     if connected?(socket) do
@@ -31,8 +26,12 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   @impl true
   @spec handle_params(map, binary, Socket.t()) :: {:noreply, Socket.t()}
-  def handle_params(_, _, socket) do
-    socket = assign(socket, :page_title, page_title(socket.assigns.live_action))
+  def handle_params(%{"id" => voting_id}, _, socket) do
+    socket =
+      socket
+      |> assign(:page_title, page_title(socket.assigns.live_action))
+      |> assign(show_results: false)
+      |> load_voting_and_votes(voting_id)
 
     if socket.assigns.voting.generating_left > 0 do
       Process.send_after(self(), :reload, 1_000)

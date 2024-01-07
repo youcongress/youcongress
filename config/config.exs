@@ -73,6 +73,12 @@ config :you_congress, Oban,
     default: 10
   ]
 
+config :extwitter, :oauth,
+  consumer_key: System.get_env("TWITTER_CONSUMER_KEY"),
+  consumer_secret: System.get_env("TWITTER_CONSUMER_SECRET"),
+  access_token: System.get_env("TWITTER_ACCESS_TOKEN"),
+  access_token_secret: System.get_env("TWITTER_ACCESS_SECRET")
+
 config :you_congress, :amplitude_api_key, System.get_env("AMPLITUDE_KEY")
 
 # Import environment specific config. This must remain at the bottom

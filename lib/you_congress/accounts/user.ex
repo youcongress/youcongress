@@ -54,11 +54,23 @@ defmodule YouCongress.Accounts.User do
       submitting the form), this option can be set to `false`.
       Defaults to `true`.
   """
-  def registration_changeset(user, attrs, opts \\ []) do
+  def password_registration_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email, :password, :author_id])
     |> validate_email(opts)
     |> validate_password(opts)
+  end
+
+  def twitter_registration_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:email, :author_id, :role])
+    |> validate_email(opts)
+  end
+
+  def login_with_x_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:email, :role])
+    |> validate_email(opts)
   end
 
   defp validate_email(changeset, opts) do

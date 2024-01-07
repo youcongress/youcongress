@@ -22,6 +22,10 @@ defmodule YouCongressWeb.Router do
 
     get "/terms", PageController, :terms
     get "/privacy-policy", PageController, :privacy_policy
+
+    get "/waiting_list", PageController, :waiting_list
+    post "/log_in", TwitterLogInController, :log_in
+    get "/twitter-callback", TwitterLogInController, :callback
   end
 
   scope "/", YouCongressWeb do
@@ -88,21 +92,6 @@ defmodule YouCongressWeb.Router do
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{YouCongressWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/log_in", UserLoginLive, :new
-      live "/reset_password", UserForgotPasswordLive, :new
-      live "/reset_password/:token", UserResetPasswordLive, :edit
-    end
-
-    post "/log_in", UserSessionController, :create
-  end
-
-  scope "/", YouCongressWeb do
-    pipe_through [:browser, :require_authenticated_user]
-
-    live_session :require_authenticated_user,
-      on_mount: [{YouCongressWeb.UserAuth, :ensure_authenticated}] do
-      live "/settings", UserSettingsLive, :edit
-      live "/settings/confirm_email/:token", UserSettingsLive, :confirm_email
     end
   end
 
