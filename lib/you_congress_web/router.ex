@@ -28,6 +28,8 @@ defmodule YouCongressWeb.Router do
     pipe_through [:browser, :redirect_home_if_user_is_authenticated]
 
     get "/", PageController, :home
+    post "/log_in", TwitterLogInController, :log_in
+    get "/twitter-callback", TwitterLogInController, :callback
   end
 
   scope "/", YouCongressWeb do
@@ -88,12 +90,12 @@ defmodule YouCongressWeb.Router do
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{YouCongressWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/log_in", UserLoginLive, :new
+      # live "/log_in", UserLoginLive, :new
       live "/reset_password", UserForgotPasswordLive, :new
       live "/reset_password/:token", UserResetPasswordLive, :edit
     end
 
-    post "/log_in", UserSessionController, :create
+    # post "/log_in", UserSessionController, :create
   end
 
   scope "/", YouCongressWeb do

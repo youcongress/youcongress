@@ -4,11 +4,12 @@
       <div class="flex lg:flex-1">
         YouCongress
       </div>
-      <div class="hidden lg:flex lg:flex-1 lg:justify-end">
-        <.link href={~p"/log_in"}>Log in</.link>
-      </div>
     </nav>
   </header>
+
+  <div class="mx-auto max-w-4xl">
+    <.flash_group flash={@flash} />
+  </div>
 
   <div class="relative isolate px-6 pt-14 lg:px-8">
     <div
@@ -32,13 +33,23 @@
           </div>
           <div>- Alex Pentland, MIT Professor</div>
         </div>
-        <div class="mt-10 flex items-center justify-center">
-          <.link
-            href={~p"/log_in"}
-            class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-          >
-            Log in
-          </.link>
+        <div class="mt-10 items-center justify-center">
+          <div>
+            <.link
+              href={~p"/log_in"}
+              method="post"
+              class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              Log in with X
+            </.link>
+          </div>
+          <div class="pt-4">
+            Requires an invite /
+            <.link href={~p"/log_in"} method="post" class="underline">
+              Join the waitlist
+            </.link>
+            otherwise
+          </div>
         </div>
       </div>
     </div>
