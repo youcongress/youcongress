@@ -80,6 +80,7 @@ config :extwitter, :oauth,
   access_token_secret: System.get_env("TWITTER_ACCESS_SECRET")
 
 config :you_congress, :amplitude_api_key, System.get_env("AMPLITUDE_KEY")
+config :you_congress, :base_url, System.get_env("BASE_URL")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
