@@ -8,18 +8,16 @@
   patch={~p"/"}
 />
 
-<.table
-  id="votings"
-  rows={@streams.votings}
-  row_click={fn {_id, voting} -> JS.navigate(~p"/votings/#{voting}") end}
->
-  <:col :let={{_id, voting}} label="Recent"><%= voting.title %></:col>
-  <:action :let={{_id, voting}}>
-    <div class="sr-only">
-      <.link navigate={~p"/votings/#{voting}"}>Show</.link>
-    </div>
-  </:action>
-</.table>
+<div class="text-sm text-gray-400 pt-8 pb-2 border-b border-gray-200">Recent</div>
+<table>
+  <%= for {html_id, voting} <- @streams.votings do %>
+    <tr>
+      <td id={html_id} class="py-4 border-b border-gray-200">
+        <a href={~p"/votings/#{voting.id}"}><%= voting.title %></a>
+      </td>
+    </tr>
+  <% end %>
+</table>
 
 <.modal :if={@live_action in [:new, :edit]} id="voting-modal" show on_cancel={JS.patch(~p"/")}>
   <.live_component
