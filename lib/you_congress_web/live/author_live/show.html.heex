@@ -2,7 +2,7 @@
   <%= @author.name || "Anonymous" %>
   <:subtitle><%= @author.bio %></:subtitle>
   <:actions>
-    <%= if @current_user && @current_user.id != @author.id do %>
+    <%= if @current_user && @current_user.author_id != @author.id do %>
       <.link phx-click="toggle-delegate" phx-value-author_id={@author.id}>
         <.button><%= if @delegating?, do: "Remove delegate", else: "Delegate" %></.button>
       </.link>
