@@ -8,7 +8,9 @@ defmodule YouCongress.Workers.OpinatorWorker do
   alias YouCongress.DigitalTwins
   alias YouCongress.Votings
 
-  @num_gen_opinions 5
+  @num_gen_opinions_in_prod 15
+  @num_gen_opinions_in_dev 2
+  @num_gen_opinions_in_test 2
 
   @impl Oban.Worker
   @spec perform(Oban.Job.t()) :: :ok
@@ -17,8 +19,9 @@ defmodule YouCongress.Workers.OpinatorWorker do
 
     num_left =
       if voting.generating_left == 0 do
-        Votings.update_voting(voting, %{generating_left: @num_gen_opinions})
-        @num_gen_opinions
+        num = num_gen_opinions()
+        Votings.update_voting(voting, %{generating_left: num})
+        num
       else
         voting.generating_left
       end
@@ -39,7 +42,13 @@ defmodule YouCongress.Workers.OpinatorWorker do
     :ok
   end
 
-  def num_gen_opinions, do: @num_gen_opinions
+  def num_gen_opinions do
+    case Mix.env() do
+      :test -> @num_gen_opinions_in_test
+      :dev -> @num_gen_opinions_in_dev
+      _ -> @num_gen_opinions_in_prod
+    end
+  end
 
   defp refresh_delegated_votes(vote, voting_id) do
     %{author_id: vote.author_id, voting_id: voting_id}
