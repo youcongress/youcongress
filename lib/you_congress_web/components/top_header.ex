@@ -8,6 +8,9 @@ defmodule YouCongressWeb.TopHeaderComponent do
 
   def top_header(assigns) do
     ~H"""
+    <div class="mx-auto w-full text-center bg-yellow-50">
+      All votes are public. Choose a list of delegates to vote according to the majority of them – unless you vote directly.
+    </div>
     <header class="px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between border-b border-zinc-100 py-3 text-sm">
         <div class="flex items-center gap-4">
