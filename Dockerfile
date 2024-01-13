@@ -27,5 +27,8 @@ RUN mix assets.deploy
 # Compile the app
 RUN mix compile
 
+# Run database migrations
+CMD ["mix", "ecto.migrate"]
+
 # The command to run when the container starts
 CMD ["mix", "phx.server"]
