@@ -81,7 +81,7 @@ defmodule YouCongressWeb.VotingLive.FormComponent do
         {:noreply,
          socket
          |> put_flash(:info, "Voting updated successfully")
-         |> push_patch(to: socket.assigns.patch)}
+         |> push_patch(to: ~p"/v/#{voting.slug}")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}
@@ -96,7 +96,7 @@ defmodule YouCongressWeb.VotingLive.FormComponent do
         {:noreply,
          socket
          |> put_flash(:info, "Voting created successfully")
-         |> redirect(to: ~p"/votings/#{voting.id}")}
+         |> redirect(to: ~p"/v/#{voting.slug}")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}

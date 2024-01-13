@@ -58,6 +58,7 @@ defmodule YouCongress.MixProject do
       {:credo, "~> 1.7.0", only: [:dev, :test]},
       {:dialyxir, "~> 1.4.2", only: [:dev, :test], runtime: false},
       {:extwitter, github: "youcongress/extwitter"},
+      {:slugify, "~> 1.3.1"},
       {:appsignal, "~> 2.8.0"},
       {:appsignal_phoenix, "~> 2.3.5"}
     ]

@@ -26,12 +26,14 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   @impl true
   @spec handle_params(map, binary, Socket.t()) :: {:noreply, Socket.t()}
-  def handle_params(%{"id" => voting_id}, _, socket) do
+  def handle_params(%{"slug" => slug}, _, socket) do
+    voting = Votings.get_voting_by_slug!(slug)
+
     socket =
       socket
       |> assign(:page_title, page_title(socket.assigns.live_action))
       |> assign(show_results: false)
-      |> load_voting_and_votes(voting_id)
+      |> load_voting_and_votes(voting.id)
 
     if socket.assigns.voting.generating_left > 0 do
       Process.send_after(self(), :reload, 1_000)

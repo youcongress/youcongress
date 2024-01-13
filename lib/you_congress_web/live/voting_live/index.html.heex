@@ -13,7 +13,7 @@
   <%= for {html_id, voting} <- @streams.votings do %>
     <tr>
       <td id={html_id} class="py-4 border-b border-gray-200">
-        <a href={~p"/votings/#{voting.id}"}><%= voting.title %></a>
+        <a href={~p"/v/#{voting.slug}"}><%= voting.title %></a>
       </td>
     </tr>
   <% end %>
