@@ -36,7 +36,7 @@
     <%= if YouCongress.Votes.public?(vote) || @current_user.author_id == @author.id do %>
       <li class="pb-4">
         <strong>
-          <.link patch={~p"/v/#{vote.voting.id}"}><%= vote.voting.title %></.link>
+          <.link patch={~p"/v/#{vote.voting.slug}"}><%= vote.voting.title %></.link>
         </strong>
         <.live_component
           module={YouCongressWeb.VotingLive.VoteComponent}

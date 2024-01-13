@@ -9,7 +9,7 @@
     <% end %>
 
     <%= if YouCongress.Accounts.Permissions.can_edit_voting?(@voting, @current_user) do %>
-      <.link patch={~p"/v/#{@voting}/show/edit"} phx-click={JS.push_focus()}>
+      <.link patch={~p"/v/#{@voting.slug}/show/edit"} phx-click={JS.push_focus()}>
         Edit
       </.link>
     <% end %>
