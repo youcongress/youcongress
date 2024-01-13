@@ -22,12 +22,13 @@ defmodule YouCongress.DigitalTwins do
 
   """
   def generate_vote(voting_id) do
-    voting = Votings.get_voting!(voting_id, include: [votes: [:author]])
+    voting = Votings.get_voting!(voting_id, include: [votes: [:author, :answer]])
     topic = voting.title
     model = :"gpt-4-1106-preview"
     exclude_names = Enum.map(voting.votes, & &1.author.name)
+    next_response = YouCongress.DigitalTwins.ResponseVariety.next_response(voting.votes)
 
-    case AI.generate_opinion(topic, model, exclude_names) do
+    case AI.generate_opinion(topic, model, next_response, exclude_names) do
       {:ok, %{opinion: vote}} ->
         case Votes.Answers.get_answer_by_response(vote["agree_rate"]) do
           %Answer{} = answer ->

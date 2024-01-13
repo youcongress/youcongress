@@ -51,10 +51,10 @@ defmodule YouCongress.DigitalTwins.AI do
   }
   """
 
-  @spec generate_opinion(binary, model_type, [binary]) ::
+  @spec generate_opinion(binary, model_type, binary | nil, [binary]) ::
           {:ok, map} | {:error, binary}
-  def generate_opinion(topic, model, exclude_names \\ []) when model in @models do
-    question = get_question(topic, exclude_names)
+  def generate_opinion(topic, model, next_response, exclude_names \\ []) when model in @models do
+    question = get_question(topic, next_response, exclude_names)
 
     with {:ok, data} <- ask_gpt(question, model),
          content <- get_content(data),
@@ -66,14 +66,14 @@ defmodule YouCongress.DigitalTwins.AI do
     end
   end
 
-  @spec get_question(binary, [binary]) :: binary
-  defp get_question(topic, exclude_names) do
+  @spec get_question(binary, binary | nil, [binary]) :: binary
+  defp get_question(topic, response, exclude_names) do
     exclude_names = Enum.join(exclude_names, ",")
 
     """
     Topic: #{topic}
 
-    Write one more opinion in first person from a public figure who have publicly shared their views on the topic.
+    Write one more opinion in first person from a public figure who have publicly shared their views on the topic#{if response, do: " and #{response}"}.
 
     Exclude opinions from: #{exclude_names}
     """
