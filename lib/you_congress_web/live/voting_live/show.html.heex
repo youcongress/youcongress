@@ -9,7 +9,7 @@
     <% end %>
 
     <%= if YouCongress.Accounts.Permissions.can_edit_voting?(@voting, @current_user) do %>
-      <.link patch={~p"/votings/#{@voting}/show/edit"} phx-click={JS.push_focus()}>
+      <.link patch={~p"/v/#{@voting}/show/edit"} phx-click={JS.push_focus()}>
         Edit
       </.link>
     <% end %>
@@ -169,18 +169,13 @@
 
 <.back navigate={~p"/"}>Back</.back>
 
-<.modal
-  :if={@live_action == :edit}
-  id="voting-modal"
-  show
-  on_cancel={JS.patch(~p"/votings/#{@voting}")}
->
+<.modal :if={@live_action == :edit} id="voting-modal" show on_cancel={JS.patch(~p"/v/#{@voting}")}>
   <.live_component
     module={YouCongressWeb.VotingLive.FormComponent}
     id={@voting.id}
     title={@page_title}
     action={@live_action}
     voting={@voting}
-    patch={~p"/votings/#{@voting}"}
+    patch={~p"/v/#{@voting}"}
   />
 </.modal>
