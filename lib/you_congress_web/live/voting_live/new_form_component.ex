@@ -110,7 +110,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
         {:noreply,
          socket
          |> put_flash(:info, "Voting created successfully")
-         |> redirect(to: ~p"/votings/#{voting.id}")}
+         |> redirect(to: ~p"/v/#{voting.id}")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}
