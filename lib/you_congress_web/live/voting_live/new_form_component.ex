@@ -19,7 +19,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
           <.input field={@form[:title]} type="text" maxlength="150" placeholder="Should we...?" />
           <%= if @suggested_titles != [] do %>
             <div>
-              <div class="py-2">We propose one of these variants:</div>
+              <div class="py-2">Would you like to create one of these votings?</div>
               <%= for suggested_title <- @suggested_titles do %>
                 <div class="py-2">
                   <button
@@ -39,7 +39,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
           <% else %>
             <div>
               <.button class="mt-4" phx-disable-with="Validating with ChatGPT. Please wait.">
-                Next
+                Propose new voting
               </.button>
             </div>
           <% end %>
@@ -87,12 +87,21 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
 
     # {:noreply, assign(socket, suggested_titles: suggested_titles)}
 
-    case TitleRewording.generate_rewordings(voting["title"], :"gpt-4-1106-preview") do
-      {:ok, suggested_titles, _} ->
-        {:noreply, assign(socket, suggested_titles: suggested_titles)}
+    if voting["title"] == "" do
+      changeset =
+        socket.assigns.voting
+        |> Votings.change_voting(%{})
+        |> Map.put(:action, :validate)
 
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Error validating the voting")}
+      {:noreply, assign_form(socket, changeset)}
+    else
+      case TitleRewording.generate_rewordings(voting["title"], :"gpt-4-1106-preview") do
+        {:ok, suggested_titles, _} ->
+          {:noreply, assign(socket, suggested_titles: suggested_titles)}
+
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Error validating the voting")}
+      end
     end
   end
 
@@ -124,4 +133,6 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     assign(socket, :form, to_form(changeset))
   end
+
+  defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
 end
