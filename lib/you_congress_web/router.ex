@@ -38,8 +38,8 @@ defmodule YouCongressWeb.Router do
     pipe_through [:browser, :require_admin_user]
 
     live "/v/new", VotingLive.Index, :new
-    live "/v/:id/edit", VotingLive.Show, :edit
-    live "/v/:id/show/edit", VotingLive.Show, :edit
+    live "/v/:slug/edit", VotingLive.Show, :edit
+    live "/v/:slug/show/edit", VotingLive.Show, :edit
 
     live "/authors/new", AuthorLive.Index, :new
     live "/authors/:id/edit", AuthorLive.Show, :edit
@@ -54,7 +54,7 @@ defmodule YouCongressWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live "/home", VotingLive.Index, :index
-    live "/v/:id", VotingLive.Show, :show
+    live "/v/:slug", VotingLive.Show, :show
 
     live "/authors", AuthorLive.Index, :index
     live "/authors/:id", AuthorLive.Show, :show

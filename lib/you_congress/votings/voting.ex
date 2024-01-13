@@ -7,9 +7,12 @@ defmodule YouCongress.Votings.Voting do
 
   alias YouCongress.Votes.Vote
 
+  @max_title_slug_size 70
+
   schema "votings" do
     field :title, :string
     field :generating_left, :integer, default: 0
+    field :slug, :string
 
     has_many :votes, Vote
     belongs_to :user, YouCongress.Accounts.User
@@ -23,6 +26,7 @@ defmodule YouCongress.Votings.Voting do
           votes: [Vote.t()],
           user: YouCongress.Accounts.User.t(),
           user_id: integer() | nil,
+          slug: String.t(),
           inserted_at: NaiveDateTime.t(),
           updated_at: NaiveDateTime.t()
         }
@@ -30,8 +34,27 @@ defmodule YouCongress.Votings.Voting do
   @doc false
   def changeset(voting, attrs) do
     voting
-    |> cast(attrs, [:title, :generating_left, :user_id])
+    |> cast(attrs, [:title, :generating_left, :user_id, :slug])
     |> validate_required([:title])
     |> unique_constraint(:title)
+    |> generate_slug_if_empty()
+    |> unique_constraint(:slug)
   end
+
+  defp generate_slug_if_empty(changeset) do
+    if get_field(changeset, :slug) do
+      changeset
+    else
+      title = get_field(changeset, :title)
+      put_change(changeset, :slug, new_slug(title))
+    end
+  end
+
+  defp new_slug(title) when is_binary(title) do
+    title
+    |> Slug.slugify()
+    |> String.slice(0..(@max_title_slug_size - 1))
+  end
+
+  defp new_slug(_), do: nil
 end

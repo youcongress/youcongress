@@ -143,4 +143,22 @@ defmodule YouCongress.Votings do
   def count do
     Repo.aggregate(Voting, :count, :id)
   end
+
+  @doc """
+  Returns the voting with the given slug.
+  """
+
+  def get_voting_by_slug(slug) do
+    Repo.get_by(Voting, slug: slug)
+  end
+
+  def get_voting_by_slug!(slug) do
+    Repo.get_by!(Voting, slug: slug)
+  end
+
+  def regenerate_slug(voting) do
+    voting
+    |> Voting.changeset(%{slug: nil})
+    |> Repo.update()
+  end
 end
