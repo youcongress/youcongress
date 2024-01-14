@@ -39,7 +39,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
           <% else %>
             <div>
               <.button class="mt-4" phx-disable-with="Validating with ChatGPT. Please wait.">
-                Propose yes/no question
+                Send yes/no question
               </.button>
             </div>
           <% end %>
