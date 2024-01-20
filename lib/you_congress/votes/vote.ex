@@ -36,6 +36,6 @@ defmodule YouCongress.Votes.Vote do
     vote
     |> cast(attrs, [:direct, :twin, :opinion, :author_id, :voting_id, :answer_id])
     |> validate_required([:author_id, :voting_id, :answer_id])
-    |> unique_constraint([:author_id, :voting_id, :answer_id])
+    |> unique_constraint([:author_id, :voting_id])
   end
 end
