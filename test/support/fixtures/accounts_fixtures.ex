@@ -21,19 +21,19 @@ defmodule YouCongress.AccountsFixtures do
     Enum.map(attrs, fn {k, v} -> {to_string(k), v} end)
   end
 
-  def user_fixture(attrs \\ %{}) do
+  def user_fixture(attrs \\ %{}, author_attrs \\ %{}) do
     {:ok, %{user: user}} =
       attrs
       |> valid_user_attributes()
-      |> YouCongress.Accounts.register_user()
+      |> YouCongress.Accounts.register_user(author_attrs)
 
     user
   end
 
-  def admin_fixture(attrs \\ %{}) do
+  def admin_fixture(attrs \\ %{}, author_attrs \\ %{}) do
     {:ok, user} =
       attrs
-      |> user_fixture()
+      |> user_fixture(author_attrs)
       |> YouCongress.Accounts.update_role("admin")
 
     user
