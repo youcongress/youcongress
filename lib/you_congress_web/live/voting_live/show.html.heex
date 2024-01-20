@@ -148,8 +148,8 @@
     </ul>
   </div>
 <% end %>
-<div>
-  <%= if @votes_from_delegates != [] do %>
+<div class="mb-6">
+  <%= if @votes_from_non_delegates != [] do %>
     <h2 class="mb-2">Other opinions:</h2>
   <% end %>
   <ul>
@@ -165,6 +165,26 @@
       </li>
     <% end %>
   </ul>
+</div>
+
+<div class="mb-6">
+  <%= if @votes_without_opinion != [] do %>
+    <h2 class="mb-2">Votes without an opinion:</h2>
+
+    <ul>
+      <%= for vote <- @votes_without_opinion do %>
+        <li class="pb-4">
+          <.live_component
+            module={YouCongressWeb.VotingLive.VoteComponent}
+            id={vote.id}
+            vote={vote}
+            author={vote.author}
+            include_author_bio={true}
+          />
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
 </div>
 
 <.back navigate={~p"/"}>More votings</.back>
