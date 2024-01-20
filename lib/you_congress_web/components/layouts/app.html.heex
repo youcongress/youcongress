@@ -9,4 +9,6 @@
     <%= @inner_content %>
   </div>
 </main>
-<.footer />
+<%= if assigns[:page_title] && @page_title != "Welcome" do %>
+  <.footer />
+<% end %>

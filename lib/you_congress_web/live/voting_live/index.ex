@@ -48,6 +48,10 @@ defmodule YouCongressWeb.VotingLive.Index do
     {:noreply, stream_insert(socket, :votings, voting)}
   end
 
+  def handle_info({YouCongressWeb.VotingLive.NewFormComponent, {:put_flash, type, msg}}, socket) do
+    {:noreply, put_flash(socket, type, msg)}
+  end
+
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     voting = Votings.get_voting!(id)
