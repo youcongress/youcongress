@@ -5,6 +5,8 @@ defmodule YouCongress.Workers.OpinatorWorker do
 
   use Oban.Worker
 
+  require Logger
+
   alias YouCongress.DigitalTwins
   alias YouCongress.Votings
 
@@ -26,9 +28,13 @@ defmodule YouCongress.Workers.OpinatorWorker do
         voting.generating_left
       end
 
-    {:ok, vote} = DigitalTwins.generate_vote(voting_id)
+    case DigitalTwins.generate_vote(voting_id) do
+      {:ok, vote} ->
+        refresh_delegated_votes(vote, voting_id)
 
-    refresh_delegated_votes(vote, voting_id)
+      {:error, error} ->
+        Logger.error("Failed to generate vote. Skipping. error: #{inspect(error)}")
+    end
 
     next_num_left = num_left - 1
     Votings.update_voting(voting, %{generating_left: next_num_left})
