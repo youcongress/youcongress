@@ -16,6 +16,7 @@ defmodule YouCongress.Authors.Author do
     field :profile_image_url, :string
     field :description, :string
     field :followers_count, :integer
+    field :friends_count, :integer
     field :verified, :boolean
     field :location, :string
 
@@ -38,6 +39,7 @@ defmodule YouCongress.Authors.Author do
       :profile_image_url,
       :description,
       :followers_count,
+      :friends_count,
       :verified,
       :location
     ])
