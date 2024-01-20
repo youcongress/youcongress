@@ -33,6 +33,7 @@ defmodule YouCongressWeb.TwitterLogInController do
       description: data.description,
       location: data.location,
       followers_count: data.followers_count,
+      friends_count: data.friends_count,
       verified: data.verified
     }
 
