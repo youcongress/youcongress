@@ -1,0 +1,10 @@
+<div class="py-4">Write a question that can be answered with yes/no:</div>
+<.live_component
+  module={YouCongressWeb.VotingLive.NewFormComponent}
+  id={:new}
+  title={@page_title}
+  action={@live_action}
+  voting={%Voting{}}
+  current_user={@current_user}
+  patch={~p"/"}
+/>
