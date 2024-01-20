@@ -63,6 +63,9 @@ defmodule YouCongress.Accounts do
       nil
 
   """
+  def get_user_by_twitter_id_str_or_username(nil, twitter_username),
+    do: get_user_by_username(twitter_username)
+
   def get_user_by_twitter_id_str_or_username(twitter_id_str, twitter_username) do
     query =
       from u in User,
@@ -424,4 +427,6 @@ defmodule YouCongress.Accounts do
 
   def in_waiting_list?(%User{role: "waiting_list"}), do: true
   def in_waiting_list?(_), do: false
+
+  def count, do: Repo.aggregate(User, :count, :id)
 end

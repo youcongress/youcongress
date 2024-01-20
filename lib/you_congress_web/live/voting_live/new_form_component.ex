@@ -100,7 +100,8 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
           {:noreply, assign(socket, suggested_titles: suggested_titles)}
 
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Error validating the voting")}
+          notify_parent({:put_flash, :error, "Error validating the voting"})
+          {:noreply, socket}
       end
     end
   end
@@ -133,4 +134,6 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     assign(socket, :form, to_form(changeset))
   end
+
+  defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
 end

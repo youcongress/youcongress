@@ -167,7 +167,7 @@
   </ul>
 </div>
 
-<.back navigate={~p"/"}>Back</.back>
+<.back navigate={~p"/"}>More votings</.back>
 
 <.modal :if={@live_action == :edit} id="voting-modal" show on_cancel={JS.patch(~p"/v/#{@voting}")}>
   <.live_component
