@@ -55,6 +55,19 @@ defmodule YouCongress.Votes do
   end
 
   @doc """
+  Returns the list of votes for a voting without opinion.
+  """
+  @spec list_votes_without_opinion(integer, Keyword.t()) :: [Vote.t(), ...]
+  def list_votes_without_opinion(voting_id, opts \\ []) do
+    include_tables = Keyword.get(opts, :include, [])
+
+    Vote
+    |> where([v], v.voting_id == ^voting_id and is_nil(v.opinion))
+    |> preload(^include_tables)
+    |> Repo.all()
+  end
+
+  @doc """
   Gets a single vote.
 
   Raises `Ecto.NoResultsError` if the Vote does not exist.

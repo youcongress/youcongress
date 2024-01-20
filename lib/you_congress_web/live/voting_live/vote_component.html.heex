@@ -3,7 +3,7 @@
     <div>
       <strong><.link patch={~p"/authors/#{@author.id}"}><%= @author.name %><%= if @vote.twin, do: " AI" %></.link></strong>,
       <span class="text-sm">
-        <%= @author.bio %>
+        <%= @author.bio || @author.description %>
       </span>
     </div>
   <% end %>

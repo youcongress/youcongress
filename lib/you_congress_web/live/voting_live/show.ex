@@ -222,11 +222,15 @@ defmodule YouCongressWeb.VotingLive.Show do
     votes_from_delegates = get_votes_from_delegates(votes, current_user)
     vote_frequencies = get_vote_frequencies(voting)
 
+    votes_without_opinion =
+      Votes.list_votes_without_opinion(voting_id, include: [:author, :answer])
+
     socket
     |> assign(
       voting: voting,
       votes_from_delegates: votes_from_delegates,
       votes_from_non_delegates: votes -- votes_from_delegates,
+      votes_without_opinion: votes_without_opinion,
       current_user_vote: get_current_user_vote(voting, current_user),
       vote_frequencies: vote_frequencies,
       percentage: percentage
