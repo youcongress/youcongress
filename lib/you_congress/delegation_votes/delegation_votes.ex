@@ -65,12 +65,22 @@ defmodule YouCongress.DelegationVotes do
   end
 
   defp vote(voting_id, author_id, answer_id) do
-    Votes.create_vote(%{
-      voting_id: voting_id,
-      author_id: author_id,
-      answer_id: answer_id,
-      direct: false
-    })
+    case Votes.get_vote(%{voting_id: voting_id, author_id: author_id}) do
+      nil ->
+        Votes.create_vote(%{
+          voting_id: voting_id,
+          author_id: author_id,
+          answer_id: answer_id,
+          direct: false
+        })
+
+      vote ->
+        if vote.answer_id != answer_id do
+          Votes.update_vote(vote, %{answer_id: answer_id})
+        else
+          {:ok, vote}
+        end
+    end
   end
 
   defp delete_vote_if_exists(voting_id, author_id) do
