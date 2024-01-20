@@ -6,6 +6,7 @@ defmodule YouCongressWeb.TwitterLogInController do
   alias YouCongress.Accounts
   alias YouCongress.Authors
   alias YouCongress.Accounts.User
+  alias YouCongress.Track
 
   def log_in(conn, _params) do
     base_url = Application.get_env(:you_congress, :base_url)
@@ -59,7 +60,9 @@ defmodule YouCongressWeb.TwitterLogInController do
     user_attrs = %{"role" => "waiting_list", "email" => email}
 
     case Accounts.register_user(user_attrs, author_attrs) do
-      {:ok, %{user: _user, author: _author}} ->
+      {:ok, %{user: user, author: _author}} ->
+        Track.event("Join Waiting List", user)
+
         conn
         |> put_flash(:error, "You're in the waiting list. See you soon.")
         |> redirect(to: ~p"/waiting_list")
@@ -75,6 +78,7 @@ defmodule YouCongressWeb.TwitterLogInController do
     with {:ok, user} <- Accounts.update_login_with_x(user, user_attrs),
          {:ok, _} <- Authors.update_author(user.author, author_attrs) do
       if Accounts.in_waiting_list?(user) do
+        Track.event("Rejoin Waiting List", user)
         redirect(conn, to: ~p"/waiting_list")
       else
         log_in_and_redirect(user, conn)
@@ -110,17 +114,28 @@ defmodule YouCongressWeb.TwitterLogInController do
 
   defp maybe_change_role(%User{role: "waiting_list"} = user) do
     case Accounts.update_role(user, "user") do
-      {:ok, _} -> :ok
-      {:error, changeset} -> {:error, changeset}
+      {:ok, user} ->
+        Track.event("New user", user)
+        :ok
+
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 
-  defp maybe_change_role(_), do: :ok
+  defp maybe_change_role(user) do
+    Track.event("Login with X", user)
+    :ok
+  end
 
   defp create_user_and_log_in(user_attrs, author_attrs) do
     case Accounts.register_user(user_attrs, author_attrs) do
-      {:ok, %{user: user, author: _author}} -> {:ok, user}
-      {:error, changeset} -> {:error, changeset}
+      {:ok, %{user: user, author: _author}} ->
+        Track.event("New user", user)
+        {:ok, user}
+
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 
