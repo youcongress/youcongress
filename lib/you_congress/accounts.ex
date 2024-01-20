@@ -428,7 +428,5 @@ defmodule YouCongress.Accounts do
   def in_waiting_list?(%User{role: "waiting_list"}), do: true
   def in_waiting_list?(_), do: false
 
-  def count() do
-    Repo.aggregate(User, :count, :id)
-  end
+  def count, do: Repo.aggregate(User, :count, :id)
 end
