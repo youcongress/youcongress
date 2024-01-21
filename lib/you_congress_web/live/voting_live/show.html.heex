@@ -130,6 +130,16 @@
     </div>
   </div>
 <% end %>
+<%= if @reload do %>
+  <div class="pb-6">
+    <button
+      phx-click="reload"
+      class="rounded bg-white px-2 py-1 text-xs font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+    >
+      Reload new changes
+    </button>
+  </div>
+<% end %>
 <%= if @votes_from_delegates != [] do %>
   <div class="mb-8">
     <h2 class="mb-2">Opinions from your delegates:</h2>
@@ -142,6 +152,8 @@
             vote={vote}
             author={vote.author}
             include_author_bio={true}
+            delegating?={@delegations[vote.author_id]}
+            current_user={@current_user}
           />
         </li>
       <% end %>
@@ -161,6 +173,8 @@
           vote={vote}
           author={vote.author}
           include_author_bio={true}
+          delegating?={@delegations[vote.author_id]}
+          current_user={@current_user}
         />
       </li>
     <% end %>
@@ -180,6 +194,8 @@
             vote={vote}
             author={vote.author}
             include_author_bio={true}
+            delegating?={@delegations[vote.author_id]}
+            current_user={@current_user}
           />
         </li>
       <% end %>

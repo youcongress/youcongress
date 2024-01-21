@@ -32,7 +32,7 @@ defmodule YouCongressWeb.VotingLive.Show do
     socket =
       socket
       |> assign(:page_title, page_title(socket.assigns.live_action))
-      |> assign(show_results: false)
+      |> assign(show_results: false, reload: false)
       |> load_voting_and_votes(voting.id)
 
     if socket.assigns.voting.generating_left > 0 do
@@ -161,6 +161,65 @@ defmodule YouCongressWeb.VotingLive.Show do
     end
   end
 
+  def handle_event("reload", _, socket) do
+    socket =
+      socket
+      |> load_voting_and_votes(socket.assigns.voting.id)
+      |> assign(reload: false)
+      |> clear_flash()
+
+    {:noreply, socket}
+  end
+
+  def handle_event("add-delegation", %{"author_id" => author_id}, socket) do
+    %{assigns: %{current_user: current_user, voting: voting}} = socket
+    deleguee_id = current_user.id
+    delegate_id = String.to_integer(author_id)
+
+    case Delegations.create_delegation(%{delegate_id: delegate_id, deleguee_id: deleguee_id}) do
+      {:ok, _} ->
+        YouCongress.Track.event("Delegate", current_user)
+
+        socket =
+          socket
+          |> assign(:delegating?, true)
+          |> put_flash(
+            :info,
+            "Added to your delegation list. You're voting as the majority of your delegates – unless you directly vote."
+          )
+          |> assign_main_variables(voting, current_user)
+          |> assign(reload: true)
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Error creating delegation.")}
+    end
+  end
+
+  def handle_event("remove-delegation", %{"author_id" => author_id}, socket) do
+    %{assigns: %{current_user: current_user, voting: voting}} = socket
+    deleguee_id = current_user.id
+    delegate_id = String.to_integer(author_id)
+
+    case Delegations.delete_delegation(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
+      {:ok, _} ->
+        YouCongress.Track.event("Remove Delegate", current_user)
+
+        socket =
+          socket
+          |> assign(:delegating?, false)
+          |> put_flash(:info, "Removed from your delegation list.")
+          |> assign_main_variables(voting, current_user)
+          |> assign(reload: true)
+
+        {:noreply, socket}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Error deleting delegation.")}
+    end
+  end
+
   @impl true
   def handle_info(:reload, socket) do
     socket = load_voting_and_votes(socket, socket.assigns.voting.id)
@@ -220,7 +279,6 @@ defmodule YouCongressWeb.VotingLive.Show do
     percentage = round(votes_generated * 100 / num_gen_opinions())
 
     votes_from_delegates = get_votes_from_delegates(votes, current_user)
-    vote_frequencies = get_vote_frequencies(voting)
 
     votes_without_opinion =
       Votes.list_votes_without_opinion(voting_id, include: [:author, :answer])
@@ -232,10 +290,49 @@ defmodule YouCongressWeb.VotingLive.Show do
       votes_from_non_delegates: votes -- votes_from_delegates,
       votes_without_opinion: votes_without_opinion,
       current_user_vote: get_current_user_vote(voting, current_user),
-      vote_frequencies: vote_frequencies,
       percentage: percentage
     )
+    |> assign_main_variables(voting, current_user)
+  end
+
+  defp assign_main_variables(socket, voting, current_user) do
+    socket
+    |> load_delegations(current_user)
     |> assign_counters()
+    |> assign_vote_frequencies(voting)
+    |> assign_current_user_vote(voting, current_user)
+  end
+
+  defp assign_current_user_vote(socket, voting, current_user) do
+    assign(socket, current_user_vote: get_current_user_vote(voting, current_user))
+  end
+
+  defp assign_vote_frequencies(socket, voting) do
+    assign(socket, vote_frequencies: get_vote_frequencies(voting))
+  end
+
+  defp load_delegations(socket, current_user) do
+    %{
+      assigns: %{
+        votes_from_delegates: votes_from_delegates,
+        votes_from_non_delegates: votes_from_non_delegates,
+        votes_without_opinion: votes_without_opinion
+      }
+    } = socket
+
+    author_ids =
+      Enum.map(votes_from_delegates, & &1.author_id) ++
+        Enum.map(votes_from_non_delegates, & &1.author_id) ++
+        Enum.map(votes_without_opinion, & &1.author_id)
+
+    delegate_ids = Delegations.delegate_ids_by_author_id(current_user.id)
+
+    delegations =
+      Enum.reduce(author_ids, %{}, fn author_id, acc ->
+        Map.put(acc, author_id, !!Enum.find(delegate_ids, &(&1 == author_id)))
+      end)
+
+    assign(socket, delegations: delegations)
   end
 
   @spec get_vote_frequencies(Voting.t()) :: %{binary => number}
