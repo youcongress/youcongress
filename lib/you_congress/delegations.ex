@@ -26,6 +26,10 @@ defmodule YouCongress.Delegations do
     Repo.all(from d in Delegation, where: d.deleguee_id == ^author_id, select: d.delegate_id)
   end
 
+  def deleguee_ids_by_delegate_id(delegate_id) do
+    Repo.all(from d in Delegation, where: d.delegate_id == ^delegate_id, select: d.deleguee_id)
+  end
+
   @doc """
   Gets a single delegation.
 
