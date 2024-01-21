@@ -9,6 +9,8 @@ defmodule YouCongress.Workers.OpinatorWorker do
 
   alias YouCongress.DigitalTwins
   alias YouCongress.Votings
+  alias YouCongress.Delegations
+  alias YouCongress.DelegationVotes
 
   @num_gen_opinions_in_prod 15
   @num_gen_opinions_in_dev 2
@@ -31,16 +33,20 @@ defmodule YouCongress.Workers.OpinatorWorker do
     case DigitalTwins.generate_vote(voting_id) do
       {:ok, vote} ->
         refresh_delegated_votes(vote, voting_id)
+        next(voting, num_left)
 
       {:error, error} ->
         Logger.error("Failed to generate vote. Skipping. error: #{inspect(error)}")
+        next(voting, num_left)
     end
+  end
 
+  defp next(voting, num_left) do
     next_num_left = num_left - 1
-    Votings.update_voting(voting, %{generating_left: next_num_left})
+    {:ok, voting} = Votings.update_voting(voting, %{generating_left: next_num_left})
 
     if next_num_left > 0 do
-      %{voting_id: voting_id}
+      %{voting_id: voting.id}
       |> __MODULE__.new()
       |> Oban.insert()
     end
@@ -57,8 +63,14 @@ defmodule YouCongress.Workers.OpinatorWorker do
   end
 
   defp refresh_delegated_votes(vote, voting_id) do
-    %{author_id: vote.author_id, voting_id: voting_id}
-    |> YouCongress.Workers.RefreshAuthorVotingDelegatedVotesWorker.new()
-    |> Oban.insert()
+    delegate_id = vote.author_id
+    deleguee_ids = Delegations.deleguee_ids_by_delegate_id(delegate_id)
+
+    for deleguee_id <- deleguee_ids do
+      DelegationVotes.update_author_voting_delegated_votes(%{
+        author_id: deleguee_id,
+        voting_id: voting_id
+      })
+    end
   end
 end
