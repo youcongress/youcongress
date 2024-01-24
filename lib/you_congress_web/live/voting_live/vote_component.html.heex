@@ -47,6 +47,11 @@
       <%= unless @vote.direct do %>
         via delegates
       <% end %>
+      <%= if @vote.source_url do %>
+        <span class="text-xs">
+          (<.link href={@vote.source_url} class="underline">source</.link>)
+        </span>
+      <% end %>
       <%= if @vote.opinion do %>
         and says:
       <% end %>
