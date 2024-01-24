@@ -49,7 +49,7 @@
       <% end %>
       <%= if @vote.source_url do %>
         <span class="text-xs">
-          (<.link href={@vote.source_url} class="underline">source</.link>)
+          (<.link href={@vote.source_url} target="_blank" class="underline">source</.link>)
         </span>
       <% end %>
       <%= if @vote.opinion do %>
