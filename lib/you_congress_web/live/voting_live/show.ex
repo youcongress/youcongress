@@ -173,7 +173,7 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   def handle_event("add-delegation", %{"author_id" => author_id}, socket) do
     %{assigns: %{current_user: current_user, voting: voting}} = socket
-    deleguee_id = current_user.id
+    deleguee_id = current_user.author_id
     delegate_id = String.to_integer(author_id)
 
     case Delegations.create_delegation(%{delegate_id: delegate_id, deleguee_id: deleguee_id}) do
