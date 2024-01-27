@@ -36,7 +36,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
       ) do
     %{assigns: %{current_user: current_user}} = socket
 
-    deleguee_id = current_user.id
+    deleguee_id = current_user.author_id
     delegate_id = String.to_integer(author_id)
 
     case Delegations.delete_delegation(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
@@ -86,7 +86,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
   @spec assign_delegating?(Socket.t()) :: Socket.t()
   defp assign_delegating?(%{assigns: %{author: author, current_user: current_user}} = socket) do
-    delegating = Delegations.delegating?(current_user.id, author.id)
+    delegating = Delegations.delegating?(current_user.author_id, author.id)
     assign(socket, :delegating?, delegating)
   end
 end

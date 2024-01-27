@@ -199,7 +199,7 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   def handle_event("remove-delegation", %{"author_id" => author_id}, socket) do
     %{assigns: %{current_user: current_user, voting: voting}} = socket
-    deleguee_id = current_user.id
+    deleguee_id = current_user.author_id
     delegate_id = String.to_integer(author_id)
 
     case Delegations.delete_delegation(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
@@ -325,7 +325,7 @@ defmodule YouCongressWeb.VotingLive.Show do
         Enum.map(votes_from_non_delegates, & &1.author_id) ++
         Enum.map(votes_without_opinion, & &1.author_id)
 
-    delegate_ids = Delegations.delegate_ids_by_author_id(current_user.id)
+    delegate_ids = Delegations.delegate_ids_by_author_id(current_user.author_id)
 
     delegations =
       Enum.reduce(author_ids, %{}, fn author_id, acc ->
