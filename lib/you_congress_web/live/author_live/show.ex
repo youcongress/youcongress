@@ -58,7 +58,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
   def handle_event("toggle-delegate", %{"author_id" => delegate_id}, socket) do
     %{assigns: %{current_user: current_user}} = socket
-    deleguee_id = current_user.id
+    deleguee_id = current_user.author_id
 
     case Delegations.create_delegation(%{delegate_id: delegate_id, deleguee_id: deleguee_id}) do
       {:ok, _} ->
