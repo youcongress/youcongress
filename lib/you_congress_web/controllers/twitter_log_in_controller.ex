@@ -62,6 +62,7 @@ defmodule YouCongressWeb.TwitterLogInController do
 
     case Accounts.register_user(user_attrs, author_attrs) do
       {:ok, %{user: user, author: _author}} ->
+        user = YouCongress.Accounts.get_user!(user.id, include: [:author])
         Track.event("Join Waiting List", user)
 
         conn
