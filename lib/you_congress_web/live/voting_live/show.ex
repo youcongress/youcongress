@@ -352,7 +352,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp get_votes_from_delegates(_, nil), do: []
 
   defp get_votes_from_delegates(votes, current_user) do
-    delegate_ids = Delegations.delegate_ids_by_author_id(current_user.id)
+    delegate_ids = Delegations.delegate_ids_by_author_id(current_user.author_id)
     Enum.filter(votes, fn vote -> vote.author_id in delegate_ids end)
   end
 
