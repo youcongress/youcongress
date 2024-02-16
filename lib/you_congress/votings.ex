@@ -34,6 +34,10 @@ defmodule YouCongress.Votings do
     Repo.all(from v in Voting, order_by: ^order_by)
   end
 
+  def list_random_votings(except_id, limit) do
+    Repo.all(from v in Voting, where: v.id != ^except_id, limit: ^limit)
+  end
+
   @doc """
   Gets a voting given some params.
 
