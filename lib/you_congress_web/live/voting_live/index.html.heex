@@ -10,9 +10,9 @@
 
 <div class="text-sm text-gray-400 pt-8 pb-4 border-b border-gray-200">Recent</div>
 <table>
-  <%= for {html_id, voting} <- @streams.votings do %>
+  <%= for voting <- @votings do %>
     <tr>
-      <td id={html_id} class="py-4 border-b border-gray-200">
+      <td class="py-4 border-b border-gray-200">
         <a href={~p"/v/#{voting.slug}"}><%= voting.title %></a>
       </td>
     </tr>

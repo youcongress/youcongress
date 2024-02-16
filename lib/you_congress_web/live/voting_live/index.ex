@@ -10,7 +10,7 @@ defmodule YouCongressWeb.VotingLive.Index do
       socket
       |> assign_current_user(session["user_token"])
       |> assign_counters()
-      |> stream(:votings, Votings.list_votings(order_by: [desc: :id]))
+      |> assign(:votings, Votings.list_votings(order_by: [desc: :id]))
 
     if connected?(socket) do
       %{assigns: %{current_user: current_user}} = socket
@@ -41,22 +41,5 @@ defmodule YouCongressWeb.VotingLive.Index do
     socket
     |> assign(:page_title, "Votings")
     |> assign(:voting, nil)
-  end
-
-  @impl true
-  def handle_info({YouCongressWeb.VotingLive.FormComponent, {:saved, voting}}, socket) do
-    {:noreply, stream_insert(socket, :votings, voting)}
-  end
-
-  def handle_info({YouCongressWeb.VotingLive.NewFormComponent, {:put_flash, type, msg}}, socket) do
-    {:noreply, put_flash(socket, type, msg)}
-  end
-
-  @impl true
-  def handle_event("delete", %{"id" => id}, socket) do
-    voting = Votings.get_voting!(id)
-    {:ok, _} = Votings.delete_voting(voting)
-
-    {:noreply, stream_delete(socket, :votings, voting)}
   end
 end
