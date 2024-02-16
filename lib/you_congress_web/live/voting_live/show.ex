@@ -34,6 +34,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       |> assign(:page_title, page_title(socket.assigns.live_action))
       |> assign(show_results: false, reload: false)
       |> load_voting_and_votes(voting.id)
+      |> load_random_votings(voting.id)
 
     if socket.assigns.voting.generating_left > 0 do
       Process.send_after(self(), :reload, 1_000)
@@ -309,6 +310,10 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   defp assign_vote_frequencies(socket, voting) do
     assign(socket, vote_frequencies: get_vote_frequencies(voting))
+  end
+
+  defp load_random_votings(socket, voting_id) do
+    assign(socket, :random_votings, Votings.list_random_votings(voting_id, 5))
   end
 
   defp load_delegations(socket, current_user) do

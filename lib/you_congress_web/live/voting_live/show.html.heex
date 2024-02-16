@@ -206,7 +206,18 @@
   </div>
 <% end %>
 
-<.back navigate={~p"/"}>More votings</.back>
+<div class="text-sm text-gray-600 pt-8 pb-4 border-b border-gray-200">More votings</div>
+<table>
+  <%= for random_voting <- @random_votings do %>
+    <tr>
+      <td class="py-4 border-b border-gray-200">
+        <a href={~p"/v/#{random_voting.slug}"}><%= random_voting.title %></a>
+      </td>
+    </tr>
+  <% end %>
+</table>
+
+<.back navigate={~p"/"}>Back</.back>
 
 <.modal :if={@live_action == :edit} id="voting-modal" show on_cancel={JS.patch(~p"/v/#{@voting}")}>
   <.live_component
