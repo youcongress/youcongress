@@ -3,13 +3,13 @@ defmodule YouCongress.DigitalTwins.AI do
   Generate opinions via OpenAI's API.
   """
 
-  @type model_type :: :"gpt-3.5-turbo" | :"gpt-4" | :"gpt-4-1106-preview"
+  @type model_type :: :"gpt-3.5-turbo-0125" | :"gpt-4" | :"gpt-4-1106-preview"
 
-  @models [:"gpt-4-1106-preview", :"gpt-4", :"gpt-3.5-turbo"]
+  @models [:"gpt-4-1106-preview", :"gpt-4", :"gpt-3.5-turbo-0125"]
   @token_cost %{
     :"gpt-4-1106-preview" => %{completion_tokens: 0.03, prompt_tokens: 0.01},
     :"gpt-4" => %{completion_tokens: 0.06, prompt_tokens: 0.03},
-    :"gpt-3.5-turbo" => %{completion_tokens: 0.002, prompt_tokens: 0.0015}
+    :"gpt-3.5-turbo-0125" => %{completion_tokens: 0.002, prompt_tokens: 0.0015}
   }
 
   @question0 """
