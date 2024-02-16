@@ -35,7 +35,12 @@ defmodule YouCongress.Votings do
   end
 
   def list_random_votings(except_id, limit) do
-    Repo.all(from v in Voting, where: v.id != ^except_id, limit: ^limit)
+    Repo.all(
+      from v in Voting,
+        where: v.id != ^except_id,
+        order_by: fragment("RANDOM()"),
+        limit: ^limit
+    )
   end
 
   @doc """
