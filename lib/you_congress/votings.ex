@@ -148,7 +148,7 @@ defmodule YouCongress.Votings do
          |> Voting.changeset(attrs)
          |> Repo.update() do
       {:ok, voting} ->
-        YouCongress.HallsVotings.link_from_voting!(voting.id)
+        YouCongress.HallsVotings.sync!(voting.id)
         {:ok, voting}
 
       {:error, changeset} ->
