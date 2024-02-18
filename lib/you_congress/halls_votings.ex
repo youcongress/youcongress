@@ -6,8 +6,8 @@ defmodule YouCongress.HallsVotings do
   alias YouCongress.Votings.Voting
   alias YouCongress.Halls
 
-  def link_all_votings!() do
-    Enum.each(Votings.list_votings(), &link_from_voting!/1)
+  def sync!() do
+    Enum.each(Votings.list_votings(), fn voting -> sync!(voting.id) end)
   end
 
   @doc """
@@ -16,8 +16,8 @@ defmodule YouCongress.HallsVotings do
   ## Raises
     - Raises an error if the voting does not exist or if there's an issue updating the voting's halls.
   """
-  @spec link_from_voting!(integer) :: :ok
-  def link_from_voting!(voting_id) do
+  @spec sync!(integer) :: :ok
+  def sync!(voting_id) do
     voting = Votings.get_voting!(voting_id, preload: [:halls])
 
     {:ok, %{tags: tags}} = Halls.Classification.classify(voting.title)
