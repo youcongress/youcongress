@@ -5,6 +5,7 @@ defmodule YouCongress.HallsVotings do
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
   alias YouCongress.Halls
+  alias YouCongress.HallsVotings.HallVoting
 
   def sync!() do
     Enum.each(Votings.list_votings(), fn voting -> sync!(voting.id) end)
@@ -47,5 +48,9 @@ defmodule YouCongress.HallsVotings do
       {:ok, _} -> :ok
       {:error, changeset} -> {:error, changeset}
     end
+  end
+
+  def delete_halls_votings(%Voting{id: voting_id}) do
+    Repo.delete_all(from h in HallVoting, where: h.voting_id == ^voting_id)
   end
 end
