@@ -26,12 +26,50 @@ defmodule YouCongress.Votings do
 
   ## Examples
 
-      iex> list_votings(order_by: [desc: :id])
+      iex> list_votings(order: desc)
       [%Voting{}, ...]
 
   """
-  def list_votings(order_by: order_by) do
-    Repo.all(from v in Voting, order_by: ^order_by)
+  def list_votings(opts) do
+    preload = opts[:preload] || []
+    base_query = from v in Voting, preload: ^preload
+    opts = replace_hall_name_with_ids(opts, opts[:hall_name])
+
+    Enum.reduce(
+      opts,
+      base_query,
+      fn
+        {:order, :desc}, query ->
+          order_by(query, desc: :id)
+
+        {:order, :random}, query ->
+          order_by(query, fragment("RANDOM()"))
+
+        {:ids, ids}, query ->
+          where(query, [voting], voting.id in ^ids)
+
+        _, query ->
+          query
+      end
+    )
+    |> Repo.all()
+  end
+
+  @spec replace_hall_name_with_ids(list, binary | nil) :: list
+  defp replace_hall_name_with_ids(opts, nil), do: opts
+
+  defp replace_hall_name_with_ids(opts, hall_name) do
+    case YouCongress.Halls.get_by_name(hall_name, preload: :votings) do
+      nil ->
+        opts
+
+      hall ->
+        voting_ids = Enum.map(hall.votings, & &1.id)
+
+        opts
+        |> Keyword.delete(:hall_name)
+        |> Keyword.put(:ids, voting_ids)
+    end
   end
 
   def list_random_votings(except_id, limit) do
@@ -68,10 +106,10 @@ defmodule YouCongress.Votings do
 
   ## Examples
 
-      iex> get_voting!(123, include: [:votes])
+      iex> get_voting!(123, preload: [:votes])
       %Voting{}
   """
-  def get_voting!(id, include: tables) do
+  def get_voting!(id, preload: tables) do
     Repo.get!(Voting, id) |> Repo.preload(tables)
   end
 
@@ -106,9 +144,16 @@ defmodule YouCongress.Votings do
 
   """
   def update_voting(%Voting{} = voting, attrs) do
-    voting
-    |> Voting.changeset(attrs)
-    |> Repo.update()
+    case voting
+         |> Voting.changeset(attrs)
+         |> Repo.update() do
+      {:ok, voting} ->
+        YouCongress.HallsVotings.link_from_voting!(voting.id)
+        {:ok, voting}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   @doc """

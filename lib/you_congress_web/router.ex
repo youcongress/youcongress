@@ -55,6 +55,7 @@ defmodule YouCongressWeb.Router do
 
     live "/welcome", WelcomeLive.Index, :index
     live "/home", VotingLive.Index, :index
+    live "/halls/:hall", VotingLive.Index, :index
     live "/v/:slug", VotingLive.Show, :show
 
     live "/authors", AuthorLive.Index, :index
