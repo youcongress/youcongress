@@ -169,6 +169,7 @@ defmodule YouCongress.Votings do
 
   """
   def delete_voting(%Voting{} = voting) do
+    YouCongress.HallsVotings.delete_halls_votings(voting)
     Repo.delete(voting)
   end
 
