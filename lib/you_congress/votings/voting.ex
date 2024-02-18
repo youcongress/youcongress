@@ -6,6 +6,7 @@ defmodule YouCongress.Votings.Voting do
   import Ecto.Changeset
 
   alias YouCongress.Votes.Vote
+  alias YouCongress.Halls.Hall
 
   @max_title_slug_size 70
 
@@ -15,6 +16,14 @@ defmodule YouCongress.Votings.Voting do
     field :slug, :string
 
     has_many :votes, Vote
+
+    many_to_many(
+      :halls,
+      Hall,
+      join_through: "halls_votings",
+      on_replace: :delete
+    )
+
     belongs_to :user, YouCongress.Accounts.User
 
     timestamps()

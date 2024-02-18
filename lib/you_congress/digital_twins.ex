@@ -22,7 +22,7 @@ defmodule YouCongress.DigitalTwins do
 
   """
   def generate_vote(voting_id) do
-    voting = Votings.get_voting!(voting_id, include: [votes: [:author, :answer]])
+    voting = Votings.get_voting!(voting_id, preload: [votes: [:author, :answer]])
     topic = voting.title
     model = :"gpt-4-1106-preview"
     exclude_names = Enum.map(voting.votes, & &1.author.name)
