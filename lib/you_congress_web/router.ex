@@ -37,6 +37,7 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through [:browser, :require_admin_user]
 
+    live "/i", InvitationLive, :index
     live "/v/new", VotingLive.Index, :new
     live "/v/:slug/edit", VotingLive.Show, :edit
     live "/v/:slug/show/edit", VotingLive.Show, :edit
