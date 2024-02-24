@@ -19,9 +19,8 @@ defmodule YouCongressWeb.ErrorHelpers do
         String.replace(acc, "%{#{k}}", to_string(v))
       end)
     end)
-    |> Enum.map(fn {field, messages} ->
+    |> Enum.map_join(", ", fn {field, messages} ->
       "#{field} #{Enum.join(messages, ", ")}"
     end)
-    |> Enum.join(", ")
   end
 end
