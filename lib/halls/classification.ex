@@ -57,7 +57,7 @@ defmodule YouCongress.Halls.Classification do
     )
   end
 
-  defp question0() do
+  defp question0 do
     """
     Classify a text and return a list of tags:
 
