@@ -1,4 +1,8 @@
 defmodule YouCongress.Halls.Hall do
+  @moduledoc """
+  The Hall schema.
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
 

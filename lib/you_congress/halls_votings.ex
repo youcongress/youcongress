@@ -1,4 +1,8 @@
 defmodule YouCongress.HallsVotings do
+  @moduledoc """
+  Relationships between Halls and Votings.
+  """
+
   import Ecto.Query, warn: false
   alias YouCongress.Repo
 
@@ -7,7 +11,7 @@ defmodule YouCongress.HallsVotings do
   alias YouCongress.Halls
   alias YouCongress.HallsVotings.HallVoting
 
-  def sync!() do
+  def sync! do
     Enum.each(Votings.list_votings(), fn voting -> sync!(voting.id) end)
   end
 
