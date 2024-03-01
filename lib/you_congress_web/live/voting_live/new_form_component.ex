@@ -16,7 +16,14 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
         phx-submit="ai-validate"
       >
         <div>
-          <.input field={@form[:title]} type="text" maxlength="150" placeholder="Should we...?" />
+          Create a new question
+          <div class="text-sm text-gray-600 pt-2">It needs to be a yes/no question</div>
+          <.input
+            field={@form[:title]}
+            type="text"
+            maxlength="150"
+            placeholder="Should we build AI smarter than us?"
+          />
           <%= if @suggested_titles != [] do %>
             <div>
               <div class="py-2">Would you like to create one of these votings?</div>
@@ -39,7 +46,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
           <% else %>
             <div>
               <.button class="mt-4" phx-disable-with="Validating with ChatGPT. Please wait.">
-                Send yes/no question
+                Send
               </.button>
             </div>
           <% end %>
