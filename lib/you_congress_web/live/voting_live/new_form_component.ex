@@ -26,7 +26,13 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
           />
           <%= if @suggested_titles != [] do %>
             <div>
-              <div class="py-2">Would you like to create one of these votings?</div>
+              <div class="py-2">
+                <div>Our AI proposes you one of these new questions based on your prompt.</div>
+                <div>This guarantees that it's an understandable yes/no question in English.</div>
+                <div class="pt-2">
+                  Choose one of these (or click <button type="submit" class="underline">3 more</button>):
+                </div>
+              </div>
               <%= for suggested_title <- @suggested_titles do %>
                 <div class="py-2">
                   <button
@@ -39,9 +45,6 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
                   </button>
                 </div>
               <% end %>
-              <.link class="py-2" phx-click="delete-suggested-titles" phx-target={@myself}>
-                Back
-              </.link>
             </div>
           <% else %>
             <div>
@@ -111,31 +114,6 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
           {:noreply, socket}
       end
     end
-  end
-
-  def handle_event("save", %{"suggested_title" => suggested_title}, socket) do
-    %{assigns: %{current_user: current_user}} = socket
-
-    case Votings.create_voting(%{title: suggested_title, user_id: current_user.id}) do
-      {:ok, voting} ->
-        %{voting_id: voting.id}
-        |> YouCongress.Workers.OpinatorWorker.new()
-        |> Oban.insert()
-
-        YouCongress.Track.event("Create Voting", current_user)
-
-        {:noreply,
-         socket
-         |> put_flash(:info, "Voting created successfully")
-         |> redirect(to: ~p"/v/#{voting.slug}")}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign_form(socket, changeset)}
-    end
-  end
-
-  def handle_event("delete-suggested-titles", _, socket) do
-    {:noreply, assign(socket, suggested_titles: [])}
   end
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
