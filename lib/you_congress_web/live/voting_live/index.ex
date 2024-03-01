@@ -4,11 +4,17 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
 
+  @default_hall "ai"
+
   @impl true
   def mount(params, session, socket) do
     votings =
-      if params["hall"] do
-        Votings.list_votings(hall_name: params["hall"], order: :desc, preload: [:halls])
+      if params["hall"] != "all" do
+        Votings.list_votings(
+          hall_name: params["hall"] || @default_hall,
+          order: :desc,
+          preload: [:halls]
+        )
       else
         Votings.list_votings(order: :desc, preload: [:halls])
       end
@@ -17,7 +23,7 @@ defmodule YouCongressWeb.VotingLive.Index do
       socket
       |> assign_current_user(session["user_token"])
       |> assign_counters()
-      |> assign(votings: votings, hall_name: params["hall"])
+      |> assign(votings: votings, hall_name: params["hall"] || @default_hall)
 
     if connected?(socket) do
       %{assigns: %{current_user: current_user}} = socket
