@@ -6,7 +6,7 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
   alias YouCongress.DigitalTwins.OpenAIModel
 
   @num_gen_opinions_in_prod 15
-  @num_gen_opinions_in_dev 5
+  @num_gen_opinions_in_dev 2
   @num_gen_opinions_in_test 2
 
   @spec generate_list(binary, OpenAIModel.t(), [binary]) ::
