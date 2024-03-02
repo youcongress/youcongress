@@ -37,7 +37,15 @@ defmodule YouCongress.OpinatorWorker.GeneratingLeftServer do
 
         voting ->
           generating_left = voting.generating_left - num_to_decrese
-          Votings.update_voting(voting, %{generating_left: generating_left})
+
+          args =
+            if generating_left == 0 do
+              %{generating_total: 0, generating_left: generating_left}
+            else
+              %{generating_left: generating_left}
+            end
+
+          Votings.update_voting(voting, args)
       end
     end)
 

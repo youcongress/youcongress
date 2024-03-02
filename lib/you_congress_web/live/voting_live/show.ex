@@ -48,7 +48,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   def handle_event("generate-votes", %{"voting_id" => voting_id}, socket) do
     voting_id = String.to_integer(voting_id)
 
-    %{voting_id: voting_id, include_chatgpt_opinion: false}
+    %{voting_id: voting_id}
     |> YouCongress.Workers.PublicFiguresWorker.new()
     |> Oban.insert()
 
@@ -268,9 +268,6 @@ defmodule YouCongressWeb.VotingLive.Show do
     votes_without_opinion =
       Votes.list_votes_without_opinion(voting_id, include: [:author, :answer])
 
-    votes_generated = num_gen_opinions() - voting.generating_left
-    percentage = round(votes_generated * 100 / num_gen_opinions())
-
     votes_from_delegates = get_votes_from_delegates(votes_with_opinion, current_user)
 
     socket
@@ -280,7 +277,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       votes_from_non_delegates: votes_with_opinion -- votes_from_delegates,
       votes_without_opinion: votes_without_opinion,
       current_user_vote: get_current_user_vote(voting, current_user),
-      percentage: percentage
+      percentage: get_percentage(voting)
     )
     |> assign_main_variables(voting, current_user)
   end
@@ -291,6 +288,13 @@ defmodule YouCongressWeb.VotingLive.Show do
     |> assign_counters()
     |> assign_vote_frequencies(voting)
     |> assign_current_user_vote(voting, current_user)
+  end
+
+  defp get_percentage(%Voting{generating_total: 0}), do: 100
+
+  defp get_percentage(voting) do
+    votes_generated = voting.generating_total - voting.generating_left
+    round(votes_generated * 100 / voting.generating_total)
   end
 
   defp assign_current_user_vote(socket, voting, current_user) do
@@ -378,8 +382,4 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp response_color("Disagree"), do: "red"
   defp response_color("Strongly disagree"), do: "red"
   defp response_color(_), do: "gray"
-
-  defp num_gen_opinions do
-    YouCongress.DigitalTwins.PublicFigures.num_gen_opinions()
-  end
 end

@@ -12,6 +12,7 @@ defmodule YouCongress.Votings.Voting do
 
   schema "votings" do
     field :title, :string
+    field :generating_total, :integer, default: 0
     field :generating_left, :integer, default: 0
     field :slug, :string
 
@@ -43,7 +44,7 @@ defmodule YouCongress.Votings.Voting do
   @doc false
   def changeset(voting, attrs) do
     voting
-    |> cast(attrs, [:title, :generating_left, :user_id, :slug])
+    |> cast(attrs, [:title, :generating_left, :generating_total, :user_id, :slug])
     |> validate_required([:title])
     |> unique_constraint(:title)
     |> generate_slug_if_empty()

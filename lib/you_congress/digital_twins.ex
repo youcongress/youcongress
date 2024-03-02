@@ -11,7 +11,7 @@ defmodule YouCongress.DigitalTwins do
 
   require Logger
 
-  @spec generate_vote(number, binary) :: {:ok, Vote.t()} | {:error, String.t()}
+  @spec generate_vote(number, binary, binary) :: {:ok, Vote.t()} | {:error, String.t()}
   @doc """
   Generates votes for a voting.
 
@@ -21,11 +21,10 @@ defmodule YouCongress.DigitalTwins do
       [%Vote{}, ...]
 
   """
-  def generate_vote(voting_id, name) do
+  def generate_vote(voting_id, name, next_response) do
     voting = Votings.get_voting!(voting_id, preload: [votes: [:author, :answer]])
     topic = voting.title
     model = :"gpt-3.5-turbo-0125"
-    next_response = YouCongress.DigitalTwins.ResponseVariety.next_response(voting.votes)
 
     case AI.generate_opinion(topic, model, next_response, name) do
       {:ok, %{opinion: vote}} ->
