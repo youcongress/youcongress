@@ -48,11 +48,14 @@ defmodule YouCongress.DigitalTwins do
   end
 
   def save(opinion, answer, voting_id) do
+    name = standarize_chat_gpt(opinion["name"])
+
     author_data = %{
-      "name" => opinion["name"],
+      "name" => name,
       "bio" => opinion["bio"],
-      "wikipedia_url" => url_or_nil(opinion["wikipedia_url"]),
-      "twitter_username" => opinion["twitter_username"],
+      "wikipedia_url" =>
+        opinion["wikipedia_url"] |> url_or_nil() |> replace_wp_url_if_chatgpt_author(name),
+      "twitter_username" => replace_twitter_if_chatgpt_author(opinion["twitter_username"], name),
       "country" => opinion["country"],
       "answer_id" => answer.id
     }
@@ -68,6 +71,18 @@ defmodule YouCongress.DigitalTwins do
       twin: true
     })
   end
+
+  defp standarize_chat_gpt("GPT-3"), do: "ChatGPT"
+  defp standarize_chat_gpt("GPT-4"), do: "ChatGPT"
+  defp standarize_chat_gpt("GPT-3.5"), do: "ChatGPT"
+  defp standarize_chat_gpt("GPT-3.5-turbo"), do: "ChatGPT"
+  defp standarize_chat_gpt(name), do: name
+
+  defp replace_wp_url_if_chatgpt_author(_, "ChatGPT"), do: "https://en.wikipedia.org/wiki/ChatGPT"
+  defp replace_wp_url_if_chatgpt_author(url, _), do: url
+
+  defp replace_twitter_if_chatgpt_author(_, "ChatGPT"), do: nil
+  defp replace_twitter_if_chatgpt_author(username, _), do: username
 
   @spec url_or_nil(binary) :: binary | nil
   defp url_or_nil("http" <> _ = url), do: url
