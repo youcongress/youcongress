@@ -6,34 +6,43 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
   alias YouCongress.DigitalTwins.OpenAIModel
 
   @num_gen_opinions_in_prod 15
-  @num_gen_opinions_in_dev 2
+  @num_gen_opinions_in_dev 3
   @num_gen_opinions_in_test 2
 
   @spec generate_list(binary, OpenAIModel.t(), [binary]) ::
           {:ok, map} | {:error, binary}
-  @spec generate_list(binary(), :"gpt-3.5-turbo-0125" | :"gpt-4" | :"gpt-4-1106-preview") ::
+  @spec generate_list(
+          binary(),
+          :"gpt-3.5-turbo-0125" | :"gpt-4" | :"gpt-4-1106-preview",
+          boolean,
+          list | nil
+        ) ::
           {:error, binary()} | {:ok, %{cost: float(), names: any()}}
-  def generate_list(topic, model, exclude_names \\ []) do
-    question = get_question(topic, exclude_names)
+  def generate_list(topic, model, include_chatgpt_opinion, exclude_names \\ []) do
+    num = num_gen_opinions()
+    num = if include_chatgpt_opinion, do: num - 1, else: num
+    question = get_question(topic, num, exclude_names)
 
     with {:ok, data} <- ask_gpt(question, model),
          content <- get_content(data),
          {:ok, decoded} <- Jason.decode(content),
          true <- decoded["names"] != nil,
          cost <- OpenAIModel.get_cost(data, model) do
-      {:ok, %{names: decoded["names"], cost: cost}}
+      names = decoded["names"]
+      names = if include_chatgpt_opinion, do: ["ChatGPT" | names], else: names
+      {:ok, %{names: names, cost: cost}}
     else
       {:error, error} -> {:error, error}
     end
   end
 
-  @spec get_question(binary, [binary]) :: binary
-  defp get_question(topic, exclude_names) do
+  @spec get_question(binary, number, [binary]) :: binary
+  defp get_question(topic, num_opinions, exclude_names) do
     exclude_names = Enum.join(exclude_names, ",")
 
     """
     User
-    Tell me the name of #{num_gen_opinions()} public figures in json who have publicly shared their views on the topic "#{topic}".
+    Tell me the name of #{num_opinions} public figures in json who have publicly shared their views on the topic "#{topic}".
     Example: { "names": ["Bill Gates, "Greta Thunberg"]}
 
     Exclude opinions from: #{exclude_names}
