@@ -9,26 +9,16 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
   @num_gen_opinions_in_dev 2
   @num_gen_opinions_in_test 2
 
-  @spec generate_list(
-          binary(),
-          OpenAIModel.t(),
-          boolean,
-          list | nil
-        ) ::
-          {:error, binary()} | {:ok, %{cost: float(), names: any()}}
-  def generate_list(topic, model, include_chatgpt_opinion, exclude_names \\ []) do
-    num = num_gen_opinions()
-    num = if include_chatgpt_opinion, do: num - 1, else: num
-    question = get_question(topic, num, exclude_names)
+  @spec generate_list(binary, OpenAIModel.t(), list | nil) ::
+          {:error, binary} | {:ok, %{cost: float, votes: list}}
+  def generate_list(topic, model, exclude_names \\ []) do
+    question = get_question(topic, num_gen_opinions(), exclude_names)
 
     with {:ok, data} <- ask_gpt(question, model),
          content <- OpenAIModel.get_content(data),
          {:ok, decoded} <- Jason.decode(content),
-         true <- decoded["names"] != nil,
          cost <- OpenAIModel.get_cost(data, model) do
-      names = decoded["names"]
-      names = if include_chatgpt_opinion, do: ["ChatGPT" | names], else: names
-      {:ok, %{names: names, cost: cost}}
+      {:ok, %{votes: decoded["votes"], cost: cost}}
     else
       {:error, error} -> {:error, error}
     end
@@ -39,11 +29,28 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
     exclude_names = Enum.join(exclude_names, ",")
 
     """
-    User
-    Tell me the name of #{num_opinions} public figures in json who have publicly shared their views on the topic "#{topic}".
-    Example: { "names": ["Bill Gates, "Greta Thunberg"]}
+    Topic: Climate Change
 
-    Exclude opinions from: #{exclude_names}
+    Tell me the name of 2 public figures or experts in json who have publicly shared their views on the topic "#{topic}".
+    Also, rate how much they agree from: "Strongly agree", "Agree", "Abstain", "Disagree", "Strongly disagree".
+
+    Example: { "votes": [["Bill Gates", "Strongly agree"], ["Greta Thunberg", "Disagree"]]}
+
+    Topic: Is Elixir better than Ruby for web development?
+
+    Tell me the name of 2 public figures or experts in json who have publicly shared their views on the topic "#{topic}".
+    Also, rate how much they agree from: "Strongly agree", "Agree", "Abstain", "Disagree", "Strongly disagree".
+
+    Example: { "votes": [["José Valim", "Strongly agree"], ["David Heinemeier Hansson", "Strongly Disagree"]]}
+
+    Topic: #{topic}
+
+    Tell me the name of #{num_opinions} public figures or experts in json who have publicly shared their views on the topic "#{topic}".
+    Also, rate how much they agree from: "Strongly agree", "Agree", "Abstain", "Disagree", "Strongly disagree".
+    Try to include diverse votes (e.g. not only "Strongly agree").
+    It should be plausible that the public figure has that opinion about the topic (E.g. an actor probably won't have an opinion on programming languages, but well-known programmers might).
+
+    Exclude these public figures: #{exclude_names}
     """
   end
 

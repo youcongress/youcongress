@@ -3,7 +3,7 @@ defmodule YouCongress.Workers.OpinatorWorker do
   Generates opinions and votes for a voting.
   """
 
-  use Oban.Worker
+  use Oban.Worker, max_attempts: 3
 
   require Logger
 
@@ -14,8 +14,16 @@ defmodule YouCongress.Workers.OpinatorWorker do
 
   @impl Oban.Worker
   @spec perform(Oban.Job.t()) :: :ok
-  def perform(%Oban.Job{args: %{"voting_id" => voting_id, "name" => name}}) do
-    case DigitalTwins.generate_vote(voting_id, name) do
+
+  def perform(%Oban.Job{attempt: attempt, args: %{"voting_id" => voting_id}}) when attempt == 3 do
+    Logger.info("Failed to generate vote. Max attempts reached.")
+    GeneratingLeftServer.decrease_generating_left(voting_id)
+
+    {:cancel, "Max attempts reached."}
+  end
+
+  def perform(%Oban.Job{args: %{"voting_id" => voting_id, "name" => name, "response" => response}}) do
+    case DigitalTwins.generate_vote(voting_id, name, response) do
       {:ok, vote} ->
         refresh_delegated_votes(vote, voting_id)
         GeneratingLeftServer.decrease_generating_left(voting_id)

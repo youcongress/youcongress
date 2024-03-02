@@ -121,7 +121,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
 
     case Votings.create_voting(%{title: suggested_title, user_id: current_user.id}) do
       {:ok, voting} ->
-        %{voting_id: voting.id, include_chatgpt_opinion: true}
+        %{voting_id: voting.id}
         |> YouCongress.Workers.PublicFiguresWorker.new()
         |> Oban.insert()
 
