@@ -21,7 +21,9 @@ defmodule YouCongress.Application do
       # Start the Endpoint (http/https)
       YouCongressWeb.Endpoint,
       # Oban
-      {Oban, Application.fetch_env!(:you_congress, Oban)}
+      {Oban, Application.fetch_env!(:you_congress, Oban)},
+      #  Server that updates Voting.generating_left
+      {YouCongress.OpinatorWorker.GeneratingLeftServer, []}
       # Start a worker by calling: YouCongress.Worker.start_link(arg)
       # {YouCongress.Worker, arg}
     ]

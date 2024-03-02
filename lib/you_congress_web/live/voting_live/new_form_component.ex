@@ -116,6 +116,27 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
     end
   end
 
+  def handle_event("save", %{"suggested_title" => suggested_title}, socket) do
+    %{assigns: %{current_user: current_user}} = socket
+
+    case Votings.create_voting(%{title: suggested_title, user_id: current_user.id}) do
+      {:ok, voting} ->
+        %{voting_id: voting.id}
+        |> YouCongress.Workers.PublicFiguresWorker.new()
+        |> Oban.insert()
+
+        YouCongress.Track.event("Create Voting", current_user)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Voting created successfully")
+         |> redirect(to: ~p"/v/#{voting.slug}")}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign_form(socket, changeset)}
+    end
+  end
+
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     assign(socket, :form, to_form(changeset))
   end

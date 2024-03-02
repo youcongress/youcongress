@@ -99,6 +99,10 @@ defmodule YouCongress.Votings do
 
   def get_voting!(id), do: Repo.get!(Voting, id)
 
+  def get_voting(id) do
+    Repo.get(Voting, id)
+  end
+
   @doc """
   Gets a single voting with a table preloaded such as votes and authors.
 
