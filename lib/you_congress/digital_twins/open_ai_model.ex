@@ -11,6 +11,12 @@ defmodule YouCongress.DigitalTwins.OpenAIModel do
     :"gpt-3.5-turbo-0125" => %{completion_tokens: 0.002, prompt_tokens: 0.0015}
   }
 
+  @spec get_content(map) :: [binary]
+  def get_content(data) do
+    hd(data.choices)["message"]["content"]
+    |> String.split("\n\n")
+  end
+
   @spec get_cost(map, __MODULE__.t()) :: number
   def get_cost(data, model) do
     completion = data.usage["completion_tokens"] * @token_cost[model][:completion_tokens] / 1000

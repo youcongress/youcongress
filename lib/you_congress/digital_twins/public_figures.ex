@@ -24,7 +24,7 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
     question = get_question(topic, num, exclude_names)
 
     with {:ok, data} <- ask_gpt(question, model),
-         content <- get_content(data),
+         content <- OpenAIModel.get_content(data),
          {:ok, decoded} <- Jason.decode(content),
          true <- decoded["names"] != nil,
          cost <- OpenAIModel.get_cost(data, model) do
@@ -60,12 +60,6 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
         %{role: "user", content: question}
       ]
     )
-  end
-
-  @spec get_content(map) :: [binary]
-  defp get_content(data) do
-    hd(data.choices)["message"]["content"]
-    |> String.split("\n\n")
   end
 
   def num_gen_opinions do

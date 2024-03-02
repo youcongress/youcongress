@@ -50,7 +50,7 @@ defmodule YouCongress.DigitalTwins.AI do
     question = get_question(topic, next_response, name)
 
     with {:ok, data} <- ask_gpt(question, model),
-         content <- get_content(data),
+         content <- OpenAIModel.get_content(data),
          {:ok, opinion} <- Jason.decode(content),
          cost <- OpenAIModel.get_cost(data, model) do
       {:ok, %{opinion: opinion, cost: cost}}
@@ -83,11 +83,5 @@ defmodule YouCongress.DigitalTwins.AI do
         %{role: "user", content: question}
       ]
     )
-  end
-
-  @spec get_content(map) :: [binary]
-  defp get_content(data) do
-    hd(data.choices)["message"]["content"]
-    |> String.split("\n\n")
   end
 end
