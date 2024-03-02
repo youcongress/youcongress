@@ -1,4 +1,8 @@
 defmodule YouCongress.DigitalTwins.PublicFigures do
+  @moduledoc """
+  Generates a list of public figures who have publicly shared their views on a topic.
+  """
+
   alias YouCongress.DigitalTwins.OpenAIModel
 
   @num_gen_opinions_in_prod 15

@@ -1,4 +1,7 @@
 defmodule YouCongress.OpinatorWorker.GeneratingLeftServer do
+  @moduledoc """
+  Decreases the number of opinions left each second.
+  """
   use GenServer
 
   @name :generating_left_server

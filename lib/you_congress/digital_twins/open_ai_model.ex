@@ -1,4 +1,8 @@
 defmodule YouCongress.DigitalTwins.OpenAIModel do
+  @moduledoc """
+  Provides the cost of using OpenAI models.
+  """
+
   @type t :: :"gpt-3.5-turbo-0125" | :"gpt-4" | :"gpt-4-1106-preview"
 
   @token_cost %{
