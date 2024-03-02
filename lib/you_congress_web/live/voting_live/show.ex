@@ -48,7 +48,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   def handle_event("generate-votes", %{"voting_id" => voting_id}, socket) do
     voting_id = String.to_integer(voting_id)
 
-    %{voting_id: voting_id}
+    %{voting_id: voting_id, include_chatgpt_opinion: false}
     |> YouCongress.Workers.PublicFiguresWorker.new()
     |> Oban.insert()
 

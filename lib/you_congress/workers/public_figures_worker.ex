@@ -12,15 +12,21 @@ defmodule YouCongress.Workers.PublicFiguresWorker do
 
   @impl Oban.Worker
   @spec perform(Oban.Job.t()) :: :ok
-  def perform(%Oban.Job{args: %{"voting_id" => voting_id}}) do
+  def perform(%Oban.Job{
+        args: %{"voting_id" => voting_id, "include_chatgpt_opinion" => include_chatgpt_opinion}
+      }) do
     voting = Votings.get_voting!(voting_id, preload: [votes: :author])
-
     exclude_names = Enum.map(voting.votes, & &1.author.name)
 
     with {:ok, _} <-
            Votings.update_voting(voting, %{generating_left: PublicFigures.num_gen_opinions()}),
          {:ok, %{names: names}} <-
-           PublicFigures.generate_list(voting.title, :"gpt-3.5-turbo-0125", exclude_names) do
+           PublicFigures.generate_list(
+             voting.title,
+             :"gpt-3.5-turbo-0125",
+             include_chatgpt_opinion,
+             exclude_names
+           ) do
       for name <- names do
         %{voting_id: voting_id, name: name}
         |> YouCongress.Workers.OpinatorWorker.new()
