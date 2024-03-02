@@ -3,14 +3,7 @@ defmodule YouCongress.DigitalTwins.AI do
   Generate opinions via OpenAI's API.
   """
 
-  @type model_type :: :"gpt-3.5-turbo-0125" | :"gpt-4" | :"gpt-4-1106-preview"
-
-  @models [:"gpt-4-1106-preview", :"gpt-4", :"gpt-3.5-turbo-0125"]
-  @token_cost %{
-    :"gpt-4-1106-preview" => %{completion_tokens: 0.03, prompt_tokens: 0.01},
-    :"gpt-4" => %{completion_tokens: 0.06, prompt_tokens: 0.03},
-    :"gpt-3.5-turbo-0125" => %{completion_tokens: 0.002, prompt_tokens: 0.0015}
-  }
+  alias YouCongress.DigitalTwins.OpenAIModel
 
   @question0 """
   Json data:
@@ -51,15 +44,15 @@ defmodule YouCongress.DigitalTwins.AI do
   }
   """
 
-  @spec generate_opinion(binary, model_type, binary | nil, [binary]) ::
+  @spec generate_opinion(binary, OpenAIModel.t(), binary | nil, [binary]) ::
           {:ok, map} | {:error, binary}
-  def generate_opinion(topic, model, next_response, exclude_names \\ []) when model in @models do
-    question = get_question(topic, next_response, exclude_names)
+  def generate_opinion(topic, model, next_response, name) do
+    question = get_question(topic, next_response, name)
 
     with {:ok, data} <- ask_gpt(question, model),
          content <- get_content(data),
          {:ok, opinion} <- Jason.decode(content),
-         cost <- get_cost(data, model) do
+         cost <- OpenAIModel.get_cost(data, model) do
       {:ok, %{opinion: opinion, cost: cost}}
     else
       {:error, error} -> {:error, error}
@@ -67,19 +60,15 @@ defmodule YouCongress.DigitalTwins.AI do
   end
 
   @spec get_question(binary, binary | nil, [binary]) :: binary
-  defp get_question(topic, response, exclude_names) do
-    exclude_names = Enum.join(exclude_names, ",")
-
+  defp get_question(topic, response, name) do
     """
     Topic: #{topic}
 
-    Write one more opinion in first person from a public figure who have publicly shared their views on the topic#{if response, do: " and #{response}"}.
-
-    Exclude opinions from: #{exclude_names}
+    Write one more opinion in first person from the public figure "#{name}" who have publicly shared their views on the topic#{if response, do: " and #{response}"}.
     """
   end
 
-  @spec ask_gpt(binary, model_type) ::
+  @spec ask_gpt(binary, OpenAIModel.t()) ::
           {:ok, map} | {:error, binary}
   defp ask_gpt(question, model) do
     OpenAI.chat_completion(
@@ -100,12 +89,5 @@ defmodule YouCongress.DigitalTwins.AI do
   defp get_content(data) do
     hd(data.choices)["message"]["content"]
     |> String.split("\n\n")
-  end
-
-  @spec get_cost(map, model_type) :: number
-  defp get_cost(data, model) do
-    completion = data.usage["completion_tokens"] * @token_cost[model][:completion_tokens] / 1000
-    prompt = data.usage["prompt_tokens"] * @token_cost[model][:prompt_tokens] / 1000
-    completion + prompt
   end
 end

@@ -47,16 +47,9 @@ defmodule YouCongressWeb.VotingLive.Show do
   @spec handle_event(binary, map, Socket.t()) :: {:noreply, Socket.t()}
   def handle_event("generate-votes", %{"voting_id" => voting_id}, socket) do
     voting_id = String.to_integer(voting_id)
-    voting = Votings.get_voting!(voting_id)
-
-    {:ok, _voting} =
-      Votings.update_voting(voting, %{
-        generating_opinions: true,
-        generating_left: num_gen_opinions()
-      })
 
     %{voting_id: voting_id}
-    |> YouCongress.Workers.OpinatorWorker.new()
+    |> YouCongress.Workers.PublicFiguresWorker.new()
     |> Oban.insert()
 
     YouCongress.Track.event("Generate AI opinions", socket.assigns.current_user)
@@ -273,22 +266,22 @@ defmodule YouCongressWeb.VotingLive.Show do
   @spec load_voting_and_votes(Socket.t(), number) :: Socket.t()
   defp load_voting_and_votes(socket, voting_id) do
     voting = Votings.get_voting!(voting_id)
-    votes = Votes.list_votes_with_opinion(voting_id, include: [:author, :answer])
+    votes_with_opinion = Votes.list_votes_with_opinion(voting_id, include: [:author, :answer])
     %{assigns: %{current_user: current_user}} = socket
+
+    votes_without_opinion =
+      Votes.list_votes_without_opinion(voting_id, include: [:author, :answer])
 
     votes_generated = num_gen_opinions() - voting.generating_left
     percentage = round(votes_generated * 100 / num_gen_opinions())
 
-    votes_from_delegates = get_votes_from_delegates(votes, current_user)
-
-    votes_without_opinion =
-      Votes.list_votes_without_opinion(voting_id, include: [:author, :answer])
+    votes_from_delegates = get_votes_from_delegates(votes_with_opinion, current_user)
 
     socket
     |> assign(
       voting: voting,
       votes_from_delegates: votes_from_delegates,
-      votes_from_non_delegates: votes -- votes_from_delegates,
+      votes_from_non_delegates: votes_with_opinion -- votes_from_delegates,
       votes_without_opinion: votes_without_opinion,
       current_user_vote: get_current_user_vote(voting, current_user),
       percentage: percentage
@@ -391,6 +384,6 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp response_color(_), do: "gray"
 
   defp num_gen_opinions do
-    YouCongress.Workers.OpinatorWorker.num_gen_opinions()
+    YouCongress.DigitalTwins.PublicFigures.num_gen_opinions()
   end
 end
