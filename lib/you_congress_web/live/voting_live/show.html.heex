@@ -1,4 +1,4 @@
-<.header class="pb-5">
+<.header>
   <:actions>
     <%= if @voting.generating_left == 0 do %>
       <%= if YouCongress.Accounts.Permissions.can_generate_ai_votes?(@current_user) do %>
@@ -20,68 +20,9 @@
   <%= @voting.title %>
 </h1>
 
-<div class="inline-flex mb-8">
-  <div class="mt-1">
-    Vote publicly:
-  </div>
-  <div class="inline-flex cursor-pointer pl-1">
-    <span title="Agree">
-      <svg
-        class={agree_icon_mt_css(response(@current_user_vote))}
-        phx-click="vote"
-        phx-value-icon="tick"
-        xmlns="http://www.w3.org/2000/svg"
-        height={agree_icon_size(response(@current_user_vote))}
-        viewBox="0 -960 960 960"
-        width={agree_icon_size(response(@current_user_vote))}
-      >
-        <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z" />
-      </svg>
-    </span>
-    <span title="Disagree">
-      <svg
-        class={disagree_icon_mt_css(response(@current_user_vote))}
-        phx-click="vote"
-        phx-value-icon="x"
-        xmlns="http://www.w3.org/2000/svg"
-        height={disagree_icon_size(response(@current_user_vote))}
-        viewBox="0 -960 960 960"
-        width={disagree_icon_size(response(@current_user_vote))}
-      >
-        <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
-      </svg>
-    </span>
-  </div>
-  <div
-    class={"mt-1 ml-1 cursor-pointer#{if response(@current_user_vote) == "Abstain", do: " text-xl"}"}
-    phx-click="vote"
-    phx-value-icon="abstain"
-    title="Abstain"
-  >
-    🤷‍♂️
-  </div>
-  <div
-    class={"mt-1 ml-1 cursor-pointer#{if response(@current_user_vote) == "N/A", do: " text-xl"}"}
-    phx-click="vote"
-    phx-value-icon="no-comment"
-    title="N/A"
-  >
-    🤐
-  </div>
-  <%= if @current_user_vote && !@current_user_vote.direct do %>
-    <div class="mt-1 ml-2 text-sm text-gray-600">
-      via delegates
-    </div>
-  <% end %>
-  <%= if @current_user_vote do %>
-    <div class="mt-1 ml-4 text-sm cursor-pointer" phx-click="toggle-results">
-      <%= if @show_results, do: "Hide", else: "Show" %> results
-    </div>
-  <% end %>
-</div>
-<%= if @show_results do %>
-  <div class="mb-12">
-    <div class="space-y-4">
+<%= if(@votes_from_delegates != [] || @votes_from_non_delegates != []) do %>
+  <div class="mt-4 mb-4">
+    <div class="space-y-1">
       <%= for response <- Answers.basic_responses() do %>
         <% {votes, percentage} = @vote_frequencies[response] || {0, 0} %>
         <div class="mb-2">
@@ -206,16 +147,18 @@
   </div>
 <% end %>
 
-<div class="text-sm text-gray-600 pt-8 pb-4 border-b border-gray-200">More votings</div>
-<table>
-  <%= for random_voting <- @random_votings do %>
-    <tr>
-      <td class="py-4 border-b border-gray-200">
-        <a href={~p"/v/#{random_voting.slug}"}><%= random_voting.title %></a>
-      </td>
-    </tr>
-  <% end %>
-</table>
+<%= if(@votes_from_delegates != [] || @votes_from_non_delegates != []) do %>
+  <div class="text-sm text-gray-600 pt-8 pb-4 border-b border-gray-200">More votings</div>
+  <table>
+    <%= for random_voting <- @random_votings do %>
+      <tr>
+        <td class="py-4 border-b border-gray-200">
+          <a href={~p"/v/#{random_voting.slug}"}><%= random_voting.title %></a>
+        </td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
 
 <.back navigate={~p"/"}>Back</.back>
 

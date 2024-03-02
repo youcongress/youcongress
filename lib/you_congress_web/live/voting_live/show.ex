@@ -32,7 +32,7 @@ defmodule YouCongressWeb.VotingLive.Show do
     socket =
       socket
       |> assign(:page_title, page_title(socket.assigns.live_action))
-      |> assign(show_results: false, reload: false)
+      |> assign(reload: false)
       |> load_voting_and_votes(voting.id)
       |> load_random_votings(voting.id)
 
@@ -57,10 +57,6 @@ defmodule YouCongressWeb.VotingLive.Show do
     Process.send_after(self(), :reload, 1_000)
 
     {:noreply, clear_flash(socket)}
-  end
-
-  def handle_event("toggle-results", _, socket) do
-    {:noreply, assign(socket, :show_results, not socket.assigns.show_results)}
   end
 
   def handle_event("vote", %{"icon" => icon}, socket) do
