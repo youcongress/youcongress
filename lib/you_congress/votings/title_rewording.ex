@@ -28,7 +28,7 @@ defmodule YouCongress.Votings.TitleRewording do
   }
   """
 
-  @spec generate_rewordings(binary, atom) :: {:ok, list, number} | {:error, binary}
+  @spec generate_rewordings(binary, OpenAIModel.t()) :: {:ok, list, number} | {:error, binary}
   def generate_rewordings(prompt, model) do
     with {:ok, data} <- ask_gpt("Prompt: #{prompt}", model),
          content <- OpenAIModel.get_content(data),
@@ -40,8 +40,7 @@ defmodule YouCongress.Votings.TitleRewording do
     end
   end
 
-  @spec ask_gpt(binary, atom) ::
-          {:ok, map} | {:error, binary}
+  @spec ask_gpt(binary, OpenAIModel.t()) :: {:ok, map} | {:error, binary}
   defp ask_gpt(question, model) do
     OpenAI.chat_completion(
       model: model,

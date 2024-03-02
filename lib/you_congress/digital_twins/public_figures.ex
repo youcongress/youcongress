@@ -9,11 +9,9 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
   @num_gen_opinions_in_dev 2
   @num_gen_opinions_in_test 2
 
-  @spec generate_list(binary, OpenAIModel.t(), [binary]) ::
-          {:ok, map} | {:error, binary}
   @spec generate_list(
           binary(),
-          :"gpt-3.5-turbo-0125" | :"gpt-4" | :"gpt-4-1106-preview",
+          OpenAIModel.t(),
           boolean,
           list | nil
         ) ::
@@ -49,8 +47,7 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
     """
   end
 
-  @spec ask_gpt(binary, OpenAIModel.t()) ::
-          {:ok, map} | {:error, binary}
+  @spec ask_gpt(binary, OpenAIModel.t()) :: {:ok, map} | {:error, binary}
   defp ask_gpt(question, model) do
     OpenAI.chat_completion(
       model: model,
