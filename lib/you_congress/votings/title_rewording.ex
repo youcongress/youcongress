@@ -3,14 +3,7 @@ defmodule YouCongress.Votings.TitleRewording do
   Generate opinions via OpenAI's API.
   """
 
-  @type model_type :: :"gpt-3.5-turbo" | :"gpt-4" | :"gpt-4-1106-preview"
-
-  @models [:"gpt-4-1106-preview", :"gpt-4", :"gpt-3.5-turbo"]
-  @token_cost %{
-    :"gpt-4-1106-preview" => %{completion_tokens: 0.03, prompt_tokens: 0.01},
-    :"gpt-4" => %{completion_tokens: 0.06, prompt_tokens: 0.03},
-    :"gpt-3.5-turbo" => %{completion_tokens: 0.002, prompt_tokens: 0.0015}
-  }
+  alias YouCongress.DigitalTwins.OpenAIModel
 
   @question """
   Generate three questions from the prompt so:
@@ -35,19 +28,19 @@ defmodule YouCongress.Votings.TitleRewording do
   }
   """
 
-  @spec generate_rewordings(binary, model_type) :: {:ok, list, number} | {:error, binary}
-  def generate_rewordings(prompt, model) when model in @models do
+  @spec generate_rewordings(binary, atom) :: {:ok, list, number} | {:error, binary}
+  def generate_rewordings(prompt, model) do
     with {:ok, data} <- ask_gpt("Prompt: #{prompt}", model),
-         content <- get_content(data),
+         content <- OpenAIModel.get_content(data),
          {:ok, %{"questions" => votings}} <- Jason.decode(content),
-         cost <- get_cost(data, model) do
+         cost <- OpenAIModel.get_cost(data, model) do
       {:ok, votings, cost}
     else
       {:error, error} -> {:error, error}
     end
   end
 
-  @spec ask_gpt(binary, model_type) ::
+  @spec ask_gpt(binary, atom) ::
           {:ok, map} | {:error, binary}
   defp ask_gpt(question, model) do
     OpenAI.chat_completion(
@@ -60,18 +53,5 @@ defmodule YouCongress.Votings.TitleRewording do
         %{role: "user", content: question}
       ]
     )
-  end
-
-  @spec get_content(map) :: [binary]
-  defp get_content(data) do
-    hd(data.choices)["message"]["content"]
-    |> String.split("\n\n")
-  end
-
-  @spec get_cost(map, model_type) :: number
-  defp get_cost(data, model) do
-    completion = data.usage["completion_tokens"] * @token_cost[model][:completion_tokens] / 1000
-    prompt = data.usage["prompt_tokens"] * @token_cost[model][:prompt_tokens] / 1000
-    completion + prompt
   end
 end
