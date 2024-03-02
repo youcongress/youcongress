@@ -13,7 +13,7 @@ defmodule YouCongress.Halls.Classification do
   }
   """
 
-  @spec classify(binary, atom) :: {:ok, map} | {:error, binary}
+  @spec classify(binary, OpenAIModel.t()) :: {:ok, map} | {:error, binary}
   def classify(text, model \\ @model) do
     if Mix.env() == :test do
       {:ok, %{tags: ["ai", "spain"]}}
@@ -25,6 +25,7 @@ defmodule YouCongress.Halls.Classification do
     end
   end
 
+  @spec classify_gpt(binary, OpenAIModel.t()) :: {:ok, map} | {:error, binary}
   defp classify_gpt(text, model) do
     with {:ok, data} <- ask_gpt(text, model),
          content <- OpenAIModel.get_content(data),
@@ -36,7 +37,7 @@ defmodule YouCongress.Halls.Classification do
     end
   end
 
-  @spec ask_gpt(binary, atom) ::
+  @spec ask_gpt(binary, OpenAIModel.t()) ::
           {:ok, map} | {:error, binary}
   defp ask_gpt(question, model) do
     OpenAI.chat_completion(
@@ -51,6 +52,7 @@ defmodule YouCongress.Halls.Classification do
     )
   end
 
+  @spec question0() :: binary
   defp question0 do
     """
     Classify a text and return a list of tags:
