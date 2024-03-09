@@ -13,20 +13,14 @@ defmodule YouCongress.Votes.AnswersFixtures do
     {:ok, answer} =
       attrs
       |> Enum.into(%{
-        response: new_unique_response()
+        response: new_response()
       })
       |> Answers.create_answer()
 
     answer
   end
 
-  defp new_unique_response do
-    new = Faker.Lorem.sentence()
-
-    if Answers.get_answer_by_response(new) do
-      new_unique_response()
-    else
-      new
-    end
+  defp new_response do
+    Enum.random(YouCongress.Votes.Answers.basic_responses())
   end
 end
