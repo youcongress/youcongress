@@ -49,7 +49,11 @@ defmodule YouCongress.Votes do
     include_tables = Keyword.get(opts, :include, [])
 
     Vote
-    |> where([v], v.voting_id == ^voting_id and not is_nil(v.opinion))
+    |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
+    |> where(
+      [v, a],
+      v.voting_id == ^voting_id and not is_nil(v.opinion) and (a.enabled == true or not v.twin)
+    )
     |> preload(^include_tables)
     |> Repo.all()
   end
@@ -62,7 +66,11 @@ defmodule YouCongress.Votes do
     include_tables = Keyword.get(opts, :include, [])
 
     Vote
-    |> where([v], v.voting_id == ^voting_id and is_nil(v.opinion))
+    |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
+    |> where(
+      [v, a],
+      v.voting_id == ^voting_id and is_nil(v.opinion) and (a.enabled == true or not v.twin)
+    )
     |> preload(^include_tables)
     |> Repo.all()
   end

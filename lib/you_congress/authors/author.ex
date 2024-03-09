@@ -19,6 +19,7 @@ defmodule YouCongress.Authors.Author do
     field :friends_count, :integer
     field :verified, :boolean
     field :location, :string
+    field :enabled, :boolean, default: true
 
     has_many :votes, YouCongress.Votes.Vote
 
@@ -41,7 +42,8 @@ defmodule YouCongress.Authors.Author do
       :followers_count,
       :friends_count,
       :verified,
-      :location
+      :location,
+      :enabled
     ])
     |> validate_required([:is_twin])
     |> validate_required_if_is_twin()
