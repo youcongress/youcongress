@@ -3,7 +3,9 @@ defmodule YouCongress.Workers.PublicFiguresWorker do
   Generates opinions and votes for a voting.
   """
 
-  use Oban.Worker, max_attempts: 3
+  @max_attempts 2
+
+  use Oban.Worker, max_attempts: @max_attempts
 
   require Logger
 
@@ -12,7 +14,7 @@ defmodule YouCongress.Workers.PublicFiguresWorker do
 
   @impl Oban.Worker
   @spec perform(Oban.Job.t()) :: :ok
-  def perform(%Oban.Job{attempt: attempt}) when attempt == 3 do
+  def perform(%Oban.Job{attempt: attempt}) when attempt == @max_attempts do
     Logger.info("Failed to generate a list of public figures. Max attempts reached.")
     {:cancel, "Max attempts reached."}
   end
