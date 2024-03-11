@@ -13,7 +13,7 @@ defmodule YouCongressWeb.Components.FooterComponent do
       · <.link href="https://web.telegram.org/a/#-1002011576166" target="_blank">Telegram</.link>
       · <.link href={~p"/terms"}>Terms</.link>
       · <.link href={~p"/privacy-policy"}>Privacy</.link>
-      · <.link href="mailto:hi@youcongress.com">Contact</.link>
+      · <.link href="mailto:hi@youcongress.com" target="_blank">Contact</.link>
     </div>
     """
   end
