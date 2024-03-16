@@ -4,10 +4,11 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   require Logger
 
-  alias YouCongress.Accounts.User
+  import YouCongressWeb.VotingLive.Show.VotesLoader,
+    only: [load_voting_and_votes: 2, assign_main_variables: 3]
+
   alias YouCongress.Delegations
   alias YouCongress.Votings
-  alias YouCongress.Votings.Voting
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
   alias YouCongress.Votes.Answers
@@ -154,95 +155,8 @@ defmodule YouCongressWeb.VotingLive.Show do
     end
   end
 
-  def handle_event(
-        "post",
-        %{"comment" => opinion},
-        %{assigns: %{current_user_vote: nil}} = socket
-      ) do
-    %{
-      assigns: %{current_user: current_user, voting: voting}
-    } = socket
-
-    opinion =
-      opinion
-      |> String.trim()
-      |> case do
-        "" -> nil
-        opinion -> opinion
-      end
-
-    if opinion do
-      case Votes.create_vote(%{
-             voting_id: voting.id,
-             author_id: current_user.author_id,
-             opinion: opinion,
-             answer_id: Answers.answer_id_by_response("N/A")
-           }) do
-        {:ok, _} ->
-          socket =
-            socket
-            |> assign(editing: false)
-            |> load_voting_and_votes(voting.id)
-            |> put_flash(:info, "Comment created successfully.")
-
-          {:noreply, socket}
-
-        {:error, error} ->
-          Logger.error("Error creating vote: #{inspect(error)}")
-          {:noreply, put_flash(socket, :error, "Error. Please try again.")}
-      end
-    else
-      {:noreply, put_flash(socket, :error, "Comment can't be blank.")}
-    end
-  end
-
   def handle_event("post", %{"comment" => opinion}, socket) do
-    %{assigns: %{current_user_vote: current_user_vote, voting: voting}} = socket
-
-    opinion =
-      opinion
-      |> String.trim()
-      |> case do
-        "" -> nil
-        opinion -> opinion
-      end
-
-    cond do
-      is_nil(opinion) && is_nil(socket.assigns.current_user_vote.opinion) ->
-        {:noreply, put_flash(socket, :error, "Comment can't be blank.")}
-
-      opinion || current_user_vote.answer_id != Answers.answer_id_by_response("N/A") ->
-        case Votes.update_vote(current_user_vote, %{opinion: opinion}) do
-          {:ok, vote} ->
-            verb = if opinion, do: "updated", else: "deleted"
-
-            socket =
-              socket
-              |> load_voting_and_votes(voting.id)
-              |> assign(current_user_vote: vote, editing: !opinion)
-              |> put_flash(:info, "Your comment has been #{verb}.")
-
-            {:noreply, socket}
-
-          {:error, _vote} ->
-            {:noreply, put_flash(socket, :error, "Error. Please try again.")}
-        end
-
-      true ->
-        case Votes.delete_vote(current_user_vote) do
-          {:ok, _} ->
-            socket =
-              socket
-              |> load_voting_and_votes(voting.id)
-              |> assign(editing: true)
-              |> put_flash(:info, "Your comment has been deleted.")
-
-            {:noreply, socket}
-
-          {:error, _} ->
-            {:noreply, put_flash(socket, :error, "Error. Please try again.")}
-        end
-    end
+    YouCongressWeb.VotingLive.Show.Comments.post_event(opinion, socket)
   end
 
   def handle_event("reload", _, socket) do
@@ -357,116 +271,8 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp page_title(:show), do: "Show Voting"
   defp page_title(:edit), do: "Edit Voting"
 
-  @spec load_voting_and_votes(Socket.t(), number) :: Socket.t()
-  defp load_voting_and_votes(socket, voting_id) do
-    %{assigns: %{current_user: current_user}} = socket
-    voting = Votings.get_voting!(voting_id)
-    current_user_vote = get_current_user_vote(voting, current_user)
-    exclude_ids = (current_user_vote && [current_user_vote.id]) || []
-
-    votes_with_opinion =
-      Votes.list_votes_with_opinion(voting_id,
-        include: [:author, :answer],
-        exclude_ids: exclude_ids
-      )
-
-    votes_without_opinion =
-      Votes.list_votes_without_opinion(voting_id,
-        include: [:author, :answer],
-        exclude_ids: exclude_ids
-      )
-
-    votes_from_delegates = get_votes_from_delegates(votes_with_opinion, current_user)
-
-    socket
-    |> assign(
-      voting: voting,
-      votes_from_delegates: votes_from_delegates,
-      votes_from_non_delegates: votes_with_opinion -- votes_from_delegates,
-      votes_without_opinion: votes_without_opinion,
-      current_user_vote: current_user_vote,
-      percentage: get_percentage(voting)
-    )
-    |> assign_main_variables(voting, current_user)
-  end
-
-  defp assign_main_variables(socket, voting, current_user) do
-    socket
-    |> load_delegations(current_user)
-    |> assign_counters()
-    |> assign_vote_frequencies(voting)
-    |> assign_current_user_vote(voting, current_user)
-  end
-
-  defp get_percentage(%Voting{generating_total: 0}), do: 100
-
-  defp get_percentage(voting) do
-    votes_generated = voting.generating_total - voting.generating_left
-    round(votes_generated * 100 / voting.generating_total)
-  end
-
-  defp assign_current_user_vote(socket, voting, current_user) do
-    assign(socket, current_user_vote: get_current_user_vote(voting, current_user))
-  end
-
-  defp assign_vote_frequencies(socket, voting) do
-    assign(socket, vote_frequencies: get_vote_frequencies(voting))
-  end
-
   defp load_random_votings(socket, voting_id) do
     assign(socket, :random_votings, Votings.list_random_votings(voting_id, 5))
-  end
-
-  defp load_delegations(socket, current_user) do
-    %{
-      assigns: %{
-        votes_from_delegates: votes_from_delegates,
-        votes_from_non_delegates: votes_from_non_delegates,
-        votes_without_opinion: votes_without_opinion
-      }
-    } = socket
-
-    author_ids =
-      Enum.map(votes_from_delegates, & &1.author_id) ++
-        Enum.map(votes_from_non_delegates, & &1.author_id) ++
-        Enum.map(votes_without_opinion, & &1.author_id)
-
-    delegate_ids = Delegations.delegate_ids_by_author_id(current_user.author_id)
-
-    delegations =
-      Enum.reduce(author_ids, %{}, fn author_id, acc ->
-        Map.put(acc, author_id, !!Enum.find(delegate_ids, &(&1 == author_id)))
-      end)
-
-    assign(socket, delegations: delegations)
-  end
-
-  @spec get_vote_frequencies(Voting.t()) :: %{binary => number}
-  defp get_vote_frequencies(voting) do
-    vote_frequencies =
-      Votes.count_by_response(voting.id)
-      |> Enum.into(%{})
-
-    total = Enum.sum(Map.values(vote_frequencies))
-
-    vote_frequencies
-    |> Enum.map(fn {k, v} -> {k, {v, round(v * 100 / total)}} end)
-    |> Enum.into(%{})
-  end
-
-  @spec get_votes_from_delegates([Vote.t()], User.t() | nil) :: [Vote.t()] | []
-  defp get_votes_from_delegates(_, nil), do: []
-
-  defp get_votes_from_delegates(votes, current_user) do
-    delegate_ids = Delegations.delegate_ids_by_author_id(current_user.author_id)
-    Enum.filter(votes, fn vote -> vote.author_id in delegate_ids end)
-  end
-
-  @spec get_current_user_vote(Voting.t(), User.t() | nil) :: Vote.t() | nil
-  defp get_current_user_vote(_, nil), do: nil
-
-  defp get_current_user_vote(voting, current_user) do
-    Votes.get_vote([voting_id: voting.id, author_id: current_user.author_id], preload: :answer)
   end
 
   def agree_icon_size("Strongly agree"), do: 36
