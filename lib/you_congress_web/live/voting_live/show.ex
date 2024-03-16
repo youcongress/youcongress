@@ -36,6 +36,9 @@ defmodule YouCongressWeb.VotingLive.Show do
       |> load_voting_and_votes(voting.id)
       |> load_random_votings(voting.id)
 
+    current_user_vote = socket.assigns.current_user_vote
+    socket = assign(socket, editing: !current_user_vote || !current_user_vote.opinion)
+
     if socket.assigns.voting.generating_left > 0 do
       Process.send_after(self(), :reload, 1_000)
     end
@@ -140,7 +143,7 @@ defmodule YouCongressWeb.VotingLive.Show do
           |> load_voting_and_votes(socket.assigns.voting.id)
           |> put_flash(
             :info,
-            "You are now voting #{response}. Click again to delete your direct vote."
+            "You voted #{response}. Click again to delete your direct vote."
           )
 
         {:noreply, socket}
@@ -148,6 +151,97 @@ defmodule YouCongressWeb.VotingLive.Show do
       {:error, error} ->
         Logger.error("Error creating vote: #{inspect(error)}")
         {:noreply, put_flash(socket, :error, "Error creating vote.")}
+    end
+  end
+
+  def handle_event(
+        "post",
+        %{"comment" => opinion},
+        %{assigns: %{current_user_vote: nil}} = socket
+      ) do
+    %{
+      assigns: %{current_user: current_user, voting: voting}
+    } = socket
+
+    opinion =
+      opinion
+      |> String.trim()
+      |> case do
+        "" -> nil
+        opinion -> opinion
+      end
+
+    if opinion do
+      case Votes.create_vote(%{
+             voting_id: voting.id,
+             author_id: current_user.author_id,
+             opinion: opinion,
+             answer_id: Answers.answer_id_by_response("N/A")
+           }) do
+        {:ok, _} ->
+          socket =
+            socket
+            |> assign(editing: false)
+            |> load_voting_and_votes(voting.id)
+            |> put_flash(:info, "Comment created successfully.")
+
+          {:noreply, socket}
+
+        {:error, error} ->
+          Logger.error("Error creating vote: #{inspect(error)}")
+          {:noreply, put_flash(socket, :error, "Error. Please try again.")}
+      end
+    else
+      {:noreply, put_flash(socket, :error, "Comment can't be blank.")}
+    end
+  end
+
+  def handle_event("post", %{"comment" => opinion}, socket) do
+    %{assigns: %{current_user_vote: current_user_vote, voting: voting}} = socket
+
+    opinion =
+      opinion
+      |> String.trim()
+      |> case do
+        "" -> nil
+        opinion -> opinion
+      end
+
+    cond do
+      is_nil(opinion) && is_nil(socket.assigns.current_user_vote.opinion) ->
+        {:noreply, put_flash(socket, :error, "Comment can't be blank.")}
+
+      opinion || current_user_vote.answer_id != Answers.answer_id_by_response("N/A") ->
+        case Votes.update_vote(current_user_vote, %{opinion: opinion}) do
+          {:ok, vote} ->
+            verb = if opinion, do: "updated", else: "deleted"
+
+            socket =
+              socket
+              |> load_voting_and_votes(voting.id)
+              |> assign(current_user_vote: vote, editing: !opinion)
+              |> put_flash(:info, "Your comment has been #{verb}.")
+
+            {:noreply, socket}
+
+          {:error, _vote} ->
+            {:noreply, put_flash(socket, :error, "Error. Please try again.")}
+        end
+
+      true ->
+        case Votes.delete_vote(current_user_vote) do
+          {:ok, _} ->
+            socket =
+              socket
+              |> load_voting_and_votes(voting.id)
+              |> assign(editing: true)
+              |> put_flash(:info, "Your comment has been deleted.")
+
+            {:noreply, socket}
+
+          {:error, _} ->
+            {:noreply, put_flash(socket, :error, "Error. Please try again.")}
+        end
     end
   end
 
@@ -185,6 +279,10 @@ defmodule YouCongressWeb.VotingLive.Show do
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Error creating delegation.")}
     end
+  end
+
+  def handle_event("edit", _, socket) do
+    {:noreply, assign(socket, editing: true)}
   end
 
   def handle_event("remove-delegation", %{"author_id" => author_id}, socket) do
@@ -261,12 +359,22 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   @spec load_voting_and_votes(Socket.t(), number) :: Socket.t()
   defp load_voting_and_votes(socket, voting_id) do
-    voting = Votings.get_voting!(voting_id)
-    votes_with_opinion = Votes.list_votes_with_opinion(voting_id, include: [:author, :answer])
     %{assigns: %{current_user: current_user}} = socket
+    voting = Votings.get_voting!(voting_id)
+    current_user_vote = get_current_user_vote(voting, current_user)
+    exclude_ids = (current_user_vote && [current_user_vote.id]) || []
+
+    votes_with_opinion =
+      Votes.list_votes_with_opinion(voting_id,
+        include: [:author, :answer],
+        exclude_ids: exclude_ids
+      )
 
     votes_without_opinion =
-      Votes.list_votes_without_opinion(voting_id, include: [:author, :answer])
+      Votes.list_votes_without_opinion(voting_id,
+        include: [:author, :answer],
+        exclude_ids: exclude_ids
+      )
 
     votes_from_delegates = get_votes_from_delegates(votes_with_opinion, current_user)
 
@@ -276,7 +384,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       votes_from_delegates: votes_from_delegates,
       votes_from_non_delegates: votes_with_opinion -- votes_from_delegates,
       votes_without_opinion: votes_without_opinion,
-      current_user_vote: get_current_user_vote(voting, current_user),
+      current_user_vote: current_user_vote,
       percentage: get_percentage(voting)
     )
     |> assign_main_variables(voting, current_user)

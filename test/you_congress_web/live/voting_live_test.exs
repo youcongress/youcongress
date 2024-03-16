@@ -153,5 +153,118 @@ defmodule YouCongressWeb.VotingLiveTest do
       assert html =~ "real quote"
       refute html =~ "invented quote"
     end
+
+    test "casts a vote", %{conn: conn, voting: voting} do
+      conn = log_in_as_user(conn)
+
+      #  Create a vote so we display the voting options
+      VotesFixtures.vote_fixture(%{voting_id: voting.id})
+
+      {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
+
+      # Vote strongly agree
+      show_live
+      |> element(".vote", "Strongly agree")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Strongly agree"
+
+      #  Delete direct vote
+      show_live
+      |> element(".vote", "Strongly agree")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "Your direct vote has been deleted."
+
+      # Vote agree
+      show_live
+      |> element(".vote", "Agree")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Agree"
+
+      #  Vote N/A
+      show_live
+      |> element(".vote", "N/A")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted N/A"
+
+      # Vote disagree
+      show_live
+      |> element(".vote", "Disagree")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Disagree"
+
+      # Vote strongly disagree
+      show_live
+      |> element(".vote", "Strongly disagree")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Strongly disagree"
+    end
+
+    test "creates a comment", %{conn: conn, voting: voting} do
+      conn = log_in_as_user(conn)
+
+      {:ok, show_live, html} = live(conn, ~p"/v/#{voting.slug}")
+
+      refute html =~ "edit"
+
+      show_live
+      |> form("#comment-form", comment: "some comment")
+      |> render_submit()
+
+      html = render(show_live)
+      assert html =~ "Comment created successfully"
+      assert html =~ "some comment"
+
+      # Check that the vote is N/A
+      assert html =~ "N/A"
+
+      #  Check that the comment is not AI generated
+      assert html =~ "and says"
+      refute html =~ "and say according to AI"
+    end
+
+    test "edit a comment", %{conn: conn, voting: voting} do
+      conn = log_in_as_user(conn)
+
+      author = Authors.list_authors() |> hd()
+
+      VotesFixtures.vote_fixture(%{
+        voting_id: voting.id,
+        author_id: author.id,
+        opinion: "whatever"
+      })
+
+      {:ok, show_live, html} = live(conn, ~p"/v/#{voting.slug}")
+
+      assert html =~ "whatever"
+
+      show_live
+      |> element("button", "edit")
+      |> render_click()
+
+      show_live
+      |> form("#comment-form", comment: "some comment")
+      |> render_submit()
+
+      html = render(show_live)
+      assert html =~ "Your comment has been updated"
+      refute html =~ "whatever"
+      assert html =~ "some comment"
+
+      #  Check that the comment is not AI generated
+      assert html =~ "and says"
+      refute html =~ "and say according to AI"
+    end
   end
 end
