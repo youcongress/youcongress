@@ -31,10 +31,10 @@ defmodule YouCongress.Workers.OpinatorWorker do
         refresh_delegated_votes(vote, voting_id)
         GeneratingLeftServer.decrease_generating_left(voting_id)
 
-      {:error, :ai_disabled} ->
+      {:error, :twin_disabled} ->
         Logger.error("Author has AI-gen content disabled. Cancel.")
         GeneratingLeftServer.decrease_generating_left(voting_id)
-        :ok
+        {:cancel, "Author has twin disabled."}
 
       {:error, error} ->
         Logger.error("Failed to generate vote. Retry. error: #{inspect(error)}")

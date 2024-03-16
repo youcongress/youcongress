@@ -74,7 +74,7 @@ defmodule YouCongress.DigitalTwins do
       #  Set the author as twin so it won't be used again and do not save
       Authors.update_author(author, %{twin: true})
       Logger.warning("Author is disabled. author: #{inspect(author)}")
-      {:error, :ai_disabled}
+      {:error, :twin_disabled}
     end
   end
 

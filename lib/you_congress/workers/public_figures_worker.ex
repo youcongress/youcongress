@@ -24,12 +24,12 @@ defmodule YouCongress.Workers.PublicFiguresWorker do
     voting = Votings.get_voting!(voting_id, preload: [votes: :author])
     exclude_existent = Enum.map(voting.votes, & &1.author.name)
 
-    exclude_ai_disabled =
+    exclude_twin_disabled =
       %{twin: true, twin_enabled: false}
       |> Authors.list_authors()
       |> Enum.map(& &1.name)
 
-    exclude_names = exclude_existent ++ exclude_ai_disabled
+    exclude_names = exclude_existent ++ exclude_twin_disabled
 
     provisional_num = PublicFigures.num_gen_opinions()
 
