@@ -61,7 +61,7 @@ defmodule YouCongress.DigitalTwins do
 
     {:ok, author} = Authors.find_by_wikipedia_url_or_create(author_data)
 
-    if author.enabled do
+    if author.twin_enabled do
       Votes.create_vote(%{
         opinion: opinion["opinion"],
         author_id: author.id,

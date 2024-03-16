@@ -44,12 +44,12 @@ defmodule YouCongressWeb.SettingsLiveTest do
 
       # Uncheck the AI-generated content setting
       settings_live
-      |> form("#author-form", %{"author[enabled]" => false})
+      |> form("#author-form", %{"author[twin_enabled]" => false})
       |> render_change()
 
       # Submit the form
       settings_live
-      |> form("#author-form", %{"author[enabled]" => false})
+      |> form("#author-form", %{"author[twin_enabled]" => false})
       |> render_submit()
 
       html = render(settings_live)

@@ -29,8 +29,8 @@ defmodule YouCongress.Authors do
         {:twin, twin}, query ->
           where(query, [author], author.twin == ^twin)
 
-        {:enabled, enabled}, query ->
-          where(query, [author], author.enabled == ^enabled)
+        {:twin_enabled, twin_enabled}, query ->
+          where(query, [author], author.twin_enabled == ^twin_enabled)
 
         _, query ->
           query
@@ -157,11 +157,14 @@ defmodule YouCongress.Authors do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_author(%Author{enabled: true} = author_before, %{"enabled" => "false"} = attrs) do
+  def update_author(
+        %Author{twin_enabled: true} = author_before,
+        %{"twin_enabled" => "false"} = attrs
+      ) do
     update_author_and_delete_twin_options(author_before, attrs)
   end
 
-  def update_author(%Author{enabled: true} = author_before, %{enabled: false} = attrs) do
+  def update_author(%Author{twin_enabled: true} = author_before, %{twin_enabled: false} = attrs) do
     update_author_and_delete_twin_options(author_before, attrs)
   end
 
