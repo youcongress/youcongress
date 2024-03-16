@@ -4,14 +4,12 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   require Logger
 
-  import YouCongressWeb.VotingLive.Show.VotesLoader,
-    only: [load_voting_and_votes: 2, assign_main_variables: 3]
-
   alias YouCongress.Delegations
   alias YouCongress.Votings
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
   alias YouCongress.Votes.Answers
+  alias YouCongressWeb.VotingLive.Show.VotesLoader
 
   @impl true
   def mount(_, session, socket) do
@@ -34,7 +32,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       socket
       |> assign(:page_title, page_title(socket.assigns.live_action))
       |> assign(reload: false)
-      |> load_voting_and_votes(voting.id)
+      |> VotesLoader.load_voting_and_votes(voting.id)
       |> load_random_votings(voting.id)
 
     current_user_vote = socket.assigns.current_user_vote
@@ -81,7 +79,7 @@ defmodule YouCongressWeb.VotingLive.Show do
            author_id: current_user.author_id
          }) do
       {:ok, :deleted} ->
-        socket = load_voting_and_votes(socket, socket.assigns.voting.id)
+        socket = VotesLoader.load_voting_and_votes(socket, socket.assigns.voting.id)
         %{assigns: %{current_user_vote: current_user_vote}} = socket
         YouCongress.Track.event("Delete Vote", socket.assigns.current_user)
 
@@ -99,7 +97,7 @@ defmodule YouCongressWeb.VotingLive.Show do
 
         socket =
           socket
-          |> load_voting_and_votes(socket.assigns.voting.id)
+          |> VotesLoader.load_voting_and_votes(socket.assigns.voting.id)
           |> put_flash(:info, "You now #{message(response)}.")
 
         {:noreply, socket}
@@ -126,7 +124,7 @@ defmodule YouCongressWeb.VotingLive.Show do
            author_id: current_user.author_id
          }) do
       {:ok, :deleted} ->
-        socket = load_voting_and_votes(socket, socket.assigns.voting.id)
+        socket = VotesLoader.load_voting_and_votes(socket, socket.assigns.voting.id)
         %{assigns: %{current_user_vote: current_user_vote}} = socket
 
         socket =
@@ -141,7 +139,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       {:ok, _} ->
         socket =
           socket
-          |> load_voting_and_votes(socket.assigns.voting.id)
+          |> VotesLoader.load_voting_and_votes(socket.assigns.voting.id)
           |> put_flash(
             :info,
             "You voted #{response}. Click again to delete your direct vote."
@@ -162,7 +160,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   def handle_event("reload", _, socket) do
     socket =
       socket
-      |> load_voting_and_votes(socket.assigns.voting.id)
+      |> VotesLoader.load_voting_and_votes(socket.assigns.voting.id)
       |> assign(reload: false)
       |> clear_flash()
 
@@ -185,7 +183,10 @@ defmodule YouCongressWeb.VotingLive.Show do
             :info,
             "Added to your delegation list. You're voting as the majority of your delegates – unless you directly vote."
           )
-          |> assign_main_variables(voting, current_user)
+          |> YouCongressWeb.VotingLive.Show.VotesLoader.assign_main_variables(
+            voting,
+            current_user
+          )
           |> assign(reload: true)
 
         {:noreply, socket}
@@ -212,7 +213,10 @@ defmodule YouCongressWeb.VotingLive.Show do
           socket
           |> assign(:delegating?, false)
           |> put_flash(:info, "Removed from your delegation list.")
-          |> assign_main_variables(voting, current_user)
+          |> VotesLoader.assign_main_variables(
+            voting,
+            current_user
+          )
           |> assign(reload: true)
 
         {:noreply, socket}
@@ -224,7 +228,7 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   @impl true
   def handle_info(:reload, socket) do
-    socket = load_voting_and_votes(socket, socket.assigns.voting.id)
+    socket = VotesLoader.load_voting_and_votes(socket, socket.assigns.voting.id)
 
     if socket.assigns.voting.generating_left > 0 do
       Process.send_after(self(), :reload, 1_000)
