@@ -6,12 +6,8 @@ defmodule YouCongress.Authors.Author do
   import Ecto.Changeset
 
   schema "authors" do
+    # twitter fields
     field :name, :string
-    field :bio, :string
-    field :country, :string
-    field :twitter_username, :string
-    field :wikipedia_url, :string
-    field :is_twin, :boolean, default: true
     field :twitter_id_str, :string
     field :profile_image_url, :string
     field :description, :string
@@ -19,6 +15,13 @@ defmodule YouCongress.Authors.Author do
     field :friends_count, :integer
     field :verified, :boolean
     field :location, :string
+    field :twitter_username, :string
+    # bio is AI-generated for twins and is displayed instead of description if present
+    field :bio, :string
+    # country is AI-generated for twins and is displayed location if present
+    field :country, :string
+    field :wikipedia_url, :string
+    field :is_twin, :boolean, default: true
     field :twin_enabled, :boolean, default: true
 
     has_many :votes, YouCongress.Votes.Vote
@@ -38,12 +41,12 @@ defmodule YouCongress.Authors.Author do
       :is_twin,
       :twitter_id_str,
       :profile_image_url,
+      :twin_enabled,
       :description,
       :followers_count,
       :friends_count,
       :verified,
-      :location,
-      :twin_enabled
+      :location
     ])
     |> validate_required([:is_twin])
     |> validate_required_if_is_twin()
