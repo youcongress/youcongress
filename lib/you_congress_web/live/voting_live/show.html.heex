@@ -71,15 +71,17 @@
     </div>
   </div>
 <% end %>
-<div class="pb-8">
-  <.live_component
-    module={YouCongressWeb.VotingLive.Show.CurrentUserVoteComponent}
-    id={:v}
-    current_user_vote={@current_user_vote}
-    current_user={@current_user}
-    editing={@editing}
-  />
-</div>
+<%= if @votes_from_delegates != [] || @votes_from_non_delegates != [] do %>
+  <div class="pb-8">
+    <.live_component
+      module={YouCongressWeb.VotingLive.Show.CurrentUserVoteComponent}
+      id={:v}
+      current_user_vote={@current_user_vote}
+      current_user={@current_user}
+      editing={@editing}
+    />
+  </div>
+<% end %>
 <%= if @votes_from_delegates != [] do %>
   <div class="mb-8">
     <h2 class="mb-2">Opinions from your delegates:</h2>
