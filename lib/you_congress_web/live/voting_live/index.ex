@@ -3,6 +3,7 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
+  alias YouCongressWeb.VotingLive.Index.HallNav
 
   @default_hall "ai"
 
