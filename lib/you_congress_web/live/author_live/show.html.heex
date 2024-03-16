@@ -2,7 +2,15 @@
   <%= @author.name || "Anonymous" %>
   <:subtitle><%= @author.bio %></:subtitle>
   <:actions>
-    <%= if @current_user && @current_user.author_id != @author.id do %>
+    <%= if @current_user && @current_user.author_id == @author.id do %>
+      <.link
+        href={~p"/log_out"}
+        method="delete"
+        class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+      >
+        Log out
+      </.link>
+    <% else %>
       <.link phx-click="toggle-delegate" phx-value-author_id={@author.id}>
         <.button><%= if @delegating?, do: "Remove delegate", else: "Delegate" %></.button>
       </.link>

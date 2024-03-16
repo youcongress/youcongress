@@ -24,6 +24,7 @@ defmodule YouCongressWeb.Router do
     get "/privacy-policy", PageController, :privacy_policy
 
     get "/waiting_list", PageController, :waiting_list
+    get "/about", PageController, :about
     post "/log_in", TwitterLogInController, :log_in
     get "/twitter-callback", TwitterLogInController, :callback
   end

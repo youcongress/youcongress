@@ -18,4 +18,8 @@ defmodule YouCongressWeb.PageController do
   def waiting_list(conn, _params) do
     render(conn, :waiting_list, layout: false)
   end
+
+  def about(conn, _params) do
+    render(conn, :about)
+  end
 end
