@@ -214,6 +214,9 @@ defmodule YouCongressWeb.VotingLiveTest do
     test "creates a comment", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
 
+      #  Create an AI generated comment as we don't display the form until we have one of these
+      VotesFixtures.vote_fixture(%{twin: true, voting_id: voting.id})
+
       {:ok, show_live, html} = live(conn, ~p"/v/#{voting.slug}")
 
       refute html =~ "edit"
@@ -229,9 +232,8 @@ defmodule YouCongressWeb.VotingLiveTest do
       # Check that the vote is N/A
       assert html =~ "N/A"
 
-      #  Check that the comment is not AI generated
+      # Check that there is non- AI-generated comment
       assert html =~ "and says"
-      refute html =~ "and say according to AI"
     end
 
     test "edit a comment", %{conn: conn, voting: voting} do
@@ -244,6 +246,9 @@ defmodule YouCongressWeb.VotingLiveTest do
         author_id: author.id,
         opinion: "whatever"
       })
+
+      #  Create an AI generated comment as we don't display the form until we have one of these
+      VotesFixtures.vote_fixture(%{twin: true, voting_id: voting.id})
 
       {:ok, show_live, html} = live(conn, ~p"/v/#{voting.slug}")
 
@@ -262,9 +267,8 @@ defmodule YouCongressWeb.VotingLiveTest do
       refute html =~ "whatever"
       assert html =~ "some comment"
 
-      #  Check that the comment is not AI generated
+      # Check that there is non- AI-generated comment
       assert html =~ "and says"
-      refute html =~ "and say according to AI"
     end
   end
 end
