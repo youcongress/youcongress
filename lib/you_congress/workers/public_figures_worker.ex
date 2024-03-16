@@ -11,6 +11,7 @@ defmodule YouCongress.Workers.PublicFiguresWorker do
 
   alias YouCongress.DigitalTwins.PublicFigures
   alias YouCongress.Votings
+  alias YouCongress.Authors
 
   @impl Oban.Worker
   @spec perform(Oban.Job.t()) :: :ok
@@ -21,7 +22,14 @@ defmodule YouCongress.Workers.PublicFiguresWorker do
 
   def perform(%Oban.Job{args: %{"voting_id" => voting_id}}) do
     voting = Votings.get_voting!(voting_id, preload: [votes: :author])
-    exclude_names = Enum.map(voting.votes, & &1.author.name)
+    exclude_existent = Enum.map(voting.votes, & &1.author.name)
+
+    exclude_ai_disabled =
+      %{twin: true, enabled: false}
+      |> Authors.list_authors()
+      |> Enum.map(& &1.name)
+
+    exclude_names = exclude_existent ++ exclude_ai_disabled
 
     provisional_num = PublicFigures.num_gen_opinions()
 

@@ -7,6 +7,7 @@ defmodule YouCongress.Authors do
   alias YouCongress.Repo
 
   alias YouCongress.Authors.Author
+  alias YouCongress.Votes.Vote
 
   @doc """
   Returns the list of authors.
@@ -17,8 +18,25 @@ defmodule YouCongress.Authors do
       [%Author{}, ...]
 
   """
-  def list_authors do
-    Repo.all(Author)
+  def list_authors(opts \\ []) do
+    preload = opts[:preload] || []
+    base_query = from a in Author, preload: ^preload
+
+    Enum.reduce(
+      opts,
+      base_query,
+      fn
+        {:twin, twin}, query ->
+          where(query, [author], author.twin == ^twin)
+
+        {:enabled, enabled}, query ->
+          where(query, [author], author.enabled == ^enabled)
+
+        _, query ->
+          query
+      end
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -139,10 +157,28 @@ defmodule YouCongress.Authors do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_author(%Author{} = author, attrs) do
-    author
+  def update_author(%Author{enabled: true} = author_before, %{"enabled" => "false"} = attrs) do
+    update_author_and_delete_twin_options(author_before, attrs)
+  end
+
+  def update_author(%Author{enabled: true} = author_before, %{enabled: false} = attrs) do
+    update_author_and_delete_twin_options(author_before, attrs)
+  end
+
+  def update_author(%Author{} = author_before, attrs) do
+    author_before
     |> Author.changeset(attrs)
     |> Repo.update()
+  end
+
+  defp update_author_and_delete_twin_options(author_before, attrs) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:update_author, Author.changeset(author_before, attrs))
+    |> Ecto.Multi.delete_all(
+      :delete_votes,
+      from(v in Vote, where: v.author_id == ^author_before.id and v.twin)
+    )
+    |> Repo.transaction()
   end
 
   @doc """

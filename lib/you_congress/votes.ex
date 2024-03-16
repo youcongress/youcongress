@@ -60,6 +60,18 @@ defmodule YouCongress.Votes do
     |> Repo.all()
   end
 
+  def get_current_user_vote(voting_id, author_id) do
+    Vote
+    |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
+    |> where(
+      [v, a],
+      v.voting_id == ^voting_id and v.author_id == ^author_id and
+        (a.enabled == true or not v.twin)
+    )
+    |> preload(:answer)
+    |> Repo.one()
+  end
+
   @doc """
   Returns the list of votes for a voting without opinion.
   """

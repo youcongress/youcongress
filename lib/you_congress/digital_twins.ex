@@ -61,14 +61,21 @@ defmodule YouCongress.DigitalTwins do
 
     {:ok, author} = Authors.find_by_wikipedia_url_or_create(author_data)
 
-    Votes.create_vote(%{
-      opinion: opinion["opinion"],
-      author_id: author.id,
-      voting_id: voting_id,
-      answer_id: answer.id,
-      direct: true,
-      twin: true
-    })
+    if author.enabled do
+      Votes.create_vote(%{
+        opinion: opinion["opinion"],
+        author_id: author.id,
+        voting_id: voting_id,
+        answer_id: answer.id,
+        direct: true,
+        twin: true
+      })
+    else
+      #  Set the author as twin so it won't be used again and do not save
+      Authors.update_author(author, %{twin: true})
+      Logger.warning("Author is disabled. author: #{inspect(author)}")
+      {:error, :ai_disabled}
+    end
   end
 
   defp standarize_chat_gpt("GPT-3"), do: "ChatGPT"
