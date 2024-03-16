@@ -15,9 +15,6 @@ defmodule YouCongressWeb.LiveHelpers do
     assign(socket, :current_user, current_user)
   end
 
-  @doc """
-  Assigns the page title to the socket.
-  """
   @spec assign_counters(Socket.t()) :: Socket.t()
   def assign_counters(socket) do
     assign(socket,

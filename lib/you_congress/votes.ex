@@ -47,12 +47,14 @@ defmodule YouCongress.Votes do
   @spec list_votes_with_opinion(integer, Keyword.t()) :: [Vote.t(), ...]
   def list_votes_with_opinion(voting_id, opts \\ []) do
     include_tables = Keyword.get(opts, :include, [])
+    exclude_ids = Keyword.get(opts, :exclude_ids, [])
 
     Vote
     |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
     |> where(
       [v, a],
-      v.voting_id == ^voting_id and not is_nil(v.opinion) and (a.enabled == true or not v.twin)
+      v.voting_id == ^voting_id and not is_nil(v.opinion) and (a.enabled == true or not v.twin) and
+        v.id not in ^exclude_ids
     )
     |> preload(^include_tables)
     |> Repo.all()
@@ -64,12 +66,14 @@ defmodule YouCongress.Votes do
   @spec list_votes_without_opinion(integer, Keyword.t()) :: [Vote.t(), ...]
   def list_votes_without_opinion(voting_id, opts \\ []) do
     include_tables = Keyword.get(opts, :include, [])
+    exclude_ids = Keyword.get(opts, :exclude_ids, [])
 
     Vote
     |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
     |> where(
       [v, a],
-      v.voting_id == ^voting_id and is_nil(v.opinion) and (a.enabled == true or not v.twin)
+      v.voting_id == ^voting_id and is_nil(v.opinion) and (a.enabled == true or not v.twin) and
+        v.id not in ^exclude_ids
     )
     |> preload(^include_tables)
     |> Repo.all()

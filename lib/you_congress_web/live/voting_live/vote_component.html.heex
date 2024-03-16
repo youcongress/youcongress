@@ -57,5 +57,7 @@
       <% end %>
     <% end %>
   </div>
-  <div class="pt-2"><%= @vote.opinion %></div>
+  <%= if @show_opinion do %>
+    <div class="pt-2"><%= @vote.opinion %></div>
+  <% end %>
 </div>
