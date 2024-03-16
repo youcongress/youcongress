@@ -1,0 +1,35 @@
+<h1 class="text-2xl font-bold">
+  Settings
+</h1>
+
+<div class="pt-4">
+  <.link
+    href={~p"/log_out"}
+    method="delete"
+    class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 mt-4"
+  >
+    Log out
+  </.link>
+</div>
+<.simple_form for={@form} id="author-form" phx-change="validate" phx-submit="save">
+  <div>
+    <ul class="text-sm">
+      <li>Name: <%= @current_user.author.name %></li>
+      <li>Bio: <%= @current_user.author.bio %></li>
+    </ul>
+
+    <div class="pt-2">
+      You can <strong>change your name</strong>
+      and bio on X/Twitter. Then, log out & log in on YouCongress again and they will be updated.
+    </div>
+  </div>
+
+  <.input
+    field={@form[:twin_enabled]}
+    type="checkbox"
+    label="Accept AI-generated content on my name. Unselect to delete current AI-gen opinions and disable future ones."
+  />
+  <:actions>
+    <.button phx-disable-with="Saving...">Save</.button>
+  </:actions>
+</.simple_form>

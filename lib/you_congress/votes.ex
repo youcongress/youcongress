@@ -53,11 +53,22 @@ defmodule YouCongress.Votes do
     |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
     |> where(
       [v, a],
-      v.voting_id == ^voting_id and not is_nil(v.opinion) and (a.enabled == true or not v.twin) and
+      v.voting_id == ^voting_id and not is_nil(v.opinion) and
         v.id not in ^exclude_ids
     )
     |> preload(^include_tables)
     |> Repo.all()
+  end
+
+  def get_current_user_vote(voting_id, author_id) do
+    Vote
+    |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
+    |> where(
+      [v, a],
+      v.voting_id == ^voting_id and v.author_id == ^author_id
+    )
+    |> preload(:answer)
+    |> Repo.one()
   end
 
   @doc """
@@ -72,8 +83,7 @@ defmodule YouCongress.Votes do
     |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
     |> where(
       [v, a],
-      v.voting_id == ^voting_id and is_nil(v.opinion) and (a.enabled == true or not v.twin) and
-        v.id not in ^exclude_ids
+      v.voting_id == ^voting_id and is_nil(v.opinion) and v.id not in ^exclude_ids
     )
     |> preload(^include_tables)
     |> Repo.all()

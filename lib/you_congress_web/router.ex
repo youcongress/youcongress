@@ -65,6 +65,8 @@ defmodule YouCongressWeb.Router do
 
     live "/votes", VoteLive.Index, :index
     live "/votes/:id", VoteLive.Show, :show
+
+    live "/settings", SettingsLive, :settings
   end
 
   # Other scopes may use custom stacks.
@@ -102,6 +104,7 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through [:browser]
 
+    get "/log_out", UserSessionController, :delete
     delete "/log_out", UserSessionController, :delete
 
     live_session :current_user,

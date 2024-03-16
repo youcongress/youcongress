@@ -25,6 +25,11 @@ defmodule YouCongressWeb.AuthorLive.FormComponent do
         <.input field={@form[:twitter_username]} type="text" label="Twitter username" />
         <.input field={@form[:country]} type="text" label="Country" />
         <.input field={@form[:is_twin]} type="checkbox" label="Is twin" />
+        <.input
+          field={@form[:twin_enabled]}
+          type="checkbox"
+          label="Accept AI-generated content on my name. Unselect to delete current AI-gen opinions and disable future ones."
+        />
         <:actions>
           <.button phx-disable-with="Saving...">Save Author</.button>
         </:actions>

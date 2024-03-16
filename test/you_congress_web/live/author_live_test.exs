@@ -3,10 +3,6 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
   import Phoenix.LiveViewTest
   import YouCongress.AuthorsFixtures
-  import YouCongress.VotesFixtures
-  import YouCongress.VotingsFixtures
-
-  alias YouCongress.Authors
 
   @create_attrs %{
     bio: "some bio",
@@ -109,39 +105,6 @@ defmodule YouCongressWeb.AuthorLiveTest do
       html = render(show_live)
       assert html =~ "Author updated successfully"
       assert html =~ "some updated bio"
-    end
-
-    test "does NOT display twin vote if disabled author", %{conn: conn, author: author} do
-      conn = log_in_as_user(conn)
-
-      voting = voting_fixture()
-
-      vote_fixture(%{
-        author_id: author.id,
-        voting_id: voting.id,
-        opinion: "invented quote",
-        twin: true
-      })
-
-      vote_fixture(%{
-        author_id: author.id,
-        voting_id: voting.id,
-        opinion: "real quote",
-        twin: false
-      })
-
-      {:ok, _show_live, html} = live(conn, ~p"/authors/#{author}")
-
-      assert html =~ "invented quote"
-      assert html =~ "real quote"
-
-      #  Disable author
-      Authors.update_author(author, %{enabled: false})
-
-      {:ok, _show_live, html} = live(conn, ~p"/authors/#{author}")
-
-      assert html =~ "real quote"
-      refute html =~ "invented quote"
     end
   end
 end

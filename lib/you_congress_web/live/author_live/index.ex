@@ -22,7 +22,7 @@ defmodule YouCongressWeb.AuthorLive.Index do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
-    |> assign(:page_title, "Edit Author")
+    |> assign(:page_title, "Settings")
     |> assign(:author, Authors.get_author!(id))
   end
 
