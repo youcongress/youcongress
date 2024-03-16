@@ -31,7 +31,7 @@
     </.link>
   </:item>
   <:item :if={@author.country || @author.location} title="Location">
-    <%= @author.location %>
+    <%= @author.country || @author.location %>
   </:item>
 </.list>
 
