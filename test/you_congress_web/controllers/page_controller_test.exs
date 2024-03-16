@@ -17,4 +17,15 @@ defmodule YouCongressWeb.PageControllerTest do
     conn = get(conn, ~p"/terms")
     assert html_response(conn, 200) =~ "Terms and Conditions"
   end
+
+  test "GET /about loads as a non-logged visitor", %{conn: conn} do
+    conn = get(conn, ~p"/about")
+    assert html_response(conn, 200) =~ "About YouCongress"
+  end
+
+  test "GET /about loads as a user", %{conn: conn} do
+    conn = log_in_as_user(conn)
+    conn = get(conn, ~p"/about")
+    assert html_response(conn, 200) =~ "About YouCongress"
+  end
 end
