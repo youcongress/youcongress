@@ -8,44 +8,7 @@
   patch={~p"/"}
 />
 <div class="pt-6">
-  <div class="border-b border-gray-200">
-    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-      <a
-        href="/home"
-        class={
-          if @hall_name == "ai",
-            do:
-              "border-indigo-500 text-indigo-600 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium",
-            else:
-              "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
-        }
-        aria-current="page"
-      >
-        AI
-      </a>
-      <%= if @hall_name not in ["ai", "all"] do %>
-        <a
-          href={"/halls/#{@hall_name}"}
-          class="border-indigo-500 text-indigo-600 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
-        >
-          <%= @hall_name %>
-        </a>
-      <% end %>
-      <a
-        href="/halls/all"
-        class={
-          if @hall_name == "all",
-            do:
-              "border-indigo-500 text-indigo-600 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium",
-            else:
-              "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
-        }
-        class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
-      >
-        All topics
-      </a>
-    </nav>
-  </div>
+  <HallNav.render hall_name={@hall_name} />
 </div>
 
 <table>
