@@ -75,10 +75,11 @@ defmodule YouCongressWeb.ConnCase do
     |> Plug.Conn.put_session(:user_token, token)
   end
 
+  def log_in_as_user(conn), do: log_in_as(conn, "user")
+
   def log_in_as_admin(conn), do: log_in_as(conn, "admin")
   @spec log_in_as_creator(Plug.Conn.t()) :: Plug.Conn.t()
   def log_in_as_creator(conn), do: log_in_as(conn, "creator")
-  def log_in_as_user(conn), do: log_in_as(conn, "user")
 
   def log_in_as(conn, role) do
     {:ok, user} =

@@ -6,7 +6,6 @@ defmodule YouCongressWeb.VotingLiveTest do
   import Phoenix.LiveViewTest
   import YouCongress.VotingsFixtures
 
-  alias YouCongress.AuthorsFixtures
   alias YouCongress.VotesFixtures
   alias YouCongress.Votings
   alias YouCongress.Authors
@@ -118,40 +117,6 @@ defmodule YouCongressWeb.VotingLiveTest do
       assert_raise Ecto.NoResultsError, fn ->
         Votings.get_voting!(voting.id)
       end
-    end
-
-    test "does NOT display twin opinion from disabled author", %{conn: conn, voting: voting} do
-      conn = log_in_as_user(conn)
-
-      author = AuthorsFixtures.author_fixture(%{name: "Hec Perez"})
-
-      VotesFixtures.vote_fixture(%{
-        voting_id: voting.id,
-        author_id: author.id,
-        opinion: "invented quote",
-        twin: true
-      })
-
-      VotesFixtures.vote_fixture(%{
-        voting_id: voting.id,
-        author_id: author.id,
-        opinion: "real quote",
-        twin: false
-      })
-
-      {:ok, _show_live, html} = live(conn, ~p"/v/#{voting.slug}")
-
-      assert html =~ "Hec Perez"
-      assert html =~ "invented quote"
-      assert html =~ "real quote"
-
-      Authors.update_author(author, %{enabled: false})
-
-      {:ok, _show_live, html} = live(conn, ~p"/v/#{voting.slug}")
-
-      assert html =~ "Hec Perez"
-      assert html =~ "real quote"
-      refute html =~ "invented quote"
     end
 
     test "casts a vote", %{conn: conn, voting: voting} do

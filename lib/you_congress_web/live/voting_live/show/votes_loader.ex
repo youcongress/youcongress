@@ -50,7 +50,7 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
   def get_current_user_vote(_, nil), do: nil
 
   def get_current_user_vote(voting, current_user) do
-    Votes.get_vote([voting_id: voting.id, author_id: current_user.author_id], preload: :answer)
+    Votes.get_current_user_vote(voting.id, current_user.author_id)
   end
 
   @spec assign_main_variables(Socket.t(), Voting.t(), User.t() | nil) :: Socket.t()
