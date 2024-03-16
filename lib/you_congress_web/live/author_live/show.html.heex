@@ -1,6 +1,6 @@
 <.header>
   <%= @author.name || "Anonymous" %>
-  <:subtitle><%= @author.bio %></:subtitle>
+  <:subtitle><%= @author.bio || @author.description %></:subtitle>
   <:actions>
     <%= if @current_user && @current_user.author_id == @author.id do %>
       <.link patch={~p"/settings"} phx-click={JS.push_focus()}>
@@ -30,8 +30,8 @@
       @<%= @author.twitter_username %>
     </.link>
   </:item>
-  <:item :if={@author.country} title="Country">
-    <%= @author.country %>
+  <:item :if={@author.country || @author.location} title="Location">
+    <%= @author.location %>
   </:item>
 </.list>
 
