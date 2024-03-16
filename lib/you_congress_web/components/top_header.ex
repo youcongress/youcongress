@@ -16,12 +16,29 @@ defmodule YouCongressWeb.TopHeaderComponent do
           </a>
         </div>
 
-        <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
+        <div class="text-sm flex items-center gap-3 leading-6 text-zinc-900">
           <%= if @current_user do %>
+            <div>
+              <.link href="https://github.com/youcongress/youcongress" target="_blank">GitHub</.link>
+            </div>
+            <div>
+              <.link href="https://web.telegram.org/a/#-1002011576166" target="_blank">
+                Telegram
+              </.link>
+            </div>
+
+            <div>
+              <.link
+                href={~p"/about"}
+                class="text-[0.8125rem] leading-6 text-zinc-900 hover:text-zinc-700"
+              >
+                About
+              </.link>
+            </div>
             <div>
               <.link
                 href={~p"/authors/#{@current_user.author_id}"}
-                class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+                class="text-[0.8125rem] leading-6 text-zinc-900 hover:text-zinc-700"
               >
                 Profile
               </.link>

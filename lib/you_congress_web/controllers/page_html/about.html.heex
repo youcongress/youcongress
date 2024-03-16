@@ -1,0 +1,37 @@
+<div class="py-4 text-lg font-semibold text-center bg-blue-100">About YouCongress</div>
+<p class="mt-4">
+  YouCongress is an
+  <.link class="underline" target="_blank" href="https://github.com/youcongress/youcongress">
+    open-source
+  </.link>
+  initiative designed to enhance decision-making in an environment where diverse opinions thrive, where change of opinion is celebrated and leads to individual and collective learning.
+</p>
+
+<p class="pt-6">We're still shaping YouCongress, but you already can:</p>
+<ul class="list-disc pl-5">
+  <li>create a voting</li>
+  <li>vote (votes are public)</li>
+  <li>add arguments</li>
+  <li>explore AI-generated opinions from public figures</li>
+  <li>
+    delegate to other users and public figures. You'll vote as the majority of your delegates — unless you vote directly.
+  </li>
+</ul>
+
+<p class="mt-4">Be humble to change your mind, be bold to convince others.</p>
+<%= if @current_user do %>
+  <a
+    href="/home"
+    class="inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 mt-4"
+  >
+    Create / browse votes
+  </a>
+<% else %>
+  <.link
+    href={~p"/log_in"}
+    method="post"
+    class="inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 mt-4"
+  >
+    Log in with X
+  </.link>
+<% end %>
