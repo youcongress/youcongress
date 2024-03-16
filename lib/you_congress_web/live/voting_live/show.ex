@@ -157,6 +157,19 @@ defmodule YouCongressWeb.VotingLive.Show do
     YouCongressWeb.VotingLive.Show.Comments.post_event(opinion, socket)
   end
 
+  def handle_event("cancel-edit", _, socket) do
+    socket =
+      socket
+      |> assign(editing: false)
+      |> clear_flash()
+
+    {:noreply, socket}
+  end
+
+  def handle_event("delete-comment", _, socket) do
+    YouCongressWeb.VotingLive.Show.Comments.delete_event(socket)
+  end
+
   def handle_event("reload", _, socket) do
     socket =
       socket

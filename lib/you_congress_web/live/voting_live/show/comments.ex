@@ -99,6 +99,29 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
     end
   end
 
+  def delete_event(socket) do
+    %{assigns: %{current_user_vote: current_user_vote, voting: voting}} = socket
+    no_answer_id = Answers.answer_id_by_response("N/A")
+
+    if current_user_vote.answer_id == no_answer_id do
+      delete_vote(voting, current_user_vote, socket)
+    else
+      case Votes.update_vote(current_user_vote, %{opinion: nil}) do
+        {:ok, vote} ->
+          socket =
+            socket
+            |> load_voting_and_votes(voting.id)
+            |> assign(current_user_vote: vote)
+            |> put_flash(:info, "Your comment has been deleted.")
+
+          {:noreply, socket}
+
+        {:error, _vote} ->
+          {:noreply, put_flash(socket, :error, "Error. Please try again.")}
+      end
+    end
+  end
+
   defp clean_opinion(opinion) do
     opinion
     |> String.trim()
