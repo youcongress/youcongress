@@ -28,18 +28,12 @@ defmodule YouCongressWeb.TopHeaderComponent do
             </div>
 
             <div>
-              <.link
-                href={~p"/about"}
-                class="text-[0.8125rem] leading-6 text-zinc-900 hover:text-zinc-700"
-              >
+              <.link href={~p"/about"}>
                 About
               </.link>
             </div>
             <div>
-              <.link
-                href={~p"/authors/#{@current_user.author_id}"}
-                class="text-[0.8125rem] leading-6 text-zinc-900 hover:text-zinc-700"
-              >
+              <.link href={~p"/authors/#{@current_user.author_id}"}>
                 Profile
               </.link>
             </div>
