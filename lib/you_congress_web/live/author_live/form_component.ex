@@ -24,7 +24,7 @@ defmodule YouCongressWeb.AuthorLive.FormComponent do
         <.input field={@form[:wikipedia_url]} type="text" label="Wikipedia url" />
         <.input field={@form[:twitter_username]} type="text" label="Twitter username" />
         <.input field={@form[:country]} type="text" label="Country" />
-        <.input field={@form[:is_twin]} type="checkbox" label="Is twin" />
+        <.input field={@form[:twin_origin]} type="checkbox" label="Is twin" />
         <.input
           field={@form[:twin_enabled]}
           type="checkbox"

@@ -11,7 +11,7 @@ defmodule YouCongress.AuthorsTest do
     @invalid_attrs %{
       bio: nil,
       country: nil,
-      is_twin: nil,
+      twin_origin: nil,
       name: nil,
       twitter_username: nil,
       wikipedia_url: nil
@@ -31,7 +31,7 @@ defmodule YouCongress.AuthorsTest do
       valid_attrs = %{
         bio: "some bio",
         country: "some country",
-        is_twin: true,
+        twin_origin: true,
         name: "some name",
         twitter_username: "some twitter_username",
         wikipedia_url: "some wikipedia_url"
@@ -40,7 +40,7 @@ defmodule YouCongress.AuthorsTest do
       assert {:ok, %Author{} = author} = Authors.create_author(valid_attrs)
       assert author.bio == "some bio"
       assert author.country == "some country"
-      assert author.is_twin == true
+      assert author.twin_origin == true
       assert author.name == "some name"
       assert author.twitter_username == "some twitter_username"
       assert author.wikipedia_url == "some wikipedia_url"
@@ -56,7 +56,7 @@ defmodule YouCongress.AuthorsTest do
       update_attrs = %{
         bio: "some updated bio",
         country: "some updated country",
-        is_twin: false,
+        twin_origin: false,
         name: "some updated name",
         twitter_username: "some updated twitter_username",
         wikipedia_url: "some updated wikipedia_url"
@@ -65,7 +65,7 @@ defmodule YouCongress.AuthorsTest do
       assert {:ok, %Author{} = author} = Authors.update_author(author, update_attrs)
       assert author.bio == "some updated bio"
       assert author.country == "some updated country"
-      assert author.is_twin == false
+      assert author.twin_origin == false
       assert author.name == "some updated name"
       assert author.twitter_username == "some updated twitter_username"
       assert author.wikipedia_url == "some updated wikipedia_url"

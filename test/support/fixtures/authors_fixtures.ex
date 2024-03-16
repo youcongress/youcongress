@@ -13,7 +13,7 @@ defmodule YouCongress.AuthorsFixtures do
       |> Enum.into(%{
         bio: Faker.Lorem.sentence(),
         country: Faker.Address.country(),
-        is_twin: true,
+        twin_origin: true,
         name: Faker.Person.name(),
         twitter_username: Faker.Internet.user_name(),
         wikipedia_url: "https://wikipedia.org/wiki/" <> Faker.Internet.user_name()

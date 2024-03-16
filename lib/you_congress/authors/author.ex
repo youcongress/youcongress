@@ -21,7 +21,7 @@ defmodule YouCongress.Authors.Author do
     # country is AI-generated for twins and is displayed location if present
     field :country, :string
     field :wikipedia_url, :string
-    field :is_twin, :boolean, default: true
+    field :twin_origin, :boolean, default: true
     field :twin_enabled, :boolean, default: true
 
     has_many :votes, YouCongress.Votes.Vote
@@ -38,7 +38,7 @@ defmodule YouCongress.Authors.Author do
       :wikipedia_url,
       :twitter_username,
       :country,
-      :is_twin,
+      :twin_origin,
       :twitter_id_str,
       :profile_image_url,
       :twin_enabled,
@@ -48,12 +48,12 @@ defmodule YouCongress.Authors.Author do
       :verified,
       :location
     ])
-    |> validate_required([:is_twin])
-    |> validate_required_if_is_twin()
+    |> validate_required([:twin_origin])
+    |> validate_required_if_twin_origin()
   end
 
-  def validate_required_if_is_twin(changeset) do
-    if get_field(changeset, :is_twin) do
+  def validate_required_if_twin_origin(changeset) do
+    if get_field(changeset, :twin_origin) do
       changeset
       |> validate_required([:name, :bio, :country])
       |> unique_constraint(:twitter_username)

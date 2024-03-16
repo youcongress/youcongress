@@ -131,7 +131,7 @@ defmodule YouCongress.Accounts do
 
   """
   def register_user(user_attrs, author_attrs \\ %{}) do
-    author_attrs = Map.put(author_attrs, :is_twin, false)
+    author_attrs = Map.put(author_attrs, :twin_origin, false)
 
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:author, Author.changeset(%Author{}, author_attrs))

@@ -7,7 +7,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
   @create_attrs %{
     bio: "some bio",
     country: "some country",
-    is_twin: true,
+    twin_origin: true,
     name: "some name",
     twitter_username: "some twitter_username",
     wikipedia_url: "some wikipedia_url"
@@ -15,7 +15,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
   @update_attrs %{
     bio: "some updated bio",
     country: "some updated country",
-    is_twin: true,
+    twin_origin: true,
     name: "some updated name",
     twitter_username: "some updated twitter_username",
     wikipedia_url: "some updated wikipedia_url"
@@ -23,7 +23,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
   @invalid_attrs %{
     bio: nil,
     country: nil,
-    is_twin: true,
+    twin_origin: true,
     name: nil,
     twitter_username: nil,
     wikipedia_url: nil
