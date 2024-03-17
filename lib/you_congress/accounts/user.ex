@@ -14,6 +14,7 @@ defmodule YouCongress.Accounts.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :naive_datetime
     field :role, :string, default: "user"
+    field :newsletter, :boolean, default: false
 
     belongs_to :author, YouCongress.Authors.Author
 
@@ -28,7 +29,8 @@ defmodule YouCongress.Accounts.User do
           role: String.t(),
           author_id: integer() | nil,
           inserted_at: NaiveDateTime.t(),
-          updated_at: NaiveDateTime.t()
+          updated_at: NaiveDateTime.t(),
+          newsletter: boolean()
         }
 
   @doc """
@@ -65,6 +67,11 @@ defmodule YouCongress.Accounts.User do
     user
     |> cast(attrs, [:email, :author_id, :role])
     |> validate_email(opts)
+  end
+
+  def welcome_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:newsletter])
   end
 
   def login_with_x_changeset(user, attrs, opts \\ []) do
