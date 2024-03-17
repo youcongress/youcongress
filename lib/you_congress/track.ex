@@ -7,6 +7,8 @@ defmodule YouCongress.Track do
 
   alias YouCongress.Authors
 
+  def event(_, nil), do: nil
+
   def event(event_type, current_user) do
     api_key = Application.get_env(:you_congress, :amplitude_api_key)
 
