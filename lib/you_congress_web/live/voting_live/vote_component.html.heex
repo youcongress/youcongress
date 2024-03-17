@@ -1,12 +1,12 @@
 <div>
   <%= if @include_author_bio do %>
     <div>
-      <strong><.link patch={~p"/authors/#{@author.id}"}><%= @author.name %><%= if @vote.twin, do: " AI" %></.link></strong>,
+      <strong><.link href={~p"/authors/#{@author.id}"}><%= @author.name %><%= if @vote.twin, do: " AI" %></.link></strong>,
       <span class="text-sm">
         <%= @author.bio || @author.description %>
       </span>
       <span class="pl-2">
-        <%= if !@current_user || @author.id != @current_user.id do %>
+        <%= if !@current_user || (@author.id != @current_user.id) do %>
           <Tooltip.render
             content={[
               "Choose a list of delegates.",
