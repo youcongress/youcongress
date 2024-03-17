@@ -213,6 +213,12 @@ defmodule YouCongress.Accounts do
     |> Repo.update()
   end
 
+  def welcome_update(%User{} = user, attrs) do
+    user
+    |> User.welcome_changeset(attrs)
+    |> Repo.update()
+  end
+
   defp user_email_multi(user, email, context) do
     changeset =
       user

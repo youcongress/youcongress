@@ -1,6 +1,6 @@
 <div class="py-4 text-lg font-semibold text-center bg-blue-100">Welcome to YouCongress!</div>
 <p class="mt-4">
-  YouCongress is an initiative designed to enhance decision-making in an environment where diverse opinions thrive, where change of opinion is celebrated and leads to individual and collective learning.
+  YouCongress is a project designed to enhance decision-making in an environment where diverse opinions thrive, where change of opinion is celebrated and leads to individual and collective learning.
 </p>
 
 <p class="pt-6">We're still shaping YouCongress, but you already can:</p>
@@ -15,9 +15,14 @@
 </ul>
 
 <p class="mt-4">Be humble to change your mind, be bold to convince others.</p>
-<a
-  href="/home"
-  class="inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 mt-4"
->
-  Start
-</a>
+
+<.simple_form for={@form} id="user-form" phx-submit="save">
+  <.input
+    field={@form[:newsletter]}
+    type="checkbox"
+    label="I consent to receive updates via email."
+  />
+  <:actions>
+    <.button phx-disable-with="Saving...">Start</.button>
+  </:actions>
+</.simple_form>

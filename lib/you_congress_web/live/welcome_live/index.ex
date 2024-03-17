@@ -1,16 +1,20 @@
 defmodule YouCongressWeb.WelcomeLive.Index do
   use YouCongressWeb, :live_view
 
+  alias YouCongress.Accounts
+  alias YouCongress.Accounts.User
+
   @impl true
   def mount(_params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
+    changeset = User.welcome_changeset(socket.assigns.current_user, %{})
 
     if connected?(socket) do
       %{assigns: %{current_user: current_user}} = socket
       YouCongress.Track.event("View Welcome", current_user)
     end
 
-    {:ok, socket}
+    {:ok, assign_form(socket, changeset)}
   end
 
   @impl true
@@ -22,6 +26,21 @@ defmodule YouCongressWeb.WelcomeLive.Index do
     socket
     |> assign(:page_title, "Welcome")
     |> assign(:voting, nil)
+  end
+
+  defp assign_form(socket, %Ecto.Changeset{} = changeset) do
+    assign(socket, :form, to_form(changeset))
+  end
+
+  @impl true
+  def handle_event("save", %{"user" => user_params}, socket) do
+    case Accounts.welcome_update(socket.assigns.current_user, user_params) do
+      {:ok, _} ->
+        {:noreply, redirect(socket, to: "/home")}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign_form(socket, changeset)}
+    end
   end
 
   @impl true
