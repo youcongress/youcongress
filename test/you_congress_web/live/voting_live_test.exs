@@ -70,7 +70,7 @@ defmodule YouCongressWeb.VotingLiveTest do
   describe "Show" do
     setup [:create_voting]
 
-    test "displays voting", %{conn: conn, voting: voting} do
+    test "displays voting as logged user", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
 
       {:ok, _show_live, html} = live(conn, ~p"/v/#{voting.slug}")
@@ -78,6 +78,13 @@ defmodule YouCongressWeb.VotingLiveTest do
       assert html =~ "Show Voting"
       assert html =~ voting.title
     end
+
+    # test "displays voting as non-logged visitor", %{conn: conn, voting: voting} do
+    #   {:ok, _show_live, html} = live(conn, ~p"/v/#{voting.slug}")
+
+    #   assert html =~ "Show Voting"
+    #   assert html =~ voting.title
+    # end
 
     test "updates voting within modal", %{conn: conn, voting: voting} do
       conn = log_in_as_admin(conn)

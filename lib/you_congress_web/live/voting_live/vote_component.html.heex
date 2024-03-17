@@ -6,7 +6,7 @@
         <%= @author.bio || @author.description %>
       </span>
       <span class="pl-2">
-        <%= if @author.id != @current_user.id do %>
+        <%= if !@current_user || @author.id != @current_user.id do %>
           <Tooltip.render
             content={[
               "Choose a list of delegates.",
