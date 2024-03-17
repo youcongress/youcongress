@@ -61,57 +61,6 @@ defmodule YouCongressWeb.VotingLive.Show do
     {:noreply, clear_flash(socket)}
   end
 
-  def handle_event("vote", %{"icon" => icon}, socket) do
-    %{
-      assigns: %{
-        current_user: current_user,
-        voting: voting,
-        current_user_vote: current_user_vote
-      }
-    } = socket
-
-    response = next_response(icon, response(current_user_vote))
-    answer_id = Answers.get_basic_answer_id(response)
-
-    case Votes.next_vote(%{
-           voting_id: voting.id,
-           answer_id: answer_id,
-           author_id: current_user.author_id
-         }) do
-      {:ok, :deleted} ->
-        socket = VotesLoader.load_voting_and_votes(socket, socket.assigns.voting.id)
-        %{assigns: %{current_user_vote: current_user_vote}} = socket
-        YouCongress.Track.event("Delete Vote", socket.assigns.current_user)
-
-        socket =
-          socket
-          |> put_flash(
-            :info,
-            "Your direct vote has been deleted.#{extra_delete_message(response(current_user_vote))}"
-          )
-
-        {:noreply, socket}
-
-      {:ok, _} ->
-        YouCongress.Track.event("Vote", socket.assigns.current_user)
-
-        socket =
-          socket
-          |> VotesLoader.load_voting_and_votes(socket.assigns.voting.id)
-          |> put_flash(:info, "You now #{message(response)}.")
-
-        {:noreply, socket}
-
-      {:error, error} ->
-        Logger.error("Error creating vote: #{inspect(error)}")
-        {:noreply, put_flash(socket, :error, "Error creating vote.")}
-    end
-  end
-
-  def handle_event("vote", _, %{assigns: %{current_user: nil}} = socket) do
-    {:noreply, put_flash(socket, :error, "You must be logged in to vote.")}
-  end
-
   def handle_event("vote", %{"response" => response}, socket) do
     %{
       assigns: %{
@@ -262,25 +211,6 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp extra_delete_message("Disagree"), do: " You now disagree via your delegates."
   defp extra_delete_message("Abstain"), do: " You now abstain via your delegates."
 
-  @spec next_response(binary, binary) :: binary
-  defp next_response("tick", "Agree"), do: "Strongly agree"
-  defp next_response("tick", "Strongly agree"), do: "Strongly agree"
-  defp next_response("tick", _), do: "Agree"
-  defp next_response("x", "Disagree"), do: "Strongly disagree"
-  defp next_response("x", "Strongly disagree"), do: "Strongly disagree"
-  defp next_response("x", _), do: "Disagree"
-  defp next_response("abstain", _), do: "Abstain"
-  defp next_response("no-comment", _), do: "N/A"
-
-  defp message("Strongly agree"), do: "strongly agree. Click again to delete your direct vote"
-  defp message("Agree"), do: "agree. Click again to strongly agree"
-  defp message("Abstain"), do: "abstain. Click again to delete your direct vote"
-  defp message("N/A"), do: "N/A. Click again to delete your direct vote"
-  defp message("Disagree"), do: "disagree. Click again to strongly disagree"
-
-  defp message("Strongly disagree"),
-    do: "strongly disagree. Click again to delete your direct vote"
-
   @spec response(Vote.t() | nil) :: binary | nil
   defp response(nil), do: nil
 
@@ -295,22 +225,6 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp load_random_votings(socket, voting_id) do
     assign(socket, :random_votings, Votings.list_random_votings(voting_id, 5))
   end
-
-  def agree_icon_size("Strongly agree"), do: 36
-  def agree_icon_size("Agree"), do: 32
-  def agree_icon_size(_), do: 24
-
-  def disagree_icon_size("Strongly disagree"), do: 36
-  def disagree_icon_size("Disagree"), do: 32
-  def disagree_icon_size(_), do: 24
-
-  def agree_icon_mt_css("Strongly agree"), do: nil
-  def agree_icon_mt_css("Agree"), do: nil
-  def agree_icon_mt_css(_), do: "mt-1"
-
-  def disagree_icon_mt_css("Strongly disagree"), do: nil
-  def disagree_icon_mt_css("Disagree"), do: nil
-  def disagree_icon_mt_css(_), do: "mt-1"
 
   defp response_color("Strongly agree"), do: "green"
   defp response_color("Agree"), do: "green"
