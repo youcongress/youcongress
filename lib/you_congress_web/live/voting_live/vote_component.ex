@@ -1,6 +1,8 @@
 defmodule YouCongressWeb.VotingLive.VoteComponent do
   use YouCongressWeb, :live_component
 
+  alias YouCongressWeb.Tools.Tooltip
+
   defp response(assigns, response) do
     assigns =
       assign(assigns, color: response_color(response), response: String.downcase(response))
