@@ -96,7 +96,9 @@ defmodule YouCongressWeb.Tools.Tooltip do
   defp classes(:position, %{position: "right"}), do: "left-full top-1/2 -translate-y-1/2"
   defp classes(:position, %{position: "top_end"}), do: "bottom-full right-0"
   defp classes(:position, %{position: "top_start"}), do: "bottom-full left-0"
-  defp classes(:position, %{position: "top"}), do: "bottom-full left-1/2 -translate-x-1/2"
+
+  defp classes(:position, %{position: "top"}),
+    do: "bottom-full left-0"
 
   # Variant
   defp classes(:variant, %{position: position, variant: "arrow"}) do
