@@ -6,6 +6,7 @@ defmodule YouCongressWeb.VotingLiveTest do
   import Phoenix.LiveViewTest
   import YouCongress.VotingsFixtures
 
+  alias YouCongress.AccountsFixtures
   alias YouCongress.VotesFixtures
   alias YouCongress.Votings
   alias YouCongress.Authors
@@ -186,8 +187,14 @@ defmodule YouCongressWeb.VotingLiveTest do
     test "creates a comment", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
 
+      another_user = AccountsFixtures.user_fixture()
+
       #  Create an AI generated comment as we don't display the form until we have one of these
-      VotesFixtures.vote_fixture(%{twin: true, voting_id: voting.id})
+      VotesFixtures.vote_fixture(%{
+        twin: true,
+        voting_id: voting.id,
+        author_id: another_user.author_id
+      })
 
       {:ok, show_live, html} = live(conn, ~p"/v/#{voting.slug}")
 
