@@ -37,8 +37,8 @@ defmodule YouCongressWeb.AuthorLiveTest do
   describe "Index" do
     setup [:create_author]
 
-    test "lists all authors", %{conn: conn, author: author} do
-      conn = log_in_as_user(conn)
+    test "lists all authors as admin", %{conn: conn, author: author} do
+      conn = log_in_as_admin(conn)
 
       {:ok, _index_live, html} = live(conn, ~p"/authors")
 

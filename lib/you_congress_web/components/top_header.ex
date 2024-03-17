@@ -17,21 +17,21 @@ defmodule YouCongressWeb.TopHeaderComponent do
         </div>
 
         <div class="text-sm flex items-center gap-3 leading-6 text-zinc-900">
-          <%= if @current_user do %>
-            <div>
-              <.link href="https://github.com/youcongress/youcongress" target="_blank">GitHub</.link>
-            </div>
-            <div>
-              <.link href="https://web.telegram.org/a/#-1002011576166" target="_blank">
-                Telegram
-              </.link>
-            </div>
+          <div>
+            <.link href="https://github.com/youcongress/youcongress" target="_blank">GitHub</.link>
+          </div>
+          <div>
+            <.link href="https://web.telegram.org/a/#-1002011576166" target="_blank">
+              Telegram
+            </.link>
+          </div>
 
-            <div>
-              <.link href={~p"/about"}>
-                About
-              </.link>
-            </div>
+          <div>
+            <.link href={~p"/about"}>
+              About
+            </.link>
+          </div>
+          <%= if @current_user do %>
             <div>
               <.link href={~p"/authors/#{@current_user.author_id}"}>
                 Profile
@@ -42,7 +42,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
               <.link
                 href={~p"/log_in"}
                 method="post"
-                class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+                class="text-[0.8125rem] leading-6 text-zinc-900 hover:text-zinc-700"
               >
                 Log in with X
               </.link>

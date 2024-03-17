@@ -43,6 +43,7 @@ defmodule YouCongressWeb.Router do
     live "/v/:slug/edit", VotingLive.Show, :edit
     live "/v/:slug/show/edit", VotingLive.Show, :edit
 
+    live "/authors", AuthorLive.Index, :index
     live "/authors/new", AuthorLive.Index, :new
     live "/authors/:id/edit", AuthorLive.Show, :edit
     live "/authors/:id/show/edit", AuthorLive.Show, :edit
@@ -60,7 +61,6 @@ defmodule YouCongressWeb.Router do
     live "/halls/:hall", VotingLive.Index, :index
     live "/v/:slug", VotingLive.Show, :show
 
-    live "/authors", AuthorLive.Index, :index
     live "/authors/:id", AuthorLive.Show, :show
 
     live "/votes", VoteLive.Index, :index
