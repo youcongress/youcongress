@@ -56,6 +56,10 @@ defmodule YouCongressWeb.AuthorLive.Show do
     end
   end
 
+  def handle_event("toggle-delegate", _, %{assigns: %{current_user: nil}} = socket) do
+    {:noreply, put_flash(socket, :error, "You must be logged in to delegate.")}
+  end
+
   def handle_event("toggle-delegate", %{"author_id" => delegate_id}, socket) do
     %{assigns: %{current_user: current_user}} = socket
     deleguee_id = current_user.author_id
