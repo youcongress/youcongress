@@ -26,8 +26,8 @@ defmodule YouCongress.Authors do
       opts,
       base_query,
       fn
-        {:twin, twin}, query ->
-          where(query, [author], author.twin == ^twin)
+        {:twin_origin, twin_origin}, query ->
+          where(query, [author], author.twin_origin == ^twin_origin)
 
         {:twin_enabled, twin_enabled}, query ->
           where(query, [author], author.twin_enabled == ^twin_enabled)

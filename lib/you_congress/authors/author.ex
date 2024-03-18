@@ -21,6 +21,8 @@ defmodule YouCongress.Authors.Author do
     # country is AI-generated for twins and is displayed location if present
     field :country, :string
     field :wikipedia_url, :string
+    # twin_origin indicates if the author started as a digital twin
+    # or if GPT returned an opinion while being disabled (see digital_twins.ex)
     field :twin_origin, :boolean, default: true
     field :twin_enabled, :boolean, default: true
 
