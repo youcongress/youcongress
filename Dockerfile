@@ -1,5 +1,5 @@
 # Specify the Elixir version
-FROM elixir:1.14
+FROM elixir:1.16.2
 
 # Create and set the working directory
 RUN mkdir /app
