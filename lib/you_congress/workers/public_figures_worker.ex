@@ -25,7 +25,7 @@ defmodule YouCongress.Workers.PublicFiguresWorker do
     exclude_existent = Enum.map(voting.votes, & &1.author.name)
 
     exclude_twin_disabled =
-      %{twin: true, twin_enabled: false}
+      %{twin_origin: true, twin_enabled: false}
       |> Authors.list_authors()
       |> Enum.map(& &1.name)
 
