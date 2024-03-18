@@ -27,6 +27,7 @@ defmodule YouCongressWeb.Router do
     get "/about", PageController, :about
     post "/log_in", TwitterLogInController, :log_in
     get "/twitter-callback", TwitterLogInController, :callback
+    get "/faq", PageController, :faq
   end
 
   scope "/", YouCongressWeb do

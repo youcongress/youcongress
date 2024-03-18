@@ -22,4 +22,8 @@ defmodule YouCongressWeb.PageController do
   def about(conn, _params) do
     render(conn, :about)
   end
+
+  def faq(conn, _params) do
+    render(conn, :faq)
+  end
 end

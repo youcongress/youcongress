@@ -28,4 +28,9 @@ defmodule YouCongressWeb.PageControllerTest do
     conn = get(conn, ~p"/about")
     assert html_response(conn, 200) =~ "About YouCongress"
   end
+
+  test "GET /faq loads successfully", %{conn: conn} do
+    conn = get(conn, ~p"/faq")
+    assert html_response(conn, 200) =~ "Frequently asked questions"
+  end
 end

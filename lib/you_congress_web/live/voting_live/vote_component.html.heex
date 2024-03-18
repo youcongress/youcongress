@@ -1,11 +1,16 @@
 <div>
   <%= if @include_author_bio do %>
     <div>
-      <div>
-        <strong><.link href={~p"/authors/#{@author.id}"}><%= @author.name %><%= if @vote.twin, do: " AI" %></.link></strong>,
-        <span class="text-sm">
-          <%= @author.bio || @author.description %>
-        </span>
+      <div class="flex justify-between">
+        <div>
+          <strong><.link href={~p"/authors/#{@author.id}"}><%= @author.name %><%= if @vote.twin, do: " AI" %></.link></strong>,
+          <span class="text-sm">
+            <%= @author.bio || @author.description %>
+          </span>
+        </div>
+        <%= if @vote.twin do %>
+          <AiQuoteMenu.render author_name={@author.name} vote_id={@vote.id} />
+        <% end %>
       </div>
       <%= if !@current_user || (@author.id != @current_user.id) do %>
         <div>
@@ -46,11 +51,7 @@
       <%= if !@include_author_bio, do: "#{@author.name} AI" %> would <%= response(
         assigns,
         @vote.answer.response
-      ) %> and say according to AI (wrong? <.link
-        class="underline"
-        href="#"
-        data-confirm="This feature is coming soon! You'll be able to add real quotes."
-      >fact check this</.link>):
+      ) %> and say according to AI
     <% else %>
       <%= if !@include_author_bio, do: @author.name || "Anonymous" %>
       <%= response_with_s(
