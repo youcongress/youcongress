@@ -2,6 +2,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
   use YouCongressWeb, :live_component
 
   alias YouCongressWeb.Tools.Tooltip
+  alias YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu
 
   defp response(assigns, response) do
     assigns =
