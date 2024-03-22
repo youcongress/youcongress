@@ -7,11 +7,9 @@ const AIQuote = {
       const menu = this.el.querySelector('.absolute');
 
       if (expanded) {
-        menu.classList.add("opacity-0", "translate-y-1");
-        menu.classList.remove("opacity-100", "translate-y-0");
+        menu.classList.add("hidden");
       } else {
-        menu.classList.add("opacity-100", "translate-y-0");
-        menu.classList.remove("opacity-0", "translate-y-1");
+        menu.classList.remove("hidden");
       }
     });
   }
