@@ -31,7 +31,7 @@ defmodule YouCongressWeb.Tools.Tooltip do
       |> build_tooltip_attrs()
 
     ~H"""
-    <div id={assigns[:id]} class="group relative inline-block">
+    <div id={assigns[:id]} class="group relative inline-block pr-2">
       <%= render_slot(@inner_block) %>
       <div {@tooltip_attrs}>
         <%= cond do %>
