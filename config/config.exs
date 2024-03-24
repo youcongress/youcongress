@@ -59,11 +59,6 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-config :openai,
-  api_key: System.get_env("OPENAI_API_KEY"),
-  organization_key: System.get_env("OPENAI_ORGANIZATION_KEY"),
-  http_options: [recv_timeout: 30_000]
-
 config :you_congress, Oban,
   repo: YouCongress.Repo,
   plugins: [
@@ -72,15 +67,6 @@ config :you_congress, Oban,
   queues: [
     default: 10
   ]
-
-config :extwitter, :oauth,
-  consumer_key: System.get_env("TWITTER_CONSUMER_KEY"),
-  consumer_secret: System.get_env("TWITTER_CONSUMER_SECRET"),
-  access_token: System.get_env("TWITTER_ACCESS_TOKEN"),
-  access_token_secret: System.get_env("TWITTER_ACCESS_SECRET")
-
-config :you_congress, :amplitude_api_key, System.get_env("AMPLITUDE_KEY")
-config :you_congress, :base_url, System.get_env("BASE_URL")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
