@@ -21,8 +21,13 @@ defmodule YouCongressWeb.TopHeaderComponent do
             <.link href="https://github.com/youcongress/youcongress" target="_blank">GitHub</.link>
           </div>
           <div>
-            <.link href="https://web.telegram.org/a/#-1002011576166" target="_blank">
-              Telegram
+            <.link href="https://discord.gg/d58rKSaB2n" target="_blank">
+              Discord
+            </.link>
+          </div>
+          <div class="hidden md:block">
+            <.link href="https://twitter.com/arpahector" target="_blank">
+              X/Twitter
             </.link>
           </div>
 
