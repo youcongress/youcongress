@@ -81,6 +81,8 @@ defmodule YouCongressWeb.VotingLive.Show do
            author_id: current_user.author_id
          }) do
       {:ok, :deleted} ->
+        YouCongress.Track.event("Delete Vote", current_user)
+
         socket = VotesLoader.load_voting_and_votes(socket, socket.assigns.voting.id)
         %{assigns: %{current_user_vote: current_user_vote}} = socket
 
@@ -94,6 +96,8 @@ defmodule YouCongressWeb.VotingLive.Show do
         {:noreply, socket}
 
       {:ok, _} ->
+        YouCongress.Track.event("Vote", current_user)
+
         socket =
           socket
           |> VotesLoader.load_voting_and_votes(socket.assigns.voting.id)
