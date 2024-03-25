@@ -11,9 +11,9 @@ We're still shaping YouCongress, but you already can:
 - explore AI-generated opinions from public figures
 - delegate to other users and public figures. You'll vote as the majority of your delegates — unless you vote directly.
 
-# Discord
+# Telegram
 
-You can join [Discord](https://discord.gg/d58rKSaB2n) to ask any questions and/or have a chat.
+You can join [Telegram](https://t.me/youcongress) to ask any questions and/or have a chat.
 
 # Contributions
 
