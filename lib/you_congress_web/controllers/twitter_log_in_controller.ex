@@ -5,7 +5,6 @@ defmodule YouCongressWeb.TwitterLogInController do
 
   alias YouCongress.Accounts
   alias YouCongress.Authors
-  alias YouCongress.Accounts.User
   alias YouCongress.Track
 
   def log_in(conn, _params) do
@@ -39,9 +38,8 @@ defmodule YouCongressWeb.TwitterLogInController do
 
     email = data.raw_data.email
 
-    invitation = YouCongress.Invitations.get_invitation_by_twitter_username(data.screen_name)
     user = Accounts.get_user_by_twitter_id_str_or_username(data.id_str, data.screen_name)
-    create_or_log_in_user(invitation, user, email, author_attrs, conn)
+    create_or_log_in_user(user, email, author_attrs, conn)
   end
 
   def get_callback_data(oauth_token, oauth_verifier) do
@@ -57,77 +55,27 @@ defmodule YouCongressWeb.TwitterLogInController do
     ExTwitter.verify_credentials(include_email: true)
   end
 
-  defp create_or_log_in_user(nil, nil, email, author_attrs, conn) do
-    user_attrs = %{"role" => "waiting_list", "email" => email}
-
-    case Accounts.register_user(user_attrs, author_attrs) do
-      {:ok, %{user: user, author: _author}} ->
-        user = YouCongress.Accounts.get_user!(user.id, include: [:author])
-        Track.event("Join Waiting List", user)
-
-        conn
-        |> put_flash(:error, "You're in the waiting list. See you soon.")
-        |> redirect(to: ~p"/waiting_list")
-
-      {:error, changeset} ->
-        show_error(changeset, conn)
-    end
-  end
-
-  defp create_or_log_in_user(nil, user, email, author_attrs, conn) do
-    user_attrs = %{"email" => email}
-
-    with {:ok, user} <- Accounts.update_login_with_x(user, user_attrs),
-         {:ok, _} <- Authors.update_author(user.author, author_attrs) do
-      if Accounts.in_waiting_list?(user) do
-        Track.event("Rejoin Waiting List", user)
-        redirect(conn, to: ~p"/waiting_list")
-      else
-        log_in_and_redirect(user, conn)
-      end
-    else
-      {:error, changeset} -> show_error(changeset, conn)
-    end
-  end
-
-  defp create_or_log_in_user(invitation, nil, email, author_attrs, conn) do
+  defp create_or_log_in_user(nil, email, author_attrs, conn) do
     user_attrs = %{"role" => "user", "email" => email}
 
     case create_user_and_log_in(user_attrs, author_attrs) do
       {:ok, user} ->
-        YouCongress.Invitations.delete_invitation(invitation)
         log_in_and_redirect(user, conn, ~p"/welcome")
 
-      {:error, changeset} ->
+      {:error, _, changeset} ->
         show_error(changeset, conn)
     end
   end
 
-  defp create_or_log_in_user(invitation, user, _data, _author_attrs, conn) do
-    case maybe_change_role(user) do
-      :ok ->
-        YouCongress.Invitations.delete_invitation(invitation)
-        log_in_and_redirect(user, conn, ~p"/welcome")
+  defp create_or_log_in_user(user, email, author_attrs, conn) do
+    user_attrs = %{"email" => email}
 
-      {:error, changeset} ->
-        show_error(changeset, conn)
+    with {:ok, user} <- Accounts.update_login_with_x(user, user_attrs),
+         {:ok, _} <- Authors.update_author(user.author, author_attrs) do
+      log_in_and_redirect(user, conn)
+    else
+      {:error, changeset} -> show_error(changeset, conn)
     end
-  end
-
-  defp maybe_change_role(%User{role: "waiting_list"} = user) do
-    case Accounts.update_role(user, "user") do
-      {:ok, user} ->
-        Track.event("New user", user)
-        :ok
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
-  end
-
-  defp maybe_change_role(user) do
-    Track.event("Login with X", user)
-    :ok
   end
 
   defp create_user_and_log_in(user_attrs, author_attrs) do
