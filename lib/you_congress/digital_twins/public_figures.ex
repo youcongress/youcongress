@@ -67,7 +67,7 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
   end
 
   def num_gen_opinions do
-    case Application.get_env(:notesclub, :env) do
+    case Application.get_env(:youcongress, :env) do
       :test -> @num_gen_opinions_in_test
       :dev -> @num_gen_opinions_in_dev
       _ -> @num_gen_opinions_in_prod
