@@ -61,6 +61,10 @@ defmodule YouCongressWeb.VotingLive.Show do
     {:noreply, clear_flash(socket)}
   end
 
+  def handle_event("vote", _, %{assigns: %{current_user: nil}} = socket) do
+    {:noreply, put_flash(socket, :error, "You must be logged in to vote.")}
+  end
+
   def handle_event("vote", %{"response" => response}, socket) do
     %{
       assigns: %{
@@ -131,6 +135,10 @@ defmodule YouCongressWeb.VotingLive.Show do
       |> clear_flash()
 
     {:noreply, socket}
+  end
+
+  def handle_event("add-delegation", _, %{assigns: %{current_user: nil}} = socket) do
+    {:noreply, put_flash(socket, :error, "You must be logged in to delegate.")}
   end
 
   def handle_event("add-delegation", %{"author_id" => author_id}, socket) do
