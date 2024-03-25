@@ -15,7 +15,7 @@ defmodule YouCongress.Halls.Classification do
 
   @spec classify(binary, OpenAIModel.t()) :: {:ok, map} | {:error, binary}
   def classify(text, model \\ @model) do
-    if Application.get_env(:youcongress, :env) == :test do
+    if Application.get_env(:you_congress, :env) == :test do
       {:ok, %{tags: ["ai", "spain"]}}
     else
       case classify_gpt(text, model) do

@@ -14,12 +14,8 @@
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
     </script>
-    <%= if Application.get_env(:youcongress, :env) == :prod do %>
-      <script
-        defer
-        data-domain={Application.get_env(:youcongress, :base_url)}
-        src="https://plausible.io/js/script.js"
-      >
+    <%= if Application.get_env(:you_congress, :env) == :prod do %>
+      <script defer data-domain="youcongress.com" src="https://plausible.io/js/script.js">
       </script>
     <% end %>
   </head>
