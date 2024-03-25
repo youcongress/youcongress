@@ -2,7 +2,6 @@ defmodule YouCongressWeb.TwitterLogInControllerTest do
   use YouCongressWeb.ConnCase, async: true
 
   import YouCongress.AccountsFixtures
-  import YouCongress.InvitationsFixtures
   import Mock
 
   @twitter_data %ExTwitter.Model.User{
@@ -43,64 +42,14 @@ defmodule YouCongressWeb.TwitterLogInControllerTest do
   end
 
   describe "GET /twitter-callback" do
-    test "redirects to /waiting_list if NO user and NOT in invitation list", %{
+    test "creates user and redirects to /welcome if new user", %{
       conn: conn
     } do
       with_mocks([
         {YouCongressWeb.TwitterLogInController, [:passthrough],
          [get_callback_data: fn _, _ -> @twitter_data end]}
       ]) do
-        conn = get(conn, ~p"/twitter-callback?oauth_token=one&oauth_verifier=two")
-        assert user = Accounts.get_user_by_username("arpahector")
-        assert user.role == "waiting_list"
-        assert redirected_to(conn) =~ ~p"/waiting_list"
-      end
-    end
-
-    test "redirects to /waiting_list if user in waiting list and NOT in invitation list", %{
-      conn: conn
-    } do
-      user_fixture(%{role: "waiting_list"}, %{twitter_username: "arpahector"})
-
-      with_mocks([
-        {YouCongressWeb.TwitterLogInController, [:passthrough],
-         [get_callback_data: fn _, _ -> @twitter_data end]}
-      ]) do
-        conn = get(conn, ~p"/twitter-callback?oauth_token=one&oauth_verifier=two")
-        assert Accounts.count() == 1
-        assert user = Accounts.get_user_by_username("arpahector")
-        assert user.role == "waiting_list"
-        assert redirected_to(conn) =~ ~p"/waiting_list"
-      end
-    end
-
-    test "redirects to /welcome if user in waiting list and in invitation list", %{
-      conn: conn
-    } do
-      user_fixture(%{role: "waiting_list"}, %{twitter_username: "arpahector"})
-      invitation_fixture(%{twitter_username: "arpahector"})
-
-      with_mocks([
-        {YouCongressWeb.TwitterLogInController, [:passthrough],
-         [get_callback_data: fn _, _ -> @twitter_data end]}
-      ]) do
-        conn = get(conn, ~p"/twitter-callback?oauth_token=one&oauth_verifier=two")
-        assert Accounts.count() == 1
-        assert user = Accounts.get_user_by_username("arpahector")
-        assert user.role == "user"
-        assert redirected_to(conn) =~ ~p"/welcome"
-      end
-    end
-
-    test "redirects to /welcome if user NOT in waiting list and in invitation list", %{
-      conn: conn
-    } do
-      invitation_fixture(%{twitter_username: "arpahector"})
-
-      with_mocks([
-        {YouCongressWeb.TwitterLogInController, [:passthrough],
-         [get_callback_data: fn _, _ -> @twitter_data end]}
-      ]) do
+        assert Accounts.count() == 0
         conn = get(conn, ~p"/twitter-callback?oauth_token=one&oauth_verifier=two")
         assert Accounts.count() == 1
         assert user = Accounts.get_user_by_username("arpahector")
@@ -118,29 +67,12 @@ defmodule YouCongressWeb.TwitterLogInControllerTest do
         {YouCongressWeb.TwitterLogInController, [:passthrough],
          [get_callback_data: fn _, _ -> @twitter_data end]}
       ]) do
+        assert Accounts.count() == 1
         conn = get(conn, ~p"/twitter-callback?oauth_token=one&oauth_verifier=two")
         assert Accounts.count() == 1
         assert user = Accounts.get_user_by_username("arpahector")
         assert user.role == "user"
         assert redirected_to(conn) =~ ~p"/home"
-      end
-    end
-
-    test "redirects to /welcome if returning user in invitation list", %{
-      conn: conn
-    } do
-      user_fixture(%{role: "user"}, %{twitter_username: "arpahector"})
-      invitation_fixture(%{twitter_username: "arpahector"})
-
-      with_mocks([
-        {YouCongressWeb.TwitterLogInController, [:passthrough],
-         [get_callback_data: fn _, _ -> @twitter_data end]}
-      ]) do
-        conn = get(conn, ~p"/twitter-callback?oauth_token=one&oauth_verifier=two")
-        assert Accounts.count() == 1
-        assert user = Accounts.get_user_by_username("arpahector")
-        assert user.role == "user"
-        assert redirected_to(conn) =~ ~p"/welcome"
       end
     end
   end
