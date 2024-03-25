@@ -8,6 +8,7 @@ defmodule YouCongress.Application do
   @impl true
   def start(_type, _args) do
     Appsignal.Phoenix.LiveView.attach()
+    topologies = Application.get_env(:libcluster, :topologies) || []
 
     children = [
       # Start the Telemetry supervisor
@@ -22,10 +23,10 @@ defmodule YouCongress.Application do
       YouCongressWeb.Endpoint,
       # Oban
       {Oban, Application.fetch_env!(:you_congress, Oban)},
-      #  Server that updates Voting.generating_left
-      {YouCongress.OpinatorWorker.GeneratingLeftServer, []}
-      # Start a worker by calling: YouCongress.Worker.start_link(arg)
-      # {YouCongress.Worker, arg}
+      # Server that updates Voting.generating_left
+      {YouCongress.OpinatorWorker.GeneratingLeftServer, []},
+      # Setup for clustering
+      {Cluster.Supervisor, [topologies, [name: YouCongress.ClusterSupervisor]]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
