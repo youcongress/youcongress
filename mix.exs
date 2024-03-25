@@ -61,7 +61,8 @@ defmodule YouCongress.MixProject do
       {:extwitter, github: "youcongress/extwitter"},
       {:slugify, "~> 1.3.1"},
       {:appsignal, "~> 2.8.0"},
-      {:appsignal_phoenix, "~> 2.3.5"}
+      {:appsignal_phoenix, "~> 2.3.5"},
+      {:libcluster, "~> 3.3.3"}
     ]
   end
 

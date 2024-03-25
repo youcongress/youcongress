@@ -1,0 +1,35 @@
+# fly.toml app configuration file generated for youcongress-production on 2024-03-24T09:52:57+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'youcongress-production'
+primary_region = 'fra'
+kill_signal = 'SIGTERM'
+
+[build]
+
+[deploy]
+  release_command = '/app/bin/migrate'
+
+[env]
+  PHX_HOST = 'youcongress.com'
+  PORT = '8080'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 2
+  processes = ['app']
+
+[http_service.concurrency]
+    type = 'connections'
+    hard_limit = 1000
+    soft_limit = 1000
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 2
