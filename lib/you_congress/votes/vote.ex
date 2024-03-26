@@ -17,6 +17,8 @@ defmodule YouCongress.Votes.Vote do
     belongs_to :author, Author
     belongs_to :voting, Voting
     belongs_to :answer, Answer
+    # opinion_id links to the main opinion
+    # authors can have more than one opinion per voting, but at the moment we only display one
     belongs_to :opinion, Opinion
 
     timestamps()
