@@ -8,7 +8,7 @@ defmodule YouCongress.Repo.Migrations.CreateOpinions do
       add :twin, :boolean, default: false, null: false
       add :author_id, references(:authors, on_delete: :delete_all)
       add :user_id, references(:users, on_delete: :delete_all)
-      add :vote_id, references(:votes, on_delete: :delete_all)
+      add :vote_id, references(:votes, on_delete: :nilify_all)
 
       timestamps()
     end
@@ -18,7 +18,7 @@ defmodule YouCongress.Repo.Migrations.CreateOpinions do
     create index(:opinions, [:vote_id])
 
     alter table(:votes) do
-      add :opinion_id, references(:opinions, on_delete: :nothing)
+      add :opinion_id, references(:opinions, on_delete: :nilify_all)
     end
   end
 end
