@@ -18,7 +18,7 @@ defmodule YouCongress.Repo.Migrations.CreateOpinions do
     create index(:opinions, [:vote_id])
 
     alter table(:votes) do
-      add :opinion_id, references(:opinions, on_delete: :nothing)
+      add :opinion_id, references(:opinions, on_delete: :nullify)
     end
   end
 end

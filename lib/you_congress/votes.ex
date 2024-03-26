@@ -25,7 +25,7 @@ defmodule YouCongress.Votes do
   def list_votes_with_opinion do
     from(v in Vote,
       join: a in assoc(v, :author),
-      where: not is_nil(v.opinion),
+      where: not is_nil(v.opinion_id),
       select: v
     )
     |> Repo.all()
@@ -62,7 +62,7 @@ defmodule YouCongress.Votes do
     |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
     |> where(
       [v, a],
-      v.voting_id == ^voting_id and not is_nil(v.opinion) and
+      v.voting_id == ^voting_id and not is_nil(v.opinion_id) and
         v.id not in ^exclude_ids
     )
     |> preload(^include_tables)
@@ -76,7 +76,7 @@ defmodule YouCongress.Votes do
       [v, a],
       v.voting_id == ^voting_id and v.author_id == ^author_id
     )
-    |> preload(:answer)
+    |> preload([:answer, :opinion])
     |> Repo.one()
   end
 
@@ -92,7 +92,7 @@ defmodule YouCongress.Votes do
     |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
     |> where(
       [v, a],
-      v.voting_id == ^voting_id and is_nil(v.opinion) and v.id not in ^exclude_ids
+      v.voting_id == ^voting_id and is_nil(v.opinion_id) and v.id not in ^exclude_ids
     )
     |> preload(^include_tables)
     |> Repo.all()

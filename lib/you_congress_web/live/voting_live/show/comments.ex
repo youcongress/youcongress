@@ -11,6 +11,7 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
 
   alias YouCongress.Votes.Answers
   alias YouCongress.Votes
+  alias YouCongress.Opinions
 
   def post_event(opinion, %{assigns: %{current_user_vote: nil}} = socket) do
     opinion = clean_opinion(opinion)
@@ -65,20 +66,40 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
     end
   end
 
-  defp update_vote(voting, current_user_vote, opinion, socket) do
-    case Votes.update_vote(current_user_vote, %{opinion: opinion}) do
-      {:ok, vote} ->
-        verb = if opinion, do: "updated", else: "deleted"
+  defp update_vote(voting, current_user_vote, nil, socket) do
+    case Opinions.delete_opinion(current_user_vote.opinion) do
+      {:ok, _} ->
+        current_user_vote =
+          Votes.get_current_user_vote(voting.id, socket.assigns.current_user.author_id)
 
         socket =
           socket
           |> load_voting_and_votes(voting.id)
-          |> assign(current_user_vote: vote, editing: !opinion)
-          |> put_flash(:info, "Your comment has been #{verb}.")
+          |> assign(current_user_vote: current_user_vote, editing: false)
+          |> put_flash(:info, "Your comment has been deleted.")
 
         {:noreply, socket}
 
-      {:error, _vote} ->
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Error. Please try again.")}
+    end
+  end
+
+  defp update_vote(voting, current_user_vote, opinion, socket) do
+    case Opinions.update_opinion(current_user_vote.opinion, %{content: opinion}) do
+      {:ok, opinion} ->
+        current_user_vote =
+          Votes.get_current_user_vote(voting.id, socket.assigns.current_user.author_id)
+
+        socket =
+          socket
+          |> load_voting_and_votes(voting.id)
+          |> assign(current_user_vote: current_user_vote, editing: !opinion)
+          |> put_flash(:info, "Your comment has been updated.")
+
+        {:noreply, socket}
+
+      {:error, _} ->
         {:noreply, put_flash(socket, :error, "Error. Please try again.")}
     end
   end

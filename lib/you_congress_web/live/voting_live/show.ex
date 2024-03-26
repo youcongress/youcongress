@@ -36,7 +36,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       |> load_random_votings(voting.id)
 
     current_user_vote = socket.assigns.current_user_vote
-    socket = assign(socket, editing: !current_user_vote || !current_user_vote.opinion)
+    socket = assign(socket, editing: !current_user_vote || !current_user_vote.opinion_id)
 
     if socket.assigns.voting.generating_left > 0 do
       Process.send_after(self(), :reload, 1_000)
