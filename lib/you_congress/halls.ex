@@ -152,4 +152,12 @@ defmodule YouCongress.Halls do
   def change_hall(%Hall{} = hall, attrs \\ %{}) do
     Hall.changeset(hall, attrs)
   end
+
+  def classify(text, model \\ :"gpt-3.5-turbo-0125") do
+    classifier_impl().classify(text, model)
+  end
+
+  defp classifier_impl do
+    Application.get_env(:you_congress, :hall_classifier, YouCongress.Halls.Classification)
+  end
 end

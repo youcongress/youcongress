@@ -5,23 +5,20 @@ defmodule YouCongress.Halls.Classification do
 
   alias YouCongress.DigitalTwins.OpenAIModel
 
-  @model :"gpt-3.5-turbo-0125"
-
   @answer0 """
   {
     "tags": ["ai", "spain"]
   }
   """
 
+  @behaviour YouCongress.Halls.ClassificationBehaviour
+
+  @impl YouCongress.Halls.ClassificationBehaviour
   @spec classify(binary, OpenAIModel.t()) :: {:ok, map} | {:error, binary}
-  def classify(text, model \\ @model) do
-    if Application.get_env(:you_congress, :env) == :test do
-      {:ok, %{tags: ["ai", "spain"]}}
-    else
-      case classify_gpt(text, model) do
-        {:ok, %{tags: tags, cost: cost}} -> {:ok, %{tags: tags, cost: cost}}
-        {:error, error} -> {:error, error}
-      end
+  def classify(text, model) do
+    case classify_gpt(text, model) do
+      {:ok, %{tags: tags, cost: cost}} -> {:ok, %{tags: tags, cost: cost}}
+      {:error, error} -> {:error, error}
     end
   end
 

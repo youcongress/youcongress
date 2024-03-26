@@ -25,7 +25,7 @@ defmodule YouCongress.HallsVotings do
   def sync!(voting_id) do
     voting = Votings.get_voting!(voting_id, preload: [:halls])
 
-    {:ok, %{tags: tags}} = Halls.Classification.classify(voting.title)
+    {:ok, %{tags: tags}} = Halls.classify(voting.title)
     {:ok, halls} = Halls.list_or_create_by_names(tags)
 
     link!(voting, halls)
