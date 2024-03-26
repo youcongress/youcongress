@@ -52,7 +52,7 @@ defmodule YouCongress.MixProject do
       {:gettext, "~> 0.24"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:faker, "~> 0.17", only: :test},
+      {:faker, "~> 0.17", only: [:test, :dev]},
       {:mock, "~> 0.3.8", only: :test},
       {:openai, "~> 0.5.4"},
       {:oban, "~> 2.17.1"},

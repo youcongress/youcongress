@@ -55,5 +55,9 @@ defmodule YouCongress.HallsTest do
       hall = hall_fixture()
       assert %Ecto.Changeset{} = Halls.change_hall(hall)
     end
+
+    test "classify/1 returns fake tags" do
+      assert {:ok, %{tags: ["fake", _], cost: 0}} = Halls.classify("some text")
+    end
   end
 end
