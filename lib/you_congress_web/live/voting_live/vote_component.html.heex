@@ -71,7 +71,7 @@
       <% end %>
     <% end %>
   </div>
-  <%= if @show_opinion do %>
-    <div class="pt-2"><%= @vote.opinion %></div>
+  <%= if @show_opinion && @vote.opinion_id do %>
+    <div class="pt-2"><%= @vote.opinion.content %></div>
   <% end %>
 </div>

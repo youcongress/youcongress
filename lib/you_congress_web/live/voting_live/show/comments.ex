@@ -42,24 +42,33 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
     end
   end
 
-  defp create_vote(opinion, socket) do
+  defp create_vote(opinion_content, socket) do
     %{assigns: %{current_user: current_user, voting: voting}} = socket
 
-    case Votes.create_vote(%{
-           voting_id: voting.id,
-           author_id: current_user.author_id,
-           opinion: opinion,
-           answer_id: Answers.answer_id_by_response("N/A")
-         }) do
-      {:ok, _} ->
-        socket =
-          socket
-          |> assign(editing: false)
-          |> load_voting_and_votes(voting.id)
-          |> put_flash(:info, "Comment created successfully.")
+    args = %{
+      content: opinion_content,
+      author_id: current_user.author_id,
+      user_id: current_user.id,
+      voting_id: voting.id,
+      twin: false
+    }
 
-        {:noreply, socket}
+    with {:ok, opinion} <- Opinions.create_opinion(args),
+         {:ok, _} <-
+           Votes.create_vote(%{
+             voting_id: voting.id,
+             author_id: current_user.author_id,
+             opinion_id: opinion.id,
+             answer_id: Answers.answer_id_by_response("N/A")
+           }) do
+      socket =
+        socket
+        |> assign(editing: false)
+        |> load_voting_and_votes(voting.id)
+        |> put_flash(:info, "Comment created successfully.")
 
+      {:noreply, socket}
+    else
       {:error, error} ->
         Logger.error("Error creating vote: #{inspect(error)}")
         {:noreply, put_flash(socket, :error, "Error. Please try again.")}
@@ -80,6 +89,33 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
 
         {:noreply, socket}
 
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Error. Please try again.")}
+    end
+  end
+
+  defp update_vote(voting, %{opinion_id: nil} = current_user_vote, opinion_content, socket) do
+    args = %{
+      content: opinion_content,
+      author_id: current_user_vote.author_id,
+      user_id: socket.assigns.current_user.id,
+      vote_id: current_user_vote.id,
+      twin: current_user_vote.twin
+    }
+
+    with {:ok, opinion} <- Opinions.create_opinion(args),
+         {:ok, _} <- Votes.update_vote(current_user_vote, %{opinion_id: opinion.id}) do
+      current_user_vote =
+        Votes.get_current_user_vote(voting.id, socket.assigns.current_user.author_id)
+
+      socket =
+        socket
+        |> load_voting_and_votes(voting.id)
+        |> assign(current_user_vote: current_user_vote, editing: false)
+        |> put_flash(:info, "Your comment has been updated.")
+
+      {:noreply, socket}
+    else
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Error. Please try again.")}
     end
@@ -122,24 +158,22 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
 
   def delete_event(socket) do
     %{assigns: %{current_user_vote: current_user_vote, voting: voting}} = socket
-    no_answer_id = Answers.answer_id_by_response("N/A")
 
-    if current_user_vote.answer_id == no_answer_id do
-      delete_vote(voting, current_user_vote, socket)
-    else
-      case Votes.update_vote(current_user_vote, %{opinion: nil}) do
-        {:ok, vote} ->
-          socket =
-            socket
-            |> load_voting_and_votes(voting.id)
-            |> assign(current_user_vote: vote)
-            |> put_flash(:info, "Your comment has been deleted.")
+    case Opinions.delete_opinion(current_user_vote.opinion) do
+      {:ok, _opinion} ->
+        current_user_vote =
+          Votes.get_current_user_vote(voting.id, socket.assigns.current_user.author_id)
 
-          {:noreply, socket}
+        socket =
+          socket
+          |> load_voting_and_votes(voting.id)
+          |> assign(current_user_vote: current_user_vote)
+          |> put_flash(:info, "Your comment has been deleted.")
 
-        {:error, _vote} ->
-          {:noreply, put_flash(socket, :error, "Error. Please try again.")}
-      end
+        {:noreply, socket}
+
+      {:error, _vote} ->
+        {:noreply, put_flash(socket, :error, "Error. Please try again.")}
     end
   end
 

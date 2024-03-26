@@ -15,7 +15,6 @@ defmodule YouCongress.VotesFixtures do
     {:ok, vote} =
       attrs
       |> Enum.into(%{
-        opinion: Faker.Lorem.sentence(),
         author_id: author_fixture().id,
         voting_id: voting_fixture().id,
         answer_id: answer_fixture().id

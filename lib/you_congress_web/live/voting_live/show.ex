@@ -95,6 +95,11 @@ defmodule YouCongressWeb.VotingLive.Show do
 
         {:noreply, socket}
 
+      {:ok, :opinion_and_no_answer_response} ->
+        socket = put_flash(socket, :info, "You are already voting N/A")
+
+        {:noreply, socket}
+
       {:ok, _} ->
         YouCongress.Track.event("Vote", current_user)
 

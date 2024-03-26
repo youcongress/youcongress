@@ -6,6 +6,7 @@ defmodule YouCongress.VotesTest do
   import YouCongress.VotesFixtures
 
   import YouCongress.Votes.AnswersFixtures
+  import YouCongress.OpinionsFixtures
 
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
@@ -25,14 +26,13 @@ defmodule YouCongress.VotesTest do
 
     test "create_vote/1 with valid data creates a vote" do
       valid_attrs = %{
-        opinion: "some opinion",
+        opinion_id: opinion_fixture().id,
         author_id: author_fixture().id,
         voting_id: voting_fixture().id,
         answer_id: answer_fixture().id
       }
 
-      assert {:ok, %Vote{} = vote} = Votes.create_vote(valid_attrs)
-      assert vote.opinion == "some opinion"
+      assert {:ok, %Vote{}} = Votes.create_vote(valid_attrs)
     end
 
     test "create_vote/1 with invalid data returns error changeset" do
@@ -41,10 +41,11 @@ defmodule YouCongress.VotesTest do
 
     test "update_vote/2 with valid data updates the vote" do
       vote = vote_fixture()
-      update_attrs = %{opinion: "some updated vote"}
+      opinion = opinion_fixture()
+      update_attrs = %{opinion_id: opinion.id}
 
       assert {:ok, %Vote{} = vote} = Votes.update_vote(vote, update_attrs)
-      assert vote.opinion == "some updated vote"
+      assert vote.opinion_id == opinion.id
     end
 
     test "update_vote/2 with invalid data returns error changeset" do

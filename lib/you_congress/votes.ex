@@ -183,17 +183,23 @@ defmodule YouCongress.Votes do
           {:ok, Vote.t()} | {:ok, :deleted} | {:error, String.t()}
   defp delete_or_update_vote(%Vote{} = vote, voting_id, author_id, attrs) do
     if vote.answer_id == attrs[:answer_id] && vote.direct do
-      case delete_vote(vote) do
-        {:ok, _} ->
-          DelegationVotes.update_author_voting_delegated_votes(%{
-            author_id: author_id,
-            voting_id: voting_id
-          })
+      no_answer_id = YouCongress.Votes.Answers.no_answer_id()
 
-          {:ok, :deleted}
+      if vote.opinion_id && vote.answer_id == no_answer_id do
+        {:ok, :opinion_and_no_answer_response}
+      else
+        case(delete_vote(vote)) do
+          {:ok, _} ->
+            DelegationVotes.update_author_voting_delegated_votes(%{
+              author_id: author_id,
+              voting_id: voting_id
+            })
 
-        {:error, _} ->
-          {:error, "Error deleting vote"}
+            {:ok, :deleted}
+
+          {:error, _} ->
+            {:error, "Error deleting vote"}
+        end
       end
     else
       attrs = Map.put(attrs, :direct, true)
