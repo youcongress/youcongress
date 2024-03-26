@@ -5,7 +5,6 @@ defmodule YouCongress.Votes do
 
   import Ecto.Query, warn: false
 
-  alias YouCongress.DelegationVotes
   alias YouCongress.Votes.Vote
   alias YouCongress.Repo
 
@@ -20,6 +19,15 @@ defmodule YouCongress.Votes do
   """
   def list_votes do
     Repo.all(Vote)
+  end
+
+  def list_votes_with_opinion do
+    from(v in Vote,
+      join: a in assoc(v, :author),
+      where: not is_nil(v.opinion_id),
+      select: v
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -53,7 +61,7 @@ defmodule YouCongress.Votes do
     |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
     |> where(
       [v, a],
-      v.voting_id == ^voting_id and not is_nil(v.opinion) and
+      v.voting_id == ^voting_id and not is_nil(v.opinion_id) and
         v.id not in ^exclude_ids
     )
     |> preload(^include_tables)
@@ -67,7 +75,7 @@ defmodule YouCongress.Votes do
       [v, a],
       v.voting_id == ^voting_id and v.author_id == ^author_id
     )
-    |> preload(:answer)
+    |> preload([:answer, :opinion])
     |> Repo.one()
   end
 
@@ -83,7 +91,7 @@ defmodule YouCongress.Votes do
     |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
     |> where(
       [v, a],
-      v.voting_id == ^voting_id and is_nil(v.opinion) and v.id not in ^exclude_ids
+      v.voting_id == ^voting_id and is_nil(v.opinion_id) and v.id not in ^exclude_ids
     )
     |> preload(^include_tables)
     |> Repo.all()
@@ -162,33 +170,11 @@ defmodule YouCongress.Votes do
   @doc """
   Creates, updates or deletes a vote.
   """
-  @spec next_vote(map) :: {:ok, Vote.t()} | {:ok, :deleted} | {:error, String.t()}
-  def next_vote(%{voting_id: voting_id, author_id: author_id} = attrs) do
+  @spec create_or_update(map) :: {:ok, Vote.t()} | {:ok, :deleted} | {:error, String.t()}
+  def create_or_update(%{voting_id: voting_id, author_id: author_id} = attrs) do
     case Repo.get_by(Vote, %{voting_id: voting_id, author_id: author_id}) do
       nil -> create_vote(attrs)
-      vote -> delete_or_update_vote(vote, voting_id, author_id, attrs)
-    end
-  end
-
-  @spec delete_or_update_vote(Vote.t(), integer, integer, map) ::
-          {:ok, Vote.t()} | {:ok, :deleted} | {:error, String.t()}
-  defp delete_or_update_vote(%Vote{} = vote, voting_id, author_id, attrs) do
-    if vote.answer_id == attrs[:answer_id] && vote.direct do
-      case delete_vote(vote) do
-        {:ok, _} ->
-          DelegationVotes.update_author_voting_delegated_votes(%{
-            author_id: author_id,
-            voting_id: voting_id
-          })
-
-          {:ok, :deleted}
-
-        {:error, _} ->
-          {:error, "Error deleting vote"}
-      end
-    else
-      attrs = Map.put(attrs, :direct, true)
-      update_vote(vote, attrs)
+      vote -> update_vote(vote, attrs)
     end
   end
 

@@ -8,8 +8,10 @@ defmodule YouCongressWeb.VotingLiveTest do
 
   alias YouCongress.AccountsFixtures
   alias YouCongress.VotesFixtures
+  alias YouCongress.OpinionsFixtures
   alias YouCongress.Votings
   alias YouCongress.Authors
+  alias YouCongress.Opinions
 
   @create_attrs %{title: "nuclear energy"}
   @suggested_titles [
@@ -143,14 +145,6 @@ defmodule YouCongressWeb.VotingLiveTest do
       html = render(show_live)
       assert html =~ "You voted Strongly agree"
 
-      #  Delete direct vote
-      show_live
-      |> element(".vote", "Strongly agree")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "Your direct vote has been deleted."
-
       # Vote agree
       show_live
       |> element(".vote", "Agree")
@@ -220,11 +214,21 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       author = Authors.list_authors() |> hd()
 
-      VotesFixtures.vote_fixture(%{
-        voting_id: voting.id,
-        author_id: author.id,
-        opinion: "whatever"
-      })
+      opinion =
+        OpinionsFixtures.opinion_fixture(%{
+          author_id: author.id,
+          voting_id: voting.id,
+          content: "whatever"
+        })
+
+      vote =
+        VotesFixtures.vote_fixture(%{
+          voting_id: voting.id,
+          author_id: author.id,
+          opinion_id: opinion.id
+        })
+
+      {:ok, _} = Opinions.update_opinion(opinion, %{vote_id: vote.id})
 
       #  Create an AI generated comment as we don't display the form until we have one of these
       VotesFixtures.vote_fixture(%{twin: true, voting_id: voting.id})

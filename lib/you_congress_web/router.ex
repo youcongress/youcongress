@@ -50,10 +50,6 @@ defmodule YouCongressWeb.Router do
     live "/authors/new", AuthorLive.Index, :new
     live "/authors/:id/edit", AuthorLive.Show, :edit
     live "/authors/:id/show/edit", AuthorLive.Show, :edit
-
-    live "/votes/new", VoteLive.Index, :new
-    live "/votes/:id/edit", VoteLive.Show, :edit
-    live "/votes/:id/show/edit", VoteLive.Show, :edit
   end
 
   scope "/", YouCongressWeb do

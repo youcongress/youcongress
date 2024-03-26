@@ -7,7 +7,6 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Delegations
   alias YouCongress.Votings
   alias YouCongress.Votes
-  alias YouCongress.Votes.Vote
   alias YouCongress.Votes.Answers
   alias YouCongressWeb.VotingLive.Show.VotesLoader
 
@@ -36,7 +35,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       |> load_random_votings(voting.id)
 
     current_user_vote = socket.assigns.current_user_vote
-    socket = assign(socket, editing: !current_user_vote || !current_user_vote.opinion)
+    socket = assign(socket, editing: !current_user_vote || !current_user_vote.opinion_id)
 
     if socket.assigns.voting.generating_left > 0 do
       Process.send_after(self(), :reload, 1_000)
@@ -75,26 +74,11 @@ defmodule YouCongressWeb.VotingLive.Show do
 
     answer_id = Answers.get_basic_answer_id(response)
 
-    case Votes.next_vote(%{
+    case Votes.create_or_update(%{
            voting_id: voting.id,
            answer_id: answer_id,
            author_id: current_user.author_id
          }) do
-      {:ok, :deleted} ->
-        YouCongress.Track.event("Delete Vote", current_user)
-
-        socket = VotesLoader.load_voting_and_votes(socket, socket.assigns.voting.id)
-        %{assigns: %{current_user_vote: current_user_vote}} = socket
-
-        socket =
-          put_flash(
-            socket,
-            :info,
-            "Your direct vote has been deleted.#{extra_delete_message(response(current_user_vote))}"
-          )
-
-        {:noreply, socket}
-
       {:ok, _} ->
         YouCongress.Track.event("Vote", current_user)
 
@@ -103,7 +87,7 @@ defmodule YouCongressWeb.VotingLive.Show do
           |> VotesLoader.load_voting_and_votes(socket.assigns.voting.id)
           |> put_flash(
             :info,
-            "You voted #{response}. Click again to delete your direct vote."
+            "You voted #{response}."
           )
 
         {:noreply, socket}
@@ -216,19 +200,6 @@ defmodule YouCongressWeb.VotingLive.Show do
   end
 
   def handle_info(_, socket), do: {:noreply, socket}
-
-  defp extra_delete_message(nil), do: ""
-
-  defp extra_delete_message("Agree"), do: " You now agree via your delegates."
-  defp extra_delete_message("Disagree"), do: " You now disagree via your delegates."
-  defp extra_delete_message("Abstain"), do: " You now abstain via your delegates."
-
-  @spec response(Vote.t() | nil) :: binary | nil
-  defp response(nil), do: nil
-
-  defp response(vote) do
-    Answers.basic_answer_id_response_map()[vote.answer_id]
-  end
 
   @spec page_title(atom) :: binary
   defp page_title(:show), do: "Show Voting"
