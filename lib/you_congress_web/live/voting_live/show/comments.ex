@@ -35,10 +35,10 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
         {:noreply, put_flash(socket, :error, "Comment can't be blank.")}
 
       opinion || current_user_vote.answer_id != no_answer_id ->
-        update_vote(voting, current_user_vote, opinion, socket)
+        update_comment(voting, current_user_vote, opinion, socket)
 
       true ->
-        delete_vote(voting, current_user_vote, socket)
+        delete_comment(voting, current_user_vote, socket)
     end
   end
 
@@ -75,7 +75,7 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
     end
   end
 
-  defp update_vote(voting, current_user_vote, nil, socket) do
+  defp update_comment(voting, current_user_vote, nil, socket) do
     case Opinions.delete_opinion(current_user_vote.opinion) do
       {:ok, _} ->
         current_user_vote =
@@ -94,17 +94,17 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
     end
   end
 
-  defp update_vote(voting, %{opinion_id: nil} = current_user_vote, opinion_content, socket) do
+  defp update_comment(voting, %{opinion_id: nil} = current_user_vote, opinion_content, socket) do
     args = %{
       content: opinion_content,
       author_id: current_user_vote.author_id,
       user_id: socket.assigns.current_user.id,
       vote_id: current_user_vote.id,
-      twin: current_user_vote.twin
+      twin: false
     }
 
     with {:ok, opinion} <- Opinions.create_opinion(args),
-         {:ok, _} <- Votes.update_vote(current_user_vote, %{opinion_id: opinion.id}) do
+         {:ok, _} <- Votes.update_vote(current_user_vote, %{opinion_id: opinion.id, twin: false}) do
       current_user_vote =
         Votes.get_current_user_vote(voting.id, socket.assigns.current_user.author_id)
 
@@ -121,9 +121,13 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
     end
   end
 
-  defp update_vote(voting, current_user_vote, opinion, socket) do
-    case Opinions.update_opinion(current_user_vote.opinion, %{content: opinion}) do
+  defp update_comment(voting, current_user_vote, opinion, socket) do
+    update_twin = !!current_user_vote.twin
+
+    case Opinions.update_opinion(current_user_vote.opinion, %{content: opinion, twin: false}) do
       {:ok, opinion} ->
+        if update_twin, do: Votes.update_vote(current_user_vote, %{twin: false})
+
         current_user_vote =
           Votes.get_current_user_vote(voting.id, socket.assigns.current_user.author_id)
 
@@ -140,7 +144,7 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
     end
   end
 
-  defp delete_vote(voting, current_user_vote, socket) do
+  defp delete_comment(voting, current_user_vote, socket) do
     case Votes.delete_vote(current_user_vote) do
       {:ok, _} ->
         socket =
