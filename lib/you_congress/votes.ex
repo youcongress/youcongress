@@ -22,6 +22,15 @@ defmodule YouCongress.Votes do
     Repo.all(Vote)
   end
 
+  def list_votes_with_opinion do
+    from(v in Vote,
+      join: a in assoc(v, :author),
+      where: not is_nil(v.opinion),
+      select: v
+    )
+    |> Repo.all()
+  end
+
   @doc """
   Returns the list of votes for a voting.
 
