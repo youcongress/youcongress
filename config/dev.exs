@@ -1,5 +1,10 @@
 import Config
 
+if !System.get_env("OPENAI_API_KEY") do
+  # Use a fake to classify halls in development
+  config :you_congress, :hall_classifier, YouCongress.Halls.ClassificationFake
+end
+
 # Configure your database
 config :you_congress, YouCongress.Repo,
   username: "postgres",
