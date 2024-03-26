@@ -8,6 +8,7 @@ defmodule YouCongress.DigitalTwins do
   alias YouCongress.Votes.Answers.Answer
   alias YouCongress.Votes.Vote
   alias YouCongress.Votings
+  alias YouCongress.Opinions
 
   require Logger
 
@@ -62,14 +63,26 @@ defmodule YouCongress.DigitalTwins do
     {:ok, author} = Authors.find_by_wikipedia_url_or_create(author_data)
 
     if author.twin_enabled do
-      Votes.create_vote(%{
-        opinion: opinion["opinion"],
-        author_id: author.id,
-        voting_id: voting_id,
-        answer_id: answer.id,
-        direct: true,
-        twin: true
-      })
+      {:ok, opinion} =
+        Opinions.create_opinion(%{
+          author_id: author.id,
+          voting_id: voting_id,
+          content: opinion["opinion"],
+          twin: true
+        })
+
+      {:ok, vote} =
+        Votes.create_vote(%{
+          author_id: author.id,
+          voting_id: voting_id,
+          answer_id: answer.id,
+          direct: true,
+          twin: true,
+          opinion_id: opinion.id
+        })
+
+      Opinions.update_opinion(opinion, %{vote_id: vote.id})
+      {:ok, vote}
     else
       #  Set the author as twin_origin so it won't be used again and do not save
       Authors.update_author(author, %{twin_origin: true})

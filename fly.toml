@@ -9,9 +9,6 @@ kill_signal = 'SIGTERM'
 
 [build]
 
-[deploy]
-  release_command = '/app/bin/migrate'
-
 [env]
   PHX_HOST = 'youcongress.com'
   PORT = '8080'

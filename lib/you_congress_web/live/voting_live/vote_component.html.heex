@@ -61,9 +61,9 @@
       <%= unless @vote.direct do %>
         via delegates
       <% end %>
-      <%= if @vote.source_url do %>
+      <%= if @vote.opinion_id && @vote.opinion.source_url do %>
         <span class="text-xs">
-          (<.link href={@vote.source_url} target="_blank" class="underline">source</.link>)
+          (<.link href={@vote.opinion.source_url} target="_blank" class="underline">source</.link>)
         </span>
       <% end %>
       <%= if @vote.opinion do %>
@@ -71,7 +71,7 @@
       <% end %>
     <% end %>
   </div>
-  <%= if @show_opinion do %>
-    <div class="pt-2"><%= @vote.opinion %></div>
+  <%= if @show_opinion && @vote.opinion_id do %>
+    <div class="pt-2"><%= @vote.opinion.content %></div>
   <% end %>
 </div>

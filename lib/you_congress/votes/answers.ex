@@ -49,6 +49,8 @@ defmodule YouCongress.Votes.Answers do
 
   def private_ids, do: @private_ids
 
+  def no_answer_id, do: @basic_response_answer_id_map["N/A"]
+
   @doc """
   Returns the list of answers.
 

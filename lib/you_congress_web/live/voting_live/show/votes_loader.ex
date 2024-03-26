@@ -22,13 +22,13 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
 
     votes_with_opinion =
       Votes.list_votes_with_opinion(voting_id,
-        include: [:author, :answer],
+        include: [:author, :answer, :opinion],
         exclude_ids: exclude_ids
       )
 
     votes_without_opinion =
       Votes.list_votes_without_opinion(voting_id,
-        include: [:author, :answer],
+        include: [:author, :answer, :opinion],
         exclude_ids: exclude_ids
       )
 

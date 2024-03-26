@@ -12,7 +12,7 @@
   rows={@streams.votes}
   row_click={fn {_id, vote} -> JS.navigate(~p"/votes/#{vote}") end}
 >
-  <:col :let={{_id, vote}} label="Vote"><%= vote.opinion %></:col>
+  <:col :let={{_id, vote}} label="Vote"><%= vote.opinion.content %></:col>
   <:action :let={{_id, vote}}>
     <div class="sr-only">
       <.link navigate={~p"/votes/#{vote}"}>Show</.link>

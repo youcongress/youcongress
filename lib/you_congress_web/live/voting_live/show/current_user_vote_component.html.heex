@@ -38,7 +38,7 @@
                 placeholder={
                   if @current_user, do: "Add your comment...", else: "Log in to comment..."
                 }
-              ><%= @current_user_vote && @current_user_vote.opinion %></textarea>
+              ><%= @current_user_vote && @current_user_vote.opinion_id && @current_user_vote.opinion.content %></textarea>
             </div>
           </div>
         </div>

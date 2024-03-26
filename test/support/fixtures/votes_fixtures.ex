@@ -7,6 +7,7 @@ defmodule YouCongress.VotesFixtures do
   import YouCongress.AuthorsFixtures
   import YouCongress.VotingsFixtures
   import YouCongress.Votes.AnswersFixtures
+  import YouCongress.OpinionsFixtures
 
   @doc """
   Generate a vote.
@@ -15,13 +16,28 @@ defmodule YouCongress.VotesFixtures do
     {:ok, vote} =
       attrs
       |> Enum.into(%{
-        opinion: Faker.Lorem.sentence(),
         author_id: author_fixture().id,
         voting_id: voting_fixture().id,
         answer_id: answer_fixture().id
       })
+      |> add_opinion_id_if_missing()
       |> YouCongress.Votes.create_vote()
 
     vote
+  end
+
+  def add_opinion_id_if_missing(attrs) do
+    if Map.has_key?(attrs, :opinion_id) do
+      attrs
+    else
+      opinion =
+        opinion_fixture(%{
+          author_id: attrs.author_id,
+          voting_id: attrs.voting_id,
+          content: Faker.Lorem.sentence()
+        })
+
+      attrs |> Map.put(:opinion_id, opinion.id)
+    end
   end
 end
