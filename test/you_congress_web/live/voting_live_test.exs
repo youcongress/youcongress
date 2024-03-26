@@ -145,14 +145,6 @@ defmodule YouCongressWeb.VotingLiveTest do
       html = render(show_live)
       assert html =~ "You voted Strongly agree"
 
-      #  Delete direct vote
-      show_live
-      |> element(".vote", "Strongly agree")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "Your direct vote has been deleted."
-
       # Vote agree
       show_live
       |> element(".vote", "Agree")
@@ -236,7 +228,7 @@ defmodule YouCongressWeb.VotingLiveTest do
           opinion_id: opinion.id
         })
 
-      Opinions.update_opinion(opinion, %{vote_id: vote.id})
+      {:ok, _} = Opinions.update_opinion(opinion, %{vote_id: vote.id})
 
       #  Create an AI generated comment as we don't display the form until we have one of these
       VotesFixtures.vote_fixture(%{twin: true, voting_id: voting.id})

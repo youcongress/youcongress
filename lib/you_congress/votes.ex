@@ -5,7 +5,6 @@ defmodule YouCongress.Votes do
 
   import Ecto.Query, warn: false
 
-  alias YouCongress.DelegationVotes
   alias YouCongress.Votes.Vote
   alias YouCongress.Repo
 
@@ -171,39 +170,11 @@ defmodule YouCongress.Votes do
   @doc """
   Creates, updates or deletes a vote.
   """
-  @spec next_vote(map) :: {:ok, Vote.t()} | {:ok, :deleted} | {:error, String.t()}
-  def next_vote(%{voting_id: voting_id, author_id: author_id} = attrs) do
+  @spec create_or_update(map) :: {:ok, Vote.t()} | {:ok, :deleted} | {:error, String.t()}
+  def create_or_update(%{voting_id: voting_id, author_id: author_id} = attrs) do
     case Repo.get_by(Vote, %{voting_id: voting_id, author_id: author_id}) do
       nil -> create_vote(attrs)
-      vote -> delete_or_update_vote(vote, voting_id, author_id, attrs)
-    end
-  end
-
-  @spec delete_or_update_vote(Vote.t(), integer, integer, map) ::
-          {:ok, Vote.t()} | {:ok, :deleted} | {:error, String.t()}
-  defp delete_or_update_vote(%Vote{} = vote, voting_id, author_id, attrs) do
-    if vote.answer_id == attrs[:answer_id] && vote.direct do
-      no_answer_id = YouCongress.Votes.Answers.no_answer_id()
-
-      if vote.opinion_id && vote.answer_id == no_answer_id do
-        {:ok, :opinion_and_no_answer_response}
-      else
-        case(delete_vote(vote)) do
-          {:ok, _} ->
-            DelegationVotes.update_author_voting_delegated_votes(%{
-              author_id: author_id,
-              voting_id: voting_id
-            })
-
-            {:ok, :deleted}
-
-          {:error, _} ->
-            {:error, "Error deleting vote"}
-        end
-      end
-    else
-      attrs = Map.put(attrs, :direct, true)
-      update_vote(vote, attrs)
+      vote -> update_vote(vote, attrs)
     end
   end
 
