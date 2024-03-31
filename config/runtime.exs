@@ -93,6 +93,12 @@ if config_env() == :prod do
       ]
     ]
 
+  config :appsignal, :config,
+    revision: System.get_env("APP_REVISION"),
+    ignore_errors: [
+      "Ecto.NoResultsError"
+    ]
+
   # ## SSL Support
   #
   # To get SSL working, you will need to add the `https` key
