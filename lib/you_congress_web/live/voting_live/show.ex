@@ -9,6 +9,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Votes
   alias YouCongress.Votes.Answers
   alias YouCongressWeb.VotingLive.Show.VotesLoader
+  alias YouCongress.DelegationVotes
 
   @impl true
   def mount(_, session, socket) do
@@ -77,7 +78,8 @@ defmodule YouCongressWeb.VotingLive.Show do
     case Votes.create_or_update(%{
            voting_id: voting.id,
            answer_id: answer_id,
-           author_id: current_user.author_id
+           author_id: current_user.author_id,
+           direct: true
          }) do
       {:ok, _} ->
         YouCongress.Track.event("Vote", current_user)
@@ -95,6 +97,29 @@ defmodule YouCongressWeb.VotingLive.Show do
       {:error, error} ->
         Logger.error("Error creating vote: #{inspect(error)}")
         {:noreply, put_flash(socket, :error, "Error creating vote.")}
+    end
+  end
+
+  def handle_event("delete-direct-vote", _, socket) do
+    %{
+      assigns: %{current_user_vote: current_user_vote, current_user: current_user, voting: voting}
+    } = socket
+
+    case Votes.delete_vote(current_user_vote) do
+      {:ok, _} ->
+        YouCongress.Track.event("Delete Vote", current_user)
+
+        DelegationVotes.update_author_voting_delegated_votes(current_user.author_id, voting.id)
+
+        socket =
+          socket
+          |> VotesLoader.load_voting_and_votes(voting.id)
+          |> put_flash(:info, "Direct vote deleted.")
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Error deleting vote.")}
     end
   end
 

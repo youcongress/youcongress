@@ -31,6 +31,17 @@ defmodule YouCongress.DelegationVotes do
     :ok
   end
 
+  def update_author_voting_delegated_votes(author_id, voting_id) do
+    if Votes.get_vote(%{author_id: author_id, voting_id: voting_id, direct: true}) do
+      :direct_vote_exists
+    else
+      delegate_ids = Delegations.delegate_ids_by_author_id(author_id)
+      answers = Answers.basic_response_answer_id_map()
+      update_votes(voting_id, author_id, delegate_ids, answers)
+      :ok
+    end
+  end
+
   defp update_votes(voting_id, author_id, delegate_ids, answers) do
     {in_favour, against, neutral} = get_counters(voting_id, delegate_ids)
 

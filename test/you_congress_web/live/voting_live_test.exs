@@ -129,7 +129,64 @@ defmodule YouCongressWeb.VotingLiveTest do
       end
     end
 
-    test "casts a vote", %{conn: conn, voting: voting} do
+    test "casts a vote from voting buttons", %{conn: conn, voting: voting} do
+      conn = log_in_as_user(conn)
+
+      #  Create a vote so we display the voting options
+      VotesFixtures.vote_fixture(%{voting_id: voting.id})
+
+      {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
+
+      #  Vote strongly agree
+      show_live
+      |> element("button", "Strongly agree")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Strongly agree"
+
+      # Vote agree
+      show_live
+      |> element("button", "Agree")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Agree"
+
+      # Vote Abstain
+      show_live
+      |> element("button", "Abstain")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Abstain"
+
+      # Vote N/A
+      show_live
+      |> element("button", "N/A")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted N/A"
+
+      # Vote disagree
+      show_live
+      |> element("button", "Disagree")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Disagree"
+
+      # Vote strongly disagree
+      show_live
+      |> element("button", "Strongly disagree")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Strongly disagree"
+    end
+
+    test "casts a vote from results", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
 
       #  Create a vote so we display the voting options
@@ -139,7 +196,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       # Vote strongly agree
       show_live
-      |> element(".vote", "Strongly agree")
+      |> element(".result", "Strongly agree")
       |> render_click()
 
       html = render(show_live)
@@ -147,15 +204,23 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       # Vote agree
       show_live
-      |> element(".vote", "Agree")
+      |> element(".result", "Agree")
       |> render_click()
 
       html = render(show_live)
       assert html =~ "You voted Agree"
 
-      #  Vote N/A
+      # Vote Abstain
       show_live
-      |> element(".vote", "N/A")
+      |> element(".result", "Abstain")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Abstain"
+
+      # Vote N/A
+      show_live
+      |> element(".result", "N/A")
       |> render_click()
 
       html = render(show_live)
@@ -163,7 +228,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       # Vote disagree
       show_live
-      |> element(".vote", "Disagree")
+      |> element(".result", "Disagree")
       |> render_click()
 
       html = render(show_live)
@@ -171,7 +236,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       # Vote strongly disagree
       show_live
-      |> element(".vote", "Strongly disagree")
+      |> element(".result", "Strongly disagree")
       |> render_click()
 
       html = render(show_live)

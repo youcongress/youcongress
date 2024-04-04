@@ -35,7 +35,12 @@ defmodule YouCongress.OpinionsTest do
 
     test "update_opinion/2 with valid data updates the opinion" do
       opinion = opinion_fixture()
-      update_attrs = %{source_url: "some updated source_url", content: "some updated content", twin: false}
+
+      update_attrs = %{
+        source_url: "some updated source_url",
+        content: "some updated content",
+        twin: false
+      }
 
       assert {:ok, %Opinion{} = opinion} = Opinions.update_opinion(opinion, update_attrs)
       assert opinion.source_url == "some updated source_url"
