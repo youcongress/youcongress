@@ -33,14 +33,38 @@
 
 <%= if(@votes_from_delegates != [] || @votes_from_non_delegates != []) do %>
   <div class="mt-4 mb-4">
-    <div class="pb-2">Cast your vote:</div>
+    <div>
+      Cast your vote:
+      <%= for response <- Answers.basic_responses() do %>
+        <button
+          phx-click="vote"
+          phx-value-response={response}
+          class={"rounded bg-#{response_color(response)}-500 px-2 py-1 text-xs font-semibold text-white shadow-sm ring-1 ring-inset ring-#{response_color(response)}-300 hover:bg-#{response_color(response)}-600"}
+        >
+          <%= if @current_user_vote && @current_user_vote.answer.response == response,
+            do: "✓ " %>
+          <%= response %>
+          <%= if @current_user_vote && !@current_user_vote.direct && @current_user_vote.answer.response == response do %>
+            <span class="ml-1">
+              via delegates
+            </span>
+          <% end %>
+        </button>
+      <% end %>
+      <%= if @current_user_vote && @current_user_vote.direct do %>
+        <button phx-click="delete-direct-vote" class="text-sm">
+          Clear
+        </button>
+      <% end %>
+    </div>
+    <div class="pb-2 pt-6">Results:</div>
     <div class="space-y-1">
       <%= for response <- Answers.basic_responses() do %>
         <% {votes, percentage} = @vote_frequencies[response] || {0, 0} %>
         <div class="mb-2">
           <div class="flex justify-between items-center mb-1">
             <div
-              class="vote flex items-center cursor-pointer"
+              class="result flex items-center cursor-pointer"
               phx-click="vote"
               phx-value-response={response}
             >
