@@ -64,6 +64,7 @@ defmodule YouCongress.Votes do
       v.voting_id == ^voting_id and not is_nil(v.opinion_id) and
         v.id not in ^exclude_ids
     )
+    |> order_by([v], asc: v.twin)
     |> preload(^include_tables)
     |> Repo.all()
   end
