@@ -47,7 +47,7 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
 
     Tell me the name of #{num_opinions} public figures or experts in json who have publicly shared their views on the topic "#{topic}".
     Also, rate how much they agree from: "Strongly agree", "Agree", "Abstain", "Disagree", "Strongly disagree".
-    Try to include diverse votes (e.g. not only "Strongly agree").
+    Try to include diverse votes (e.g. not only "Strongly agree"), unless all public figures agree.
     It should be plausible that the public figure has that opinion about the topic (E.g. an actor probably won't have an opinion on programming languages, but well-known programmers might).
 
     Exclude these public figures: #{exclude_names}
