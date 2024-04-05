@@ -153,7 +153,7 @@ defmodule YouCongress.Halls do
     Hall.changeset(hall, attrs)
   end
 
-  def classify(text, model \\ :"gpt-3.5-turbo-0125") do
+  def classify(text, model \\ :"gpt-4-turbo-preview") do
     classifier_impl().classify(text, model)
   end
 

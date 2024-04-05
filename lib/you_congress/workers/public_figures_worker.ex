@@ -39,7 +39,7 @@ defmodule YouCongress.Workers.PublicFiguresWorker do
              generating_total: provisional_num
            }),
          {:ok, %{votes: votes}} <-
-           PublicFigures.generate_list(voting.title, :"gpt-3.5-turbo-0125", exclude_names),
+           PublicFigures.generate_list(voting.title, :"gpt-4-turbo-preview", exclude_names),
          true <- is_list(votes),
          {:ok, _} <-
            Votings.update_voting(voting, %{
