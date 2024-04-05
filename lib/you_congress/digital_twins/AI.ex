@@ -64,9 +64,9 @@ defmodule YouCongress.DigitalTwins.AI do
     """
     Topic: #{topic}
 
-    Write one more opinion in first person from the public figure "#{name}" who have publicly shared their views on the topic.
-    #{if response, do: "The opinion should make clear that #{name} #{response} with the topic."}.
-    It should be plausible that the public figure has that opinion about the topic (E.g. an actor probably won't have an opinion on programming languages)
+    Write one more opinion in first person from the public figure "#{name}".
+    #{if response, do: "Consider that #{name} must #{response} with the question #{topic}. Write the opinion accordingly."}.
+    It should be plausible that the public figure has that opinion about the topic (E.g. most actors won't have an opinion on programming languages)
     """
   end
 
