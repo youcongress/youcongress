@@ -6,16 +6,17 @@ defmodule YouCongress.Votings.TitleRewording do
   alias YouCongress.DigitalTwins.OpenAIModel
 
   @question """
-  Generate three questions from the prompt so:
-  - It is short (more like a title) and grammatically correct in English (translate otherwise)
+  Generate two questions from the prompt so:
+  - It is short (more like a title) and grammatically correct in English. Translate to English if it's in a different language.
   - It should be a yes/no question which starts with "Should we...", "Shall we...?" or similar
   - It is neutral and not offensive as it's going to be voted and discussed among diverse people.
   - Ideally, it should be about topics that are relevant both locally and globally.
-  - Give one option very similar in meaning to the original prompt and two others more creative
+  - The first one should be almost the same as the prompt with slight changes so it is a question and translated to English if it was in a different language.
+  - The others should be more creative
 
   Prompt: Nuclear energy
 
-  The response should be in in JSON format (an array of three strings)
+  The response should be in JSON format (an array of three strings)
   """
 
   @answer """
@@ -23,7 +24,7 @@ defmodule YouCongress.Votings.TitleRewording do
     "questions": [
       "Should we use more nuclear energy?",
       "Is nuclear energy safe?",
-      "Would nuclear energy help us tackle climate change?"
+      "Shall we invest in nuclear energy?"
     ]
   }
   """
