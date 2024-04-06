@@ -16,43 +16,51 @@ defmodule YouCongressWeb.TwitterLogInController do
   end
 
   def callback(conn, %{"oauth_token" => oauth_token, "oauth_verifier" => oauth_verifier}) do
-    data = YouCongressWeb.TwitterLogInController.get_callback_data(oauth_token, oauth_verifier)
+    case YouCongressWeb.TwitterLogInController.get_callback_data(oauth_token, oauth_verifier) do
+      {:ok, data} ->
+        author_attrs = %{
+          twitter_username: data.screen_name,
+          twitter_id_str: data.id_str,
+          name: data.name,
+          profile_image_url: data.profile_image_url_https,
+          description: data.description,
+          location: data.location,
+          followers_count: data.followers_count,
+          friends_count: data.friends_count,
+          verified: data.verified
+        }
 
-    # Inspect the data returned by Twitter:
-    #
-    # data
-    # |> Map.from_struct()
-    # |> Enum.each(fn {key, value} -> Logger.info("#{key}: #{inspect(value)}") end)
+        email = data.raw_data.email
 
-    author_attrs = %{
-      twitter_username: data.screen_name,
-      twitter_id_str: data.id_str,
-      name: data.name,
-      profile_image_url: data.profile_image_url_https,
-      description: data.description,
-      location: data.location,
-      followers_count: data.followers_count,
-      friends_count: data.friends_count,
-      verified: data.verified
-    }
+        user = Accounts.get_user_by_twitter_id_str_or_username(data.id_str, data.screen_name)
+        create_or_log_in_user(user, email, author_attrs, conn)
 
-    email = data.raw_data.email
+      {:error, error} ->
+        Logger.error("Error getting Twitter data: #{inspect(error)}")
 
-    user = Accounts.get_user_by_twitter_id_str_or_username(data.id_str, data.screen_name)
-    create_or_log_in_user(user, email, author_attrs, conn)
+        conn
+        |> put_flash(:error, "There was an error.")
+        |> redirect(to: "/")
+    end
   end
 
   def get_callback_data(oauth_token, oauth_verifier) do
-    {:ok, access_token} = ExTwitter.access_token(oauth_verifier, oauth_token)
+    case ExTwitter.access_token(oauth_verifier, oauth_token) do
+      {:ok, access_token} ->
+        ExTwitter.configure(
+          consumer_key: System.get_env("TWITTER_CONSUMER_KEY"),
+          consumer_secret: System.get_env("TWITTER_CONSUMER_SECRET"),
+          access_token: access_token.oauth_token,
+          access_token_secret: access_token.oauth_token_secret
+        )
 
-    ExTwitter.configure(
-      consumer_key: System.get_env("TWITTER_CONSUMER_KEY"),
-      consumer_secret: System.get_env("TWITTER_CONSUMER_SECRET"),
-      access_token: access_token.oauth_token,
-      access_token_secret: access_token.oauth_token_secret
-    )
+        data = ExTwitter.verify_credentials(include_email: true)
 
-    ExTwitter.verify_credentials(include_email: true)
+        {:ok, data}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   defp create_or_log_in_user(nil, email, author_attrs, conn) do
