@@ -47,7 +47,7 @@ defmodule YouCongressWeb.TwitterLogInControllerTest do
     } do
       with_mocks([
         {YouCongressWeb.TwitterLogInController, [:passthrough],
-         [get_callback_data: fn _, _ -> @twitter_data end]}
+         [get_callback_data: fn _, _ -> {:ok, @twitter_data} end]}
       ]) do
         assert Accounts.count() == 0
         conn = get(conn, ~p"/twitter-callback?oauth_token=one&oauth_verifier=two")
@@ -65,7 +65,7 @@ defmodule YouCongressWeb.TwitterLogInControllerTest do
 
       with_mocks([
         {YouCongressWeb.TwitterLogInController, [:passthrough],
-         [get_callback_data: fn _, _ -> @twitter_data end]}
+         [get_callback_data: fn _, _ -> {:ok, @twitter_data} end]}
       ]) do
         assert Accounts.count() == 1
         conn = get(conn, ~p"/twitter-callback?oauth_token=one&oauth_verifier=two")
