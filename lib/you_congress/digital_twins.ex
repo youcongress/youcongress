@@ -25,7 +25,7 @@ defmodule YouCongress.DigitalTwins do
   def generate_vote(voting_id, name, next_response) do
     voting = Votings.get_voting!(voting_id, preload: [votes: [:author, :answer]])
     topic = voting.title
-    model = :"gpt-4-turbo-preview"
+    model = :"gpt-4-turbo-2024-04-09"
 
     case AI.generate_opinion(topic, model, next_response, name) do
       {:ok, %{opinion: vote}} ->

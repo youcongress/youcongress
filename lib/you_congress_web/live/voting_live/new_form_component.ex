@@ -105,7 +105,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
 
       {:noreply, assign_form(socket, changeset)}
     else
-      case TitleRewording.generate_rewordings(voting["title"], :"gpt-4-turbo-preview") do
+      case TitleRewording.generate_rewordings(voting["title"], :"gpt-4-turbo-2024-04-09") do
         {:ok, suggested_titles, _} ->
           {:noreply, assign(socket, suggested_titles: suggested_titles)}
 
