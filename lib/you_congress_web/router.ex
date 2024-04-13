@@ -59,9 +59,7 @@ defmodule YouCongressWeb.Router do
     live "/home", VotingLive.Index, :index
     live "/halls/:hall", VotingLive.Index, :index
     live "/authors/:id", AuthorLive.Show, :show
-
-    live "/votes", VoteLive.Index, :index
-    live "/votes/:id", VoteLive.Show, :show
+    live "/v/:slug/add-quote", VotingLive.AddQuote, :add_quote
 
     live "/settings", SettingsLive, :settings
   end
