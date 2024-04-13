@@ -12,7 +12,7 @@ defmodule YouCongress.OpinionsFixtures do
       attrs
       |> Enum.into(%{
         content: "some content",
-        source_url: "some source_url",
+        source_url: Faker.Internet.url(),
         twin: true
       })
       |> YouCongress.Opinions.create_opinion()

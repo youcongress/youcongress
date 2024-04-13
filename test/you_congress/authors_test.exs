@@ -34,7 +34,7 @@ defmodule YouCongress.AuthorsTest do
         twin_origin: true,
         name: "some name",
         twitter_username: "some twitter_username",
-        wikipedia_url: "some wikipedia_url"
+        wikipedia_url: "https://en.wikipedia.org/wiki/whatever"
       }
 
       assert {:ok, %Author{} = author} = Authors.create_author(valid_attrs)
@@ -43,7 +43,7 @@ defmodule YouCongress.AuthorsTest do
       assert author.twin_origin == true
       assert author.name == "some name"
       assert author.twitter_username == "some twitter_username"
-      assert author.wikipedia_url == "some wikipedia_url"
+      assert author.wikipedia_url == "https://en.wikipedia.org/wiki/whatever"
     end
 
     test "create_author/1 with invalid data returns error changeset" do
@@ -59,7 +59,7 @@ defmodule YouCongress.AuthorsTest do
         twin_origin: false,
         name: "some updated name",
         twitter_username: "some updated twitter_username",
-        wikipedia_url: "some updated wikipedia_url"
+        wikipedia_url: "https://en.wikipedia.org/wiki/whatever"
       }
 
       assert {:ok, %Author{} = author} = Authors.update_author(author, update_attrs)
@@ -68,7 +68,7 @@ defmodule YouCongress.AuthorsTest do
       assert author.twin_origin == false
       assert author.name == "some updated name"
       assert author.twitter_username == "some updated twitter_username"
-      assert author.wikipedia_url == "some updated wikipedia_url"
+      assert author.wikipedia_url == "https://en.wikipedia.org/wiki/whatever"
     end
 
     test "update_author/2 with invalid data returns error changeset" do

@@ -8,7 +8,7 @@
             <%= @author.bio || @author.description %>
           </span>
         </div>
-        <AiQuoteMenu.render author_name={@author.name} vote={@vote} />
+        <AiQuoteMenu.render author={@author} vote={@vote} voting={@voting} />
       </div>
       <%= if !@current_user || (@author.id != @current_user.id) do %>
         <div>

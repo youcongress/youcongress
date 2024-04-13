@@ -62,6 +62,8 @@ defmodule YouCongress.Authors do
     Repo.get!(Author, id) |> Repo.preload(tables)
   end
 
+  def get_author_by_twitter_username(nil), do: nil
+
   def get_author_by_twitter_username(twitter_username) do
     from(a in Author, where: ilike(a.twitter_username, ^twitter_username))
     |> Repo.one()

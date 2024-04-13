@@ -10,7 +10,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
     twin_origin: true,
     name: "some name",
     twitter_username: "some twitter_username",
-    wikipedia_url: "some wikipedia_url"
+    wikipedia_url: "https://en.wikipedia.org/wiki/whatever"
   }
   @update_attrs %{
     bio: "some updated bio",
@@ -18,7 +18,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
     twin_origin: true,
     name: "some updated name",
     twitter_username: "some updated twitter_username",
-    wikipedia_url: "some updated wikipedia_url"
+    wikipedia_url: "https://en.wikipedia.org/wiki/whatever"
   }
   @invalid_attrs %{
     bio: nil,
