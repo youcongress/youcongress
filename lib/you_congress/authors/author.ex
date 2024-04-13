@@ -50,7 +50,7 @@ defmodule YouCongress.Authors.Author do
       :verified,
       :location
     ])
-    |> validate_required([:name, :twin_origin])
+    |> validate_required([:twin_origin])
     |> validate_required_if_twin_origin()
     |> unique_constraint(:twitter_username)
     |> unique_constraint(:wikipedia_url)
@@ -59,7 +59,7 @@ defmodule YouCongress.Authors.Author do
 
   def validate_required_if_twin_origin(changeset) do
     if get_field(changeset, :twin_origin) do
-      validate_required(changeset, [:bio, :country])
+      validate_required(changeset, [:name, :bio, :country])
     else
       changeset
     end
