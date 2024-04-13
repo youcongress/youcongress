@@ -82,17 +82,6 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
     end
   end
 
-  def handle_params(%{"slug" => slug}, _, socket) do
-    voting = Votings.get_voting_by_slug!(slug)
-
-    socket =
-      socket
-      |> assign(:page_title, "Add quote")
-      |> assign(voting: voting, twitter_username: nil)
-
-    {:noreply, socket}
-  end
-
   @impl true
   def handle_event("remove-author", _, socket) do
     {:noreply,
