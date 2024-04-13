@@ -2,13 +2,13 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
   @moduledoc """
   Displays links to:
   - About AI profiles
-  - I am <%= @author_name %>
-  - Add a real quote with a URL source
+  - I am <%= @author.name %>
+  - Add a real quote
   """
   use Phoenix.Component
 
   attr :vote, :map, required: true
-  attr :author_name, :string, required: true
+  attr :author, :map, required: true
 
   def render(assigns) do
     ~H"""
@@ -28,10 +28,15 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
             <a href="/faq#ai-profiles" class="block p-2 hover:text-indigo-600">About AI profiles</a>
           <% end %>
           <a href="/faq#change-ai-profile" class="block p-2 hover:text-indigo-600">
-            I am <%= @author_name %>
+            I am <%= @author.name %>
           </a>
           <span class="block p-2">
-            Add a real quote with a URL source (soon)
+            <.link
+              href={"/v/#{@voting.slug}/add-quote?twitter_username=#{@author.twitter_username}"}
+              class="hover:text-indigo-600"
+            >
+              Add a real quote
+            </.link>
           </span>
         </div>
       </div>

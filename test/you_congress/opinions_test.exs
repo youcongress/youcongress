@@ -21,10 +21,14 @@ defmodule YouCongress.OpinionsTest do
     end
 
     test "create_opinion/1 with valid data creates a opinion" do
-      valid_attrs = %{source_url: "some source_url", content: "some content", twin: true}
+      valid_attrs = %{
+        source_url: "https://some.source_url.com",
+        content: "some content",
+        twin: true
+      }
 
       assert {:ok, %Opinion{} = opinion} = Opinions.create_opinion(valid_attrs)
-      assert opinion.source_url == "some source_url"
+      assert opinion.source_url == "https://some.source_url.com"
       assert opinion.content == "some content"
       assert opinion.twin == true
     end
@@ -37,13 +41,13 @@ defmodule YouCongress.OpinionsTest do
       opinion = opinion_fixture()
 
       update_attrs = %{
-        source_url: "some updated source_url",
+        source_url: "https://some.source_url.com",
         content: "some updated content",
         twin: false
       }
 
       assert {:ok, %Opinion{} = opinion} = Opinions.update_opinion(opinion, update_attrs)
-      assert opinion.source_url == "some updated source_url"
+      assert opinion.source_url == "https://some.source_url.com"
       assert opinion.content == "some updated content"
       assert opinion.twin == false
     end
