@@ -101,6 +101,15 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
      )}
   end
 
+  def handle_event(
+        "add-author",
+        %{"twitter_username" => "@" <> twitter_username} = params,
+        %{assigns: %{twitter_username: nil}} = socket
+      ) do
+    params = Map.put(params, "twitter_username", twitter_username)
+    handle_event("add-author", params, socket)
+  end
+
   def handle_event("add-author", params, %{assigns: %{twitter_username: nil}} = socket) do
     twitter_username = params["twitter_username"]
 
