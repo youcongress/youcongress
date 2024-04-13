@@ -114,6 +114,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              twin: false
            }),
          {:ok, _vote} <- Votes.update_vote(vote, %{opinion_id: opinion.id}) do
+      YouCongress.Track.event("Add Quote", current_user)
       {:noreply, put_flash(socket, :info, "Quote added")}
     else
       {:error, changeset} ->
@@ -146,6 +147,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              answer_id: answer_id,
              twin: false
            }) do
+      YouCongress.Track.event("Add Quote", current_user)
       {:noreply, put_flash(socket, :info, "Quote added.")}
     else
       {:error, changeset} ->
