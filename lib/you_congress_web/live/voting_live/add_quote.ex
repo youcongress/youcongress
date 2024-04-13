@@ -33,13 +33,13 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
       nil ->
         form =
           to_form(%{
-            twitter_username: nil,
-            name: nil,
-            bio: nil,
-            wikipedia_url: nil,
-            agree_rate: nil,
-            opinion: nil,
-            source_url: nil
+            "twitter_username" => nil,
+            "name" => nil,
+            "bio" => nil,
+            "wikipedia_url" => nil,
+            "agree_rate" => nil,
+            "opinion" => nil,
+            "source_url" => nil
           })
 
         {:noreply,
@@ -58,9 +58,9 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
       author ->
         form =
           to_form(%{
-            agree_rate: nil,
-            opinion: nil,
-            source_url: nil
+            "agree_rate" => nil,
+            "opinion" => nil,
+            "source_url" => nil
           })
 
         socket =
@@ -136,7 +136,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
           |> push_patch(
             to: ~p"/v/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
           )
-          |> put_flash(:info, "Author added.")
+          |> put_flash(:info, "Author created.")
 
         {:noreply, socket}
 
@@ -199,7 +199,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
            }),
          {:ok, _vote} <- Votes.update_vote(vote, %{opinion_id: opinion.id}) do
       YouCongress.Track.event("Add Quote", current_user)
-      {:noreply, put_flash(socket, :info, "Quote added")}
+      {:noreply, put_flash(socket, :info, "Quote added.")}
     else
       {:error, changeset} ->
         error_message =
