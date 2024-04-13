@@ -21,7 +21,17 @@ defmodule YouCongress.AccountsFixtures do
     Enum.map(attrs, fn {k, v} -> {to_string(k), v} end)
   end
 
-  def user_fixture(attrs \\ %{}, author_attrs \\ %{}) do
+  def user_fixture(attrs \\ %{}, author_attrs \\ nil) do
+    author_attrs =
+      author_attrs ||
+        %{
+          name: Faker.Person.name(),
+          twitter_username: Faker.Internet.user_name(),
+          bio: Faker.Lorem.sentence(),
+          wikipedia_url: "https://wikipedia.org/wiki/#{Faker.Internet.user_name()}",
+          twin_origin: false
+        }
+
     {:ok, %{user: user}} =
       attrs
       |> valid_user_attributes()

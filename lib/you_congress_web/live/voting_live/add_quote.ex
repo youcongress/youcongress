@@ -24,28 +24,40 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
 
   @impl true
   @spec handle_params(map, binary, Socket.t()) :: {:noreply, Socket.t()}
-  def handle_params(%{"slug" => slug, "twitter_username" => twitter_username}, _, socket) do
+  def handle_params(%{"slug" => slug} = params, _, socket) do
     voting = Votings.get_voting_by_slug!(slug)
+
+    twitter_username = params["twitter_username"]
 
     case Authors.get_author_by_twitter_username(twitter_username) do
       nil ->
+        form =
+          to_form(%{
+            twitter_username: nil,
+            name: nil,
+            bio: nil,
+            wikipedia_url: nil,
+            agree_rate: nil,
+            opinion: nil,
+            source_url: nil
+          })
+
         {:noreply,
          assign(socket,
-           twitter_username: twitter_username,
            voting: voting,
+           form: form,
+           agree_rate_options: Answers.basic_responses(),
+           errors: nil,
            author: nil,
-           errors: nil
+           twitter_username: nil,
+           name: nil,
+           bio: nil,
+           wikipedia_url: nil
          )}
 
       author ->
-        socket = assign(socket, author: author, twitter_username: twitter_username)
-
         form =
           to_form(%{
-            # twitter_username: author.twitter_username,
-            # name: author.name,
-            # bio: author.bio,
-            # wikipedia_url: author.wikipedia_url,
             agree_rate: nil,
             opinion: nil,
             source_url: nil
@@ -58,7 +70,12 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
             voting: voting,
             form: form,
             agree_rate_options: Answers.basic_responses(),
-            errors: nil
+            errors: nil,
+            author: author,
+            twitter_username: twitter_username,
+            name: nil,
+            bio: nil,
+            wikipedia_url: nil
           )
 
         {:noreply, socket}
@@ -77,6 +94,75 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
   end
 
   @impl true
+  def handle_event("remove-author", _, socket) do
+    {:noreply,
+     push_patch(socket,
+       to: ~p"/v/#{socket.assigns.voting.slug}/add-quote"
+     )}
+  end
+
+  def handle_event("add-author", params, %{assigns: %{twitter_username: nil}} = socket) do
+    twitter_username = params["twitter_username"]
+
+    case Authors.get_author_by_twitter_username(twitter_username) do
+      nil ->
+        socket = assign(socket, twitter_username: twitter_username)
+        {:noreply, put_flash(socket, :info, "Author not found. Please fill the form.")}
+
+      author ->
+        voting = socket.assigns.voting
+
+        {:noreply,
+         push_patch(socket,
+           to: ~p"/v/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
+         )}
+    end
+  end
+
+  def handle_event("add-author", params, socket) do
+    args = %{
+      twitter_username: params["twitter_username"],
+      name: params["name"],
+      bio: params["bio"],
+      wikipedia_url: params["wikipedia_url"],
+      user_id: socket.assigns.current_user.id,
+      twin_origin: false
+    }
+
+    case Authors.create_author(args) do
+      {:ok, author} ->
+        voting = socket.assigns.voting
+
+        socket =
+          socket
+          |> push_patch(
+            to: ~p"/v/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
+          )
+          |> put_flash(:info, "Author added.")
+
+        {:noreply, socket}
+
+      {:error, changeset} ->
+        error_message =
+          Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} ->
+            msg
+          end)
+
+        Logger.error("Error creating author: #{inspect(error_message)}")
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Error. Please try again")
+         |> assign(
+           errors: error_message,
+           twitter_username: params["twitter_username"],
+           name: params["name"],
+           bio: params["bio"],
+           wikipedia_url: params["wikipedia_url"]
+         )}
+    end
+  end
+
   def handle_event(
         "add-quote",
         %{"agree_rate" => response, "opinion" => opinion, "source_url" => source_url},

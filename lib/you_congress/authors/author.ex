@@ -50,18 +50,35 @@ defmodule YouCongress.Authors.Author do
       :verified,
       :location
     ])
-    |> validate_required([:twin_origin])
+    |> validate_required([:name, :twin_origin])
     |> validate_required_if_twin_origin()
+    |> unique_constraint(:twitter_username)
+    |> unique_constraint(:wikipedia_url)
+    |> validate_wikipedia_url_if_present()
   end
 
   def validate_required_if_twin_origin(changeset) do
     if get_field(changeset, :twin_origin) do
-      changeset
-      |> validate_required([:name, :bio, :country])
-      |> unique_constraint(:twitter_username)
-      |> unique_constraint(:wikipedia_url)
+      validate_required(changeset, [:bio, :country])
     else
       changeset
     end
   end
+
+  defp validate_wikipedia_url_if_present(changeset) do
+    case get_field(changeset, :wikipedia_url) do
+      nil ->
+        changeset
+
+      wikipedia_url ->
+        if starts_with_http(wikipedia_url) do
+          changeset
+        else
+          add_error(changeset, :wikipedia_url, "is not a valid URL")
+        end
+    end
+  end
+
+  defp starts_with_http("http" <> _), do: true
+  defp starts_with_http(_), do: false
 end

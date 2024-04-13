@@ -3,15 +3,16 @@
 <div class="pt-2"><%= @voting.title %></div>
 <%= if @author do %>
   <div class="pt-4 block text-sm font-semibold leading-6 text-zinc-800">Author</div>
-  <div class="pt-2"><%= "#{@author.name}, @#{@author.twitter_username}, #{@author.bio}" %></div>
+  <div class="pt-2"><%= "#{@author.name}, @#{@author.twitter_username}, #{@author.bio}" %>
+    <span phx-click="remove-author" class="pl-4 text-gray-600 cursor-pointer">Clear</span></div>
 
   <.simple_form for={@form} id="form" phx-submit="add-quote" phx-loading="phx-loading">
     <.input
       field={@form[:opinion]}
       type="textarea"
-      label="Opinion"
+      label="Quote"
       data-lpignore="true"
-      placeholder="Quote or opinion"
+      placeholder="Quote..."
       required
     />
     <.input
@@ -36,6 +37,65 @@
     <:actions>
       <div>
         <.button phx-disable-with="Changing...">Add quote</.button>
+        <span class="pl-2">or</span>
+        <.link href={~p"/v/#{@voting.slug}"} class="ml-2">Back</.link>
+      </div>
+    </:actions>
+  </.simple_form>
+<% else %>
+  <.simple_form for={@form} id="form" phx-submit="add-author" phx-loading="phx-loading">
+    <.input
+      field={@form[:twitter_username]}
+      type="text"
+      label="Author Twitter username"
+      data-lpignore="true"
+      placeholder="@..."
+      value={@twitter_username}
+      required
+    />
+
+    <%= if @twitter_username do %>
+      <.input
+        field={@form[:name]}
+        type="text"
+        label="Name"
+        data-lpignore="true"
+        placeholder="Author name"
+        value={@name}
+        required
+      />
+      <.input
+        field={@form[:bio]}
+        type="textarea"
+        label="Bio"
+        data-lpignore="true"
+        placeholder="Author bio"
+        value={@bio}
+        required
+      />
+      <.input
+        field={@form[:wikipedia_url]}
+        type="text"
+        label="Wikipedia URL"
+        data-lpignore="true"
+        placeholder="https://..."
+        value={@wikipedia_url}
+        required
+      />
+      <%= if @errors[:wikipedia_url] do %>
+        <span class="text-red-600 text-sm">Please provide a valid Wikipedia URL</span>
+      <% end %>
+    <% end %>
+
+    <:actions>
+      <div>
+        <.button phx-disable-with="Changing...">
+          <%= if @twitter_username do %>
+            Create
+          <% else %>
+            Next
+          <% end %>
+        </.button>
         <span class="pl-2">or</span>
         <.link href={~p"/v/#{@voting.slug}"} class="ml-2">Back</.link>
       </div>
