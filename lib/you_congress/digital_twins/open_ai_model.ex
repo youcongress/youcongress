@@ -3,10 +3,10 @@ defmodule YouCongress.DigitalTwins.OpenAIModel do
   Provides the cost of using OpenAI models.
   """
 
-  @type t :: :"gpt-3.5-turbo-0125" | :"gpt-4" | :"gpt-4-turbo-preview"
+  @type t :: :"gpt-3.5-turbo-0125" | :"gpt-4" | :"gpt-4-turbo-2024-04-09"
 
   @token_cost %{
-    :"gpt-4-turbo-preview" => %{completion_tokens: 0.03, prompt_tokens: 0.01},
+    :"gpt-4-turbo-2024-04-09" => %{completion_tokens: 0.03, prompt_tokens: 0.01},
     :"gpt-4" => %{completion_tokens: 0.06, prompt_tokens: 0.03},
     :"gpt-3.5-turbo-0125" => %{completion_tokens: 0.002, prompt_tokens: 0.0015}
   }
