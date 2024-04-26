@@ -104,7 +104,23 @@ defmodule YouCongress.Votes do
     Vote
     |> where([v], v.author_id == ^author_id)
     |> preload(^tables)
-    |> order_by([v], fragment("CASE WHEN ? IS NULL THEN 1 ELSE 0 END", v.opinion_id))
+    |> order_by(
+      [v],
+      fragment(
+        "CASE
+      WHEN ? IS NOT NULL AND ? = FALSE THEN 0
+      WHEN ? IS NOT NULL AND ? = FALSE THEN 1
+      ELSE 2
+    END",
+        # Conditions for the first WHEN (votes with non-AI opinion)
+        v.opinion_id,
+        v.twin,
+        # Conditions for the second WHEN (votes with AI opinion)
+        v.opinion_id,
+        v.twin
+        #  Then votes without opinion
+      )
+    )
     |> Repo.all()
   end
 
