@@ -36,7 +36,7 @@
 </.list>
 
 <ul class="pt-6">
-  <%= for vote <- @author.votes do %>
+  <%= for vote <- @votes do %>
     <%= if (@author.twin_enabled || !vote.twin) && (YouCongress.Votes.public?(vote) || @current_user.author_id == @author.id) do %>
       <li class="pb-4">
         <strong>
