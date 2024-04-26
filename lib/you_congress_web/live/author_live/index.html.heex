@@ -12,7 +12,7 @@
 <.table
   id="authors"
   rows={@streams.authors}
-  row_click={fn {_id, author} -> JS.navigate(~p"/authors/#{author}") end}
+  row_click={fn {_id, author} -> JS.navigate(author_path(author)) end}
 >
   <:col :let={{_id, author}} label="Name"><%= author.name %></:col>
   <:col :let={{_id, author}} label="Bio"><%= author.bio %></:col>

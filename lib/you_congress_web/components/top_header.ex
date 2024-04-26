@@ -6,6 +6,8 @@ defmodule YouCongressWeb.TopHeaderComponent do
   use Phoenix.Component
   use YouCongressWeb, :html
 
+  defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
+
   def top_header(assigns) do
     ~H"""
     <header class="px-4 sm:px-6 lg:px-8">
@@ -38,7 +40,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
           </div>
           <%= if @current_user do %>
             <div>
-              <.link href={~p"/authors/#{@current_user.author_id}"}>
+              <.link href={author_path(@current_user.author)}>
                 Profile
               </.link>
             </div>

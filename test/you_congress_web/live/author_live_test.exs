@@ -17,7 +17,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
     country: "some updated country",
     twin_origin: true,
     name: "some updated name",
-    twitter_username: "some updated twitter_username",
+    twitter_username: "whatever",
     wikipedia_url: "https://en.wikipedia.org/wiki/whatever"
   }
   @invalid_attrs %{
@@ -30,7 +30,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
   }
 
   defp create_author(_) do
-    author = author_fixture()
+    author = author_fixture(%{twitter_username: "whatever"})
     %{author: author}
   end
 
@@ -77,7 +77,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
     test "displays author", %{conn: conn, author: author} do
       conn = log_in_as_user(conn)
-      {:ok, _show_live, html} = live(conn, ~p"/authors/#{author}")
+      {:ok, _show_live, html} = live(conn, ~p"/x/#{author.twitter_username}")
 
       assert html =~ "Show Author"
       assert html =~ author.bio
@@ -85,7 +85,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
     test "updates author within modal", %{conn: conn, author: author} do
       conn = log_in_as_admin(conn)
-      {:ok, show_live, _html} = live(conn, ~p"/authors/#{author}")
+      {:ok, show_live, _html} = live(conn, ~p"/x/#{author.twitter_username}")
 
       assert show_live |> element("a", "Edit") |> render_click() =~
                "Edit Author"
@@ -100,7 +100,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
              |> form("#author-form", author: @update_attrs)
              |> render_submit()
 
-      assert_patch(show_live, ~p"/authors/#{author}")
+      assert_patch(show_live, ~p"/x/#{author.twitter_username}")
 
       html = render(show_live)
       assert html =~ "Author updated successfully"

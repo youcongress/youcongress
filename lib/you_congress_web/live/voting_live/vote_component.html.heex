@@ -3,7 +3,7 @@
     <div>
       <div class="flex justify-between">
         <div>
-          <strong><.link href={~p"/authors/#{@author.id}"}><%= @author.name %><%= if @vote.twin, do: " AI" %></.link></strong>,
+          <strong><.link href={author_path(@author)}><%= @author.name %><%= if @vote.twin, do: " AI" %></.link></strong>,
           <span class="text-sm">
             <%= @author.bio || @author.description %>
           </span>
