@@ -98,6 +98,16 @@ defmodule YouCongress.Votes do
     |> Repo.all()
   end
 
+  def list_votes_by_author_id(author_id, opts \\ []) do
+    tables = Keyword.get(opts, :preload, [])
+
+    Vote
+    |> where([v], v.author_id == ^author_id)
+    |> preload(^tables)
+    |> order_by([v], fragment("CASE WHEN ? IS NULL THEN 1 ELSE 0 END", v.opinion_id))
+    |> Repo.all()
+  end
+
   @doc """
   Gets a single vote.
 

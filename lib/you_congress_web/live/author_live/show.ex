@@ -4,6 +4,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongress.Authors
   alias YouCongress.Delegations
   alias Phoenix.LiveView.Socket
+  alias YouCongress.Votes
 
   @impl true
   def mount(_params, session, socket) do
@@ -21,10 +22,13 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
+    author = Authors.get_author!(id)
+    votes = Votes.list_votes_by_author_id(author.id, preload: [:voting, :answer, :opinion])
+    title = page_title(socket.assigns.live_action)
+
     {:noreply,
      socket
-     |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:author, Authors.get_author!(id, include: [votes: [:voting, :answer, :opinion]]))
+     |> assign(page_title: title, author: author, votes: votes)
      |> assign_delegating?()}
   end
 
