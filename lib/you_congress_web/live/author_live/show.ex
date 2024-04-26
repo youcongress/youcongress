@@ -21,8 +21,8 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   @impl true
-  def handle_params(%{"id" => id}, _, socket) do
-    author = Authors.get_author!(id)
+  def handle_params(params, _, socket) do
+    author = get_author!(params)
     votes = Votes.list_votes_by_author_id(author.id, preload: [:voting, :answer, :opinion])
     title = page_title(socket.assigns.live_action)
 
@@ -30,6 +30,14 @@ defmodule YouCongressWeb.AuthorLive.Show do
      socket
      |> assign(page_title: title, author: author, votes: votes)
      |> assign_delegating?()}
+  end
+
+  defp get_author!(%{"id" => user_id}) do
+    Authors.get_author!(user_id)
+  end
+
+  defp get_author!(%{"twitter_username" => twitter_username}) do
+    Authors.get_author_by_twitter_username!(twitter_username)
   end
 
   @impl true
@@ -83,6 +91,14 @@ defmodule YouCongressWeb.AuthorLive.Show do
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Error creating delegation.")}
     end
+  end
+
+  def author_path(%{twitter_username: nil, id: author_id}) do
+    ~p"/a/#{author_id}"
+  end
+
+  def author_path(%{twitter_username: twitter_username}) do
+    ~p"/x/#{twitter_username}"
   end
 
   defp page_title(:show), do: "Show Author"

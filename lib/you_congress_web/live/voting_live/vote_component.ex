@@ -4,6 +4,8 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
   alias YouCongressWeb.Tools.Tooltip
   alias YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu
 
+  defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
+
   defp response(assigns, response) do
     assigns =
       assign(assigns, color: response_color(response), response: String.downcase(response))
