@@ -69,6 +69,11 @@ defmodule YouCongress.Authors do
     |> Repo.one()
   end
 
+  def get_author_by_twitter_username!(twitter_username) do
+    from(a in Author, where: ilike(a.twitter_username, ^twitter_username))
+    |> Repo.one!()
+  end
+
   @doc """
   Creates a author.
 

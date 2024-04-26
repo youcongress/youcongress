@@ -62,7 +62,7 @@
   :if={@live_action == :edit}
   id="author-modal"
   show
-  on_cancel={JS.patch(~p"/authors/#{@author}")}
+  on_cancel={JS.patch(author_path(@author))}
 >
   <.live_component
     module={YouCongressWeb.AuthorLive.FormComponent}
@@ -70,6 +70,6 @@
     title={@page_title}
     action={@live_action}
     author={@author}
-    patch={~p"/authors/#{@author}"}
+    patch={author_path(@author)}
   />
 </.modal>

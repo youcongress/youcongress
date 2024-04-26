@@ -4,6 +4,8 @@ defmodule YouCongressWeb.AuthorLive.Index do
   alias YouCongress.Authors
   alias YouCongress.Authors.Author
 
+  defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
+
   @impl true
   def mount(_params, session, socket) do
     socket =
