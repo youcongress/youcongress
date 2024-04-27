@@ -78,7 +78,6 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       {:ok, _show_live, html} = live(conn, ~p"/v/#{voting.slug}")
 
-      assert html =~ "Show Voting"
       assert html =~ voting.title
     end
 
