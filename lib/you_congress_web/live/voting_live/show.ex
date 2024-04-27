@@ -30,7 +30,7 @@ defmodule YouCongressWeb.VotingLive.Show do
 
     socket =
       socket
-      |> assign(:page_title, page_title(socket.assigns.live_action))
+      |> assign(:page_title, page_title(socket.assigns.live_action, voting.title))
       |> assign(reload: false)
       |> VotesLoader.load_voting_and_votes(voting.id)
       |> load_random_votings(voting.id)
@@ -226,9 +226,9 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   def handle_info(_, socket), do: {:noreply, socket}
 
-  @spec page_title(atom) :: binary
-  defp page_title(:show), do: "Show Voting"
-  defp page_title(:edit), do: "Edit Voting"
+  @spec page_title(atom, binary) :: binary
+  defp page_title(:show, voting_title), do: voting_title
+  defp page_title(:edit, _), do: "Edit Voting"
 
   defp load_random_votings(socket, voting_id) do
     assign(socket, :random_votings, Votings.list_random_votings(voting_id, 5))
