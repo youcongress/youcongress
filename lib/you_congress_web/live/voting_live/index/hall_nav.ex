@@ -11,7 +11,7 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
     <div class="border-b border-gray-200">
       <div class="hidden md:block">
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-          <HallNav.tab url_hall_name={@hall_name} hall_name="ai" hall_link="/home" hall_title="AI" />
+          <HallNav.tab url_hall_name={@hall_name} hall_name="ai" hall_link="/" hall_title="AI" />
           <%= if @hall_name not in ["ai", "climate", "space", "spain", "eu", "us", "law", "programming", "all"] do %>
             <HallNav.tab
               url_hall_name={@hall_name}
@@ -72,7 +72,7 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
       </div>
       <div class="md:hidden">
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-          <HallNav.tab url_hall_name={@hall_name} hall_name="ai" hall_link="/home" hall_title="AI" />
+          <HallNav.tab url_hall_name={@hall_name} hall_name="ai" hall_link="/" hall_title="AI" />
           <%= if @hall_name not in ["ai", "climate", "all"] do %>
             <HallNav.tab
               url_hall_name={@hall_name}

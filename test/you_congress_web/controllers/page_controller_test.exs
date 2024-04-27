@@ -4,8 +4,7 @@ defmodule YouCongressWeb.PageControllerTest do
   test "GET / loads successfully", %{conn: conn} do
     conn = get(conn, ~p"/")
 
-    assert html_response(conn, 200) =~
-             "The biggest problem in the world is not climate change, war or poverty, but how we organise among ourselves to make good decisions and carry them out"
+    assert html_response(conn, 200) =~ "YouCongress"
   end
 
   test "GET /privacy loads successfully", %{conn: conn} do
