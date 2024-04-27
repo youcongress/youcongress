@@ -110,15 +110,18 @@ defmodule YouCongress.Votes do
         "CASE
       WHEN ? IS NOT NULL AND ? = FALSE THEN 0
       WHEN ? IS NOT NULL AND ? = FALSE THEN 1
-      ELSE 2
+      WHEN ? = TRUE THEN 2
+      ELSE 3
     END",
         # Conditions for the first WHEN (votes with non-AI opinion)
         v.opinion_id,
         v.twin,
         # Conditions for the second WHEN (votes with AI opinion)
         v.opinion_id,
-        v.twin
-        #  Then votes without opinion
+        v.twin,
+        # Conditions for the third WHEN (direct votes without opinion)
+        v.direct
+        # Else (delegated votes without opinion)
       )
     )
     |> Repo.all()
