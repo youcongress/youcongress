@@ -36,7 +36,7 @@ defmodule YouCongressWeb.WelcomeLive.Index do
   def handle_event("save", %{"user" => user_params}, socket) do
     case Accounts.welcome_update(socket.assigns.current_user, user_params) do
       {:ok, _} ->
-        {:noreply, redirect(socket, to: "/home")}
+        {:noreply, redirect(socket, to: ~p"/")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}

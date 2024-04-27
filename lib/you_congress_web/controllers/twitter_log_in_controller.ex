@@ -97,7 +97,7 @@ defmodule YouCongressWeb.TwitterLogInController do
     end
   end
 
-  defp log_in_and_redirect(user, conn, path \\ ~p"/home") do
+  defp log_in_and_redirect(user, conn, path \\ ~p"/") do
     conn
     |> YouCongressWeb.UserAuth.log_in_user_without_redirect(user)
     |> put_flash(:info, "Welcome!")
