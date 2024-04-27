@@ -23,6 +23,9 @@ defmodule YouCongressWeb.Router do
     live "/v/:slug", VotingLive.Show, :show
     live "/a/:id", AuthorLive.Show, :show
     live "/x/:twitter_username", AuthorLive.Show, :show
+    live "/", VotingLive.Index, :index
+    get "/home", PageController, :redirect_to_root
+    live "/halls/:hall", VotingLive.Index, :index
 
     get "/terms", PageController, :terms
     get "/privacy-policy", PageController, :privacy_policy
@@ -32,12 +35,6 @@ defmodule YouCongressWeb.Router do
     post "/log_in", TwitterLogInController, :log_in
     get "/twitter-callback", TwitterLogInController, :callback
     get "/faq", PageController, :faq
-  end
-
-  scope "/", YouCongressWeb do
-    pipe_through [:browser, :redirect_home_if_user_is_authenticated]
-
-    get "/", PageController, :home
   end
 
   scope "/", YouCongressWeb do
@@ -58,8 +55,6 @@ defmodule YouCongressWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live "/welcome", WelcomeLive.Index, :index
-    live "/home", VotingLive.Index, :index
-    live "/halls/:hall", VotingLive.Index, :index
     live "/v/:slug/add-quote", VotingLive.AddQuote, :add_quote
 
     live "/settings", SettingsLive, :settings

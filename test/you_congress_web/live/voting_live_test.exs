@@ -32,7 +32,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
     test "lists all votings", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
-      {:ok, _index_live, html} = live(conn, ~p"/home")
+      {:ok, _index_live, html} = live(conn, ~p"/")
 
       assert html =~ "Votings"
       assert html =~ voting.title
@@ -45,7 +45,7 @@ defmodule YouCongressWeb.VotingLiveTest do
         {Oban, [], [insert: fn _ -> {:ok, %{id: 1}} end]}
       ]) do
         conn = log_in_as_admin(conn)
-        {:ok, index_live, _html} = live(conn, ~p"/home")
+        {:ok, index_live, _html} = live(conn, ~p"/")
 
         assert index_live
                |> form("#voting-form", voting: @invalid_attrs)

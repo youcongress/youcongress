@@ -58,7 +58,7 @@ defmodule YouCongressWeb.TwitterLogInControllerTest do
       end
     end
 
-    test "redirects to /home if returning user", %{
+    test "redirects to / if returning user", %{
       conn: conn
     } do
       user_fixture(%{role: "user"}, %{twitter_username: "arpahector"})
@@ -72,7 +72,7 @@ defmodule YouCongressWeb.TwitterLogInControllerTest do
         assert Accounts.count() == 1
         assert user = Accounts.get_user_by_username("arpahector")
         assert user.role == "user"
-        assert redirected_to(conn) =~ ~p"/home"
+        assert redirected_to(conn) =~ ~p"/"
       end
     end
   end

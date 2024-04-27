@@ -35,7 +35,7 @@ defmodule YouCongressWeb.WelcomeLiveTest do
 
       assert current_user.newsletter == false
 
-      {:error, {:redirect, %{to: "/home"}}} =
+      {:error, {:redirect, %{to: "/"}}} =
         welcome_live
         |> form("#user-form", %{"user[newsletter]" => true})
         |> render_submit()
@@ -54,7 +54,7 @@ defmodule YouCongressWeb.WelcomeLiveTest do
 
       assert current_user.newsletter == false
 
-      {:error, {:redirect, %{to: "/home"}}} =
+      {:error, {:redirect, %{to: "/"}}} =
         welcome_live
         |> form("#user-form", %{"user[newsletter]" => false})
         |> render_submit()

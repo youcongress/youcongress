@@ -26,4 +26,10 @@ defmodule YouCongressWeb.PageController do
   def faq(conn, _params) do
     render(conn, :faq)
   end
+
+  def redirect_to_questions(conn, _params) do
+    conn
+    |> redirect(to: ~p"/")
+    |> halt()
+  end
 end

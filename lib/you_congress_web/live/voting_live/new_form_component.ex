@@ -22,7 +22,12 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
             field={@form[:title]}
             type="text"
             maxlength="150"
-            placeholder="Should we build AI smarter than us?"
+            placeholder={
+              if @current_user,
+                do: "Should we build AI smarter than us?",
+                else: "Log in to create a new question"
+            }
+            disabled={!@current_user}
           />
           <%= if @suggested_titles != [] do %>
             <div>
@@ -48,9 +53,17 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
             </div>
           <% else %>
             <div>
-              <.button class="mt-4" phx-disable-with="Validating with ChatGPT. Please wait.">
+              <button
+                class={[
+                  "mt-4 inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600",
+                  @current_user && "bg-indigo-600 hover:bg-indigo-500",
+                  !@current_user && "bg-gray-300"
+                ]}
+                phx-disable-with="Validating with ChatGPT. Please wait."
+                disabled={!@current_user}
+              >
                 Send
-              </.button>
+              </button>
             </div>
           <% end %>
         </div>

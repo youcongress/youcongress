@@ -7,7 +7,15 @@
   project designed to enhance decision-making in an environment where diverse opinions thrive, where change of opinion is celebrated and leads to individual and collective learning.
 </p>
 
-<p class="pt-6">We're still shaping YouCongress, but you already can:</p>
+<p class="mt-4">
+  Also, we aim to find overwhelming support for certain laws to enact or repeal, allowing us to ease <.link
+    href="https://slatestarcodex.com/2014/07/30/meditations-on-moloch"
+    target="_blank"
+    class="underline"
+  >Moloch</.link>.
+</p>
+
+<p class="pt-6">YouCongress is still a prototype, but you already can:</p>
 <ul class="list-disc pl-5">
   <li>create a voting</li>
   <li>vote (votes are public)</li>
@@ -19,13 +27,13 @@
 </ul>
 
 <p class="mt-4">
-  You can read more about YouCongress in the <.link href="/faq" class="underline">Frequently Asked Questions</.link>.
+  You can read more in the <.link href="/faq" class="underline">Frequently Asked Questions</.link>.
 </p>
 
 <p class="mt-4">Be humble to change your mind, be bold to convince others.</p>
 <%= if @current_user do %>
   <a
-    href="/home"
+    href={~p"/"}
     class="inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 mt-4"
   >
     Create / browse votes
