@@ -1,6 +1,37 @@
 <.header>
   <%= @author.name || "Anonymous" %>
-  <:subtitle><%= @author.bio || @author.description %></:subtitle>
+  <:subtitle>
+    <div><%= @author.bio || @author.description %></div>
+
+    <div class="pt-6 space-y-2">
+      <%= if @author.twitter_username do %>
+        Links:
+        <.link
+          navigate={"https://twitter.com/" <> @author.twitter_username}
+          target="_blank"
+          class="hover:underline"
+        >
+          X/Twitter
+        </.link>
+        <%= if @author.wikipedia_url || @author.country || @author.location do %>
+          ·
+        <% end %>
+      <% end %>
+      <%= if @author.wikipedia_url do %>
+        <%= unless @author.twitter_username do %>
+          Links:
+        <% end %>
+        <.link navigate={@author.wikipedia_url} target="_blank" class="hover:underline">
+          Wikipedia
+        </.link>
+      <% end %>
+      <%= if @author.country || @author.location do %>
+        <div>
+          Location: <%= @author.country || @author.location %>
+        </div>
+      <% end %>
+    </div>
+  </:subtitle>
   <:actions>
     <%= if @current_user && @current_user.author_id == @author.id do %>
       <.link patch={~p"/settings"} phx-click={JS.push_focus()}>
@@ -18,22 +49,6 @@
     <% end %>
   </:actions>
 </.header>
-
-<.list :if={@author.wikipedia_url || @author.twitter_username || @author.country}>
-  <:item :if={@author.wikipedia_url} title="Wikipedia url">
-    <.link navigate={@author.wikipedia_url} target="_blank">
-      <%= @author.wikipedia_url %>
-    </.link>
-  </:item>
-  <:item :if={@author.twitter_username} title="Twitter url">
-    <.link navigate={"https://twitter.com/" <> @author.twitter_username} target="_blank">
-      @<%= @author.twitter_username %>
-    </.link>
-  </:item>
-  <:item :if={@author.country || @author.location} title="Location">
-    <%= @author.country || @author.location %>
-  </:item>
-</.list>
 
 <ul class="pt-6">
   <%= for vote <- @votes do %>
