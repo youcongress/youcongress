@@ -12,6 +12,7 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
   alias YouCongress.Votes.Vote
   alias YouCongress.Delegations
   alias YouCongress.Accounts.User
+  alias YouCongress.Votes.Answers
 
   @spec load_voting_and_votes(Socket.t(), number) :: Socket.t()
   def load_voting_and_votes(socket, voting_id) do
@@ -34,6 +35,9 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
 
     votes_from_delegates = get_votes_from_delegates(votes_with_opinion, current_user)
 
+    share_to_x_text =
+      x_post(current_user_vote, voting) <> " https://youcongress.com/v/#{voting.slug}"
+
     socket
     |> assign(
       voting: voting,
@@ -41,9 +45,24 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
       votes_from_non_delegates: votes_with_opinion -- votes_from_delegates,
       votes_without_opinion: votes_without_opinion,
       current_user_vote: current_user_vote,
-      percentage: get_percentage(voting)
+      percentage: get_percentage(voting),
+      share_to_x_text: share_to_x_text
     )
     |> assign_main_variables(voting, current_user)
+  end
+
+  defp x_post(nil, voting), do: voting.title
+
+  defp x_post(%{opinion_id: nil, direct: false} = current_user_vote, voting) do
+    voting.title <> " " <> Answers.get_answer(current_user_vote.answer_id) <> " via delegates"
+  end
+
+  defp x_post(%{opinion_id: nil} = current_user_vote, voting) do
+    voting.title <> " " <> Answers.get_answer(current_user_vote.answer_id)
+  end
+
+  defp x_post(current_user_vote, voting) do
+    voting.title <> " " <> current_user_vote.opinion.content
   end
 
   @spec get_current_user_vote(Voting.t(), User.t() | nil) :: Vote.t() | nil
