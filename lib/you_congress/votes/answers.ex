@@ -41,6 +41,10 @@ defmodule YouCongress.Votes.Answers do
 
   def basic_answer_id_response_map, do: @basic_answer_id_response_map
 
+  def get_answer(id) do
+    @basic_answer_id_response_map[id]
+  end
+
   def answer_id_by_response(response) do
     @basic_response_answer_id_map[response]
   end
