@@ -3,6 +3,7 @@ defmodule YouCongressWeb.WelcomeLive.Index do
 
   alias YouCongress.Accounts
   alias YouCongress.Accounts.User
+  alias YouCongress.Track
 
   @impl true
   def mount(_params, session, socket) do
@@ -11,7 +12,7 @@ defmodule YouCongressWeb.WelcomeLive.Index do
 
     if connected?(socket) do
       %{assigns: %{current_user: current_user}} = socket
-      YouCongress.Track.event("View Welcome", current_user)
+      Track.event("View Welcome", current_user)
     end
 
     {:ok, assign_form(socket, changeset)}

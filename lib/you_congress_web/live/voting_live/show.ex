@@ -11,6 +11,12 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.DelegationVotes
   alias YouCongressWeb.VotingLive.Show.VotesLoader
   alias YouCongressWeb.VotingLive.Show.ShareComponent
+  alias YouCongressWeb.VotingLive.Show.CurrentUserVoteComponent
+  alias YouCongressWeb.VotingLive.VoteComponent
+  alias YouCongressWeb.VotingLive.Show.Comments
+  alias YouCongress.Track
+  alias YouCongress.Workers.PublicFiguresWorker
+  alias YouCongress.Accounts.Permissions
 
   @impl true
   def mount(_, session, socket) do
@@ -18,7 +24,7 @@ defmodule YouCongressWeb.VotingLive.Show do
     %{assigns: %{current_user: current_user}} = socket
 
     if connected?(socket) do
-      YouCongress.Track.event("View Voting", current_user)
+      Track.event("View Voting", current_user)
     end
 
     {:ok, socket}
@@ -52,10 +58,10 @@ defmodule YouCongressWeb.VotingLive.Show do
     voting_id = String.to_integer(voting_id)
 
     %{voting_id: voting_id}
-    |> YouCongress.Workers.PublicFiguresWorker.new()
+    |> PublicFiguresWorker.new()
     |> Oban.insert()
 
-    YouCongress.Track.event("Generate AI opinions", socket.assigns.current_user)
+    Track.event("Generate AI opinions", socket.assigns.current_user)
 
     Process.send_after(self(), :reload, 1_000)
 
@@ -83,7 +89,7 @@ defmodule YouCongressWeb.VotingLive.Show do
            direct: true
          }) do
       {:ok, _} ->
-        YouCongress.Track.event("Vote", current_user)
+        Track.event("Vote", current_user)
 
         socket =
           socket
@@ -108,7 +114,7 @@ defmodule YouCongressWeb.VotingLive.Show do
 
     case Votes.delete_vote(current_user_vote) do
       {:ok, _} ->
-        YouCongress.Track.event("Delete Vote", current_user)
+        Track.event("Delete Vote", current_user)
 
         DelegationVotes.update_author_voting_delegated_votes(current_user.author_id, voting.id)
 
@@ -125,7 +131,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   end
 
   def handle_event("post", %{"comment" => opinion}, socket) do
-    YouCongressWeb.VotingLive.Show.Comments.post_event(opinion, socket)
+    Comments.post_event(opinion, socket)
   end
 
   def handle_event("cancel-edit", _, socket) do
@@ -138,7 +144,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   end
 
   def handle_event("delete-comment", _, socket) do
-    YouCongressWeb.VotingLive.Show.Comments.delete_event(socket)
+    Comments.delete_event(socket)
   end
 
   def handle_event("reload", _, socket) do
@@ -162,7 +168,7 @@ defmodule YouCongressWeb.VotingLive.Show do
 
     case Delegations.create_delegation(%{delegate_id: delegate_id, deleguee_id: deleguee_id}) do
       {:ok, _} ->
-        YouCongress.Track.event("Delegate", current_user)
+        Track.event("Delegate", current_user)
 
         socket =
           socket
@@ -171,7 +177,7 @@ defmodule YouCongressWeb.VotingLive.Show do
             :info,
             "Added to your delegation list. You're voting as the majority of your delegates – unless you directly vote."
           )
-          |> YouCongressWeb.VotingLive.Show.VotesLoader.assign_main_variables(
+          |> VotesLoader.assign_main_variables(
             voting,
             current_user
           )
@@ -195,7 +201,7 @@ defmodule YouCongressWeb.VotingLive.Show do
 
     case Delegations.delete_delegation(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
       {:ok, _} ->
-        YouCongress.Track.event("Remove Delegate", current_user)
+        Track.event("Remove Delegate", current_user)
 
         socket =
           socket

@@ -4,6 +4,9 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
   alias YouCongressWeb.VotingLive.Index.HallNav
+  alias YouCongress.Track
+  alias YouCongressWeb.VotingLive.NewFormComponent
+  alias YouCongressWeb.VotingLive.FormComponent
 
   @default_hall "ai"
 
@@ -28,7 +31,7 @@ defmodule YouCongressWeb.VotingLive.Index do
 
     if connected?(socket) do
       %{assigns: %{current_user: current_user}} = socket
-      YouCongress.Track.event("View Home", current_user)
+      Track.event("View Home", current_user)
     end
 
     {:ok, socket}

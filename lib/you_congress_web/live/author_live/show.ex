@@ -5,6 +5,10 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongress.Delegations
   alias Phoenix.LiveView.Socket
   alias YouCongress.Votes
+  alias YouCongress.Track
+  alias YouCongressWeb.VotingLive.VoteComponent
+  alias YouCongressWeb.AuthorLive.FormComponent
+  alias YouCongress.Accounts.Permissions
 
   @impl true
   def mount(_params, session, socket) do
@@ -14,7 +18,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
       |> assign_counters()
 
     if connected?(socket) do
-      YouCongress.Track.event("View Author", socket.assigns.current_user)
+      Track.event("View Author", socket.assigns.current_user)
     end
 
     {:ok, socket}
@@ -53,7 +57,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
     case Delegations.delete_delegation(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
       {:ok, _} ->
-        YouCongress.Track.event("Remove Delegate", current_user)
+        Track.event("Remove Delegate", current_user)
 
         socket =
           socket
@@ -78,7 +82,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
     case Delegations.create_delegation(%{delegate_id: delegate_id, deleguee_id: deleguee_id}) do
       {:ok, _} ->
-        YouCongress.Track.event("Delegate", current_user)
+        Track.event("Delegate", current_user)
 
         socket =
           socket

@@ -42,7 +42,7 @@
         <.button><%= if @delegating?, do: "Remove delegate", else: "Delegate" %></.button>
       </.link>
     <% end %>
-    <%= if @current_user && YouCongress.Accounts.Permissions.can_edit_author?(@current_user) do %>
+    <%= if @current_user && Permissions.can_edit_author?(@current_user) do %>
       <.link patch={~p"/authors/#{@author}/show/edit"} phx-click={JS.push_focus()}>
         <.button>Edit author</.button>
       </.link>
@@ -52,13 +52,13 @@
 
 <ul class="pt-6">
   <%= for vote <- @votes do %>
-    <%= if (@author.twin_enabled || !vote.twin) && (YouCongress.Votes.public?(vote) || (@current_user && @current_user.author_id == @author.id)) do %>
+    <%= if (@author.twin_enabled || !vote.twin) && (Votes.public?(vote) || (@current_user && @current_user.author_id == @author.id)) do %>
       <li class="pb-4">
         <strong>
           <.link patch={~p"/v/#{vote.voting.slug}"}><%= vote.voting.title %></.link>
         </strong>
         <.live_component
-          module={YouCongressWeb.VotingLive.VoteComponent}
+          module={VoteComponent}
           id={vote.id}
           voting={vote.voting}
           author={@author}
@@ -80,7 +80,7 @@
   on_cancel={JS.patch(author_path(@author))}
 >
   <.live_component
-    module={YouCongressWeb.AuthorLive.FormComponent}
+    module={FormComponent}
     id={@author.id}
     title={@page_title}
     action={@live_action}
