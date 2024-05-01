@@ -9,6 +9,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
   alias YouCongress.Votes.Answers
   alias YouCongress.Votes
   alias YouCongress.Opinions
+  alias YouCongress.Track
 
   @impl true
   def mount(_, session, socket) do
@@ -16,7 +17,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
     %{assigns: %{current_user: current_user}} = socket
 
     if connected?(socket) do
-      YouCongress.Track.event("View Add Quote", current_user)
+      Track.event("View Add Quote", current_user)
     end
 
     {:ok, socket}
@@ -198,7 +199,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              twin: false
            }),
          {:ok, _vote} <- Votes.update_vote(vote, %{opinion_id: opinion.id}) do
-      YouCongress.Track.event("Add Quote", current_user)
+      Track.event("Add Quote", current_user)
       {:noreply, put_flash(socket, :info, "Quote added.")}
     else
       {:error, changeset} ->
@@ -231,7 +232,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              answer_id: answer_id,
              twin: false
            }) do
-      YouCongress.Track.event("Add Quote", current_user)
+      Track.event("Add Quote", current_user)
       {:noreply, put_flash(socket, :info, "Quote added.")}
     else
       {:error, changeset} ->

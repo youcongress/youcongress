@@ -1,5 +1,5 @@
 <.live_component
-  module={YouCongressWeb.VotingLive.NewFormComponent}
+  module={NewFormComponent}
   id={:new}
   title={@page_title}
   action={@live_action}
@@ -31,7 +31,7 @@
 
 <.modal :if={@live_action in [:new, :edit]} id="voting-modal" show on_cancel={JS.patch(~p"/")}>
   <.live_component
-    module={YouCongressWeb.VotingLive.FormComponent}
+    module={FormComponent}
     id={@voting.id || :new}
     title={@page_title}
     action={@live_action}

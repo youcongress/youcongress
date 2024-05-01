@@ -3,6 +3,8 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
 
   alias YouCongress.Votings
   alias YouCongress.Votings.TitleRewording
+  alias YouCongress.Track
+  alias YouCongress.Workers.PublicFiguresWorker
 
   @impl true
   def render(assigns) do
@@ -100,7 +102,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
 
   def handle_event("ai-validate", %{"voting" => voting}, socket) do
     %{assigns: %{current_user: current_user}} = socket
-    YouCongress.Track.event("Validate New Voting", current_user)
+    Track.event("Validate New Voting", current_user)
 
     # suggested_titles = [
     #   "Should we increase investment in nuclear energy research?",
@@ -135,10 +137,10 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
     case Votings.create_voting(%{title: suggested_title, user_id: current_user.id}) do
       {:ok, voting} ->
         %{voting_id: voting.id}
-        |> YouCongress.Workers.PublicFiguresWorker.new()
+        |> PublicFiguresWorker.new()
         |> Oban.insert()
 
-        YouCongress.Track.event("Create Voting", current_user)
+        Track.event("Create Voting", current_user)
 
         {:noreply,
          socket

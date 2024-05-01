@@ -1,14 +1,14 @@
 <.header>
   <:actions>
     <%= if @voting.generating_left == 0 do %>
-      <%= if YouCongress.Accounts.Permissions.can_generate_ai_votes?(@current_user) do %>
+      <%= if Permissions.can_generate_ai_votes?(@current_user) do %>
         <.link phx-click="generate-votes" phx-value-voting_id={@voting.id}>
           <.button>Generate AI comments</.button>
         </.link>
       <% end %>
     <% end %>
 
-    <%= if YouCongress.Accounts.Permissions.can_edit_voting?(@voting, @current_user) do %>
+    <%= if Permissions.can_edit_voting?(@voting, @current_user) do %>
       <.link patch={~p"/v/#{@voting.slug}/show/edit"} phx-click={JS.push_focus()} class="pl-2">
         Edit
       </.link>
@@ -102,7 +102,7 @@
 <%= if @votes_from_delegates != [] || @votes_from_non_delegates != [] do %>
   <div class="pb-8">
     <.live_component
-      module={YouCongressWeb.VotingLive.Show.CurrentUserVoteComponent}
+      module={CurrentUserVoteComponent}
       id={:v}
       voting={@voting}
       current_user_vote={@current_user_vote}
@@ -118,7 +118,7 @@
       <%= for vote <- @votes_from_delegates do %>
         <li class="pb-4">
           <.live_component
-            module={YouCongressWeb.VotingLive.VoteComponent}
+            module={VoteComponent}
             id={vote.id}
             voting={@voting}
             vote={vote}
@@ -147,7 +147,7 @@
     <%= for vote <- @votes_from_non_delegates do %>
       <li class="pb-4">
         <.live_component
-          module={YouCongressWeb.VotingLive.VoteComponent}
+          module={VoteComponent}
           id={vote.id}
           voting={@voting}
           vote={vote}
@@ -170,7 +170,7 @@
       <%= for vote <- @votes_without_opinion do %>
         <li class="pb-4">
           <.live_component
-            module={YouCongressWeb.VotingLive.VoteComponent}
+            module={VoteComponent}
             id={vote.id}
             voting={@voting}
             vote={vote}
