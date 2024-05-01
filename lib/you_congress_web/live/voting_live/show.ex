@@ -8,8 +8,9 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Votings
   alias YouCongress.Votes
   alias YouCongress.Votes.Answers
-  alias YouCongressWeb.VotingLive.Show.VotesLoader
   alias YouCongress.DelegationVotes
+  alias YouCongressWeb.VotingLive.Show.VotesLoader
+  alias YouCongressWeb.VotingLive.Show.ShareComponent
 
   @impl true
   def mount(_, session, socket) do
