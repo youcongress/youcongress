@@ -79,6 +79,12 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
         </nav>
       </div>
       <div class="-mb-px flex space-x-8 md:hidden">
+        <HallNav.tab
+          url_hall_name={@hall_name}
+          hall_name="climate"
+          hall_link={~p"/halls/climate"}
+          hall_title="Climate"
+        />
         <%= if @hall_name not in ["programming", "ai", "climate", "space", "spain", "eu", "us", "law", "programming", "all"] do %>
           <HallNav.tab
             url_hall_name={@hall_name}
@@ -89,29 +95,23 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
         <% else %>
           <HallNav.tab
             url_hall_name={@hall_name}
-            hall_name="climate"
-            hall_link={~p"/halls/climate"}
-            hall_title="Climate"
-          />
-          <HallNav.tab
-            url_hall_name={@hall_name}
             hall_name="programming"
             hall_link={~p"/halls/programming"}
             hall_title="Programming"
           />
-          <HallNav.tab
-            url_hall_name={@hall_name}
-            hall_name="law"
-            hall_link={~p"/halls/law"}
-            hall_title="Law"
-          />
-          <HallNav.tab
-            url_hall_name={@hall_name}
-            hall_name="space"
-            hall_link={~p"/halls/space"}
-            hall_title="Space"
-          />
         <% end %>
+        <HallNav.tab
+          url_hall_name={@hall_name}
+          hall_name="law"
+          hall_link={~p"/halls/law"}
+          hall_title="Law"
+        />
+        <HallNav.tab
+          url_hall_name={@hall_name}
+          hall_name="space"
+          hall_link={~p"/halls/space"}
+          hall_title="Space"
+        />
       </div>
     </div>
     """
