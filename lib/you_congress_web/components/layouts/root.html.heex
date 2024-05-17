@@ -5,9 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
     <%= if assigns[:page_title] do %>
-      <.live_title suffix=" / YouCongress">
-        <%= assigns[:page_title] %>
-      </.live_title>
+      <%= if assigns[:skip_page_suffix] do %>
+        <title><%= assigns[:page_title] %></title>
+      <% else %>
+        <.live_title suffix=" / YouCongress">
+          <%= assigns[:page_title] %>
+        </.live_title>
+      <% end %>
     <% else %>
       <title>YouCongress</title>
     <% end %>

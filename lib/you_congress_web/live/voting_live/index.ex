@@ -56,7 +56,10 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "Votings")
-    |> assign(:voting, nil)
+    |> assign(
+      page_title: "YouCongress: Public Voting with AI and Delegation",
+      skip_page_suffix: true,
+      voting: nil
+    )
   end
 end
