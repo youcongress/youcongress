@@ -12,7 +12,7 @@ Amidst the growing excitement around AI, a consensus is emerging for the need of
 - _"How AI gets built is currently decided by a small group of technologists. As this technology is transforming our lives, it should be in all of our interest to become informed and engaged."_ – Max Roser, Our World In Data
 
 We're still shaping YouCongress, but you already can:
-- create a voting
+- create a public opinion poll
 - vote (votes are public)
 - add arguments
 - explore AI-generated opinions from public figures
