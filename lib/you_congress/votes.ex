@@ -46,6 +46,9 @@ defmodule YouCongress.Votes do
         {:limit, limit}, query ->
           limit(query, ^limit)
 
+        {:offset, offset}, query ->
+          offset(query, ^offset)
+
         _, query ->
           query
       end

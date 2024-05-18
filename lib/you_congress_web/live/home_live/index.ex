@@ -5,6 +5,8 @@ defmodule YouCongressWeb.HomeLive.Index do
   alias YouCongress.Track
   alias YouCongressWeb.VotingLive.VoteComponent
 
+  @per_page 15
+
   @impl true
   def mount(_params, session, socket) do
     socket =
@@ -27,11 +29,38 @@ defmodule YouCongressWeb.HomeLive.Index do
         direct: true,
         twin: false,
         order_by: [desc: :updated_at],
-        limit: 20
+        limit: @per_page
       )
 
-    {:noreply,
-     socket
-     |> assign(page_title: "Home", votes: votes)}
+    socket =
+      socket
+      |> stream(:votes, votes)
+      |> assign(page_title: "Home", page: 1, no_more_votes?: length(votes) < @per_page)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("load-more", _, socket) do
+    %{assigns: %{page: page}} = socket
+    new_page = page + 1
+    offset = (new_page - 1) * @per_page
+
+    votes =
+      Votes.list_votes(
+        preload: [:voting, :answer, :opinion, :author],
+        direct: true,
+        twin: false,
+        order_by: [desc: :updated_at],
+        limit: @per_page,
+        offset: offset
+      )
+
+    socket =
+      socket
+      |> stream(:votes, votes)
+      |> assign(page: new_page, no_more_votes?: length(votes) < @per_page)
+
+    {:noreply, socket}
   end
 end

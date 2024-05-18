@@ -1,7 +1,7 @@
 <.header>
   Recent activity
   <:subtitle>
-    This excludes AI-digital-twin activity, which can be found on the poll pages.
+    This excludes AI-digital-twin activity, which can be found on the poll pages after human opinions.
   </:subtitle>
 
   <:actions>
@@ -11,8 +11,8 @@
   </:actions>
 </.header>
 
-<ul class="pt-6">
-  <%= for vote <- @votes do %>
+<ul class="pt-6" phx-update="stream" phx-viewport-bottom="load-more" id="activity">
+  <%= for {_id, vote} <- @streams.votes do %>
     <%= if Votes.public?(vote) || (@current_user && @current_user.author_id == vote.author_id) do %>
       <li class="pb-4">
         <strong>
@@ -32,4 +32,6 @@
   <% end %>
 </ul>
 
-<.link href={~p"/"}>Back to poll list</.link>
+<div :if={@no_more_votes?} class="mt-5 text-xl text-center">
+  🎉 You made it to the end of recent activity 🎉
+</div>
