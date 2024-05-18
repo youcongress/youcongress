@@ -17,7 +17,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
     """
   end
 
-  defp response_with_s(assigns, response) do
+  def response_with_s(assigns, response) do
     assigns =
       assign(assigns, color: response_color(response), response: with_s(response))
 

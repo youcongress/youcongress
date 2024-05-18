@@ -47,6 +47,10 @@ defmodule YouCongressWeb.VotingLiveTest do
         conn = log_in_as_admin(conn)
         {:ok, index_live, _html} = live(conn, ~p"/")
 
+        index_live
+        |> element("button", "Create poll")
+        |> render_click()
+
         assert index_live
                |> form("#voting-form", voting: @invalid_attrs)
                |> render_change() =~ "can&#39;t be blank"

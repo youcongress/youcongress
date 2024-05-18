@@ -1,12 +1,33 @@
-<.live_component
-  module={NewFormComponent}
-  id={:new}
-  title={@page_title}
-  action={@live_action}
-  voting={%Voting{}}
-  current_user={@current_user}
-  patch={~p"/"}
-/>
+<h1 class="text-xl pb-4 md:hidden">YouCongress: Public Opinion Polls with AI and Delegation</h1>
+<.header>
+  <h1 class="text-xl pb-4 hidden md:block">
+    YouCongress: Public Opinion Polls with AI and Delegation
+  </h1>
+  <:actions>
+    <button
+      phx-click="toggle-new-poll"
+      class="phx-submit-loading:opacity-75 rounded-lg bg-zinc-300 text-zinc-900  hover:bg-zinc-400 py-2 px-3 text-sm font-semibold leading-6  active:text-white/80"
+    >
+      Create poll
+    </button>
+    <.link patch={~p"/activity"}>
+      <.button>Recent activity</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<div :if={@new_poll_visible?} class="pt-4">
+  <.live_component
+    module={NewFormComponent}
+    id={:new}
+    title={@page_title}
+    action={@live_action}
+    voting={%Voting{}}
+    current_user={@current_user}
+    patch={~p"/"}
+  />
+</div>
+
 <div class="pt-6">
   <HallNav.render hall_name={@hall_name} />
 </div>
