@@ -13,7 +13,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
     <header class="px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between border-b border-zinc-100 py-3 text-sm">
         <div class="flex items-center gap-4">
-          <.link href={if @current_user, do: "/home", else: "/"}>
+          <.link href={if @current_user, do: ~p"/activity", else: ~p"/"}>
             YouCongress
           </.link>
         </div>

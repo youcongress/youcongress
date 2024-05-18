@@ -27,7 +27,11 @@ defmodule YouCongressWeb.VotingLive.Index do
       socket
       |> assign_current_user(session["user_token"])
       |> assign_counters()
-      |> assign(votings: votings, hall_name: params["hall"] || @default_hall)
+      |> assign(
+        votings: votings,
+        hall_name: params["hall"] || @default_hall,
+        new_poll_visible?: false
+      )
 
     if connected?(socket) do
       %{assigns: %{current_user: current_user}} = socket
@@ -40,6 +44,17 @@ defmodule YouCongressWeb.VotingLive.Index do
   @impl true
   def handle_params(params, _url, socket) do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
+
+  @impl true
+  def handle_event("toggle-new-poll", _, socket) do
+    %{assigns: %{current_user: current_user, new_poll_visible?: new_poll_visible?}} = socket
+
+    if current_user do
+      {:noreply, assign(socket, new_poll_visible?: !new_poll_visible?)}
+    else
+      {:noreply, put_flash(socket, :error, "You need to log in to create a poll")}
+    end
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
