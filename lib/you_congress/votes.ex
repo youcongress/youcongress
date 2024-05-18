@@ -21,12 +21,39 @@ defmodule YouCongress.Votes do
     Repo.all(Vote)
   end
 
-  def list_votes_with_opinion do
-    from(v in Vote,
-      join: a in assoc(v, :author),
-      where: not is_nil(v.opinion_id),
-      select: v
+  def list_votes(opts) when is_list(opts) do
+    preload_tables = Keyword.get(opts, :preload, [])
+
+    base_query =
+      from(v in Vote,
+        join: a in assoc(v, :author),
+        select: v
+      )
+
+    Enum.reduce(
+      opts,
+      base_query,
+      fn
+        {:twin, twin}, query ->
+          where(query, [v], v.twin == ^twin)
+
+        {:direct, direct}, query ->
+          where(query, [v], v.direct == ^direct)
+
+        {:order_by, order_by}, query ->
+          order_by(query, ^order_by)
+
+        {:limit, limit}, query ->
+          limit(query, ^limit)
+
+        {:offset, offset}, query ->
+          offset(query, ^offset)
+
+        _, query ->
+          query
+      end
     )
+    |> preload(^preload_tables)
     |> Repo.all()
   end
 
