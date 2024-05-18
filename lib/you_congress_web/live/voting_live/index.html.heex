@@ -1,3 +1,11 @@
+<.header>
+  <:actions>
+    <.link patch={~p"/home"} phx-click={JS.push_focus()}>
+      <.button>Recent activity</.button>
+    </.link>
+  </:actions>
+</.header>
+
 <.live_component
   module={NewFormComponent}
   id={:new}

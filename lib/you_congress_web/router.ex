@@ -20,6 +20,7 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through :browser
 
+    live "/home", HomeLive.Index, :index
     live "/v/:slug", VotingLive.Show, :show
     live "/a/:id", AuthorLive.Show, :show
     live "/x/:twitter_username", AuthorLive.Show, :show
@@ -53,7 +54,6 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through [:browser, :require_authenticated_user]
 
-    live "/home", HomeLive.Index, :index
     live "/welcome", WelcomeLive.Index, :index
     live "/v/:slug/add-quote", VotingLive.AddQuote, :add_quote
 
