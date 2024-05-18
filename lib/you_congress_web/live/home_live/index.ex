@@ -15,7 +15,7 @@ defmodule YouCongressWeb.HomeLive.Index do
       |> assign_counters()
 
     if connected?(socket) do
-      Track.event("View Author", socket.assigns.current_user)
+      Track.event("View Activity", socket.assigns.current_user)
     end
 
     {:ok, socket}
