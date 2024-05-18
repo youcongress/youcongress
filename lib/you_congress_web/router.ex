@@ -24,7 +24,6 @@ defmodule YouCongressWeb.Router do
     live "/a/:id", AuthorLive.Show, :show
     live "/x/:twitter_username", AuthorLive.Show, :show
     live "/", VotingLive.Index, :index
-    get "/home", PageController, :redirect_to_root
     live "/halls/:hall", VotingLive.Index, :index
 
     get "/terms", PageController, :terms
@@ -54,6 +53,7 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    live "/home", HomeLive.Index, :index
     live "/welcome", WelcomeLive.Index, :index
     live "/v/:slug/add-quote", VotingLive.AddQuote, :add_quote
 
