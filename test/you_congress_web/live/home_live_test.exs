@@ -1,4 +1,4 @@
-defmodule YouCongressWeb.HomeLiveTest do
+defmodule YouCongressWeb.LiveTest do
   use YouCongressWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -18,7 +18,7 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       conn = log_in_as_admin(conn)
 
-      {:ok, _index_live, html} = live(conn, ~p"/home")
+      {:ok, _index_live, html} = live(conn, ~p"/activity")
 
       assert html =~ "Recent activity"
       assert html =~ opinion1.content
