@@ -4,6 +4,7 @@ defmodule YouCongressWeb.HomeLive.Index do
   alias YouCongress.Votes
   alias YouCongress.Track
   alias YouCongressWeb.VotingLive.VoteComponent
+  alias YouCongressWeb.AuthorLive.Show, as: AuthorShow
 
   @per_page 15
 

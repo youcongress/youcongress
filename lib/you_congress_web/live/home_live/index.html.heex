@@ -1,7 +1,7 @@
 <.header>
   Recent activity
   <:subtitle>
-    This excludes AI-digital-twin activity, which can be found on the poll pages after human opinions.
+    This excludes AI-digital-twin & delegation activity, which can be found on the poll pages after human opinions.
   </:subtitle>
 
   <:actions>
@@ -18,15 +18,31 @@
         <strong>
           <.link patch={~p"/v/#{vote.voting.slug}"}><%= vote.voting.title %></.link>
         </strong>
-        <.live_component
-          module={VoteComponent}
-          id={vote.id}
-          voting={vote.voting}
-          author={vote.author}
-          include_author_bio={false}
-          vote={vote}
-          show_opinion={true}
-        />
+        <div class="text-sm">
+          <.link href={AuthorShow.author_path(vote.author)}>
+            <%= vote.author.name || "Anonymous" %>
+          </.link>
+          <%= VoteComponent.response_with_s(
+            assigns,
+            vote.answer.response
+          ) %>
+          <%= unless vote.direct do %>
+            via delegates
+          <% end %>
+          <%= if vote.opinion do %>
+            and says:
+          <% end %>
+        </div>
+        <%= if vote.opinion_id do %>
+          <div class="pt-2">
+            <%= vote.opinion.content %>
+            <%= if vote.opinion_id && vote.opinion.source_url do %>
+              <span class="text-xs">
+                (<.link href={vote.opinion.source_url} target="_blank" class="underline">source</.link>)
+              </span>
+            <% end %>
+          </div>
+        <% end %>
       </li>
     <% end %>
   <% end %>
