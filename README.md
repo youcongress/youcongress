@@ -18,6 +18,9 @@ We're still shaping YouCongress, but you already can:
 - explore AI-generated opinions from public figures
 - delegate to other users and public figures. You'll vote as the majority of your delegates — unless you vote directly.
 
+You can read more about the project on the LessWrong post:
+- [Tackling Moloch: How YouCongress Offers a Novel Coordination Mechanism](https://www.lesswrong.com/posts/4KjiZeAWc7Yv9oyCb/tackling-moloch-how-youcongress-offers-a-novel-coordination)
+
 # Telegram
 
 You can join [Telegram](https://t.me/youcongress) to ask any questions and/or have a chat.
