@@ -100,7 +100,8 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
       author_id: current_user_vote.author_id,
       user_id: socket.assigns.current_user.id,
       vote_id: current_user_vote.id,
-      twin: false
+      twin: false,
+      voting_id: voting.id
     }
 
     with {:ok, opinion} <- Opinions.create_opinion(args),

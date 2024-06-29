@@ -49,9 +49,12 @@
       <% end %>
     </div>
   <% end %>
+  <%= if @show_opinion do %>
+    <button phx-click="edit" class="underline">edit</button>
+  <% end %>
   <div class="flex justify-between pt-4 pb-4">
     <div>
-      <%= if @vote.opinion_id do %>
+      <%= if @vote.opinion_id && @show_opinion do %>
         <.link href={~p"/comments/#{@vote.opinion_id}" <> "#reply"}>
           <img src="/images/comment.svg" alt="Comment" class="h-4 w-4 inline" />
         </.link>

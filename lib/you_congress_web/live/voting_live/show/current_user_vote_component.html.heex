@@ -12,9 +12,6 @@
         current_user={@current_user}
         show_opinion={!@editing}
       />
-      <%= if !@editing do %>
-        <button phx-click="edit" class="underline">edit</button>
-      <% end %>
     </div>
   <% end %>
   <%= if @editing do %>
