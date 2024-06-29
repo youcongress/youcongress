@@ -8,7 +8,14 @@
             <%= @author.bio || @author.description %>
           </span>
         </div>
-        <AiQuoteMenu.render author={@author} id={@vote.id} twin={@vote.twin} voting={@voting} />
+        <%= if @vote.opinion_id do %>
+          <AiQuoteMenu.render
+            author={@author}
+            id={@vote.id}
+            opinion={@vote.opinion}
+            voting={@voting}
+          />
+        <% end %>
       </div>
     </div>
   <% end %>
@@ -45,7 +52,7 @@
   <div class="flex justify-between pt-4 pb-4">
     <div>
       <%= if @vote.opinion_id do %>
-        <.link href={~p"/comments/#{@vote.opinion_id}"}>
+        <.link href={~p"/comments/#{@vote.opinion_id}" <> "#reply"}>
           <img src="/images/comment.svg" alt="Comment" class="h-4 w-4 inline" />
         </.link>
       <% end %>
@@ -75,7 +82,5 @@
       <% end %>
     </div>
   </div>
-  <%= if @vote.opinion_id do %>
-    <hr />
-  <% end %>
+  <hr />
 </div>

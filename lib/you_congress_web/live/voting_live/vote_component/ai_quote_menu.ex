@@ -9,7 +9,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
 
   attr :id, :map, required: true
   attr :author, :map, required: true
-  attr :twin, :boolean, required: true
+  attr :opinion, :map, required: true
 
   def render(assigns) do
     ~H"""
@@ -25,20 +25,29 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
       </button>
       <div class="hidden absolute right-0 lg:right-0 z-10 lg:mt-5 flex lg:w-screen max-w-full lg:max-w-min lg:-translate-x-1/2 lg:px-1/2">
         <div class="w-56 shrink rounded-xl bg-white p-4 text-sm font-semibold leading-6 text-gray-900 shadow-lg ring-1 ring-gray-900/5">
-          <%= if @twin do %>
+          <%= if @opinion.twin do %>
             <a href="/faq#ai-profiles" class="block p-2 hover:text-indigo-600">About AI profiles</a>
           <% end %>
-          <a href="/faq#change-ai-profile" class="block p-2 hover:text-indigo-600">
-            I am <%= @author.name %>
-          </a>
-          <span class="block p-2">
-            <.link
-              href={"/v/#{@voting.slug}/add-quote?twitter_username=#{@author.twitter_username}"}
-              class="hover:text-indigo-600"
-            >
-              Add a real quote
+          <%= if @opinion.twin || @opinion.source_url do %>
+            <.link href="/faq#change-ai-profile" class="block p-2 hover:text-indigo-600">
+              I am <%= @author.name %>
             </.link>
-          </span>
+            <span class="block p-2">
+              <.link
+                href={"/v/#{@voting.slug}/add-quote?twitter_username=#{@author.twitter_username}"}
+                class="hover:text-indigo-600"
+              >
+                Add a real quote
+              </.link>
+            </span>
+          <% end %>
+          <.link
+            href="mailto:hi@youcongress.com"
+            target="_blank"
+            class="block p-2 hover:text-indigo-600"
+          >
+            Report comment
+          </.link>
         </div>
       </div>
     </div>

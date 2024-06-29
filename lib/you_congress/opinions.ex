@@ -17,8 +17,20 @@ defmodule YouCongress.Opinions do
       [%Opinion{}, ...]
 
   """
-  def list_opinions do
-    Repo.all(Opinion)
+  def list_opinions(opts \\ []) do
+    base_query = from(o in Opinion)
+
+    Enum.reduce(opts, base_query, fn
+      {:parent_id, parent_id}, query ->
+        from q in query, where: q.parent_id == ^parent_id
+
+      {:preload, preloads}, query ->
+        from q in query, preload: ^preloads
+
+      _, query ->
+        query
+    end)
+    |> Repo.all()
   end
 
   @doc """

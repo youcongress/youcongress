@@ -22,6 +22,10 @@ defmodule YouCongress.Delegations do
     Repo.all(Delegation)
   end
 
+  def list_delegation_ids(deleguee_id: deleguee_id) do
+    Repo.all(from d in Delegation, where: d.deleguee_id == ^deleguee_id, select: d.delegate_id)
+  end
+
   def delegate_ids_by_author_id(author_id) do
     Repo.all(from d in Delegation, where: d.deleguee_id == ^author_id, select: d.delegate_id)
   end

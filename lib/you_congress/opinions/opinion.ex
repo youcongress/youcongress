@@ -23,7 +23,16 @@ defmodule YouCongress.Opinions.Opinion do
   @doc false
   def changeset(opinion, attrs) do
     opinion
-    |> cast(attrs, [:content, :source_url, :twin, :vote_id, :author_id, :user_id, :voting_id])
+    |> cast(attrs, [
+      :content,
+      :source_url,
+      :twin,
+      :vote_id,
+      :author_id,
+      :user_id,
+      :voting_id,
+      :parent_id
+    ])
     |> validate_required([:content, :twin])
     |> validate_source_url_if_present()
   end
