@@ -10,6 +10,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
   attr :id, :map, required: true
   attr :author, :map, required: true
   attr :opinion, :map, required: true
+  attr :current_user, :map, required: true
 
   def render(assigns) do
     ~H"""
@@ -48,6 +49,24 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
           >
             Report comment
           </.link>
+          <%= if @current_user.author_id == @opinion.author_id do %>
+            <%= if !@opinion.parent_id do %>
+              <.link
+                phx-click="edit"
+                phx-value-opinion_id={@opinion.id}
+                class="block p-2 hover:text-indigo-600"
+              >
+                Edit comment
+              </.link>
+            <% end %>
+            <.link
+              phx-click="delete-comment"
+              phx-value-opinion_id={@opinion.id}
+              class="block p-2 hover:text-indigo-600"
+            >
+              Delete comment
+            </.link>
+          <% end %>
         </div>
       </div>
     </div>

@@ -41,7 +41,9 @@ Comment
 </.form>
 
 <div class="mt-6">
-  <h3 class="text-lg font-semibold mb-4">Comments</h3>
+  <%= if @child_opinions != [] do %>
+    <h3 class="text-lg font-semibold mb-4">Comments</h3>
+  <% end %>
   <%= for child_opinion <- @child_opinions do %>
     <div class="mb-4 pl-4 border-l-2 border-gray-200">
       <OpinionComponent.render

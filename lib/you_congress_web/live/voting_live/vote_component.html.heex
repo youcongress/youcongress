@@ -14,6 +14,7 @@
             id={@vote.id}
             opinion={@vote.opinion}
             voting={@voting}
+            current_user={@current_user}
           />
         <% end %>
       </div>
@@ -49,9 +50,6 @@
       <% end %>
     </div>
   <% end %>
-  <%= if @show_opinion do %>
-    <button phx-click="edit" class="underline">edit</button>
-  <% end %>
   <div class="flex justify-between pt-4 pb-4">
     <div>
       <%= if @vote.opinion_id && @show_opinion do %>
@@ -85,5 +83,7 @@
       <% end %>
     </div>
   </div>
-  <hr />
+  <%= if @current_user.author_id != @vote.author_id do %>
+    <hr />
+  <% end %>
 </div>

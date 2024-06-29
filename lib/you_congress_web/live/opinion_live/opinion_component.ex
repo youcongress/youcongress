@@ -27,6 +27,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
             id={@opinion.id}
             opinion={@opinion}
             voting={@voting}
+            current_user={@current_user}
           />
         </div>
       </div>
