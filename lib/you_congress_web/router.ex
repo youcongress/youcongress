@@ -54,6 +54,7 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    live "/comments/:id", OpinionLive.Show, :show
     live "/welcome", WelcomeLive.Index, :index
     live "/v/:slug/add-quote", VotingLive.AddQuote, :add_quote
 

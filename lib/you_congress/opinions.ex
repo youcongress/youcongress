@@ -37,6 +37,14 @@ defmodule YouCongress.Opinions do
   """
   def get_opinion!(id), do: Repo.get!(Opinion, id)
 
+  def get_opinion!(id, preload: tables) do
+    Repo.get!(Opinion, id)
+    |> Repo.preload(tables)
+  end
+
+  def get_opinion(nil), do: nil
+  def get_opinion(id), do: Repo.get(Opinion, id)
+
   @doc """
   Creates a opinion.
 
