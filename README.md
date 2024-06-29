@@ -34,3 +34,6 @@ Feel free to:
 - Add documentation
 
 Thanks!
+
+# Acknowledgments
+This project uses [AppSignal](https://www.appsignal.com), which generously provides their services for free. We appreciate their support and trust in our project, helping us monitor YouCongress, maintain quality, and improve continuously.
