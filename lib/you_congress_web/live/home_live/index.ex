@@ -1,6 +1,7 @@
 defmodule YouCongressWeb.HomeLive.Index do
   use YouCongressWeb, :live_view
 
+  alias YouCongress.Opinions
   alias YouCongress.Votes
   alias YouCongress.Track
   alias YouCongressWeb.VotingLive.VoteComponent
@@ -24,10 +25,9 @@ defmodule YouCongressWeb.HomeLive.Index do
 
   @impl true
   def handle_params(_params, _, socket) do
-    votes =
-      Votes.list_votes(
-        preload: [:voting, :answer, :opinion, :author],
-        direct: true,
+    opinions =
+      Opinions.list_opinions(
+        preload: [:voting, :author, vote: [:answer]],
         twin: false,
         order_by: [desc: :updated_at],
         limit: @per_page
@@ -35,8 +35,8 @@ defmodule YouCongressWeb.HomeLive.Index do
 
     socket =
       socket
-      |> stream(:votes, votes)
-      |> assign(page_title: "Home", page: 1, no_more_votes?: length(votes) < @per_page)
+      |> stream(:opinions, opinions)
+      |> assign(page_title: "Home", page: 1, no_more_opinions?: length(opinions) < @per_page)
 
     {:noreply, socket}
   end
@@ -47,10 +47,9 @@ defmodule YouCongressWeb.HomeLive.Index do
     new_page = page + 1
     offset = (new_page - 1) * @per_page
 
-    votes =
-      Votes.list_votes(
-        preload: [:voting, :answer, :opinion, :author],
-        direct: true,
+    opinions =
+      Opinions.list_opinions(
+        preload: [:voting, :author, vote: [:answer]],
         twin: false,
         order_by: [desc: :updated_at],
         limit: @per_page,
@@ -59,8 +58,8 @@ defmodule YouCongressWeb.HomeLive.Index do
 
     socket =
       socket
-      |> stream(:votes, votes)
-      |> assign(page: new_page, no_more_votes?: length(votes) < @per_page)
+      |> stream(:opinions, opinions)
+      |> assign(page: new_page, no_more_opinions?: length(opinions) < @per_page)
 
     {:noreply, socket}
   end

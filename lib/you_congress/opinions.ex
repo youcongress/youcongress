@@ -20,17 +20,34 @@ defmodule YouCongress.Opinions do
   def list_opinions(opts \\ []) do
     base_query = from(o in Opinion)
 
-    Enum.reduce(opts, base_query, fn
-      {:parent_id, parent_id}, query ->
-        from q in query, where: q.parent_id == ^parent_id
+    query =
+      Enum.reduce(opts, base_query, fn
+        {:parent_id, parent_id}, query ->
+          from q in query, where: q.parent_id == ^parent_id
 
-      {:preload, preloads}, query ->
-        from q in query, preload: ^preloads
+        {:twin, twin_value}, query ->
+          from q in query, where: q.twin == ^twin_value
 
-      _, query ->
-        query
-    end)
-    |> Repo.all()
+        {:preload, preloads}, query ->
+          from q in query, preload: ^preloads
+
+        {:order_by, order}, query ->
+          from q in query, order_by: ^order
+
+        {:limit, limit}, query ->
+          from q in query, limit: ^limit
+
+        {:offset, offset}, query ->
+          from q in query, offset: ^offset
+
+        {key, value}, query ->
+          from q in query, where: field(q, ^key) == ^value
+
+        _, query ->
+          query
+      end)
+
+    Repo.all(query)
   end
 
   @doc """
