@@ -138,4 +138,8 @@ defmodule YouCongress.Opinions do
   def change_opinion(%Opinion{} = opinion, attrs \\ %{}) do
     Opinion.changeset(opinion, attrs)
   end
+
+  def exists?(query) do
+    Repo.exists?(from(o in Opinion, where: ^query))
+  end
 end

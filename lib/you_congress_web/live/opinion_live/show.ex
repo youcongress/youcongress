@@ -56,7 +56,6 @@ defmodule YouCongressWeb.OpinionLive.Show do
     opinion_params = %{
       "content" => content,
       "voting_id" => opinion.voting_id,
-      "parent_id" => opinion.id,
       "author_id" => current_user.author_id,
       "user_id" => current_user.id,
       "parent_id" => opinion.id
@@ -110,6 +109,45 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
       {:error, _} ->
         {:noreply, socket |> put_flash(:error, "Failed to delegate.")}
+    end
+  end
+
+  def handle_event("delete-comment", %{"opinion_id" => opinion_id}, socket) do
+    opinion = Opinions.get_opinion!(opinion_id)
+
+    if Opinions.exists?(parent_id: opinion.id) do
+      case Opinions.update_opinion(opinion, %{content: "(deleted)"}) do
+        {:ok, _} ->
+          socket =
+            socket
+            |> load_opinion!(socket.assigns.opinion.id)
+            |> load_delegations()
+            |> put_flash(:info, "Opinion deleted successfully.")
+
+          {:noreply, socket}
+
+        {:error, _} ->
+          {:noreply, socket |> put_flash(:error, "Failed to delete opinion.")}
+      end
+    else
+      case Opinions.delete_opinion(opinion) do
+        {:ok, _} ->
+          socket =
+            if opinion.id == socket.assigns.opinion.id,
+              do: redirect(socket, to: "/"),
+              else: socket
+
+          socket =
+            socket
+            |> load_opinion!(socket.assigns.opinion.id)
+            |> load_delegations()
+            |> put_flash(:info, "Opinion deleted successfully.")
+
+          {:noreply, socket}
+
+        {:error, _} ->
+          {:noreply, socket |> put_flash(:error, "Failed to delete opinion.")}
+      end
     end
   end
 
