@@ -28,7 +28,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
             opinion={@opinion}
             current_user={@current_user}
             voting={@opinion.voting}
-            voting_show_page={false}
+            page={:opinion_show}
           />
         </div>
       </div>
