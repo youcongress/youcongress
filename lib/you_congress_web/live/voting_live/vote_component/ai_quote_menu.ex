@@ -7,12 +7,16 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
   """
   use Phoenix.Component
 
-  attr :vote, :map, required: true
+  attr :id, :map, required: true
   attr :author, :map, required: true
+  attr :opinion, :map, required: true
+  attr :current_user, :map, required: true
+  attr :voting, :map, required: true
+  attr :page, :atom, required: true
 
   def render(assigns) do
     ~H"""
-    <div class="justify-end" phx-hook="AIQuote" id={"ai-menu-#{@vote.id}"}>
+    <div class="justify-end" phx-hook="AIQuote" id={"ai-menu-#{@id}"}>
       <button
         type="button"
         class="inline-flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900"
@@ -24,20 +28,47 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
       </button>
       <div class="hidden absolute right-0 lg:right-0 z-10 lg:mt-5 flex lg:w-screen max-w-full lg:max-w-min lg:-translate-x-1/2 lg:px-1/2">
         <div class="w-56 shrink rounded-xl bg-white p-4 text-sm font-semibold leading-6 text-gray-900 shadow-lg ring-1 ring-gray-900/5">
-          <%= if @vote.twin do %>
+          <%= if @opinion.twin do %>
             <a href="/faq#ai-profiles" class="block p-2 hover:text-indigo-600">About AI profiles</a>
           <% end %>
-          <a href="/faq#change-ai-profile" class="block p-2 hover:text-indigo-600">
-            I am <%= @author.name %>
-          </a>
-          <span class="block p-2">
-            <.link
-              href={"/v/#{@voting.slug}/add-quote?twitter_username=#{@author.twitter_username}"}
-              class="hover:text-indigo-600"
-            >
-              Add a real quote
+          <%= if @opinion.twin || @opinion.source_url do %>
+            <.link href="/faq#change-ai-profile" class="block p-2 hover:text-indigo-600">
+              I am <%= @author.name %>
             </.link>
-          </span>
+            <span class="block p-2">
+              <.link
+                href={"/v/#{@voting.slug}/add-quote?twitter_username=#{@author.twitter_username}"}
+                class="hover:text-indigo-600"
+              >
+                Add a real quote
+              </.link>
+            </span>
+          <% end %>
+          <.link
+            href="mailto:hi@youcongress.com"
+            target="_blank"
+            class="block p-2 hover:text-indigo-600"
+          >
+            Report comment
+          </.link>
+          <%= if @current_user && @current_user.author_id == @opinion.author_id do %>
+            <%= if @page == :voting_show && !@opinion.ancestry do %>
+              <.link
+                phx-click="edit"
+                phx-value-opinion_id={@opinion.id}
+                class="block p-2 hover:text-indigo-600"
+              >
+                Edit comment
+              </.link>
+            <% end %>
+            <.link
+              phx-click="delete-comment"
+              phx-value-opinion_id={@opinion.id}
+              class="block p-2 hover:text-indigo-600"
+            >
+              Delete comment
+            </.link>
+          <% end %>
         </div>
       </div>
     </div>

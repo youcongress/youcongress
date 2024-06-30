@@ -12,42 +12,48 @@
 </.header>
 
 <ul class="pt-6" phx-update="stream" phx-viewport-bottom="load-more" id="activity">
-  <%= for {_id, vote} <- @streams.votes do %>
-    <%= if Votes.public?(vote) || (@current_user && @current_user.author_id == vote.author_id) do %>
-      <li class="pb-4" id={"vote-#{vote.id}"}>
-        <strong>
-          <.link patch={~p"/v/#{vote.voting.slug}"}><%= vote.voting.title %></.link>
-        </strong>
-        <div class="text-sm">
-          <.link href={AuthorShow.author_path(vote.author)}>
-            <%= vote.author.name || "Anonymous" %>
-          </.link>
+  <%= for {_id, opinion} <- @streams.opinions do %>
+    <li class="pb-4" id={"opinion-#{opinion.id}"}>
+      <strong>
+        <.link patch={~p"/v/#{opinion.voting.slug}"}><%= opinion.voting.title %></.link>
+      </strong>
+      <div class="text-sm">
+        <.link href={AuthorShow.author_path(opinion.author)}>
+          <%= opinion.author.name || "Anonymous" %>
+        </.link>
+        <%= if opinion.vote && Votes.public?(opinion.vote) do %>
           <%= VoteComponent.response_with_s(
             assigns,
-            vote.answer.response
+            opinion.vote.answer.response
           ) %>
-          <%= unless vote.direct do %>
+          <%= unless opinion.vote.direct do %>
             via delegates
           <% end %>
-          <%= if vote.opinion do %>
+          <%= if opinion.vote.opinion do %>
             and says:
           <% end %>
-        </div>
-        <%= if vote.opinion_id do %>
-          <div class="pt-2">
-            <%= vote.opinion.content %>
-            <%= if vote.opinion_id && vote.opinion.source_url do %>
-              <span class="text-xs">
-                (<.link href={vote.opinion.source_url} target="_blank" class="underline">source</.link>)
-              </span>
-            <% end %>
-          </div>
+        <% else %>
+          commented:
         <% end %>
-      </li>
-    <% end %>
+      </div>
+      <div class="pt-2">
+        <% parent_id = Opinion.parent_id(opinion) %>
+        <%= if parent_id do %>
+          <.link href={~p"/comments/#{parent_id}"}>
+            <div class="text-xs">... (view parent)</div>
+          </.link>
+        <% end %>
+        <%= opinion.content %>
+        <%= if opinion.source_url do %>
+          <span class="text-xs">
+            (<.link href={opinion.source_url} target="_blank" class="underline">source</.link>)
+          </span>
+        <% end %>
+      </div>
+    </li>
   <% end %>
 </ul>
 
-<div :if={@no_more_votes?} class="mt-5 text-xl text-center">
+<div :if={@no_more_opinions?} class="mt-5 text-xl text-center">
   🎉 You made it to the end of recent activity 🎉
 </div>
