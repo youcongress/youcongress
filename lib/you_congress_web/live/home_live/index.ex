@@ -2,6 +2,7 @@ defmodule YouCongressWeb.HomeLive.Index do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Votes
   alias YouCongress.Track
   alias YouCongressWeb.VotingLive.VoteComponent

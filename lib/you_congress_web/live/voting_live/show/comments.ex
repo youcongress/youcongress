@@ -164,7 +164,7 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
   def delete_event(socket) do
     %{assigns: %{current_user_vote: current_user_vote, voting: voting}} = socket
 
-    if Opinions.exists?(parent_id: current_user_vote.opinion_id) do
+    if Opinions.exists?(initial_ancestry: current_user_vote.opinion_id) do
       case Opinions.update_opinion(current_user_vote.opinion, %{content: "(deleted)"}) do
         {:ok, _} ->
           socket =

@@ -2,6 +2,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Track
   alias YouCongress.Delegations
   alias YouCongressWeb.OpinionLive.OpinionComponent
@@ -24,7 +25,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   def handle_params(%{"id" => opinion_id}, _, socket) do
     socket = load_opinion!(socket, opinion_id)
     %{assigns: %{opinion: opinion}} = socket
-    parent_opinion = Opinions.get_opinion(opinion.parent_id)
+    parent_opinion = Opinion.parent(opinion)
     changeset = Opinions.change_opinion(%Opinions.Opinion{})
 
     socket = load_delegations(socket)
@@ -53,17 +54,25 @@ defmodule YouCongressWeb.OpinionLive.Show do
   def handle_event("save", %{"opinion" => %{"content" => content}}, socket) do
     %{assigns: %{opinion: opinion, current_user: current_user}} = socket
 
+    ancestry = if opinion.ancestry, do: "#{opinion.ancestry}/#{opinion.id}", else: "#{opinion.id}"
+
     opinion_params = %{
       "content" => content,
       "voting_id" => opinion.voting_id,
       "author_id" => current_user.author_id,
       "user_id" => current_user.id,
-      "parent_id" => opinion.id
+      "ancestry" => ancestry
     }
 
     case Opinions.create_opinion(opinion_params) do
       {:ok, _opinion} ->
-        child_opinions = Opinions.list_opinions(parent_id: opinion.id, preload: [:author])
+        child_opinions =
+          Opinions.list_opinions(
+            ancestry: Opinion.path_str(opinion),
+            preload: [:author],
+            order_by: [desc: :id]
+          )
+
         changeset = Opinions.change_opinion(%Opinions.Opinion{})
 
         {:noreply,
@@ -115,7 +124,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   def handle_event("delete-comment", %{"opinion_id" => opinion_id}, socket) do
     opinion = Opinions.get_opinion!(opinion_id)
 
-    if Opinions.exists?(parent_id: opinion.id) do
+    if Opinion.parent_id(opinion) do
       case Opinions.update_opinion(opinion, %{content: "(deleted)"}) do
         {:ok, _} ->
           socket =
@@ -159,7 +168,13 @@ defmodule YouCongressWeb.OpinionLive.Show do
   defp load_delegations(socket) do
     %{assigns: %{current_user: current_user, opinion: opinion}} = socket
 
-    child_opinions = Opinions.list_opinions(parent_id: opinion.id, preload: [:author])
+    child_opinions =
+      Opinions.list_opinions(
+        ancestry: Opinion.path_str(opinion),
+        preload: [:author],
+        order_by: [desc: :id]
+      )
+
     delegating = Delegations.delegating?(current_user.author_id, opinion.author_id)
     delegate_ids = Delegations.list_delegation_ids(deleguee_id: current_user.author_id)
 

@@ -18,35 +18,7 @@ defmodule YouCongress.Opinions do
 
   """
   def list_opinions(opts \\ []) do
-    base_query = from(o in Opinion)
-
-    query =
-      Enum.reduce(opts, base_query, fn
-        {:parent_id, parent_id}, query ->
-          from q in query, where: q.parent_id == ^parent_id
-
-        {:twin, twin_value}, query ->
-          from q in query, where: q.twin == ^twin_value
-
-        {:preload, preloads}, query ->
-          from q in query, preload: ^preloads
-
-        {:order_by, order}, query ->
-          from q in query, order_by: ^order
-
-        {:limit, limit}, query ->
-          from q in query, limit: ^limit
-
-        {:offset, offset}, query ->
-          from q in query, offset: ^offset
-
-        {key, value}, query ->
-          from q in query, where: field(q, ^key) == ^value
-
-        _, query ->
-          query
-      end)
-
+    query = build_query(opts)
     Repo.all(query)
   end
 
@@ -139,7 +111,41 @@ defmodule YouCongress.Opinions do
     Opinion.changeset(opinion, attrs)
   end
 
-  def exists?(query) do
-    Repo.exists?(from(o in Opinion, where: ^query))
+  def exists?(opts) do
+    query = build_query(opts)
+    Repo.exists?(query)
+  end
+
+  defp build_query(opts) do
+    base_query = from(o in Opinion)
+
+    Enum.reduce(opts, base_query, fn
+      {:initial_ancestry, ancestry}, query ->
+        from q in query, where: fragment("? LIKE ?", q.ancestry, ^"#{ancestry}/%")
+
+      {:ancestry, ancestry}, query ->
+        from q in query, where: q.ancestry == ^"#{ancestry}"
+
+      {:twin, twin_value}, query ->
+        from q in query, where: q.twin == ^twin_value
+
+      {:preload, preloads}, query ->
+        from q in query, preload: ^preloads
+
+      {:order_by, order}, query ->
+        from q in query, order_by: ^order
+
+      {:limit, limit}, query ->
+        from q in query, limit: ^limit
+
+      {:offset, offset}, query ->
+        from q in query, offset: ^offset
+
+      {key, value}, query when is_atom(key) ->
+        from q in query, where: field(q, ^key) == ^value
+
+      _, query ->
+        query
+    end)
   end
 end

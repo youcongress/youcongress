@@ -1,4 +1,4 @@
-<div class="pb-4">
+<div>
   <%= if @include_author_bio do %>
     <div>
       <div class="flex justify-between">
@@ -14,6 +14,7 @@
             id={@vote.id}
             opinion={@vote.opinion}
             current_user={@current_user}
+            voting={@voting}
           />
         <% end %>
       </div>
@@ -49,7 +50,10 @@
       <% end %>
     </div>
   <% end %>
-  <div class="flex justify-between pt-4 pb-4">
+  <div class={[
+    "flex justify-between pt-4",
+    !@current_user || (@current_user.author_id != @vote.author_id && "pb-4")
+  ]}>
     <div>
       <%= if @vote.opinion_id && @show_opinion do %>
         <.link href={~p"/comments/#{@vote.opinion_id}" <> "#reply"}>

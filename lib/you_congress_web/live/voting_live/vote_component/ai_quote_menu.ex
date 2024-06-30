@@ -11,6 +11,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
   attr :author, :map, required: true
   attr :opinion, :map, required: true
   attr :current_user, :map, required: true
+  attr :voting, :map, required: true
 
   def render(assigns) do
     ~H"""
@@ -50,7 +51,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
             Report comment
           </.link>
           <%= if @current_user.author_id == @opinion.author_id do %>
-            <%= if !@opinion.parent_id do %>
+            <%= if !@opinion.ancestry do %>
               <.link
                 phx-click="edit"
                 phx-value-opinion_id={@opinion.id}
