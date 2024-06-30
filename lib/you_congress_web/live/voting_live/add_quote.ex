@@ -196,7 +196,8 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              source_url: source_url,
              user_id: current_user.id,
              direct: true,
-             twin: false
+             twin: false,
+             voting_id: voting.id
            }),
          {:ok, _vote} <- Votes.update_vote(vote, %{opinion_id: opinion.id}) do
       Track.event("Add Quote", current_user)
@@ -224,7 +225,8 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              source_url: source_url,
              user_id: current_user.id,
              direct: true,
-             twin: false
+             twin: false,
+             voting_id: vote.voting_id
            }),
          {:ok, _vote} <-
            Votes.update_vote(vote, %{

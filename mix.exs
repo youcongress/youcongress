@@ -62,7 +62,8 @@ defmodule YouCongress.MixProject do
       {:slugify, "~> 1.3.1"},
       {:appsignal, "~> 2.8.0"},
       {:appsignal_phoenix, "~> 2.3.5"},
-      {:libcluster, "~> 3.3.3"}
+      {:libcluster, "~> 3.3.3"},
+      {:ancestry, "~> 0.1.3"}
     ]
   end
 

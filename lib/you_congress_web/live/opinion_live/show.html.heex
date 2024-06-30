@@ -1,0 +1,58 @@
+<.link href={
+  if @parent_opinion,
+    do: ~p"/comments/#{@parent_opinion.id}",
+    else: ~p"/v/#{@opinion.voting.slug}"
+}>
+  <img src="/images/arrow-left.svg" alt="Arrow left" class="h-4 w-4 inline" />
+</.link>
+Comment
+<OpinionComponent.render
+  opinion={@opinion}
+  current_user={@current_user}
+  delegating={@delegating}
+  voting={@opinion.voting}
+/>
+
+<div class="pb-2" id="reply">replying to <%= @opinion.author.name %></div>
+
+<.form :let={f} for={@changeset} id="opinion-form" phx-submit="save" phx-change="validate">
+  <.input
+    field={f[:content]}
+    type="textarea"
+    rows="3"
+    placeholder={if @current_user, do: "Add your comment...", else: "Log in to comment..."}
+    disabled={!@current_user}
+    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+  />
+  <.error :for={error <- f[:content].errors}><%= translate_error(error) %></.error>
+
+  <button
+    type="submit"
+    class={[
+      "mt-4 inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600",
+      @current_user && "bg-gray-300",
+      @current_user && "bg-indigo-600 hover:bg-indigo-500",
+      !@current_user && "bg-gray-300"
+    ]}
+    disabled={!@current_user}
+  >
+    Post
+  </button>
+</.form>
+
+<div class="mt-6">
+  <%= if @child_opinions != [] do %>
+    <h3 class="text-lg font-semibold mb-4">Comments</h3>
+  <% end %>
+  <%= for child_opinion <- @child_opinions do %>
+    <div class="mb-4 pl-4 border-l-2 border-gray-200">
+      <OpinionComponent.render
+        opinion={child_opinion}
+        current_user={@current_user}
+        delegating={@child_opinions_delegations[child_opinion.author_id]}
+        voting={@opinion.voting}
+        opinable={true}
+      />
+    </div>
+  <% end %>
+</div>

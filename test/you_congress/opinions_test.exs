@@ -7,6 +7,7 @@ defmodule YouCongress.OpinionsTest do
     alias YouCongress.Opinions.Opinion
 
     import YouCongress.OpinionsFixtures
+    import YouCongress.VotingsFixtures
 
     @invalid_attrs %{source_url: nil, content: nil, twin: nil}
 
@@ -24,7 +25,8 @@ defmodule YouCongress.OpinionsTest do
       valid_attrs = %{
         source_url: "https://some.source_url.com",
         content: "some content",
-        twin: true
+        twin: true,
+        voting_id: voting_fixture().id
       }
 
       assert {:ok, %Opinion{} = opinion} = Opinions.create_opinion(valid_attrs)

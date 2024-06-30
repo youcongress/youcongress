@@ -17,8 +17,9 @@ defmodule YouCongress.Opinions do
       [%Opinion{}, ...]
 
   """
-  def list_opinions do
-    Repo.all(Opinion)
+  def list_opinions(opts \\ []) do
+    query = build_query(opts)
+    Repo.all(query)
   end
 
   @doc """
@@ -36,6 +37,14 @@ defmodule YouCongress.Opinions do
 
   """
   def get_opinion!(id), do: Repo.get!(Opinion, id)
+
+  def get_opinion!(id, preload: tables) do
+    Repo.get!(Opinion, id)
+    |> Repo.preload(tables)
+  end
+
+  def get_opinion(nil), do: nil
+  def get_opinion(id), do: Repo.get(Opinion, id)
 
   @doc """
   Creates a opinion.
@@ -100,5 +109,48 @@ defmodule YouCongress.Opinions do
   """
   def change_opinion(%Opinion{} = opinion, attrs \\ %{}) do
     Opinion.changeset(opinion, attrs)
+  end
+
+  def exists?(opts) do
+    query = build_query(opts)
+    Repo.exists?(query)
+  end
+
+  defp build_query(opts) do
+    base_query = from(o in Opinion)
+
+    Enum.reduce(opts, base_query, fn
+      {:initial_ancestry, ancestry}, query ->
+        from q in query, where: fragment("? LIKE ?", q.ancestry, ^"#{ancestry}/%")
+
+      {:ancestry, ancestry}, query ->
+        from q in query, where: q.ancestry == ^"#{ancestry}"
+
+      {:twin, twin_value}, query ->
+        from q in query, where: q.twin == ^twin_value
+
+      {:preload, preloads}, query ->
+        from q in query, preload: ^preloads
+
+      {:order_by, order}, query ->
+        from q in query, order_by: ^order
+
+      {:limit, limit}, query ->
+        from q in query, limit: ^limit
+
+      {:offset, offset}, query ->
+        from q in query, offset: ^offset
+
+      {key, value}, query when is_atom(key) ->
+        from q in query, where: field(q, ^key) == ^value
+
+      _, query ->
+        query
+    end)
+  end
+
+  def delete_opinion_and_descendants(%Opinion{} = opinion) do
+    subtree_ids = Opinion.subtree_ids(opinion)
+    Repo.delete_all(from o in Opinion, where: o.id in ^subtree_ids)
   end
 end

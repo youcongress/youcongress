@@ -10,7 +10,6 @@ defmodule YouCongressWeb.VotingLiveTest do
   alias YouCongress.VotesFixtures
   alias YouCongress.OpinionsFixtures
   alias YouCongress.Votings
-  alias YouCongress.Authors
   alias YouCongress.Opinions
 
   @create_attrs %{title: "nuclear energy"}
@@ -135,8 +134,10 @@ defmodule YouCongressWeb.VotingLiveTest do
     test "casts a vote from voting buttons", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
 
+      opinion = OpinionsFixtures.opinion_fixture(%{voting_id: voting.id})
       #  Create a vote so we display the voting options
-      VotesFixtures.vote_fixture(%{voting_id: voting.id})
+      VotesFixtures.vote_fixture(%{voting_id: voting.id, opinion_id: opinion.id})
+      Opinions.update_opinion(opinion, %{vote_id: opinion.vote_id})
 
       {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
 
@@ -193,7 +194,7 @@ defmodule YouCongressWeb.VotingLiveTest do
       conn = log_in_as_user(conn)
 
       #  Create a vote so we display the voting options
-      VotesFixtures.vote_fixture(%{voting_id: voting.id})
+      VotesFixtures.vote_fixture(%{voting_id: voting.id}, true)
 
       {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
 
@@ -251,16 +252,19 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       another_user = AccountsFixtures.user_fixture()
 
+      opinion = OpinionsFixtures.opinion_fixture(%{voting_id: voting.id})
+
       #  Create an AI generated comment as we don't display the form until we have one of these
       VotesFixtures.vote_fixture(%{
         twin: true,
         voting_id: voting.id,
-        author_id: another_user.author_id
+        author_id: another_user.author_id,
+        opinion_id: opinion.id
       })
 
-      {:ok, show_live, html} = live(conn, ~p"/v/#{voting.slug}")
+      Opinions.update_opinion(opinion, %{vote_id: opinion.vote_id})
 
-      refute html =~ "edit"
+      {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
 
       show_live
       |> form("#comment-form", comment: "some comment")
@@ -278,35 +282,43 @@ defmodule YouCongressWeb.VotingLiveTest do
     end
 
     test "edit a comment", %{conn: conn, voting: voting} do
-      conn = log_in_as_user(conn)
+      user = AccountsFixtures.user_fixture()
 
-      author = Authors.list_authors() |> hd()
+      conn = log_in_user(conn, user)
 
       opinion =
-        OpinionsFixtures.opinion_fixture(%{
-          author_id: author.id,
-          voting_id: voting.id,
-          content: "whatever"
-        })
+        OpinionsFixtures.opinion_fixture(
+          %{
+            author_id: user.author_id,
+            user_id: user.id,
+            voting_id: voting.id,
+            content: "whatever",
+            twin: false
+          },
+          false
+        )
 
       vote =
         VotesFixtures.vote_fixture(%{
           voting_id: voting.id,
-          author_id: author.id,
-          opinion_id: opinion.id
+          author_id: user.author_id,
+          opinion_id: opinion.id,
+          user_id: user.id,
+          twin: false
         })
 
-      {:ok, _} = Opinions.update_opinion(opinion, %{vote_id: vote.id})
+      {:ok, _opinion} =
+        Opinions.update_opinion(opinion, %{vote_id: vote.id})
 
       #  Create an AI generated comment as we don't display the form until we have one of these
-      VotesFixtures.vote_fixture(%{twin: true, voting_id: voting.id})
+      VotesFixtures.vote_fixture(%{twin: true, voting_id: voting.id}, true)
 
-      {:ok, show_live, html} = live(conn, ~p"/v/#{voting.slug}")
+      {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
 
-      assert html =~ "whatever"
+      assert render(show_live) =~ "whatever"
 
       show_live
-      |> element("button", "edit")
+      |> element("a", "Edit comment")
       |> render_click()
 
       show_live
