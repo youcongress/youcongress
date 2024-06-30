@@ -43,7 +43,9 @@
             <div class="text-xs">... (view parent)</div>
           </.link>
         <% end %>
-        <%= opinion.content %>
+        <.link href={~p"/comments/#{opinion.id}"}>
+          <%= opinion.content %>
+        </.link>
         <%= if opinion.source_url do %>
           <span class="text-xs">
             (<.link href={opinion.source_url} target="_blank" class="underline">source</.link>)
