@@ -15,7 +15,7 @@ defmodule YouCongress.VotesFixtures do
   Generate a vote.
   """
   def vote_fixture(attrs \\ %{}, generate_opinion \\ false) do
-    generate_opinion = if !generate_opinion, do: nil, else: true
+    generate_opinion = if generate_opinion, do: true, else: nil
     voting_id = voting_fixture().id
 
     attrs =

@@ -148,4 +148,9 @@ defmodule YouCongress.Opinions do
         query
     end)
   end
+
+  def delete_opinion_and_descendants(%Opinion{} = opinion) do
+    subtree_ids = Opinion.subtree_ids(opinion)
+    Repo.delete_all(from o in Opinion, where: o.id in ^subtree_ids)
+  end
 end

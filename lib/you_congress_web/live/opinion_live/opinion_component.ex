@@ -28,6 +28,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
             opinion={@opinion}
             current_user={@current_user}
             voting={@opinion.voting}
+            edit_comment={false}
           />
         </div>
       </div>

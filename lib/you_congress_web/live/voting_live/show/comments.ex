@@ -164,38 +164,19 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
   def delete_event(socket) do
     %{assigns: %{current_user_vote: current_user_vote, voting: voting}} = socket
 
-    if Opinions.exists?(initial_ancestry: current_user_vote.opinion_id) do
-      case Opinions.update_opinion(current_user_vote.opinion, %{content: "(deleted)"}) do
-        {:ok, _} ->
-          socket =
-            socket
-            |> load_voting_and_votes(voting.id)
-            |> assign(editing: false)
-            |> put_flash(:info, "Your comment has been deleted.")
+    {_count, nil} =
+      Opinions.delete_opinion_and_descendants(current_user_vote.opinion)
 
-          {:noreply, socket}
+    current_user_vote =
+      Votes.get_current_user_vote(voting.id, socket.assigns.current_user.author_id)
 
-        {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Error. Please try again.")}
-      end
-    else
-      case Opinions.delete_opinion(current_user_vote.opinion) do
-        {:ok, _opinion} ->
-          current_user_vote =
-            Votes.get_current_user_vote(voting.id, socket.assigns.current_user.author_id)
+    socket =
+      socket
+      |> load_voting_and_votes(voting.id)
+      |> assign(current_user_vote: current_user_vote, editing: true)
+      |> put_flash(:info, "Your comment has been deleted.")
 
-          socket =
-            socket
-            |> load_voting_and_votes(voting.id)
-            |> assign(current_user_vote: current_user_vote, editing: true)
-            |> put_flash(:info, "Your comment has been deleted.")
-
-          {:noreply, socket}
-
-        {:error, _vote} ->
-          {:noreply, put_flash(socket, :error, "Error. Please try again.")}
-      end
-    end
+    {:noreply, socket}
   end
 
   defp clean_opinion(opinion) do

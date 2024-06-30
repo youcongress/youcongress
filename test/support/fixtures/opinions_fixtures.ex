@@ -10,7 +10,7 @@ defmodule YouCongress.OpinionsFixtures do
   Generate an opinion.
   """
   def opinion_fixture(attrs \\ %{}, generate_vote \\ false) do
-    generate_vote = if !generate_vote, do: nil, else: true
+    generate_vote = if generate_vote, do: true, else: nil
     voting_id = attrs[:voting_id] || VotingsFixtures.voting_fixture().id
     author_id = attrs[:author_id] || AuthorsFixtures.author_fixture().id
     user_id = attrs[:user_id] || AccountsFixtures.user_fixture(%{author_id: author_id}).id
