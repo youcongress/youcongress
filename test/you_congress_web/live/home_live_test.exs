@@ -3,22 +3,36 @@ defmodule YouCongressWeb.LiveTest do
 
   import Phoenix.LiveViewTest
   import YouCongress.AuthorsFixtures
-  import YouCongress.VotesFixtures
   import YouCongress.OpinionsFixtures
+  import YouCongress.VotingsFixtures
 
   describe "Index" do
     test "lists recent votes and opinions", %{conn: conn} do
       author1 = author_fixture(%{name: "Someone1"})
-      opinion1 = opinion_fixture(%{author_id: author1.id, content: "Opinion1"})
-      vote_fixture(%{author_id: author1.id, opinion_id: opinion1.id})
+
+      voting = voting_fixture(%{author_id: author1.id})
+
+      opinion1 =
+        opinion_fixture(%{
+          author_id: author1.id,
+          content: "Opinion1",
+          voting_id: voting.id,
+          twin: false
+        })
 
       author2 = author_fixture(%{name: "Someone2"})
-      opinion2 = opinion_fixture(%{author_id: author2.id, content: "Opinion2"})
-      vote_fixture(%{author_id: author2.id, opinion_id: opinion2.id})
 
-      conn = log_in_as_admin(conn)
+      opinion2 =
+        opinion_fixture(%{
+          author_id: author2.id,
+          content: "Opinion2",
+          voting_id: voting.id,
+          twin: false
+        })
 
-      {:ok, _index_live, html} = live(conn, ~p"/activity")
+      {:ok, index_live, _html} = live(conn, ~p"/activity")
+
+      html = render(index_live)
 
       assert html =~ "Recent activity"
       assert html =~ opinion1.content
