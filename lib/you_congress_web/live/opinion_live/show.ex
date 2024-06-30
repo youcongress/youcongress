@@ -6,6 +6,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.Track
   alias YouCongress.Delegations
   alias YouCongressWeb.OpinionLive.OpinionComponent
+  alias YouCongress.Votings
 
   @impl true
   def mount(_params, session, socket) do
@@ -123,22 +124,29 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
   def handle_event("delete-comment", %{"opinion_id" => opinion_id}, socket) do
     opinion = Opinions.get_opinion!(opinion_id)
+    opinion_id = opinion.id
+    voting_id = opinion.voting_id
 
     {_count, nil} =
       Opinions.delete_opinion_and_descendants(opinion)
 
     socket =
-      if opinion.id == socket.assigns.opinion.id,
-        do: redirect(socket, to: "/"),
-        else: socket
-
-    socket =
       socket
-      |> load_opinion!(socket.assigns.opinion.id)
-      |> load_delegations()
+      |> redirect_or_load_variables(opinion_id, voting_id)
       |> put_flash(:info, "Opinion deleted successfully.")
 
     {:noreply, socket}
+  end
+
+  defp redirect_or_load_variables(%{assigns: %{opinion: %{id: id}}} = socket, id, voting_id) do
+    voting = Votings.get_voting!(voting_id)
+    redirect(socket, to: "/v/#{voting.slug}")
+  end
+
+  defp redirect_or_load_variables(socket, _, _voting_id) do
+    socket
+    |> load_opinion!(socket.assigns.opinion.id)
+    |> load_delegations()
   end
 
   defp load_opinion!(socket, opinion_id) do
