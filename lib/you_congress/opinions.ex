@@ -7,6 +7,7 @@ defmodule YouCongress.Opinions do
   alias YouCongress.Repo
 
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
 
   @doc """
   Returns the list of opinions.
@@ -59,9 +60,31 @@ defmodule YouCongress.Opinions do
 
   """
   def create_opinion(attrs \\ %{}) do
-    %Opinion{}
-    |> Opinion.changeset(attrs)
-    |> Repo.insert()
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:opinion, Opinion.changeset(%Opinion{}, attrs))
+    |> enqueue_update_ancestor_counts(attrs["ancestry"])
+    |> Repo.transaction()
+    |> handle_transaction_result()
+  end
+
+  defp enqueue_update_ancestor_counts(multi, nil), do: multi
+
+  defp enqueue_update_ancestor_counts(multi, ancestry) do
+    ascestor_ids = String.split(ancestry, "/")
+
+    Enum.reduce(ascestor_ids, multi, fn ascestor_id, multi ->
+      Ecto.Multi.insert(
+        multi,
+        "update_ancestor_id_#{ascestor_id}",
+        UpdateOpinionDescendantsCountWorker.new(%{"opinion_id" => ascestor_id})
+      )
+    end)
+  end
+
+  defp handle_transaction_result({:ok, %{opinion: opinion}}), do: {:ok, opinion}
+
+  defp handle_transaction_result({:error, _, failed_operation, _changes}) do
+    {:error, failed_operation}
   end
 
   @doc """
@@ -152,5 +175,12 @@ defmodule YouCongress.Opinions do
   def delete_opinion_and_descendants(%Opinion{} = opinion) do
     subtree_ids = Opinion.subtree_ids(opinion)
     Repo.delete_all(from o in Opinion, where: o.id in ^subtree_ids)
+  end
+
+  def update_descendants_count(%Opinion{} = opinion) do
+    count = length(Opinion.subtree_ids(opinion))
+
+    changeset = Opinion.changeset(opinion, %{descendants_count: count})
+    Repo.update(changeset)
   end
 end

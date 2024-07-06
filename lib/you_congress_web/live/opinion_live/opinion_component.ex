@@ -4,6 +4,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   alias YouCongressWeb.AuthorLive
   alias YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu
   alias YouCongressWeb.Tools.Tooltip
+  alias YouCongressWeb.OpinionLive.OpinionComponent
 
   attr :opinion, :map, required: true
   attr :delegating, :boolean, required: true
@@ -42,11 +43,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
       </div>
       <div class="flex justify-between pt-4 pb-4">
         <div>
-          <%= if @opinable do %>
-            <.link href={"/comments/#{@opinion.id}#reply"}>
-              <img src="/images/comment.svg" alt="Comment" class="h-4 w-4 inline" />
-            </.link>
-          <% end %>
+          <OpinionComponent.comment_icon :if={@opinable} opinion={@opinion} />
         </div>
         <div>
           <%= if !@current_user || (@opinion.author_id != @current_user.id) do %>
@@ -74,6 +71,19 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
         </div>
       </div>
     </div>
+    """
+  end
+
+  attr :opinion, :map, required: true
+
+  def comment_icon(assigns) do
+    ~H"""
+    <.link href={"/comments/#{@opinion.id}#reply"}>
+      <img src="/images/comment.svg" alt="Comment" class="h-4 w-4 inline" />
+      <span class="text-gray-600 pl-1 text-xs">
+        <%= if @opinion.descendants_count > 0, do: @opinion.descendants_count %>
+      </span>
+    </.link>
     """
   end
 end
