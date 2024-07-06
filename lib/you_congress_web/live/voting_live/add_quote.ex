@@ -182,15 +182,8 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
   defp create_vote_and_opinion(voting, author, answer_id, opinion, source_url, socket) do
     %{assigns: %{current_user: current_user}} = socket
 
-    with {:ok, vote} <-
-           Votes.create_vote(%{
-             voting_id: voting.id,
-             author_id: author.id,
-             answer_id: answer_id
-           }),
-         {:ok, opinion} <-
+    with {:ok, opinion} <-
            Opinions.create_opinion(%{
-             vote_id: vote.id,
              content: opinion,
              author_id: author.id,
              source_url: source_url,
@@ -199,7 +192,13 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              twin: false,
              voting_id: voting.id
            }),
-         {:ok, _vote} <- Votes.update_vote(vote, %{opinion_id: opinion.id}) do
+         {:ok, _vote} <-
+           Votes.create_vote(%{
+             voting_id: voting.id,
+             author_id: author.id,
+             answer_id: answer_id,
+             opinion_id: opinion.id
+           }) do
       Track.event("Add Quote", current_user)
       {:noreply, put_flash(socket, :info, "Quote added.")}
     else
@@ -210,7 +209,9 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
           end)
 
         {:noreply,
-         socket |> put_flash(:error, "Error. Please try again") |> assign(:errors, error_message)}
+         socket
+         |> put_flash(:error, "Error. Please try again")
+         |> assign(:errors, error_message)}
     end
   end
 
@@ -219,7 +220,6 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
 
     with {:ok, opinion} <-
            Opinions.create_opinion(%{
-             vote_id: vote.id,
              content: opinion,
              author_id: author.id,
              source_url: source_url,

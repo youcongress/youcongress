@@ -99,7 +99,6 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
       content: opinion_content,
       author_id: current_user_vote.author_id,
       user_id: socket.assigns.current_user.id,
-      vote_id: current_user_vote.id,
       twin: false,
       voting_id: voting.id
     }

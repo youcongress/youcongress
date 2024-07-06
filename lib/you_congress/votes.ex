@@ -34,6 +34,12 @@ defmodule YouCongress.Votes do
       opts,
       base_query,
       fn
+        {:author_ids, author_ids}, query ->
+          where(query, [v], v.author_id in ^author_ids)
+
+        {:voting_ids, voting_ids}, query ->
+          where(query, [v], v.voting_id in ^voting_ids)
+
         {:twin, twin}, query ->
           where(query, [v], v.twin == ^twin)
 

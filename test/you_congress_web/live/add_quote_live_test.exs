@@ -48,7 +48,6 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert opinion.author_id == author.id
       assert opinion.content == "Democracy is essential."
       assert opinion.source_url == "http://example.com/democracy_quote"
-      assert opinion.vote_id == vote.id
       assert opinion.user_id == current_user.id
       assert opinion.twin == false
     end
@@ -93,7 +92,6 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert opinion.author_id == author.id
       assert opinion.content == "Democracy is essential."
       assert opinion.source_url == "http://example.com/democracy_quote"
-      assert opinion.vote_id == vote.id
       assert opinion.user_id == current_user.id
       assert opinion.twin == false
 
@@ -122,7 +120,6 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert opinion.author_id == author.id
       assert opinion.content == "Democracy is essential 2."
       assert opinion.source_url == "http://example.com/democracy_quote2"
-      assert opinion.vote_id == vote.id
       assert opinion.user_id == current_user.id
       assert opinion.twin == false
     end
@@ -187,7 +184,6 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert opinion.author_id == author.id
       assert opinion.content == "Democracy is essential."
       assert opinion.source_url == "http://example.com/democracy_quote"
-      assert opinion.vote_id == vote.id
       assert opinion.user_id == current_user.id
       assert opinion.twin == false
     end
