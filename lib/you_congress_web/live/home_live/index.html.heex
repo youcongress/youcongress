@@ -31,19 +31,18 @@
             via delegates
           <% end %>
           <%= if vote.opinion do %>
-            and says:
+            <% parent_id = Opinion.parent_id(opinion) %> and
+            <%= if parent_id do %>
+              replied to a <.link href={~p"/comments/#{parent_id}"}>comment</.link>:
+            <% else %>
+              says:
+            <% end %>
           <% end %>
         <% else %>
           commented:
         <% end %>
       </div>
       <div class="pt-2">
-        <% parent_id = Opinion.parent_id(opinion) %>
-        <%= if parent_id do %>
-          <.link href={~p"/comments/#{parent_id}"}>
-            <div class="text-xs">... (view parent)</div>
-          </.link>
-        <% end %>
         <.link href={~p"/comments/#{opinion.id}"}>
           <%= opinion.content %>
         </.link>
