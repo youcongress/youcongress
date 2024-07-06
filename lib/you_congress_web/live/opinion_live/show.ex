@@ -67,6 +67,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
     case Opinions.create_opinion(opinion_params) do
       {:ok, _opinion} ->
+        Track.event("New Opinion", current_user)
+
         child_opinions =
           Opinions.list_opinions(
             ancestry: Opinion.path_str(opinion),
@@ -91,6 +93,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
     case Delegations.delete_delegation(%{deleguee_id: current_user.id, delegate_id: author_id}) do
       {:ok, _} ->
+        Track.event("Remove Delegate", current_user)
+
         socket =
           socket
           |> load_opinion!(opinion.id)
@@ -109,6 +113,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
     case Delegations.create_delegation(%{deleguee_id: current_user.id, delegate_id: author_id}) do
       {:ok, _} ->
+        Track.event("Delegate", current_user)
+
         socket =
           socket
           |> load_opinion!(opinion.id)
@@ -129,6 +135,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
     {_count, nil} =
       Opinions.delete_opinion_and_descendants(opinion)
+
+    Track.event("Delete Opinion", socket.assigns.current_user)
 
     socket =
       socket
