@@ -3,6 +3,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
 
   alias YouCongressWeb.Tools.Tooltip
   alias YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu
+  alias YouCongressWeb.OpinionLive.OpinionComponent
 
   defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
 
