@@ -5,16 +5,22 @@ defmodule YouCongress.Opinions.AIReplier do
 
   @behaviour YouCongress.Opinions.AIReplier.AIReplierBehaviour
 
+  require Logger
+
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Votings
+  alias YouCongress.Authors
   alias YouCongress.Opinions.AIReplier.AIComment
 
   def maybe_reply(%{twin: true}), do: do_nothing()
   def maybe_reply(%{ancestry: nil}), do: do_nothing()
 
   def maybe_reply(opinion) do
-    if Opinion.parent(opinion).twin do
+    parent_opinion = Opinion.parent(opinion)
+    parent_author = Authors.get_author!(parent_opinion.author_id)
+
+    if parent_author.twin_enabled do
       reply(opinion)
     else
       do_nothing()
@@ -38,13 +44,20 @@ defmodule YouCongress.Opinions.AIReplier do
            :"gpt-4o"
          ) do
       {:ok, %{reply: content, author_id: author_id}} ->
-        Opinions.create_opinion(%{
-          "content" => content,
-          "author_id" => author_id,
-          "voting_id" => opinion.voting_id,
-          "ancestry" => set_ancestry(opinion),
-          "twin" => true
-        })
+        case Opinions.create_opinion(%{
+               "content" => content,
+               "author_id" => author_id,
+               "voting_id" => opinion.voting_id,
+               "ancestry" => set_ancestry(opinion),
+               "twin" => true
+             }) do
+          {:ok, _} ->
+            :ok
+
+          {:error, error} ->
+            Logger.error("Digital twin failed to reply #{inspect(error)}")
+            do_nothing()
+        end
 
         :ok
 
