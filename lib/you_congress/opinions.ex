@@ -45,7 +45,12 @@ defmodule YouCongress.Opinions do
   end
 
   def get_opinion(nil), do: nil
-  def get_opinion(id), do: Repo.get(Opinion, id)
+  def get_opinion(id) when is_integer(id) or is_binary(id), do: Repo.get(Opinion, id)
+
+  def get_opinion(opts) do
+    query = build_query(opts)
+    Repo.one(query)
+  end
 
   @doc """
   Creates a opinion.
@@ -147,6 +152,12 @@ defmodule YouCongress.Opinions do
     base_query = from(o in Opinion)
 
     Enum.reduce(opts, base_query, fn
+      {:ids, ids}, query ->
+        from q in query, where: q.id in ^ids
+
+      {:content, content}, query ->
+        from q in query, where: q.content == ^content
+
       {:initial_ancestry, ancestry}, query ->
         from q in query, where: fragment("? LIKE ?", q.ancestry, ^"#{ancestry}/%")
 
@@ -192,5 +203,13 @@ defmodule YouCongress.Opinions do
 
     changeset = Opinion.changeset(opinion, %{descendants_count: count})
     Repo.update(changeset)
+  end
+
+  def maybe_reply_by_ai(opinion) do
+    ai_replier_impl().maybe_reply(opinion)
+  end
+
+  def ai_replier_impl do
+    Application.get_env(:you_congress, :ai_replier, YouCongress.Opinions.AIReplier)
   end
 end

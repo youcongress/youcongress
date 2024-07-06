@@ -3,6 +3,9 @@ import Config
 if !System.get_env("OPENAI_API_KEY") do
   # Use a fake to classify halls in development
   config :you_congress, :hall_classifier, YouCongress.Halls.ClassificationFake
+
+  # Use a fake to reply to comments under digital-twin comments
+  config :you_congress, :ai_replier, YouCongress.Opinions.AIReplier.AIReplierFake
 end
 
 # Configure your database

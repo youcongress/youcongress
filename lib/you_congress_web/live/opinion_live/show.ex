@@ -66,22 +66,16 @@ defmodule YouCongressWeb.OpinionLive.Show do
     }
 
     case Opinions.create_opinion(opinion_params) do
-      {:ok, _opinion} ->
+      {:ok, opinion} ->
         Track.event("New Opinion", current_user)
 
-        child_opinions =
-          Opinions.list_opinions(
-            ancestry: Opinion.path_str(opinion),
-            preload: [:author],
-            order_by: [desc: :id]
-          )
-
-        changeset = Opinions.change_opinion(%Opinions.Opinion{})
+        # We do this synchronous as we want the reply be ready when we redirect
+        YouCongress.Opinions.maybe_reply_by_ai(opinion)
 
         {:noreply,
          socket
          |> put_flash(:info, "Opinion created successfully.")
-         |> assign(child_opinions: child_opinions, changeset: changeset)}
+         |> redirect(to: "/comments/#{opinion.id}")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
