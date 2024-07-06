@@ -1,5 +1,11 @@
 <.header>
   <:actions>
+    <.link href={"https://twitter.com/intent/tweet?text=#{@share_to_x_text}"} target="blank_">
+      <.button>
+        Share on X
+      </.button>
+    </.link>
+
     <%= if @voting.generating_left == 0 do %>
       <%= if Permissions.can_generate_ai_votes?(@current_user) do %>
         <.link phx-click="generate-votes" phx-value-voting_id={@voting.id}>
@@ -26,14 +32,10 @@
     </button>
   </div>
 <% end %>
-<div class="inline-block">
-  <h1 class="text-2xl font-bold">
-    <%= @voting.title %>
-  </h1>
-</div>
-<div class="inline-block -mb-1 lg:pl-2">
-  <ShareComponent.share_to_x_icon share_to_x_text={@share_to_x_text} />
-</div>
+
+<h1 class="text-2xl font-bold">
+  <%= @voting.title %>
+</h1>
 
 <%= if(@votes_from_delegates != [] || @votes_from_non_delegates != []) do %>
   <div class="mt-4 mb-4">
