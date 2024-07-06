@@ -81,7 +81,6 @@ defmodule YouCongress.DigitalTwins do
           opinion_id: opinion.id
         })
 
-      Opinions.update_opinion(opinion, %{vote_id: vote.id})
       {:ok, vote}
     else
       #  Set the author as twin_origin so it won't be used again and do not save

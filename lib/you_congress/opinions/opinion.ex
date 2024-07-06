@@ -16,7 +16,6 @@ defmodule YouCongress.Opinions.Opinion do
 
     belongs_to :author, YouCongress.Authors.Author
     belongs_to :user, YouCongress.Accounts.User
-    belongs_to :vote, YouCongress.Votes.Vote
     belongs_to :voting, YouCongress.Votings.Voting
 
     timestamps()
@@ -32,8 +31,7 @@ defmodule YouCongress.Opinions.Opinion do
       :author_id,
       :user_id,
       :voting_id,
-      :ancestry,
-      :vote_id
+      :ancestry
     ])
     |> validate_required([:content, :twin])
     |> validate_source_url_if_present()

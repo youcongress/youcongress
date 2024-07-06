@@ -10,7 +10,6 @@ defmodule YouCongressWeb.VotingLiveTest do
   alias YouCongress.VotesFixtures
   alias YouCongress.OpinionsFixtures
   alias YouCongress.Votings
-  alias YouCongress.Opinions
 
   @create_attrs %{title: "nuclear energy"}
   @suggested_titles [
@@ -137,7 +136,6 @@ defmodule YouCongressWeb.VotingLiveTest do
       opinion = OpinionsFixtures.opinion_fixture(%{voting_id: voting.id})
       #  Create a vote so we display the voting options
       VotesFixtures.vote_fixture(%{voting_id: voting.id, opinion_id: opinion.id})
-      Opinions.update_opinion(opinion, %{vote_id: opinion.vote_id})
 
       {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
 
@@ -262,8 +260,6 @@ defmodule YouCongressWeb.VotingLiveTest do
         opinion_id: opinion.id
       })
 
-      Opinions.update_opinion(opinion, %{vote_id: opinion.vote_id})
-
       {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
 
       show_live
@@ -287,28 +283,21 @@ defmodule YouCongressWeb.VotingLiveTest do
       conn = log_in_user(conn, user)
 
       opinion =
-        OpinionsFixtures.opinion_fixture(
-          %{
-            author_id: user.author_id,
-            user_id: user.id,
-            voting_id: voting.id,
-            content: "whatever",
-            twin: false
-          },
-          false
-        )
-
-      vote =
-        VotesFixtures.vote_fixture(%{
-          voting_id: voting.id,
+        OpinionsFixtures.opinion_fixture(%{
           author_id: user.author_id,
-          opinion_id: opinion.id,
           user_id: user.id,
+          voting_id: voting.id,
+          content: "whatever",
           twin: false
         })
 
-      {:ok, _opinion} =
-        Opinions.update_opinion(opinion, %{vote_id: vote.id})
+      VotesFixtures.vote_fixture(%{
+        voting_id: voting.id,
+        author_id: user.author_id,
+        opinion_id: opinion.id,
+        user_id: user.id,
+        twin: false
+      })
 
       #  Create an AI generated comment as we don't display the form until we have one of these
       VotesFixtures.vote_fixture(%{twin: true, voting_id: voting.id}, true)

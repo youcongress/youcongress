@@ -13,6 +13,7 @@
 
 <ul class="pt-6" phx-update="stream" phx-viewport-bottom="load-more" id="activity">
   <%= for {_id, opinion} <- @streams.opinions do %>
+    <% vote = @votes[opinion.id] %>
     <li class="pb-4" id={"opinion-#{opinion.id}"}>
       <strong>
         <.link patch={~p"/v/#{opinion.voting.slug}"}><%= opinion.voting.title %></.link>
@@ -21,15 +22,15 @@
         <.link href={AuthorShow.author_path(opinion.author)}>
           <%= opinion.author.name || "Anonymous" %>
         </.link>
-        <%= if opinion.vote && Votes.public?(opinion.vote) do %>
+        <%= if vote && Votes.public?(vote) do %>
           <%= VoteComponent.response_with_s(
             assigns,
-            opinion.vote.answer.response
+            vote.answer.response
           ) %>
-          <%= unless opinion.vote.direct do %>
+          <%= unless vote.direct do %>
             via delegates
           <% end %>
-          <%= if opinion.vote.opinion do %>
+          <%= if vote.opinion do %>
             and says:
           <% end %>
         <% else %>
