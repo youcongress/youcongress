@@ -3,6 +3,8 @@ defmodule YouCongress.Opinions.AIReplier do
   Generate a reply from a digital twin via OpenAI's API.
   """
 
+  @behaviour YouCongress.Opinions.AIReplier.AIReplierBehaviour
+
   alias YouCongress.Opinions.Opinion
 
   def maybe_reply(%{twin: true}), do: do_nothing()

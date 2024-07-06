@@ -70,7 +70,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
         Track.event("New Opinion", current_user)
 
         # We do this synchronous as we want the reply be ready when we redirect
-        YouCongress.Opinions.AIReplier.maybe_reply(opinion)
+        YouCongress.Opinions.maybe_reply_by_ai(opinion)
 
         {:noreply,
          socket
