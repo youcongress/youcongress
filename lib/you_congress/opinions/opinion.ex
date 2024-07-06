@@ -13,6 +13,7 @@ defmodule YouCongress.Opinions.Opinion do
     field :content, :string
     field :twin, :boolean, default: false
     field :ancestry, :string
+    field :descendants_count, :integer, default: 0
 
     belongs_to :author, YouCongress.Authors.Author
     belongs_to :user, YouCongress.Accounts.User
@@ -31,7 +32,8 @@ defmodule YouCongress.Opinions.Opinion do
       :author_id,
       :user_id,
       :voting_id,
-      :ancestry
+      :ancestry,
+      :descendants_count
     ])
     |> validate_required([:content, :twin])
     |> validate_source_url_if_present()

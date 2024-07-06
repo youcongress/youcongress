@@ -56,11 +56,10 @@
     !@current_user || (@current_user.author_id != @vote.author_id && "pb-4")
   ]}>
     <div>
-      <%= if @vote.opinion_id && @show_opinion do %>
-        <.link href={~p"/comments/#{@vote.opinion_id}" <> "#reply"}>
-          <img src="/images/comment.svg" alt="Comment" class="h-4 w-4 inline" />
-        </.link>
-      <% end %>
+      <OpinionComponent.comment_icon
+        :if={@vote.opinion_id && @show_opinion}
+        opinion={@vote.opinion}
+      />
     </div>
     <div>
       <%= if !@current_user || (@author.id != @current_user.id) do %>
