@@ -45,7 +45,7 @@ defmodule YouCongress.Opinions do
   end
 
   def get_opinion(nil), do: nil
-  def get_opinion(id) when is_integer(id), do: Repo.get(Opinion, id)
+  def get_opinion(id) when is_integer(id) or is_binary(id), do: Repo.get(Opinion, id)
 
   def get_opinion(opts) do
     query = build_query(opts)
