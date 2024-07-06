@@ -118,7 +118,11 @@ defmodule YouCongress.Opinions do
 
   """
   def delete_opinion(%Opinion{} = opinion) do
-    Repo.delete(opinion)
+    Ecto.Multi.new()
+    |> Ecto.Multi.delete(:opinion, opinion)
+    |> enqueue_update_ancestor_counts(opinion.ancestry)
+    |> Repo.transaction()
+    |> handle_transaction_result()
   end
 
   @doc """
@@ -174,11 +178,17 @@ defmodule YouCongress.Opinions do
 
   def delete_opinion_and_descendants(%Opinion{} = opinion) do
     subtree_ids = Opinion.subtree_ids(opinion)
-    Repo.delete_all(from o in Opinion, where: o.id in ^subtree_ids)
+    result = Repo.delete_all(from o in Opinion, where: o.id in ^subtree_ids)
+
+    Ecto.Multi.new()
+    |> enqueue_update_ancestor_counts(opinion.ancestry)
+    |> Repo.transaction()
+
+    result
   end
 
   def update_descendants_count(%Opinion{} = opinion) do
-    count = length(Opinion.subtree_ids(opinion))
+    count = length(Opinion.descendant_ids(opinion))
 
     changeset = Opinion.changeset(opinion, %{descendants_count: count})
     Repo.update(changeset)
