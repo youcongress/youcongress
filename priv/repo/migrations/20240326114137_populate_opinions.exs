@@ -8,8 +8,7 @@ defmodule YouCongress.Repo.Migrations.PopulateOpinions do
           content: vote.opinion,
           source_url: vote.source_url,
           author_id: vote.author_id,
-          user_id: nil,
-          vote_id: vote.id
+          user_id: nil
         })
 
       YouCongress.Votes.update_vote(vote, %{opinion_id: opinion.id})
