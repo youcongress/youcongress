@@ -18,7 +18,7 @@ defmodule YouCongress.Opinions.AIReplier.AIComment do
   end
 
   defp get_prompt(voting_title, ancestors_and_self) do
-    {opinions, author} = print_opinions(ancestors_and_self)
+    {opinions, user_author, digital_twin_author} = print_opinions(ancestors_and_self)
 
     prompt =
       """
@@ -26,15 +26,16 @@ defmodule YouCongress.Opinions.AIReplier.AIComment do
 
       #{opinions}
 
-       Generate a reply in first person as if you were #{author.name} (#{author.bio}).
-       The reply should be one or a few sentences long and be a plausible comment of #{author.name}.
+       Generate a reply in first person as if you were #{digital_twin_author.name} (#{digital_twin_author.bio}).
+       The reply should be one or a few sentences long and be a plausible comment of #{digital_twin_author.name}.
+       Also, make sure to answer the last question or comment from #{user_author.name || user_author.twitter_username}.
        Return a json object with the key reply:
        {
          "reply": "reply here"
        }
       """
 
-    {prompt, author}
+    {prompt, digital_twin_author}
   end
 
   defp print_opinions(ancestors_and_self) do
@@ -43,15 +44,15 @@ defmodule YouCongress.Opinions.AIReplier.AIComment do
     |> print_opinions("", nil, nil)
   end
 
-  defp print_opinions([], output, _last, second_to_last) do
-    {output, second_to_last.author}
+  defp print_opinions([], output, last, second_to_last) do
+    {output, last.author, second_to_last.author}
   end
 
   defp print_opinions([ancestor | rest], output, last, _second_to_last) do
     output =
       """
       #{output}
-      #{ancestor.author.name} (#{ancestor.author.bio}): #{ancestor.content}
+      #{ancestor.author.name || ancestor.author.username} (#{ancestor.author.bio}): #{ancestor.content}
       ----
       """
 
