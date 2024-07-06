@@ -1,4 +1,4 @@
-defmodule YouCongress.Opinions.AIComment do
+defmodule YouCongress.Opinions.AIReplier.AIComment do
   @moduledoc """
   Generate a reply from a digital twin via OpenAI's API.
   """
@@ -7,8 +7,6 @@ defmodule YouCongress.Opinions.AIComment do
 
   def generate_comment(voting_title, ancestors_and_self, model) do
     {prompt, author} = get_prompt(voting_title, ancestors_and_self)
-    IO.inspect(prompt)
-    IO.inspect(author)
 
     with {:ok, data} <- ask_gpt(prompt, model),
          content <- OpenAIModel.get_content(data),
@@ -29,7 +27,7 @@ defmodule YouCongress.Opinions.AIComment do
       #{opinions}
 
        Generate a reply in first person as if you were #{author.name} (#{author.bio}).
-       The reply should be one or a few sentences long.
+       The reply should be one or a few sentences long and be a plausible comment of #{author.name}.
        Return a json object with the key reply:
        {
          "reply": "reply here"

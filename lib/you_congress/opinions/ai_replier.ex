@@ -29,7 +29,7 @@ defmodule YouCongress.Opinions.AIReplier do
         order_by: [desc: :id]
       )
 
-    case YouCongress.Opinions.AIComment.generate_comment(
+    case YouCongress.Opinions.AIReplier.AIComment.generate_comment(
            voting.title,
            ancestors_and_self,
            :"gpt-4o"
