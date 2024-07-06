@@ -8,7 +8,6 @@ defmodule YouCongress.Opinions do
 
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
-  alias YouCongress.Workers.AICommentWorker
 
   @doc """
   Returns the list of opinions.
@@ -64,9 +63,6 @@ defmodule YouCongress.Opinions do
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:opinion, Opinion.changeset(%Opinion{}, attrs))
     |> enqueue_update_ancestor_counts(attrs["ancestry"])
-    |> Ecto.Multi.insert(:maybe_generate_ai_comment, fn %{opinion: opinion} ->
-      AICommentWorker.new(%{"opinion_id" => opinion.id})
-    end)
     |> Repo.transaction()
     |> handle_transaction_result()
   end

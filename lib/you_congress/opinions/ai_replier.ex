@@ -1,23 +1,14 @@
-defmodule YouCongress.Workers.AICommentWorker do
+defmodule YouCongress.Opinions.AIReplier do
   @moduledoc """
   Generate a reply from a digital twin via OpenAI's API.
   """
 
-  use Oban.Worker, max_attempts: 1
-
   alias YouCongress.Opinions.Opinion
 
-  def perform(%Oban.Job{args: %{"opinion_id" => opinion_id}}) do
-    case YouCongress.Opinions.get_opinion(opinion_id) do
-      nil -> do_nothing()
-      opinion -> maybe_generate_comment(opinion)
-    end
-  end
+  def reply(%{twin: true}), do: do_nothing()
+  def reply(%{ancestry: nil}), do: do_nothing()
 
-  defp maybe_generate_comment(%{twin: true}), do: do_nothing()
-  defp maybe_generate_comment(%{ancestry: nil}), do: do_nothing()
-
-  defp maybe_generate_comment(opinion) do
+  def reply(opinion) do
     if Opinion.parent(opinion).twin do
       voting = YouCongress.Votings.get_voting!(opinion.voting_id)
       ancestor_and_self_ids = YouCongress.Opinions.Opinion.path_ids(opinion)
