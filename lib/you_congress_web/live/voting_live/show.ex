@@ -10,7 +10,6 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Votes.Answers
   alias YouCongress.DelegationVotes
   alias YouCongressWeb.VotingLive.Show.VotesLoader
-  alias YouCongressWeb.VotingLive.Show.ShareComponent
   alias YouCongressWeb.VotingLive.Show.CurrentUserVoteComponent
   alias YouCongressWeb.VotingLive.VoteComponent
   alias YouCongressWeb.VotingLive.Show.Comments
