@@ -1,5 +1,6 @@
 defmodule YouCongress.Opinions.AIReplier.AIReplierBehaviour do
   @moduledoc """
+  The behaviour for AI repliers.
   """
 
   alias YouCongress.Opinions.Opinion
