@@ -1,4 +1,8 @@
 defmodule YouCongressWeb.VotingLive.Index.HallNav do
+  @moduledoc """
+  Hall navigation.
+  """
+
   use Phoenix.Component
   use Phoenix.VerifiedRoutes, endpoint: YouCongressWeb.Endpoint, router: YouCongressWeb.Router
 

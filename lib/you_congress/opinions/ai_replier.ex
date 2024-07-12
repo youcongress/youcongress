@@ -72,5 +72,5 @@ defmodule YouCongress.Opinions.AIReplier do
     "#{ancestry}/#{id}"
   end
 
-  defp do_nothing(), do: :ok
+  defp do_nothing, do: :ok
 end

@@ -1,4 +1,8 @@
 defmodule YouCongress.Tools.StringUtils do
+  @moduledoc """
+  String utilities.
+  """
+
   def titleize(string) do
     string
     |> String.split()
