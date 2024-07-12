@@ -8,7 +8,7 @@ defmodule YouCongress.Halls.Hall do
 
   alias YouCongress.Votings.Voting
 
-  @names ["ai", "spain", "eu", "us", "china", "world", "law", "climate", "programming"]
+  @names ["ai", "spain", "eu", "us", "china", "world", "law", "climate", "programming", "finance"]
   @names_str Enum.join(@names, ",")
 
   schema "halls" do
