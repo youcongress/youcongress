@@ -5,9 +5,26 @@ defmodule YouCongressWeb.Tools.Tooltip do
   """
   use Phoenix.Component
 
+  alias YouCongressWeb.Tools.Tooltip
+
   @default_color "slate"
   @default_position "top"
   @default_variant "simple"
+
+  def delegation(assigns) do
+    ~H"""
+    <Tooltip.render
+      content={[
+        "Choose a list of delegates",
+        "to vote as the majority of them.",
+        "Unless you vote directly."
+      ]}
+      position="left"
+    >
+      <img src="/images/info.svg" alt="Info" class="h-4 w-4 inline" />
+    </Tooltip.render>
+    """
+  end
 
   @doc """
   Renders tooltip component.
