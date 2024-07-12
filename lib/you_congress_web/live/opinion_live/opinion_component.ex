@@ -11,6 +11,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   attr :voting, :map, required: true
   attr :current_user, :map, default: nil
   attr :opinable, :boolean, default: false
+  attr :delegable, :boolean, default: false
 
   def render(assigns) do
     ~H"""
@@ -46,18 +47,9 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
           <OpinionComponent.comment_icon :if={@opinable} opinion={@opinion} />
         </div>
         <div>
-          <%= if !@current_user || (@opinion.author_id != @current_user.id) do %>
+          <%= if @delegable && (!@current_user || (@opinion.author_id != @current_user.id)) do %>
             <div>
-              <Tooltip.render
-                content={[
-                  "Choose a list of delegates",
-                  "to vote as the majority of them.",
-                  "Unless you vote directly."
-                ]}
-                position="left"
-              >
-                <img src="/images/info.svg" alt="Info" class="h-4 w-4 inline" />
-              </Tooltip.render>
+              <Tooltip.delegation assigns={assigns} />
 
               <.link
                 phx-click={if @delegating, do: "remove-delegation", else: "add-delegation"}

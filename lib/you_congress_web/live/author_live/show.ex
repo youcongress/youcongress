@@ -9,6 +9,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongressWeb.VotingLive.VoteComponent
   alias YouCongressWeb.AuthorLive.FormComponent
   alias YouCongress.Accounts.Permissions
+  alias YouCongressWeb.Tools.Tooltip
 
   @impl true
   def mount(_params, session, socket) do
