@@ -12,14 +12,11 @@
         >
           X/Twitter
         </.link>
-        <%= if @author.wikipedia_url || @author.country || @author.location do %>
+        <%= if @author.wikipedia_url do %>
           ·
         <% end %>
       <% end %>
       <%= if @author.wikipedia_url do %>
-        <%= unless @author.twitter_username do %>
-          Links:
-        <% end %>
         <.link navigate={@author.wikipedia_url} target="_blank" class="hover:underline">
           Wikipedia
         </.link>
