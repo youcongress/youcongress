@@ -38,6 +38,13 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     share_to_x_text =
       x_post(current_user_vote, voting) <> " https://youcongress.com/v/#{voting.slug}"
 
+    total_votes =
+      get_total_votes(
+        current_user_vote,
+        length(votes_with_opinion),
+        length(votes_without_opinion)
+      )
+
     socket
     |> assign(
       voting: voting,
@@ -46,10 +53,14 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
       votes_without_opinion: votes_without_opinion,
       current_user_vote: current_user_vote,
       percentage: get_percentage(voting),
-      share_to_x_text: share_to_x_text
+      share_to_x_text: share_to_x_text,
+      total_votes: total_votes
     )
     |> assign_main_variables(voting, current_user)
   end
+
+  defp get_total_votes(nil, a, b), do: a + b
+  defp get_total_votes(_, a, b), do: a + b + 1
 
   defp x_post(nil, voting), do: voting.title
 
