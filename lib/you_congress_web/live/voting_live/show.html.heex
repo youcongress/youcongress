@@ -178,7 +178,7 @@
   </div>
 <% end %>
 <div class="mb-6">
-  <%= if @votes_from_non_delegates != [] do %>
+  <%= if @current_user && @votes_from_non_delegates != [] do %>
     <h2 class="mb-2">
       <%= if @votes_from_delegates == [] do %>
         Comments:
