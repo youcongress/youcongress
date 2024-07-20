@@ -33,7 +33,7 @@
   </div>
 <% end %>
 
-<h1 class="text-2xl font-bold">
+<h1 class="pt-4 text-2xl font-bold">
   <%= @voting.title %>
 </h1>
 
@@ -63,41 +63,24 @@
         </button>
       <% end %>
     </div>
-    <div class="pb-2 pt-6">Results:</div>
+    <div class="pb-2 pt-6">
+      Results (<%= length(@votes_from_delegates) + length(@votes_from_non_delegates) +
+        length(@votes_without_opinion) %>):
+    </div>
     <div class="space-y-1">
-      <%= for response <- Answers.basic_responses() do %>
-        <% {votes, percentage} = @vote_frequencies[response] || {0, 0} %>
-        <div class="mb-2">
-          <div class="flex justify-between items-center mb-1">
-            <div
-              class="result flex items-center cursor-pointer"
-              phx-click="vote"
-              phx-value-response={response}
-            >
-              <div class={"w-4 h-4 bg-#{response_color(response)}-500 rounded-full mr-2"}></div>
-              <span class={"text-#{response_color(response)}-500"}>
-                <%= if @current_user_vote && @current_user_vote.answer.response == response,
-                  do: "✓ " %><%= response %>
-                <%= if @current_user_vote && !@current_user_vote.direct && @current_user_vote.answer.response == response do %>
-                  <span class="mt-1 ml-2 text-sm text-gray-600">
-                    via delegates
-                  </span>
-                <% end %>
-              </span>
-            </div>
-            <span class={"text-#{response_color(response)}-500"}>
-              <%= "#{percentage}% (#{votes})" %>
-            </span>
-          </div>
-          <div class="w-full h-2 bar-bg rounded-full">
+      <div class="mb-2">
+        <div class="w-full h-2 bar-bg rounded-full flex">
+          <%= for response <- Answers.basic_responses() do %>
+            <% {_votes, percentage} = @vote_frequencies[response] || {0, 0} %>
+
             <div
               class={"bg-#{response_color(response)}-500 h-2 rounded-full"}
-              style={"width: #{percentage || 1}%;"}
+              style={"width: #{percentage || 0}%;"}
             >
             </div>
-          </div>
+          <% end %>
         </div>
-      <% end %>
+      </div>
     </div>
   </div>
 <% end %>

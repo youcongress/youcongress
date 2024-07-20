@@ -188,63 +188,6 @@ defmodule YouCongressWeb.VotingLiveTest do
       assert html =~ "You voted Strongly disagree"
     end
 
-    test "casts a vote from results", %{conn: conn, voting: voting} do
-      conn = log_in_as_user(conn)
-
-      #  Create a vote so we display the voting options
-      VotesFixtures.vote_fixture(%{voting_id: voting.id}, true)
-
-      {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
-
-      # Vote strongly agree
-      show_live
-      |> element(".result", "Strongly agree")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "You voted Strongly agree"
-
-      # Vote agree
-      show_live
-      |> element(".result", "Agree")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "You voted Agree"
-
-      # Vote Abstain
-      show_live
-      |> element(".result", "Abstain")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "You voted Abstain"
-
-      # Vote N/A
-      show_live
-      |> element(".result", "N/A")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "You voted N/A"
-
-      # Vote disagree
-      show_live
-      |> element(".result", "Disagree")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "You voted Disagree"
-
-      # Vote strongly disagree
-      show_live
-      |> element(".result", "Strongly disagree")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "You voted Strongly disagree"
-    end
-
     test "creates a comment", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
 

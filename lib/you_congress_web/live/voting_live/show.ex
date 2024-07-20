@@ -235,8 +235,8 @@ defmodule YouCongressWeb.VotingLive.Show do
   end
 
   defp response_color("Strongly agree"), do: "green"
-  defp response_color("Agree"), do: "green"
-  defp response_color("Disagree"), do: "red"
+  defp response_color("Agree"), do: "lime"
+  defp response_color("Disagree"), do: "orange"
   defp response_color("Strongly disagree"), do: "red"
   defp response_color(_), do: "gray"
 end
