@@ -141,7 +141,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       #  Vote strongly agree
       show_live
-      |> element("button", "Strongly agree")
+      |> element("button#mobile-vote-strongly-agree")
       |> render_click()
 
       html = render(show_live)
@@ -149,7 +149,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       # Vote agree
       show_live
-      |> element("button", "Agree")
+      |> element("button#mobile-vote-agree")
       |> render_click()
 
       html = render(show_live)
@@ -157,7 +157,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       # Vote Abstain
       show_live
-      |> element("button", "Abstain")
+      |> element("button#mobile-vote-abstain")
       |> render_click()
 
       html = render(show_live)
@@ -165,7 +165,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       # Vote N/A
       show_live
-      |> element("button", "N/A")
+      |> element("button#mobile-vote-na")
       |> render_click()
 
       html = render(show_live)
@@ -173,7 +173,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       # Vote disagree
       show_live
-      |> element("button", "Disagree")
+      |> element("button#mobile-vote-disagree")
       |> render_click()
 
       html = render(show_live)
@@ -181,7 +181,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       # Vote strongly disagree
       show_live
-      |> element("button", "Strongly disagree")
+      |> element("button#mobile-vote-strongly-disagree")
       |> render_click()
 
       html = render(show_live)

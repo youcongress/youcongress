@@ -16,6 +16,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Track
   alias YouCongress.Workers.PublicFiguresWorker
   alias YouCongress.Accounts.Permissions
+  alias YouCongressWeb.VotingLive.Show.CastComponent
 
   @impl true
   def mount(_, session, socket) do
@@ -233,10 +234,4 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp load_random_votings(socket, voting_id) do
     assign(socket, :random_votings, Votings.list_random_votings(voting_id, 5))
   end
-
-  defp response_color("Strongly agree"), do: "green"
-  defp response_color("Agree"), do: "lime"
-  defp response_color("Disagree"), do: "orange"
-  defp response_color("Strongly disagree"), do: "red"
-  defp response_color(_), do: "gray"
 end
