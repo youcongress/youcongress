@@ -40,7 +40,7 @@
 <%= if(@votes_from_delegates != [] || @votes_from_non_delegates != []) do %>
   <div class="mt-4 mb-4">
     <div class="space-y-1 md:hidden">
-      <div class="pb-2">
+      <div class="pb-1">
         Cast your vote:
       </div>
       <div>
@@ -86,7 +86,7 @@
       </div>
     </div>
     <div class="hidden md:block">
-      <div class="pb-2">
+      <div class="pb-1">
         Cast your vote<%= unless @current_user_vote, do: " to see the results" %>:
       </div>
       <CastComponent.button
@@ -126,7 +126,7 @@
       <% end %>
     </div>
     <%= if @current_user_vote do %>
-      <div class="pt-6">
+      <div class="pt-6 pb-1">
         Results (<%= @total_votes %>):
       </div>
       <div class="space-y-1">
