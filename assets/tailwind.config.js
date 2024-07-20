@@ -13,11 +13,15 @@ module.exports = {
   ],
   safelist: [
     // Used dynamically when displaying voting results
+    "text-orange-500",
     "text-red-500",
+    "text-lime-500",
     "text-green-500",
     "text-gray-500",
     "bg-red-500",
+    "bg-orange-500",
     "bg-green-500",
+    "bg-lime-500",
     "bg-gray-500",
   ],
   theme: {
