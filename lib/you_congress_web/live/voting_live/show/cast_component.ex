@@ -1,4 +1,7 @@
 defmodule YouCongressWeb.VotingLive.Show.CastComponent do
+  @moduledoc """
+  Component for voting buttons
+  """
   use Phoenix.Component
 
   attr :response, :string, required: true
