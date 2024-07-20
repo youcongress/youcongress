@@ -7,6 +7,8 @@ defmodule YouCongressWeb.HomeLive.Index do
   alias YouCongress.Track
   alias YouCongressWeb.VotingLive.VoteComponent
   alias YouCongressWeb.AuthorLive.Show, as: AuthorShow
+  alias YouCongressWeb.OpinionLive.OpinionComponent
+  alias YouCongress.Delegations
 
   @per_page 15
 
@@ -38,20 +40,31 @@ defmodule YouCongressWeb.HomeLive.Index do
   end
 
   defp load_opinions_and_votes(socket) do
+    %{assigns: %{current_user: current_user}} = socket
+
     opinions =
       Opinions.list_opinions(
         preload: [:voting, :author],
         twin: false,
-        order_by: [desc: :updated_at],
+        order_by: [desc: :id],
         limit: @per_page
       )
 
     votes = get_votes(opinions)
 
-    socket
-    |> stream(:opinions, opinions)
-    |> assign(votes: votes)
-    |> assign(no_more_opinions?: length(opinions) < @per_page)
+    assign(socket,
+      # opinions is not a stream because we need to re-render OpinionComponent when we delegate
+      opinions: opinions,
+      votes: votes,
+      current_user_delegation_ids: current_user_delegation_ids(current_user),
+      no_more_opinions?: length(opinions) < @per_page
+    )
+  end
+
+  defp current_user_delegation_ids(nil), do: []
+
+  defp current_user_delegation_ids(%{id: current_user_id}) do
+    Delegations.list_delegation_ids(deleguee_id: current_user_id)
   end
 
   defp get_votes(opinions) do
@@ -73,17 +86,73 @@ defmodule YouCongressWeb.HomeLive.Index do
     votes
   end
 
+  def handle_event("add-delegation", _, %{assigns: %{current_user: nil}} = socket) do
+    {:noreply, put_flash(socket, :error, "You must be logged in to delegate.")}
+  end
+
+  def handle_event(
+        "add-delegation",
+        %{"author_id" => delegate_id, "opinion_id" => opinion_id},
+        socket
+      ) do
+    %{assigns: %{current_user: current_user}} = socket
+
+    case Delegations.create_delegation(current_user, delegate_id) do
+      {:ok, _} ->
+        socket =
+          socket
+          |> assign(current_user_delegation_ids: current_user_delegation_ids(current_user))
+          |> put_flash(:info, "Delegation added successfully.")
+
+        send_update(YouCongressWeb.OpinionLive.OpinionComponent,
+          id: opinion_id,
+          delegating: true
+        )
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, socket |> put_flash(:error, "Failed to add delegation.")}
+    end
+  end
+
+  def handle_event(
+        "remove-delegation",
+        %{"author_id" => delegate_id, "opinion_id" => opinion_id},
+        socket
+      ) do
+    %{assigns: %{current_user: current_user}} = socket
+
+    case Delegations.delete_delegation(current_user, delegate_id) do
+      {:ok, _} ->
+        socket =
+          socket
+          |> assign(current_user_delegation_ids: current_user_delegation_ids(current_user))
+          |> put_flash(:info, "Delegation removed successfully.")
+
+        send_update(YouCongressWeb.OpinionLive.OpinionComponent,
+          id: opinion_id,
+          delegating: false
+        )
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, socket |> put_flash(:error, "Failed to remove delegation.")}
+    end
+  end
+
   @impl true
   def handle_event("load-more", _, socket) do
-    %{assigns: %{page: page, votes: votes}} = socket
+    %{assigns: %{page: page, votes: votes, opinions: opinions}} = socket
     new_page = page + 1
     offset = (new_page - 1) * @per_page
 
-    opinions =
+    new_opinions =
       Opinions.list_opinions(
         preload: [:voting, :author],
         twin: false,
-        order_by: [desc: :updated_at],
+        order_by: [desc: :id],
         limit: @per_page,
         offset: offset
       )
@@ -91,10 +160,12 @@ defmodule YouCongressWeb.HomeLive.Index do
     votes = Map.merge(votes, get_votes(opinions))
 
     socket =
-      socket
-      |> stream(:opinions, opinions)
-      |> assign(votes: votes)
-      |> assign(page: new_page, no_more_opinions?: length(opinions) < @per_page)
+      assign(socket,
+        opinions: opinions ++ new_opinions,
+        votes: votes,
+        page: new_page,
+        no_more_opinions?: length(new_opinions) < @per_page
+      )
 
     {:noreply, socket}
   end

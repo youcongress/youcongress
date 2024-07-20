@@ -162,13 +162,10 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   def handle_event("add-delegation", %{"author_id" => author_id}, socket) do
     %{assigns: %{current_user: current_user, voting: voting}} = socket
-    deleguee_id = current_user.author_id
     delegate_id = String.to_integer(author_id)
 
-    case Delegations.create_delegation(%{delegate_id: delegate_id, deleguee_id: deleguee_id}) do
+    case Delegations.create_delegation(current_user, delegate_id) do
       {:ok, _} ->
-        Track.event("Delegate", current_user)
-
         socket =
           socket
           |> assign(:delegating?, true)
@@ -195,13 +192,10 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   def handle_event("remove-delegation", %{"author_id" => author_id}, socket) do
     %{assigns: %{current_user: current_user, voting: voting}} = socket
-    deleguee_id = current_user.author_id
     delegate_id = String.to_integer(author_id)
 
-    case Delegations.delete_delegation(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
+    case Delegations.delete_delegation(current_user, delegate_id) do
       {:ok, _} ->
-        Track.event("Remove Delegate", current_user)
-
         socket =
           socket
           |> assign(:delegating?, false)

@@ -11,8 +11,19 @@
   </:actions>
 </.header>
 
-<ul class="pt-6" phx-update="stream" phx-viewport-bottom="load-more" id="activity">
-  <%= for {_id, opinion} <- @streams.opinions do %>
+<ul class="pt-6" phx-viewport-bottom="load-more" id="activity">
+  <%= for opinion <- @opinions do %>
+    <.live_component
+      module={OpinionComponent}
+      id={opinion.id}
+      opinion={opinion}
+      current_user={@current_user}
+      delegating={opinion.author_id in @current_user_delegation_ids}
+      voting={opinion.voting}
+      opinable={true}
+      delegable={true}
+    />
+
     <% vote = @votes[opinion.id] %>
     <li class="pb-4" id={"opinion-#{opinion.id}"}>
       <strong>

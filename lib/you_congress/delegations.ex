@@ -8,6 +8,8 @@ defmodule YouCongress.Delegations do
 
   alias YouCongress.Delegations.Delegation
   alias YouCongress.DelegationVotes
+  alias YouCongress.Accounts.User
+  alias YouCongress.Track
 
   @doc """
   Returns the list of delegations.
@@ -79,6 +81,14 @@ defmodule YouCongress.Delegations do
     end
   end
 
+  def create_delegation(%User{} = current_user, delegate_id) do
+    with {:ok, delegation} <-
+           create_delegation(%{deleguee_id: current_user.author_id, delegate_id: delegate_id}) do
+      Track.event("Delegate", current_user)
+      {:ok, delegation}
+    end
+  end
+
   @doc """
   Updates a delegation.
 
@@ -121,6 +131,14 @@ defmodule YouCongress.Delegations do
 
       {:error, changeset} ->
         {:error, changeset}
+    end
+  end
+
+  def delete_delegation(%User{} = current_user, delegate_id) do
+    with {:ok, delegation} <-
+           delete_delegation(%{deleguee_id: current_user.author_id, delegate_id: delegate_id}) do
+      Track.event("Remove Delegate", current_user)
+      {:ok, delegation}
     end
   end
 

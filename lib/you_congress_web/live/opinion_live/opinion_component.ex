@@ -1,5 +1,5 @@
 defmodule YouCongressWeb.OpinionLive.OpinionComponent do
-  use Phoenix.Component
+  use Phoenix.LiveComponent
 
   alias YouCongressWeb.AuthorLive
   alias YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu
@@ -54,6 +54,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
               <.link
                 phx-click={if @delegating, do: "remove-delegation", else: "add-delegation"}
                 phx-value-author_id={@opinion.author.id}
+                phx-value-opinion_id={@opinion.id}
                 class="rounded bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-600 shadow-sm hover:bg-indigo-100"
               >
                 <%= if @delegating, do: "Delegating", else: "Delegate" %>

@@ -7,6 +7,7 @@
 </.link>
 Comment
 <OpinionComponent.render
+  id={:c}
   opinion={@opinion}
   current_user={@current_user}
   delegating={@delegating}
@@ -46,6 +47,7 @@ Comment
   <%= for child_opinion <- @child_opinions do %>
     <div class="mb-4 pl-4 border-l-2 border-gray-200">
       <OpinionComponent.render
+        id={child_opinion.id}
         opinion={child_opinion}
         current_user={@current_user}
         delegating={@child_opinions_delegations[child_opinion.author_id]}

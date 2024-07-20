@@ -85,10 +85,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
   def handle_event("remove-delegation", %{"author_id" => author_id}, socket) do
     %{assigns: %{current_user: current_user, opinion: opinion}} = socket
 
-    case Delegations.delete_delegation(%{deleguee_id: current_user.id, delegate_id: author_id}) do
+    case Delegations.delete_delegation(current_user, author_id) do
       {:ok, _} ->
-        Track.event("Remove Delegate", current_user)
-
         socket =
           socket
           |> load_opinion!(opinion.id)
@@ -105,10 +103,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
   def handle_event("add-delegation", %{"author_id" => author_id}, socket) do
     %{assigns: %{current_user: current_user, opinion: opinion}} = socket
 
-    case Delegations.create_delegation(%{deleguee_id: current_user.id, delegate_id: author_id}) do
+    case Delegations.create_delegation(current_user, author_id) do
       {:ok, _} ->
-        Track.event("Delegate", current_user)
-
         socket =
           socket
           |> load_opinion!(opinion.id)
