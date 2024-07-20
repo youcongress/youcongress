@@ -39,24 +39,82 @@
 
 <%= if(@votes_from_delegates != [] || @votes_from_non_delegates != []) do %>
   <div class="mt-4 mb-4">
-    <div>
-      Cast your vote:
-      <%= for response <- Answers.basic_responses() do %>
-        <button
-          phx-click="vote"
-          phx-value-response={response}
-          class={"rounded bg-#{response_color(response)}-500 px-2 py-1 text-xs font-semibold text-white shadow-sm ring-1 ring-inset ring-#{response_color(response)}-300 hover:bg-#{response_color(response)}-600"}
-        >
-          <%= if @current_user_vote && @current_user_vote.answer.response == response,
-            do: "✓ " %>
-          <%= response %>
-          <%= if @current_user_vote && !@current_user_vote.direct && @current_user_vote.answer.response == response do %>
-            <span class="ml-1">
-              via delegates
-            </span>
-          <% end %>
-        </button>
-      <% end %>
+    <div class="space-y-1 md:hidden">
+      <div class="pb-2">Cast your vote:</div>
+      <div>
+        <CastComponent.button
+          button_id="mobile-vote-agree"
+          response="Agree"
+          current_user_vote={@current_user_vote}
+        />
+        <CastComponent.button
+          button_id="mobile-vote-strongly-agree"
+          response="Strongly agree"
+          current_user_vote={@current_user_vote}
+        />
+      </div>
+      <div>
+        <CastComponent.button
+          button_id="mobile-vote-disagree"
+          response="Disagree"
+          current_user_vote={@current_user_vote}
+        />
+        <CastComponent.button
+          button_id="mobile-vote-strongly-disagree"
+          response="Strongly disagree"
+          current_user_vote={@current_user_vote}
+        />
+      </div>
+      <div>
+        <CastComponent.button
+          button_id="mobile-vote-abstain"
+          response="Abstain"
+          current_user_vote={@current_user_vote}
+        />
+        <CastComponent.button
+          button_id="mobile-vote-na"
+          response="N/A"
+          current_user_vote={@current_user_vote}
+        />
+        <%= if @current_user_vote && @current_user_vote.direct do %>
+          <button phx-click="delete-direct-vote" class="text-sm">
+            Clear
+          </button>
+        <% end %>
+      </div>
+    </div>
+    <div class="hidden md:block">
+      <div class="pb-2">Cast your vote:</div>
+      <CastComponent.button
+        response="Strongly agree"
+        current_user_vote={@current_user_vote}
+        button_id="desktop-vote-strongly-agree"
+      />
+      <CastComponent.button
+        response="Agree"
+        current_user_vote={@current_user_vote}
+        button_id="desktop-vote-agree"
+      />
+      <CastComponent.button
+        response="Abstain"
+        current_user_vote={@current_user_vote}
+        button_id="desktop-vote-abstain"
+      />
+      <CastComponent.button
+        response="N/A"
+        current_user_vote={@current_user_vote}
+        button_id="desktop-vote-na"
+      />
+      <CastComponent.button
+        response="Disagree"
+        current_user_vote={@current_user_vote}
+        button_id="vote-disagree"
+      />
+      <CastComponent.button
+        response="Strongly disagree"
+        current_user_vote={@current_user_vote}
+        button_id="vote-strongly-disagree"
+      />
       <%= if @current_user_vote && @current_user_vote.direct do %>
         <button phx-click="delete-direct-vote" class="text-sm">
           Clear
@@ -64,8 +122,7 @@
       <% end %>
     </div>
     <div class="pb-2 pt-6">
-      Results (<%= length(@votes_from_delegates) + length(@votes_from_non_delegates) +
-        length(@votes_without_opinion) %>):
+      Results (<%= @total_votes %>):
     </div>
     <div class="space-y-1">
       <div class="mb-2">
@@ -74,7 +131,7 @@
             <% {_votes, percentage} = @vote_frequencies[response] || {0, 0} %>
 
             <div
-              class={"bg-#{response_color(response)}-500 h-2 rounded-full"}
+              class={"bg-#{CastComponent.response_color(response)}-500 h-2 rounded-full"}
               style={"width: #{percentage || 0}%;"}
             >
             </div>
