@@ -18,11 +18,13 @@ module.exports = {
     "text-lime-500",
     "text-green-500",
     "text-gray-500",
+    "text-blue-500",
     "bg-red-500",
     "bg-orange-500",
     "bg-green-500",
     "bg-lime-500",
     "bg-gray-500",
+    "bg-blue-500",
   ],
   theme: {
     extend: {

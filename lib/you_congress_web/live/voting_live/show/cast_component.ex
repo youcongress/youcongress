@@ -32,5 +32,6 @@ defmodule YouCongressWeb.VotingLive.Show.CastComponent do
   def response_color("Agree"), do: "lime"
   def response_color("Disagree"), do: "orange"
   def response_color("Strongly disagree"), do: "red"
+  def response_color("Abstain"), do: "blue"
   def response_color(_), do: "gray"
 end
