@@ -40,6 +40,6 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
   defp response_color("Strongly agree"), do: "text-green-800"
   defp response_color("Disagree"), do: "text-orange-800"
   defp response_color("Strongly disagree"), do: "text-red-800"
-  defp response_color("Abstain"), do: "text-gray-400"
-  defp response_color("N/A"), do: "text-gray-400"
+  defp response_color("Abstain"), do: "text-blue-800"
+  defp response_color("N/A"), do: "text-gray-800"
 end
