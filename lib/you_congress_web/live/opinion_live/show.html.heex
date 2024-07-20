@@ -7,7 +7,6 @@
 </.link>
 Comment
 <OpinionComponent.render
-  id={:c}
   opinion={@opinion}
   current_user={@current_user}
   delegating={@delegating}
@@ -17,11 +16,17 @@ Comment
 <div class="pb-2" id="reply">replying to <%= @opinion.author.name %></div>
 
 <.form :let={f} for={@changeset} id="opinion-form" phx-submit="save" phx-change="validate">
+  <% twin_msg =
+    if @opinion.author.twin_enabled, do: "#{@opinion.author.name}'s digital twin (AI) will reply." %>
   <.input
     field={f[:content]}
     type="textarea"
     rows="3"
-    placeholder={if @current_user, do: "Add your comment...", else: "Log in to comment..."}
+    placeholder={
+      if @current_user,
+        do: "Add your comment... #{twin_msg}",
+        else: "Log in to comment... #{twin_msg}"
+    }
     disabled={!@current_user}
     class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
   />
