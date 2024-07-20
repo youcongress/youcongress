@@ -26,6 +26,7 @@ defmodule YouCongressWeb.Router do
     live "/x/:twitter_username", AuthorLive.Show, :show
     live "/", VotingLive.Index, :index
     live "/halls/:hall", VotingLive.Index, :index
+    live "/comments/:id", OpinionLive.Show, :show
 
     get "/terms", PageController, :terms
     get "/privacy-policy", PageController, :privacy_policy
@@ -54,7 +55,6 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through [:browser, :require_authenticated_user]
 
-    live "/comments/:id", OpinionLive.Show, :show
     live "/welcome", WelcomeLive.Index, :index
     live "/v/:slug/add-quote", VotingLive.AddQuote, :add_quote
 

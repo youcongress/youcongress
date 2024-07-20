@@ -162,8 +162,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
         order_by: [desc: :id]
       )
 
-    delegating = Delegations.delegating?(current_user.author_id, opinion.author_id)
-    delegate_ids = Delegations.list_delegation_ids(deleguee_id: current_user.author_id)
+    delegating = get_delegating(current_user, opinion.author_id)
+    delegate_ids = get_delegate_ids(current_user)
 
     child_opinions_delegations =
       child_opinions
@@ -178,5 +178,17 @@ defmodule YouCongressWeb.OpinionLive.Show do
       child_opinions_delegations: child_opinions_delegations,
       child_opinions: child_opinions
     )
+  end
+
+  defp get_delegating(nil, _), do: false
+
+  defp get_delegating(%{author_id: current_user_author_id}, opinion_author_id) do
+    Delegations.delegating?(current_user_author_id, opinion_author_id)
+  end
+
+  defp get_delegate_ids(nil), do: []
+
+  defp get_delegate_ids(%{author_id: author_id}) do
+    Delegations.list_delegation_ids(deleguee_id: author_id)
   end
 end
