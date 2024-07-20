@@ -1,5 +1,5 @@
 defmodule YouCongressWeb.OpinionLive.OpinionComponent do
-  use Phoenix.LiveComponent
+  use Phoenix.Component
 
   alias YouCongressWeb.AuthorLive
   alias YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu

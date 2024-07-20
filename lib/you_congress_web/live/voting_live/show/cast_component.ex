@@ -6,7 +6,7 @@ defmodule YouCongressWeb.VotingLive.Show.CastComponent do
 
   attr :response, :string, required: true
   attr :current_user_vote, :map, required: true
-  attr :button_id, :integer, required: true
+  attr :button_id, :string, required: true
 
   def button(assigns) do
     ~H"""

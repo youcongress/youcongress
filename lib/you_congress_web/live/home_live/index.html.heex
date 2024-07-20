@@ -13,9 +13,7 @@
 
 <ul class="pt-6" phx-viewport-bottom="load-more" id="activity">
   <%= for opinion <- @opinions do %>
-    <.live_component
-      module={OpinionComponent}
-      id={opinion.id}
+    <OpinionComponent.render
       opinion={opinion}
       current_user={@current_user}
       delegating={opinion.author_id in @current_user_delegation_ids}
