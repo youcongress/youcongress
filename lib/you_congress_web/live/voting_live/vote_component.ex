@@ -36,9 +36,9 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
   defp with_s("Abstain"), do: "abstains"
   defp with_s("N/A"), do: "N/A"
 
-  defp response_color("Agree"), do: "text-green-800"
+  defp response_color("Agree"), do: "text-lime-800"
   defp response_color("Strongly agree"), do: "text-green-800"
-  defp response_color("Disagree"), do: "text-red-800"
+  defp response_color("Disagree"), do: "text-orange-800"
   defp response_color("Strongly disagree"), do: "text-red-800"
   defp response_color("Abstain"), do: "text-gray-400"
   defp response_color("N/A"), do: "text-gray-400"
