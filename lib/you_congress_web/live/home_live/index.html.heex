@@ -1,11 +1,12 @@
 <.header>
-  Recent activity
   <:subtitle>
-    This excludes AI-digital-twin & delegation activity, which can be found on the poll pages after human opinions.
+    <%= if @all do %>
+      This excludes AI-digital-twin & delegation activity, which can be found on the poll pages after human opinions.
+    <% end %>
   </:subtitle>
 
   <:actions>
-    <.link patch={~p"/"} phx-click={JS.push_focus()}>
+    <.link patch={~p"/halls"} phx-click={JS.push_focus()}>
       <.button>List of Polls</.button>
     </.link>
   </:actions>
