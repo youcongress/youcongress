@@ -15,7 +15,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
 
   def render(assigns) do
     ~H"""
-    <div class="pt-6 pb-4">
+    <div class="pb-4">
       <div>
         <div class="flex justify-between">
           <div>

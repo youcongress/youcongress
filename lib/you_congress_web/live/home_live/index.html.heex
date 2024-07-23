@@ -13,53 +13,21 @@
 
 <ul class="pt-6" phx-viewport-bottom="load-more" id="activity">
   <%= for opinion <- @opinions do %>
-    <OpinionComponent.render
-      opinion={opinion}
-      current_user={@current_user}
-      delegating={opinion.author_id in @current_user_delegation_ids}
-      voting={opinion.voting}
-      opinable={true}
-      delegable={true}
-    />
-
-    <% vote = @votes[opinion.id] %>
     <li class="pb-4" id={"opinion-#{opinion.id}"}>
-      <strong>
-        <.link patch={~p"/v/#{opinion.voting.slug}"}><%= opinion.voting.title %></.link>
-      </strong>
-      <div class="text-sm">
-        <.link href={AuthorShow.author_path(opinion.author)}>
-          <%= opinion.author.name || "Anonymous" %>
-        </.link>
-        <%= if vote && Votes.public?(vote) do %>
-          <%= VoteComponent.response_with_s(
-            assigns,
-            vote.answer.response
-          ) %>
-          <%= unless vote.direct do %>
-            via delegates
-          <% end %>
-          <%= if vote.opinion do %>
-            <% parent_id = Opinion.parent_id(opinion) %> and
-            <%= if parent_id do %>
-              replied to a <.link href={~p"/comments/#{parent_id}"}>comment</.link>:
-            <% else %>
-              says:
-            <% end %>
-          <% end %>
-        <% else %>
-          commented:
-        <% end %>
+      <div class="pb-1">
+        <strong>
+          <.link patch={~p"/v/#{opinion.voting.slug}"}><%= opinion.voting.title %></.link>
+        </strong>
       </div>
-      <div class="pt-2">
-        <.link href={~p"/comments/#{opinion.id}"}>
-          <%= opinion.content %>
-        </.link>
-        <%= if opinion.source_url do %>
-          <span class="text-xs">
-            (<.link href={opinion.source_url} target="_blank" class="underline">source</.link>)
-          </span>
-        <% end %>
+      <div>
+        <OpinionComponent.render
+          opinion={opinion}
+          current_user={@current_user}
+          delegating={opinion.author_id in @current_user_delegation_ids}
+          voting={opinion.voting}
+          opinable={true}
+          delegable={true}
+        />
       </div>
     </li>
   <% end %>

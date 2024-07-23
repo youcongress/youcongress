@@ -1,11 +1,13 @@
-<.link href={
-  if @parent_opinion,
-    do: ~p"/comments/#{@parent_opinion.id}",
-    else: ~p"/v/#{@opinion.voting.slug}"
-}>
-  <img src="/images/arrow-left.svg" alt="Arrow left" class="h-4 w-4 inline" />
-</.link>
-Comment
+<div class="pb-6">
+  <.link href={
+    if @parent_opinion,
+      do: ~p"/comments/#{@parent_opinion.id}",
+      else: ~p"/v/#{@opinion.voting.slug}"
+  }>
+    <img src="/images/arrow-left.svg" alt="Arrow left" class="h-4 w-4 inline" />
+  </.link>
+  Comment
+</div>
 <OpinionComponent.render
   opinion={@opinion}
   current_user={@current_user}
@@ -50,7 +52,7 @@ Comment
     <h3 class="text-lg font-semibold mb-4">Comments</h3>
   <% end %>
   <%= for child_opinion <- @child_opinions do %>
-    <div class="mb-4 pl-4 border-l-2 border-gray-200">
+    <div class="pt-6 mb-4 pl-4 border-l-2 border-gray-200">
       <OpinionComponent.render
         opinion={child_opinion}
         current_user={@current_user}

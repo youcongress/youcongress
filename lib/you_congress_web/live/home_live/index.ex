@@ -2,11 +2,7 @@ defmodule YouCongressWeb.HomeLive.Index do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Opinions
-  alias YouCongress.Opinions.Opinion
-  alias YouCongress.Votes
   alias YouCongress.Track
-  alias YouCongressWeb.VotingLive.VoteComponent
-  alias YouCongressWeb.AuthorLive.Show, as: AuthorShow
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongress.Delegations
 
@@ -50,12 +46,9 @@ defmodule YouCongressWeb.HomeLive.Index do
         limit: @per_page
       )
 
-    votes = get_votes(opinions)
-
     assign(socket,
       # opinions is not a stream because we need to re-render OpinionComponent when we delegate
       opinions: opinions,
-      votes: votes,
       current_user_delegation_ids: current_user_delegation_ids(current_user),
       no_more_opinions?: length(opinions) < @per_page
     )
@@ -65,25 +58,6 @@ defmodule YouCongressWeb.HomeLive.Index do
 
   defp current_user_delegation_ids(%{id: current_user_id}) do
     Delegations.list_delegation_ids(deleguee_id: current_user_id)
-  end
-
-  defp get_votes(opinions) do
-    voting_ids = Enum.map(opinions, & &1.voting_id)
-    author_ids = Enum.map(opinions, & &1.author_id)
-
-    votes = Votes.list_votes(voting_ids: voting_ids, author_ids: author_ids, preload: [:answer])
-
-    votes =
-      Enum.reduce(opinions, %{}, fn opinion, acc ->
-        vote =
-          Enum.find(votes, fn v ->
-            v.voting_id == opinion.voting_id && v.author_id == opinion.author_id
-          end)
-
-        Map.put(acc, opinion.id, vote)
-      end)
-
-    votes
   end
 
   def handle_event("add-delegation", _, %{assigns: %{current_user: nil}} = socket) do
@@ -144,7 +118,7 @@ defmodule YouCongressWeb.HomeLive.Index do
 
   @impl true
   def handle_event("load-more", _, socket) do
-    %{assigns: %{page: page, votes: votes, opinions: opinions}} = socket
+    %{assigns: %{page: page, opinions: opinions}} = socket
     new_page = page + 1
     offset = (new_page - 1) * @per_page
 
@@ -157,12 +131,9 @@ defmodule YouCongressWeb.HomeLive.Index do
         offset: offset
       )
 
-    votes = Map.merge(votes, get_votes(opinions))
-
     socket =
       assign(socket,
         opinions: opinions ++ new_opinions,
-        votes: votes,
         page: new_page,
         no_more_opinions?: length(new_opinions) < @per_page
       )
