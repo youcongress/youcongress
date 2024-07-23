@@ -1,5 +1,6 @@
 defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   use Phoenix.Component
+  use Phoenix.VerifiedRoutes, endpoint: YouCongressWeb.Endpoint, router: YouCongressWeb.Router
 
   alias YouCongressWeb.AuthorLive
   alias YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu
@@ -71,7 +72,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
 
   def comment_icon(assigns) do
     ~H"""
-    <.link href={"/comments/#{@opinion.id}#reply"}>
+    <.link href={~p"/comments/#{@opinion.id}"}>
       <img src="/images/comment.svg" alt="Comment" class="h-4 w-4 inline" />
       <span class="text-gray-600 pl-1 text-xs">
         <%= if @opinion.descendants_count > 0, do: @opinion.descendants_count %>

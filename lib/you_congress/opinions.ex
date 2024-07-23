@@ -161,6 +161,9 @@ defmodule YouCongress.Opinions do
       {:initial_ancestry, ancestry}, query ->
         from q in query, where: fragment("? LIKE ?", q.ancestry, ^"#{ancestry}/%")
 
+      {:ancestry, nil}, query ->
+        from q in query, where: is_nil(q.ancestry)
+
       {:ancestry, ancestry}, query ->
         from q in query, where: q.ancestry == ^"#{ancestry}"
 
@@ -169,6 +172,13 @@ defmodule YouCongress.Opinions do
 
       {:preload, preloads}, query ->
         from q in query, preload: ^preloads
+
+      {:order_by, :updated_at_descendants_first}, query ->
+        from q in query,
+          order_by: [
+            desc: fragment("CASE WHEN ? > 0 THEN 1 ELSE 0 END", q.descendants_count),
+            desc: q.updated_at
+          ]
 
       {:order_by, order}, query ->
         from q in query, order_by: ^order
