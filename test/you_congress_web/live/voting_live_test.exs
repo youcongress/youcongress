@@ -64,7 +64,7 @@ defmodule YouCongressWeb.VotingLiveTest do
           |> element("button", title2)
           |> render_click()
 
-        voting = Votings.get_voting!(%{title: title2})
+        voting = Votings.get_voting!(title: title2)
         voting_path = ~p"/v/#{voting.slug}"
 
         {_, {:redirect, %{to: ^voting_path}}} = response

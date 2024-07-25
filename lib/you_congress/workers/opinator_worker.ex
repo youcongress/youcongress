@@ -12,6 +12,7 @@ defmodule YouCongress.Workers.OpinatorWorker do
   alias YouCongress.DigitalTwins
   alias YouCongress.Delegations
   alias YouCongress.DelegationVotes
+  alias YouCongress.Votings
   alias YouCongress.OpinatorWorker.GeneratingLeftServer
 
   @impl Oban.Worker
@@ -25,8 +26,8 @@ defmodule YouCongress.Workers.OpinatorWorker do
     {:cancel, "Max attempts reached."}
   end
 
-  def perform(%Oban.Job{args: %{"voting_id" => voting_id, "name" => name, "response" => response}}) do
-    case DigitalTwins.generate_vote(voting_id, name, response) do
+  def perform(%Oban.Job{args: %{"voting_id" => voting_id, "name" => name} = args}) do
+    case DigitalTwins.generate_vote(voting_id, name, args["response"]) do
       {:ok, vote} ->
         refresh_delegated_votes(vote, voting_id)
         GeneratingLeftServer.decrease_generating_left(voting_id)
@@ -40,6 +41,11 @@ defmodule YouCongress.Workers.OpinatorWorker do
         Logger.error("Failed to generate vote. Retry. error: #{inspect(error)}")
         :error
     end
+  end
+
+  def perform(%Oban.Job{args: %{"voting_title" => title} = args} = job) do
+    voting = Votings.get_voting!(title: title)
+    perform(%{job | args: Map.put(args, "voting_id", voting.id)})
   end
 
   defp refresh_delegated_votes(vote, voting_id) do
