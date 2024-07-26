@@ -92,12 +92,17 @@ defmodule YouCongress.Votes do
 
     Vote
     |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
+    |> join(:inner, [v], o in YouCongress.Opinions.Opinion, on: v.opinion_id == o.id)
     |> where(
-      [v, a],
+      [v, a, o],
       v.voting_id == ^voting_id and not is_nil(v.opinion_id) and
         v.id not in ^exclude_ids
     )
-    |> order_by([v], asc: v.twin)
+    |> order_by([v, a, o], fragment("CASE
+                  WHEN ? IS NOT NULL THEN 0
+                  WHEN ? = FALSE THEN 1
+                  ELSE 2
+                  END", o.source_url, o.twin))
     |> preload(^include_tables)
     |> Repo.all()
   end
