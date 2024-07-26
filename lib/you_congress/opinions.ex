@@ -173,10 +173,16 @@ defmodule YouCongress.Opinions do
       {:preload, preloads}, query ->
         from q in query, preload: ^preloads
 
-      {:order_by, :updated_at_descendants_first}, query ->
+      {:order_by, :relevant}, query ->
         from q in query,
           order_by: [
-            desc: fragment("CASE WHEN ? > 0 THEN 1 ELSE 0 END", q.descendants_count),
+            desc:
+              fragment(
+                "CASE WHEN ? IS NOT NULL THEN 3 WHEN ? > 0 THEN 2 WHEN ? IS NULL THEN 1 ELSE 0 END",
+                q.source_url,
+                q.descendants_count,
+                q.twin
+              ),
             desc: q.updated_at
           ]
 
