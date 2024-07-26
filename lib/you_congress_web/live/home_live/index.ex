@@ -62,7 +62,7 @@ defmodule YouCongressWeb.HomeLive.Index do
     Opinions.list_opinions(
       preload: [:voting, :author],
       ancestry: nil,
-      order_by: :updated_at_descendants_first,
+      order_by: :relevant,
       limit: @per_page
     )
   end
@@ -80,8 +80,8 @@ defmodule YouCongressWeb.HomeLive.Index do
   defp list_opinions(false, offset) do
     Opinions.list_opinions(
       preload: [:voting, :author],
-      twin: false,
-      order_by: :updated_at_descendants_first,
+      ancestry: nil,
+      order_by: :relevant,
       limit: @per_page,
       offset: offset
     )
