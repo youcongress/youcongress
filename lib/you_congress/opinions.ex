@@ -178,7 +178,7 @@ defmodule YouCongress.Opinions do
           order_by: [
             desc:
               fragment(
-                "CASE WHEN ? IS NOT NULL THEN 3 WHEN ? > 0 THEN 2 WHEN ? IS NULL THEN 1 ELSE 0 END",
+                "CASE WHEN ? IS NOT NULL OR ? > 0 OR ? = false THEN 1 ELSE 0 END",
                 q.source_url,
                 q.descendants_count,
                 q.twin
