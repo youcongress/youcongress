@@ -6,7 +6,7 @@
   </:actions>
 </.header>
 
-<.header class="pt-2">
+<.header>
   <:subtitle>
     Explore diverse arguments in AI & liquid democracy public opinion polls
     <%= if @all do %>
@@ -16,36 +16,38 @@
   Empower your decisions – personal (health, money) & civic (policies, laws)
 </.header>
 
-<a
-  href={~p"/halls/ai"}
-  class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
->
-  AI
-</a>
-<a
-  href={~p"/halls/climate"}
-  class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
->
-  Climate
-</a>
-<a
-  href={~p"/halls/us"}
-  class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
->
-  US
-</a>
-<a
-  href={~p"/halls/us"}
-  class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
->
-  EU
-</a>
-<a
-  href={~p"/halls/personal-finance"}
-  class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
->
-  Personal Finance
-</a>
+<div class="pt-2">
+  <a
+    href={~p"/halls/ai"}
+    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
+  >
+    AI
+  </a>
+  <a
+    href={~p"/halls/climate"}
+    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
+  >
+    Climate
+  </a>
+  <a
+    href={~p"/halls/us"}
+    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
+  >
+    US
+  </a>
+  <a
+    href={~p"/halls/us"}
+    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
+  >
+    EU
+  </a>
+  <a
+    href={~p"/halls/personal-finance"}
+    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
+  >
+    Personal Finance
+  </a>
+</div>
 
 <ul class="pt-6" phx-viewport-bottom="load-more" id="activity">
   <%= for opinion <- @opinions do %>
