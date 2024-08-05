@@ -1,16 +1,51 @@
 <.header>
-  <:subtitle>
-    <%= if @all do %>
-      This excludes AI-digital-twin & delegation activity, which can be found on the poll pages after human opinions.
-    <% end %>
-  </:subtitle>
-
   <:actions>
     <.link patch={~p"/halls"} phx-click={JS.push_focus()}>
       <.button>List of Polls</.button>
     </.link>
   </:actions>
 </.header>
+
+<.header class="pt-2">
+  <:subtitle>
+    Explore diverse arguments in AI & liquid democracy public opinion polls
+    <%= if @all do %>
+      This excludes AI-digital-twin & delegation activity, which can be found on the poll pages after human opinions.
+    <% end %>
+  </:subtitle>
+  Empower your decisions – personal (health, money) & civic (policies, laws)
+</.header>
+
+<a
+  href={~p"/halls/ai"}
+  class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
+>
+  AI
+</a>
+<a
+  href={~p"/halls/climate"}
+  class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
+>
+  Climate
+</a>
+<a
+  href={~p"/halls/us"}
+  class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
+>
+  US
+</a>
+<a
+  href={~p"/halls/us"}
+  class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
+>
+  EU
+</a>
+<a
+  href={~p"/halls/personal-finance"}
+  class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
+>
+  Personal Finance
+</a>
 
 <ul class="pt-6" phx-viewport-bottom="load-more" id="activity">
   <%= for opinion <- @opinions do %>

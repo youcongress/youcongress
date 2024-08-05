@@ -1,8 +1,4 @@
-<h1 class="text-xl pb-4 md:hidden">YouCongress: Public Opinion Polls with AI and Delegation</h1>
 <.header>
-  <h1 class="text-xl pb-4 hidden md:block">
-    YouCongress: Public Opinion Polls with AI and Delegation
-  </h1>
   <:actions>
     <button
       phx-click="toggle-new-poll"
@@ -14,6 +10,13 @@
       <.button>Recent activity</.button>
     </.link>
   </:actions>
+</.header>
+
+<.header class="pt-2">
+  <:subtitle>
+    Explore diverse arguments in AI & liquid democracy public opinion polls
+  </:subtitle>
+  Empower your decisions – personal (health, money) & civic (policies, laws)
 </.header>
 
 <div :if={@new_poll_visible?} class="pt-4">
