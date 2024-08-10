@@ -16,6 +16,8 @@ We're still shaping YouCongress, but you already can:
 - vote (votes are public)
 - add arguments
 - explore AI-generated opinions from public figures
+- explore real quotes from public figures
+- comment on public figures' opinions and their AI digital twins will reply back
 - delegate to other users and public figures. You'll vote as the majority of your delegates — unless you vote directly.
 
 You can read more about the project on the LessWrong post:
