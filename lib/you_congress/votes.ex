@@ -200,6 +200,22 @@ defmodule YouCongress.Votes do
   end
 
   @doc """
+  Gets a single vote that matches the given criteria.
+
+  ## Examples
+
+      iex> get_vote_by(author_id: 1, voting_id: 123)
+      %Vote{}
+
+      iex> get_vote_by(author_id: 999, voting_id: 999)
+      nil
+
+  """
+  def get_vote_by(criteria) when is_list(criteria) do
+    Repo.get_by(Vote, criteria)
+  end
+
+  @doc """
   Creates a vote.
 
   ## Examples
