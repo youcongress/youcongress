@@ -62,6 +62,33 @@ defmodule YouCongress.Authors do
     Repo.get!(Author, id) |> Repo.preload(tables)
   end
 
+  def get_author_by(opts) do
+    query = build_query(opts)
+    Repo.one(query)
+  end
+
+  defp build_query(opts) do
+    base_query = from(a in Author)
+
+    Enum.reduce(
+      opts,
+      base_query,
+      fn
+        {:name, name}, query ->
+          from a in query, where: a.name == ^name
+
+        {:wikipedia_url, wikipedia_url}, query ->
+          from a in query, where: a.wikipedia_url == ^wikipedia_url
+
+        {:twitter_username, twitter_username}, query ->
+          from a in query, where: a.twitter_username == ^twitter_username
+
+        _, query ->
+          query
+      end
+    )
+  end
+
   def get_author_by_twitter_username(nil), do: nil
 
   def get_author_by_twitter_username(twitter_username) do

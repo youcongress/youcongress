@@ -59,7 +59,7 @@ defmodule YouCongress.Authors.Author do
 
   def validate_required_if_twin_origin(changeset) do
     if get_field(changeset, :twin_origin) do
-      validate_required(changeset, [:name, :bio, :country])
+      validate_required(changeset, [:name, :bio])
     else
       changeset
     end
