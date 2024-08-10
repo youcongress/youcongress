@@ -99,10 +99,12 @@ defmodule YouCongress.Votes do
         v.id not in ^exclude_ids
     )
     |> order_by([v, a, o], fragment("CASE
-                  WHEN ? IS NOT NULL THEN 0
-                  WHEN ? = FALSE THEN 1
-                  ELSE 2
-                  END", o.source_url, o.twin))
+                  WHEN ? > 0 THEN 0
+                  WHEN ? IS NOT NULL THEN 1
+                  WHEN ? IS NOT NULL THEN 2
+                  WHEN ? = FALSE THEN 3
+                  ELSE 4
+  END", o.descendants_count, o.source_url, a.wikipedia_url, o.twin))
     |> preload(^include_tables)
     |> Repo.all()
   end
