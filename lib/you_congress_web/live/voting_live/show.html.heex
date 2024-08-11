@@ -41,7 +41,7 @@
   <div class="mt-4 mb-4">
     <div class="space-y-1 md:hidden">
       <div class="pb-1">
-        Cast your vote to see the results:
+        Cast your vote:
       </div>
       <div>
         <CastComponent.button
@@ -87,7 +87,7 @@
     </div>
     <div class="hidden md:block">
       <div class="pb-1">
-        Cast your vote<%= unless @current_user_vote, do: " to see the results" %>:
+        Cast your vote:
       </div>
       <CastComponent.button
         response="Strongly agree"
@@ -125,26 +125,24 @@
         </button>
       <% end %>
     </div>
-    <%= if @current_user_vote do %>
-      <div class="pt-6 pb-1">
-        Results (<%= @total_votes %>):
-      </div>
-      <div class="space-y-1">
-        <div class="mb-2">
-          <div class="w-full h-2 bar-bg rounded-full flex">
-            <%= for response <- Answers.basic_responses() do %>
-              <% {_votes, percentage} = @vote_frequencies[response] || {0, 0} %>
+    <div class="pt-6 pb-1">
+      Results (<%= @total_votes %>):
+    </div>
+    <div class="space-y-1">
+      <div class="mb-2">
+        <div class="w-full h-2 bar-bg rounded-full flex">
+          <%= for response <- Answers.basic_responses() do %>
+            <% {_votes, percentage} = @vote_frequencies[response] || {0, 0} %>
 
-              <div
-                class={"bg-#{CastComponent.response_color(response)}-500 h-2 rounded-full"}
-                style={"width: #{percentage || 0}%;"}
-              >
-              </div>
-            <% end %>
-          </div>
+            <div
+              class={"bg-#{CastComponent.response_color(response)}-500 h-2 rounded-full"}
+              style={"width: #{percentage || 0}%;"}
+            >
+            </div>
+          <% end %>
         </div>
       </div>
-    <% end %>
+    </div>
   </div>
 <% end %>
 <%= if @votes_from_delegates != [] || @votes_from_non_delegates != [] do %>
