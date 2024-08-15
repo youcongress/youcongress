@@ -23,17 +23,12 @@ We're still shaping YouCongress, but you already can:
 You can read more about the project on the LessWrong post:
 - [Tackling Moloch: How YouCongress Offers a Novel Coordination Mechanism](https://www.lesswrong.com/posts/4KjiZeAWc7Yv9oyCb/tackling-moloch-how-youcongress-offers-a-novel-coordination)
 
-# Telegram
-
-You can join [Telegram](https://t.me/youcongress) to ask any questions and/or have a chat.
-
 # Contributions
 
 Feel free to:
-- [Take an issue](https://github.com/youcongress/youcongress/issues)
-- Propose a new issue
-- Refactor existent code
-- Add documentation
+- Use [Discussions](https://github.com/youcongress/youcongress/discussions) to introduce yourself, ask questions and propose ideas.
+- [Take any unassigned issue](https://github.com/youcongress/youcongress/issues)
+- Add documentation, refactor existent code, etc.
 
 Thanks!
 
