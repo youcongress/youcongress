@@ -3,6 +3,9 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
   import Phoenix.LiveViewTest
   import YouCongress.AuthorsFixtures
+  import YouCongress.AccountsFixtures
+  import YouCongress.VotesFixtures
+  import YouCongress.VotingsFixtures
 
   @create_attrs %{
     bio: "some bio",
@@ -105,6 +108,44 @@ defmodule YouCongressWeb.AuthorLiveTest do
       html = render(show_live)
       assert html =~ "Author updated successfully"
       assert html =~ "some updated bio"
+    end
+
+    test "like icon click changes from heart.svg to filled-heart.svg", %{conn: conn} do
+      current_user = user_fixture()
+      conn = log_in_user(conn, current_user)
+      author = author_fixture(%{twitter_username: "asimov"})
+      voting = voting_fixture()
+      vote_fixture(%{voting_id: voting.id, author_id: author.id}, true)
+
+      {:ok, view, _html} = live(conn, "/x/asimov")
+
+      # We have a heart icon
+      assert has_element?(view, "img[src='/images/heart.svg']")
+
+      # We don't have a filled heart icon
+      refute has_element?(view, "img[src='/images/filled-heart.svg']")
+
+      # Like the author
+      view
+      |> element("img[src='/images/heart.svg']")
+      |> render_click()
+
+      # We have a filled heart icon
+      assert has_element?(view, "img[src='/images/filled-heart.svg']")
+
+      # We don't have a heart icon
+      refute has_element?(view, "img[src='/images/heart.svg']")
+
+      # Unlike the author
+      view
+      |> element("img[src='/images/filled-heart.svg']")
+      |> render_click()
+
+      # We have a heart icon
+      assert has_element?(view, "img[src='/images/heart.svg']")
+
+      # We don't have a filled heart icon
+      refute has_element?(view, "img[src='/images/filled-heart.svg']")
     end
   end
 end

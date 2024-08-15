@@ -5,6 +5,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongress.Delegations
   alias Phoenix.LiveView.Socket
   alias YouCongress.Votes
+  alias YouCongress.Likes
   alias YouCongress.Track
   alias YouCongressWeb.VotingLive.VoteComponent
   alias YouCongressWeb.AuthorLive.FormComponent
@@ -30,11 +31,13 @@ defmodule YouCongressWeb.AuthorLive.Show do
     author = get_author!(params)
     votes = Votes.list_votes_by_author_id(author.id, preload: [:voting, :answer, :opinion])
     title = page_title(socket.assigns.live_action)
+    current_user = socket.assigns.current_user
 
     {:noreply,
      socket
      |> assign(page_title: title, author: author, votes: votes)
-     |> assign_delegating?()}
+     |> assign_delegating?()
+     |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))}
   end
 
   defp get_author!(%{"id" => user_id}) do
@@ -95,6 +98,58 @@ defmodule YouCongressWeb.AuthorLive.Show do
     end
   end
 
+  def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
+    {:noreply, put_flash(socket, :error, "You must be logged in to like.")}
+  end
+
+  def handle_event("like", %{"opinion_id" => opinion_id}, socket) do
+    %{
+      assigns: %{
+        current_user: current_user,
+        liked_opinion_ids: liked_opinion_ids
+      }
+    } = socket
+
+    opinion_id = String.to_integer(opinion_id)
+
+    case Likes.like(opinion_id, current_user) do
+      {:ok, _} ->
+        socket =
+          socket
+          |> assign(:liked_opinion_ids, [opinion_id | liked_opinion_ids])
+          |> update_likes_count(opinion_id, &(&1 + 1))
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, socket |> put_flash(:error, "Failed to like opinion.")}
+    end
+  end
+
+  def handle_event("unlike", %{"opinion_id" => opinion_id}, socket) do
+    %{
+      assigns: %{
+        current_user: current_user,
+        liked_opinion_ids: liked_opinion_ids
+      }
+    } = socket
+
+    opinion_id = String.to_integer(opinion_id)
+
+    case Likes.unlike(opinion_id, current_user) do
+      {:ok, _} ->
+        socket =
+          socket
+          |> assign(:liked_opinion_ids, Enum.filter(liked_opinion_ids, &(&1 != opinion_id)))
+          |> update_likes_count(opinion_id, &(&1 - 1))
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, socket |> put_flash(:error, "Failed to unlike opinion.")}
+    end
+  end
+
   def author_path(%{twitter_username: nil, id: author_id}) do
     ~p"/a/#{author_id}"
   end
@@ -115,4 +170,16 @@ defmodule YouCongressWeb.AuthorLive.Show do
     delegating = Delegations.delegating?(current_user.author_id, author.id)
     assign(socket, :delegating?, delegating)
   end
+
+  defp update_likes_count(socket, opinion_id, operation) do
+    %{assigns: %{votes: votes}} = socket
+    assign(socket, :votes, Enum.map(votes, &replace_opinion_in_vote(&1, opinion_id, operation)))
+  end
+
+  defp replace_opinion_in_vote(%{opinion_id: opinion_id} = vote, opinion_id, operation) do
+    opinion = Map.put(vote.opinion, :likes_count, operation.(vote.opinion.likes_count))
+    Map.put(vote, :opinion, opinion)
+  end
+
+  defp replace_opinion_in_vote(vote, _, _), do: vote
 end

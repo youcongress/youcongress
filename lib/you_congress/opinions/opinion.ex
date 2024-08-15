@@ -14,10 +14,13 @@ defmodule YouCongress.Opinions.Opinion do
     field :twin, :boolean, default: false
     field :ancestry, :string
     field :descendants_count, :integer, default: 0
+    field :likes_count, :integer, default: 0
 
     belongs_to :author, YouCongress.Authors.Author
     belongs_to :user, YouCongress.Accounts.User
     belongs_to :voting, YouCongress.Votings.Voting
+
+    has_many :likes, YouCongress.Likes.Like
 
     timestamps()
   end
@@ -33,7 +36,8 @@ defmodule YouCongress.Opinions.Opinion do
       :user_id,
       :voting_id,
       :ancestry,
-      :descendants_count
+      :descendants_count,
+      :likes_count
     ])
     |> validate_required([:content, :twin])
     |> validate_source_url_if_present()

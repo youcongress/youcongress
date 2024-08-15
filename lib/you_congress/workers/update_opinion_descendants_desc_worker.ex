@@ -3,7 +3,7 @@ defmodule YouCongress.Workers.UpdateOpinionDescendantsCountWorker do
   Updates the descendants count of an opinion.
   """
 
-  use Oban.Worker
+  use Oban.Worker, unique: [states: [:scheduled, :available]]
 
   alias YouCongress.Opinions
 
