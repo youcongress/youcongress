@@ -17,6 +17,8 @@ defmodule YouCongress.Votings.Voting do
     field :slug, :string
 
     has_many :votes, Vote
+    has_many :opinions, YouCongress.Opinions.Opinion
+    has_many :likes, YouCongress.Likes.Like
 
     many_to_many(
       :halls,

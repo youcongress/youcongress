@@ -5,6 +5,7 @@ defmodule YouCongressWeb.HomeLiveTest do
   import YouCongress.AuthorsFixtures
   import YouCongress.OpinionsFixtures
   import YouCongress.VotingsFixtures
+  import YouCongress.AccountsFixtures
 
   describe "Index" do
     test "lists recent root opinions", %{conn: conn} do
@@ -93,6 +94,43 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ opinion3.content
       assert html =~ author1.name
       assert html =~ author2.name
+    end
+
+    test "like icon click changes from heart.svg to filled-heart.svg", %{conn: conn} do
+      current_user = user_fixture()
+      conn = log_in_user(conn, current_user)
+      voting_fixture()
+      opinion_fixture()
+
+      {:ok, view, _html} = live(conn, "/")
+
+      # We have a heart icon
+      assert has_element?(view, "img[src='/images/heart.svg']")
+
+      # We don't have a filled heart icon
+      refute has_element?(view, "img[src='/images/filled-heart.svg']")
+
+      # Like the opinion
+      view
+      |> element("img[src='/images/heart.svg']")
+      |> render_click()
+
+      # We have a filled heart icon
+      assert has_element?(view, "img[src='/images/filled-heart.svg']")
+
+      # We don't have a heart icon
+      refute has_element?(view, "img[src='/images/heart.svg']")
+
+      # Unlike the opinion
+      view
+      |> element("img[src='/images/filled-heart.svg']")
+      |> render_click()
+
+      # We have a heart icon
+      assert has_element?(view, "img[src='/images/heart.svg']")
+
+      # We don't have a filled heart icon
+      refute has_element?(view, "img[src='/images/filled-heart.svg']")
     end
   end
 end

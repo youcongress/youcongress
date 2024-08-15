@@ -17,7 +17,6 @@ defmodule YouCongress.Workers.OpinatorWorker do
 
   @impl Oban.Worker
   @spec perform(Oban.Job.t()) :: :ok
-
   def perform(%Oban.Job{attempt: attempt, args: %{"voting_id" => voting_id}})
       when attempt == @max_attempts do
     Logger.info("Failed to generate vote. Max attempts reached.")

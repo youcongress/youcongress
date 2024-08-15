@@ -13,6 +13,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   attr :current_user, :map, default: nil
   attr :opinable, :boolean, default: false
   attr :delegable, :boolean, default: false
+  attr :liked_opinion_ids, :list, default: []
 
   def render(assigns) do
     ~H"""
@@ -45,6 +46,9 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
       </div>
       <div class="flex justify-between pt-4 pb-4">
         <div>
+          <span :if={@opinable} class="pr-2">
+            <OpinionComponent.like_icon opinion={@opinion} liked={@opinion.id in @liked_opinion_ids} />
+          </span>
           <OpinionComponent.comment_icon :if={@opinable} opinion={@opinion} />
         </div>
         <div>
@@ -55,7 +59,6 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
               <.link
                 phx-click={if @delegating, do: "remove-delegation", else: "add-delegation"}
                 phx-value-author_id={@opinion.author.id}
-                phx-value-opinion_id={@opinion.id}
                 class="rounded bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-600 shadow-sm hover:bg-indigo-100"
               >
                 <%= if @delegating, do: "Delegating", else: "Delegate" %>
@@ -78,6 +81,24 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
         <%= if @opinion.descendants_count > 0, do: @opinion.descendants_count %>
       </span>
     </.link>
+    """
+  end
+
+  attr :opinion, :map, required: true
+  attr :liked, :boolean, default: false
+
+  def like_icon(assigns) do
+    ~H"""
+    <img
+      phx-click={if @liked, do: "unlike", else: "like"}
+      phx-value-opinion_id={@opinion.id}
+      src={"/images/#{if @liked, do: "filled-heart", else: "heart"}.svg"}
+      alt="Comment"
+      class="h-4 w-4 inline"
+    />
+    <span class="text-gray-600 pl-1 text-xs">
+      <%= if @opinion.likes_count > 0, do: @opinion.likes_count %>
+    </span>
     """
   end
 end
