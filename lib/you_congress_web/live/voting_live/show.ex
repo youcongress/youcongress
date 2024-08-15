@@ -4,6 +4,7 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   require Logger
 
+  alias YouCongress.Likes
   alias YouCongress.Delegations
   alias YouCongress.Votings
   alias YouCongress.Votes
@@ -34,6 +35,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   @spec handle_params(map, binary, Socket.t()) :: {:noreply, Socket.t()}
   def handle_params(%{"slug" => slug}, _, socket) do
     voting = Votings.get_voting_by_slug!(slug)
+    current_user = socket.assigns.current_user
 
     socket =
       socket
@@ -41,6 +43,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       |> assign(reload: false)
       |> VotesLoader.load_voting_and_votes(voting.id)
       |> load_random_votings(voting.id)
+      |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user, voting))
 
     current_user_vote = socket.assigns.current_user_vote
     socket = assign(socket, editing: !current_user_vote || !current_user_vote.opinion_id)
@@ -127,6 +130,42 @@ defmodule YouCongressWeb.VotingLive.Show do
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Error deleting vote.")}
+    end
+  end
+
+  def handle_event("like", %{"opinion_id" => opinion_id}, socket) do
+    %{assigns: %{current_user: current_user, liked_opinion_ids: liked_opinion_ids}} = socket
+    opinion_id = String.to_integer(opinion_id)
+
+    case Likes.like(opinion_id, current_user) do
+      {:ok, _} ->
+        socket =
+          socket
+          |> replace_opinion(opinion_id, &(&1 + 1))
+          |> assign(:liked_opinion_ids, [opinion_id | liked_opinion_ids])
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Error liking opinion.")}
+    end
+  end
+
+  def handle_event("unlike", %{"opinion_id" => opinion_id}, socket) do
+    %{assigns: %{current_user: current_user, liked_opinion_ids: liked_opinion_ids}} = socket
+    opinion_id = String.to_integer(opinion_id)
+
+    case Likes.unlike(opinion_id, current_user) do
+      {:ok, _} ->
+        socket =
+          socket
+          |> replace_opinion(opinion_id, &(&1 - 1))
+          |> assign(:liked_opinion_ids, Enum.filter(liked_opinion_ids, &(&1 != opinion_id)))
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Error unliking opinion.")}
     end
   end
 
@@ -226,6 +265,41 @@ defmodule YouCongressWeb.VotingLive.Show do
   end
 
   def handle_info(_, socket), do: {:noreply, socket}
+
+  defp replace_opinion(socket, opinion_id, operation) do
+    %{
+      assigns: %{
+        votes_from_delegates: votes_from_delegates,
+        votes_from_non_delegates: votes_from_non_delegates,
+        current_user_vote: current_user_vote
+      }
+    } = socket
+
+    socket
+    |> assign(
+      :votes_from_delegates,
+      Enum.map(votes_from_delegates, &replace_opinion_in_vote(&1, opinion_id, operation))
+    )
+    |> assign(
+      :votes_from_non_delegates,
+      Enum.map(votes_from_non_delegates, &replace_opinion_in_vote(&1, opinion_id, operation))
+    )
+    |> assign(
+      :current_user_vote,
+      replace_opinion_in_vote(current_user_vote, opinion_id, operation)
+    )
+  end
+
+  defp replace_opinion_in_vote(
+         %{opinion: %{id: opinion_id}} = vote,
+         opinion_id,
+         operation
+       ) do
+    opinion = Map.put(vote.opinion, :likes_count, operation.(vote.opinion.likes_count))
+    Map.put(vote, :opinion, opinion)
+  end
+
+  defp replace_opinion_in_vote(vote, _, _), do: vote
 
   @spec page_title(atom, binary) :: binary
   defp page_title(:show, voting_title), do: voting_title

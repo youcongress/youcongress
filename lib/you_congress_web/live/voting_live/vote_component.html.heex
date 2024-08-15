@@ -56,6 +56,12 @@
     !@current_user || (@current_user.author_id != @vote.author_id && "pb-4")
   ]}>
     <div>
+      <span :if={@vote.opinion_id && @show_opinion} class="pr-2">
+        <OpinionComponent.like_icon
+          opinion={@vote.opinion}
+          liked={@vote.opinion.id in @liked_opinion_ids}
+        />
+      </span>
       <OpinionComponent.comment_icon
         :if={@vote.opinion_id && @show_opinion}
         opinion={@vote.opinion}

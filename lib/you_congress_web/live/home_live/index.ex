@@ -3,6 +3,7 @@ defmodule YouCongressWeb.HomeLive.Index do
 
   alias YouCongress.Opinions
   alias YouCongress.Track
+  alias YouCongress.Likes
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongress.Delegations
 
@@ -25,6 +26,8 @@ defmodule YouCongressWeb.HomeLive.Index do
 
   @impl true
   def handle_params(_params, _, socket) do
+    %{assigns: %{current_user: current_user}} = socket
+
     socket =
       socket
       |> load_opinions_and_votes()
@@ -32,6 +35,7 @@ defmodule YouCongressWeb.HomeLive.Index do
         page_title: "Home",
         page: 1
       )
+      |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
 
     {:noreply, socket}
   end
@@ -42,7 +46,6 @@ defmodule YouCongressWeb.HomeLive.Index do
     opinions = list_opinions(all)
 
     assign(socket,
-      # opinions is not a stream because we need to re-render OpinionComponent when we delegate
       opinions: opinions,
       current_user_delegation_ids: current_user_delegation_ids(current_user),
       no_more_opinions?: length(opinions) < @per_page
@@ -93,15 +96,65 @@ defmodule YouCongressWeb.HomeLive.Index do
     Delegations.list_delegation_ids(deleguee_id: current_user_id)
   end
 
+  def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
+    {:noreply, put_flash(socket, :error, "You must be logged in to like.")}
+  end
+
+  def handle_event("like", %{"opinion_id" => opinion_id}, socket) do
+    %{
+      assigns: %{
+        current_user: current_user,
+        opinions: opinions,
+        liked_opinion_ids: liked_opinion_ids
+      }
+    } = socket
+
+    opinion_id = String.to_integer(opinion_id)
+
+    case Likes.like(opinion_id, current_user) do
+      {:ok, _} ->
+        socket =
+          socket
+          |> assign(:liked_opinion_ids, [opinion_id | liked_opinion_ids])
+          |> assign(:opinions, update_opinion_likes_count(opinions, opinion_id, &(&1 + 1)))
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, socket |> put_flash(:error, "Failed to like opinion.")}
+    end
+  end
+
+  def handle_event("unlike", %{"opinion_id" => opinion_id}, socket) do
+    %{
+      assigns: %{
+        current_user: current_user,
+        opinions: opinions,
+        liked_opinion_ids: liked_opinion_ids
+      }
+    } = socket
+
+    opinion_id = String.to_integer(opinion_id)
+
+    case Likes.unlike(opinion_id, current_user) do
+      {:ok, _} ->
+        socket =
+          socket
+          |> assign(:liked_opinion_ids, Enum.filter(liked_opinion_ids, &(&1 != opinion_id)))
+          |> assign(:opinions, update_opinion_likes_count(opinions, opinion_id, &(&1 - 1)))
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, socket |> put_flash(:error, "Failed to unlike opinion.")}
+    end
+  end
+
   def handle_event("add-delegation", _, %{assigns: %{current_user: nil}} = socket) do
     {:noreply, put_flash(socket, :error, "You must be logged in to delegate.")}
   end
 
-  def handle_event(
-        "add-delegation",
-        %{"author_id" => delegate_id, "opinion_id" => opinion_id},
-        socket
-      ) do
+  def handle_event("add-delegation", %{"author_id" => delegate_id}, socket) do
     %{assigns: %{current_user: current_user}} = socket
 
     case Delegations.create_delegation(current_user, delegate_id) do
@@ -111,11 +164,6 @@ defmodule YouCongressWeb.HomeLive.Index do
           |> assign(current_user_delegation_ids: current_user_delegation_ids(current_user))
           |> put_flash(:info, "Delegation added successfully.")
 
-        send_update(YouCongressWeb.OpinionLive.OpinionComponent,
-          id: opinion_id,
-          delegating: true
-        )
-
         {:noreply, socket}
 
       {:error, _} ->
@@ -123,11 +171,7 @@ defmodule YouCongressWeb.HomeLive.Index do
     end
   end
 
-  def handle_event(
-        "remove-delegation",
-        %{"author_id" => delegate_id, "opinion_id" => opinion_id},
-        socket
-      ) do
+  def handle_event("remove-delegation", %{"author_id" => delegate_id}, socket) do
     %{assigns: %{current_user: current_user}} = socket
 
     case Delegations.delete_delegation(current_user, delegate_id) do
@@ -136,11 +180,6 @@ defmodule YouCongressWeb.HomeLive.Index do
           socket
           |> assign(current_user_delegation_ids: current_user_delegation_ids(current_user))
           |> put_flash(:info, "Delegation removed successfully.")
-
-        send_update(YouCongressWeb.OpinionLive.OpinionComponent,
-          id: opinion_id,
-          delegating: false
-        )
 
         {:noreply, socket}
 
@@ -165,5 +204,15 @@ defmodule YouCongressWeb.HomeLive.Index do
       )
 
     {:noreply, socket}
+  end
+
+  defp update_opinion_likes_count(opinions, opinion_id, operation) do
+    Enum.map(opinions, fn
+      %Opinions.Opinion{id: ^opinion_id} = opinion ->
+        Map.update!(opinion, :likes_count, operation)
+
+      other ->
+        other
+    end)
   end
 end

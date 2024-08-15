@@ -6,6 +6,7 @@ defmodule YouCongress.Opinions do
   import Ecto.Query, warn: false
   alias YouCongress.Repo
 
+  alias YouCongress.Likes
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
 
@@ -218,6 +219,20 @@ defmodule YouCongress.Opinions do
     count = length(Opinion.descendant_ids(opinion))
 
     changeset = Opinion.changeset(opinion, %{descendants_count: count})
+    Repo.update(changeset)
+  end
+
+  def update_opinion_likes_count(opinion_id) when is_number(opinion_id) do
+    case get_opinion(opinion_id) do
+      nil -> {:error, "Opinion not found"}
+      opinion -> update_opinion_likes_count(opinion)
+    end
+  end
+
+  def update_opinion_likes_count(%Opinion{} = opinion) do
+    count = Likes.count(opinion_id: opinion.id)
+
+    changeset = Opinion.changeset(opinion, %{likes_count: count})
     Repo.update(changeset)
   end
 
