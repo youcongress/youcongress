@@ -25,12 +25,10 @@ You can read more about the project on the LessWrong post:
 
 # Contributions
 
-Feel free to:
+Welcome to YouCongress! Feel free to:
 - Use [Discussions](https://github.com/youcongress/youcongress/discussions) to introduce yourself, ask questions and propose ideas.
 - [Take any unassigned issue](https://github.com/youcongress/youcongress/issues)
 - Add documentation, refactor existent code, etc.
-
-Thanks!
 
 # Acknowledgments
 This project uses [AppSignal](https://www.appsignal.com), which generously provides their services for free. We appreciate their support and trust in our project, helping us monitor YouCongress, maintain quality, and improve continuously.
