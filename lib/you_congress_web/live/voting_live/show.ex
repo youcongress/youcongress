@@ -133,6 +133,10 @@ defmodule YouCongressWeb.VotingLive.Show do
     end
   end
 
+  def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
+    {:noreply, put_flash(socket, :error, "You must be logged in to like.")}
+  end
+
   def handle_event("like", %{"opinion_id" => opinion_id}, socket) do
     %{assigns: %{current_user: current_user, liked_opinion_ids: liked_opinion_ids}} = socket
     opinion_id = String.to_integer(opinion_id)
