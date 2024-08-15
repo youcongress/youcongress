@@ -5,10 +5,11 @@ defmodule YouCongressWeb.VotingLiveTest do
 
   import Phoenix.LiveViewTest
   import YouCongress.VotingsFixtures
+  import YouCongress.AccountsFixtures
+  import YouCongress.VotesFixtures
+  import YouCongress.OpinionsFixtures
+  import YouCongress.VotesFixtures
 
-  alias YouCongress.AccountsFixtures
-  alias YouCongress.VotesFixtures
-  alias YouCongress.OpinionsFixtures
   alias YouCongress.Votings
 
   @create_attrs %{title: "nuclear energy"}
@@ -133,9 +134,9 @@ defmodule YouCongressWeb.VotingLiveTest do
     test "casts a vote from voting buttons", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
 
-      opinion = OpinionsFixtures.opinion_fixture(%{voting_id: voting.id})
+      opinion = opinion_fixture(%{voting_id: voting.id})
       #  Create a vote so we display the voting options
-      VotesFixtures.vote_fixture(%{voting_id: voting.id, opinion_id: opinion.id})
+      vote_fixture(%{voting_id: voting.id, opinion_id: opinion.id})
 
       {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
 
@@ -191,12 +192,12 @@ defmodule YouCongressWeb.VotingLiveTest do
     test "creates a comment", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
 
-      another_user = AccountsFixtures.user_fixture()
+      another_user = user_fixture()
 
-      opinion = OpinionsFixtures.opinion_fixture(%{voting_id: voting.id})
+      opinion = opinion_fixture(%{voting_id: voting.id})
 
       #  Create an AI generated comment as we don't display the form until we have one of these
-      VotesFixtures.vote_fixture(%{
+      vote_fixture(%{
         twin: true,
         voting_id: voting.id,
         author_id: another_user.author_id,
@@ -221,12 +222,12 @@ defmodule YouCongressWeb.VotingLiveTest do
     end
 
     test "edit a comment", %{conn: conn, voting: voting} do
-      user = AccountsFixtures.user_fixture()
+      user = user_fixture()
 
       conn = log_in_user(conn, user)
 
       opinion =
-        OpinionsFixtures.opinion_fixture(%{
+        opinion_fixture(%{
           author_id: user.author_id,
           user_id: user.id,
           voting_id: voting.id,
@@ -234,7 +235,7 @@ defmodule YouCongressWeb.VotingLiveTest do
           twin: false
         })
 
-      VotesFixtures.vote_fixture(%{
+      vote_fixture(%{
         voting_id: voting.id,
         author_id: user.author_id,
         opinion_id: opinion.id,
@@ -243,7 +244,7 @@ defmodule YouCongressWeb.VotingLiveTest do
       })
 
       #  Create an AI generated comment as we don't display the form until we have one of these
-      VotesFixtures.vote_fixture(%{twin: true, voting_id: voting.id}, true)
+      vote_fixture(%{twin: true, voting_id: voting.id}, true)
 
       {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
 
@@ -264,6 +265,43 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       # Check that there is non- AI-generated comment
       assert html =~ "and says"
+    end
+
+    test "like icon click changes from heart.svg to filled-heart.svg", %{conn: conn} do
+      current_user = user_fixture()
+      conn = log_in_user(conn, current_user)
+      voting = voting_fixture()
+      vote_fixture(%{voting_id: voting.id}, true)
+
+      {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
+
+      # We have a heart icon
+      assert has_element?(show_live, "img[src='/images/heart.svg']")
+
+      # We don't have a filled heart icon
+      refute has_element?(show_live, "img[src='/images/filled-heart.svg']")
+
+      # Like the opinion
+      show_live
+      |> element("img[src='/images/heart.svg']")
+      |> render_click()
+
+      # We have a filled heart icon
+      assert has_element?(show_live, "img[src='/images/filled-heart.svg']")
+
+      # We don't have a heart icon
+      refute has_element?(show_live, "img[src='/images/heart.svg']")
+
+      # Unlike the opinion
+      show_live
+      |> element("img[src='/images/filled-heart.svg']")
+      |> render_click()
+
+      # We have a heart icon
+      assert has_element?(show_live, "img[src='/images/heart.svg']")
+
+      # We don't have a filled heart icon
+      refute has_element?(show_live, "img[src='/images/filled-heart.svg']")
     end
   end
 end
