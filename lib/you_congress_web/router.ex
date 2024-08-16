@@ -24,8 +24,8 @@ defmodule YouCongressWeb.Router do
     live "/v/:slug", VotingLive.Show, :show
     live "/a/:id", AuthorLive.Show, :show
     live "/x/:twitter_username", AuthorLive.Show, :show
-    live "/halls", VotingLive.Index, :index
-    live "/halls/:hall", VotingLive.Index, :index
+    live "/polls", VotingLive.Index, :index
+    live "/y/:hall", VotingLive.Index, :index
     live "/comments/:id", OpinionLive.Show, :show
 
     get "/terms", PageController, :terms
