@@ -15,7 +15,7 @@
     <% end %>
 
     <%= if Permissions.can_edit_voting?(@voting, @current_user) do %>
-      <.link patch={~p"/v/#{@voting.slug}/show/edit"} phx-click={JS.push_focus()} class="pl-2">
+      <.link patch={~p"/p/#{@voting.slug}/show/edit"} phx-click={JS.push_focus()} class="pl-2">
         Edit
       </.link>
     <% end %>
@@ -261,7 +261,7 @@
       <%= for random_voting <- @random_votings do %>
         <tr>
           <td class="py-4 border-b border-gray-200">
-            <a href={~p"/v/#{random_voting.slug}"}><%= random_voting.title %></a>
+            <a href={~p"/p/#{random_voting.slug}"}><%= random_voting.title %></a>
           </td>
         </tr>
       <% end %>
@@ -281,7 +281,7 @@
   :if={@live_action == :edit}
   id="voting-modal"
   show
-  on_cancel={JS.patch(~p"/v/#{@voting.slug}")}
+  on_cancel={JS.patch(~p"/p/#{@voting.slug}")}
 >
   <.live_component
     module={YouCongressWeb.VotingLive.FormComponent}
@@ -289,7 +289,7 @@
     title={@page_title}
     action={@live_action}
     voting={@voting}
-    patch={~p"/v/#{@voting}"}
+    patch={~p"/p/#{@voting}"}
     show_opinion={true}
   />
 </.modal>

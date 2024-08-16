@@ -38,7 +38,7 @@
       <div>
         <.button phx-disable-with="Changing...">Add quote</.button>
         <span class="pl-2">or</span>
-        <.link href={~p"/v/#{@voting.slug}"} class="ml-2">Back</.link>
+        <.link href={~p"/p/#{@voting.slug}"} class="ml-2">Back</.link>
       </div>
     </:actions>
   </.simple_form>
@@ -96,7 +96,7 @@
           <% end %>
         </.button>
         <span class="pl-2">or</span>
-        <.link href={~p"/v/#{@voting.slug}"} class="ml-2">Back</.link>
+        <.link href={~p"/p/#{@voting.slug}"} class="ml-2">Back</.link>
       </div>
     </:actions>
   </.simple_form>

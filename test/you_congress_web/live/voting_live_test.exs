@@ -66,7 +66,7 @@ defmodule YouCongressWeb.VotingLiveTest do
           |> render_click()
 
         voting = Votings.get_voting!(title: title2)
-        voting_path = ~p"/v/#{voting.slug}"
+        voting_path = ~p"/p/#{voting.slug}"
 
         {_, {:redirect, %{to: ^voting_path}}} = response
       end
@@ -79,13 +79,13 @@ defmodule YouCongressWeb.VotingLiveTest do
     test "displays voting as logged user", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
 
-      {:ok, _show_live, html} = live(conn, ~p"/v/#{voting.slug}")
+      {:ok, _show_live, html} = live(conn, ~p"/p/#{voting.slug}")
 
       assert html =~ voting.title
     end
 
     # test "displays voting as non-logged visitor", %{conn: conn, voting: voting} do
-    #   {:ok, _show_live, html} = live(conn, ~p"/v/#{voting.slug}")
+    #   {:ok, _show_live, html} = live(conn, ~p"/p/#{voting.slug}")
 
     #   assert html =~ "Show Voting"
     #   assert html =~ voting.title
@@ -94,13 +94,13 @@ defmodule YouCongressWeb.VotingLiveTest do
     test "updates voting within modal", %{conn: conn, voting: voting} do
       conn = log_in_as_admin(conn)
 
-      {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{voting.slug}")
 
       assert show_live
              |> element("a", "Edit")
              |> render_click() =~ "Edit Voting"
 
-      assert_patch(show_live, ~p"/v/#{voting.slug}/show/edit")
+      assert_patch(show_live, ~p"/p/#{voting.slug}/show/edit")
 
       assert show_live
              |> form("#voting-form", voting: @invalid_attrs)
@@ -110,7 +110,7 @@ defmodule YouCongressWeb.VotingLiveTest do
              |> form("#voting-form", voting: @update_attrs)
              |> render_submit()
 
-      assert_patch(show_live, ~p"/v/#{voting.slug}")
+      assert_patch(show_live, ~p"/p/#{voting.slug}")
 
       html = render(show_live)
       assert html =~ "Voting updated successfully"
@@ -120,7 +120,7 @@ defmodule YouCongressWeb.VotingLiveTest do
     test "deletes voting in listing", %{conn: conn, voting: voting} do
       conn = log_in_as_admin(conn)
 
-      {:ok, index_live, _html} = live(conn, ~p"/v/#{voting.slug}/edit")
+      {:ok, index_live, _html} = live(conn, ~p"/p/#{voting.slug}/edit")
 
       index_live
       |> element("a", "Delete")
@@ -138,7 +138,7 @@ defmodule YouCongressWeb.VotingLiveTest do
       #  Create a vote so we display the voting options
       vote_fixture(%{voting_id: voting.id, opinion_id: opinion.id})
 
-      {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{voting.slug}")
 
       #  Vote strongly agree
       show_live
@@ -204,7 +204,7 @@ defmodule YouCongressWeb.VotingLiveTest do
         opinion_id: opinion.id
       })
 
-      {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{voting.slug}")
 
       show_live
       |> form("#comment-form", comment: "some comment")
@@ -246,7 +246,7 @@ defmodule YouCongressWeb.VotingLiveTest do
       #  Create an AI generated comment as we don't display the form until we have one of these
       vote_fixture(%{twin: true, voting_id: voting.id}, true)
 
-      {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{voting.slug}")
 
       assert render(show_live) =~ "whatever"
 
@@ -273,7 +273,7 @@ defmodule YouCongressWeb.VotingLiveTest do
       voting = voting_fixture()
       vote_fixture(%{voting_id: voting.id}, true)
 
-      {:ok, show_live, _html} = live(conn, ~p"/v/#{voting.slug}")
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{voting.slug}")
 
       # We have a heart icon
       assert has_element?(show_live, "img[src='/images/heart.svg']")
