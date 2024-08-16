@@ -11,6 +11,7 @@ defmodule YouCongress.Likes do
   alias YouCongress.Accounts.User
   alias YouCongress.Votings.Voting
   alias YouCongress.Workers.UpdateOpinionLikesCountWorker
+  alias YouCongress.Track
 
   def count(opinion_id: opinion_id) do
     from(l in Like,
@@ -20,28 +21,48 @@ defmodule YouCongress.Likes do
     |> Repo.one()
   end
 
-  def like(opinion_id, %User{id: user_id}) do
+  def like(opinion_id, %User{} = current_user) do
     Ecto.Multi.new()
-    |> Ecto.Multi.insert(:like, %Like{opinion_id: opinion_id, user_id: user_id})
+    |> Ecto.Multi.insert(:like, %Like{opinion_id: opinion_id, user_id: current_user.id})
     |> Oban.insert(:job, UpdateOpinionLikesCountWorker.new(%{opinion_id: opinion_id}))
     |> Repo.transaction()
     |> case do
-      {:ok, %{like: like, job: _job}} -> {:ok, like}
-      {:error, :like, _changeset, _changes_so_far} -> {:error, :already_liked}
-      {:error, :job, _reason, _changes_so_far} -> {:error, :job_enqueue_failed}
+      {:ok, %{like: _like, job: _job}} ->
+        Track.event("Like", current_user)
+        {:ok, :liked}
+
+      {:error, :like, changeset, _changes_so_far} ->
+        case Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end) do
+          %{opinion_id: ["has already been taken"]} ->
+            {:ok, :already_liked}
+
+          _ ->
+            {:error, :like_failed}
+        end
+
+      {:error, :job, _reason, _changes_so_far} ->
+        {:error, :job_enqueue_failed}
     end
   end
 
-  def unlike(opinion_id, %User{id: user_id}) do
+  def unlike(opinion_id, %User{} = current_user) do
     Ecto.Multi.new()
-    |> Ecto.Multi.delete_all(:unlike, like_query(opinion_id, user_id))
+    |> Ecto.Multi.delete_all(:unlike, like_query(opinion_id, current_user.id))
     |> Oban.insert(:job, UpdateOpinionLikesCountWorker.new(%{opinion_id: opinion_id}))
     |> Repo.transaction()
     |> case do
-      {:ok, %{unlike: {1, _}, job: _job}} -> {:ok, :unliked}
-      {:ok, %{unlike: {0, _}, job: _job}} -> {:error, :already_unliked}
-      {:error, :unlike, _reason, _changes_so_far} -> {:error, :unlike_failed}
-      {:error, :job, _reason, _changes_so_far} -> {:error, :job_enqueue_failed}
+      {:ok, %{unlike: {1, _}, job: _job}} ->
+        Track.event("Unlike", current_user)
+        {:ok, :unliked}
+
+      {:ok, %{unlike: {0, _}, job: _job}} ->
+        {:ok, :already_unliked}
+
+      {:error, :unlike, _reason, _changes_so_far} ->
+        {:error, :unlike_failed}
+
+      {:error, :job, _reason, _changes_so_far} ->
+        {:error, :job_enqueue_failed}
     end
   end
 

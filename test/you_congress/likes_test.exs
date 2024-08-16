@@ -36,18 +36,18 @@ defmodule YouCongress.LikesTest do
     assert Likes.count(opinion_id: opinion.id) == 0
   end
 
-  test "unlike/2 returns {:error, :already_unliked} if the user has already unliked the opinion" do
+  test "unlike/2 returns {:ok, :already_unliked} if the user has already unliked the opinion" do
     opinion = opinion_fixture()
     user = user_fixture()
 
-    assert {:error, :already_unliked} = Likes.unlike(opinion.id, user)
+    assert {:ok, :already_unliked} = Likes.unlike(opinion.id, user)
   end
 
-  test "unlike/2 returns {:error, :already_unliked} if deleting the like fails" do
+  test "unlike/2 returns {:ok, :already_unliked} if deleting the like fails" do
     opinion = opinion_fixture()
     user = user_fixture()
 
-    assert {:error, :already_unliked} = Likes.unlike(opinion.id, user)
+    assert {:ok, :already_unliked} = Likes.unlike(opinion.id, user)
   end
 
   test "get_liked_opinion_ids/1 returns an empty list when user is nil" do
