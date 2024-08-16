@@ -25,7 +25,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
             </.link>
           </div>
           <div class="hidden md:block">
-            <.link href="https://twitter.com/arpahector" target="_blank">
+            <.link href="https://x.com/arpahector" target="_blank">
               X/Twitter
             </.link>
           </div>

@@ -37,7 +37,7 @@ defmodule YouCongressWeb.TwitterLogInControllerTest do
   describe "POST /log_in" do
     test "log in with twitter", %{conn: conn} do
       conn = post(conn, ~p"/log_in")
-      assert redirected_to(conn) =~ "https://api.twitter.com/oauth/authenticate"
+      assert redirected_to(conn) =~ "https://api.x.com/oauth/authenticate"
     end
   end
 
