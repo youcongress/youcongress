@@ -138,7 +138,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
   defp redirect_or_load_variables(%{assigns: %{opinion: %{id: id}}} = socket, id, voting_id) do
     voting = Votings.get_voting!(voting_id)
-    redirect(socket, to: "/v/#{voting.slug}")
+    redirect(socket, to: "/p/#{voting.slug}")
   end
 
   defp redirect_or_load_variables(socket, _, _voting_id) do

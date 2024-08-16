@@ -21,7 +21,7 @@ defmodule YouCongressWeb.Router do
     pipe_through :browser
 
     live "/", HomeLive.Index, :index
-    live "/v/:slug", VotingLive.Show, :show
+    live "/p/:slug", VotingLive.Show, :show
     live "/a/:id", AuthorLive.Show, :show
     live "/x/:twitter_username", AuthorLive.Show, :show
     live "/polls", VotingLive.Index, :index
@@ -36,15 +36,18 @@ defmodule YouCongressWeb.Router do
     post "/log_in", TwitterLogInController, :log_in
     get "/twitter-callback", TwitterLogInController, :callback
     get "/faq", PageController, :faq
+
+    # Legacy redirection from /v/:slug to /p/:slug
+    get "/v/:slug", VotingController, :redirect_to_p
   end
 
   scope "/", YouCongressWeb do
     pipe_through [:browser, :require_admin_user]
 
     live "/i", InvitationLive, :index
-    live "/v/new", VotingLive.Index, :new
-    live "/v/:slug/edit", VotingLive.Show, :edit
-    live "/v/:slug/show/edit", VotingLive.Show, :edit
+    live "/p/new", VotingLive.Index, :new
+    live "/p/:slug/edit", VotingLive.Show, :edit
+    live "/p/:slug/show/edit", VotingLive.Show, :edit
 
     live "/authors", AuthorLive.Index, :index
     live "/authors/new", AuthorLive.Index, :new
@@ -56,7 +59,7 @@ defmodule YouCongressWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live "/welcome", WelcomeLive.Index, :index
-    live "/v/:slug/add-quote", VotingLive.AddQuote, :add_quote
+    live "/p/:slug/add-quote", VotingLive.AddQuote, :add_quote
 
     live "/settings", SettingsLive, :settings
   end

@@ -2,7 +2,7 @@
   <.link href={
     if @parent_opinion,
       do: ~p"/comments/#{@parent_opinion.id}",
-      else: ~p"/v/#{@opinion.voting.slug}"
+      else: ~p"/p/#{@opinion.voting.slug}"
   }>
     <img src="/images/arrow-left.svg" alt="Arrow left" class="h-4 w-4 inline" />
   </.link>

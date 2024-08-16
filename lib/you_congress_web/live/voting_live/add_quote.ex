@@ -87,7 +87,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
   def handle_event("remove-author", _, socket) do
     {:noreply,
      push_patch(socket,
-       to: ~p"/v/#{socket.assigns.voting.slug}/add-quote"
+       to: ~p"/p/#{socket.assigns.voting.slug}/add-quote"
      )}
   end
 
@@ -113,7 +113,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
 
         {:noreply,
          push_patch(socket,
-           to: ~p"/v/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
+           to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
          )}
     end
   end
@@ -135,7 +135,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
         socket =
           socket
           |> push_patch(
-            to: ~p"/v/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
+            to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
           )
           |> put_flash(:info, "Author created.")
 

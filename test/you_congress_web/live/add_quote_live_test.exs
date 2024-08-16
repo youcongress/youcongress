@@ -25,7 +25,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
-        live(conn, ~p"/v/#{voting.slug}/add-quote?twitter_username=someone")
+        live(conn, ~p"/p/#{voting.slug}/add-quote?twitter_username=someone")
 
       assert html =~ "Add a quote"
 
@@ -58,7 +58,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
-        live(conn, ~p"/v/#{voting.slug}/add-quote")
+        live(conn, ~p"/p/#{voting.slug}/add-quote")
 
       assert html =~ "Add a quote"
 
@@ -129,7 +129,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
-        live(conn, ~p"/v/#{voting.slug}/add-quote")
+        live(conn, ~p"/p/#{voting.slug}/add-quote")
 
       assert html =~ "Add a quote"
 

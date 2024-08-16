@@ -33,7 +33,7 @@
   <%= for voting <- @votings do %>
     <tr>
       <td class="py-4 border-b border-gray-200">
-        <a href={~p"/v/#{voting.slug}"}><%= voting.title %></a>
+        <a href={~p"/p/#{voting.slug}"}><%= voting.title %></a>
         <%= for hall <- voting.halls do %>
           <a
             href={~p"/y/#{hall.name}"}
