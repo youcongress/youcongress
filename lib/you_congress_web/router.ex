@@ -36,6 +36,8 @@ defmodule YouCongressWeb.Router do
     post "/log_in", TwitterLogInController, :log_in
     get "/twitter-callback", TwitterLogInController, :callback
     get "/faq", PageController, :faq
+    get "/email-login-waiting-list", PageController, :email_login_waiting_list
+    get "/email-login-waiting-list/thanks", PageController, :email_login_waiting_list_thanks
 
     # Legacy redirection from /v/:slug to /p/:slug
     get "/v/:slug", VotingController, :redirect_to_p
