@@ -32,4 +32,14 @@ defmodule YouCongressWeb.PageControllerTest do
     conn = get(conn, ~p"/faq")
     assert html_response(conn, 200) =~ "Frequently asked questions"
   end
+
+  test "GET /email-login-waiting-list", %{conn: conn} do
+    conn = get(conn, ~p"/email-login-waiting-list")
+    assert html_response(conn, 200) =~ "Waiting list for email/password login – YouCongress"
+  end
+
+  test "POST /email-login-waiting-list/thanks", %{conn: conn} do
+    conn = get(conn, ~p"/email-login-waiting-list/thanks")
+    assert html_response(conn, 302) =~ "redirected"
+  end
 end

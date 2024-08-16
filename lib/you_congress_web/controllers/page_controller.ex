@@ -32,4 +32,14 @@ defmodule YouCongressWeb.PageController do
     |> redirect(to: ~p"/")
     |> halt()
   end
+
+  def email_login_waiting_list(conn, _params) do
+    render(conn, :email_login_waiting_list, layout: false)
+  end
+
+  def email_login_waiting_list_thanks(conn, _params) do
+    conn
+    |> put_flash(:info, "Thanks for joining the waiting list! We'll be in touch.")
+    |> redirect(to: ~p"/")
+  end
 end
