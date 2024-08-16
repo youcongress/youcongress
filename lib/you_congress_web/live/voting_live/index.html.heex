@@ -36,7 +36,7 @@
         <a href={~p"/v/#{voting.slug}"}><%= voting.title %></a>
         <%= for hall <- voting.halls do %>
           <a
-            href={~p"/halls/#{hall.name}"}
+            href={~p"/y/#{hall.name}"}
             class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
           >
             <%= hall.name %>

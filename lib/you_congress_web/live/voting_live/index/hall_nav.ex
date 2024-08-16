@@ -17,23 +17,28 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
       <div class="pb-2">
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
           <div class="pt-1 space-x-8">
-            <HallNav.tab url_hall_name={@hall_name} hall_name="ai" hall_link="/" hall_title="AI" />
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="ai"
+              hall_link={~p"/y/ai"}
+              hall_title="AI"
+            />
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="spain"
-              hall_link={~p"/halls/spain"}
+              hall_link={~p"/y/spain"}
               hall_title="Spain"
             />
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="eu"
-              hall_link={~p"/halls/eu"}
+              hall_link={~p"/y/eu"}
               hall_title="EU"
             />
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="us"
-              hall_link={~p"/halls/us"}
+              hall_link={~p"/y/us"}
               hall_title="US"
             />
           </div>
@@ -41,34 +46,34 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="climate"
-              hall_link={~p"/halls/climate"}
+              hall_link={~p"/y/climate"}
               hall_title="Climate"
             />
             <%= if @hall_name not in ["programming", "ai", "climate", "space", "spain", "eu", "us", "law", "programming", "all"] do %>
               <HallNav.tab
                 url_hall_name={@hall_name}
                 hall_name={@hall_name}
-                hall_link={~p"/halls/#{@hall_name}"}
+                hall_link={~p"/y/#{@hall_name}"}
                 hall_title={StringUtils.titleize(@hall_name)}
               />
             <% else %>
               <HallNav.tab
                 url_hall_name={@hall_name}
                 hall_name="programming"
-                hall_link={~p"/halls/programming"}
+                hall_link={~p"/y/programming"}
                 hall_title="Programming"
               />
             <% end %>
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="law"
-              hall_link={~p"/halls/law"}
+              hall_link={~p"/y/law"}
               hall_title="Law"
             />
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="space"
-              hall_link={~p"/halls/space"}
+              hall_link={~p"/y/space"}
               hall_title="Space"
             />
           </div>
@@ -76,7 +81,7 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="all"
-              hall_link={~p"/halls/all"}
+              hall_link={~p"/y/all"}
               hall_title="All"
             />
           </div>
@@ -86,34 +91,34 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
         <HallNav.tab
           url_hall_name={@hall_name}
           hall_name="climate"
-          hall_link={~p"/halls/climate"}
+          hall_link={~p"/y/climate"}
           hall_title="Climate"
         />
         <%= if @hall_name not in ["programming", "ai", "climate", "space", "spain", "eu", "us", "law", "programming", "all"] do %>
           <HallNav.tab
             url_hall_name={@hall_name}
             hall_name={@hall_name}
-            hall_link={~p"/halls/#{@hall_name}"}
+            hall_link={~p"/y/#{@hall_name}"}
             hall_title={StringUtils.titleize(@hall_name)}
           />
         <% else %>
           <HallNav.tab
             url_hall_name={@hall_name}
             hall_name="programming"
-            hall_link={~p"/halls/programming"}
+            hall_link={~p"/y/programming"}
             hall_title="Programming"
           />
         <% end %>
         <HallNav.tab
           url_hall_name={@hall_name}
           hall_name="law"
-          hall_link={~p"/halls/law"}
+          hall_link={~p"/y/law"}
           hall_title="Law"
         />
         <HallNav.tab
           url_hall_name={@hall_name}
           hall_name="space"
-          hall_link={~p"/halls/space"}
+          hall_link={~p"/y/space"}
           hall_title="Space"
         />
       </div>
