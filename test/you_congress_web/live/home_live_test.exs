@@ -40,7 +40,7 @@ defmodule YouCongressWeb.HomeLiveTest do
           twin: false
         })
 
-      {:ok, index_live, _html} = live(conn, ~p"/")
+      {:ok, index_live, _html} = live(conn, ~p"/activity")
 
       html = render(index_live)
 
@@ -85,7 +85,7 @@ defmodule YouCongressWeb.HomeLiveTest do
           twin: false
         })
 
-      {:ok, index_live, _html} = live(conn, ~p"/?all=true")
+      {:ok, index_live, _html} = live(conn, ~p"/activity?all=true")
 
       html = render(index_live)
 
@@ -102,7 +102,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       voting_fixture()
       opinion_fixture()
 
-      {:ok, view, _html} = live(conn, "/")
+      {:ok, view, _html} = live(conn, "/activity")
 
       # We have a heart icon
       assert has_element?(view, "img[src='/images/heart.svg']")

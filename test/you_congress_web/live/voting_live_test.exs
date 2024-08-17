@@ -31,7 +31,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
     test "lists all votings", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
-      {:ok, _index_live, html} = live(conn, ~p"/polls")
+      {:ok, _index_live, html} = live(conn, ~p"/")
 
       assert html =~ "YouCongress: Public Opinion Polls with AI and Delegation"
       assert html =~ voting.title
@@ -44,7 +44,7 @@ defmodule YouCongressWeb.VotingLiveTest do
         {Oban, [], [insert: fn _ -> {:ok, %{id: 1}} end]}
       ]) do
         conn = log_in_as_admin(conn)
-        {:ok, index_live, _html} = live(conn, ~p"/polls")
+        {:ok, index_live, _html} = live(conn, ~p"/")
 
         index_live
         |> element("button", "Create poll")

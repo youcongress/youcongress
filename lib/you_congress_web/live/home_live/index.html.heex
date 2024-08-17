@@ -1,20 +1,18 @@
 <.header>
   <:actions>
-    <.link patch={~p"/polls"} phx-click={JS.push_focus()}>
+    <.link patch={~p"/"} phx-click={JS.push_focus()}>
       <.button>List of Polls</.button>
     </.link>
   </:actions>
 </.header>
 
-<.header>
-  <:subtitle>
-    Explore diverse viewpoints and make your voice count
-    <%= if @all do %>
+<%= if @all do %>
+  <.header>
+    <:subtitle>
       This excludes AI-digital-twin & delegation activity, which can be found on the poll pages after human opinions.
-    <% end %>
-  </:subtitle>
-  Shape better policies
-</.header>
+    </:subtitle>
+  </.header>
+<% end %>
 
 <div class="pt-2">
   <a
