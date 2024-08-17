@@ -20,11 +20,11 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through :browser
 
-    live "/", HomeLive.Index, :index
+    live "/activity", HomeLive.Index, :index
     live "/p/:slug", VotingLive.Show, :show
     live "/a/:id", AuthorLive.Show, :show
     live "/x/:twitter_username", AuthorLive.Show, :show
-    live "/polls", VotingLive.Index, :index
+    live "/", VotingLive.Index, :index
     live "/y/:hall", VotingLive.Index, :index
     live "/comments/:id", OpinionLive.Show, :show
 
