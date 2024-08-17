@@ -17,23 +17,12 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
       <div class="pb-2">
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
           <div class="pt-1 space-x-8">
+            <HallNav.tab url_hall_name={@hall_name} hall_name="ai" hall_link={~p"/"} hall_title="AI" />
             <HallNav.tab
               url_hall_name={@hall_name}
-              hall_name="ai"
-              hall_link={~p"/y/ai"}
-              hall_title="AI"
-            />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="spain"
-              hall_link={~p"/y/spain"}
-              hall_title="Spain"
-            />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="eu"
-              hall_link={~p"/y/eu"}
-              hall_title="EU"
+              hall_name="climate"
+              hall_link={~p"/y/climate"}
+              hall_title="Climate"
             />
             <HallNav.tab
               url_hall_name={@hall_name}
@@ -41,13 +30,19 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
               hall_link={~p"/y/us"}
               hall_title="US"
             />
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="eu"
+              hall_link={~p"/y/eu"}
+              hall_title="EU"
+            />
           </div>
           <div class="hidden md:block pt-1 space-x-8">
             <HallNav.tab
               url_hall_name={@hall_name}
-              hall_name="climate"
-              hall_link={~p"/y/climate"}
-              hall_title="Climate"
+              hall_name="spain"
+              hall_link={~p"/y/spain"}
+              hall_title="Spain"
             />
             <%= if @hall_name not in ["programming", "ai", "climate", "space", "spain", "eu", "us", "law", "programming", "all"] do %>
               <HallNav.tab
