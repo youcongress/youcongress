@@ -40,7 +40,7 @@ defmodule YouCongress.Votings do
       base_query,
       fn
         {:order, :desc}, query ->
-          order_by(query, desc: :id)
+          order_by(query, desc: :updated_at)
 
         {:order, :random}, query ->
           order_by(query, fragment("RANDOM()"))
