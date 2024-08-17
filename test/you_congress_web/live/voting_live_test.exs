@@ -33,7 +33,9 @@ defmodule YouCongressWeb.VotingLiveTest do
       conn = log_in_as_user(conn)
       {:ok, _index_live, html} = live(conn, ~p"/")
 
-      assert html =~ "YouCongress: Public Opinion Polls with AI and Delegation"
+      assert html =~
+               "YouCongress: Shape the post-AGI world: Finding policies with overwhelming support"
+
       assert html =~ voting.title
     end
 
