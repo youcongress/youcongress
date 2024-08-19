@@ -73,7 +73,7 @@ defmodule YouCongressWeb.VotingLive.Index do
     socket
     |> assign(
       page_title:
-        "YouCongress: Shape the post-AGI world: Finding policies with overwhelming support",
+        "YouCongress: Shape the post-AGI world: Finding ideas with overwhelming support",
       skip_page_suffix: true,
       voting: nil
     )
