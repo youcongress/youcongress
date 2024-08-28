@@ -89,7 +89,7 @@ defmodule YouCongressWeb.TwitterLogInController do
   defp create_user_and_log_in(user_attrs, author_attrs) do
     author_attrs = Map.put(author_attrs, :twin_enabled, false)
 
-    case Accounts.register_user(user_attrs, author_attrs) do
+    case Accounts.x_register_user(user_attrs, author_attrs) do
       {:ok, %{user: user, author: _author}} ->
         Track.event("New user", user)
         {:ok, user}

@@ -12,17 +12,22 @@
   </.link>
 </div>
 <.simple_form for={@form} id="author-form" phx-change="validate" phx-submit="save">
-  <div>
-    <ul class="text-sm">
-      <li>Name: <%= @current_user.author.name %></li>
-      <li>Bio: <%= @current_user.author.bio %></li>
-    </ul>
+  <%= if !!@current_user.hashed_password do %>
+    <.input field={@form[:name]} label="Name" />
+    <.input field={@form[:bio]} label="One-line bio" />
+  <% else %>
+    <div>
+      <ul class="text-sm">
+        <li>Name: <%= @current_user.author.name %></li>
+        <li>Bio: <%= @current_user.author.bio %></li>
+      </ul>
 
-    <div class="pt-2">
-      You can <strong>change your name</strong>
-      and bio on X/Twitter. Then, log out & log in on YouCongress again and they will be updated.
+      <div class="pt-2">
+        You can <strong>change your name</strong>
+        and bio on X/Twitter. Then, log out & log in on YouCongress again and they will be updated.
+      </div>
     </div>
-  </div>
+  <% end %>
 
   <.input
     field={@form[:twin_enabled]}

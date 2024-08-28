@@ -45,10 +45,9 @@ defmodule YouCongressWeb.TopHeaderComponent do
             <div>
               <.link
                 href={~p"/log_in"}
-                method="post"
                 class="text-[0.8125rem] leading-6 text-zinc-900 hover:text-zinc-700"
               >
-                Log in with X
+                Log in
               </.link>
             </div>
           <% end %>
