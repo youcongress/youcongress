@@ -44,12 +44,22 @@ defmodule YouCongress.AccountsTest do
   describe "register_user/1" do
     test "validates email uniqueness" do
       %{email: email} = user_fixture()
-      {:error, :user, changeset, _} = Accounts.register_user(%{"email" => email})
+      {:error, :user, changeset, _} = Accounts.x_register_user(%{"email" => email})
       assert "has already been taken" in errors_on(changeset).email
 
       # Now try with the upper cased email too, to check that email case is ignored.
-      {:error, :user, changeset, _} = Accounts.register_user(%{"email" => String.upcase(email)})
+      {:error, :user, changeset, _} = Accounts.x_register_user(%{"email" => String.upcase(email)})
       assert "has already been taken" in errors_on(changeset).email
+    end
+
+    test "registers with email/password" do
+      email = "whatever@gmail.com"
+      password = "d?we2424D-D2sm@"
+
+      {:ok, %{user: user}} = Accounts.register_user(%{"email" => email, "password" => password})
+      assert user.email == email
+      assert user.hashed_password
+      assert user.confirmed_at == nil
     end
   end
 
