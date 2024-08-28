@@ -136,6 +136,17 @@ defmodule YouCongress.Accounts do
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:author, Author.changeset(%Author{}, author_attrs))
     |> Ecto.Multi.insert(:user, fn %{author: author} ->
+      User.password_registration_changeset(%User{}, Map.put(user_attrs, "author_id", author.id))
+    end)
+    |> Repo.transaction()
+  end
+
+  def x_register_user(user_attrs, author_attrs \\ %{}) do
+    author_attrs = Map.put(author_attrs, :twin_origin, false)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:author, Author.changeset(%Author{}, author_attrs))
+    |> Ecto.Multi.insert(:user, fn %{author: author} ->
       User.twitter_registration_changeset(%User{}, Map.put(user_attrs, "author_id", author.id))
     end)
     |> Repo.transaction()

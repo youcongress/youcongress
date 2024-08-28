@@ -35,7 +35,7 @@ defmodule YouCongress.AccountsFixtures do
     {:ok, %{user: user}} =
       attrs
       |> valid_user_attributes()
-      |> YouCongress.Accounts.register_user(author_attrs)
+      |> YouCongress.Accounts.x_register_user(author_attrs)
 
     user
   end

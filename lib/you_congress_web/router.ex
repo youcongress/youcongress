@@ -33,7 +33,7 @@ defmodule YouCongressWeb.Router do
 
     get "/waiting_list", PageController, :waiting_list
     get "/about", PageController, :about
-    post "/log_in", TwitterLogInController, :log_in
+    post "/x_log_in", TwitterLogInController, :log_in
     get "/twitter-callback", TwitterLogInController, :callback
     get "/faq", PageController, :faq
     get "/email-login-waiting-list", PageController, :email_login_waiting_list
@@ -95,7 +95,10 @@ defmodule YouCongressWeb.Router do
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{YouCongressWeb.UserAuth, :redirect_if_user_is_authenticated}] do
+      live "/log_in", UserLoginLive, :new
     end
+
+    post "/log_in", UserSessionController, :create
   end
 
   scope "/", YouCongressWeb do
