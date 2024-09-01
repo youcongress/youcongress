@@ -1,6 +1,7 @@
 defmodule YouCongressWeb.OpinionLive.Show do
   use YouCongressWeb, :live_view
 
+  alias YouCongress.Likes
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Track
@@ -15,8 +16,12 @@ defmodule YouCongressWeb.OpinionLive.Show do
       |> assign_current_user(session["user_token"])
       |> assign_counters()
 
+    %{assigns: %{current_user: current_user}} = socket
+
+    socket = assign(socket, :liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
+
     if connected?(socket) do
-      Track.event("View Opinion", socket.assigns.current_user)
+      Track.event("View Opinion", current_user)
     end
 
     {:ok, socket}
@@ -135,6 +140,78 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
     {:noreply, socket}
   end
+
+  def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
+    {:noreply, put_flash(socket, :error, "You must be logged in to like.")}
+  end
+
+  def handle_event("like", %{"opinion_id" => opinion_id}, socket) do
+    %{
+      assigns: %{
+        current_user: current_user,
+        liked_opinion_ids: liked_opinion_ids
+      }
+    } = socket
+
+    opinion_id = String.to_integer(opinion_id)
+
+    case Likes.like(opinion_id, current_user) do
+      {:ok, _} ->
+        socket =
+          socket
+          |> assign(:liked_opinion_ids, [opinion_id | liked_opinion_ids])
+          |> update_likes_count(opinion_id, &(&1 + 1))
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, socket |> put_flash(:error, "Failed to like opinion.")}
+    end
+  end
+
+  def handle_event("unlike", %{"opinion_id" => opinion_id}, socket) do
+    %{
+      assigns: %{
+        current_user: current_user,
+        liked_opinion_ids: liked_opinion_ids
+      }
+    } = socket
+
+    opinion_id = String.to_integer(opinion_id)
+
+    case Likes.unlike(opinion_id, current_user) do
+      {:ok, _} ->
+        socket =
+          socket
+          |> assign(:liked_opinion_ids, Enum.filter(liked_opinion_ids, &(&1 != opinion_id)))
+          |> update_likes_count(opinion_id, &(&1 - 1))
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, socket |> put_flash(:error, "Failed to unlike opinion.")}
+    end
+  end
+
+  defp update_likes_count(socket, opinion_id, operation) do
+    %{assigns: %{child_opinions: child_opinions}} = socket
+
+    assign(
+      socket,
+      :child_opinions,
+      Enum.map(child_opinions, &replace_opinion_in_child_opinions(&1, opinion_id, operation))
+    )
+  end
+
+  defp replace_opinion_in_child_opinions(
+         %{id: opinion_id} = opinion,
+         opinion_id,
+         operation
+       ) do
+    Map.put(opinion, :likes_count, operation.(opinion.likes_count))
+  end
+
+  defp replace_opinion_in_child_opinions(opinion, _, _), do: opinion
 
   defp redirect_or_load_variables(%{assigns: %{opinion: %{id: id}}} = socket, id, voting_id) do
     voting = Votings.get_voting!(voting_id)
