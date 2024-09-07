@@ -34,7 +34,7 @@ defmodule YouCongressWeb.VotingLiveTest do
       {:ok, _index_live, html} = live(conn, ~p"/")
 
       assert html =~
-               "YouCongress: AI Polls &amp;amp; Liquid Democracy | Finding Agreement, Tackling Moloch"
+               "YouCongress: AI Polls &amp;amp; Liquid Democracy + AI Digital Twins | Finding Agreement, Tackling Moloch"
 
       assert html =~ voting.title
     end
