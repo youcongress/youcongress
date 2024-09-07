@@ -5,26 +5,36 @@ defmodule YouCongressWeb.VotingLive.Show.CastComponent do
   use Phoenix.Component
 
   attr :response, :string, required: true
+  attr :label1, :string
+  attr :label2, :string
   attr :current_user_vote, :map, required: true
   attr :button_id, :string, required: true
 
   def button(assigns) do
     ~H"""
-    <button
-      id={@button_id}
-      phx-click="vote"
-      phx-value-response={@response}
-      class={"rounded-lg bg-#{response_color(@response)}-500 px-4 py-2 text-xs font-semibold text-white shadow-sm ring-1 ring-inset ring-#{response_color(@response)}-300 hover:bg-#{response_color(@response)}-600"}
-    >
-      <%= if @current_user_vote && @current_user_vote.answer.response == @response,
-        do: "✓ " %>
-      <%= @response %>
-      <%= if @current_user_vote && !@current_user_vote.direct && @current_user_vote.answer.response == @response do %>
-        <span class="ml-1">
-          via delegates
-        </span>
-      <% end %>
-    </button>
+    <div class="pr-1">
+      <button
+        id={@button_id}
+        phx-click="vote"
+        phx-value-response={@response}
+        class={"rounded-lg bg-#{response_color(@response)}-500 h-10 flex flex-col justify-center items-center p-1 text-xs font-semibold text-white shadow-sm ring-1 ring-inset ring-#{response_color(@response)}-300 hover:bg-#{response_color(@response)}-600"}
+      >
+        <%= if assigns[:label1] && assigns[:label2] do %>
+          <div>
+            <%= if @current_user_vote && @current_user_vote.answer.response == @response,
+              do: "✓ " %>
+            <%= @label1 %>
+          </div>
+          <div>
+            <%= @label2 %>
+          </div>
+        <% else %>
+          <%= if @current_user_vote && @current_user_vote.answer.response == @response,
+            do: "✓ " %>
+          <div><%= @response %></div>
+        <% end %>
+      </button>
+    </div>
     """
   end
 
