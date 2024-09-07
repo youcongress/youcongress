@@ -83,12 +83,6 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
         </nav>
       </div>
       <div class="-mb-px flex space-x-8 md:hidden">
-        <HallNav.tab
-          url_hall_name={@hall_name}
-          hall_name="climate"
-          hall_link={~p"/y/climate"}
-          hall_title="Climate"
-        />
         <%= if @hall_name not in ["programming", "ai", "climate", "space", "spain", "eu", "us", "law", "programming", "all"] do %>
           <HallNav.tab
             url_hall_name={@hall_name}
