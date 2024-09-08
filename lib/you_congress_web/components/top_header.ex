@@ -21,12 +21,12 @@ defmodule YouCongressWeb.TopHeaderComponent do
         <div class="text-sm flex items-center gap-3 leading-6 text-zinc-900">
           <div>
             <.link href="https://github.com/youcongress/youcongress" target="_blank">
-              Open Source
+              Star us on GitHub
             </.link>
           </div>
           <div class="hidden md:block">
-            <.link href="https://x.com/arpahector" target="_blank">
-              X/Twitter
+            <.link href="https://x.com/YouCongressCom" target="_blank">
+              Follow us on X
             </.link>
           </div>
 
