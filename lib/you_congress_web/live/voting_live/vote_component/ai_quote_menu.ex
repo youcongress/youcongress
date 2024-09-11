@@ -31,7 +31,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
           <%= if @opinion.twin do %>
             <a href="/faq#ai-profiles" class="block p-2 hover:text-indigo-600">About AI profiles</a>
           <% end %>
-          <%= if @opinion.twin || @opinion.source_url do %>
+          <%= if (@opinion.twin || @opinion.source_url) && is_nil(@opinion.ancestry) do %>
             <.link href="/faq#change-ai-profile" class="block p-2 hover:text-indigo-600">
               I am <%= @author.name %>
             </.link>
