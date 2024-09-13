@@ -5,7 +5,7 @@ defmodule YouCongress.Votings.TitleRewording do
 
   alias YouCongress.DigitalTwins.OpenAIModel
 
-  @question """
+  @prompt """
   Generate two questions from the prompt so:
   - It is short (more like a title) and grammatically correct in English. Translate to English if it's in a different language.
   - It should be a yes/no question which starts with "Should we...", "Shall we...?" or similar
@@ -42,15 +42,15 @@ defmodule YouCongress.Votings.TitleRewording do
   end
 
   @spec ask_gpt(binary, OpenAIModel.t()) :: {:ok, map} | {:error, binary}
-  defp ask_gpt(question, model) do
+  defp ask_gpt(prompt, model) do
     OpenAI.chat_completion(
       model: model,
       response_format: %{type: "json_object"},
       messages: [
         %{role: "system", content: "You are a helpful assistant."},
-        %{role: "user", content: @question},
+        %{role: "user", content: @prompt},
         %{role: "assistant", content: @answer},
-        %{role: "user", content: question}
+        %{role: "user", content: prompt}
       ]
     )
   end
