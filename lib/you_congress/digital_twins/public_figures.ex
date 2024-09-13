@@ -12,9 +12,9 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
   @spec generate_list(binary, OpenAIModel.t(), list | nil) ::
           {:error, binary} | {:ok, %{cost: float, votes: list}}
   def generate_list(topic, model, exclude_names \\ []) do
-    question = get_question(topic, num_gen_opinions(), exclude_names)
+    prompt = get_prompt(topic, num_gen_opinions(), exclude_names)
 
-    with {:ok, data} <- ask_gpt(question, model),
+    with {:ok, data} <- ask_gpt(prompt, model),
          content <- OpenAIModel.get_content(data),
          {:ok, decoded} <- Jason.decode(content),
          cost <- OpenAIModel.get_cost(data, model) do
@@ -24,8 +24,8 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
     end
   end
 
-  @spec get_question(binary, number, [binary]) :: binary
-  defp get_question(topic, num_opinions, exclude_names) do
+  @spec get_prompt(binary, number, [binary]) :: binary
+  defp get_prompt(topic, num_opinions, exclude_names) do
     exclude_names = Enum.join(exclude_names, ",")
 
     """
@@ -55,13 +55,13 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
   end
 
   @spec ask_gpt(binary, OpenAIModel.t()) :: {:ok, map} | {:error, binary}
-  defp ask_gpt(question, model) do
+  defp ask_gpt(prompt, model) do
     OpenAI.chat_completion(
       model: model,
       response_format: %{type: "json_object"},
       messages: [
         %{role: "system", content: "You are a helpful assistant."},
-        %{role: "user", content: question}
+        %{role: "user", content: prompt}
       ]
     )
   end

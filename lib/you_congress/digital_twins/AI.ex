@@ -5,7 +5,7 @@ defmodule YouCongress.DigitalTwins.AI do
 
   alias YouCongress.DigitalTwins.OpenAIModel
 
-  @question0 """
+  @prompt0 """
   Json data:
   "name": Author name
   "bio": Author bio (max 7 words)
@@ -47,9 +47,9 @@ defmodule YouCongress.DigitalTwins.AI do
   @spec generate_opinion(binary, OpenAIModel.t(), binary | nil, [binary]) ::
           {:ok, map} | {:error, binary}
   def generate_opinion(topic, model, next_response, name) do
-    question = get_question(topic, next_response, name)
+    prompt = get_prompt(topic, next_response, name)
 
-    with {:ok, data} <- ask_gpt(question, model),
+    with {:ok, data} <- ask_gpt(prompt, model),
          content <- OpenAIModel.get_content(data),
          {:ok, opinion} <- Jason.decode(content),
          cost <- OpenAIModel.get_cost(data, model) do
@@ -59,8 +59,8 @@ defmodule YouCongress.DigitalTwins.AI do
     end
   end
 
-  @spec get_question(binary, binary | nil, [binary]) :: binary
-  defp get_question(topic, response, name) do
+  @spec get_prompt(binary, binary | nil, [binary]) :: binary
+  defp get_prompt(topic, response, name) do
     """
     Topic: #{topic}
 
@@ -72,17 +72,17 @@ defmodule YouCongress.DigitalTwins.AI do
 
   @spec ask_gpt(binary, OpenAIModel.t()) ::
           {:ok, map} | {:error, binary}
-  defp ask_gpt(question, model) do
+  defp ask_gpt(prompt, model) do
     OpenAI.chat_completion(
       model: model,
       response_format: %{type: "json_object"},
       messages: [
         %{role: "system", content: "You are a helpful assistant."},
-        %{role: "user", content: @question0},
+        %{role: "user", content: @prompt0},
         %{role: "assistant", content: @answer0},
-        %{role: "user", content: @question0},
+        %{role: "user", content: @prompt0},
         %{role: "assistant", content: @answer1},
-        %{role: "user", content: question}
+        %{role: "user", content: prompt}
       ]
     )
   end

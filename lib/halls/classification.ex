@@ -36,21 +36,21 @@ defmodule YouCongress.Halls.Classification do
 
   @spec ask_gpt(binary, OpenAIModel.t()) ::
           {:ok, map} | {:error, binary}
-  defp ask_gpt(question, model) do
+  defp ask_gpt(prompt, model) do
     OpenAI.chat_completion(
       model: model,
       response_format: %{type: "json_object"},
       messages: [
         %{role: "system", content: "You are a helpful assistant."},
-        %{role: "user", content: question0()},
+        %{role: "user", content: prompt0()},
         %{role: "assistant", content: @answer0},
-        %{role: "user", content: question}
+        %{role: "user", content: prompt}
       ]
     )
   end
 
-  @spec question0() :: binary
-  defp question0 do
+  @spec prompt0 :: binary
+  defp prompt0 do
     """
     Classify a text and return a list of tags:
 
