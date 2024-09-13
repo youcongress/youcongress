@@ -82,7 +82,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
       conn = log_in_as_user(conn)
       {:ok, _show_live, html} = live(conn, ~p"/x/#{author.twitter_username}")
 
-      assert html =~ "Show Author"
+      assert html =~ author.name
       assert html =~ author.bio
     end
 

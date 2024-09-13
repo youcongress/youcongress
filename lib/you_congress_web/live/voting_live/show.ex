@@ -40,6 +40,10 @@ defmodule YouCongressWeb.VotingLive.Show do
     socket =
       socket
       |> assign(:page_title, page_title(socket.assigns.live_action, voting.title))
+      |> assign(
+        :page_description,
+        "Find agreement, understand disagreement. Tackle Moloch."
+      )
       |> assign(reload: false)
       |> VotesLoader.load_voting_and_votes(voting.id)
       |> load_random_votings(voting.id)
