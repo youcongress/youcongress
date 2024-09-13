@@ -36,6 +36,11 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
           />
         </div>
       </div>
+      <%= if @opinion.twin do %>
+        <div class="text-xs text-gray-600">
+          would say according to AI:
+        </div>
+      <% end %>
       <div class="pt-2">
         <%= @opinion.content %>
         <%= if @opinion.source_url do %>
