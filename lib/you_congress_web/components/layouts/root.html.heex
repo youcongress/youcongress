@@ -15,6 +15,9 @@
     <% else %>
       <title>YouCongress</title>
     <% end %>
+    <%= if assigns[:page_description] do %>
+      <meta name="description" content={assigns[:page_description]} />
+    <% end %>
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
     </script>
