@@ -30,12 +30,20 @@ defmodule YouCongressWeb.AuthorLive.Show do
   def handle_params(params, _, socket) do
     author = get_author!(params)
     votes = Votes.list_votes_by_author_id(author.id, preload: [:voting, :answer, :opinion])
-    title = page_title(socket.assigns.live_action)
+
+    name = author.name || author.twitter_username || "Anonymous user"
+    title = page_title(socket.assigns.live_action, name)
+
     current_user = socket.assigns.current_user
 
     {:noreply,
      socket
-     |> assign(page_title: title, author: author, votes: votes)
+     |> assign(
+       page_title: title,
+       page_description: "Delegate to #{name} to vote on your behalf.",
+       author: author,
+       votes: votes
+     )
      |> assign_delegating?()
      |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))}
   end
@@ -158,8 +166,8 @@ defmodule YouCongressWeb.AuthorLive.Show do
     ~p"/x/#{twitter_username}"
   end
 
-  defp page_title(:show), do: "Show Author"
-  defp page_title(:edit), do: "Edit Author"
+  defp page_title(:show, name), do: name
+  defp page_title(:edit, name), do: "Edit Author #{name}"
 
   defp assign_delegating?(%{assigns: %{current_user: nil}} = socket) do
     assign(socket, :delegating?, false)
