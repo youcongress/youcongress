@@ -72,9 +72,9 @@ defmodule YouCongressWeb.VotingLive.Index do
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(
-      page_title:
-        "YouCongress: AI Polls & Liquid Democracy + AI Digital Twins | Finding Agreement, Tackling Moloch",
+      page_title: "YouCongress: AI Polls, Liquid Democracy + Digital Twins",
       skip_page_suffix: true,
+      page_description: "Find agreement, understand disagreement. Tackle Moloch.",
       voting: nil
     )
   end
