@@ -26,7 +26,7 @@
       <%= if !@include_author_bio, do: "#{@author.name} AI" %> would <%= response(
         assigns,
         @vote.answer.response
-      ) %> and say according to AI
+      ) %> and say according to AI:
     <% else %>
       <%= if !@include_author_bio, do: @author.name || "Anonymous" %>
       <%= response_with_s(
