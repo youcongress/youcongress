@@ -25,15 +25,30 @@ defmodule YouCongressWeb.UserLoginLive do
           <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
         </:actions>
         <:actions>
-          <.button phx-disable-with="Signing in..." class="w-full">
+          <.button
+            phx-disable-with="Signing in..."
+            class="w-full bg-blue-700 hover:bg-blue-400 text-white"
+          >
             Log in <span aria-hidden="true">→</span>
           </.button>
         </:actions>
       </.simple_form>
-      <div class="text-center pt-2">
-        or
-        <.link href="/x_log_in" method="post" class="w-full underline">
-          log in with X
+      <div class="text-center">
+        <div class="pb-1">or</div>
+        <.link
+          href="/x_log_in"
+          method="post"
+          class="inline-flex items-center justify-between bg-black text-white font-bold py-2 px-4 rounded-full hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-opacity-50 transition-colors duration-300"
+        >
+          Sign in with
+          <svg
+            class="w-5 h-5 ml-2"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="#ffffff"
+          >
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+          </svg>
         </.link>
       </div>
     </div>
