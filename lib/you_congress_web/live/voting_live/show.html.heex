@@ -42,53 +42,7 @@
     <div class="pb-1">
       Cast your vote:
     </div>
-    <div class="flex">
-      <CastComponent.button
-        response="Strongly agree"
-        label1="Strongly"
-        label2="Agree"
-        current_user_vote={@current_user_vote}
-        button_id="vote-strongly-agree"
-      />
-      <CastComponent.button
-        response="Agree"
-        current_user_vote={@current_user_vote}
-        button_id="vote-agree"
-      />
-      <CastComponent.button
-        response="Abstain"
-        current_user_vote={@current_user_vote}
-        button_id="vote-abstain"
-      />
-      <CastComponent.button
-        response="N/A"
-        current_user_vote={@current_user_vote}
-        button_id="vote-na"
-      />
-      <CastComponent.button
-        response="Disagree"
-        current_user_vote={@current_user_vote}
-        button_id="vote-disagree"
-      />
-      <CastComponent.button
-        response="Strongly disagree"
-        label1="Strongly"
-        label2="Disagree"
-        current_user_vote={@current_user_vote}
-        button_id="vote-strongly-disagree"
-      />
-    </div>
-    <%= if @current_user_vote do %>
-      <%= if @current_user_vote.direct do %>
-        <button phx-click="delete-direct-vote" class="text-sm">
-          Clear
-        </button>
-      <% else %>
-        <span class="ml-1 text-xs">
-          via delegates
-        </span>
-      <% end %>
-    <% end %>
+    <CastComponent.buttons current_user_vote={@current_user_vote} voting_id={@voting.id} />
     <div class="pt-6 pb-1">
       Results (<%= @total_votes %>):
     </div>

@@ -186,38 +186,32 @@ defmodule YouCongress.Votes do
   """
   def get_vote!(id), do: Repo.get!(Vote, id)
 
+  def get_vote(id) do
+    Repo.get(Vote, id)
+  end
+
+  def get_vote(id, preload: preload) do
+    Vote
+    |> Repo.get(id)
+    |> Repo.preload(preload)
+  end
+
   @doc """
   Gets a single vote by some options.
   """
-  @spec get_vote(map) :: Vote.t() | nil
-  def get_vote(options) do
+  @spec get_by(map) :: Vote.t() | nil
+  def get_by(options) do
     Repo.get_by(Vote, options)
   end
 
   @doc """
   Gets a single vote by some options and preload some tables.
   """
-  @spec get_vote(Keyword.t(), Keyword.t()) :: Vote.t() | nil
-  def get_vote(options, preload: tables) do
+  @spec get_by(Keyword.t(), Keyword.t()) :: Vote.t() | nil
+  def get_by(options, preload: tables) do
     Vote
     |> Repo.get_by(options)
     |> Repo.preload(tables)
-  end
-
-  @doc """
-  Gets a single vote that matches the given criteria.
-
-  ## Examples
-
-      iex> get_vote_by(author_id: 1, voting_id: 123)
-      %Vote{}
-
-      iex> get_vote_by(author_id: 999, voting_id: 999)
-      nil
-
-  """
-  def get_vote_by(criteria) when is_list(criteria) do
-    Repo.get_by(Vote, criteria)
   end
 
   @doc """

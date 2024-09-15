@@ -12,8 +12,6 @@
 
 alias YouCongress.Votes.Answers
 
-Answers.basic_response_answer_id_map()
-|> Map.keys()
-|> Enum.each(fn response ->
+Enum.each(Answers.basic_responses(), fn response ->
   {:ok, _} = Answers.create_answer(%{response: response})
 end)
