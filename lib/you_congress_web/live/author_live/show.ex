@@ -211,7 +211,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
       {:ok, vote} ->
         Track.event("Vote", current_user)
 
-        vote = Votes.get_vote([id: vote.id], preload: [:answer])
+        vote = Votes.get_vote(vote.id, preload: [:answer])
 
         current_user_votes_by_voting_id =
           Map.put(current_user_votes_by_voting_id, voting_id, vote)
@@ -253,7 +253,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
         DelegationVotes.update_author_voting_delegated_votes(current_user.author_id, voting_id)
 
         vote =
-          Votes.get_vote([voting_id: voting_id, author_id: current_user.author_id],
+          Votes.get_by([voting_id: voting_id, author_id: current_user.author_id],
             preload: [:answer]
           )
 
@@ -279,7 +279,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
   defp maybe_replace_vote_in_votes(socket, false, _, _), do: socket
 
   defp maybe_replace_vote_in_votes(socket, true, old_vote_id, new_vote_id) do
-    vote = Votes.get_vote([id: new_vote_id], preload: [:answer, :opinion, :voting])
+    vote = Votes.get_vote(new_vote_id, preload: [:answer, :opinion, :voting])
 
     votes =
       Enum.map(socket.assigns.votes, fn v ->
