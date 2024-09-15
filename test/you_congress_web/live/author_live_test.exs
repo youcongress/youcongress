@@ -147,5 +147,63 @@ defmodule YouCongressWeb.AuthorLiveTest do
       # We don't have a filled heart icon
       refute has_element?(view, "img[src='/images/filled-heart.svg']")
     end
+
+    test "casts a vote from voting buttons", %{conn: conn} do
+      current_user = user_fixture()
+      conn = log_in_user(conn, current_user)
+      author = author_fixture(%{twitter_username: "asimov"})
+      voting = voting_fixture()
+      vote_fixture(%{voting_id: voting.id, author_id: author.id}, true)
+
+      {:ok, show_live, _html} = live(conn, ~p"/x/asimov")
+
+      # Vote strongly agree
+      show_live
+      |> element("button#vote-strongly-agree")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Strongly agree"
+
+      # Vote agree
+      show_live
+      |> element("button#vote-agree")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Agree"
+
+      # Vote Abstain
+      show_live
+      |> element("button#vote-abstain")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Abstain"
+
+      # Vote N/A
+      show_live
+      |> element("button#vote-na")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted N/A"
+
+      # Vote disagree
+      show_live
+      |> element("button#vote-disagree")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Disagree"
+
+      # Vote strongly disagree
+      show_live
+      |> element("button#vote-strongly-disagree")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "You voted Strongly disagree"
+    end
   end
 end

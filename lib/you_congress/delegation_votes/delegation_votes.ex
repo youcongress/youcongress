@@ -32,7 +32,7 @@ defmodule YouCongress.DelegationVotes do
   end
 
   def update_author_voting_delegated_votes(author_id, voting_id) do
-    if Votes.get_vote(%{author_id: author_id, voting_id: voting_id, direct: true}) do
+    if Votes.get_by(author_id: author_id, voting_id: voting_id, direct: true) do
       :direct_vote_exists
     else
       delegate_ids = Delegations.delegate_ids_by_author_id(author_id)
@@ -65,7 +65,7 @@ defmodule YouCongress.DelegationVotes do
 
   @spec update_author_voting_delegated_votes(map) :: :ok | :direct_vote_exists
   def update_author_voting_delegated_votes(%{author_id: author_id, voting_id: voting_id}) do
-    if Votes.get_vote(%{author_id: author_id, voting_id: voting_id, direct: true}) do
+    if Votes.get_by(author_id: author_id, voting_id: voting_id, direct: true) do
       :direct_vote_exists
     else
       delegate_ids = Delegations.delegate_ids_by_author_id(author_id)
@@ -76,7 +76,7 @@ defmodule YouCongress.DelegationVotes do
   end
 
   defp vote(voting_id, author_id, answer_id) do
-    case Votes.get_vote(%{voting_id: voting_id, author_id: author_id}) do
+    case Votes.get_by(voting_id: voting_id, author_id: author_id) do
       nil ->
         Votes.create_vote(%{
           voting_id: voting_id,

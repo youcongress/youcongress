@@ -170,7 +170,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
     %{assigns: %{voting: voting, author: author}} = socket
     answer_id = Answers.get_answer_id(response)
 
-    case Votes.get_vote(%{voting_id: voting.id, author_id: author.id}) do
+    case Votes.get_by(voting_id: voting.id, author_id: author.id) do
       nil ->
         create_vote_and_opinion(voting, author, answer_id, opinion, source_url, socket)
 

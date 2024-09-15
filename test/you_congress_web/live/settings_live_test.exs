@@ -57,12 +57,12 @@ defmodule YouCongressWeb.SettingsLiveTest do
       assert html =~ "Settings updated successfully"
 
       # Check that the votes were deleted
-      assert Votes.get_vote(id: vote1.id) == nil
-      assert Votes.get_vote(id: vote2.id) == nil
+      assert Votes.get_vote(vote1.id) == nil
+      assert Votes.get_vote(vote2.id) == nil
 
       # Check that the vote from someone else was not deleted
-      assert Votes.get_vote(id: vote3.id) != nil
-      assert Votes.get_vote(id: vote3.id) == vote3
+      assert Votes.get_vote(vote3.id) != nil
+      assert Votes.get_vote(vote3.id) == vote3
     end
   end
 end
