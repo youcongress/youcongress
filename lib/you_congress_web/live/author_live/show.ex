@@ -252,6 +252,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
         DelegationVotes.update_author_voting_delegated_votes(current_user.author_id, voting_id)
 
+        # We get the new delegated vote, if any
         vote =
           Votes.get_by([voting_id: voting_id, author_id: current_user.author_id],
             preload: [:answer]
@@ -266,7 +267,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
             :current_user_votes_by_voting_id,
             Map.put(current_user_votes_by_voting_id, voting_id, vote)
           )
-          |> maybe_replace_vote_in_votes(same_user?, deleted_vote.id, vote.id)
+          |> maybe_replace_vote_in_votes(same_user?, deleted_vote.id, vote && vote.id)
           |> put_flash(:info, "Direct vote deleted.#{delegating_txt}")
 
         {:noreply, socket}
@@ -277,6 +278,13 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   defp maybe_replace_vote_in_votes(socket, false, _, _), do: socket
+
+  defp maybe_replace_vote_in_votes(socket, true, old_vote_id, nil) do
+    votes =
+      Enum.filter(socket.assigns.votes, fn v -> v.id != old_vote_id end)
+
+    assign(socket, :votes, votes)
+  end
 
   defp maybe_replace_vote_in_votes(socket, true, old_vote_id, new_vote_id) do
     vote = Votes.get_vote(new_vote_id, preload: [:answer, :opinion, :voting])
