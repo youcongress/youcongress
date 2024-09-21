@@ -10,6 +10,7 @@ defmodule YouCongress.Delegations do
   alias YouCongress.DelegationVotes
   alias YouCongress.Accounts.User
   alias YouCongress.Track
+  alias YouCongress.Workers.UpdateDelegationVotesWorker
 
   @doc """
   Returns the list of delegations.
@@ -28,8 +29,8 @@ defmodule YouCongress.Delegations do
     Repo.all(from d in Delegation, where: d.deleguee_id == ^deleguee_id, select: d.delegate_id)
   end
 
-  def delegate_ids_by_author_id(author_id) do
-    Repo.all(from d in Delegation, where: d.deleguee_id == ^author_id, select: d.delegate_id)
+  def delegate_ids_by_deleguee_id(deleguee_id) do
+    Repo.all(from d in Delegation, where: d.deleguee_id == ^deleguee_id, select: d.delegate_id)
   end
 
   def deleguee_ids_by_delegate_id(delegate_id) do
@@ -72,7 +73,10 @@ defmodule YouCongress.Delegations do
 
     case result do
       {:ok, delegation} ->
-        DelegationVotes.update_author_delegated_votes(delegation.deleguee_id)
+        DelegationVotes.update_delegated_votes(%{
+          deleguee_id: delegation.deleguee_id,
+          delegate_id: delegation.delegate_id
+        })
 
         {:ok, delegation}
 
@@ -126,7 +130,11 @@ defmodule YouCongress.Delegations do
 
     case result do
       {:ok, delegation} ->
-        DelegationVotes.update_author_delegated_votes(deleguee_id)
+        DelegationVotes.update_delegated_votes(%{
+          deleguee_id: delegation.deleguee_id,
+          delegate_id: delegation.delegate_id
+        })
+
         {:ok, delegation}
 
       {:error, changeset} ->

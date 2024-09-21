@@ -17,14 +17,30 @@ defmodule YouCongress.DelegationVotes do
   @spec update_author_delegated_votes(integer) :: :ok
   def update_author_delegated_votes(author_id) do
     voting_ids_with_author_direct_votes = voting_ids_with_author_direct_votes(author_id)
-    delegate_ids = Delegations.delegate_ids_by_author_id(author_id)
+    delegate_ids = Delegations.delegate_ids_by_deleguee_id(author_id)
     answers = Answers.basic_response_answer_id_map()
 
     for voting_id <- voting_ids_voted_by([author_id | delegate_ids]) do
       if voting_id in voting_ids_with_author_direct_votes do
-        :direct_vote_exists
+        {:ok, :direct_vote_exists}
       else
         update_votes(voting_id, author_id, delegate_ids, answers)
+      end
+    end
+
+    :ok
+  end
+
+  def update_delegated_votes(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
+    voting_ids_with_deleguee_direct_votes = voting_ids_with_author_direct_votes(deleguee_id)
+    delegate_ids = Delegations.delegate_ids_by_deleguee_id(deleguee_id)
+    answers = Answers.basic_response_answer_id_map()
+
+    for voting_id <- voting_ids_voted_by([delegate_id]) do
+      if voting_id in voting_ids_with_deleguee_direct_votes do
+        {:ok, :direct_vote_exists}
+      else
+        update_votes(voting_id, deleguee_id, delegate_ids, answers)
       end
     end
 
@@ -35,7 +51,7 @@ defmodule YouCongress.DelegationVotes do
     if Votes.get_by(author_id: author_id, voting_id: voting_id, direct: true) do
       :direct_vote_exists
     else
-      delegate_ids = Delegations.delegate_ids_by_author_id(author_id)
+      delegate_ids = Delegations.delegate_ids_by_deleguee_id(author_id)
       answers = Answers.basic_response_answer_id_map()
       update_votes(voting_id, author_id, delegate_ids, answers)
       :ok
@@ -56,7 +72,7 @@ defmodule YouCongress.DelegationVotes do
         vote(voting_id, author_id, answers["Disagree"])
 
       neutral > in_favour && neutral > against ->
-        vote(voting_id, author_id, answers["Neutral"])
+        vote(voting_id, author_id, answers["Abstain"])
 
       true ->
         delete_vote_if_exists(voting_id, author_id)
@@ -68,7 +84,7 @@ defmodule YouCongress.DelegationVotes do
     if Votes.get_by(author_id: author_id, voting_id: voting_id, direct: true) do
       :direct_vote_exists
     else
-      delegate_ids = Delegations.delegate_ids_by_author_id(author_id)
+      delegate_ids = Delegations.delegate_ids_by_deleguee_id(author_id)
       answers = Answers.basic_response_answer_id_map()
       update_votes(voting_id, author_id, delegate_ids, answers)
       :ok
@@ -104,8 +120,8 @@ defmodule YouCongress.DelegationVotes do
 
     in_favour = count(votes, ["Strongly agree", "Agree"])
     against = count(votes, ["Strongly disagree", "Disagree"])
-    neutral = count(votes, ["Neutral"])
-    {in_favour, against, neutral}
+    abstain = count(votes, ["Abstain"])
+    {in_favour, against, abstain}
   end
 
   defp count(votes, responses) do

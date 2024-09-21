@@ -112,7 +112,9 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
         Enum.map(votes_without_opinion, & &1.author_id)
 
     delegate_ids =
-      if current_user, do: Delegations.delegate_ids_by_author_id(current_user.author_id), else: []
+      if current_user,
+        do: Delegations.delegate_ids_by_deleguee_id(current_user.author_id),
+        else: []
 
     delegations =
       Enum.reduce(author_ids, %{}, fn author_id, acc ->
@@ -139,7 +141,7 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
   defp get_votes_from_delegates(_, nil), do: []
 
   defp get_votes_from_delegates(votes, current_user) do
-    delegate_ids = Delegations.delegate_ids_by_author_id(current_user.author_id)
+    delegate_ids = Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
     Enum.filter(votes, fn vote -> vote.author_id in delegate_ids end)
   end
 
