@@ -9,9 +9,12 @@
       <Tooltip.delegation assigns={assigns} />
       <.link phx-click="toggle-delegate" phx-value-author_id={@author.id}>
         <%= if @delegating? do %>
-          <.button class="bg-transparent border-2 border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white transition-colors duration-200">
+          <button
+            type="button"
+            class="rounded-lg border-2 border-zinc-900 bg-transparent px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-900 hover:text-white transition-colors duration-200"
+          >
             Remove delegate
-          </.button>
+          </button>
         <% else %>
           <.button>Delegate</.button>
         <% end %>
