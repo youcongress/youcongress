@@ -10,9 +10,9 @@ defmodule YouCongress.Track do
   def event(_, nil), do: nil
 
   def event(event_type, current_user) do
-    Task.async(fn ->
-      track_now(event_type, current_user.id, current_user.author_id)
-    end)
+    %{event_type: event_type, current_user_id: current_user.id, author_id: current_user.author_id}
+    |> YouCongress.Workers.TrackWorker.new()
+    |> Oban.insert()
   end
 
   def track_now(event_type, current_user_id, author_id) do
