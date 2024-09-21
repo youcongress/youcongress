@@ -3,7 +3,6 @@
 Welcome to YouCongress!
 
 YouCongress is an open-source project to find agreement and understand disagreement.
-
 We use liquid democracy and AI digital twins.
 
 We're still shaping YouCongress, but you already can:
@@ -26,7 +25,7 @@ Welcome to YouCongress! Feel free to:
 
 # Contributors
 - [Hector Perez](https://x.com/arpahector)
-- [Gonzalo Cardenete Burgos](https://www.linkedin.com/in/gonzalo-cardenete-burgos-519a1b43)
+- [Gonzalo Cardenete](https://www.linkedin.com/in/gonzalo-cardenete-burgos-519a1b43)
 - [David Ernst](https://github.com/dsernst)
 - ... (add yourself if you add a commit)
 
