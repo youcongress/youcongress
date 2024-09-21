@@ -26,7 +26,6 @@ defmodule YouCongressWeb.VotingLive.Index do
     socket =
       socket
       |> assign_current_user(session["user_token"])
-      |> assign_counters()
       |> assign(
         votings: votings,
         hall_name: params["hall"] || @default_hall,

@@ -19,10 +19,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
   @impl true
   def mount(_params, session, socket) do
-    socket =
-      socket
-      |> assign_current_user(session["user_token"])
-      |> assign_counters()
+    socket = assign_current_user(socket, session["user_token"])
 
     if connected?(socket) do
       Track.event("View Author", socket.assigns.current_user)
@@ -93,7 +90,6 @@ defmodule YouCongressWeb.AuthorLive.Show do
             :current_user_votes_by_voting_id,
             get_current_user_votes_by_voting_id(current_user)
           )
-          |> assign_counters()
           |> put_flash(:info, "You're no longer voting as #{author.name}.")
 
         {:noreply, socket}
@@ -117,6 +113,10 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
     case Delegations.create_delegation(current_user, delegate_id) do
       {:ok, _} ->
+        Track.event("Delegate", current_user)
+
+        send(self(), :update)
+
         socket =
           socket
           |> assign(:delegating?, true)
@@ -124,7 +124,6 @@ defmodule YouCongressWeb.AuthorLive.Show do
             :current_user_votes_by_voting_id,
             get_current_user_votes_by_voting_id(current_user)
           )
-          |> assign_counters()
           |> put_flash(:info, "You're now voting as #{author.name}.")
 
         {:noreply, socket}

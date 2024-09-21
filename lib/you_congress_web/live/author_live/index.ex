@@ -11,7 +11,6 @@ defmodule YouCongressWeb.AuthorLive.Index do
     socket =
       socket
       |> assign_current_user(session["user_token"])
-      |> assign_counters()
       |> stream(:authors, Authors.list_authors())
 
     {:ok, socket}
