@@ -74,7 +74,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
         %{"author_id" => author_id},
         %{assigns: %{delegating?: true}} = socket
       ) do
-    %{assigns: %{current_user: current_user, author: author}} = socket
+    %{assigns: %{current_user: current_user}} = socket
 
     deleguee_id = current_user.author_id
     delegate_id = String.to_integer(author_id)
@@ -82,17 +82,9 @@ defmodule YouCongressWeb.AuthorLive.Show do
     case Delegations.delete_delegation(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
       {:ok, _} ->
         Track.event("Remove Delegate", current_user)
+        send(self(), :update_current_user_votes_by_voting_id)
 
-        socket =
-          socket
-          |> assign(:delegating?, false)
-          |> assign(
-            :current_user_votes_by_voting_id,
-            get_current_user_votes_by_voting_id(current_user)
-          )
-          |> put_flash(:info, "You're no longer voting as #{author.name}.")
-
-        {:noreply, socket}
+        {:noreply, assign(socket, :delegating?, false)}
 
       _ ->
         {:noreply, put_flash(socket, :error, "Error deleting delegation.")}
@@ -109,24 +101,14 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   def handle_event("toggle-delegate", %{"author_id" => delegate_id}, socket) do
-    %{assigns: %{current_user: current_user, author: author}} = socket
+    %{assigns: %{current_user: current_user}} = socket
 
     case Delegations.create_delegation(current_user, delegate_id) do
       {:ok, _} ->
         Track.event("Delegate", current_user)
+        send(self(), :update_current_user_votes_by_voting_id)
 
-        send(self(), :update)
-
-        socket =
-          socket
-          |> assign(:delegating?, true)
-          |> assign(
-            :current_user_votes_by_voting_id,
-            get_current_user_votes_by_voting_id(current_user)
-          )
-          |> put_flash(:info, "You're now voting as #{author.name}.")
-
-        {:noreply, socket}
+        {:noreply, assign(socket, :delegating?, true)}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Error creating delegation.")}
@@ -275,6 +257,22 @@ defmodule YouCongressWeb.AuthorLive.Show do
         {:noreply, put_flash(socket, :error, "Error deleting vote.")}
     end
   end
+
+  @impl true
+  def handle_info(:update_current_user_votes_by_voting_id, socket) do
+    current_user = socket.assigns.current_user
+
+    socket =
+      assign(
+        socket,
+        :current_user_votes_by_voting_id,
+        get_current_user_votes_by_voting_id(current_user)
+      )
+
+    {:noreply, socket}
+  end
+
+  def handle_info(_, socket), do: {:noreply, socket}
 
   defp maybe_replace_vote_in_votes(socket, false, _, _), do: socket
 
