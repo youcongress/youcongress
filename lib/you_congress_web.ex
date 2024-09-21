@@ -56,8 +56,7 @@ defmodule YouCongressWeb do
 
       unquote(html_helpers())
 
-      import YouCongressWeb.LiveHelpers,
-        only: [assign_current_user: 2, assign_counters: 1]
+      import YouCongressWeb.LiveHelpers, only: [assign_current_user: 2]
     end
   end
 

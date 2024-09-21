@@ -11,10 +11,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
   @impl true
   def mount(_params, session, socket) do
-    socket =
-      socket
-      |> assign_current_user(session["user_token"])
-      |> assign_counters()
+    socket = assign_current_user(socket, session["user_token"])
 
     %{assigns: %{current_user: current_user}} = socket
 

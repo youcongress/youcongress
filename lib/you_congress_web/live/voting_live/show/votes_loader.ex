@@ -4,7 +4,6 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
   """
 
   import Phoenix.Component, only: [assign: 2]
-  import YouCongressWeb.LiveHelpers, only: [assign_counters: 1]
 
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
@@ -87,7 +86,6 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
   def assign_main_variables(socket, voting, current_user) do
     socket
     |> load_delegations(current_user)
-    |> assign_counters()
     |> assign_vote_frequencies(voting)
     |> assign_current_user_vote(voting, current_user)
   end

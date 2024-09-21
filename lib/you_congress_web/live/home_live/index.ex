@@ -14,7 +14,6 @@ defmodule YouCongressWeb.HomeLive.Index do
     socket =
       socket
       |> assign_current_user(session["user_token"])
-      |> assign_counters()
       |> assign(all: params["all"] == "true")
 
     if connected?(socket) do
