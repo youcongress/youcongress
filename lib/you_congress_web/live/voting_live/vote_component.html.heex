@@ -21,29 +21,37 @@
       </div>
     </div>
   <% end %>
-  <div class="text-sm">
-    <%= if @vote.twin do %>
-      <%= if !@include_author_bio, do: "#{@author.name} AI" %> would <%= response(
-        assigns,
-        @vote.answer.response
-      ) %> and say according to AI:
-    <% else %>
-      <%= if !@include_author_bio, do: @author.name || "Anonymous" %>
-      <%= response_with_s(
-        assigns,
-        @vote.answer.response
-      ) %>
-      <%= unless @vote.direct do %>
-        via delegates
+  <%= if @show_vote do %>
+    <div class="text-sm pb-2">
+      <%= if @vote.twin do %>
+        <%= if !@include_author_bio, do: "#{@author.name} AI" %> would <%= response(
+          assigns,
+          @vote.answer.response
+        ) %> and say according to AI:
+      <% else %>
+        <%= if !@include_author_bio, do: @author.name || "Anonymous" %>
+        <%= response_with_s(
+          assigns,
+          @vote.answer.response
+        ) %>
+        <%= unless @vote.direct do %>
+          via delegates
+        <% end %>
+        <%= if @vote.opinion do %>
+          and says:
+        <% end %>
       <% end %>
-      <%= if @vote.opinion do %>
-        and says:
-      <% end %>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
   <%= if @show_opinion && @vote.opinion_id do %>
-    <div class="pt-2">
-      <%= @vote.opinion.content %>
+    <div>
+      <%= if @current_user && @current_user.author_id == @author.id do %>
+        <.link href={"/p/#{@voting.slug}"}>
+          <%= @vote.opinion.content %>
+        </.link>
+      <% else %>
+        <%= @vote.opinion.content %>
+      <% end %>
       <%= if @vote.opinion_id && @vote.opinion.source_url do %>
         <span class="text-xs">
           (<.link href={@vote.opinion.source_url} target="_blank" class="underline">source</.link>)
