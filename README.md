@@ -2,14 +2,9 @@
 
 Welcome to YouCongress!
 
-YouCongress is an open-source project designed to enhance decision-making in an environment where diverse opinions thrive, where change of opinion is celebrated and leads to individual and collective learning.
+YouCongress is an open-source project to find agreement and understand disagreement.
 
-Amidst the growing excitement around AI, a consensus is emerging for the need of widespread participation in shaping the future of AI and the era of post-artificial general intelligence:
-- _"The least bad solution to the AGI control problem that I can think of is to give every verified human a vote"_ — Elon Musk
-- _"AI is not going to be run by one person or organization. It should belong to the world, belong to humanity and there will be many ways this will happen and ultimately everyone should have a say on that"_ – Demis Hassabis, CEO of DeepMind
-- _"People need to have agency, the ability to influence this. They need, we need to sort of jointly be architects of the future."_ – Sam Altman, CEO of OpenAI
-- _"Human feedback for open source LLMs needs to be crowd-sourced, Wikipedia style. It is the only way for LLMs to become the repository of all human knowledge and cultures. Who wants to build the platform for this?"_ – Yann LeCun, Chief AI Scientist at Meta
-- _"How AI gets built is currently decided by a small group of technologists. As this technology is transforming our lives, it should be in all of our interest to become informed and engaged."_ – Max Roser, Our World In Data
+We use liquid democracy and AI digital twins.
 
 We're still shaping YouCongress, but you already can:
 - create a public opinion poll
@@ -23,7 +18,13 @@ We're still shaping YouCongress, but you already can:
 You can read more about the project on the LessWrong post:
 - [Tackling Moloch: How YouCongress Offers a Novel Coordination Mechanism](https://www.lesswrong.com/posts/4KjiZeAWc7Yv9oyCb/tackling-moloch-how-youcongress-offers-a-novel-coordination)
 
-# Contributions
+# Contributors
+- [Hector Perez](https://x.com/arpahector)
+- [Gonzalo Cardenete Burgos](https://www.linkedin.com/in/gonzalo-cardenete-burgos-519a1b43)
+- [David Ernst](https://github.com/dsernst)
+- ... (add yourself if you add a commit)
+
+# How to contribute
 
 Welcome to YouCongress! Feel free to:
 - Use [Discussions](https://github.com/youcongress/youcongress/discussions) to introduce yourself, ask questions and propose ideas.
