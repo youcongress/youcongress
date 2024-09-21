@@ -92,8 +92,8 @@ defmodule YouCongressWeb.HomeLive.Index do
 
   defp current_user_delegation_ids(nil), do: []
 
-  defp current_user_delegation_ids(%{id: current_user_id}) do
-    Delegations.list_delegation_ids(deleguee_id: current_user_id)
+  defp current_user_delegation_ids(%{author_id: current_user_author_id}) do
+    Delegations.list_delegation_ids(deleguee_id: current_user_author_id)
   end
 
   def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
@@ -159,12 +159,8 @@ defmodule YouCongressWeb.HomeLive.Index do
 
     case Delegations.create_delegation(current_user, delegate_id) do
       {:ok, _} ->
-        socket =
-          socket
-          |> assign(current_user_delegation_ids: current_user_delegation_ids(current_user))
-          |> put_flash(:info, "Delegation added successfully.")
-
-        {:noreply, socket}
+        {:noreply,
+         assign(socket, :current_user_delegation_ids, current_user_delegation_ids(current_user))}
 
       {:error, _} ->
         {:noreply, socket |> put_flash(:error, "Failed to add delegation.")}
@@ -176,12 +172,8 @@ defmodule YouCongressWeb.HomeLive.Index do
 
     case Delegations.delete_delegation(current_user, delegate_id) do
       {:ok, _} ->
-        socket =
-          socket
-          |> assign(current_user_delegation_ids: current_user_delegation_ids(current_user))
-          |> put_flash(:info, "Delegation removed successfully.")
-
-        {:noreply, socket}
+        {:noreply,
+         assign(socket, :current_user_delegation_ids, current_user_delegation_ids(current_user))}
 
       {:error, _} ->
         {:noreply, socket |> put_flash(:error, "Failed to remove delegation.")}
