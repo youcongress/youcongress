@@ -81,7 +81,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   def comment_icon(assigns) do
     ~H"""
     <.link href={~p"/comments/#{@opinion.id}"}>
-      <img src="/images/comment.svg" alt="Comment" class="h-4 w-4 inline" />
+      <img src="/images/comment.svg" alt="Comment" class="h-5 w-5 inline" />
       <span class="text-gray-600 pl-1 text-xs">
         <%= if @opinion.descendants_count > 0, do: @opinion.descendants_count %>
       </span>
@@ -99,7 +99,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
       phx-value-opinion_id={@opinion.id}
       src={"/images/#{if @liked, do: "filled-heart", else: "heart"}.svg"}
       alt="Comment"
-      class="h-4 w-4 inline"
+      class="h-5 w-5 inline cursor-pointer"
     />
     <span class="text-gray-600 pl-1 text-xs">
       <%= if @opinion.likes_count > 0, do: @opinion.likes_count %>

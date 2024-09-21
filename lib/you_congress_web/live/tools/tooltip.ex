@@ -21,7 +21,7 @@ defmodule YouCongressWeb.Tools.Tooltip do
       ]}
       position="left"
     >
-      <img src="/images/info.svg" alt="Info" class="h-4 w-4 inline" />
+      <img src="/images/info.svg" alt="Info" class="h-5 w-5 inline" />
     </Tooltip.render>
     """
   end
