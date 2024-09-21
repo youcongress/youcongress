@@ -42,7 +42,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       |> assign(:page_title, page_title(socket.assigns.live_action, voting.title))
       |> assign(
         :page_description,
-        "Find agreement, understand disagreement. Tackle Moloch."
+        "Find agreement, understand disagreement."
       )
       |> assign(reload: false)
       |> VotesLoader.load_voting_and_votes(voting.id)
