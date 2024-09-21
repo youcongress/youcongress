@@ -122,15 +122,8 @@ defmodule YouCongressWeb.VotingLive.Show do
     case Votes.delete_vote(current_user_vote) do
       {:ok, _} ->
         Track.event("Delete Vote", current_user)
-
         DelegationVotes.update_author_voting_delegated_votes(current_user.author_id, voting.id)
-
-        socket =
-          socket
-          |> VotesLoader.load_voting_and_votes(voting.id)
-          |> put_flash(:info, "Direct vote deleted.")
-
-        {:noreply, socket}
+        {:noreply, VotesLoader.load_voting_and_votes(socket, voting.id)}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Error deleting vote.")}
@@ -247,7 +240,6 @@ defmodule YouCongressWeb.VotingLive.Show do
         socket =
           socket
           |> assign(:delegating?, false)
-          |> put_flash(:info, "Removed from your delegation list.")
           |> VotesLoader.assign_main_variables(
             voting,
             current_user

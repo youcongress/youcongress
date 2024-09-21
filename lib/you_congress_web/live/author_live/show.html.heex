@@ -8,7 +8,13 @@
     <% else %>
       <Tooltip.delegation assigns={assigns} />
       <.link phx-click="toggle-delegate" phx-value-author_id={@author.id}>
-        <.button><%= if @delegating?, do: "Remove delegate", else: "Delegate" %></.button>
+        <%= if @delegating? do %>
+          <.button class="bg-transparent border-2 border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white transition-colors duration-200">
+            Remove delegate
+          </.button>
+        <% else %>
+          <.button>Delegate</.button>
+        <% end %>
       </.link>
     <% end %>
     <%= if @current_user && Permissions.can_edit_author?(@current_user) do %>
