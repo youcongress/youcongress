@@ -25,10 +25,7 @@ defmodule YouCongressWeb.UserLoginLive do
           <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
         </:actions>
         <:actions>
-          <.button
-            phx-disable-with="Signing in..."
-            class="w-full bg-blue-700 hover:bg-blue-400 text-white"
-          >
+          <.button phx-disable-with="Signing in..." class="w-full bg-indigo-500 hover:bg-indigo-700">
             Log in <span aria-hidden="true">→</span>
           </.button>
         </:actions>
