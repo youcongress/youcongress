@@ -7,6 +7,8 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   alias YouCongressWeb.Tools.Tooltip
   alias YouCongressWeb.OpinionLive.OpinionComponent
 
+  @max_x_length 280
+
   attr :opinion, :map, required: true
   attr :delegating, :boolean, required: true
   attr :voting, :map, required: true
@@ -54,7 +56,15 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
           <span :if={@opinable} class="pr-2">
             <OpinionComponent.like_icon opinion={@opinion} liked={@opinion.id in @liked_opinion_ids} />
           </span>
-          <OpinionComponent.comment_icon :if={@opinable} opinion={@opinion} />
+          <span class="pr-2">
+            <OpinionComponent.comment_icon :if={@opinable} opinion={@opinion} />
+          </span>
+          <OpinionComponent.x_icon
+            author={@opinion.author}
+            voting={@voting}
+            opinion={@opinion}
+            current_user={@current_user}
+          />
         </div>
         <div>
           <%= if @delegable && (!@current_user || (@opinion.author_id != @current_user.author_id)) do %>
@@ -114,5 +124,76 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
       <%= if @opinion.likes_count > 0, do: @opinion.likes_count %>
     </span>
     """
+  end
+
+  attr :opinion, :map, required: true
+  attr :voting, :map, required: true
+  attr :author, :map, required: true
+  attr :current_user, :map, default: nil
+
+  def x_icon(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :href,
+        x_url(assigns.opinion, assigns.voting, assigns.author, assigns.current_user)
+      )
+
+    ~H"""
+    <a href={@href} target="_blank">
+      <img src="/images/x.svg" alt="X" class="h-4 w-4 inline cursor-pointer" />
+    </a>
+    """
+  end
+
+  defp x_url(opinion, voting, author, current_user) do
+    author_url = " https://youcongress.com#{author_path(author)}"
+
+    opinion
+    |> x_post(voting, author, current_user)
+    |> maybe_shorten(author_url)
+    |> then(&"#{&1}#{author_url}")
+    |> URI.encode_www_form()
+    |> then(&"https://x.com/intent/tweet?text=#{&1}")
+  end
+
+  def author_path(%{twitter_username: nil, id: author_id}) do
+    ~p"/a/#{author_id}"
+  end
+
+  def author_path(%{twitter_username: twitter_username}) do
+    ~p"/x/#{twitter_username}"
+  end
+
+  defp x_post(opinion, voting, %{id: id} = _author, %{id: id} = _current_user) do
+    "#{voting.title} My take: #{opinion.content}"
+  end
+
+  defp x_post(opinion, voting, author, _current_user) do
+    "#{voting.title} #{print_author(author, opinion.twin)}: #{opinion.content}'"
+  end
+
+  defp maybe_shorten(text, author_url) do
+    via_length = String.length(author_url)
+
+    if String.length(text) > @max_x_length - via_length do
+      String.slice(text, 0..(@max_x_length - 5 - via_length)) <> "..."
+    else
+      text
+    end
+  end
+
+  defp print_author(author, true) do
+    "#{x_username(author) || author.name}'s AI digital twin"
+  end
+
+  defp print_author(author, false) do
+    x_username(author) || author.name
+  end
+
+  defp x_username(%{twitter_username: nil}), do: nil
+
+  defp x_username(%{twitter_username: username}) do
+    "@#{username}"
   end
 end
