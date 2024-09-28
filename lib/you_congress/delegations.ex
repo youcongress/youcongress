@@ -10,7 +10,6 @@ defmodule YouCongress.Delegations do
   alias YouCongress.DelegationVotes
   alias YouCongress.Accounts.User
   alias YouCongress.Track
-  alias YouCongress.Workers.UpdateDelegationVotesWorker
 
   @doc """
   Returns the list of delegations.
