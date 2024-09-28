@@ -141,7 +141,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
 
     ~H"""
     <a href={@href} target="_blank">
-      <img src="/images/x.svg" alt="X" class="h-5 w-5 inline cursor-pointer" />
+      <img src="/images/x.svg" alt="X" class="h-4 w-4 inline cursor-pointer" />
     </a>
     """
   end
