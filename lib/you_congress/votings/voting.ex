@@ -6,9 +6,10 @@ defmodule YouCongress.Votings.Voting do
   import Ecto.Changeset
 
   alias YouCongress.Votes.Vote
+  alias YouCongress.Votings
   alias YouCongress.Halls.Hall
 
-  @max_title_slug_size 70
+  @max_title_slug_size 30
 
   schema "votings" do
     field :title, :string
@@ -58,15 +59,41 @@ defmodule YouCongress.Votings.Voting do
       changeset
     else
       title = get_field(changeset, :title)
-      put_change(changeset, :slug, new_slug(title))
+      put_change(changeset, :slug, new_unique_slug(title))
     end
   end
+
+  defp new_unique_slug(nil), do: nil
+  defp new_unique_slug(""), do: ""
+
+  defp new_unique_slug(title) do
+    slug = new_slug(title)
+
+    case Votings.get_by(slug: slug) do
+      nil -> slug
+      _ -> "#{slug}-#{random_string()}"
+    end
+  end
+
+  defp random_string(), do: :crypto.strong_rand_bytes(1) |> Base.encode16()
 
   defp new_slug(title) when is_binary(title) do
     title
     |> Slug.slugify()
+    |> remove_some_words()
     |> String.slice(0..(@max_title_slug_size - 1))
+    |> String.replace(~r/\-$/, "")
   end
 
   defp new_slug(_), do: nil
+
+  defp words() do
+    ~w(a an and as at but by for in nor of on or so the to up yet would should will shall he she it them we with consider accept that this those these)
+  end
+
+  defp remove_some_words(slug) do
+    words()
+    |> Enum.reduce("-#{slug}", &String.replace(&2, "-#{&1}-", "-"))
+    |> String.replace(~r/^\-/, "")
+  end
 end

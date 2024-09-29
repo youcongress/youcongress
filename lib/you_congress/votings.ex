@@ -215,9 +215,18 @@ defmodule YouCongress.Votings do
     Repo.get_by!(Voting, slug: slug)
   end
 
+  def get_by(opts) do
+    Repo.get_by(Voting, opts)
+  end
+
   def regenerate_slug(voting) do
     voting
     |> Voting.changeset(%{slug: nil})
     |> Repo.update()
+  end
+
+  def regenerate_all_voting_slugs do
+    Repo.all(Voting)
+    |> Enum.each(&regenerate_slug/1)
   end
 end
