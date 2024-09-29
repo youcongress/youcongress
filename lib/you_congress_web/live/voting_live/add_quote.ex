@@ -26,7 +26,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
   @impl true
   @spec handle_params(map, binary, Socket.t()) :: {:noreply, Socket.t()}
   def handle_params(%{"slug" => slug} = params, _, socket) do
-    voting = Votings.get_voting_by_slug!(slug)
+    voting = Votings.get_by!(slug: slug)
 
     twitter_username = params["twitter_username"]
 
