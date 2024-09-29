@@ -136,7 +136,12 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
       assign(
         assigns,
         :href,
-        x_url(assigns.opinion, assigns.voting, assigns.author, assigns.current_user)
+        x_url(
+          assigns.opinion,
+          assigns.voting,
+          assigns.author,
+          assigns.current_user
+        )
       )
 
     ~H"""
@@ -147,22 +152,18 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   end
 
   defp x_url(opinion, voting, author, current_user) do
-    author_url = " https://youcongress.com#{author_path(author)}"
+    url = " https://youcongress.com#{x_path(voting)}"
 
     opinion
     |> x_post(voting, author, current_user)
-    |> maybe_shorten(author_url)
-    |> then(&"#{&1}#{author_url}")
+    |> maybe_shorten(url)
+    |> then(&"#{&1}#{url}")
     |> URI.encode_www_form()
     |> then(&"https://x.com/intent/tweet?text=#{&1}")
   end
 
-  def author_path(%{twitter_username: nil, id: author_id}) do
-    ~p"/a/#{author_id}"
-  end
-
-  def author_path(%{twitter_username: twitter_username}) do
-    ~p"/x/#{twitter_username}"
+  def x_path(voting) do
+    ~p"/p/#{voting.slug}"
   end
 
   defp x_post(opinion, voting, %{id: id} = _author, %{id: id} = _current_user) do
@@ -173,8 +174,8 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
     "#{voting.title} #{print_author(author, opinion.twin)}: #{opinion.content}'"
   end
 
-  defp maybe_shorten(text, author_url) do
-    via_length = String.length(author_url)
+  defp maybe_shorten(text, x_url) do
+    via_length = String.length(x_url)
 
     if String.length(text) > @max_x_length - via_length do
       String.slice(text, 0..(@max_x_length - 5 - via_length)) <> "..."
