@@ -207,16 +207,12 @@ defmodule YouCongress.Votings do
   Returns the voting with the given slug.
   """
 
-  def get_voting_by_slug(slug) do
-    Repo.get_by(Voting, slug: slug)
-  end
-
-  def get_voting_by_slug!(slug) do
-    Repo.get_by!(Voting, slug: slug)
-  end
-
   def get_by(opts) do
     Repo.get_by(Voting, opts)
+  end
+
+  def get_by!(opts) do
+    Repo.get_by!(Voting, opts)
   end
 
   def regenerate_slug(voting) do

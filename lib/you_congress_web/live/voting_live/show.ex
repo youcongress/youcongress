@@ -34,7 +34,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   @impl true
   @spec handle_params(map, binary, Socket.t()) :: {:noreply, Socket.t()}
   def handle_params(%{"slug" => slug}, _, socket) do
-    voting = Votings.get_voting_by_slug!(slug)
+    voting = Votings.get_by!(slug: slug)
     current_user = socket.assigns.current_user
 
     socket =
