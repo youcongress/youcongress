@@ -8,6 +8,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   alias YouCongressWeb.OpinionLive.OpinionComponent
 
   @max_x_length 280
+  @url_length String.length("youcongress.com/p/should-tech-")
 
   attr :opinion, :map, required: true
   attr :delegating, :boolean, required: true
@@ -156,7 +157,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
 
     opinion
     |> x_post(voting, author, current_user)
-    |> maybe_shorten(url)
+    |> maybe_shorten()
     |> then(&"#{&1}#{url}")
     |> URI.encode_www_form()
     |> then(&"https://x.com/intent/tweet?text=#{&1}")
@@ -174,11 +175,9 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
     "#{voting.title} #{print_author(author, opinion.twin)}: #{opinion.content}'"
   end
 
-  defp maybe_shorten(text, x_url) do
-    via_length = String.length(x_url)
-
-    if String.length(text) > @max_x_length - via_length do
-      String.slice(text, 0..(@max_x_length - 5 - via_length)) <> "..."
+  defp maybe_shorten(text) do
+    if String.length(text) > @max_x_length - @url_length do
+      String.slice(text, 0..(@max_x_length - 1 - @url_length)) <> "..."
     else
       text
     end
