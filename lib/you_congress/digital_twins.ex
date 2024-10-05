@@ -12,7 +12,6 @@ defmodule YouCongress.DigitalTwins do
 
   require Logger
 
-  @spec generate_vote(number, binary, binary) :: {:ok, Vote.t()} | {:error, String.t()}
   @doc """
   Generates votes for a voting.
 
@@ -22,6 +21,7 @@ defmodule YouCongress.DigitalTwins do
       [%Vote{}, ...]
 
   """
+  @spec generate_vote(number, binary, binary | nil) :: {:ok, Vote.t()} | {:error, String.t()}
   def generate_vote(voting_id, name, next_response) do
     voting = Votings.get_voting!(voting_id, preload: [votes: [:author, :answer]])
     topic = voting.title
