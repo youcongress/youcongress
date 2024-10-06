@@ -1,6 +1,6 @@
 <div class="md:flex md:justify-between">
   <div class="w-80 pb-4 md:pb-0">
-    <form>
+    <form :if={!@new_poll_visible?}>
       <input
         phx-change="search"
         field={@search}
@@ -29,7 +29,7 @@
 </div>
 
 <%= if @search do %>
-  <Search.render authors={@authors} votings={@votings} search={@search} search_tab={@search_tab} />
+  <Search.render authors={@authors} votings={@votings} search_tab={@search_tab} />
 <% else %>
   <div :if={@new_poll_visible?} class="pt-4">
     <.live_component
