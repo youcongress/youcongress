@@ -24,7 +24,7 @@ defmodule YouCongress.DigitalTwins.Regenerate do
          {:ok, %{opinion: data}} <-
            AI.generate_opinion(opinion.voting.title, :"gpt-4o", nil, opinion.author.name),
          %Answer{} = answer <- Votes.Answers.get_answer_by_response(data["agree_rate"]),
-         {:ok, {_opinion, vote}} =
+         {:ok, {_opinion, vote}} <-
            update_opinion_and_vote(opinion, data["opinion"], vote, answer.id) do
       Track.event("Regenerate opinion", current_user)
       {:ok, {opinion, vote}}
