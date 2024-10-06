@@ -7,6 +7,7 @@ defmodule YouCongress.Likes do
 
   alias YouCongress.Repo
   alias YouCongress.Likes.Like
+  alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Accounts.User
   alias YouCongress.Votings.Voting
@@ -90,5 +91,16 @@ defmodule YouCongress.Likes do
       select: o.id
     )
     |> Repo.all()
+  end
+
+  def delete_likes(%Opinion{} = opinion) do
+    result =
+      from(l in Like,
+        where: l.opinion_id == ^opinion.id
+      )
+      |> Repo.delete_all()
+
+    Opinions.update_opinion_likes_count(opinion)
+    result
   end
 end

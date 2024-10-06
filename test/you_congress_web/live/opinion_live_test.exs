@@ -56,7 +56,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
       assert length(Opinions.list_opinions()) == 3
 
-      opinion = Opinions.get_opinion(content: "Opinion2")
+      opinion = Opinions.get_by(content: "Opinion2")
       [new_twin_comment] = Opinion.descendants(opinion)
       assert new_twin_comment.twin
     end
