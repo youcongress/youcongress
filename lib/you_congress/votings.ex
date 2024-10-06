@@ -39,6 +39,9 @@ defmodule YouCongress.Votings do
       opts,
       base_query,
       fn
+        {:title_contains, title}, query ->
+          where(query, [v], fragment("? ILIKE ?", v.title, ^"%#{title}%"))
+
         {:order, :desc}, query ->
           order_by(query, desc: :updated_at)
 

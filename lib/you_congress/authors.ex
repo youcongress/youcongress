@@ -26,6 +26,13 @@ defmodule YouCongress.Authors do
       opts,
       base_query,
       fn
+        {:search, search}, query ->
+          where(
+            query,
+            [author],
+            ilike(author.name, ^"%#{search}%") or ilike(author.twitter_username, ^"%#{search}%")
+          )
+
         {:twin_origin, twin_origin}, query ->
           where(query, [author], author.twin_origin == ^twin_origin)
 
