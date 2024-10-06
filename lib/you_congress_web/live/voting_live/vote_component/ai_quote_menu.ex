@@ -65,7 +65,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
           >
             Report comment
           </.link>
-          <%= if @current_user && @current_user.author_id == @opinion.author_id do %>
+          <%= if @current_user && @opinion && @current_user.author_id == @opinion.author_id do %>
             <%= if @page == :voting_show && !@opinion.ancestry do %>
               <.link
                 phx-click="edit"
