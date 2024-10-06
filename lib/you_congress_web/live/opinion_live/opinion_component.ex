@@ -17,6 +17,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   attr :opinable, :boolean, default: false
   attr :delegable, :boolean, default: false
   attr :liked_opinion_ids, :list, default: []
+  attr :page, :atom, required: true
 
   def render(assigns) do
     ~H"""
@@ -35,7 +36,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
             opinion={@opinion}
             current_user={@current_user}
             voting={@voting}
-            page={:opinion_show}
+            page={@page}
           />
         </div>
       </div>
@@ -54,7 +55,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
       </div>
       <div class="flex justify-between pt-4 pb-4">
         <div>
-          <span :if={@opinable} class="pr-2">
+          <span class="pr-2">
             <OpinionComponent.like_icon opinion={@opinion} liked={@opinion.id in @liked_opinion_ids} />
           </span>
           <span class="pr-2">

@@ -73,6 +73,7 @@
       current_user={@current_user}
       editing={@editing}
       liked_opinion_ids={@liked_opinion_ids}
+      regenerating_opinion_id={@regenerating_opinion_id}
     />
   </div>
 <% end %>
@@ -95,6 +96,7 @@
             current_user={@current_user}
             delegable={true}
             liked_opinion_ids={@liked_opinion_ids}
+            regenerating_opinion_id={@regenerating_opinion_id}
           />
         </li>
       <% end %>
@@ -127,6 +129,7 @@
           current_user={@current_user}
           delegable={true}
           liked_opinion_ids={@liked_opinion_ids}
+          regenerating_opinion_id={@regenerating_opinion_id}
         />
       </li>
     <% end %>
@@ -153,6 +156,7 @@
             show_opinion={true}
             delegable={true}
             liked_opinion_ids={@liked_opinion_ids}
+            regenerating_opinion_id={@regenerating_opinion_id}
           />
         </li>
       <% end %>
