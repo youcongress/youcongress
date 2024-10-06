@@ -45,10 +45,29 @@ defmodule YouCongress.Opinions do
     |> Repo.preload(tables)
   end
 
+  @doc """
+  Gets a single opinion.
+
+  Returns `nil` if the Opinion does not exist.
+
+  ## Examples
+
+      iex> get_opinion(123)
+      %Opinion{}
+
+      iex> get_opinion(456)
+      nil
+
+  """
   def get_opinion(nil), do: nil
   def get_opinion(id) when is_integer(id) or is_binary(id), do: Repo.get(Opinion, id)
 
-  def get_opinion(opts) do
+  def get_opinion(id, preload: tables) do
+    Repo.get(Opinion, id)
+    |> Repo.preload(tables)
+  end
+
+  def get_by(opts) do
     query = build_query(opts)
     Repo.one(query)
   end
@@ -242,5 +261,12 @@ defmodule YouCongress.Opinions do
 
   def ai_replier_impl do
     Application.get_env(:you_congress, :ai_replier, YouCongress.Opinions.AIReplier)
+  end
+
+  def delete_subopinions(%Opinion{} = opinion) do
+    descendant_ids = Opinion.descendant_ids(opinion)
+    result = Repo.delete_all(from o in Opinion, where: o.id in ^descendant_ids)
+    update_descendants_count(opinion)
+    result
   end
 end

@@ -10,6 +10,9 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Votes
   alias YouCongress.Votes.Answers
   alias YouCongress.DelegationVotes
+  alias YouCongress.DigitalTwins.Regenerate
+  alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongressWeb.VotingLive.Show.VotesLoader
   alias YouCongressWeb.VotingLive.Show.CurrentUserVoteComponent
   alias YouCongressWeb.VotingLive.VoteComponent
@@ -45,6 +48,7 @@ defmodule YouCongressWeb.VotingLive.Show do
         "Find agreement, understand disagreement."
       )
       |> assign(reload: false)
+      |> assign(:regenerating_opinion_id, nil)
       |> VotesLoader.load_voting_and_votes(voting.id)
       |> load_random_votings(voting.id)
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user, voting))
@@ -142,7 +146,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       {:ok, _} ->
         socket =
           socket
-          |> replace_opinion(opinion_id, &(&1 + 1))
+          |> replace_opinion_likes(opinion_id, &(&1 + 1))
           |> assign(:liked_opinion_ids, [opinion_id | liked_opinion_ids])
 
         {:noreply, socket}
@@ -160,7 +164,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       {:ok, _} ->
         socket =
           socket
-          |> replace_opinion(opinion_id, &(&1 - 1))
+          |> replace_opinion_likes(opinion_id, &(&1 - 1))
           |> assign(:liked_opinion_ids, Enum.filter(liked_opinion_ids, &(&1 != opinion_id)))
 
         {:noreply, socket}
@@ -253,7 +257,35 @@ defmodule YouCongressWeb.VotingLive.Show do
     end
   end
 
+  def handle_event("regenerate", %{"opinion_id" => opinion_id}, socket) do
+    opinion_id = String.to_integer(opinion_id)
+    send(self(), {:regenerate, opinion_id})
+    {:noreply, assign(socket, :regenerating_opinion_id, opinion_id)}
+  end
+
   @impl true
+  def handle_info({:regenerate, opinion_id}, socket) do
+    %{assigns: %{current_user: current_user, voting: voting}} = socket
+
+    case Regenerate.regenerate(opinion_id, current_user) do
+      {:ok, {opinion, _vote}} ->
+        opinion = Opinions.get_opinion(opinion.id, preload: [:author, :voting])
+
+        socket =
+          socket
+          |> replace_opinion(opinion)
+          |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user, voting))
+          |> assign(:regenerating_opinion_id, nil)
+          |> put_flash(:info, "Opinion regenerated.")
+
+        {:noreply, socket}
+
+      error ->
+        Logger.debug("Error regenerating opinion. #{inspect(error)}")
+        {:noreply, put_flash(socket, :error, "Error regenerating opinion.")}
+    end
+  end
+
   def handle_info(:reload, socket) do
     socket = VotesLoader.load_voting_and_votes(socket, socket.assigns.voting.id)
 
@@ -266,7 +298,7 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   def handle_info(_, socket), do: {:noreply, socket}
 
-  defp replace_opinion(socket, opinion_id, operation) do
+  defp replace_opinion(socket, opinion) do
     %{
       assigns: %{
         votes_from_delegates: votes_from_delegates,
@@ -278,19 +310,58 @@ defmodule YouCongressWeb.VotingLive.Show do
     socket
     |> assign(
       :votes_from_delegates,
-      Enum.map(votes_from_delegates, &replace_opinion_in_vote(&1, opinion_id, operation))
+      Enum.map(votes_from_delegates, &replace_opinion_in_vote(&1, opinion))
     )
     |> assign(
       :votes_from_non_delegates,
-      Enum.map(votes_from_non_delegates, &replace_opinion_in_vote(&1, opinion_id, operation))
+      Enum.map(
+        votes_from_non_delegates,
+        &replace_opinion_in_vote(&1, opinion)
+      )
     )
     |> assign(
       :current_user_vote,
-      replace_opinion_in_vote(current_user_vote, opinion_id, operation)
+      replace_opinion_in_vote(current_user_vote, opinion)
     )
   end
 
   defp replace_opinion_in_vote(
+         %{opinion: %{id: opinion_id}} = vote,
+         %Opinion{id: opinion_id} = opinion
+       ) do
+    Map.put(vote, :opinion, opinion)
+  end
+
+  defp replace_opinion_in_vote(vote, _), do: vote
+
+  defp replace_opinion_likes(socket, opinion_id, operation) do
+    %{
+      assigns: %{
+        votes_from_delegates: votes_from_delegates,
+        votes_from_non_delegates: votes_from_non_delegates,
+        current_user_vote: current_user_vote
+      }
+    } = socket
+
+    socket
+    |> assign(
+      :votes_from_delegates,
+      Enum.map(votes_from_delegates, &replace_opinion_likes_in_vote(&1, opinion_id, operation))
+    )
+    |> assign(
+      :votes_from_non_delegates,
+      Enum.map(
+        votes_from_non_delegates,
+        &replace_opinion_likes_in_vote(&1, opinion_id, operation)
+      )
+    )
+    |> assign(
+      :current_user_vote,
+      replace_opinion_likes_in_vote(current_user_vote, opinion_id, operation)
+    )
+  end
+
+  defp replace_opinion_likes_in_vote(
          %{opinion: %{id: opinion_id}} = vote,
          opinion_id,
          operation
@@ -299,7 +370,7 @@ defmodule YouCongressWeb.VotingLive.Show do
     Map.put(vote, :opinion, opinion)
   end
 
-  defp replace_opinion_in_vote(vote, _, _), do: vote
+  defp replace_opinion_likes_in_vote(vote, _, _), do: vote
 
   @spec page_title(atom, binary) :: binary
   defp page_title(:show, voting_title), do: voting_title

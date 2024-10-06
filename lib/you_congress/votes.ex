@@ -198,6 +198,14 @@ defmodule YouCongress.Votes do
 
   @doc """
   Gets a single vote by some options.
+
+  ## Examples
+
+      iex> get_by(%{id: 123})
+      %Vote{}
+
+      iex> get_by(%{id: 456})
+      nil
   """
   @spec get_by(map) :: Vote.t() | nil
   def get_by(options) do

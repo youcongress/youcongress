@@ -88,7 +88,7 @@ defmodule YouCongress.Votings.Voting do
   defp new_slug(_), do: nil
 
   defp words() do
-    ~w(a an and as at but by for in nor of on or so the to up yet would should will shall he she it them we with consider accept that this those these)
+    ~w(a an and as at but by for in nor of on or so the to up yet would should will shall could can he she it them we with consider accept that this those these)
   end
 
   defp remove_some_words(slug) do

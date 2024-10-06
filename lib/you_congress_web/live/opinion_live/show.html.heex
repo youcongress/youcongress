@@ -13,6 +13,7 @@
   current_user={@current_user}
   delegating={@delegating}
   voting={@opinion.voting}
+  page={:opinion_show}
 />
 
 <div class="pb-2" id="reply">replying to <%= @opinion.author.name %></div>
@@ -60,6 +61,7 @@
         voting={@opinion.voting}
         opinable={true}
         liked_opinion_ids={@liked_opinion_ids}
+        page={:opinion_show}
       />
     </div>
   <% end %>

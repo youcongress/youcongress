@@ -22,24 +22,36 @@
     </div>
   <% end %>
   <%= if @show_vote do %>
-    <div class="text-sm pb-2">
-      <%= if @vote.twin do %>
-        <%= if !@include_author_bio, do: "#{@author.name} AI" %> would <%= response(
-          assigns,
-          @vote.answer.response
-        ) %> and say according to AI:
-      <% else %>
-        <%= if !@include_author_bio, do: @author.name || "Anonymous" %>
-        <%= response_with_s(
-          assigns,
-          @vote.answer.response
-        ) %>
-        <%= unless @vote.direct do %>
-          via delegates
+    <div class="flex justify-between">
+      <div class="text-sm pb-2">
+        <%= if @vote.twin do %>
+          <%= if !@include_author_bio do %>
+            <%= "#{@author.name} AI" %>
+          <% end %>
+          would <%= response(assigns, @vote.answer.response) %> and say according to AI:
+        <% else %>
+          <%= if !@include_author_bio, do: @author.name || "Anonymous" %>
+          <%= response_with_s(
+            assigns,
+            @vote.answer.response
+          ) %>
+          <%= unless @vote.direct do %>
+            via delegates
+          <% end %>
+          <%= if @vote.opinion do %>
+            and says:
+          <% end %>
         <% end %>
-        <%= if @vote.opinion do %>
-          and says:
-        <% end %>
+      </div>
+      <%= if !@include_author_bio do %>
+        <AiQuoteMenu.render
+          author={@author}
+          id={@vote.id}
+          opinion={@vote.opinion}
+          current_user={@current_user}
+          voting={@voting}
+          page={:voting_show}
+        />
       <% end %>
     </div>
   <% end %>
@@ -51,6 +63,9 @@
         </.link>
       <% else %>
         <%= @vote.opinion.content %>
+      <% end %>
+      <%= if @regenerating_opinion_id == @vote.opinion.id do %>
+        <img src="/images/loading.gif" alt="Loading" />
       <% end %>
       <%= if @vote.opinion_id && @vote.opinion.source_url do %>
         <span class="text-xs">
