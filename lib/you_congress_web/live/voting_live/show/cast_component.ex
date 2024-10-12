@@ -11,6 +11,9 @@ defmodule YouCongressWeb.VotingLive.Show.CastComponent do
 
   def buttons(assigns) do
     ~H"""
+    <div class="pb-1">
+      Cast your vote:
+    </div>
     <div class="flex">
       <CastComponent.button
         response="Strongly agree"
@@ -107,6 +110,76 @@ defmodule YouCongressWeb.VotingLive.Show.CastComponent do
           <div><%= @response %></div>
         <% end %>
       </button>
+    </div>
+    """
+  end
+
+  attr :total_votes, :integer, required: true
+  attr :vote_frequencies, :map, required: true
+
+  def results(assigns) do
+    ~H"""
+    <div class="pt-6 pb-1">
+      Results (<%= @total_votes %>):
+    </div>
+    <div class="space-y-1">
+      <div class="mb-2">
+        <div class="w-full h-2 bar-bg rounded-full flex">
+          <CastComponent.result
+            response="Strongly agree"
+            percentage={elem(@vote_frequencies["Strongly agree"] || {0, 0}, 1)}
+          />
+          <%= if @vote_frequencies["Strongly agree"] && @vote_frequencies["Agree"] do %>
+            <div class="bg-black w-px"></div>
+          <% end %>
+          <CastComponent.result
+            response="Agree"
+            percentage={elem(@vote_frequencies["Agree"] || {0, 0}, 1)}
+          />
+          <%= if @vote_frequencies["Strongly agree"] || @vote_frequencies["Agree"] do %>
+            <div class="bg-white w-0.5"></div>
+          <% end %>
+          <CastComponent.result
+            response="Abstain"
+            percentage={elem(@vote_frequencies["Abstain"] || {0, 0}, 1)}
+          />
+          <%= if @vote_frequencies["N/A"] && @vote_frequencies["Abstain"] do %>
+            <div class="bg-black w-px"></div>
+          <% end %>
+          <CastComponent.result
+            response="N/A"
+            percentage={elem(@vote_frequencies["N/A"] || {0, 0}, 1)}
+          />
+          <%= if (@vote_frequencies["Abstain"] || @vote_frequencies["N/A"]) && (@vote_frequencies["Disagree"] || @vote_frequencies["Strongly disagree"]) do %>
+            <div class="bg-white w-0.5"></div>
+          <% end %>
+          <CastComponent.result
+            response="Disagree"
+            percentage={elem(@vote_frequencies["Disagree"] || {0, 0}, 1)}
+          />
+          <%= if @vote_frequencies["Disagree"] && @vote_frequencies["Strongly disagree"] do %>
+            <div class="bg-black w-px"></div>
+          <% end %>
+          <CastComponent.result
+            response="Strongly disagree"
+            percentage={elem(@vote_frequencies["Strongly disagree"] || {0, 0}, 1)}
+          />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :response, :string, required: true
+  attr :percentage, :integer, required: true
+  attr :class, :string, default: ""
+
+  def result(assigns) do
+    ~H"""
+    <div
+      class={["bg-#{response_color(@response)}-500 h-2", @class]}
+      style={"width: #{@percentage || 0}%;"}
+    >
     </div>
     """
   end
