@@ -2,17 +2,22 @@
   <%= if @page != :author_show do %>
     <div>
       <div class="flex justify-between">
-        <div>
-          <strong>
-            <.link href={author_path(@author)}>
-            <OpinionComponent.avatar_icon is_human={
-              !@vote.twin
-            } />
-            <%= @author.name %><%= if @vote.twin, do: " AI" %>
-          </.link></strong>,
-          <span class="text-sm">
-            <%= @author.bio || @author.description %>
-          </span>
+        <div class="flex justify-between space-x-2">
+          <div class="pt-2">
+            <.link href={author_path(@author)} class="cursor-pointer">
+              <OpinionComponent.avatar_icon is_human={!@vote.twin} />
+            </.link>
+          </div>
+          <div>
+            <strong>
+              <.link href={author_path(@author)}>
+                <%= @author.name %><%= if @vote.twin, do: " AI" %>
+              </.link>
+            </strong>
+            <div class="text-sm">
+              <%= @author.bio || @author.description %>
+            </div>
+          </div>
         </div>
         <%= if @vote.opinion_id do %>
           <AiQuoteMenu.render
