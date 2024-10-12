@@ -154,9 +154,12 @@ defmodule YouCongress.Votings do
     case voting
          |> Voting.changeset(attrs)
          |> Repo.update() do
-      {:ok, voting} ->
-        YouCongress.HallsVotings.sync!(voting.id)
-        {:ok, voting}
+      {:ok, new_voting} ->
+        if attrs[:title] && attrs[:title] != voting.title do
+          YouCongress.HallsVotings.sync!(new_voting.id)
+        end
+
+        {:ok, new_voting}
 
       {:error, changeset} ->
         {:error, changeset}
