@@ -32,7 +32,7 @@
       <div class="text-sm pb-2">
         <OpinionComponent.avatar_icon :if={@page == :author_show} is_human={!@vote.twin} />
         <%= if @vote.twin do %>
-          <%= if @page != :author_show do %>
+          <%= if @page == :author_show do %>
             <%= "#{@author.name} AI" %>
           <% end %>
           would <%= response(assigns, @vote.answer.response) %> and say according to AI:
