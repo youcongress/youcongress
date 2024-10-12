@@ -243,11 +243,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   end
 
   def handle_info({:voted, vote}, socket) do
-    socket =
-      socket
-      |> assign(:current_user_vote, vote)
-
-    {:noreply, socket}
+    {:noreply, assign(socket, :current_user_vote, vote)}
   end
 
   def handle_info(_, socket), do: {:noreply, socket}
