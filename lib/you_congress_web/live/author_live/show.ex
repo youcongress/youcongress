@@ -211,7 +211,12 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   def handle_info({:put_flash, kind, msg}, socket) do
-    {:noreply, put_flash(socket, kind, msg)}
+    socket =
+      socket
+      |> clear_flash()
+      |> put_flash(kind, msg)
+
+    {:noreply, socket}
   end
 
   def handle_info(_, socket), do: {:noreply, socket}

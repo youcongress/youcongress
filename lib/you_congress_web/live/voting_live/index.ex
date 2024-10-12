@@ -1,16 +1,22 @@
 defmodule YouCongressWeb.VotingLive.Index do
   use YouCongressWeb, :live_view
 
+  require Logger
+
   alias YouCongress.Authors
+  alias YouCongress.Delegations
+  alias YouCongress.Likes
   alias YouCongress.Votes
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
-  alias YouCongressWeb.VotingLive.Index.HallNav
+  alias YouCongress.DigitalTwins.Regenerate
   alias YouCongress.Track
+  alias YouCongressWeb.VotingLive.Index.HallNav
   alias YouCongressWeb.VotingLive.NewFormComponent
   alias YouCongressWeb.VotingLive.FormComponent
   alias YouCongressWeb.VotingLive.Index.Search
   alias YouCongressWeb.VotingLive.CastVoteComponent
+  alias YouCongressWeb.VotingLive.VoteComponent
 
   @default_hall "ai"
 
@@ -20,13 +26,25 @@ defmodule YouCongressWeb.VotingLive.Index do
     voting_ids = Enum.map(votings, & &1.id)
 
     socket = assign_current_user(socket, session["user_token"])
+    current_user = socket.assigns.current_user
+
+    votes_by_voting_id =
+      YouCongress.Votings.VotingQueries.get_one_vote_per_voting(
+        voting_ids,
+        current_user
+      )
+
+    liked_opinion_ids = Likes.get_liked_opinion_ids(current_user)
 
     socket =
       socket
       |> assign(:votes, load_votes(voting_ids, socket.assigns.current_user))
       |> assign(:search, nil)
+      |> assign(:delegate_ids, load_delegate_ids(current_user))
+      |> assign(:votes_by_voting_id, votes_by_voting_id)
       |> assign(:search_tab, :polls)
       |> assign(:votings, votings)
+      |> assign(:liked_opinion_ids, liked_opinion_ids)
       |> assign(:hall_name, params["hall"] || @default_hall)
       |> assign(:new_poll_visible?, false)
 
@@ -93,7 +111,34 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   @impl true
   def handle_info({:put_flash, kind, msg}, socket) do
-    {:noreply, put_flash(socket, kind, msg)}
+    socket =
+      socket
+      |> clear_flash()
+      |> put_flash(kind, msg)
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:regenerate, opinion_id}, socket) do
+    %{assigns: %{current_user: current_user, votes_by_voting_id: votes_by_voting_id}} = socket
+
+    case Regenerate.regenerate(opinion_id, current_user) do
+      {:ok, {_, vote}} ->
+        vote = Votes.get_vote(vote.id, preload: [:answer, :opinion, :author])
+        votes_by_voting_id = Map.put(votes_by_voting_id, vote.voting_id, vote)
+
+        socket =
+          socket
+          |> assign(:votes_by_voting_id, votes_by_voting_id)
+          |> assign(:regenerating_opinion_id, nil)
+          |> put_flash(:info, "Opinion regenerated.")
+
+        {:noreply, socket}
+
+      error ->
+        Logger.debug("Error regenerating opinion. #{inspect(error)}")
+        {:noreply, put_flash(socket, :error, "Error regenerating opinion.")}
+    end
   end
 
   def handle_info(_, socket), do: {:noreply, socket}
@@ -144,5 +189,11 @@ defmodule YouCongressWeb.VotingLive.Index do
     Map.new(votes, fn vote ->
       {vote.voting_id, vote}
     end)
+  end
+
+  defp load_delegate_ids(nil), do: []
+
+  defp load_delegate_ids(current_user) do
+    Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
   end
 end

@@ -269,4 +269,9 @@ defmodule YouCongress.Opinions do
     update_descendants_count(opinion)
     result
   end
+
+  def count do
+    from(o in Opinion, select: count(o.id))
+    |> Repo.one()
+  end
 end

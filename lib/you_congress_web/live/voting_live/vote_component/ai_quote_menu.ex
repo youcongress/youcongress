@@ -15,6 +15,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
   attr :current_user, :map, required: true
   attr :voting, :map, required: true
   attr :page, :atom, required: true
+  attr :myself, :map, default: nil
 
   def render(assigns) do
     ~H"""
@@ -47,12 +48,13 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
               </.link>
             </span>
           <% end %>
-          <%= if @opinion && @opinion.twin && @page in [:voting_show, :author_show] && Permissions.can_regenerate_opinion?(@current_user) do %>
+          <%= if @opinion && @opinion.twin && @page in [:voting_index, :voting_show, :author_show] && Permissions.can_regenerate_opinion?(@current_user) do %>
             <span class="block p-2">
               <.link
                 href="#"
                 class="hover:text-indigo-600"
                 phx-click="regenerate"
+                phx-target={@myself}
                 phx-value-opinion_id={@opinion.id}
               >
                 Regenerate AI (& delete likes/comments)

@@ -88,7 +88,7 @@
           current_user={@current_user}
           delegating?={false}
           delegable={false}
-          liked_opinion_ids={@liked_opinion_ids}
+          liked={vote.opinion_id in @liked_opinion_ids}
           regenerating_opinion_id={@regenerating_opinion_id}
           page={:author_show}
         />
