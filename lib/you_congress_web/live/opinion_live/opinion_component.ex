@@ -24,15 +24,24 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
     <div class="pb-4">
       <div>
         <div class="flex justify-between">
-          <div>
-            <strong><.link href={AuthorLive.Show.author_path(@opinion.author)}>
-            <OpinionComponent.avatar_icon is_human={
-                !@opinion.twin
-              } />
-            <%= @opinion.author.name %><%= if @opinion.twin, do: " AI" %></.link></strong>,
-            <span class="text-sm">
-              <%= @opinion.author.bio || @opinion.author.description %>
-            </span>
+          <div class="flex justify-between space-x-2">
+            <div class="pt-2">
+              <.link href={AuthorLive.Show.author_path(@opinion.author)} class="cursor-pointer">
+                <OpinionComponent.avatar_icon is_human={!@opinion.twin} />
+              </.link>
+            </div>
+            <div>
+              <div>
+                <strong>
+                  <.link href={AuthorLive.Show.author_path(@opinion.author)}>
+                    <%= @opinion.author.name %><%= if @opinion.twin, do: " AI" %>
+                  </.link>
+                </strong>
+              </div>
+              <div class="text-sm">
+                <%= @opinion.author.bio || @opinion.author.description %>
+              </div>
+            </div>
           </div>
           <AiQuoteMenu.render
             author={@opinion.author}
@@ -45,7 +54,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
         </div>
       </div>
       <%= if @opinion.twin do %>
-        <div class="text-xs text-gray-600">
+        <div class="pt-1 text-xs text-gray-600">
           would say according to AI:
         </div>
       <% end %>
@@ -162,17 +171,9 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   def avatar_icon(assigns) do
     ~H"""
     <%= if @is_human do %>
-      <img
-        src="/images/human-avatar.svg"
-        alt="human-avatar"
-        class="-ml-2 h-8 w-8 inline cursor-pointer"
-      />
+      <img src="/images/human-avatar.svg" alt="human-avatar" class="h-8 w-8 inline" />
     <% else %>
-      <img
-        src="/images/robot-avatar.svg"
-        alt="robot-avatar"
-        class="-ml-2 h-8 w-8 inline cursor-pointer"
-      />
+      <img src="/images/robot-avatar.svg" alt="robot-avatar" class="h-8 w-8 inline" />
     <% end %>
     """
   end
