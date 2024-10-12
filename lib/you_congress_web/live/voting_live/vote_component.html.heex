@@ -1,9 +1,15 @@
 <div>
-  <%= if @include_author_bio do %>
+  <%= if @page != :author_show do %>
     <div>
       <div class="flex justify-between">
         <div>
-          <strong><.link href={author_path(@author)}><%= @author.name %><%= if @vote.twin, do: " AI" %></.link></strong>,
+          <strong>
+            <.link href={author_path(@author)}>
+            <OpinionComponent.avatar_icon is_human={
+              !@vote.twin
+            } />
+            <%= @author.name %><%= if @vote.twin, do: " AI" %>
+          </.link></strong>,
           <span class="text-sm">
             <%= @author.bio || @author.description %>
           </span>
@@ -24,13 +30,14 @@
   <%= if @show_vote do %>
     <div class="flex justify-between">
       <div class="text-sm pb-2">
+        <OpinionComponent.avatar_icon :if={@page == :author_show} is_human={!@vote.twin} />
         <%= if @vote.twin do %>
-          <%= if !@include_author_bio do %>
+          <%= if @page != :author_show do %>
             <%= "#{@author.name} AI" %>
           <% end %>
           would <%= response(assigns, @vote.answer.response) %> and say according to AI:
         <% else %>
-          <%= if !@include_author_bio, do: @author.name || "Anonymous" %>
+          <%= if @page == :author_show, do: @author.name || "Anonymous" %>
           <%= response_with_s(
             assigns,
             @vote.answer.response
@@ -43,7 +50,7 @@
           <% end %>
         <% end %>
       </div>
-      <%= if !@include_author_bio do %>
+      <%= if @page == :author_show do %>
         <AiQuoteMenu.render
           author={@author}
           id={@vote.id}

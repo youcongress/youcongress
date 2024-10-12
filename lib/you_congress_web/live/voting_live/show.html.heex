@@ -54,6 +54,7 @@
       editing={@editing}
       liked_opinion_ids={@liked_opinion_ids}
       regenerating_opinion_id={@regenerating_opinion_id}
+      page={:voting_show}
     />
   </div>
 <% end %>
@@ -69,7 +70,6 @@
             voting={@voting}
             vote={vote}
             author={vote.author}
-            include_author_bio={true}
             delegating?={@delegations[vote.author_id]}
             show_vote={true}
             show_opinion={true}
@@ -77,6 +77,7 @@
             delegable={true}
             liked_opinion_ids={@liked_opinion_ids}
             regenerating_opinion_id={@regenerating_opinion_id}
+            page={:voting_show}
           />
         </li>
       <% end %>
@@ -102,7 +103,6 @@
           voting={@voting}
           vote={vote}
           author={vote.author}
-          include_author_bio={true}
           delegating?={@delegations[vote.author_id]}
           show_vote={true}
           show_opinion={true}
@@ -110,6 +110,7 @@
           delegable={true}
           liked_opinion_ids={@liked_opinion_ids}
           regenerating_opinion_id={@regenerating_opinion_id}
+          page={:voting_show}
         />
       </li>
     <% end %>
@@ -129,7 +130,6 @@
             voting={@voting}
             vote={vote}
             author={vote.author}
-            include_author_bio={true}
             delegating?={@delegations[vote.author_id]}
             current_user={@current_user}
             show_vote={true}
@@ -137,6 +137,7 @@
             delegable={true}
             liked_opinion_ids={@liked_opinion_ids}
             regenerating_opinion_id={@regenerating_opinion_id}
+            page={:voting_show}
           />
         </li>
       <% end %>
