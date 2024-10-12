@@ -162,9 +162,17 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   def avatar_icon(assigns) do
     ~H"""
     <%= if @is_human do %>
-      <img src="/images/human-avatar.svg" class="-ml-2 h-8 w-8 inline cursor-pointer" />
+      <img
+        src="/images/human-avatar.svg"
+        alt="human-avatar"
+        class="-ml-2 h-8 w-8 inline cursor-pointer"
+      />
     <% else %>
-      <img src="/images/robot-avatar.svg" class="-ml-2 h-8 w-8 inline cursor-pointer" />
+      <img
+        src="/images/robot-avatar.svg"
+        alt="robot-avatar"
+        class="-ml-2 h-8 w-8 inline cursor-pointer"
+      />
     <% end %>
     """
   end
