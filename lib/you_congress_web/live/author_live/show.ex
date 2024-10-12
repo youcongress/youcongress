@@ -9,13 +9,11 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongress.DigitalTwins.Regenerate
   alias Phoenix.LiveView.Socket
   alias YouCongress.Votes
-  alias YouCongress.Votes.Answers
   alias YouCongress.Likes
   alias YouCongress.Track
   alias YouCongressWeb.AuthorLive.FormComponent
   alias YouCongressWeb.VotingLive.VoteComponent
   alias YouCongressWeb.Tools.Tooltip
-  alias YouCongress.DelegationVotes
   alias YouCongressWeb.VotingLive.CastVoteComponent
 
   @impl true
@@ -217,30 +215,6 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   def handle_info(_, socket), do: {:noreply, socket}
-
-  defp maybe_replace_vote_in_votes(socket, false, _, _), do: socket
-
-  defp maybe_replace_vote_in_votes(socket, true, old_vote_id, nil) do
-    votes =
-      Enum.filter(socket.assigns.votes, fn v -> v.id != old_vote_id end)
-
-    assign(socket, :votes, votes)
-  end
-
-  defp maybe_replace_vote_in_votes(socket, true, old_vote_id, new_vote_id) do
-    vote = Votes.get_vote(new_vote_id, preload: [:answer, :opinion, :voting])
-
-    votes =
-      Enum.map(socket.assigns.votes, fn v ->
-        if v.id == old_vote_id do
-          vote
-        else
-          v
-        end
-      end)
-
-    assign(socket, :votes, votes)
-  end
 
   def author_path(%{twitter_username: nil, id: author_id}) do
     ~p"/a/#{author_id}"

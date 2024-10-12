@@ -50,9 +50,6 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     |> assign_main_variables(voting, current_user)
   end
 
-  defp get_total_votes(nil, a, b), do: a + b
-  defp get_total_votes(_, a, b), do: a + b + 1
-
   defp x_post(nil, voting), do: voting.title
 
   defp x_post(%{opinion_id: nil, direct: false} = current_user_vote, voting) do

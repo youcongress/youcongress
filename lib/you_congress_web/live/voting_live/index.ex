@@ -10,9 +10,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongressWeb.VotingLive.NewFormComponent
   alias YouCongressWeb.VotingLive.FormComponent
   alias YouCongressWeb.VotingLive.Index.Search
-  alias YouCongressWeb.VotingLive.ResultsComponent
   alias YouCongressWeb.VotingLive.CastVoteComponent
-  alias YouCongress.Votes.VoteFrequencies
 
   @default_hall "ai"
 
