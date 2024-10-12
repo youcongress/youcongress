@@ -7,9 +7,6 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Likes
   alias YouCongress.Delegations
   alias YouCongress.Votings
-  alias YouCongress.Votes
-  alias YouCongress.Votes.Answers
-  alias YouCongress.DelegationVotes
   alias YouCongress.DigitalTwins.Regenerate
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
@@ -20,7 +17,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Track
   alias YouCongress.Workers.PublicFiguresWorker
   alias YouCongress.Accounts.Permissions
-  alias YouCongressWeb.VotingLive.Show.CastComponent
+  alias YouCongressWeb.VotingLive.CastVoteComponent
 
   @impl true
   def mount(_, session, socket) do
@@ -77,61 +74,6 @@ defmodule YouCongressWeb.VotingLive.Show do
     Process.send_after(self(), :reload, 1_000)
 
     {:noreply, clear_flash(socket)}
-  end
-
-  def handle_event("vote", _, %{assigns: %{current_user: nil}} = socket) do
-    {:noreply, put_flash(socket, :error, "You must be logged in to vote.")}
-  end
-
-  def handle_event("vote", %{"response" => response}, socket) do
-    %{
-      assigns: %{
-        current_user: current_user,
-        voting: voting
-      }
-    } = socket
-
-    answer_id = Answers.get_basic_answer_id(response)
-
-    case Votes.create_or_update(%{
-           voting_id: voting.id,
-           answer_id: answer_id,
-           author_id: current_user.author_id,
-           direct: true
-         }) do
-      {:ok, _} ->
-        Track.event("Vote", current_user)
-
-        socket =
-          socket
-          |> VotesLoader.load_voting_and_votes(socket.assigns.voting.id)
-          |> put_flash(
-            :info,
-            "You voted #{response}."
-          )
-
-        {:noreply, socket}
-
-      {:error, error} ->
-        Logger.error("Error creating vote: #{inspect(error)}")
-        {:noreply, put_flash(socket, :error, "Error creating vote.")}
-    end
-  end
-
-  def handle_event("delete-direct-vote", _, socket) do
-    %{
-      assigns: %{current_user_vote: current_user_vote, current_user: current_user, voting: voting}
-    } = socket
-
-    case Votes.delete_vote(current_user_vote) do
-      {:ok, _} ->
-        Track.event("Delete Vote", current_user)
-        DelegationVotes.update_author_voting_delegated_votes(current_user.author_id, voting.id)
-        {:noreply, VotesLoader.load_voting_and_votes(socket, voting.id)}
-
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Error deleting vote.")}
-    end
   end
 
   def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
@@ -292,6 +234,18 @@ defmodule YouCongressWeb.VotingLive.Show do
     if socket.assigns.voting.generating_left > 0 do
       Process.send_after(self(), :reload, 1_000)
     end
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:put_flash, kind, msg}, socket) do
+    {:noreply, put_flash(socket, kind, msg)}
+  end
+
+  def handle_info({:voted, vote}, socket) do
+    socket =
+      socket
+      |> assign(:current_user_vote, vote)
 
     {:noreply, socket}
   end

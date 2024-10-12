@@ -65,9 +65,16 @@
           <%= vote.voting.title %>
         </.link>
         <div class="pb-2">
-          <CastComponent.buttons
+          <div class="pb-1">
+            Cast your vote:
+          </div>
+          <.live_component
+            module={CastVoteComponent}
+            id={vote.voting_id}
+            voting={vote.voting}
             current_user_vote={@current_user_votes_by_voting_id[vote.voting_id]}
-            voting_id={vote.voting_id}
+            current_user={@current_user}
+            display_results={:never}
           />
         </div>
         <.live_component

@@ -2,6 +2,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Authors
+  alias YouCongress.Votes
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
   alias YouCongressWeb.VotingLive.Index.HallNav
@@ -9,23 +10,27 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongressWeb.VotingLive.NewFormComponent
   alias YouCongressWeb.VotingLive.FormComponent
   alias YouCongressWeb.VotingLive.Index.Search
+  alias YouCongressWeb.VotingLive.ResultsComponent
+  alias YouCongressWeb.VotingLive.CastVoteComponent
+  alias YouCongress.Votes.VoteFrequencies
 
   @default_hall "ai"
 
   @impl true
   def mount(params, session, socket) do
     votings = load_votings(params["hall"])
+    voting_ids = Enum.map(votings, & &1.id)
+
+    socket = assign_current_user(socket, session["user_token"])
 
     socket =
       socket
-      |> assign_current_user(session["user_token"])
+      |> assign(:votes, load_votes(voting_ids, socket.assigns.current_user))
       |> assign(:search, nil)
       |> assign(:search_tab, :polls)
-      |> assign(
-        votings: votings,
-        hall_name: params["hall"] || @default_hall,
-        new_poll_visible?: false
-      )
+      |> assign(:votings, votings)
+      |> assign(:hall_name, params["hall"] || @default_hall)
+      |> assign(:new_poll_visible?, false)
 
     if connected?(socket) do
       %{assigns: %{current_user: current_user}} = socket
@@ -88,6 +93,13 @@ defmodule YouCongressWeb.VotingLive.Index do
     {:noreply, assign(socket, search_tab: :delegates)}
   end
 
+  @impl true
+  def handle_info({:put_flash, kind, msg}, socket) do
+    {:noreply, put_flash(socket, kind, msg)}
+  end
+
+  def handle_info(_, socket), do: {:noreply, socket}
+
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
     |> assign(:page_title, "Edit Voting")
@@ -114,11 +126,25 @@ defmodule YouCongressWeb.VotingLive.Index do
     if hall_name != "all" do
       Votings.list_votings(
         hall_name: hall_name || @default_hall,
-        order: :desc,
-        preload: [:halls]
+        order: :desc
       )
     else
-      Votings.list_votings(order: :desc, preload: [:halls])
+      Votings.list_votings(order: :desc)
     end
+  end
+
+  defp load_votes(_, nil), do: %{}
+
+  defp load_votes(voting_ids, current_user) do
+    votes =
+      Votes.list_votes(
+        voting_ids: voting_ids,
+        author_ids: [current_user.author_id],
+        preload: [:answer]
+      )
+
+    Map.new(votes, fn vote ->
+      {vote.voting_id, vote}
+    end)
   end
 end

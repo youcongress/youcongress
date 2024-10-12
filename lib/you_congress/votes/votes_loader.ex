@@ -16,7 +16,7 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
   @spec load_voting_and_votes(Socket.t(), number) :: Socket.t()
   def load_voting_and_votes(socket, voting_id) do
     %{assigns: %{current_user: current_user}} = socket
-    voting = Votings.get_voting!(voting_id)
+    voting = Votings.get_voting!(voting_id, preload: [:halls])
     current_user_vote = get_current_user_vote(voting, current_user)
     exclude_ids = (current_user_vote && [current_user_vote.id]) || []
 
@@ -37,13 +37,6 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     share_to_x_text =
       x_post(current_user_vote, voting) <> " https://youcongress.com/p/#{voting.slug}"
 
-    total_votes =
-      get_total_votes(
-        current_user_vote,
-        length(votes_with_opinion),
-        length(votes_without_opinion)
-      )
-
     socket
     |> assign(
       voting: voting,
@@ -52,8 +45,7 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
       votes_without_opinion: votes_without_opinion,
       current_user_vote: current_user_vote,
       percentage: get_percentage(voting),
-      share_to_x_text: share_to_x_text,
-      total_votes: total_votes
+      share_to_x_text: share_to_x_text
     )
     |> assign_main_variables(voting, current_user)
   end
@@ -86,7 +78,6 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
   def assign_main_variables(socket, voting, current_user) do
     socket
     |> load_delegations(current_user)
-    |> assign_vote_frequencies(voting)
     |> assign_current_user_vote(voting, current_user)
   end
 
@@ -124,19 +115,6 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     assign(socket, delegations: delegations)
   end
 
-  @spec get_vote_frequencies(Voting.t()) :: %{binary => number}
-  defp get_vote_frequencies(voting) do
-    vote_frequencies =
-      Votes.count_by_response(voting.id)
-      |> Enum.into(%{})
-
-    total = Enum.sum(Map.values(vote_frequencies))
-
-    vote_frequencies
-    |> Enum.map(fn {k, v} -> {k, {v, round(v * 100 / total)}} end)
-    |> Enum.into(%{})
-  end
-
   @spec get_votes_from_delegates([Vote.t()], User.t() | nil) :: [Vote.t()] | []
   defp get_votes_from_delegates(_, nil), do: []
 
@@ -147,9 +125,5 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
 
   defp assign_current_user_vote(socket, voting, current_user) do
     assign(socket, current_user_vote: get_current_user_vote(voting, current_user))
-  end
-
-  defp assign_vote_frequencies(socket, voting) do
-    assign(socket, vote_frequencies: get_vote_frequencies(voting))
   end
 end

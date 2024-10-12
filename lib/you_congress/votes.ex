@@ -313,6 +313,14 @@ defmodule YouCongress.Votes do
     Repo.aggregate(Vote, :count, :id)
   end
 
+  def count_by_voting(voting_id) do
+    from(v in Vote,
+      where: v.voting_id == ^voting_id,
+      select: count(v.id)
+    )
+    |> Repo.one()
+  end
+
   @doc """
   Returns the number of votes of an author.
   """
