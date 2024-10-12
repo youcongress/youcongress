@@ -25,7 +25,11 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
       <div>
         <div class="flex justify-between">
           <div>
-            <strong><.link href={AuthorLive.Show.author_path(@opinion.author)}><%= @opinion.author.name %><%= if @opinion.twin, do: " AI" %></.link></strong>,
+            <strong><.link href={AuthorLive.Show.author_path(@opinion.author)}>
+            <OpinionComponent.avatar_icon is_human={
+                !@opinion.twin
+              } />
+            <%= @opinion.author.name %><%= if @opinion.twin, do: " AI" %></.link></strong>,
             <span class="text-sm">
               <%= @opinion.author.bio || @opinion.author.description %>
             </span>
@@ -150,6 +154,18 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
     <a href={@href} target="_blank">
       <img src="/images/x.svg" alt="X" class="h-5 w-5 inline cursor-pointer" />
     </a>
+    """
+  end
+
+  attr :is_human, :boolean, default: true
+
+  def avatar_icon(assigns) do
+    ~H"""
+    <%= if @is_human do %>
+      <img src="/images/human-avatar.svg" class="-ml-2 h-8 w-8 inline cursor-pointer" />
+    <% else %>
+      <img src="/images/robot-avatar.svg" class="-ml-2 h-8 w-8 inline cursor-pointer" />
+    <% end %>
     """
   end
 

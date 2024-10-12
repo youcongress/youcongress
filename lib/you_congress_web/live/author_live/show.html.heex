@@ -75,7 +75,6 @@
           id={vote.id}
           voting={vote.voting}
           author={@author}
-          include_author_bio={false}
           vote={vote}
           show_vote={!@current_user || @author.id != @current_user.author_id || vote.twin}
           show_opinion={true}

@@ -7,7 +7,6 @@
         vote={@current_user_vote}
         voting={@voting}
         author={@current_user.author}
-        include_author_bio={true}
         delegating?={false}
         current_user={@current_user}
         show_vote={true}
@@ -15,6 +14,7 @@
         delegable={false}
         liked_opinion_ids={@liked_opinion_ids}
         regenerating_opinion_id={@regenerating_opinion_id}
+        page={@page}
       />
     </div>
   <% end %>
