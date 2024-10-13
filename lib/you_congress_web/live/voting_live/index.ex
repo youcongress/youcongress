@@ -22,31 +22,16 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   @impl true
   def mount(params, session, socket) do
-    votings = load_votings(params["hall"])
-    voting_ids = Enum.map(votings, & &1.id)
-
     socket = assign_current_user(socket, session["user_token"])
-    current_user = socket.assigns.current_user
-
-    votes_by_voting_id =
-      YouCongress.Votings.VotingQueries.get_one_vote_per_voting(
-        voting_ids,
-        current_user
-      )
-
-    liked_opinion_ids = Likes.get_liked_opinion_ids(current_user)
 
     socket =
       socket
-      |> assign(:votes, load_votes(voting_ids, socket.assigns.current_user))
       |> assign(:search, nil)
-      |> assign(:delegate_ids, load_delegate_ids(current_user))
-      |> assign(:votes_by_voting_id, votes_by_voting_id)
       |> assign(:search_tab, :polls)
-      |> assign(:votings, votings)
-      |> assign(:liked_opinion_ids, liked_opinion_ids)
+      |> assign(:order_by_date, false)
       |> assign(:hall_name, params["hall"] || @default_hall)
       |> assign(:new_poll_visible?, false)
+      |> assign_votes()
 
     if connected?(socket) do
       %{assigns: %{current_user: current_user}} = socket
@@ -73,7 +58,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   end
 
   def handle_event("search", %{"search" => ""}, socket) do
-    votings = load_votings(socket.assigns.hall_name)
+    votings = load_votings(socket.assigns.hall_name, socket.assigns.order_by_date)
 
     {:noreply, assign(socket, votings: votings, search: nil, search_tab: nil)}
   end
@@ -107,6 +92,18 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   def handle_event("search-tab", %{"tab" => "delegates"}, socket) do
     {:noreply, assign(socket, search_tab: :delegates)}
+  end
+
+  def handle_event("toggle-order-by-date", _, socket) do
+    IO.inspect("aaaaaaaaaa")
+    order_by_date = !socket.assigns.order_by_date
+
+    socket =
+      socket
+      |> assign(:order_by_date, order_by_date)
+      |> assign_votes()
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -165,14 +162,16 @@ defmodule YouCongressWeb.VotingLive.Index do
     )
   end
 
-  defp load_votings(hall_name) do
+  defp load_votings(hall_name, order_by_date) do
+    order = if order_by_date, do: :inserted_at_desc, else: :updated_at_desc
+
     if hall_name != "all" do
       Votings.list_votings(
         hall_name: hall_name || @default_hall,
-        order: :desc
+        order: order
       )
     else
-      Votings.list_votings(order: :desc)
+      Votings.list_votings(order: order)
     end
   end
 
@@ -195,5 +194,27 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   defp load_delegate_ids(current_user) do
     Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
+  end
+
+  defp assign_votes(socket) do
+    %{assigns: %{current_user: current_user, hall_name: hall_name}} = socket
+
+    votings = load_votings(hall_name, socket.assigns.order_by_date)
+    voting_ids = Enum.map(votings, & &1.id)
+
+    votes_by_voting_id =
+      YouCongress.Votings.VotingQueries.get_one_vote_per_voting(
+        voting_ids,
+        current_user
+      )
+
+    liked_opinion_ids = Likes.get_liked_opinion_ids(current_user)
+
+    socket
+    |> assign(:delegate_ids, load_delegate_ids(current_user))
+    |> assign(:votes_by_voting_id, votes_by_voting_id)
+    |> assign(:liked_opinion_ids, liked_opinion_ids)
+    |> assign(:votings, votings)
+    |> assign(:votes, load_votes(voting_ids, current_user))
   end
 end
