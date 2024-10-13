@@ -125,12 +125,14 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
 
   attr :opinion, :map, required: true
   attr :liked, :boolean, default: false
+  attr :target, :string, default: nil
 
   def like_icon(assigns) do
     ~H"""
     <img
       phx-click={if @liked, do: "unlike", else: "like"}
       phx-value-opinion_id={@opinion.id}
+      phx-target={@target}
       src={"/images/#{if @liked, do: "filled-heart", else: "heart"}.svg"}
       alt="Comment"
       class="h-5 w-5 inline cursor-pointer"

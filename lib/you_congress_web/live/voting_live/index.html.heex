@@ -51,15 +51,39 @@
     <%= for voting <- @votings do %>
       <tr>
         <td class="py-4 border-b border-gray-200">
-          <a href={~p"/p/#{voting.slug}"}><%= voting.title %></a>
-          <%= for hall <- voting.halls do %>
-            <a
-              href={~p"/y/#{hall.name}"}
-              class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
-            >
-              <%= hall.name %>
-            </a>
-          <% end %>
+          <div class="text-xl">
+            <.link href={~p"/p/#{voting.slug}"}><%= voting.title %></.link>
+          </div>
+          <div class="pt-2">
+            <.live_component
+              module={CastVoteComponent}
+              id={voting.id}
+              voting={voting}
+              current_user_vote={@votes[voting.id]}
+              current_user={@current_user}
+              display_results={:after_vote}
+            />
+          </div>
+          <div class="pt-4">
+            <% vote = @votes_by_voting_id[voting.id] %>
+            <%= if vote do %>
+              <.live_component
+                module={VoteComponent}
+                id={voting.id}
+                voting={voting}
+                vote={vote}
+                author={vote.author}
+                delegating?={vote.author_id in @delegate_ids}
+                show_vote={true}
+                show_opinion={true}
+                current_user={@current_user}
+                delegable={true}
+                liked={vote.opinion_id in @liked_opinion_ids}
+                regenerating_opinion_id={nil}
+                page={:voting_index}
+              />
+            <% end %>
+          </div>
         </td>
       </tr>
     <% end %>

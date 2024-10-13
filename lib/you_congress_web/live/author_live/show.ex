@@ -9,14 +9,12 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongress.DigitalTwins.Regenerate
   alias Phoenix.LiveView.Socket
   alias YouCongress.Votes
-  alias YouCongress.Votes.Answers
   alias YouCongress.Likes
   alias YouCongress.Track
   alias YouCongressWeb.AuthorLive.FormComponent
   alias YouCongressWeb.VotingLive.VoteComponent
-  alias YouCongressWeb.VotingLive.Show.CastComponent
   alias YouCongressWeb.Tools.Tooltip
-  alias YouCongress.DelegationVotes
+  alias YouCongressWeb.VotingLive.CastVoteComponent
 
   @impl true
   def mount(_params, session, socket) do
@@ -169,97 +167,6 @@ defmodule YouCongressWeb.AuthorLive.Show do
     end
   end
 
-  def handle_event("vote", _, %{assigns: %{current_user: nil}} = socket) do
-    {:noreply, put_flash(socket, :error, "You must be logged in to vote.")}
-  end
-
-  def handle_event("vote", %{"response" => response, "voting_id" => voting_id}, socket) do
-    %{
-      assigns: %{
-        current_user: current_user,
-        current_user_votes_by_voting_id: current_user_votes_by_voting_id,
-        author: author
-      }
-    } = socket
-
-    voting_id = String.to_integer(voting_id)
-    answer_id = Answers.get_basic_answer_id(response)
-
-    case Votes.create_or_update(%{
-           voting_id: voting_id,
-           answer_id: answer_id,
-           author_id: current_user.author_id,
-           direct: true
-         }) do
-      {:ok, vote} ->
-        Track.event("Vote", current_user)
-
-        vote = Votes.get_vote(vote.id, preload: [:answer])
-
-        current_user_votes_by_voting_id =
-          Map.put(current_user_votes_by_voting_id, voting_id, vote)
-
-        socket =
-          socket
-          |> assign(:current_user_votes_by_voting_id, current_user_votes_by_voting_id)
-          |> maybe_replace_vote_in_votes(
-            current_user && author.id == current_user.author_id,
-            vote.id,
-            vote.id
-          )
-          |> put_flash(:info, "You voted #{vote.answer.response}")
-
-        {:noreply, socket}
-
-      {:error, error} ->
-        Logger.error("Error creating vote: #{inspect(error)}")
-        {:noreply, put_flash(socket, :error, "Error creating vote.")}
-    end
-  end
-
-  def handle_event("delete-direct-vote", %{"voting_id" => voting_id}, socket) do
-    %{
-      assigns: %{
-        current_user: current_user,
-        current_user_votes_by_voting_id: current_user_votes_by_voting_id,
-        author: author
-      }
-    } = socket
-
-    voting_id = String.to_integer(voting_id)
-    current_user_vote = current_user_votes_by_voting_id[voting_id]
-
-    case Votes.delete_vote(current_user_vote) do
-      {:ok, deleted_vote} ->
-        Track.event("Delete Vote", current_user)
-
-        DelegationVotes.update_author_voting_delegated_votes(current_user.author_id, voting_id)
-
-        # We get the new delegated vote, if any
-        vote =
-          Votes.get_by([voting_id: voting_id, author_id: current_user.author_id],
-            preload: [:answer]
-          )
-
-        delegating_txt = vote && " You're delegating now."
-        same_user? = current_user && author.id == current_user.author_id
-
-        socket =
-          socket
-          |> assign(
-            :current_user_votes_by_voting_id,
-            Map.put(current_user_votes_by_voting_id, voting_id, vote)
-          )
-          |> maybe_replace_vote_in_votes(same_user?, deleted_vote.id, vote && vote.id)
-          |> put_flash(:info, "Direct vote deleted.#{delegating_txt}")
-
-        {:noreply, socket}
-
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Error deleting vote.")}
-    end
-  end
-
   def handle_event("regenerate", %{"opinion_id" => opinion_id}, socket) do
     opinion_id = String.to_integer(opinion_id)
     send(self(), {:regenerate, opinion_id})
@@ -303,31 +210,16 @@ defmodule YouCongressWeb.AuthorLive.Show do
     {:noreply, socket}
   end
 
+  def handle_info({:put_flash, kind, msg}, socket) do
+    socket =
+      socket
+      |> clear_flash()
+      |> put_flash(kind, msg)
+
+    {:noreply, socket}
+  end
+
   def handle_info(_, socket), do: {:noreply, socket}
-
-  defp maybe_replace_vote_in_votes(socket, false, _, _), do: socket
-
-  defp maybe_replace_vote_in_votes(socket, true, old_vote_id, nil) do
-    votes =
-      Enum.filter(socket.assigns.votes, fn v -> v.id != old_vote_id end)
-
-    assign(socket, :votes, votes)
-  end
-
-  defp maybe_replace_vote_in_votes(socket, true, old_vote_id, new_vote_id) do
-    vote = Votes.get_vote(new_vote_id, preload: [:answer, :opinion, :voting])
-
-    votes =
-      Enum.map(socket.assigns.votes, fn v ->
-        if v.id == old_vote_id do
-          vote
-        else
-          v
-        end
-      end)
-
-    assign(socket, :votes, votes)
-  end
 
   def author_path(%{twitter_username: nil, id: author_id}) do
     ~p"/a/#{author_id}"

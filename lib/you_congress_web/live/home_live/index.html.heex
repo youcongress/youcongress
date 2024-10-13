@@ -62,12 +62,18 @@
 <ul class="pt-6" phx-viewport-bottom="load-more" id="activity">
   <%= for opinion <- @opinions do %>
     <li class="pb-4" id={"opinion-#{opinion.id}"}>
-      <div class="pb-1">
-        <strong>
-          <.link patch={~p"/p/#{opinion.voting.slug}"}><%= opinion.voting.title %></.link>
-        </strong>
+      <div class="pb-2 text-xl">
+        <.link patch={~p"/p/#{opinion.voting.slug}"}><%= opinion.voting.title %></.link>
       </div>
-      <div>
+      <.live_component
+        module={CastVoteComponent}
+        id={opinion.id}
+        voting={opinion.voting}
+        current_user_vote={@current_user_votes_by_voting_id[opinion.voting_id]}
+        current_user={@current_user}
+        display_results={:after_vote}
+      />
+      <div class="pt-2">
         <OpinionComponent.render
           opinion={opinion}
           current_user={@current_user}

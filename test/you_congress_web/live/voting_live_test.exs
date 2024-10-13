@@ -10,6 +10,7 @@ defmodule YouCongressWeb.VotingLiveTest do
   import YouCongress.OpinionsFixtures
   import YouCongress.VotesFixtures
 
+  alias YouCongress.Opinions
   alias YouCongress.Votings
 
   @create_attrs %{title: "nuclear energy"}
@@ -30,13 +31,65 @@ defmodule YouCongressWeb.VotingLiveTest do
     setup [:create_voting]
 
     test "lists all votings", %{conn: conn, voting: voting} do
+      vote = vote_fixture(%{voting_id: voting.id}, true)
+      opinion = Opinions.get_opinion!(vote.opinion_id)
+
       conn = log_in_as_user(conn)
-      {:ok, _index_live, html} = live(conn, ~p"/")
+      {:ok, index_live, html} = live(conn, ~p"/")
 
       assert html =~ "YouCongress: Find agreement, understand disagreement."
       assert html =~ "Polls, Liquid Democracy + AI Digital Twins"
 
       assert html =~ voting.title
+      assert html =~ opinion.content
+
+      #  Vote strongly agree
+      index_live
+      |> element("button#vote-strongly-agree")
+      |> render_click()
+
+      html = render(index_live)
+      assert html =~ "You voted Strongly agree"
+
+      # Vote agree
+      index_live
+      |> element("button#vote-agree")
+      |> render_click()
+
+      html = render(index_live)
+      assert html =~ "You voted Agree"
+
+      # Vote Abstain
+      index_live
+      |> element("button#vote-abstain")
+      |> render_click()
+
+      html = render(index_live)
+      assert html =~ "You voted Abstain"
+
+      # Vote N/A
+      index_live
+      |> element("button#vote-na")
+      |> render_click()
+
+      html = render(index_live)
+      assert html =~ "You voted N/A"
+
+      # Vote disagree
+      index_live
+      |> element("button#vote-disagree")
+      |> render_click()
+
+      html = render(index_live)
+      assert html =~ "You voted Disagree"
+
+      # Vote strongly disagree
+      index_live
+      |> element("button#vote-strongly-disagree")
+      |> render_click()
+
+      html = render(index_live)
+      assert html =~ "You voted Strongly disagree"
     end
 
     test "saves new voting and redirect to show", %{conn: conn} do
