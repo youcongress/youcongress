@@ -57,10 +57,9 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
   def handle_event("add-delegation", _, %{assigns: %{current_user: nil}} = socket) do
     send(
       self(),
-      {:put_flash, :warning, "Log in to unlock delegate voting and save your delegates."}
+      {:put_flash, :warning, "Log in to unlock delegate voting."}
     )
 
-    socket = assign(socket, :delegating?, true)
     {:noreply, socket}
   end
 
