@@ -37,10 +37,30 @@
   <%= @voting.title %>
 </h1>
 
+<div class="pt-2">
+  <%= for hall <- @voting.halls do %>
+    <.link
+      href={~p"/y/#{hall.name}"}
+      class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
+    >
+      <%= hall.name %>
+    </.link>
+  <% end %>
+</div>
+
 <%= if(@votes_from_delegates != [] || @votes_from_non_delegates != []) do %>
   <div class="mt-4 mb-4">
-    <CastComponent.buttons current_user_vote={@current_user_vote} voting_id={@voting.id} />
-    <CastComponent.results total_votes={@total_votes} vote_frequencies={@vote_frequencies} />
+    <div class="pb-1">
+      Cast your vote:
+    </div>
+    <.live_component
+      module={CastVoteComponent}
+      id={:cast}
+      voting={@voting}
+      current_user_vote={@current_user_vote}
+      current_user={@current_user}
+      display_results={:yes}
+    />
   </div>
 <% end %>
 <%= if @votes_from_delegates != [] || @votes_from_non_delegates != [] do %>
@@ -52,7 +72,7 @@
       current_user_vote={@current_user_vote}
       current_user={@current_user}
       editing={@editing}
-      liked_opinion_ids={@liked_opinion_ids}
+      liked={@current_user_vote && @current_user_vote.opinion_id in @liked_opinion_ids}
       regenerating_opinion_id={@regenerating_opinion_id}
       page={:voting_show}
     />
@@ -75,7 +95,7 @@
             show_opinion={true}
             current_user={@current_user}
             delegable={true}
-            liked_opinion_ids={@liked_opinion_ids}
+            liked={vote.opinion_id in @liked_opinion_ids}
             regenerating_opinion_id={@regenerating_opinion_id}
             page={:voting_show}
           />
@@ -108,7 +128,7 @@
           show_opinion={true}
           current_user={@current_user}
           delegable={true}
-          liked_opinion_ids={@liked_opinion_ids}
+          liked={vote.opinion_id in @liked_opinion_ids}
           regenerating_opinion_id={@regenerating_opinion_id}
           page={:voting_show}
         />
@@ -135,7 +155,7 @@
             show_vote={true}
             show_opinion={true}
             delegable={true}
-            liked_opinion_ids={@liked_opinion_ids}
+            liked={vote.opinion_id in @liked_opinion_ids}
             regenerating_opinion_id={@regenerating_opinion_id}
             page={:voting_show}
           />
