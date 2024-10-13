@@ -8,7 +8,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
   alias YouCongressWeb.OpinionLive.OpinionComponent
 
   def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
-    send(self(), {:put_flash, :error, "You must be logged in to like."})
+    send(self(), {:put_flash, :warning, "Log in to like."})
     {:noreply, socket}
   end
 
