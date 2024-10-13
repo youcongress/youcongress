@@ -17,7 +17,7 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div>
+    <div class="-ml-2 md:ml-0">
       <div class="flex">
         <CastVoteComponent.button
           voting={@voting}
@@ -136,7 +136,7 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
         phx-click="vote"
         phx-value-response={@response}
         phx-target={@myself}
-        class={"rounded-lg bg-#{ResultsComponent.response_color(@response)}-500 h-10 flex md:p-4 flex-col justify-center items-center p-1 text-xs font-semibold text-white shadow-sm ring-1 ring-inset ring-#{ResultsComponent.response_color(@response)}-300 hover:bg-#{ResultsComponent.response_color(@response)}-600"}
+        class={"rounded-lg bg-#{ResultsComponent.response_color(@response)}-500 h-10 w-14 flex md:p-4 flex-col justify-center items-center p-1 text-xs font-semibold text-white shadow-sm ring-1 ring-inset ring-#{ResultsComponent.response_color(@response)}-300 hover:bg-#{ResultsComponent.response_color(@response)}-600"}
       >
         <%= if assigns[:label1] && assigns[:label2] do %>
           <div>
