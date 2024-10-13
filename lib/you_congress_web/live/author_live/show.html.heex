@@ -64,10 +64,7 @@
         <.link patch={~p"/p/#{vote.voting.slug}"} class="text-xl font-bold">
           <%= vote.voting.title %>
         </.link>
-        <div class="pb-2">
-          <div class="pb-1">
-            Cast your vote:
-          </div>
+        <div class="py-2">
           <.live_component
             module={CastVoteComponent}
             id={vote.voting_id}
