@@ -67,6 +67,14 @@
           <.link patch={~p"/p/#{opinion.voting.slug}"}><%= opinion.voting.title %></.link>
         </strong>
       </div>
+      <.live_component
+        module={CastVoteComponent}
+        id={opinion.id}
+        voting={opinion.voting}
+        current_user_vote={@current_user_votes_by_voting_id[opinion.voting_id]}
+        current_user={@current_user}
+        display_results={:after_vote}
+      />
       <div>
         <OpinionComponent.render
           opinion={opinion}

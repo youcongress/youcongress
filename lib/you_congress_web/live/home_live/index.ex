@@ -4,17 +4,24 @@ defmodule YouCongressWeb.HomeLive.Index do
   alias YouCongress.Opinions
   alias YouCongress.Track
   alias YouCongress.Likes
-  alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongress.Delegations
+  alias YouCongress.Votes
+  alias YouCongressWeb.OpinionLive.OpinionComponent
+  alias YouCongressWeb.VotingLive.CastVoteComponent
 
   @per_page 15
 
   @impl true
   def mount(params, session, socket) do
+    socket = assign_current_user(socket, session["user_token"])
+
     socket =
       socket
-      |> assign_current_user(session["user_token"])
       |> assign(all: params["all"] == "true")
+      |> assign(
+        :current_user_votes_by_voting_id,
+        get_current_user_votes_by_voting_id(socket.assigns.current_user)
+      )
 
     if connected?(socket) do
       Track.event("View Activity", socket.assigns.current_user)
@@ -96,7 +103,7 @@ defmodule YouCongressWeb.HomeLive.Index do
   end
 
   def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
-    {:noreply, put_flash(socket, :error, "You must be logged in to like.")}
+    {:noreply, put_flash(socket, :warning, "You must be logged in to like.")}
   end
 
   def handle_event("like", %{"opinion_id" => opinion_id}, socket) do
@@ -150,7 +157,13 @@ defmodule YouCongressWeb.HomeLive.Index do
   end
 
   def handle_event("add-delegation", _, %{assigns: %{current_user: nil}} = socket) do
-    {:noreply, put_flash(socket, :error, "You must be logged in to delegate.")}
+    send(
+      self(),
+      {:put_flash, :warning, "Log in to unlock delegate voting and save your delegates."}
+    )
+
+    socket = assign(socket, :delegating?, true)
+    {:noreply, socket}
   end
 
   def handle_event("add-delegation", %{"author_id" => delegate_id}, socket) do
@@ -197,6 +210,17 @@ defmodule YouCongressWeb.HomeLive.Index do
     {:noreply, socket}
   end
 
+  def handle_info({:put_flash, kind, msg}, socket) do
+    socket =
+      socket
+      |> clear_flash()
+      |> put_flash(kind, msg)
+
+    {:noreply, socket}
+  end
+
+  def handle_info(_, socket), do: {:noreply, socket}
+
   defp update_opinion_likes_count(opinions, opinion_id, operation) do
     Enum.map(opinions, fn
       %Opinions.Opinion{id: ^opinion_id} = opinion ->
@@ -205,5 +229,13 @@ defmodule YouCongressWeb.HomeLive.Index do
       other ->
         other
     end)
+  end
+
+  def get_current_user_votes_by_voting_id(nil), do: %{}
+
+  def get_current_user_votes_by_voting_id(current_user) do
+    [author_ids: [current_user.author_id], preload: [:answer]]
+    |> Votes.list_votes()
+    |> Enum.reduce(%{}, fn vote, acc -> Map.put(acc, vote.voting_id, vote) end)
   end
 end
