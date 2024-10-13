@@ -139,7 +139,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
-    {:noreply, put_flash(socket, :error, "You must be logged in to like.")}
+    {:noreply, put_flash(socket, :warning, "Log in to like.")}
   end
 
   def handle_event("like", %{"opinion_id" => opinion_id}, socket) do

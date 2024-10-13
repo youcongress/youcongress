@@ -103,7 +103,7 @@ defmodule YouCongressWeb.HomeLive.Index do
   end
 
   def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
-    {:noreply, put_flash(socket, :warning, "You must be logged in to like.")}
+    {:noreply, put_flash(socket, :warning, "Log in to like.")}
   end
 
   def handle_event("like", %{"opinion_id" => opinion_id}, socket) do
@@ -209,6 +209,7 @@ defmodule YouCongressWeb.HomeLive.Index do
     {:noreply, socket}
   end
 
+  @impl true
   def handle_info({:put_flash, kind, msg}, socket) do
     socket =
       socket
