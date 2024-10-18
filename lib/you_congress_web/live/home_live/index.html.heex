@@ -71,7 +71,8 @@
         voting={opinion.voting}
         current_user_vote={@current_user_votes_by_voting_id[opinion.voting_id]}
         current_user={@current_user}
-        display_results={:after_vote}
+        display_results={!!@current_user_votes_by_voting_id[opinion.voting_id]}
+        page={:home_index}
       />
       <div class="pt-2">
         <OpinionComponent.render
