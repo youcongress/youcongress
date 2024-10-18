@@ -44,10 +44,10 @@ defmodule YouCongressWeb.TopHeaderComponent do
           <% else %>
             <div>
               <.link
-                href={~p"/log_in"}
+                href={~p"/sign_up"}
                 class="text-[0.8125rem] leading-6 text-zinc-900 hover:text-zinc-700"
               >
-                Log in
+                Sign up
               </.link>
             </div>
           <% end %>

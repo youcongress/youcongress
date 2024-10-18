@@ -7,12 +7,7 @@ defmodule YouCongressWeb.UserLoginLive do
       <.header class="text-center">
         Log in to account
         <:subtitle>
-          Don't have an account? <.link href="/x_log_in" method="post" class="underline">Sign up with X</.link>*
-          now or join the
-          <.link href="/email-login-waiting-list" class="underline">
-            waiting list
-          </.link>
-          for email/password login.
+          Don't have an account? <.link href="/sign_up" class="underline">Sign up</.link>
         </:subtitle>
       </.header>
 

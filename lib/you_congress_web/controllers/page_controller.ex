@@ -42,4 +42,14 @@ defmodule YouCongressWeb.PageController do
     |> put_flash(:info, "Thanks for joining the waiting list! We'll be in touch.")
     |> redirect(to: ~p"/")
   end
+
+  def join_and_become_a_supporter(conn, _params) do
+    render(conn, :join_and_become_a_supporter, layout: false)
+  end
+
+  def join_and_become_a_supporter_thanks(conn, _params) do
+    conn
+    |> put_flash(:info, "Thanks! We'll be in touch soon!")
+    |> redirect(to: ~p"/")
+  end
 end
