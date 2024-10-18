@@ -71,7 +71,8 @@
             voting={vote.voting}
             current_user_vote={@current_user_votes_by_voting_id[vote.voting_id]}
             current_user={@current_user}
-            display_results={:never}
+            display_results={false}
+            page={:author_show}
           />
         </div>
         <.live_component

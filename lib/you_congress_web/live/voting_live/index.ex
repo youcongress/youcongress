@@ -7,6 +7,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongress.Delegations
   alias YouCongress.Likes
   alias YouCongress.Votes
+  alias YouCongress.Opinions
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
   alias YouCongress.DigitalTwins.Regenerate
@@ -16,7 +17,6 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongressWeb.VotingLive.FormComponent
   alias YouCongressWeb.VotingLive.Index.Search
   alias YouCongressWeb.VotingLive.CastVoteComponent
-  alias YouCongressWeb.VotingLive.VoteComponent
 
   @default_hall "ai"
 
@@ -95,7 +95,6 @@ defmodule YouCongressWeb.VotingLive.Index do
   end
 
   def handle_event("toggle-order-by-date", _, socket) do
-    IO.inspect("aaaaaaaaaa")
     order_by_date = !socket.assigns.order_by_date
 
     socket =
@@ -190,6 +189,20 @@ defmodule YouCongressWeb.VotingLive.Index do
     end)
   end
 
+  defp load_opinions(_, nil), do: %{}
+
+  defp load_opinions(voting_ids, current_user) do
+    opinions =
+      Opinions.list_opinions(
+        voting_ids: voting_ids,
+        author_ids: [current_user.author_id]
+      )
+
+    Map.new(opinions, fn opinion ->
+      {opinion.voting_id, opinion}
+    end)
+  end
+
   defp load_delegate_ids(nil), do: []
 
   defp load_delegate_ids(current_user) do
@@ -216,5 +229,6 @@ defmodule YouCongressWeb.VotingLive.Index do
     |> assign(:liked_opinion_ids, liked_opinion_ids)
     |> assign(:votings, votings)
     |> assign(:votes, load_votes(voting_ids, current_user))
+    |> assign(:opinions, load_opinions(voting_ids, current_user))
   end
 end
