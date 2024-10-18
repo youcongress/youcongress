@@ -38,6 +38,8 @@ defmodule YouCongressWeb.Router do
     get "/faq", PageController, :faq
     get "/email-login-waiting-list", PageController, :email_login_waiting_list
     get "/email-login-waiting-list/thanks", PageController, :email_login_waiting_list_thanks
+    get "/join-and-become-a-supporter", PageController, :join_and_become_a_supporter
+    get "/join-and-become-a-supporter/thanks", PageController, :join_and_become_a_supporter_thanks
 
     # Legacy redirection from /v/:slug to /p/:slug
     get "/v/:slug", VotingController, :redirect_to_p
@@ -96,6 +98,7 @@ defmodule YouCongressWeb.Router do
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{YouCongressWeb.UserAuth, :redirect_if_user_is_authenticated}] do
       live "/log_in", UserLoginLive, :new
+      live "/sign_up", UserSignUpLive, :new
     end
 
     post "/log_in", UserSessionController, :create
