@@ -13,7 +13,7 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
   alias YouCongressWeb.VotingLive.ResultsComponent
   alias YouCongress.DelegationVotes
   alias YouCongress.Votes.VoteFrequencies
-
+  alias YouCongressWeb.VotingLive.Index.OpinateComponent
   @impl true
   def render(assigns) do
     ~H"""
@@ -99,11 +99,23 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
           </div>
         <% end %>
       <% end %>
-      <%= if @display_results == :yes do %>
+      <%= if @display_results do %>
         <ResultsComponent.horizontal_bar
           total_votes={@total_votes}
           vote_frequencies={@vote_frequencies}
         />
+        <%= if @page == :votings_index do %>
+          <div class="pt-4">
+            <.live_component
+              module={OpinateComponent}
+              id={@id}
+              voting={@voting}
+              opinion={@current_user_opinion}
+              vote={@current_user_vote}
+              current_user={@current_user}
+            />
+          </div>
+        <% end %>
       <% end %>
     </div>
     """
@@ -113,10 +125,11 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
   def update(assigns, socket) do
     socket = assign(socket, assigns)
 
-    socket =
-      if assigns.display_results == :yes, do: assign_results_variables(socket), else: socket
-
-    {:ok, socket}
+    if assigns.display_results do
+      {:ok, assign_results_variables(socket)}
+    else
+      {:ok, socket}
+    end
   end
 
   attr :response, :string, required: true
@@ -161,17 +174,13 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
   def handle_event("vote", %{"response" => response}, %{assigns: %{current_user: nil}} = socket) do
     send(self(), {:put_flash, :warning, "Log in to make your votes count."})
 
-    if socket.assigns.display_results == :never do
-      {:noreply, socket}
-    else
-      socket =
-        socket
-        |> assign(:display_results, :yes)
-        |> assign_results_variables()
-        |> assign(:current_user_vote, %Vote{answer: %Answer{response: response}})
+    socket =
+      socket
+      |> assign(:display_results, true)
+      |> assign_results_variables()
+      |> assign(:current_user_vote, %Vote{answer: %Answer{response: response}})
 
-      {:noreply, socket}
-    end
+    {:noreply, socket}
   end
 
   def handle_event("vote", %{"response" => response}, socket) do
@@ -249,12 +258,8 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
   defp assign_results_variables(socket) do
     %{assigns: %{voting: voting}} = socket
 
-    socket =
-      if socket.assigns.display_results == :never,
-        do: socket,
-        else: assign(socket, :display_results, :yes)
-
     socket
+    |> assign(:display_results, true)
     |> assign(:vote_frequencies, VoteFrequencies.get(voting.id))
     |> assign(:total_votes, Votes.count_by_voting(voting.id))
   end

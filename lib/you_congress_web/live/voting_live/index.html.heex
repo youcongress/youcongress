@@ -97,29 +97,11 @@
               id={voting.id}
               voting={voting}
               current_user_vote={@votes[voting.id]}
+              current_user_opinion={@opinions[voting.id]}
               current_user={@current_user}
-              display_results={:after_vote}
+              display_results={false}
+              page={:votings_index}
             />
-          </div>
-          <div class="pt-4">
-            <% vote = @votes_by_voting_id[voting.id] %>
-            <%= if vote do %>
-              <.live_component
-                module={VoteComponent}
-                id={voting.id}
-                voting={voting}
-                vote={vote}
-                author={vote.author}
-                delegating?={vote.author_id in @delegate_ids}
-                show_vote={true}
-                show_opinion={true}
-                current_user={@current_user}
-                delegable={true}
-                liked={vote.opinion_id in @liked_opinion_ids}
-                regenerating_opinion_id={nil}
-                page={:voting_index}
-              />
-            <% end %>
           </div>
         </td>
       </tr>

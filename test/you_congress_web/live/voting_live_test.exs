@@ -10,7 +10,6 @@ defmodule YouCongressWeb.VotingLiveTest do
   import YouCongress.OpinionsFixtures
   import YouCongress.VotesFixtures
 
-  alias YouCongress.Opinions
   alias YouCongress.Votings
 
   @create_attrs %{title: "nuclear energy"}
@@ -30,10 +29,7 @@ defmodule YouCongressWeb.VotingLiveTest do
   describe "Index" do
     setup [:create_voting]
 
-    test "lists all votings", %{conn: conn, voting: voting} do
-      vote = vote_fixture(%{voting_id: voting.id}, true)
-      opinion = Opinions.get_opinion!(vote.opinion_id)
-
+    test "vote and create opinion", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
       {:ok, index_live, html} = live(conn, ~p"/")
 
@@ -41,7 +37,6 @@ defmodule YouCongressWeb.VotingLiveTest do
       assert html =~ "Polls, Liquid Democracy + AI Digital Twins"
 
       assert html =~ voting.title
-      assert html =~ opinion.content
 
       #  Vote strongly agree
       index_live
@@ -90,6 +85,23 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       html = render(index_live)
       assert html =~ "You voted Strongly disagree"
+
+      # Create a comment
+      index_live
+      |> form("#v#{voting.id}-opinion-form", %{"opinion[content]" => "some comment"})
+      |> render_submit()
+
+      html = render(index_live)
+      assert html =~ "Opinion created successfully"
+      assert html =~ "some comment"
+
+      index_live
+      |> form("#v#{voting.id}-opinion-form", %{"opinion[content]" => "some updated comment"})
+      |> render_submit()
+
+      html = render(index_live)
+      assert html =~ "Opinion updated successfully"
+      assert html =~ "some updated comment"
     end
 
     test "saves new voting and redirect to show", %{conn: conn} do
