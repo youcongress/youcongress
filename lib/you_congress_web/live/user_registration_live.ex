@@ -6,6 +6,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
   alias YouCongress.Accounts
   alias YouCongress.Accounts.User
   alias YouCongress.Accounts.SmsVerification
+  alias YouCongress.Track
 
   def render(assigns) do
     ~H"""
@@ -203,12 +204,12 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
     case Accounts.register_user(user_params, author_params) do
       {:ok, %{user: user, author: _}} ->
-        if user do
-          Accounts.deliver_user_confirmation_instructions(
-            user,
-            &url(~p"/users/confirm/#{&1}")
-          )
-        end
+        Track.event("Register via email/password", user)
+
+        Accounts.deliver_user_confirmation_instructions(
+          user,
+          &url(~p"/users/confirm/#{&1}")
+        )
 
         socket =
           socket
@@ -232,6 +233,8 @@ defmodule YouCongressWeb.UserRegistrationLive do
     if code == socket.assigns.email_code do
       case Accounts.confirm_user_email(user) do
         {:ok, _user} ->
+          Track.event("Email verified", user)
+
           changeset = Accounts.change_user_phone_number(user)
           {:noreply, socket |> assign(step: :enter_mobile_phone) |> assign_form(changeset)}
 
@@ -254,6 +257,8 @@ defmodule YouCongressWeb.UserRegistrationLive do
     with {:ok, user} <-
            Accounts.update_user_phone_number(socket.assigns.user, phone_number),
          {:ok, _} <- SmsVerification.send_verification_code(phone_number) do
+      Track.event("Phone number saved", user)
+
       changeset =
         Accounts.change_user_phone_number(user, %{"phone_number" => phone_number})
 
@@ -287,12 +292,8 @@ defmodule YouCongressWeb.UserRegistrationLive do
       {:ok, _response} ->
         case Accounts.confirm_user_phone(user) do
           {:ok, _} ->
-            socket =
-              socket
-              |> redirect(to: ~p"/log_in")
-              |> put_flash(:info, "You're account has been created. Please log in now.")
-
-            {:noreply, socket}
+            Track.event("Phone number verified", user)
+            {:noreply, redirect(socket, to: ~p"/welcome")}
 
           {:error, changeset} ->
             {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}

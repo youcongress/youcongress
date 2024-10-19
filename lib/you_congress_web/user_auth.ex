@@ -106,19 +106,11 @@ defmodule YouCongressWeb.UserAuth do
   def redirect_to_user_registration_if_email_or_phone_unconfirmed(conn, _opts) do
     user = conn.assigns[:current_user]
 
-    if user do
-      twitter_login? = user.author.twitter_username != nil && user.author.twitter_username != ""
-      unconfirmed? = user.email_confirmed_at == nil || user.phone_number_confirmed_at == nil
-      registered_after_validation? = user.id > 45
-
-      if !twitter_login? && unconfirmed? && registered_after_validation? &&
-           !(current_path(conn) in ["/sign_up", "/log_out"]) do
-        conn
-        |> redirect(to: ~p"/sign_up")
-        |> halt()
-      else
-        conn
-      end
+    if user && !Accounts.sign_up_complete?(user) &&
+         !(current_path(conn) in ["/sign_up", "/log_out"]) do
+      conn
+      |> redirect(to: ~p"/sign_up")
+      |> halt()
     else
       conn
     end

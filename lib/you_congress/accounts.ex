@@ -491,13 +491,20 @@ defmodule YouCongress.Accounts do
   end
 
   def sign_up_complete?(user) do
-    # Of they have twitter username, they are registered
-    twitter_login? = user.author.twitter_username != nil && user.author.twitter_username != ""
-    # The first users are not required to confirm email or phone for now
-    first_users? = user.id <= 45
-    # All others, need to confirm email and phone number
-    confirmed? = user.email_confirmed_at && user.phone_number_confirmed_at
-
-    twitter_login? || first_users? || confirmed?
+    twitter_login?(user) || first_users?(user) || confirmed?(user)
   end
+
+  # If a user has twitter username, they are registered
+  defp twitter_login?(%User{author: %{twitter_username: nil}}), do: false
+  defp twitter_login?(%User{author: %{twitter_username: ""}}), do: false
+  defp twitter_login?(_), do: true
+
+  # The first users are not required to confirm email or phone for now
+  defp first_users?(%User{id: id}), do: id <= 45
+  defp first_users?(_), do: false
+
+  # All others need to confirm email and phone number
+  defp confirmed?(%User{email_confirmed_at: nil}), do: false
+  defp confirmed?(%User{phone_number_confirmed_at: nil}), do: false
+  defp confirmed?(_), do: true
 end
