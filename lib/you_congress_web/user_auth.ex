@@ -103,6 +103,19 @@ defmodule YouCongressWeb.UserAuth do
     assign(conn, :current_user, user)
   end
 
+  def redirect_to_user_registration_if_email_or_phone_unconfirmed(conn, _opts) do
+    user = conn.assigns[:current_user]
+
+    if user && !Accounts.sign_up_complete?(user) &&
+         !(current_path(conn) in ["/sign_up", "/log_out"]) do
+      conn
+      |> redirect(to: ~p"/sign_up")
+      |> halt()
+    else
+      conn
+    end
+  end
+
   defp ensure_user_token(conn) do
     if token = get_session(conn, :user_token) do
       {token, conn}

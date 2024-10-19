@@ -11,7 +11,7 @@ defmodule YouCongressWeb.Components.FooterComponent do
     <div class="text-center pb-10 text-sm">
       <.link href={~p"/terms"}>Terms</.link>
       · <.link href={~p"/privacy-policy"}>Privacy</.link>
-      · <.link href="mailto:hi@youcongress.com" target="_blank">Contact</.link>
+      · <.link href="mailto:hello@youcongress.com" target="_blank">Contact</.link>
     </div>
     """
   end

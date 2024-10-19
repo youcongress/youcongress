@@ -91,7 +91,7 @@ defmodule YouCongressWeb.TwitterLogInController do
 
     case Accounts.x_register_user(user_attrs, author_attrs) do
       {:ok, %{user: user, author: _author}} ->
-        Track.event("New user", user)
+        Track.event("Register via X", user)
         {:ok, user}
 
       {:error, changeset} ->

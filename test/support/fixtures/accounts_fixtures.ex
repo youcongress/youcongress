@@ -21,7 +21,7 @@ defmodule YouCongress.AccountsFixtures do
     Enum.map(attrs, fn {k, v} -> {to_string(k), v} end)
   end
 
-  def user_fixture(attrs \\ %{}, author_attrs \\ nil) do
+  def user_fixture(attrs \\ %{}, author_attrs \\ nil, confirm_email_and_phone_number? \\ true) do
     author_attrs =
       author_attrs ||
         %{
@@ -37,7 +37,13 @@ defmodule YouCongress.AccountsFixtures do
       |> valid_user_attributes()
       |> YouCongress.Accounts.x_register_user(author_attrs)
 
-    user
+    with true <- confirm_email_and_phone_number?,
+         {:ok, user} = YouCongress.Accounts.confirm_user_email(user),
+         {:ok, user} = YouCongress.Accounts.confirm_user_phone(user) do
+      user
+    else
+      _ -> user
+    end
   end
 
   def admin_fixture(attrs \\ %{}, author_attrs \\ %{}) do
