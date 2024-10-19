@@ -35,7 +35,7 @@ defmodule YouCongress.Track do
 
       :post
       |> Finch.build(@api_url, headers, Jason.encode!(body))
-      |> Finch.request(YouCongress.Finch)
+      |> Finch.request(Swoosh.Finch)
     end
   end
 

@@ -14,7 +14,7 @@ config :you_congress, YouCongressWeb.Endpoint,
   ]
 
 # Configures Swoosh API Client
-config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: YouCongress.Finch
+config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: Swoosh.Finch
 
 # Disable Swoosh Local Memory Storage
 config :swoosh, local: false
