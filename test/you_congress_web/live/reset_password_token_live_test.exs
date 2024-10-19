@@ -38,14 +38,14 @@ defmodule YouCongressWeb.ResetPasswordTokenLiveTest do
         lv
         |> form("#reset_password_form",
           user: %{
-            password: "too short",
+            password: "short",
             password_confirmation: "does not match"
           }
         )
         |> render_submit()
 
       assert result =~ "Reset Password"
-      assert result =~ "should be at least 12 character(s)"
+      assert result =~ "should be at least 8 character(s)"
       assert result =~ "does not match password"
     end
 
@@ -75,14 +75,14 @@ defmodule YouCongressWeb.ResetPasswordTokenLiveTest do
         lv
         |> form("#reset_password_form",
           user: %{
-            password: "too short",
+            password: "short",
             password_confirmation: "does not match"
           }
         )
         |> render_submit()
 
       assert result =~ "Reset Password"
-      assert result =~ "should be at least 12 character(s)"
+      assert result =~ "should be at least 8 character(s)"
       assert result =~ "does not match password"
     end
   end

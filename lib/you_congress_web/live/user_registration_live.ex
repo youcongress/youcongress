@@ -6,7 +6,6 @@ defmodule YouCongressWeb.UserRegistrationLive do
   alias YouCongress.Accounts
   alias YouCongress.Accounts.User
   alias YouCongress.Accounts.SmsVerification
-  alias YouCongress.Accounts.UserNotifier
 
   def render(assigns) do
     ~H"""
@@ -70,35 +69,17 @@ defmodule YouCongressWeb.UserRegistrationLive do
         </.simple_form>
       <% end %>
 
-      <%= if @step == :validate_email do %>
+      <%= if @step == :check_email do %>
         <.header class="text-center">
-          Verify your email
+          Please check your email
           <:subtitle>
-            We've sent a verification code to <%= @user.email %>
+            We've sent you instructions to validate your email
           </:subtitle>
         </.header>
 
-        <.simple_form
-          for={@form}
-          id="email_verification_form"
-          phx-submit="verify_email"
-          phx-change="validate"
-          method="post"
-        >
-          <.error :if={@check_errors}>
-            Oops, something went wrong! Please check the errors below.
-          </.error>
-
-          <.input field={@form[:email_verification_code]} type="text" label="Enter the Code" required />
-
-          <:actions>
-            <.button phx-disable-with="Verifying..." class="w-full">Verify Email</.button>
-          </:actions>
-        </.simple_form>
-
         <div class="mt-4 text-center">
-          <.link href="#" phx-click="resend_email_code" class="text-sm text-blue-600 hover:underline">
-            Resend verification code
+          <.link href="#" phx-click="resend_email" class="text-sm text-blue-600 hover:underline">
+            Resend email
           </.link>
         </div>
       <% end %>
@@ -123,7 +104,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
           method="post"
         >
           <.error :if={@check_errors}>
-            Oops, something went wrong! Please check the errors below.
+            Please enter a valid phone number.
           </.error>
 
           <.input
@@ -133,10 +114,6 @@ defmodule YouCongressWeb.UserRegistrationLive do
             placeholder="+1 555 555 5555"
             required
           />
-
-          <.error :if={@check_errors}>
-            Please enter a valid phone number.
-          </.error>
 
           <:actions>
             <.button phx-disable-with="Sending code..." class="w-full">
@@ -226,19 +203,22 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
     case Accounts.register_user(user_params, author_params) do
       {:ok, %{user: user, author: _}} ->
-        email_code = 100_000..999_999 |> Enum.random() |> to_string()
-        Logger.debug("Email verification code: #{email_code}")
-        {:ok, _} = UserNotifier.deliver_email_verification_instructions(user.email, email_code)
-        changeset = Accounts.change_user_phone_number(user)
+        if user do
+          Accounts.deliver_user_confirmation_instructions(
+            user,
+            &url(~p"/users/confirm/#{&1}")
+          )
+        end
 
-        {:noreply,
-         socket
-         |> assign(:step, :validate_email)
-         |> assign_form(changeset)
-         |> assign(:user, user)
-         |> assign(:email_code, email_code)}
+        socket =
+          socket
+          |> assign(:step, :check_email)
+          |> assign(:user, user)
+
+        {:noreply, socket}
 
       {:error, :user, %Ecto.Changeset{} = changeset, _} ->
+        changeset = Ecto.Changeset.put_change(changeset, :name, author_params["name"])
         {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
 
       _ ->
@@ -336,26 +316,14 @@ defmodule YouCongressWeb.UserRegistrationLive do
     {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
   end
 
-  def handle_event("resend_email_code", _params, socket) do
+  def handle_event("resend_email", _params, socket) do
     user = socket.assigns.user
-    email_code = 100_000..999_999 |> Enum.random() |> to_string()
-    Logger.debug("New email verification code: #{email_code}")
 
-    case UserNotifier.deliver_email_verification_instructions(user.email, email_code) do
-      {:ok, _} ->
-        {:noreply,
-         socket
-         |> assign(:email_code, email_code)
-         |> put_flash(:info, "A new verification code has been sent to your email.")}
+    Accounts.deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
 
-      {:error, _} ->
-        {:noreply,
-         put_flash(
-           socket,
-           :error,
-           "Failed to send a new verification code. Please try again later."
-         )}
-    end
+    {:noreply,
+     socket
+     |> put_flash(:info, "A new verification URL has been sent to your email.")}
   end
 
   def handle_event("resend_phone_code", _params, socket) do

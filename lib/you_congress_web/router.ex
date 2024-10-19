@@ -116,5 +116,10 @@ defmodule YouCongressWeb.Router do
 
     get "/log_out", UserSessionController, :delete
     delete "/log_out", UserSessionController, :delete
+    get "/users/confirm/:token", UserConfirmationController, :confirm
+
+    live_session :current_user,
+      on_mount: [{YouCongressWeb.UserAuth, :mount_current_user}] do
+    end
   end
 end

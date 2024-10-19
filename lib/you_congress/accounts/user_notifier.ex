@@ -8,6 +8,7 @@ defmodule YouCongress.Accounts.UserNotifier do
   require Logger
 
   alias YouCongress.Mailer
+  alias YouCongress.Accounts.User
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
@@ -32,16 +33,18 @@ defmodule YouCongress.Accounts.UserNotifier do
     )
   end
 
-  def deliver_email_verification_instructions(email, code) do
-    deliver(email, "Email verification code", """
-    Hi #{email},
+  @doc """
+  Deliver instructions to confirm account.
+  """
+  def deliver_confirmation_instructions(%User{} = user, url) do
+    deliver(user.email, "Confirmation instructions", """
 
-    Your code to verify your email is:
+    Hi,
+    You can confirm your account by visiting the URL below:
 
-    #{code}
+    #{url}
 
-    Best regards,
-    Hector
+    If you didn't create an account with us, please ignore this.
     """)
   end
 

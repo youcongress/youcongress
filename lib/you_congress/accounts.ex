@@ -8,6 +8,7 @@ defmodule YouCongress.Accounts do
 
   alias YouCongress.Accounts.{User, UserToken, UserNotifier}
   alias YouCongress.Authors.Author
+  alias YouCongress.Accounts.UserNotifier
 
   ## Database getters
 
@@ -216,10 +217,38 @@ defmodule YouCongress.Accounts do
     |> Repo.update()
   end
 
+  @doc """
+  Updates the user email using the given token.
+  If the token matches, the user email is updated and the token is deleted.
+  The confirmed_at date is also updated to the current time.
+  """
+  def update_user_email(user, token) do
+    context = "change:#{user.email}"
+
+    with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
+         %UserToken{sent_to: email} <- Repo.one(query),
+         {:ok, _} <- Repo.transaction(user_email_multi(user, email, context)) do
+      :ok
+    else
+      _ -> :error
+    end
+  end
+
   def welcome_update(%User{} = user, attrs) do
     user
     |> User.welcome_changeset(attrs)
     |> Repo.update()
+  end
+
+  defp user_email_multi(user, email, context) do
+    changeset =
+      user
+      |> User.email_changeset(%{email: email})
+      |> User.email_confirm_changeset()
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, changeset)
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, [context]))
   end
 
   @doc ~S"""
@@ -307,6 +336,48 @@ defmodule YouCongress.Accounts do
   def delete_user_session_token(token) do
     Repo.delete_all(UserToken.token_and_context_query(token, "session"))
     :ok
+  end
+
+  ## Confirmation
+
+  @doc ~S"""
+  Delivers the confirmation email instructions to the given user.
+  ## Examples
+      iex> deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
+      {:ok, %{to: ..., body: ...}}
+      iex> deliver_user_confirmation_instructions(confirmed_user, &url(~p"/users/confirm/#{&1}"))
+      {:error, :already_confirmed}
+  """
+  def deliver_user_confirmation_instructions(%User{} = user, confirmation_url_fun)
+      when is_function(confirmation_url_fun, 1) do
+    if user.email_confirmed_at do
+      {:error, :already_confirmed}
+    else
+      {encoded_token, user_token} = UserToken.build_email_token(user, "confirm")
+      Repo.insert!(user_token)
+      UserNotifier.deliver_confirmation_instructions(user, confirmation_url_fun.(encoded_token))
+    end
+  end
+
+  @doc """
+  Confirms a user by the given token.
+  If the token matches, the user account is marked as confirmed
+  and the token is deleted.
+  """
+  def confirm_user(token) do
+    with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm"),
+         %User{} = user <- Repo.one(query),
+         {:ok, %{user: user}} <- Repo.transaction(confirm_user_multi(user)) do
+      {:ok, user}
+    else
+      _ -> :error
+    end
+  end
+
+  defp confirm_user_multi(user) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, User.email_confirm_changeset(user))
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm"]))
   end
 
   ## Reset password
@@ -417,5 +488,16 @@ defmodule YouCongress.Accounts do
   def confirm_user_phone(%User{} = user) do
     changeset = User.phone_number_confirm_changeset(user)
     Repo.update(changeset)
+  end
+
+  def sign_up_complete?(user) do
+    # Of they have twitter username, they are registered
+    twitter_login? = user.author.twitter_username != nil && user.author.twitter_username != ""
+    # The first users are not required to confirm email or phone for now
+    first_users? = user.id <= 45
+    # All others, need to confirm email and phone number
+    confirmed? = user.email_confirmed_at && user.phone_number_confirmed_at
+
+    twitter_login? || first_users? || confirmed?
   end
 end

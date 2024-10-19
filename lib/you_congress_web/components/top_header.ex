@@ -6,6 +6,8 @@ defmodule YouCongressWeb.TopHeaderComponent do
   use Phoenix.Component
   use YouCongressWeb, :html
 
+  alias YouCongress.Accounts
+
   defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
 
   def top_header(assigns) do
@@ -19,27 +21,36 @@ defmodule YouCongressWeb.TopHeaderComponent do
         </div>
 
         <div class="text-sm flex items-center gap-3 leading-6 text-zinc-900">
-          <div>
-            <.link href="https://github.com/youcongress/youcongress" target="_blank">
-              Star us on GitHub
-            </.link>
-          </div>
-          <div class="hidden md:block">
-            <.link href="https://x.com/YouCongressCom" target="_blank">
-              Follow us on X
-            </.link>
-          </div>
+          <%= if !@current_user || Accounts.sign_up_complete?(@current_user) do %>
+            <div>
+              <.link href="https://github.com/youcongress/youcongress" target="_blank">
+                Star us on GitHub
+              </.link>
+            </div>
+            <div class="hidden md:block">
+              <.link href="https://x.com/YouCongressCom" target="_blank">
+                Follow us on X
+              </.link>
+            </div>
 
-          <div>
-            <.link href={~p"/about"}>
-              About
-            </.link>
-          </div>
+            <div>
+              <.link href={~p"/about"}>
+                About
+              </.link>
+            </div>
+          <% end %>
+
           <%= if @current_user do %>
             <div>
-              <.link href={author_path(@current_user.author)}>
-                Profile
-              </.link>
+              <%= if Accounts.sign_up_complete?(@current_user) do %>
+                <.link href={author_path(@current_user.author)}>
+                  Profile
+                </.link>
+              <% else %>
+                <.link href={~p"/log_out"}>
+                  Log out
+                </.link>
+              <% end %>
             </div>
           <% else %>
             <div>
