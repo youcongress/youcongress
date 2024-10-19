@@ -105,3 +105,9 @@ if config_env() == :prod do
 
   config :swoosh, :api_client, Swoosh.ApiClient.Finch
 end
+
+if config_env() in [:dev, :prod] do
+  config :you_congress, :twilio_account_sid, System.get_env("TWILIO_ACCOUNT_SID")
+  config :you_congress, :twilio_auth_token, System.get_env("TWILIO_AUTH_TOKEN")
+  config :you_congress, :twilio_verify_service_sid, System.get_env("TWILIO_VERIFY_SERVICE_SID")
+end
