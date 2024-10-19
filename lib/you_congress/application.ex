@@ -13,12 +13,12 @@ defmodule YouCongress.Application do
     children = [
       # Start the Telemetry supervisor
       YouCongressWeb.Telemetry,
+      # Start the Swoosh supervisor
+      {Finch, name: Swoosh.Finch},
       # Start the Ecto repository
       YouCongress.Repo,
       # Start the PubSub system
       {Phoenix.PubSub, name: YouCongress.PubSub},
-      # Start Finch
-      {Finch, name: YouCongress.Finch},
       # Start the Endpoint (http/https)
       YouCongressWeb.Endpoint,
       # Oban
