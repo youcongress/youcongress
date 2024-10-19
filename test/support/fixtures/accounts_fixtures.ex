@@ -37,6 +37,9 @@ defmodule YouCongress.AccountsFixtures do
       |> valid_user_attributes()
       |> YouCongress.Accounts.x_register_user(author_attrs)
 
+    {:ok, _} = YouCongress.Accounts.confirm_user_email(user)
+    {:ok, _} = YouCongress.Accounts.confirm_user_phone(user)
+
     user
   end
 

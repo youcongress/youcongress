@@ -131,7 +131,7 @@ defmodule YouCongress.Accounts do
 
   """
   def register_user(user_attrs, author_attrs \\ %{}) do
-    author_attrs = Map.put(author_attrs, :twin_origin, false)
+    author_attrs = Map.put(author_attrs, "twin_origin", false)
 
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:author, Author.changeset(%Author{}, author_attrs))
@@ -180,6 +180,10 @@ defmodule YouCongress.Accounts do
     User.email_changeset(user, attrs, validate_email: false)
   end
 
+  def change_user_phone_number(user, attrs \\ %{}) do
+    User.phone_number_changeset(user, attrs)
+  end
+
   @doc """
   Emulates that the email will change without actually changing
   it in the database.
@@ -200,22 +204,10 @@ defmodule YouCongress.Accounts do
     |> Ecto.Changeset.apply_action(:update)
   end
 
-  @doc """
-  Updates the user email using the given token.
-
-  If the token matches, the user email is updated and the token is deleted.
-  The confirmed_at date is also updated to the current time.
-  """
-  def update_user_email(user, token) do
-    context = "change:#{user.email}"
-
-    with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
-         %UserToken{sent_to: email} <- Repo.one(query),
-         {:ok, _} <- Repo.transaction(user_email_multi(user, email, context)) do
-      :ok
-    else
-      _ -> :error
-    end
+  def update_user_phone_number(user, phone_number) do
+    user
+    |> User.phone_number_changeset(%{"phone_number" => phone_number})
+    |> Repo.update()
   end
 
   def update_login_with_x(%User{} = user, attrs) do
@@ -228,17 +220,6 @@ defmodule YouCongress.Accounts do
     user
     |> User.welcome_changeset(attrs)
     |> Repo.update()
-  end
-
-  defp user_email_multi(user, email, context) do
-    changeset =
-      user
-      |> User.email_changeset(%{email: email})
-      |> User.confirm_changeset()
-
-    Ecto.Multi.new()
-    |> Ecto.Multi.update(:user, changeset)
-    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, [context]))
   end
 
   @doc ~S"""
@@ -328,53 +309,6 @@ defmodule YouCongress.Accounts do
     :ok
   end
 
-  ## Confirmation
-
-  @doc ~S"""
-  Delivers the confirmation email instructions to the given user.
-
-  ## Examples
-
-      iex> deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
-      {:ok, %{to: ..., body: ...}}
-
-      iex> deliver_user_confirmation_instructions(confirmed_user, &url(~p"/users/confirm/#{&1}"))
-      {:error, :already_confirmed}
-
-  """
-  def deliver_user_confirmation_instructions(%User{} = user, confirmation_url_fun)
-      when is_function(confirmation_url_fun, 1) do
-    if user.confirmed_at do
-      {:error, :already_confirmed}
-    else
-      {encoded_token, user_token} = UserToken.build_email_token(user, "confirm")
-      Repo.insert!(user_token)
-      UserNotifier.deliver_confirmation_instructions(user, confirmation_url_fun.(encoded_token))
-    end
-  end
-
-  @doc """
-  Confirms a user by the given token.
-
-  If the token matches, the user account is marked as confirmed
-  and the token is deleted.
-  """
-  def confirm_user(token) do
-    with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm"),
-         %User{} = user <- Repo.one(query),
-         {:ok, %{user: user}} <- Repo.transaction(confirm_user_multi(user)) do
-      {:ok, user}
-    else
-      _ -> :error
-    end
-  end
-
-  defp confirm_user_multi(user) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.update(:user, User.confirm_changeset(user))
-    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm"]))
-  end
-
   ## Reset password
 
   @doc ~S"""
@@ -450,4 +384,38 @@ defmodule YouCongress.Accounts do
   def in_waiting_list?(_), do: false
 
   def count, do: Repo.aggregate(User, :count, :id)
+
+  @doc """
+  Confirms a user's email.
+
+  ## Examples
+
+      iex> confirm_user_email(user)
+      {:ok, %User{}}
+
+      iex> confirm_user_email(invalid_user)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def confirm_user_email(%User{} = user) do
+    changeset = User.email_confirm_changeset(user)
+    Repo.update(changeset)
+  end
+
+  @doc """
+  Confirms a user's phone number.
+
+  ## Examples
+
+      iex> confirm_user_phone(user)
+      {:ok, %User{}}
+
+      iex> confirm_user_phone(invalid_user)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def confirm_user_phone(%User{} = user) do
+    changeset = User.phone_number_confirm_changeset(user)
+    Repo.update(changeset)
+  end
 end

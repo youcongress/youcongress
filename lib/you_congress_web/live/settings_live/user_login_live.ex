@@ -11,6 +11,32 @@ defmodule YouCongressWeb.UserLoginLive do
         </:subtitle>
       </.header>
 
+      <div class="pt-4">
+        <div class="text-center">
+          <.link
+            href="/x_log_in"
+            method="post"
+            class="inline-flex items-center justify-between bg-black text-white font-bold py-2 px-4 rounded-full hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-opacity-50 transition-colors duration-300"
+          >
+            Sign in with
+            <svg
+              class="w-5 h-5 ml-2"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="#ffffff"
+            >
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+          </.link>
+        </div>
+        <span class="text-xs">
+          * If logging in with X fails, log in at
+          <.link href="https://x.com" class="underline" target="_blank">x.com</.link>
+          and then return here.
+        </span>
+      </div>
+      <div class="pt-4 text-center">or</div>
+
       <.simple_form for={@form} id="login_form" action={~p"/log_in"} phx-update="ignore">
         <.input field={@form[:email]} type="email" label="Email" required />
         <.input field={@form[:password]} type="password" label="Password" required />
@@ -24,29 +50,12 @@ defmodule YouCongressWeb.UserLoginLive do
           </.button>
         </:actions>
       </.simple_form>
-      <div class="text-center">
-        <div class="pb-1">or</div>
-        <.link
-          href="/x_log_in"
-          method="post"
-          class="inline-flex items-center justify-between bg-black text-white font-bold py-2 px-4 rounded-full hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-opacity-50 transition-colors duration-300"
-        >
-          Sign in with
-          <svg
-            class="w-5 h-5 ml-2"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="#ffffff"
-          >
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-          </svg>
-        </.link>*
-      </div>
-      <span class="text-xs">
-        * If logging in with X fails, log in at
-        <.link href="https://x.com" class="underline" target="_blank">x.com</.link>
-        and then return here.
-      </span>
+
+      <p class="text-center mt-4">
+        <.link href={~p"/reset_password"} class="text-sm text-gray-600 hover:text-gray-900">
+          Forgot your password?
+        </.link>
+      </p>
     </div>
     """
   end

@@ -11,6 +11,7 @@ defmodule YouCongressWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :fetch_current_user
+    plug :redirect_to_user_registration_if_email_or_phone_unconfirmed
   end
 
   pipeline :api do
@@ -40,6 +41,7 @@ defmodule YouCongressWeb.Router do
     get "/email-login-waiting-list/thanks", PageController, :email_login_waiting_list_thanks
     get "/join-and-become-a-supporter", PageController, :join_and_become_a_supporter
     get "/join-and-become-a-supporter/thanks", PageController, :join_and_become_a_supporter_thanks
+    live "/sign_up", UserRegistrationLive, :new
 
     # Legacy redirection from /v/:slug to /p/:slug
     get "/v/:slug", VotingController, :redirect_to_p
@@ -48,7 +50,6 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through [:browser, :require_admin_user]
 
-    live "/i", InvitationLive, :index
     live "/p/new", VotingLive.Index, :new
     live "/p/:slug/edit", VotingLive.Show, :edit
     live "/p/:slug/show/edit", VotingLive.Show, :edit
@@ -98,10 +99,16 @@ defmodule YouCongressWeb.Router do
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{YouCongressWeb.UserAuth, :redirect_if_user_is_authenticated}] do
       live "/log_in", UserLoginLive, :new
-      live "/sign_up", UserSignUpLive, :new
     end
 
     post "/log_in", UserSessionController, :create
+  end
+
+  scope "/", YouCongressWeb do
+    pipe_through [:browser, :fetch_current_user, :redirect_if_user_is_authenticated]
+
+    live "/reset_password", ResetPasswordLive, :new
+    live "/reset_password/:token", ResetPasswordTokenLive, :edit
   end
 
   scope "/", YouCongressWeb do
@@ -109,11 +116,5 @@ defmodule YouCongressWeb.Router do
 
     get "/log_out", UserSessionController, :delete
     delete "/log_out", UserSessionController, :delete
-
-    live_session :current_user,
-      on_mount: [{YouCongressWeb.UserAuth, :mount_current_user}] do
-      live "/users/confirm/:token", UserConfirmationLive, :edit
-      live "/users/confirm", UserConfirmationInstructionsLive, :new
-    end
   end
 end

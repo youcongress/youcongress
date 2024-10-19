@@ -68,6 +68,10 @@ config :you_congress, Oban,
     default: 10
   ]
 
+config :you_congress, :twilio_account_sid, System.get_env("TWILIO_ACCOUNT_SID")
+config :you_congress, :twilio_auth_token, System.get_env("TWILIO_AUTH_TOKEN")
+config :you_congress, :twilio_verify_service_sid, System.get_env("TWILIO_VERIFY_SERVICE_SID")
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
