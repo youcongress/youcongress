@@ -12,13 +12,21 @@ defmodule YouCongress.Accounts.UserNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"YouCongress", "contact@example.com"})
+      |> from({"YouCongress", "hello@youcongress.com"})
       |> subject(subject)
       |> text_body(body)
 
     with {:ok, _metadata} <- Mailer.deliver(email) do
       {:ok, email}
     end
+  end
+
+  def deliver_test do
+    deliver(
+      "hec@hecperez.com",
+      "Test email",
+      "Whatever"
+    )
   end
 
   @doc """
