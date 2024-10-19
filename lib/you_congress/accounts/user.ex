@@ -10,9 +10,11 @@ defmodule YouCongress.Accounts.User do
 
   schema "users" do
     field :email, :string
+    field :phone_number, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
-    field :confirmed_at, :naive_datetime
+    field :email_confirmed_at, :naive_datetime
+    field :phone_number_confirmed_at, :naive_datetime
     field :role, :string, default: "user"
     field :newsletter, :boolean, default: false
 
@@ -23,9 +25,11 @@ defmodule YouCongress.Accounts.User do
 
   @type t :: %__MODULE__{
           email: String.t(),
+          phone_number: String.t() | nil,
           password: String.t() | nil,
           hashed_password: String.t(),
-          confirmed_at: NaiveDateTime.t() | nil,
+          email_confirmed_at: NaiveDateTime.t() | nil,
+          phone_number_confirmed_at: NaiveDateTime.t() | nil,
           role: String.t(),
           author_id: integer() | nil,
           inserted_at: NaiveDateTime.t(),
@@ -33,29 +37,6 @@ defmodule YouCongress.Accounts.User do
           newsletter: boolean()
         }
 
-  @doc """
-  A user changeset for registration.
-
-  It is important to validate the length of both email and password.
-  Otherwise databases may truncate the email without warnings, which
-  could lead to unpredictable or insecure behaviour. Long passwords may
-  also be very expensive to hash for certain algorithms.
-
-  ## Options
-
-    * `:hash_password` - Hashes the password so it can be stored securely
-      in the database and ensures the password field is cleared to prevent
-      leaks in the logs. If password hashing is not needed and clearing the
-      password field is not desired (like when using this changeset for
-      validations on a LiveView form), this option can be set to `false`.
-      Defaults to `true`.
-
-    * `:validate_email` - Validates the uniqueness of the email, in case
-      you don't want to validate the uniqueness of the email (like when
-      using this changeset for validations on a LiveView form before
-      submitting the form), this option can be set to `false`.
-      Defaults to `true`.
-  """
   def password_registration_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email, :password, :author_id])
@@ -91,7 +72,7 @@ defmodule YouCongress.Accounts.User do
   defp validate_password(changeset, opts) do
     changeset
     |> validate_required([:password])
-    |> validate_length(:password, min: 12, max: 72)
+    |> validate_length(:password, min: 8, max: 72)
     # Examples of additional password validation:
     # |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
     # |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
@@ -141,6 +122,15 @@ defmodule YouCongress.Accounts.User do
     end
   end
 
+  def phone_number_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:phone_number])
+    |> validate_required([:phone_number])
+    |> validate_format(:phone_number, ~r/^\+?[0-9]{10,14}$/,
+      message: "must be a valid phone number"
+    )
+  end
+
   @doc """
   A user changeset for changing the password.
 
@@ -163,9 +153,14 @@ defmodule YouCongress.Accounts.User do
   @doc """
   Confirms the account by setting `confirmed_at`.
   """
-  def confirm_changeset(user) do
+  def email_confirm_changeset(user) do
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-    change(user, confirmed_at: now)
+    change(user, email_confirmed_at: now)
+  end
+
+  def phone_number_confirm_changeset(user) do
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    change(user, phone_number_confirmed_at: now)
   end
 
   def role_changeset(user, attrs) do

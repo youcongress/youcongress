@@ -5,7 +5,10 @@ defmodule YouCongress.Accounts.UserNotifier do
 
   import Swoosh.Email
 
+  require Logger
+
   alias YouCongress.Mailer
+  alias YouCongress.Accounts.User
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
@@ -17,6 +20,7 @@ defmodule YouCongress.Accounts.UserNotifier do
       |> text_body(body)
 
     with {:ok, _metadata} <- Mailer.deliver(email) do
+      Logger.debug(email)
       {:ok, email}
     end
   end
@@ -32,20 +36,15 @@ defmodule YouCongress.Accounts.UserNotifier do
   @doc """
   Deliver instructions to confirm account.
   """
-  def deliver_confirmation_instructions(user, url) do
+  def deliver_confirmation_instructions(%User{} = user, url) do
     deliver(user.email, "Confirmation instructions", """
 
-    ==============================
-
-    Hi #{user.email},
-
+    Hi,
     You can confirm your account by visiting the URL below:
 
     #{url}
 
     If you didn't create an account with us, please ignore this.
-
-    ==============================
     """)
   end
 
@@ -54,9 +53,6 @@ defmodule YouCongress.Accounts.UserNotifier do
   """
   def deliver_reset_password_instructions(user, url) do
     deliver(user.email, "Reset password instructions", """
-
-    ==============================
-
     Hi #{user.email},
 
     You can reset your password by visiting the URL below:
@@ -64,8 +60,6 @@ defmodule YouCongress.Accounts.UserNotifier do
     #{url}
 
     If you didn't request this change, please ignore this.
-
-    ==============================
     """)
   end
 

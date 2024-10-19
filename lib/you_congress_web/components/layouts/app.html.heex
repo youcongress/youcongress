@@ -16,7 +16,7 @@
   </div>
 <% end %>
 <.top_header
-  current_user={@current_user}
+  current_user={assigns[:current_user]}
   votes_count={if assigns[:votes_count], do: @votes_count}
   user_votes_count={if assigns[:user_votes_count], do: @user_votes_count}
 />
