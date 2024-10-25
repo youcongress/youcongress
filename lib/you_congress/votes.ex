@@ -27,6 +27,7 @@ defmodule YouCongress.Votes do
     base_query =
       from(v in Vote,
         join: a in assoc(v, :author),
+        join: o in assoc(v, :opinion),
         select: v
       )
 
@@ -48,6 +49,21 @@ defmodule YouCongress.Votes do
 
         {:order_by, order_by}, query ->
           order_by(query, ^order_by)
+
+        {:order_by_strong_opinions_first, true}, query ->
+          from [v, _a, o] in query,
+            order_by: [
+              desc:
+                fragment(
+                  "CASE
+                  WHEN ? IS NULL THEN 0
+                  ELSE 1
+                  END",
+                  v.opinion_id
+                ),
+              desc: o.likes_count,
+              desc: o.descendants_count
+            ]
 
         {:limit, limit}, query ->
           limit(query, ^limit)
