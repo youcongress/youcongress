@@ -15,10 +15,14 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongressWeb.VotingLive.VoteComponent
   alias YouCongressWeb.Tools.Tooltip
   alias YouCongressWeb.VotingLive.CastVoteComponent
+  alias YouCongressWeb.Components.SwitchComponent
 
   @impl true
   def mount(_params, session, socket) do
-    socket = assign_current_user(socket, session["user_token"])
+    socket =
+      socket
+      |> assign_current_user(session["user_token"])
+      |> assign(:order_by_date, false)
 
     if connected?(socket) do
       Track.event("View Author", socket.assigns.current_user)
@@ -29,8 +33,11 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
   @impl true
   def handle_params(params, _, socket) do
+    order_by_date = socket.assigns.order_by_date
+
     author = get_author!(params)
-    votes = Votes.list_votes_by_author_id(author.id, preload: [:voting, :answer, :opinion])
+
+    votes = load_votes(author.id, order_by_date)
 
     name = author.name || author.twitter_username || "Anonymous user"
     title = page_title(socket.assigns.live_action, name)
@@ -168,6 +175,18 @@ defmodule YouCongressWeb.AuthorLive.Show do
     {:noreply, assign(socket, :regenerating_opinion_id, opinion_id)}
   end
 
+  def handle_event("toggle-order-by-date", _, socket) do
+    %{assigns: %{order_by_date: order_by_date, author: author}} = socket
+    order_by_date = !order_by_date
+
+    socket =
+      socket
+      |> assign(:order_by_date, order_by_date)
+      |> assign(:votes, load_votes(author.id, order_by_date))
+
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_info({:regenerate, opinion_id}, socket) do
     %{assigns: %{current_user: current_user, votes: votes}} = socket
@@ -248,4 +267,20 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   defp replace_opinion_in_vote(vote, _, _), do: vote
+
+  defp load_votes(author_id, false) do
+    Votes.list_votes(
+      author_ids: [author_id],
+      order_by_strong_opinions_first: true,
+      preload: [:voting, :answer, :opinion]
+    )
+  end
+
+  defp load_votes(author_id, true) do
+    Votes.list_votes(
+      author_ids: [author_id],
+      order_by: [desc: :id],
+      preload: [:voting, :answer, :opinion]
+    )
+  end
 end
