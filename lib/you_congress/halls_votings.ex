@@ -9,6 +9,7 @@ defmodule YouCongress.HallsVotings do
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
   alias YouCongress.Halls
+  alias YouCongress.Halls.Hall
   alias YouCongress.HallsVotings.HallVoting
 
   def sync! do
@@ -21,36 +22,22 @@ defmodule YouCongress.HallsVotings do
   ## Raises
     - Raises an error if the voting does not exist or if there's an issue updating the voting's halls.
   """
-  @spec sync!(integer) :: :ok
   def sync!(voting_id, tags \\ nil) do
     voting = Votings.get_voting!(voting_id, preload: [:halls])
     tags = tags || Halls.classify!(voting.title)
     {:ok, halls} = Halls.list_or_create_by_names(tags)
 
-    link!(voting, halls)
+    link(voting, halls)
   end
 
-  @doc """
-  Links a voting to a list of halls.
-
-  ## Parameters
-    - `voting`: The voting struct with its **halls preloaded**.
-    - `halls`: A list of hall structs to link with the voting.
-
-  ## Raises
-    - Raises an error if there's an issue updating the voting's halls.
-  """
-  @spec link!(Voting.t(), [Hall.t()]) :: :ok
-  def link!(voting, halls) do
+  @spec link(Voting.t(), [Hall.t()]) :: {:ok, Voting.t()} | {:error, Ecto.Changeset.t()}
+  defp link(voting, halls) do
     voting_changeset =
       voting
       |> Voting.changeset(%{})
       |> Ecto.Changeset.put_assoc(:halls, halls)
 
-    case Repo.update(voting_changeset) do
-      {:ok, _} -> :ok
-      {:error, changeset} -> {:error, changeset}
-    end
+    Repo.update(voting_changeset)
   end
 
   def delete_halls_votings(%Voting{id: voting_id}) do

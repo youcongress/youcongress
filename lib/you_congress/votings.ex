@@ -7,6 +7,8 @@ defmodule YouCongress.Votings do
   alias YouCongress.Repo
 
   alias YouCongress.Votings.Voting
+  alias YouCongress.HallsVotings
+  alias YouCongress.Workers.VotingHallsGeneratorWorker
 
   @doc """
   Returns the list of votings.
@@ -139,9 +141,21 @@ defmodule YouCongress.Votings do
 
   """
   def create_voting(attrs \\ %{}) do
-    %Voting{}
-    |> Voting.changeset(attrs)
-    |> Repo.insert()
+    voting_changeset = Voting.changeset(%Voting{}, attrs)
+
+    result =
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:voting, voting_changeset)
+      |> Oban.insert(:job, fn %{voting: voting} ->
+        VotingHallsGeneratorWorker.new(%{voting_id: voting.id})
+      end)
+      |> Repo.transaction()
+
+    case result do
+      {:ok, %{voting: voting}} -> {:ok, voting}
+      {:error, :voting, error, _} -> {:error, error}
+      {:error, _, _, _} -> {:error, %Ecto.Changeset{}}
+    end
   end
 
   @doc """
@@ -157,18 +171,20 @@ defmodule YouCongress.Votings do
 
   """
   def update_voting(%Voting{} = voting, attrs) do
-    case voting
-         |> Voting.changeset(attrs)
-         |> Repo.update() do
-      {:ok, new_voting} ->
-        if attrs[:title] && attrs[:title] != voting.title do
-          YouCongress.HallsVotings.sync!(new_voting.id)
-        end
+    result =
+      voting
+      |> Voting.changeset(attrs)
+      |> Repo.update()
 
-        {:ok, new_voting}
+    with {:ok, new_voting} <- result do
+      if attrs[:title] && attrs[:title] != voting.title do
+        # Only admins can update voting so it's ok to:
+        # 1. do it synchronously
+        # 2. raise an error if it fails
+        HallsVotings.sync!(new_voting.id)
+      end
 
-      {:error, changeset} ->
-        {:error, changeset}
+      {:ok, new_voting}
     end
   end
 

@@ -3,7 +3,7 @@ defmodule YouCongress.DigitalTwins do
   Generate and create votes and authors.
   """
   alias YouCongress.Authors
-  alias YouCongress.DigitalTwins.AI
+  alias YouCongress.DigitalTwins.Opinator
   alias YouCongress.Votes
   alias YouCongress.Votes.Answers.Answer
   alias YouCongress.Votes.Vote
@@ -27,7 +27,7 @@ defmodule YouCongress.DigitalTwins do
     topic = voting.title
     model = :"gpt-4o"
 
-    case AI.generate_opinion(topic, model, next_response, name) do
+    case Opinator.generate_opinion(topic, model, next_response, name) do
       {:ok, %{opinion: vote}} ->
         case Votes.Answers.get_answer_by_response(vote["agree_rate"]) do
           %Answer{} = answer ->
