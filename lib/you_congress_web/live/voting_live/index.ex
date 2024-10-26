@@ -18,6 +18,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongressWeb.VotingLive.Index.Search
   alias YouCongressWeb.VotingLive.CastVoteComponent
   alias YouCongressWeb.Components.SwitchComponent
+  alias YouCongress.Votings.VotingQueries
 
   @default_hall "ai"
 
@@ -217,7 +218,7 @@ defmodule YouCongressWeb.VotingLive.Index do
     voting_ids = Enum.map(votings, & &1.id)
 
     votes_by_voting_id =
-      YouCongress.Votings.VotingQueries.get_one_vote_per_voting(
+      VotingQueries.get_one_vote_per_voting(
         voting_ids,
         current_user
       )
