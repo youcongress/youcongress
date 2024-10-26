@@ -122,6 +122,10 @@ defmodule YouCongressWeb.UserRegistrationLive do
             </.button>
           </:actions>
         </.simple_form>
+        <div class="text-xs text-gray-600 text-center pt-4">
+          Or <.link href={~p"/log_out"} class="underline">log out</.link>
+          and log in with X (no phone number required)
+        </div>
       <% end %>
 
       <%= if @step == :validate_phone do %>
