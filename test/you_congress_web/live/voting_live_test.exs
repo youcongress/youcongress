@@ -107,8 +107,7 @@ defmodule YouCongressWeb.VotingLiveTest do
     test "saves new voting and redirect to show", %{conn: conn} do
       with_mocks([
         {YouCongress.Votings.TitleRewording, [],
-         [generate_rewordings: fn _, _ -> {:ok, @suggested_titles, 0} end]},
-        {Oban, [], [insert: fn _ -> {:ok, %{id: 1}} end]}
+         [generate_rewordings: fn _, _ -> {:ok, @suggested_titles, 0} end]}
       ]) do
         conn = log_in_as_admin(conn)
         {:ok, index_live, _html} = live(conn, ~p"/")
