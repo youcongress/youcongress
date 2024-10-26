@@ -157,6 +157,11 @@ defmodule YouCongress.Halls do
     classifier_impl().classify(text, model)
   end
 
+  def classify!(text, model \\ :"gpt-4o") do
+    {:ok, %{tags: tags}} = classifier_impl().classify(text, model)
+    tags
+  end
+
   defp classifier_impl do
     Application.get_env(:you_congress, :hall_classifier, YouCongress.Halls.Classification)
   end
