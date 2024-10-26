@@ -6,6 +6,8 @@ defmodule YouCongress.Opinions.AIReplier.AIReplierFake do
   @behaviour YouCongress.Opinions.AIReplier.AIReplierBehaviour
 
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.Opinions
+  alias Faker.Lorem
 
   def maybe_reply(%{twin: true}), do: do_nothing()
   def maybe_reply(%{ancestry: nil}), do: do_nothing()
@@ -21,8 +23,8 @@ defmodule YouCongress.Opinions.AIReplier.AIReplierFake do
   end
 
   defp reply(opinion, parent) do
-    YouCongress.Opinions.create_opinion(%{
-      "content" => Faker.Lorem.sentence(),
+    Opinions.create_opinion(%{
+      "content" => Lorem.sentence(),
       "author_id" => parent.author_id,
       "voting_id" => opinion.voting_id,
       "ancestry" => set_ancestry(opinion),

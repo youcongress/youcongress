@@ -4,7 +4,7 @@ defmodule YouCongress.DigitalTwins.Regenerate do
   """
 
   alias YouCongress.Accounts.Permissions
-  alias YouCongress.DigitalTwins.AI
+  alias YouCongress.DigitalTwins.Opinator
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Likes
@@ -22,7 +22,7 @@ defmodule YouCongress.DigitalTwins.Regenerate do
          %Vote{} = vote <-
            Votes.get_by(voting_id: opinion.voting_id, author_id: opinion.author_id),
          {:ok, %{opinion: data}} <-
-           AI.generate_opinion(opinion.voting.title, :"gpt-4o", nil, opinion.author.name),
+           Opinator.generate_opinion(opinion.voting.title, :"gpt-4o", nil, opinion.author.name),
          %Answer{} = answer <- Votes.Answers.get_answer_by_response(data["agree_rate"]),
          {:ok, {_opinion, vote}} <-
            update_opinion_and_vote(opinion, data["opinion"], vote, answer.id) do

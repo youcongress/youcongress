@@ -1,4 +1,4 @@
-defmodule YouCongress.DigitalTwins.AI do
+defmodule YouCongress.DigitalTwins.OpinatorAI do
   @moduledoc """
   Generate opinions via OpenAI's API.
   """
