@@ -22,10 +22,9 @@ defmodule YouCongress.HallsVotings do
     - Raises an error if the voting does not exist or if there's an issue updating the voting's halls.
   """
   @spec sync!(integer) :: :ok
-  def sync!(voting_id) do
+  def sync!(voting_id, tags \\ nil) do
     voting = Votings.get_voting!(voting_id, preload: [:halls])
-
-    {:ok, %{tags: tags}} = Halls.classify(voting.title)
+    tags = tags || Halls.classify!(voting.title)
     {:ok, halls} = Halls.list_or_create_by_names(tags)
 
     link!(voting, halls)
