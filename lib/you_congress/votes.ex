@@ -27,7 +27,7 @@ defmodule YouCongress.Votes do
     base_query =
       from(v in Vote,
         join: a in assoc(v, :author),
-        join: o in assoc(v, :opinion),
+        left_join: o in assoc(v, :opinion),
         select: v
       )
 
