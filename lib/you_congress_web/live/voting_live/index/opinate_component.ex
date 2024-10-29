@@ -29,66 +29,70 @@ defmodule YouCongressWeb.VotingLive.Index.OpinateComponent do
   def render(assigns) do
     ~H"""
     <div>
-      <.form
-        for={@form}
-        id={"v#{@voting.id}-opinion-form"}
-        phx-target={@myself}
-        phx-change="validate"
-        phx-submit="save"
-      >
-        Why did you vote that way?
-        <div class="text-xs text-gray-500 pb-0 mb-0">
-          Strong arguments may lead others to delegate to you.
-        </div>
-        <div class="mb-4">
-          <textarea
-            name="opinion[content]"
-            rows="4"
-            placeholder={
-              if @current_user,
-                do: "Add your comment...",
-                else: "Log in to comment..."
-            }
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            phx-debounce="300"
-            disabled={is_nil(@current_user)}
-          ><%= @form[:content].value %></textarea>
-          <%= for error <- Keyword.get_values(@form.errors, :content) do %>
-            <div class="mt-1 text-sm text-red-600"><%= translate_error(error) %></div>
-          <% end %>
-        </div>
-        <div class="flex items-center space-x-2">
-          <button
-            type="submit"
-            class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            phx-disable-with="Saving..."
-            disabled={is_nil(@current_user)}
-          >
-            <%= if @form.data.id, do: "Update", else: "Publish" %> Arguments
-          </button>
-          <%= if @form.data.id do %>
-            <.link
-              href="#"
-              phx-click="delete"
-              phx-target={@myself}
-              class="text-sm text-red-600 hover:text-red-800"
+      <%= if @current_user do %>
+        <.form
+          for={@form}
+          id={"v#{@voting.id}-opinion-form"}
+          phx-target={@myself}
+          phx-change="validate"
+          phx-submit="save"
+        >
+          Why did you vote that way?
+          <div class="text-xs text-gray-500 pb-0 mb-0">
+            Strong arguments may lead others to delegate to you.
+          </div>
+          <div class="mb-4">
+            <textarea
+              name="opinion[content]"
+              rows="4"
+              placeholder={
+                if @current_user,
+                  do: "Add your comment...",
+                  else: "Log in to comment..."
+              }
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              phx-debounce="300"
+              disabled={is_nil(@current_user)}
+            ><%= @form[:content].value %></textarea>
+            <%= for error <- Keyword.get_values(@form.errors, :content) do %>
+              <div class="mt-1 text-sm text-red-600"><%= translate_error(error) %></div>
+            <% end %>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button
+              type="submit"
+              class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              phx-disable-with="Saving..."
+              disabled={is_nil(@current_user)}
             >
-              Delete
-            </.link>
-          <% else %>
-            <%= if @form[:content].value && @form[:content].value != "" do %>
+              <%= if @form.data.id, do: "Update", else: "Publish" %> Arguments
+            </button>
+            <%= if @form.data.id do %>
               <.link
                 href="#"
-                phx-click="cancel"
+                phx-click="delete"
                 phx-target={@myself}
-                class="text-sm text-gray-600 hover:text-gray-800"
+                class="text-sm text-red-600 hover:text-red-800"
               >
-                Cancel
+                Delete
               </.link>
+            <% else %>
+              <%= if @form[:content].value && @form[:content].value != "" do %>
+                <.link
+                  href="#"
+                  phx-click="cancel"
+                  phx-target={@myself}
+                  class="text-sm text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </.link>
+              <% end %>
             <% end %>
-          <% end %>
-        </div>
-      </.form>
+          </div>
+        </.form>
+      <% else %>
+        <.link href={~p"/p/#{@voting.slug}"} class="underline">Read comments</.link>
+      <% end %>
     </div>
     """
   end
