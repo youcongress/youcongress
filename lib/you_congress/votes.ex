@@ -56,10 +56,27 @@ defmodule YouCongress.Votes do
               desc:
                 fragment(
                   "CASE
+                  WHEN ? = true THEN 1
+                  ELSE 0
+                  END",
+                  v.direct
+                ),
+              desc:
+                fragment(
+                  "CASE
                   WHEN ? IS NULL THEN 0
                   ELSE 1
                   END",
                   v.opinion_id
+                ),
+              desc:
+                fragment(
+                  "CASE
+                WHEN ? = 1 OR ? = 6 THEN 1
+                ELSE 0
+                END",
+                  v.answer_id,
+                  v.answer_id
                 ),
               desc: o.likes_count,
               desc: o.descendants_count
