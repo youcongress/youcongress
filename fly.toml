@@ -24,8 +24,8 @@ kill_signal = 'SIGTERM'
 
 [http_service.concurrency]
     type = 'connections'
-    hard_limit = 800
-    soft_limit = 1000
+    hard_limit = 1000
+    soft_limit = 800
 
 [[vm]]
   memory = '512mb'
