@@ -150,12 +150,11 @@ defmodule YouCongressWeb.VotingLiveTest do
       assert html =~ voting.title
     end
 
-    # test "displays voting as non-logged visitor", %{conn: conn, voting: voting} do
-    #   {:ok, _show_live, html} = live(conn, ~p"/p/#{voting.slug}")
+    test "displays voting as non-logged visitor", %{conn: conn, voting: voting} do
+      {:ok, _show_live, html} = live(conn, ~p"/p/#{voting.slug}")
 
-    #   assert html =~ "Show Voting"
-    #   assert html =~ voting.title
-    # end
+      assert html =~ voting.title
+    end
 
     test "updates voting within modal", %{conn: conn, voting: voting} do
       conn = log_in_as_admin(conn)
