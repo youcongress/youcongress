@@ -72,6 +72,14 @@ defmodule YouCongress.Votes do
               desc:
                 fragment(
                   "CASE
+                  WHEN ? IS NULL THEN 0
+                  ELSE 1
+                  END",
+                  o.source_url
+                ),
+              desc:
+                fragment(
+                  "CASE
                 WHEN ? = 1 OR ? = 6 THEN 1
                 ELSE 0
                 END",
