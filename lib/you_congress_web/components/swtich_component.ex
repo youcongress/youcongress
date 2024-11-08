@@ -2,12 +2,13 @@ defmodule YouCongressWeb.Components.SwitchComponent do
   use Phoenix.Component
 
   attr :order_by_date, :boolean
-  attr :label, :string
+  attr :label1, :string
+  attr :label2, :string
 
   def render(assigns) do
     ~H"""
     <div class="text-gray-600 pt-2">
-      <%= @label %>
+      <%= @label1 %>
     </div>
     <div class="pt-2">
       <button
@@ -32,6 +33,9 @@ defmodule YouCongressWeb.Components.SwitchComponent do
         >
         </span>
       </button>
+    </div>
+    <div class="text-gray-600 pt-2">
+      <%= @label2 %>
     </div>
     """
   end
