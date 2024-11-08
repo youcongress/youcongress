@@ -21,13 +21,13 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="climate"
-              hall_link={~p"/y/climate"}
+              hall_link={~p"/halls/climate"}
               hall_title="Climate"
             />
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="health"
-              hall_link={~p"/y/health"}
+              hall_link={~p"/halls/health"}
               hall_title="Health"
             />
           </div>
@@ -35,19 +35,19 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="law"
-              hall_link={~p"/y/law"}
+              hall_link={~p"/halls/law"}
               hall_title="Law"
             />
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="us"
-              hall_link={~p"/y/us"}
+              hall_link={~p"/halls/us"}
               hall_title="US"
             />
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="eu"
-              hall_link={~p"/y/eu"}
+              hall_link={~p"/halls/eu"}
               hall_title="EU"
             />
           </div>
@@ -55,7 +55,7 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="all"
-              hall_link={~p"/y/all"}
+              hall_link={~p"/halls/all"}
               hall_title="All"
             />
           </div>
@@ -66,18 +66,28 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
           <HallNav.tab
             url_hall_name={@hall_name}
             hall_name={@hall_name}
-            hall_link={~p"/y/#{@hall_name}"}
+            hall_link={~p"/halls/#{@hall_name}"}
             hall_title={StringUtils.titleize_hall(@hall_name)}
           />
         <% end %>
         <HallNav.tab
           url_hall_name={@hall_name}
           hall_name="law"
-          hall_link={~p"/y/law"}
+          hall_link={~p"/halls/law"}
           hall_title="Law"
         />
-        <HallNav.tab url_hall_name={@hall_name} hall_name="us" hall_link={~p"/y/us"} hall_title="US" />
-        <HallNav.tab url_hall_name={@hall_name} hall_name="eu" hall_link={~p"/y/eu"} hall_title="EU" />
+        <HallNav.tab
+          url_hall_name={@hall_name}
+          hall_name="us"
+          hall_link={~p"/halls/us"}
+          hall_title="US"
+        />
+        <HallNav.tab
+          url_hall_name={@hall_name}
+          hall_name="eu"
+          hall_link={~p"/halls/eu"}
+          hall_title="EU"
+        />
       </div>
     </div>
     """
