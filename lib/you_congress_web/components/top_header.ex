@@ -22,12 +22,12 @@ defmodule YouCongressWeb.TopHeaderComponent do
 
         <div class="text-sm flex items-center gap-3 leading-6 text-zinc-900">
           <%= if !@current_user || Accounts.sign_up_complete?(@current_user) do %>
-            <div>
+            <div class="hidden md:block">
               <.link href="https://github.com/youcongress/youcongress" target="_blank">
                 Star us on GitHub
               </.link>
             </div>
-            <div class="hidden md:block">
+            <div>
               <.link href="https://x.com/YouCongressCom" target="_blank">
                 Follow us on X
               </.link>
