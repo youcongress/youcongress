@@ -23,6 +23,7 @@
       />
     </form>
   </div>
+
   <%= if is_nil(@search) do %>
     <div class="flex">
       <SwitchComponent.render order_by_date={@order_by_date} label1="Top" label2="New" />
@@ -41,6 +42,20 @@
       </div>
     </div>
   <% end %>
+</div>
+
+<div class="pt-4 text-sm">
+  <div class="pb-2">Some deleagates:</div>
+  <div class="">
+    <.link href={~p"/a/282"} class="underline">Stuart Russell</.link>, <.link
+      href={~p"/x/demishassabis"}
+      class="underline"
+    >Demis Hassabis</.link>, <.link href={~p"/x/slatestarcodex"} class="underline">Scott Alexander</.link>, <.link
+      href={~p"/x/geoffreyhinton"}
+      class="underline"
+    >Geoffrey Hinton</.link>,
+    <.link href={~p"/x/ESYudkowsky"} class="underline">Eliezer Yudkowsky</.link>
+  </div>
 </div>
 
 <%= if @search do %>
