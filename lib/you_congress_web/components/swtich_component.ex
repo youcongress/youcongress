@@ -7,10 +7,10 @@ defmodule YouCongressWeb.Components.SwitchComponent do
 
   def render(assigns) do
     ~H"""
-    <div class="text-gray-600 pt-2">
+    <div class="text-gray-600 pt-3 text-xs">
       <%= @label1 %>
     </div>
-    <div class="pt-2">
+    <div class="pt-2 px-1">
       <button
         type="button"
         phx-click="toggle-order-by-date"
@@ -34,7 +34,7 @@ defmodule YouCongressWeb.Components.SwitchComponent do
         </span>
       </button>
     </div>
-    <div class="text-gray-600 pt-2">
+    <div class="text-gray-600 pt-3 text-xs pr-2">
       <%= @label2 %>
     </div>
     """
