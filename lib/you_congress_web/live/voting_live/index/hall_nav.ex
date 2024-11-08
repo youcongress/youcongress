@@ -26,6 +26,20 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             />
             <HallNav.tab
               url_hall_name={@hall_name}
+              hall_name="health"
+              hall_link={~p"/y/health"}
+              hall_title="Health"
+            />
+          </div>
+          <div class="hidden md:block pt-1 space-x-8">
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="law"
+              hall_link={~p"/y/law"}
+              hall_title="Law"
+            />
+            <HallNav.tab
+              url_hall_name={@hall_name}
               hall_name="us"
               hall_link={~p"/y/us"}
               hall_title="US"
@@ -35,41 +49,6 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
               hall_name="eu"
               hall_link={~p"/y/eu"}
               hall_title="EU"
-            />
-          </div>
-          <div class="hidden md:block pt-1 space-x-8">
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="spain"
-              hall_link={~p"/y/spain"}
-              hall_title="Spain"
-            />
-            <%= if @hall_name not in ["programming", "ai", "climate", "space", "spain", "eu", "us", "law", "programming", "all"] do %>
-              <HallNav.tab
-                url_hall_name={@hall_name}
-                hall_name={@hall_name}
-                hall_link={~p"/y/#{@hall_name}"}
-                hall_title={StringUtils.titleize(@hall_name)}
-              />
-            <% else %>
-              <HallNav.tab
-                url_hall_name={@hall_name}
-                hall_name="programming"
-                hall_link={~p"/y/programming"}
-                hall_title="Programming"
-              />
-            <% end %>
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="law"
-              hall_link={~p"/y/law"}
-              hall_title="Law"
-            />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="space"
-              hall_link={~p"/y/space"}
-              hall_title="Space"
             />
           </div>
           <div class="pt-1 space-x-8">
@@ -83,19 +62,12 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
         </nav>
       </div>
       <div class="-mb-px flex space-x-8 md:hidden">
-        <%= if @hall_name not in ["programming", "ai", "climate", "space", "spain", "eu", "us", "law", "programming", "all"] do %>
+        <%= if @hall_name not in ["ai", "climate", "space", "eu", "us", "law", "health", "all"] do %>
           <HallNav.tab
             url_hall_name={@hall_name}
             hall_name={@hall_name}
             hall_link={~p"/y/#{@hall_name}"}
-            hall_title={StringUtils.titleize(@hall_name)}
-          />
-        <% else %>
-          <HallNav.tab
-            url_hall_name={@hall_name}
-            hall_name="programming"
-            hall_link={~p"/y/programming"}
-            hall_title="Programming"
+            hall_title={StringUtils.titleize_hall(@hall_name)}
           />
         <% end %>
         <HallNav.tab
@@ -104,12 +76,8 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
           hall_link={~p"/y/law"}
           hall_title="Law"
         />
-        <HallNav.tab
-          url_hall_name={@hall_name}
-          hall_name="space"
-          hall_link={~p"/y/space"}
-          hall_title="Space"
-        />
+        <HallNav.tab url_hall_name={@hall_name} hall_name="us" hall_link={~p"/y/us"} hall_title="US" />
+        <HallNav.tab url_hall_name={@hall_name} hall_name="eu" hall_link={~p"/y/eu"} hall_title="EU" />
       </div>
     </div>
     """

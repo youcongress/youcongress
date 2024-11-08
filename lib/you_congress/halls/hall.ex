@@ -19,7 +19,10 @@ defmodule YouCongress.Halls.Hall do
     "climate",
     "programming",
     "personal-finance",
-    "health"
+    "health",
+    "future",
+    "gov",
+    "ethics"
   ]
   @names_str Enum.join(@names, ",")
 
