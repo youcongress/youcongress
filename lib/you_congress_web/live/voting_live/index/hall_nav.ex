@@ -50,6 +50,12 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
               hall_link={~p"/halls/eu"}
               hall_title="EU"
             />
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="spain"
+              hall_link={~p"/halls/spain"}
+              hall_title="Spain"
+            />
           </div>
           <div class="pt-1 space-x-8">
             <HallNav.tab
@@ -68,6 +74,13 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             hall_name={@hall_name}
             hall_link={~p"/halls/#{@hall_name}"}
             hall_title={StringUtils.titleize_hall(@hall_name)}
+          />
+        <% else %>
+          <HallNav.tab
+            url_hall_name={@hall_name}
+            hall_name="spain"
+            hall_link={~p"/halls/spain"}
+            hall_title="Spain"
           />
         <% end %>
         <HallNav.tab
