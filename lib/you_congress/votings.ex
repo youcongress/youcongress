@@ -261,11 +261,16 @@ defmodule YouCongress.Votings do
   def sync_opinion_likes_count(voting) do
     count =
       from(o in Opinion,
-        where: o.voting_id == ^voting.id,
+        where: o.voting_id == ^voting.id and is_nil(o.user_id),
         select: coalesce(sum(o.likes_count), 0)
       )
       |> Repo.one() || 0
 
     update_voting(voting, %{opinion_likes_count: count})
+  end
+
+  def votings_count_created_in_the_last_hour do
+    from(v in Voting, where: v.inserted_at > ago(1, "hour"), select: count(v.id))
+    |> Repo.one()
   end
 end
