@@ -44,7 +44,7 @@
   <% end %>
 </div>
 
-<div :if={!@new_poll_visible?} class="pt-4 text-sm">
+<div :if={is_nil(@search) && !@new_poll_visible?} class="pt-4 text-sm">
   <div class="pb-1">Some delegates:</div>
   <div class="">
     <.link href={~p"/a/282"} class="underline">Stuart Russell</.link>, <.link
