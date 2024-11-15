@@ -16,6 +16,7 @@ defmodule YouCongress.Votings.Voting do
     field :generating_total, :integer, default: 0
     field :generating_left, :integer, default: 0
     field :slug, :string
+    field :opinion_likes_count, :integer, default: 0
 
     has_many :votes, Vote
     has_many :opinions, YouCongress.Opinions.Opinion
@@ -47,7 +48,14 @@ defmodule YouCongress.Votings.Voting do
   @doc false
   def changeset(voting, attrs) do
     voting
-    |> cast(attrs, [:title, :generating_left, :generating_total, :user_id, :slug])
+    |> cast(attrs, [
+      :title,
+      :generating_left,
+      :generating_total,
+      :user_id,
+      :slug,
+      :opinion_likes_count
+    ])
     |> validate_required([:title])
     |> unique_constraint(:title)
     |> generate_slug_if_empty()

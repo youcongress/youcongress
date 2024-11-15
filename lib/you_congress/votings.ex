@@ -8,6 +8,7 @@ defmodule YouCongress.Votings do
 
   alias YouCongress.Votings.Voting
   alias YouCongress.HallsVotings
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Workers.VotingHallsGeneratorWorker
 
   @doc """
@@ -46,6 +47,9 @@ defmodule YouCongress.Votings do
 
         {:order, :updated_at_desc}, query ->
           order_by(query, desc: :updated_at)
+
+        {:order, :opinion_likes_count_desc}, query ->
+          order_by(query, desc: :opinion_likes_count)
 
         {:order, :inserted_at_desc}, query ->
           order_by(query, desc: :inserted_at)
@@ -252,5 +256,16 @@ defmodule YouCongress.Votings do
   def regenerate_all_voting_slugs do
     Repo.all(Voting)
     |> Enum.each(&regenerate_slug/1)
+  end
+
+  def sync_opinion_likes_count(voting) do
+    count =
+      from(o in Opinion,
+        where: o.voting_id == ^voting.id,
+        select: coalesce(sum(o.likes_count), 0)
+      )
+      |> Repo.one() || 0
+
+    update_voting(voting, %{opinion_likes_count: count})
   end
 end

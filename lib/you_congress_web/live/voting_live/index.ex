@@ -163,15 +163,15 @@ defmodule YouCongressWeb.VotingLive.Index do
   end
 
   defp load_votings(hall_name, order_by_date) do
-    order = if order_by_date, do: :inserted_at_desc, else: :updated_at_desc
+    order = if order_by_date, do: :inserted_at_desc, else: :opinion_likes_count_desc
 
-    if hall_name != "all" do
+    if hall_name == "all" do
+      Votings.list_votings(order: order)
+    else
       Votings.list_votings(
         hall_name: hall_name || @default_hall,
         order: order
       )
-    else
-      Votings.list_votings(order: order)
     end
   end
 
