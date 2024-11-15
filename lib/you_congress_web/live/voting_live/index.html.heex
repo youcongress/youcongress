@@ -1,4 +1,4 @@
-<div>
+<div :if={!@new_poll_visible?}>
   <h1 class="text-xl">Shape the future with <strong>Smart Polls</strong></h1>
   <div class="text-sm">
     Finding common ground through liquid democracy and AI twins. <.link
@@ -8,9 +8,9 @@
     >Open Source</.link>.
   </div>
 </div>
-<div class="pt-4 md:flex md:justify-between">
+<div :if={!@new_poll_visible?} class="pt-4 md:flex md:justify-between">
   <div class="w-80 pb-4 md:pb-0">
-    <form :if={!@new_poll_visible?}>
+    <form>
       <input
         phx-change="search"
         field={@search}
@@ -25,7 +25,7 @@
   </div>
 
   <%= if is_nil(@search) do %>
-    <div :if={!@new_poll_visible?} class="flex">
+    <div class="flex">
       <SwitchComponent.render order_by_date={@order_by_date} label1="Top" label2="New" />
       <div>
         <button
@@ -73,33 +73,35 @@
     />
   </div>
 
-  <div class="pt-6">
-    <HallNav.render hall_name={@hall_name} />
-  </div>
+  <div :if={!@new_poll_visible?}>
+    <div class="pt-6">
+      <HallNav.render hall_name={@hall_name} />
+    </div>
 
-  <table>
-    <%= for voting <- @votings do %>
-      <tr>
-        <td class="py-4 border-b border-gray-200">
-          <div class="text-xl">
-            <.link href={~p"/p/#{voting.slug}"}><%= voting.title %></.link>
-          </div>
-          <div class="pt-2">
-            <.live_component
-              module={CastVoteComponent}
-              id={voting.id}
-              voting={voting}
-              current_user_vote={@votes[voting.id]}
-              current_user_opinion={@opinions[voting.id]}
-              current_user={@current_user}
-              display_results={false}
-              page={:votings_index}
-            />
-          </div>
-        </td>
-      </tr>
-    <% end %>
-  </table>
+    <table>
+      <%= for voting <- @votings do %>
+        <tr>
+          <td class="py-4 border-b border-gray-200">
+            <div class="text-xl">
+              <.link href={~p"/p/#{voting.slug}"}><%= voting.title %></.link>
+            </div>
+            <div class="pt-2">
+              <.live_component
+                module={CastVoteComponent}
+                id={voting.id}
+                voting={voting}
+                current_user_vote={@votes[voting.id]}
+                current_user_opinion={@opinions[voting.id]}
+                current_user={@current_user}
+                display_results={false}
+                page={:votings_index}
+              />
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </table>
+  </div>
 
   <.modal :if={@live_action in [:new, :edit]} id="voting-modal" show on_cancel={JS.patch(~p"/")}>
     <.live_component

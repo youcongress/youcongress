@@ -18,7 +18,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
         phx-submit="ai-validate"
       >
         <div>
-          Create a new poll
+          Create a new Smart Poll
           <div class="text-sm text-gray-600 pt-2">It needs to be a yes/no question</div>
           <.input
             field={@form[:title]}
