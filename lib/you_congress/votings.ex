@@ -49,7 +49,7 @@ defmodule YouCongress.Votings do
           order_by(query, desc: :updated_at)
 
         {:order, :opinion_likes_count_desc}, query ->
-          order_by(query, desc: :opinion_likes_count)
+          order_by(query, desc: :opinion_likes_count, desc: :inserted_at)
 
         {:order, :inserted_at_desc}, query ->
           order_by(query, desc: :inserted_at)
