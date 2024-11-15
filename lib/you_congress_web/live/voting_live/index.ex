@@ -55,7 +55,7 @@ defmodule YouCongressWeb.VotingLive.Index do
     if current_user do
       {:noreply, assign(socket, new_poll_visible?: !new_poll_visible?)}
     else
-      {:noreply, put_flash(socket, :error, "You need to log in to create a poll")}
+      {:noreply, put_flash(socket, :warning, "You need to log in to create a poll")}
     end
   end
 
