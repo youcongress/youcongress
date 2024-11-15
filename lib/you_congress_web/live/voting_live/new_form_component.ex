@@ -18,24 +18,21 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
         phx-submit="ai-validate"
       >
         <div>
-          Create a new public opinion poll
+          Create a new poll
           <div class="text-sm text-gray-600 pt-2">It needs to be a yes/no question</div>
           <.input
             field={@form[:title]}
             type="text"
             maxlength="150"
-            placeholder={
-              if @current_user,
-                do: "Should we build AI smarter than us?",
-                else: "Log in to create a new question"
-            }
-            disabled={!@current_user}
+            placeholder="Should we regulate AI?"
           />
           <%= if @suggested_titles != [] do %>
             <div>
               <div class="py-2">
-                <div>Our AI proposes you one of these new questions based on your prompt.</div>
-                <div>This guarantees that it's an understandable yes/no question in English.</div>
+                <div>Our AI proposes you these polls based on your prompt.</div>
+                <div class="text-sm text-gray-600">
+                  This guarantees that it's an understandable yes/no question in English.
+                </div>
                 <div class="pt-2">
                   Choose one of these (or click <button type="submit" class="underline">3 more</button>):
                 </div>
@@ -57,12 +54,9 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
             <div>
               <button
                 class={[
-                  "mt-4 inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600",
-                  @current_user && "bg-indigo-600 hover:bg-indigo-500",
-                  !@current_user && "bg-gray-300"
+                  "mt-4 inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 bg-indigo-600 hover:bg-indigo-500"
                 ]}
                 phx-disable-with="Validating with ChatGPT. Please wait."
-                disabled={!@current_user}
               >
                 Send
               </button>
@@ -135,7 +129,13 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
   def handle_event("save", %{"suggested_title" => suggested_title}, socket) do
     %{assigns: %{current_user: current_user}} = socket
 
-    case Votings.create_voting(%{title: suggested_title, user_id: current_user.id}) do
+    user_id =
+      case current_user do
+        nil -> nil
+        _ -> current_user.id
+      end
+
+    case Votings.create_voting(%{title: suggested_title, user_id: user_id}) do
       {:ok, voting} ->
         %{voting_id: voting.id}
         |> PublicFiguresWorker.new()

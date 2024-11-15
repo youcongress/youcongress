@@ -50,12 +50,18 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   @impl true
   def handle_event("toggle-new-poll", _, socket) do
-    %{assigns: %{current_user: current_user, new_poll_visible?: new_poll_visible?}} = socket
+    if Votings.votings_count_created_in_the_last_hour() > 20 do
+      # Only logged users can create polls
+      %{assigns: %{current_user: current_user, new_poll_visible?: new_poll_visible?}} = socket
 
-    if current_user do
-      {:noreply, assign(socket, new_poll_visible?: !new_poll_visible?)}
+      if current_user do
+        {:noreply, assign(socket, new_poll_visible?: !new_poll_visible?)}
+      else
+        {:noreply, put_flash(socket, :warning, "You need to log in to create a poll")}
+      end
     else
-      {:noreply, put_flash(socket, :warning, "You need to log in to create a poll")}
+      # Non-logged visitors can create polls
+      {:noreply, assign(socket, new_poll_visible?: !socket.assigns.new_poll_visible?)}
     end
   end
 
