@@ -70,11 +70,9 @@ defmodule YouCongressWeb.VotingLive.Index do
     votings = Votings.list_votings(title_contains: search, preload: [:halls])
     authors = Authors.list_authors(search: search)
 
-    search_tab = socket.assigns.search_tab
-
     search_tab =
       cond do
-        search_tab == :polls && Enum.any?(votings) -> :polls
+        Enum.any?(votings) -> :polls
         Enum.any?(authors) -> :delegates
         true -> :polls
       end
