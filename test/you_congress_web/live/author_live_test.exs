@@ -159,7 +159,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       # Vote strongly agree
       show_live
-      |> element("button#vote-strongly-agree")
+      |> element("button##{voting.id}-vote-strongly-agree")
       |> render_click()
 
       html = render(show_live)
@@ -167,7 +167,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       # Vote agree
       show_live
-      |> element("button#vote-agree")
+      |> element("button##{voting.id}-vote-agree")
       |> render_click()
 
       html = render(show_live)
@@ -175,7 +175,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       # Vote Abstain
       show_live
-      |> element("button#vote-abstain")
+      |> element("button##{voting.id}-vote-abstain")
       |> render_click()
 
       html = render(show_live)
@@ -183,7 +183,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       # Vote N/A
       show_live
-      |> element("button#vote-na")
+      |> element("button##{voting.id}-vote-na")
       |> render_click()
 
       html = render(show_live)
@@ -191,7 +191,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       # Vote disagree
       show_live
-      |> element("button#vote-disagree")
+      |> element("button##{voting.id}-vote-disagree")
       |> render_click()
 
       html = render(show_live)
@@ -199,7 +199,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       # Vote strongly disagree
       show_live
-      |> element("button#vote-strongly-disagree")
+      |> element("button##{voting.id}-vote-strongly-disagree")
       |> render_click()
 
       html = render(show_live)

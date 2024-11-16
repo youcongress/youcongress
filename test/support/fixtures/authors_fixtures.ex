@@ -14,7 +14,7 @@ defmodule YouCongress.AuthorsFixtures do
         bio: Faker.Lorem.sentence(),
         country: Faker.Address.country(),
         twin_origin: true,
-        name: Faker.Person.name(),
+        name: Faker.Person.name() |> String.replace("'", ""),
         twitter_username: Faker.Internet.user_name(),
         wikipedia_url: "https://wikipedia.org/wiki/" <> Faker.Internet.user_name()
       })

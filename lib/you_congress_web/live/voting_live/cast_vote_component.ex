@@ -145,7 +145,7 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
     ~H"""
     <div class="pr-1">
       <button
-        id={@button_id}
+        id={"#{@voting.id}-#{@button_id}"}
         phx-click="vote"
         phx-value-response={@response}
         phx-target={@myself}

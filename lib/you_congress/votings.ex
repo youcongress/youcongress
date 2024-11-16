@@ -35,39 +35,78 @@ defmodule YouCongress.Votings do
   """
   def list_votings(opts) do
     preload = opts[:preload] || []
-    base_query = from v in Voting, preload: ^preload
+
+    base_query = from(v in Voting)
+    base_query = maybe_include_two_opinions(base_query, opts[:include_two_opinions])
+
+    # Process the remaining options
     opts = replace_hall_name_with_ids(opts, opts[:hall_name])
 
-    Enum.reduce(
-      opts,
-      base_query,
-      fn
-        {:title_contains, title}, query ->
-          where(query, [v], fragment("? ILIKE ?", v.title, ^"%#{title}%"))
+    query =
+      Enum.reduce(
+        opts,
+        base_query,
+        fn
+          {:title_contains, title}, query ->
+            where(query, [v], fragment("? ILIKE ?", v.title, ^"%#{title}%"))
 
-        {:order, :updated_at_desc}, query ->
-          order_by(query, desc: :updated_at)
+          {:order, :updated_at_desc}, query ->
+            order_by(query, desc: :updated_at)
 
-        {:order, :opinion_likes_count_desc}, query ->
-          order_by(query, desc: :opinion_likes_count, desc: :inserted_at)
+          {:order, :opinion_likes_count_desc}, query ->
+            order_by(query, desc: :opinion_likes_count, desc: :inserted_at)
 
-        {:order, :inserted_at_desc}, query ->
-          order_by(query, desc: :inserted_at)
+          {:order, :inserted_at_desc}, query ->
+            order_by(query, desc: :inserted_at)
 
-        {:order, :desc}, query ->
-          order_by(query, desc: :updated_at)
+          {:order, :desc}, query ->
+            order_by(query, desc: :updated_at)
 
-        {:order, :random}, query ->
-          order_by(query, fragment("RANDOM()"))
+          {:order, :random}, query ->
+            order_by(query, fragment("RANDOM()"))
 
-        {:ids, ids}, query ->
-          where(query, [voting], voting.id in ^ids)
+          {:ids, ids}, query ->
+            where(query, [voting], voting.id in ^ids)
 
-        _, query ->
-          query
-      end
-    )
+          _, query ->
+            query
+        end
+      )
+
+    query
     |> Repo.all()
+    |> Repo.preload(preload)
+  end
+
+  defp maybe_include_two_opinions(query, false), do: query
+
+  defp maybe_include_two_opinions(base_query, true) do
+    top_opinions_query =
+      from o in Opinion,
+        where: is_nil(o.ancestry),
+        select: %{
+          id: o.id,
+          voting_id: o.voting_id,
+          rank:
+            over(
+              row_number(),
+              partition_by: o.voting_id,
+              order_by: [
+                asc: fragment("CASE WHEN ? IS NOT NULL THEN 0 ELSE 1 END", o.source_url),
+                desc: o.likes_count,
+                desc: o.id
+              ]
+            )
+        }
+
+    filtered_opinions =
+      from o in Opinion,
+        join: ranked in subquery(top_opinions_query),
+        on: o.id == ranked.id and is_nil(o.ancestry) and ranked.rank <= 2,
+        preload: [:author]
+
+    from v in base_query,
+      preload: [opinions: ^filtered_opinions]
   end
 
   @spec replace_hall_name_with_ids(list, binary | nil) :: list
