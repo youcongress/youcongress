@@ -1,11 +1,7 @@
 <div :if={!@new_poll_visible?}>
   <h1 class="text-xl">Shape the future with <strong>Smart Polls</strong></h1>
   <div class="text-sm">
-    Finding common ground through liquid democracy and AI twins. <.link
-      href="https://github.com/youcongress/youcongress"
-      class="underline"
-      target="_blank"
-    >Open Source</.link>.
+    Finding common ground through liquid democracy and AI twins. Open Source.
   </div>
 </div>
 <div :if={!@new_poll_visible?} class="pt-4 md:flex md:justify-between">
@@ -66,47 +62,61 @@
       <HallNav.render hall_name={@hall_name} />
     </div>
 
-    <table>
-      <%= for voting <- @votings do %>
-        <tr>
-          <td class="py-4 border-b border-gray-200">
-            <div class="text-xl">
-              <.link href={~p"/p/#{voting.slug}"}><%= voting.title %></.link>
-            </div>
-            <div class="pt-2 pb-2">
-              <.live_component
-                module={CastVoteComponent}
-                id={voting.id}
-                voting={voting}
-                current_user_vote={@votes[voting.id]}
-                current_user_opinion={@opinions[voting.id]}
-                current_user={@current_user}
-                display_results={false}
-                page={:votings_index}
-              />
-            </div>
-            <%= for opinion <- voting.opinions do %>
-              <div class="pt-2">
-                <.live_component
-                  module={OpinionComponent}
-                  id={opinion.id}
-                  opinion={opinion}
-                  current_user={@current_user}
-                  delegating={opinion.author_id in @current_user_delegation_ids}
-                  voting={voting}
-                  opinable={true}
-                  delegable={true}
-                  liked={opinion.id in @liked_opinion_ids}
-                  page={:voting_index}
-                />
-              </div>
-            <% end %>
+    <ul
+      id="votings-list"
+      phx-update="stream"
+      phx-viewport-bottom={@has_more_votings && "load-more"}
+    >
+      <li
+        :for={{dom_id, voting} <- @streams.votings}
+        id={dom_id}
+        class="py-4 border-b border-gray-200"
+      >
+        <div class="text-xl">
+          <.link href={~p"/p/#{voting.slug}"}><%= voting.title %></.link>
+        </div>
+        <div class="pt-2 pb-2">
+          <.live_component
+            module={CastVoteComponent}
+            id={voting.id}
+            voting={voting}
+            current_user_vote={@votes[voting.id]}
+            current_user_opinion={@opinions[voting.id]}
+            current_user={@current_user}
+            display_results={false}
+            page={:votings_index}
+          />
+        </div>
+        <%= for opinion <- voting.opinions do %>
+          <div class="pt-2">
+            <.live_component
+              module={OpinionComponent}
+              id={opinion.id}
+              opinion={opinion}
+              current_user={@current_user}
+              delegating={opinion.author_id in @current_user_delegation_ids}
+              voting={voting}
+              opinable={true}
+              delegable={true}
+              liked={opinion.id in @liked_opinion_ids}
+              page={:voting_index}
+            />
+          </div>
+        <% end %>
 
-            <.link href={~p"/p/#{voting.slug}"} class="text-sm cursor-pointer">see more</.link>
-          </td>
-        </tr>
-      <% end %>
-    </table>
+        <.link href={~p"/p/#{voting.slug}"} class="text-sm cursor-pointer">see more</.link>
+      </li>
+    </ul>
+    <%= if !@has_more_votings do %>
+      <div class="text-center pt-4">
+        <button
+          phx-click="toggle-new-poll"
+          class="phx-submit-loading:opacity-75 rounded-lg bg-zinc-300 text-zinc-900 hover:bg-zinc-400 py-2 px-3 text-sm font-semibold leading-6 active:text-white/80"
+        >
+          Create poll
+        </button>
+      </div>
+    <% end %>
   </div>
 
   <.modal :if={@live_action in [:new, :edit]} id="voting-modal" show on_cancel={JS.patch(~p"/")}>

@@ -37,7 +37,10 @@ defmodule YouCongressWeb.VotingLive.Index do
       |> assign(:new_poll_visible?, false)
       |> assign(:current_user_delegation_ids, get_current_user_delegation_ids(current_user))
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
-      |> assign_votes()
+      |> assign(:page, 1)
+      |> assign(:per_page, 10)
+      |> assign(:has_more_votings, true)
+      |> assign_votes(1)
 
     if connected?(socket) do
       %{assigns: %{current_user: current_user}} = socket
@@ -53,6 +56,11 @@ defmodule YouCongressWeb.VotingLive.Index do
   end
 
   @impl true
+  def handle_event("load-more", _, socket) do
+    {socket, _} = assign_votings(socket, socket.assigns.page + 1)
+    {:noreply, socket}
+  end
+
   def handle_event("toggle-new-poll", _, socket) do
     if Votings.votings_count_created_in_the_last_hour() > 20 do
       # Only logged users can create polls
@@ -70,9 +78,9 @@ defmodule YouCongressWeb.VotingLive.Index do
   end
 
   def handle_event("search", %{"search" => ""}, socket) do
-    votings = load_votings(socket.assigns.hall_name, socket.assigns.order_by_date)
+    {socket, _} = assign_votings(socket, 1)
 
-    {:noreply, assign(socket, votings: votings, search: nil, search_tab: nil)}
+    {:noreply, assign(socket, search: nil, search_tab: nil)}
   end
 
   def handle_event("search", %{"search" => search}, socket) do
@@ -110,7 +118,7 @@ defmodule YouCongressWeb.VotingLive.Index do
     socket =
       socket
       |> assign(:order_by_date, order_by_date)
-      |> assign_votes()
+      |> assign_votes(1)
 
     {:noreply, socket}
   end
@@ -172,18 +180,47 @@ defmodule YouCongressWeb.VotingLive.Index do
     )
   end
 
-  defp load_votings(hall_name, order_by_date) do
-    order = if order_by_date, do: :inserted_at_desc, else: :opinion_likes_count_desc
+  defp assign_votings(socket, new_page) do
+    %{
+      assigns: %{
+        hall_name: hall_name,
+        order_by_date: order_by_date,
+        per_page: per_page
+      }
+    } = socket
 
-    if hall_name == "all" do
-      Votings.list_votings(order: order, include_two_opinions: true)
+    offset = (new_page - 1) * per_page
+    order = if order_by_date, do: :inserted_at_desc, else: :opinion_likes_count_desc
+    args = [order: order, include_two_opinions: true, offset: offset, limit: per_page]
+
+    args =
+      case hall_name do
+        "all" -> args
+        _ -> Keyword.put(args, :hall_name, hall_name)
+      end
+
+    votings = Votings.list_votings(args)
+
+    if votings == [] do
+      socket = assign(socket, :has_more_votings, false)
+      {socket, votings}
     else
-      Votings.list_votings(
-        hall_name: hall_name || @default_hall,
-        order: order,
-        include_two_opinions: true
-      )
+      socket =
+        socket
+        |> update_votings_stream(votings, new_page)
+        |> assign(:has_more_votings, true)
+        |> assign(:page, new_page)
+
+      {socket, votings}
     end
+  end
+
+  defp update_votings_stream(socket, votings, 1) do
+    stream(socket, :votings, votings, reset: true)
+  end
+
+  defp update_votings_stream(socket, votings, _page) do
+    stream(socket, :votings, votings)
   end
 
   defp load_votes(_, nil), do: %{}
@@ -221,10 +258,9 @@ defmodule YouCongressWeb.VotingLive.Index do
     Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
   end
 
-  defp assign_votes(socket) do
-    %{assigns: %{current_user: current_user, hall_name: hall_name}} = socket
-
-    votings = load_votings(hall_name, socket.assigns.order_by_date)
+  defp assign_votes(socket, new_per_page) do
+    %{assigns: %{current_user: current_user}} = socket
+    {socket, votings} = assign_votings(socket, new_per_page)
     voting_ids = Enum.map(votings, & &1.id)
 
     votes_by_voting_id =
@@ -239,7 +275,6 @@ defmodule YouCongressWeb.VotingLive.Index do
     |> assign(:delegate_ids, load_delegate_ids(current_user))
     |> assign(:votes_by_voting_id, votes_by_voting_id)
     |> assign(:liked_opinion_ids, liked_opinion_ids)
-    |> assign(:votings, votings)
     |> assign(:votes, load_votes(voting_ids, current_user))
     |> assign(:opinions, load_opinions(voting_ids, current_user))
   end
