@@ -8,11 +8,14 @@
   </.link>
   Comment
 </div>
-<OpinionComponent.render
+<.live_component
+  module={OpinionComponent}
+  id={@opinion.id}
   opinion={@opinion}
   current_user={@current_user}
   delegating={@delegating}
   voting={@opinion.voting}
+  liked={@opinion.id in @liked_opinion_ids}
   page={:opinion_show}
 />
 
@@ -54,13 +57,15 @@
   <% end %>
   <%= for child_opinion <- @child_opinions do %>
     <div class="pt-6 mb-4 pl-4 border-l-2 border-gray-200">
-      <OpinionComponent.render
+      <.live_component
+        module={OpinionComponent}
+        id={child_opinion.id}
         opinion={child_opinion}
         current_user={@current_user}
         delegating={@child_opinions_delegations[child_opinion.author_id]}
         voting={@opinion.voting}
         opinable={true}
-        liked_opinion_ids={@liked_opinion_ids}
+        liked={child_opinion.id in @liked_opinion_ids}
         page={:opinion_show}
       />
     </div>

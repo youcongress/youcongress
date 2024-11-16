@@ -1,113 +1,127 @@
 defmodule YouCongressWeb.OpinionLive.OpinionComponent do
-  use Phoenix.Component
+  use YouCongressWeb, :live_component
+
   use Phoenix.VerifiedRoutes, endpoint: YouCongressWeb.Endpoint, router: YouCongressWeb.Router
 
   alias YouCongressWeb.AuthorLive
   alias YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu
   alias YouCongressWeb.Tools.Tooltip
   alias YouCongressWeb.OpinionLive.OpinionComponent
+  alias YouCongress.Likes
+  alias YouCongress.Delegations
 
   @max_x_length 280
   @url_length String.length("youcongress.com/p/should-tech-")
 
-  attr :opinion, :map, required: true
-  attr :delegating, :boolean, required: true
-  attr :voting, :map, required: true
-  attr :current_user, :map, default: nil
-  attr :opinable, :boolean, default: false
-  attr :delegable, :boolean, default: false
-  attr :liked_opinion_ids, :list, default: []
-  attr :page, :atom, required: true
+  def update(assigns, socket) do
+    %{
+      current_user: current_user,
+      voting: voting,
+      opinion: opinion,
+      page: page
+    } = assigns
 
-  def render(assigns) do
-    ~H"""
-    <div class="pb-4">
-      <div>
-        <div class="flex justify-between">
-          <div class="flex justify-between space-x-2">
-            <div class="pt-2">
-              <.link href={AuthorLive.Show.author_path(@opinion.author)} class="cursor-pointer">
-                <OpinionComponent.avatar_icon is_human={!@opinion.twin} />
-              </.link>
-            </div>
-            <div>
-              <div>
-                <strong>
-                  <.link href={AuthorLive.Show.author_path(@opinion.author)}>
-                    <%= @opinion.author.name %><%= if @opinion.twin, do: " AI" %>
-                  </.link>
-                </strong>
-              </div>
-              <div class="text-sm">
-                <%= @opinion.author.bio || @opinion.author.description %>
-              </div>
-            </div>
-          </div>
-          <AiQuoteMenu.render
-            author={@opinion.author}
-            id={@opinion.id}
-            opinion={@opinion}
-            current_user={@current_user}
-            voting={@voting}
-            page={@page}
-          />
-        </div>
-      </div>
-      <%= if @opinion.twin do %>
-        <div class="pt-1 text-xs text-gray-600">
-          would say according to AI:
-        </div>
-      <% end %>
-      <div class="pt-2">
-        <%= @opinion.content %>
-        <%= if @opinion.source_url do %>
-          <span class="text-xs">
-            (<.link href={@opinion.source_url} target="_blank" class="underline">source</.link>)
-          </span>
-        <% end %>
-      </div>
-      <div class="flex justify-between pt-4 pb-4">
-        <div>
-          <span class="pr-2">
-            <OpinionComponent.like_icon opinion={@opinion} liked={@opinion.id in @liked_opinion_ids} />
-          </span>
-          <span class="pr-2">
-            <OpinionComponent.comment_icon :if={@opinable} opinion={@opinion} />
-          </span>
-          <OpinionComponent.x_icon
-            author={@opinion.author}
-            voting={@voting}
-            opinion={@opinion}
-            current_user={@current_user}
-          />
-        </div>
-        <div>
-          <%= if @delegable && (!@current_user || (@opinion.author_id != @current_user.author_id)) do %>
-            <div>
-              <Tooltip.delegation assigns={assigns} />
-              <%= if @delegating do %>
-                <.link
-                  phx-click="remove-delegation"
-                  phx-value-author_id={@opinion.author_id}
-                  class="rounded border border-indigo-600 bg-transparent px-2 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors duration-200"
-                >
-                  Delegating
-                </.link>
-              <% else %>
-                <.link
-                  phx-click="add-delegation"
-                  phx-value-author_id={@opinion.author_id}
-                  class="rounded bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-600 shadow-sm hover:bg-indigo-100"
-                >
-                  Delegate
-                </.link>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-    """
+    socket =
+      socket
+      |> assign(:current_user, current_user)
+      |> assign(:delegating, assigns[:delegating] || false)
+      |> assign(:voting, voting)
+      |> assign(:opinable, assigns[:opinable] || false)
+      |> assign(:delegable, assigns[:delegable] || false)
+      |> assign(:opinion, opinion)
+      |> assign(:liked, assigns[:liked] || false)
+      |> assign(:page, page)
+
+    {:ok, socket}
+  end
+
+  def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
+    send(self(), {:put_flash, :warning, "Log in to like."})
+    {:noreply, socket}
+  end
+
+  def handle_event("like", %{"opinion_id" => opinion_id}, socket) do
+    %{assigns: %{current_user: current_user, opinion: opinion}} = socket
+    opinion_id = String.to_integer(opinion_id)
+
+    case Likes.like(opinion_id, current_user) do
+      {:ok, _} ->
+        opinion =
+          opinion
+          |> Map.put(:likes_count, opinion.likes_count + 1)
+          |> Map.put(:descendants_count, opinion.descendants_count + 1)
+
+        socket =
+          socket
+          |> assign(:opinion, opinion)
+          |> assign(:liked, true)
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        send(self(), {:put_flash, :error, "Failed to like opinion."})
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("unlike", %{"opinion_id" => opinion_id}, socket) do
+    %{assigns: %{current_user: current_user, opinion: opinion}} = socket
+
+    opinion_id = String.to_integer(opinion_id)
+
+    case Likes.unlike(opinion_id, current_user) do
+      {:ok, _} ->
+        opinion =
+          opinion
+          |> Map.put(:likes_count, opinion.likes_count - 1)
+          |> Map.put(:descendants_count, opinion.descendants_count - 1)
+
+        socket =
+          socket
+          |> assign(:opinion, opinion)
+          |> assign(:liked, false)
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        send(self(), {:put_flash, :error, "Failed to unlike opinion."})
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("add-delegation", _, %{assigns: %{current_user: nil}} = socket) do
+    send(
+      self(),
+      {:put_flash, :warning, "Log in to unlock delegate voting."}
+    )
+
+    {:noreply, socket}
+  end
+
+  def handle_event("add-delegation", %{"author_id" => delegate_id}, socket) do
+    %{assigns: %{current_user: current_user}} = socket
+
+    case Delegations.create_delegation(current_user, delegate_id) do
+      {:ok, _} ->
+        {:noreply, assign(socket, :delegating, true)}
+
+      {:error, _} ->
+        send(self(), {:put_flash, :error, "Failed to add delegation."})
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("remove-delegation", %{"author_id" => delegate_id}, socket) do
+    %{assigns: %{current_user: current_user}} = socket
+
+    case Delegations.delete_delegation(current_user, delegate_id) do
+      {:ok, _} ->
+        {:noreply, assign(socket, :delegating, false)}
+
+      {:error, _} ->
+        send(self(), {:put_flash, :error, "Failed to remove delegation."})
+        {:noreply, socket}
+    end
   end
 
   attr :opinion, :map, required: true

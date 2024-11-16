@@ -75,14 +75,16 @@
         page={:home_index}
       />
       <div class="pt-2">
-        <OpinionComponent.render
+        <.live_component
+          module={OpinionComponent}
+          id={opinion.id}
           opinion={opinion}
           current_user={@current_user}
           delegating={opinion.author_id in @current_user_delegation_ids}
           voting={opinion.voting}
           opinable={true}
           delegable={true}
-          liked_opinion_ids={@liked_opinion_ids}
+          liked={opinion.id in @liked_opinion_ids}
           page={:home}
         />
       </div>
