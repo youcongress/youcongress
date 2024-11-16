@@ -24,7 +24,7 @@ Welcome to YouCongress! Feel free to:
 - Add documentation, refactor existent code, etc.
 
 # Contributors
-- [Hector Perez]([https://x.com/arpahector](https://www.linkedin.com/in/hectorperezarenas)
+- [Hector Perez](https://www.linkedin.com/in/hectorperezarenas)
 - [Gonzalo Cardenete](https://www.linkedin.com/in/gonzalo-cardenete-burgos-519a1b43)
 - [David Ernst](https://github.com/dsernst)
 - ... (add yourself if you add a commit)
