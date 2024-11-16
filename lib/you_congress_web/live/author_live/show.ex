@@ -117,58 +117,6 @@ defmodule YouCongressWeb.AuthorLive.Show do
     end
   end
 
-  def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
-    {:noreply, put_flash(socket, :warning, "Log in to like.")}
-  end
-
-  def handle_event("like", %{"opinion_id" => opinion_id}, socket) do
-    %{
-      assigns: %{
-        current_user: current_user,
-        liked_opinion_ids: liked_opinion_ids
-      }
-    } = socket
-
-    opinion_id = String.to_integer(opinion_id)
-
-    case Likes.like(opinion_id, current_user) do
-      {:ok, _} ->
-        socket =
-          socket
-          |> assign(:liked_opinion_ids, [opinion_id | liked_opinion_ids])
-          |> update_likes_count(opinion_id, &(&1 + 1))
-
-        {:noreply, socket}
-
-      {:error, _} ->
-        {:noreply, socket |> put_flash(:error, "Failed to like opinion.")}
-    end
-  end
-
-  def handle_event("unlike", %{"opinion_id" => opinion_id}, socket) do
-    %{
-      assigns: %{
-        current_user: current_user,
-        liked_opinion_ids: liked_opinion_ids
-      }
-    } = socket
-
-    opinion_id = String.to_integer(opinion_id)
-
-    case Likes.unlike(opinion_id, current_user) do
-      {:ok, _} ->
-        socket =
-          socket
-          |> assign(:liked_opinion_ids, Enum.filter(liked_opinion_ids, &(&1 != opinion_id)))
-          |> update_likes_count(opinion_id, &(&1 - 1))
-
-        {:noreply, socket}
-
-      {:error, _} ->
-        {:noreply, socket |> put_flash(:error, "Failed to unlike opinion.")}
-    end
-  end
-
   def handle_event("regenerate", %{"opinion_id" => opinion_id}, socket) do
     opinion_id = String.to_integer(opinion_id)
     send(self(), {:regenerate, opinion_id})
@@ -255,18 +203,6 @@ defmodule YouCongressWeb.AuthorLive.Show do
     delegating = Delegations.delegating?(current_user.author_id, author.id)
     assign(socket, :delegating?, delegating)
   end
-
-  defp update_likes_count(socket, opinion_id, operation) do
-    %{assigns: %{votes: votes}} = socket
-    assign(socket, :votes, Enum.map(votes, &replace_opinion_in_vote(&1, opinion_id, operation)))
-  end
-
-  defp replace_opinion_in_vote(%{opinion_id: opinion_id} = vote, opinion_id, operation) do
-    opinion = Map.put(vote.opinion, :likes_count, operation.(vote.opinion.likes_count))
-    Map.put(vote, :opinion, opinion)
-  end
-
-  defp replace_opinion_in_vote(vote, _, _), do: vote
 
   defp load_votes(author_id, false) do
     Votes.list_votes(

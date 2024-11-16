@@ -37,12 +37,13 @@ defmodule YouCongress.AccountsFixtures do
       |> valid_user_attributes()
       |> YouCongress.Accounts.x_register_user(author_attrs)
 
-    with true <- confirm_email_and_phone_number?,
-         {:ok, user} = YouCongress.Accounts.confirm_user_email(user),
-         {:ok, user} = YouCongress.Accounts.confirm_user_phone(user) do
+    if confirm_email_and_phone_number? do
+      {:ok, user} = YouCongress.Accounts.confirm_user_email(user)
+      {:ok, user} = YouCongress.Accounts.confirm_user_phone(user)
+
       user
     else
-      _ -> user
+      user
     end
   end
 

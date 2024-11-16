@@ -19,12 +19,14 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongressWeb.VotingLive.CastVoteComponent
   alias YouCongressWeb.Components.SwitchComponent
   alias YouCongress.Votings.VotingQueries
+  alias YouCongressWeb.OpinionLive.OpinionComponent
 
   @default_hall "ai"
 
   @impl true
   def mount(params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
+    current_user = socket.assigns.current_user
 
     socket =
       socket
@@ -33,6 +35,8 @@ defmodule YouCongressWeb.VotingLive.Index do
       |> assign(:order_by_date, false)
       |> assign(:hall_name, params["hall"] || @default_hall)
       |> assign(:new_poll_visible?, false)
+      |> assign(:current_user_delegation_ids, get_current_user_delegation_ids(current_user))
+      |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
       |> assign_votes()
 
     if connected?(socket) do
@@ -172,11 +176,12 @@ defmodule YouCongressWeb.VotingLive.Index do
     order = if order_by_date, do: :inserted_at_desc, else: :opinion_likes_count_desc
 
     if hall_name == "all" do
-      Votings.list_votings(order: order)
+      Votings.list_votings(order: order, include_two_opinions: true)
     else
       Votings.list_votings(
         hall_name: hall_name || @default_hall,
-        order: order
+        order: order,
+        include_two_opinions: true
       )
     end
   end
@@ -237,5 +242,11 @@ defmodule YouCongressWeb.VotingLive.Index do
     |> assign(:votings, votings)
     |> assign(:votes, load_votes(voting_ids, current_user))
     |> assign(:opinions, load_opinions(voting_ids, current_user))
+  end
+
+  defp get_current_user_delegation_ids(nil), do: []
+
+  defp get_current_user_delegation_ids(current_user) do
+    Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
   end
 end
