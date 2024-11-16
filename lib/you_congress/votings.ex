@@ -39,7 +39,6 @@ defmodule YouCongress.Votings do
     base_query = from(v in Voting)
     base_query = maybe_include_two_opinions(base_query, opts[:include_two_opinions])
 
-    # Process the remaining options
     opts = replace_hall_name_with_ids(opts, opts[:hall_name])
 
     query =
