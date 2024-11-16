@@ -37,7 +37,7 @@ defmodule YouCongress.Votings do
     preload = opts[:preload] || []
 
     base_query = from(v in Voting)
-    base_query = maybe_include_two_opinions(base_query, opts[:include_two_opinions])
+    base_query = maybe_include_two_opinions(base_query, opts[:include_two_opinions] || false)
 
     opts = replace_hall_name_with_ids(opts, opts[:hall_name])
 
