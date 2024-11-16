@@ -38,7 +38,7 @@ defmodule YouCongressWeb.VotingLive.Index do
       |> assign(:current_user_delegation_ids, get_current_user_delegation_ids(current_user))
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
       |> assign(:page, 1)
-      |> assign(:per_page, 10)
+      |> assign(:per_page, 5)
       |> assign(:has_more_votings, true)
       |> assign_votes(1)
 
