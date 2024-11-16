@@ -39,15 +39,20 @@ defmodule YouCongress.Votings do
     base_query = from(v in Voting)
     base_query = maybe_include_two_opinions(base_query, opts[:include_two_opinions] || false)
 
-    opts = replace_hall_name_with_ids(opts, opts[:hall_name])
-
     query =
       Enum.reduce(
         opts,
         base_query,
         fn
+          {:hall_name, hall_name}, query ->
+            from(v in query,
+              join: h in assoc(v, :halls),
+              where: h.name == ^hall_name,
+              distinct: true
+            )
+
           {:title_contains, title}, query ->
-            where(query, [v], fragment("? ILIKE ?", v.title, ^"%#{title}%"))
+            where(query, [v], ilike(v.title, ^"%#{title}%"))
 
           {:order, :updated_at_desc}, query ->
             order_by(query, desc: :updated_at)
@@ -64,8 +69,11 @@ defmodule YouCongress.Votings do
           {:order, :random}, query ->
             order_by(query, fragment("RANDOM()"))
 
-          {:ids, ids}, query ->
-            where(query, [voting], voting.id in ^ids)
+          {:limit, limit}, query ->
+            limit(query, ^limit)
+
+          {:offset, offset}, query ->
+            offset(query, ^offset)
 
           _, query ->
             query
@@ -106,23 +114,6 @@ defmodule YouCongress.Votings do
 
     from v in base_query,
       preload: [opinions: ^filtered_opinions]
-  end
-
-  @spec replace_hall_name_with_ids(list, binary | nil) :: list
-  defp replace_hall_name_with_ids(opts, nil), do: opts
-
-  defp replace_hall_name_with_ids(opts, hall_name) do
-    case YouCongress.Halls.get_by_name(hall_name, preload: :votings) do
-      nil ->
-        opts
-
-      hall ->
-        voting_ids = Enum.map(hall.votings, & &1.id)
-
-        opts
-        |> Keyword.delete(:hall_name)
-        |> Keyword.put(:ids, voting_ids)
-    end
   end
 
   def list_random_votings(except_id, limit) do

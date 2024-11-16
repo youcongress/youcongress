@@ -8,6 +8,9 @@ defmodule YouCongress.Votings.Voting do
   alias YouCongress.Votes.Vote
   alias YouCongress.Votings
   alias YouCongress.Halls.Hall
+  alias YouCongress.Opinions.Opinion
+  alias YouCongress.Likes.Like
+  alias YouCongress.Accounts.User
 
   @max_title_slug_size 30
 
@@ -19,8 +22,8 @@ defmodule YouCongress.Votings.Voting do
     field :opinion_likes_count, :integer, default: 0
 
     has_many :votes, Vote
-    has_many :opinions, YouCongress.Opinions.Opinion
-    has_many :likes, YouCongress.Likes.Like
+    has_many :opinions, Opinion
+    has_many :likes, Like
 
     many_to_many(
       :halls,
@@ -29,7 +32,7 @@ defmodule YouCongress.Votings.Voting do
       on_replace: :delete
     )
 
-    belongs_to :user, YouCongress.Accounts.User
+    belongs_to :user, User
 
     timestamps()
   end
@@ -38,7 +41,7 @@ defmodule YouCongress.Votings.Voting do
           title: String.t(),
           generating_left: integer(),
           votes: [Vote.t()],
-          user: YouCongress.Accounts.User.t(),
+          user: User.t(),
           user_id: integer() | nil,
           slug: String.t(),
           inserted_at: NaiveDateTime.t(),
