@@ -105,7 +105,9 @@
           </div>
         <% end %>
 
-        <.link href={~p"/p/#{voting.slug}"} class="text-sm cursor-pointer underline">more opinions</.link>
+        <.link href={~p"/p/#{voting.slug}"} class="text-sm cursor-pointer underline">
+          more opinions
+        </.link>
       </li>
     </ul>
     <%= if !@has_more_votings do %>
