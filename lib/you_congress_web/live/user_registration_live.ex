@@ -181,7 +181,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
         current_user == nil -> :enter_email_password
         current_user.email_confirmed_at == nil -> :validate_email
         current_user.phone_number == nil -> :enter_mobile_phone
-        current_user.phone_number_confirmed_at == nil -> :validate_phone
+        current_user.phone_number_confirmed_at == nil -> :enter_mobile_phone
         true -> :done
       end
 
