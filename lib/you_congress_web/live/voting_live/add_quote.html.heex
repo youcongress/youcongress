@@ -1,5 +1,5 @@
 <h1 class="text-xl">Add a quote</h1>
-<div class="pt-4 block text-sm font-semibold leading-6 text-zinc-800">Poll</div>
+<div class="pt-4 block text-sm font-semibold leading-6 text-zinc-800">Question</div>
 <div class="pt-2"><%= @voting.title %></div>
 <%= if @author do %>
   <div class="pt-4 block text-sm font-semibold leading-6 text-zinc-800">Author</div>
@@ -30,7 +30,7 @@
       field={@form[:agree_rate]}
       type="select"
       options={[nil | @agree_rate_options]}
-      label="How much does the quote agree with the poll?"
+      label="How much does the quote agree with the question?"
       data-lpignore="true"
       required
     />
