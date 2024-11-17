@@ -290,7 +290,7 @@ defmodule YouCongress.Votings do
   def sync_opinion_likes_count(voting) do
     count =
       from(o in Opinion,
-        where: o.voting_id == ^voting.id and is_nil(o.user_id),
+        where: o.voting_id == ^voting.id and is_nil(o.ancestry),
         select: coalesce(sum(o.likes_count), 0)
       )
       |> Repo.one() || 0
