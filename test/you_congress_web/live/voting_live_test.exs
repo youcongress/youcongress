@@ -116,7 +116,7 @@ defmodule YouCongressWeb.VotingLiveTest do
         {:ok, index_live, _html} = live(conn, ~p"/")
 
         index_live
-        |> element("button#create-poll-button", "New Vote")
+        |> element("button#create-poll-button", "New Question")
         |> render_click()
 
         assert index_live
