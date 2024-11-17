@@ -40,6 +40,7 @@ defmodule YouCongressWeb.VotingLive.Index do
       |> assign(:page, 1)
       |> assign(:per_page, 5)
       |> assign(:has_more_votings, true)
+      |> stream(:votings, [])
       |> assign_votes(1)
 
     if connected?(socket) do
