@@ -11,6 +11,7 @@ defmodule YouCongressWeb.VotingLiveTest do
   import YouCongress.VotesFixtures
 
   alias YouCongress.Votings
+  alias YouCongress.HallsVotings
 
   @create_attrs %{title: "nuclear energy"}
   @suggested_titles [
@@ -23,6 +24,8 @@ defmodule YouCongressWeb.VotingLiveTest do
 
   defp create_voting(_) do
     voting = voting_fixture()
+    {:ok, _} = HallsVotings.sync!(voting.id, ["ai"])
+
     %{voting: voting}
   end
 
@@ -113,7 +116,7 @@ defmodule YouCongressWeb.VotingLiveTest do
         {:ok, index_live, _html} = live(conn, ~p"/")
 
         index_live
-        |> element("button", "Create poll")
+        |> element("button#create-poll-button", "Create poll")
         |> render_click()
 
         assert index_live
