@@ -25,7 +25,7 @@ defmodule YouCongressWeb.VotingLive.FormComponent do
           <.link
             phx-click="delete"
             phx-target={@myself}
-            data-confirm="Are you sure? This will permanently delete all votes and opinions in the poll."
+            data-confirm="Are you sure? This will permanently delete all votes and opinions."
           >
             Delete
           </.link>
