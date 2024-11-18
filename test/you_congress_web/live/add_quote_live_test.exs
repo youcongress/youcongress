@@ -35,16 +35,17 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
                source_url: "http://example.com/democracy_quote",
                agree_rate: "Strongly agree"
              )
-             |> render_submit() =~ "Quote added"
+             |> render_submit()
 
+      # Assert redirect
+      assert_redirected(add_quote_live, ~p"/p/#{voting.slug}/add-quote?twitter_username=someone")
+
+      # Verify the data was saved
       [vote] = Votes.list_votes()
-
       assert vote.voting_id == voting.id
       assert vote.answer_id == Answers.get_answer_id("Strongly agree")
 
-      # Verify the quote has been added to the database
       [opinion] = Opinions.list_opinions()
-
       assert opinion.author_id == author.id
       assert opinion.content == "Democracy is essential."
       assert opinion.source_url == "http://example.com/democracy_quote"
@@ -78,17 +79,15 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       )
       |> render_submit()
 
-      html = render(add_quote_live)
+      # Assert redirect
+      assert_redirected(add_quote_live, ~p"/p/#{voting.slug}/add-quote?twitter_username=someone")
 
-      assert html =~ "Quote added."
-
+      # Verify the data was saved
       [vote] = Votes.list_votes()
-
       assert vote.voting_id == voting.id
       assert vote.answer_id == Answers.get_answer_id("Strongly agree")
 
       [opinion] = Opinions.list_opinions()
-
       assert opinion.author_id == author.id
       assert opinion.content == "Democracy is essential."
       assert opinion.source_url == "http://example.com/democracy_quote"
@@ -98,6 +97,9 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert vote.opinion_id == opinion.id
 
       # Now we add another quote (the flow is different when an author already has a quote on a voting)
+      {:ok, add_quote_live, _html} =
+        live(conn, ~p"/p/#{voting.slug}/add-quote?twitter_username=someone")
+
       add_quote_live
       |> form("form",
         opinion: "Democracy is essential 2.",
@@ -106,17 +108,14 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       )
       |> render_submit()
 
-      html = render(add_quote_live)
+      assert_redirected(add_quote_live, ~p"/p/#{voting.slug}/add-quote?twitter_username=someone")
 
-      assert html =~ "Quote added."
-
+      # Verify the data was saved
       [vote] = Votes.list_votes()
-
       assert vote.voting_id == voting.id
       assert vote.answer_id == Answers.get_answer_id("Strongly disagree")
 
       opinion = Opinions.get_opinion!(vote.opinion_id)
-
       assert opinion.author_id == author.id
       assert opinion.content == "Democracy is essential 2."
       assert opinion.source_url == "http://example.com/democracy_quote2"
@@ -170,17 +169,14 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       )
       |> render_submit()
 
-      html = render(add_quote_live)
+      assert_redirected(add_quote_live, ~p"/p/#{voting.slug}/add-quote?twitter_username=someone")
 
-      assert html =~ "Quote added."
-
+      # Verify the data was saved
       [vote] = Votes.list_votes()
-
       assert vote.voting_id == voting.id
       assert vote.answer_id == Answers.get_answer_id("Strongly agree")
 
       [opinion] = Opinions.list_opinions()
-
       assert opinion.author_id == author.id
       assert opinion.content == "Democracy is essential."
       assert opinion.source_url == "http://example.com/democracy_quote"

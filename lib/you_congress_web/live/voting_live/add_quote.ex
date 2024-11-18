@@ -200,7 +200,13 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              opinion_id: opinion.id
            }) do
       Track.event("Add Quote", current_user)
-      {:noreply, put_flash(socket, :info, "Quote added.")}
+
+      socket =
+        socket
+        |> put_flash(:info, "Quote added.")
+        |> redirect(to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}")
+
+      {:noreply, socket}
     else
       {:error, changeset} ->
         error_message =
@@ -216,7 +222,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
   end
 
   defp create_opinion_and_update_vote(vote, author, answer_id, opinion, source_url, socket) do
-    %{assigns: %{current_user: current_user}} = socket
+    %{assigns: %{current_user: current_user, voting: voting}} = socket
 
     with {:ok, opinion} <-
            Opinions.create_opinion(%{
@@ -235,7 +241,13 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              twin: false
            }) do
       Track.event("Add Quote", current_user)
-      {:noreply, put_flash(socket, :info, "Quote added.")}
+
+      socket =
+        socket
+        |> put_flash(:info, "Quote added.")
+        |> redirect(to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}")
+
+      {:noreply, socket}
     else
       {:error, changeset} ->
         error_message =
