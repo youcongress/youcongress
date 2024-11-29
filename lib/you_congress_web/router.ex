@@ -39,8 +39,8 @@ defmodule YouCongressWeb.Router do
     get "/faq", PageController, :faq
     get "/email-login-waiting-list", PageController, :email_login_waiting_list
     get "/email-login-waiting-list/thanks", PageController, :email_login_waiting_list_thanks
-    get "/join-and-become-a-supporter", PageController, :join_and_become_a_supporter
-    get "/join-and-become-a-supporter/thanks", PageController, :join_and_become_a_supporter_thanks
+    get "/members", PageController, :members
+    get "/members/thanks", PageController, :members_thanks
     live "/sign_up", UserRegistrationLive, :new
 
     # Legacy redirection from /v/:slug to /p/:slug
