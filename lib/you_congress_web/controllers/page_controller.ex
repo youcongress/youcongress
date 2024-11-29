@@ -43,13 +43,13 @@ defmodule YouCongressWeb.PageController do
     |> redirect(to: ~p"/")
   end
 
-  def join_and_become_a_supporter(conn, _params) do
-    render(conn, :join_and_become_a_supporter, layout: false)
+  def members(conn, _params) do
+    render(conn, :members)
   end
 
-  def join_and_become_a_supporter_thanks(conn, _params) do
+  def members_thanks(conn, _params) do
     conn
-    |> put_flash(:info, "Thanks! We'll be in touch soon!")
+    |> put_flash(:info, "Thanks! We'll be in touch!")
     |> redirect(to: ~p"/")
   end
 end
