@@ -3,7 +3,7 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
   Generates a list of public figures who have publicly shared their views on a topic.
   """
 
-  @num_gen_opinions_in_prod 15
+  @num_gen_opinions_in_prod 32
   @num_gen_opinions_in_dev 2
   @num_gen_opinions_in_test 2
 
