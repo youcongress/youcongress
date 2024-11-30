@@ -88,12 +88,13 @@ defmodule YouCongress.Votings do
   defp maybe_include_two_opinions(query, false), do: query
 
   defp maybe_include_two_opinions(base_query, true) do
-    top_opinions_query =
-      from o in Opinion,
+    top_votes_query =
+      from v in YouCongress.Votes.Vote,
+        join: o in assoc(v, :opinion),
         where: is_nil(o.ancestry),
         select: %{
-          id: o.id,
-          voting_id: o.voting_id,
+          id: v.id,
+          voting_id: v.voting_id,
           rank:
             over(
               row_number(),
@@ -106,14 +107,14 @@ defmodule YouCongress.Votings do
             )
         }
 
-    filtered_opinions =
-      from o in Opinion,
-        join: ranked in subquery(top_opinions_query),
-        on: o.id == ranked.id and is_nil(o.ancestry) and ranked.rank <= 2,
-        preload: [:author]
+    filtered_votes =
+      from v in YouCongress.Votes.Vote,
+        join: ranked in subquery(top_votes_query),
+        on: v.id == ranked.id and ranked.rank <= 2,
+        preload: [opinion: :author, answer: []]
 
     from v in base_query,
-      preload: [opinions: ^filtered_opinions]
+      preload: [votes: ^filtered_votes]
   end
 
   def list_random_votings(except_id, limit) do
