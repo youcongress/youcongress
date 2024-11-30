@@ -92,18 +92,21 @@
             page={:votings_index}
           />
         </div>
-        <%= for opinion <- voting.opinions do %>
+        <%= for vote <- voting.votes do %>
           <div class="pt-2">
             <.live_component
-              module={OpinionComponent}
-              id={opinion.id}
-              opinion={opinion}
-              current_user={@current_user}
-              delegating={opinion.author_id in @current_user_delegation_ids}
+              module={VoteComponent}
+              id={vote.id}
               voting={voting}
-              opinable={true}
+              author={vote.opinion.author}
+              vote={vote}
+              show_vote={true}
+              show_opinion={true}
+              current_user={@current_user}
+              delegating?={vote.opinion.author_id in @current_user_delegation_ids}
               delegable={true}
-              liked={opinion.id in @liked_opinion_ids}
+              liked={vote.opinion.id in @liked_opinion_ids}
+              regenerating_opinion_id={nil}
               page={:voting_index}
             />
           </div>
