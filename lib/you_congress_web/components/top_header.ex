@@ -29,7 +29,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
             </div>
             <div>
               <.link href="https://x.com/YouCongressCom" target="_blank">
-                X
+                𝕏
               </.link>
             </div>
             <div class="hidden md:block">
