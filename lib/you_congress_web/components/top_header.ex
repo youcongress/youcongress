@@ -27,11 +27,6 @@ defmodule YouCongressWeb.TopHeaderComponent do
                 Become a Member
               </.link>
             </div>
-            <div>
-              <.link href="https://x.com/YouCongressCom" target="_blank">
-                𝕏
-              </.link>
-            </div>
             <div class="hidden md:block">
               <.link href="https://github.com/youcongress/youcongress" target="_blank">
                 GitHub
