@@ -63,23 +63,33 @@ defmodule YouCongressWeb.VotingLive.Index do
   end
 
   def handle_event("toggle-new-poll", _, socket) do
+    %{assigns: %{new_poll_visible?: new_poll_visible?}} = socket
+
     if Votings.votings_count_created_in_the_last_hour() > 20 do
       # Only logged users can create polls
-      %{assigns: %{current_user: current_user, new_poll_visible?: new_poll_visible?}} = socket
+      if socket.assigns.current_user do
+        socket =
+          socket
+          |> assign(new_poll_visible?: !new_poll_visible?)
+          |> maybe_assign_votes()
 
-      if current_user do
-        {:noreply, assign(socket, new_poll_visible?: !new_poll_visible?)}
+        {:noreply, socket}
       else
         {:noreply, put_flash(socket, :warning, "You need to log in to create a poll")}
       end
     else
       # Non-logged visitors can create polls
-      {:noreply, assign(socket, new_poll_visible?: !socket.assigns.new_poll_visible?)}
+      socket =
+        socket
+        |> assign(new_poll_visible?: !new_poll_visible?)
+        |> maybe_assign_votes()
+
+      {:noreply, socket}
     end
   end
 
   def handle_event("search", %{"search" => ""}, socket) do
-    {socket, _} = assign_votings(socket, 1)
+    {socket, _} = assign_votes(socket, 1)
 
     {:noreply, assign(socket, search: nil, search_tab: nil)}
   end
@@ -158,6 +168,9 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   def handle_info(_, socket), do: {:noreply, socket}
 
+  defp maybe_assign_votes(%{assigns: %{new_poll_visible?: true}} = socket), do: socket
+  defp maybe_assign_votes(socket), do: assign_votes(socket, 1)
+
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
     |> assign(:page_title, "Edit Voting")
@@ -175,7 +188,8 @@ defmodule YouCongressWeb.VotingLive.Index do
     |> assign(
       page_title: "YouCongress: Shape the future with Liquid Democracy and AI Twins",
       skip_page_suffix: true,
-      page_description: "Finding agreements and understanding disagreements to improve our democracies. Open Source.",
+      page_description:
+        "Finding agreements and understanding disagreements to improve our democracies. Open Source.",
       voting: nil
     )
   end
@@ -258,9 +272,9 @@ defmodule YouCongressWeb.VotingLive.Index do
     Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
   end
 
-  defp assign_votes(socket, new_per_page) do
+  defp assign_votes(socket, page) do
     %{assigns: %{current_user: current_user}} = socket
-    {socket, votings} = assign_votings(socket, new_per_page)
+    {socket, votings} = assign_votings(socket, page)
     voting_ids = Enum.map(votings, & &1.id)
 
     votes_by_voting_id =

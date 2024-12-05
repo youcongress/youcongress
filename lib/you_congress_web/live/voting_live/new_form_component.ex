@@ -18,8 +18,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
         phx-submit="ai-validate"
       >
         <div>
-          Create a new vote
-          <div class="text-sm text-gray-600 pt-2">It needs to be a yes/no question</div>
+          Create a new yes/no question
           <.input
             field={@form[:title]}
             type="text"
