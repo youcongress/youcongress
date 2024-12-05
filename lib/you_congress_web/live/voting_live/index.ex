@@ -175,8 +175,7 @@ defmodule YouCongressWeb.VotingLive.Index do
     |> assign(
       page_title: "YouCongress: Shape the future with Liquid Democracy and AI Twins",
       skip_page_suffix: true,
-      page_description:
-        "We aim to improve our democracies and organizations. We will do this by finding agreements and understanding disagreements. Open Source.",
+      page_description: "Finding agreements and understanding disagreements to improve our democracies. Open Source.",
       voting: nil
     )
   end
