@@ -7,19 +7,19 @@
     <%= if assigns[:page_title] do %>
       <%= if assigns[:skip_page_suffix] do %>
         <title><%= assigns[:page_title] %></title>
-        <meta content={assigns[:page_title]} property="og:title">
+        <meta content={assigns[:page_title]} property="og:title" />
       <% else %>
         <.live_title suffix=" / YouCongress">
           <%= assigns[:page_title] %>
         </.live_title>
-        <meta content={"#{assigns[:page_title]} / YouCongress"} property="og:title">
+        <meta content={"#{assigns[:page_title]} / YouCongress"} property="og:title" />
       <% end %>
     <% else %>
       <title>YouCongress</title>
     <% end %>
     <%= if assigns[:page_description] do %>
       <meta name="description" content={assigns[:page_description]} />
-      <meta content={assigns[:page_description]} property="og:description">
+      <meta content={assigns[:page_description]} property="og:description" />
     <% end %>
 
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />

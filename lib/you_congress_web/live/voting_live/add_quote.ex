@@ -204,7 +204,9 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
       socket =
         socket
         |> put_flash(:info, "Quote added.")
-        |> redirect(to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}")
+        |> redirect(
+          to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
+        )
 
       {:noreply, socket}
     else
@@ -245,7 +247,9 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
       socket =
         socket
         |> put_flash(:info, "Quote added.")
-        |> redirect(to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}")
+        |> redirect(
+          to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
+        )
 
       {:noreply, socket}
     else
