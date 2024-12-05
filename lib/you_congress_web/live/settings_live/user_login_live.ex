@@ -15,7 +15,6 @@ defmodule YouCongressWeb.UserLoginLive do
         <div class="text-center">
           <.link
             href="/x_log_in"
-            method="post"
             class="inline-flex items-center justify-between bg-black text-white font-bold py-2 px-4 rounded-full hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-opacity-50 transition-colors duration-300"
           >
             Sign in with
@@ -29,11 +28,6 @@ defmodule YouCongressWeb.UserLoginLive do
             </svg>
           </.link>
         </div>
-        <span class="text-xs">
-          * If logging in with X fails, log in at
-          <.link href="https://x.com" class="underline" target="_blank">x.com</.link>
-          and then return here.
-        </span>
       </div>
       <div class="pt-4 text-center">or</div>
 

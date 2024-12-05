@@ -34,6 +34,7 @@ defmodule YouCongressWeb.Router do
 
     get "/waiting_list", PageController, :waiting_list
     get "/about", PageController, :about
+    get "/x_log_in", TwitterLogInController, :pre_login
     post "/x_log_in", TwitterLogInController, :log_in
     get "/twitter-callback", TwitterLogInController, :callback
     get "/faq", PageController, :faq

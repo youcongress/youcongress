@@ -7,6 +7,10 @@ defmodule YouCongressWeb.TwitterLogInController do
   alias YouCongress.Authors
   alias YouCongress.Track
 
+  def pre_login(conn, _params) do
+    render(conn, :pre_login)
+  end
+
   def log_in(conn, _params) do
     base_url = Application.get_env(:you_congress, :base_url)
     token = ExTwitter.request_token(base_url <> "/twitter-callback")
