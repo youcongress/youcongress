@@ -1,0 +1,61 @@
+<div class="min-h-screen flex flex-col">
+  <div class="flex items-center justify-center pt-12">
+    <div class="max-w-md w-full mx-auto p-8 bg-white rounded-xl shadow-md">
+      <h2 class="text-2xl font-bold text-center mb-4">Sign in with 𝕏</h2>
+
+      <p class="text-gray-600 text-center mb-8">
+        Please follow these quick steps to sign in:
+      </p>
+
+      <ol class="space-y-8">
+        <li class="flex flex-col items-center">
+          <span class="text-lg mb-3">1. Make sure you're logged in to 𝕏:</span>
+          <.link
+            href="https://x.com"
+            target="_blank"
+            class="inline-flex items-center justify-center bg-black text-white font-bold py-3 px-6 rounded-full hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-opacity-50 transition-colors duration-300 w-full sm:w-auto"
+          >
+            Open 𝕏.com
+          </.link>
+        </li>
+
+        <li class="text-lg text-center">
+          2. Come back here
+        </li>
+
+        <li class="flex flex-col items-center">
+          <span class="text-lg mb-3">3. Sign in to YouCongress with 𝕏:</span>
+          <.link
+            href="/x_log_in"
+            method="post"
+            class="inline-flex items-center justify-center bg-black text-white font-bold py-3 px-6 rounded-full hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-opacity-50 transition-colors duration-300 w-full sm:w-auto"
+          >
+            Sign in with 𝕏
+          </.link>
+        </li>
+      </ol>
+
+      <div class="relative mt-12">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-gray-300"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-2 bg-white text-gray-600">or</span>
+        </div>
+      </div>
+
+      <div class="mt-6 text-center">
+        <.link
+          href={~p"/sign_up"}
+          class="text-indigo-600 hover:text-indigo-800 font-medium underline"
+        >
+          sign up with email and password
+        </.link>
+      </div>
+    </div>
+  </div>
+
+  <footer class="pt-6">
+    <.footer />
+  </footer>
+</div>
