@@ -89,9 +89,12 @@ defmodule YouCongressWeb.VotingLive.Index do
   end
 
   def handle_event("search", %{"search" => ""}, socket) do
-    {socket, _} = assign_votes(socket, 1)
+    socket =
+      socket
+      |> assign_votes(1)
+      |> assign(search: nil, search_tab: nil)
 
-    {:noreply, assign(socket, search: nil, search_tab: nil)}
+    {:noreply, socket}
   end
 
   def handle_event("search", %{"search" => search}, socket) do
