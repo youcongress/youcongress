@@ -16,6 +16,15 @@ defmodule YouCongress.Halls.Classification do
   @impl YouCongress.Halls.ClassificationBehaviour
   @spec classify(binary, OpenAIModel.t()) :: {:ok, map} | {:error, binary}
   def classify(text, model) do
+    text = """
+    Possible tags:
+    #{YouCongress.Halls.Hall.names_str()}
+
+    Classify the following question and return a list of tags in json format:
+
+    Question:#{text}
+    """
+
     case classify_gpt(text, model) do
       {:ok, %{tags: tags, cost: cost}} -> {:ok, %{tags: tags, cost: cost}}
       {:error, error} -> {:error, error}
@@ -52,11 +61,9 @@ defmodule YouCongress.Halls.Classification do
   @spec prompt0 :: binary
   defp prompt0 do
     """
-    Classify a text and return a list of tags:
+    Classify a poll title and return a list of tags in json format
 
-    #{YouCongress.Halls.Hall.names_str()}
-
-    Include a list of tags in json for "Should Spain invest in AI research and development?"
+    "Should Spain invest in AI research and development?"
     """
   end
 end
