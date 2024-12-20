@@ -8,16 +8,16 @@ defmodule YouCongressWeb.HomeLive.Index do
   alias YouCongress.Votes
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongressWeb.VotingLive.CastVoteComponent
+  alias YouCongressWeb.Components.SwitchComponent
 
   @per_page 15
 
   @impl true
-  def mount(params, session, socket) do
+  def mount(_params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
 
     socket =
       socket
-      |> assign(all: params["all"] == "true")
       |> assign(
         :current_user_votes_by_voting_id,
         get_current_user_votes_by_voting_id(socket.assigns.current_user)
@@ -36,9 +36,10 @@ defmodule YouCongressWeb.HomeLive.Index do
 
     socket =
       socket
+      |> assign(:include_opinions_from_twins, true)
       |> load_opinions_and_votes()
       |> assign(
-        page_title: "Home",
+        page_title: "Activity",
         page: 1
       )
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
@@ -47,9 +48,9 @@ defmodule YouCongressWeb.HomeLive.Index do
   end
 
   defp load_opinions_and_votes(socket) do
-    %{assigns: %{current_user: current_user, all: all}} = socket
+    %{assigns: %{current_user: current_user}} = socket
 
-    opinions = list_opinions(all)
+    opinions = list_opinions(socket)
 
     assign(socket,
       opinions: opinions,
@@ -58,39 +59,20 @@ defmodule YouCongressWeb.HomeLive.Index do
     )
   end
 
-  defp list_opinions(true) do
+  defp list_opinions(socket) do
     Opinions.list_opinions(
       preload: [:voting, :author],
-      twin: false,
+      include_twins: socket.assigns.include_opinions_from_twins,
       order_by: [desc: :id],
       limit: @per_page
     )
   end
 
-  defp list_opinions(false) do
+  defp list_opinions(socket, offset) do
     Opinions.list_opinions(
       preload: [:voting, :author],
-      ancestry: nil,
-      order_by: :relevant,
-      limit: @per_page
-    )
-  end
-
-  defp list_opinions(true, offset) do
-    Opinions.list_opinions(
-      preload: [:voting, :author],
-      twin: false,
+      include_twins: socket.assigns.include_opinions_from_twins,
       order_by: [desc: :id],
-      limit: @per_page,
-      offset: offset
-    )
-  end
-
-  defp list_opinions(false, offset) do
-    Opinions.list_opinions(
-      preload: [:voting, :author],
-      ancestry: nil,
-      order_by: :relevant,
       limit: @per_page,
       offset: offset
     )
@@ -104,11 +86,11 @@ defmodule YouCongressWeb.HomeLive.Index do
 
   @impl true
   def handle_event("load-more", _, socket) do
-    %{assigns: %{page: page, opinions: opinions, all: all}} = socket
+    %{assigns: %{page: page, opinions: opinions}} = socket
     new_page = page + 1
     offset = (new_page - 1) * @per_page
 
-    new_opinions = list_opinions(all, offset)
+    new_opinions = list_opinions(socket, offset)
 
     socket =
       assign(socket,
@@ -117,6 +99,20 @@ defmodule YouCongressWeb.HomeLive.Index do
         no_more_opinions?: length(new_opinions) < @per_page
       )
 
+    {:noreply, socket}
+  end
+
+  def handle_event("toggle-switch", _, socket) do
+    %{assigns: %{include_opinions_from_twins: include_opinions_from_twins}} = socket
+
+    socket =
+      socket
+      |> assign(:include_opinions_from_twins, !include_opinions_from_twins)
+      |> load_opinions_and_votes()
+      |> assign(
+        page_title: "Activity",
+        page: 1
+      )
     {:noreply, socket}
   end
 

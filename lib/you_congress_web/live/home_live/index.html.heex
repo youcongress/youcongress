@@ -1,62 +1,8 @@
-<.header>
-  <:actions>
-    <.link patch={~p"/"} phx-click={JS.push_focus()}>
-      <.button>Questions</.button>
-    </.link>
-  </:actions>
-</.header>
-
-<%= if @all do %>
-  <.header>
-    <:subtitle>
-      This excludes AI-digital-twin & delegation activity, which can be found on the poll pages after human opinions.
-    </:subtitle>
-  </.header>
-<% end %>
-
-<div class="pt-2">
-  <a
-    href={~p"/"}
-    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
-  >
-    AI
-  </a>
-  <a
-    href={~p"/halls/climate"}
-    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
-  >
-    Climate
-  </a>
-  <a
-    href={~p"/halls/us"}
-    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
-  >
-    US
-  </a>
-  <a
-    href={~p"/halls/eu"}
-    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
-  >
-    EU
-  </a>
-  <a
-    href={~p"/halls/spain"}
-    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
-  >
-    Spain
-  </a>
-  <a
-    href={~p"/halls/world"}
-    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
-  >
-    World
-  </a>
-  <a
-    href={~p"/halls/law"}
-    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
-  >
-    Law
-  </a>
+<div class="flex justify-end">
+  <SwitchComponent.render is_active={@include_opinions_from_twins} label1="Human" label2="Human + AI Twins" />
+  <.link patch={~p"/"} phx-click={JS.push_focus()}>
+    <.button>Questions</.button>
+  </.link>
 </div>
 
 <ul class="pt-6" phx-viewport-bottom="load-more" id="activity">
