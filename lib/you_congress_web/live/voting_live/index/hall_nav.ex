@@ -29,8 +29,8 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
           <div class="hidden md:block pt-1 space-x-8">
             <HallNav.tab
               url_hall_name={@hall_name}
-              hall_name="innovation-and-culture"
-              hall_link={~p"/halls/innovation-and-culture"}
+              hall_name="ai-innovation-and-culture"
+              hall_link={~p"/halls/ai-innovation-and-culture"}
               hall_title="AI Innovation and culture"
             />
             <HallNav.tab
