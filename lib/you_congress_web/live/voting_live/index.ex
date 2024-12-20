@@ -31,7 +31,7 @@ defmodule YouCongressWeb.VotingLive.Index do
       socket
       |> assign(:search, nil)
       |> assign(:search_tab, :polls)
-      |> assign(:order_by_date, false)
+      |> assign(:order_by_date, true)
       |> assign(:hall_name, params["hall"] || @default_hall)
       |> assign(:new_poll_visible?, false)
       |> assign(:current_user_delegation_ids, get_current_user_delegation_ids(current_user))
