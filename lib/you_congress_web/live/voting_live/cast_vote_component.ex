@@ -104,7 +104,7 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
           total_votes={@total_votes}
           vote_frequencies={@vote_frequencies}
         />
-        <%= if @page == :votings_index do %>
+        <%= if @page == :votings_index && @current_user do %>
           <div class="pt-4">
             <.live_component
               module={OpinateComponent}
@@ -116,6 +116,14 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
             />
           </div>
         <% end %>
+
+        <div class="pt-2">
+          Read
+          <.link href={~p"/p/#{@voting.slug}"} class="cursor-pointer underline">arguments</.link>
+          or
+          <.link href={~p"/sign_up"} class="cursor-pointer underline">sign up</.link>
+          to add your own and/or save your vote.
+        </div>
       <% end %>
     </div>
     """
@@ -172,12 +180,6 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
 
   @impl true
   def handle_event("vote", %{"response" => response}, %{assigns: %{current_user: nil}} = socket) do
-    send(
-      self(),
-      {:put_flash, :warning,
-       "Log in to save your vote and let others delegate their votes to you."}
-    )
-
     socket =
       socket
       |> assign(:display_results, true)
@@ -223,6 +225,11 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
   end
 
   def handle_event("delete-direct-vote", _, %{assigns: %{current_user: nil}} = socket) do
+    socket =
+      socket
+      |> assign(:display_results, false)
+      |> assign(:current_user_vote, nil)
+
     {:noreply, assign(socket, current_user_vote: nil)}
   end
 
