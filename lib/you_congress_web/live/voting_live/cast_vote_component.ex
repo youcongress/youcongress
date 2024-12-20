@@ -104,20 +104,19 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
           total_votes={@total_votes}
           vote_frequencies={@vote_frequencies}
         />
-        <%= if @page == :votings_index && @current_user do %>
-          <div class="pt-4">
-            <.live_component
-              module={OpinateComponent}
-              id={@id}
-              voting={@voting}
-              opinion={@current_user_opinion}
-              vote={@current_user_vote}
-              current_user={@current_user}
-            />
-          </div>
-        <% end %>
 
-        <div class="pt-2">
+        <div class="pt-4" :if={@page == :votings_index && @current_user}>
+          <.live_component
+            module={OpinateComponent}
+            id={@id}
+            voting={@voting}
+            opinion={@current_user_opinion}
+            vote={@current_user_vote}
+            current_user={@current_user}
+          />
+        </div>
+
+        <div class="pt-2" :if={@page == :votings_index}>
           Read
           <.link href={~p"/p/#{@voting.slug}"} class="cursor-pointer underline">arguments</.link>
           or
