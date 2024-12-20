@@ -28,7 +28,7 @@ defmodule YouCongressWeb.VotingLive.Index.OpinateComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div>
+    <div class="pb-2">
       <.form
         for={@form}
         id={"v#{@voting.id}-opinion-form"}
@@ -88,10 +88,6 @@ defmodule YouCongressWeb.VotingLive.Index.OpinateComponent do
                 </.link>
               <% end %>
             <% end %>
-          <% else %>
-            <span class="pl-2">
-              or <.link href={~p"/p/#{@voting.slug}"} class="underline">read comments</.link>
-            </span>
           <% end %>
         </div>
       </.form>

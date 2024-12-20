@@ -196,21 +196,11 @@ defmodule YouCongress.Opinions do
       {:twin, twin_value}, query ->
         from q in query, where: q.twin == ^twin_value
 
+      {:include_twins, include_twins}, query ->
+        from q in query, where: q.twin == ^include_twins or q.twin == false
+
       {:preload, preloads}, query ->
         from q in query, preload: ^preloads
-
-      {:order_by, :relevant}, query ->
-        from q in query,
-          order_by: [
-            desc:
-              fragment(
-                "CASE WHEN ? IS NOT NULL OR ? > 0 OR ? = false THEN 1 ELSE 0 END",
-                q.source_url,
-                q.descendants_count,
-                q.twin
-              ),
-            desc: q.updated_at
-          ]
 
       {:order_by, order}, query ->
         from q in query, order_by: ^order

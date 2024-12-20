@@ -125,7 +125,7 @@ defmodule YouCongressWeb.VotingLive.Index do
     {:noreply, assign(socket, search_tab: :delegates)}
   end
 
-  def handle_event("toggle-order-by-date", _, socket) do
+  def handle_event("toggle-switch", _, socket) do
     order_by_date = !socket.assigns.order_by_date
 
     socket =
@@ -172,12 +172,6 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   defp maybe_assign_votes(%{assigns: %{new_poll_visible?: true}} = socket), do: socket
   defp maybe_assign_votes(socket), do: assign_votes(socket, 1)
-
-  defp apply_action(socket, :edit, %{"id" => id}) do
-    socket
-    |> assign(:page_title, "Edit Voting")
-    |> assign(:voting, Votings.get_voting!(id))
-  end
 
   defp apply_action(socket, :new, _params) do
     socket

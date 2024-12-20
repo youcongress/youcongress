@@ -123,7 +123,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     {:noreply, assign(socket, :regenerating_opinion_id, opinion_id)}
   end
 
-  def handle_event("toggle-order-by-date", _, socket) do
+  def handle_event("toggle-switch", _, socket) do
     %{assigns: %{order_by_date: order_by_date, author: author}} = socket
     order_by_date = !order_by_date
 

@@ -16,7 +16,7 @@
 
   <%= if is_nil(@search) do %>
     <div class="flex">
-      <SwitchComponent.render order_by_date={@order_by_date} label1="Top" label2="New" />
+      <SwitchComponent.render is_active={@order_by_date} label1="Top" label2="New" />
       <div>
         <button
           id="create-poll-button"
@@ -26,13 +26,11 @@
           New Question
         </button>
       </div>
-      <%= if @current_user do %>
-        <div class="pl-2">
-          <.link patch={~p"/activity"}>
-            <.button>All activity</.button>
-          </.link>
-        </div>
-      <% end %>
+      <div class="pl-2">
+        <.link patch={~p"/activity"}>
+          <.button>Activity</.button>
+        </.link>
+      </div>
     </div>
   <% end %>
 </div>
