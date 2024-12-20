@@ -18,46 +18,33 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
           <div class="pt-1 space-x-8">
             <HallNav.tab url_hall_name={@hall_name} hall_name="ai" hall_link={~p"/"} hall_title="AI" />
+            <HallNav.tab url_hall_name={@hall_name} hall_name="public-interest-ai" hall_link={~p"/halls/public-interest-ai"} hall_title="Public interest AI" />
             <HallNav.tab
               url_hall_name={@hall_name}
-              hall_name="climate"
-              hall_link={~p"/halls/climate"}
-              hall_title="Climate"
-            />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="health"
-              hall_link={~p"/halls/health"}
-              hall_title="Health"
+              hall_name="future-of-work"
+              hall_link={~p"/halls/future-of-work"}
+              hall_title="Future of work"
             />
           </div>
           <div class="hidden md:block pt-1 space-x-8">
             <HallNav.tab
               url_hall_name={@hall_name}
-              hall_name="law"
-              hall_link={~p"/halls/law"}
-              hall_title="Law"
+              hall_name="innovation-and-culture"
+              hall_link={~p"/halls/innovation-and-culture"}
+              hall_title="AI Innovation and culture"
             />
             <HallNav.tab
               url_hall_name={@hall_name}
-              hall_name="us"
-              hall_link={~p"/halls/us"}
-              hall_title="US"
+              hall_name="trust-in-ai"
+              hall_link={~p"/halls/trust-in-ai"}
+              hall_title="Trust in AI"
             />
             <HallNav.tab
               url_hall_name={@hall_name}
-              hall_name="eu"
-              hall_link={~p"/halls/eu"}
-              hall_title="EU"
+              hall_name="global-ai-governance"
+              hall_link={~p"/halls/global-ai-governance"}
+              hall_title="Global AI governance"
             />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="spain"
-              hall_link={~p"/halls/spain"}
-              hall_title="Spain"
-            />
-          </div>
-          <div class="pt-1 space-x-8">
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="all"
@@ -80,26 +67,29 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             url_hall_name={@hall_name}
             hall_name="spain"
             hall_link={~p"/halls/spain"}
-            hall_title="Spain"
+            hall_title="AI innovation and culture"
           />
         <% end %>
         <HallNav.tab
           url_hall_name={@hall_name}
           hall_name="law"
           hall_link={~p"/halls/law"}
-          hall_title="Law"
+          hall_title="Trust in AI"
         />
+        </div>
+        <div class="-mb-px flex space-x-8 md:hidden">
+
         <HallNav.tab
           url_hall_name={@hall_name}
           hall_name="us"
           hall_link={~p"/halls/us"}
-          hall_title="US"
+          hall_title="Global AI governance"
         />
         <HallNav.tab
           url_hall_name={@hall_name}
           hall_name="eu"
           hall_link={~p"/halls/eu"}
-          hall_title="EU"
+          hall_title="All"
         />
       </div>
     </div>
