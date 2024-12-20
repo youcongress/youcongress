@@ -37,7 +37,6 @@ defmodule YouCongress.Votings do
     preload = opts[:preload] || []
 
     base_query = from(v in Voting)
-    base_query = maybe_include_two_opinions(base_query, opts[:include_two_opinions] || false)
 
     query =
       Enum.reduce(
@@ -83,38 +82,6 @@ defmodule YouCongress.Votings do
     query
     |> Repo.all()
     |> Repo.preload(preload)
-  end
-
-  defp maybe_include_two_opinions(query, false), do: query
-
-  defp maybe_include_two_opinions(base_query, true) do
-    top_votes_query =
-      from v in YouCongress.Votes.Vote,
-        join: o in assoc(v, :opinion),
-        where: is_nil(o.ancestry),
-        select: %{
-          id: v.id,
-          voting_id: v.voting_id,
-          rank:
-            over(
-              row_number(),
-              partition_by: o.voting_id,
-              order_by: [
-                asc: fragment("CASE WHEN ? IS NOT NULL THEN 0 ELSE 1 END", o.source_url),
-                desc: o.likes_count,
-                desc: o.id
-              ]
-            )
-        }
-
-    filtered_votes =
-      from v in YouCongress.Votes.Vote,
-        join: ranked in subquery(top_votes_query),
-        on: v.id == ranked.id and ranked.rank <= 2,
-        preload: [opinion: :author, answer: []]
-
-    from v in base_query,
-      preload: [votes: ^filtered_votes]
   end
 
   def list_random_votings(except_id, limit) do
