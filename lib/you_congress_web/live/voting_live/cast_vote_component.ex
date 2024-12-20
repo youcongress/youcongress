@@ -116,7 +116,7 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
           />
         </div>
 
-        <div class="pt-2" :if={@page == :votings_index}>
+        <div class="pt-2" :if={@page == :votings_index && !@current_user}>
           Read
           <.link href={~p"/p/#{@voting.slug}"} class="cursor-pointer underline">arguments</.link>
           or
