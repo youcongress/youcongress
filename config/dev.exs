@@ -8,10 +8,9 @@ if !System.get_env("OPENAI_API_KEY") do
   config :you_congress, :ai_replier, YouCongress.Opinions.AIReplier.AIReplierFake
 
   config :you_congress, :public_figures_generator, YouCongress.DigitalTwins.PublicFiguresFake
-
   config :you_congress, :opinator_implementation, YouCongress.DigitalTwins.OpinatorFake
-
   config :you_congress, :title_rewording_implementation, YouCongress.Votings.TitleRewordingFake
+  config :you_congress, :voting_generator, YouCongress.Votings.GeneratorFake
 end
 
 # Configure your database

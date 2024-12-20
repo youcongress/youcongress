@@ -62,7 +62,14 @@ config :phoenix, :json_library, Jason
 config :you_congress, Oban,
   repo: YouCongress.Repo,
   plugins: [
-    Oban.Plugins.Pruner
+    Oban.Plugins.Pruner,
+    {Oban.Plugins.Cron,
+     crontab: [
+       # Generate a voting every day at 7am
+       {"0 8 * * *", YouCongress.Workers.VotingGeneratorWorker, max_attempts: 2},
+       # Generate a voting every day at 7pm
+       {"0 19 * * *", YouCongress.Workers.VotingGeneratorWorker, max_attempts: 2}
+     ]}
   ],
   queues: [
     default: 10
