@@ -19,6 +19,12 @@ Application.put_env(
   YouCongress.Votings.TitleRewordingFake
 )
 
+Application.put_env(
+  :you_congress,
+  :voting_generator,
+  YouCongress.Votings.GeneratorFake
+)
+
 ExUnit.start()
 Ecto.Adapters.SQL.Sandbox.mode(YouCongress.Repo, :manual)
 ExUnit.configure(exclude: :openai_api)
