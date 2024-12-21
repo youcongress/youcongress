@@ -65,30 +65,29 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
         <% else %>
           <HallNav.tab
             url_hall_name={@hall_name}
-            hall_name="spain"
-            hall_link={~p"/halls/spain"}
+            hall_name="ai-innovation-and-culture"
+            hall_link={~p"/halls/ai-innovation-and-culture"}
             hall_title="AI innovation and culture"
           />
         <% end %>
         <HallNav.tab
           url_hall_name={@hall_name}
-          hall_name="law"
-          hall_link={~p"/halls/law"}
+          hall_name="trust-in-ai"
+          hall_link={~p"/halls/trust-in-ai"}
           hall_title="Trust in AI"
         />
-        </div>
-        <div class="-mb-px flex space-x-8 md:hidden">
-
+      </div>
+      <div class="-mb-px flex space-x-8 md:hidden">
         <HallNav.tab
           url_hall_name={@hall_name}
-          hall_name="us"
-          hall_link={~p"/halls/us"}
+          hall_name="global-ai-governance"
+          hall_link={~p"/halls/global-ai-governance"}
           hall_title="Global AI governance"
         />
         <HallNav.tab
           url_hall_name={@hall_name}
-          hall_name="eu"
-          hall_link={~p"/halls/eu"}
+          hall_name="all"
+          hall_link={~p"/halls/all"}
           hall_title="All"
         />
       </div>
