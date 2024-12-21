@@ -66,9 +66,9 @@ config :you_congress, Oban,
     {Oban.Plugins.Cron,
      crontab: [
        # Generate a voting every day at 7am
-       {"0 8 * * *", YouCongress.Workers.VotingGeneratorWorker, max_attempts: 2},
+       {"0 7 * * *", YouCongress.Workers.VotingGeneratorWorker, args: %{}, max_attempts: 2},
        # Generate a voting every day at 7pm
-       {"0 19 * * *", YouCongress.Workers.VotingGeneratorWorker, max_attempts: 2}
+       {"0 19 * * *", YouCongress.Workers.VotingGeneratorWorker, args: %{}, max_attempts: 2}
      ]}
   ],
   queues: [
