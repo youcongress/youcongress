@@ -55,7 +55,7 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
         </nav>
       </div>
       <div class="-mb-px flex space-x-8 md:hidden">
-        <%= if @hall_name not in ["ai", "climate", "space", "eu", "us", "law", "health", "all"] do %>
+        <%= if @hall_name not in ["ai", "public-interest-ai", "future-of-work", "ai-innovation-and-culture", "trust-in-ai", "global-ai-governance", "all"] do %>
           <HallNav.tab
             url_hall_name={@hall_name}
             hall_name={@hall_name}
