@@ -9,6 +9,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongress.Likes
   alias YouCongress.Delegations
+  alias YouCongressWeb.Tools.TimeAgo
 
   @max_x_length 280
   @url_length String.length("youcongress.com/p/should-tech-")

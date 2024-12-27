@@ -106,6 +106,9 @@
           opinion={@vote.opinion}
           current_user={@current_user}
         />
+        <span class="text-xs text-gray-500 pl-3">
+          <%= TimeAgo.short_time(@vote.inserted_at) %>
+        </span>
       </div>
     <% end %>
     <div>

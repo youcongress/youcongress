@@ -48,8 +48,8 @@
       <span class="pr-2">
         <OpinionComponent.like_icon opinion={@opinion} liked={@liked} target={@myself} />
       </span>
-      <span class="pr-2">
-        <OpinionComponent.comment_icon :if={@opinable} opinion={@opinion} />
+      <span class="pr-2" :if={@opinable}>
+        <OpinionComponent.comment_icon opinion={@opinion} />
       </span>
       <OpinionComponent.x_icon
         author={@opinion.author}
@@ -57,6 +57,9 @@
         opinion={@opinion}
         current_user={@current_user}
       />
+      <span class="text-xs text-gray-500 pl-3">
+        <%= TimeAgo.short_time(@opinion.inserted_at) %>
+      </span>
     </div>
     <div>
       <%= if @delegable && (!@current_user || (@opinion.author_id != @current_user.author_id)) do %>
