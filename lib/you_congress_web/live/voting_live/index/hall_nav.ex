@@ -27,12 +27,21 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             />
           </div>
           <div class="hidden md:block pt-1 space-x-8">
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="ai-innovation-and-culture"
-              hall_link={~p"/halls/ai-innovation-and-culture"}
-              hall_title="AI Innovation and culture"
-            />
+            <%= if @hall_name not in ["ai", "public-interest-ai", "future-of-work", "ai-innovation-and-culture", "trust-in-ai", "global-ai-governance", "all"] do %>
+              <HallNav.tab
+                url_hall_name={@hall_name}
+                hall_name={@hall_name}
+                hall_link={~p"/halls/#{@hall_name}"}
+            hall_title={StringUtils.titleize_hall(@hall_name)}
+              />
+            <% else %>
+              <HallNav.tab
+                url_hall_name={@hall_name}
+                hall_name="ai-innovation-and-culture"
+                hall_link={~p"/halls/ai-innovation-and-culture"}
+                hall_title="AI Innovation and culture"
+              />
+            <% end %>
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="trust-in-ai"
