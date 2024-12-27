@@ -21,6 +21,11 @@ defmodule YouCongress.Halls do
     Repo.all(Hall)
   end
 
+  def list_halls(name_contains: txt) do
+    txt = String.replace(txt, " ", "-")
+    Repo.all(from(h in Hall, where: ilike(h.name, ^"%#{txt}%")))
+  end
+
   @doc """
   Gets a single hall.
 
