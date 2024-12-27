@@ -35,6 +35,20 @@
   <% end %>
 </div>
 
+<div :if={is_nil(@search) && !@new_poll_visible?} class="pt-4 text-sm">
+  <div class="pb-1 text-xs">Some delegates:</div>
+  <div class="">
+    <.link href={~p"/a/282"} class="underline">Stuart Russell</.link>, <.link
+      href={~p"/x/demishassabis"}
+      class="underline"
+    >Demis Hassabis</.link>, <.link href={~p"/x/slatestarcodex"} class="underline">Scott Alexander</.link>, <.link
+      href={~p"/x/Yoshua_Bengio"}
+      class="underline"
+    >Yoshua Bengio</.link>,
+    <.link href={~p"/x/ESYudkowsky"} class="underline">Eliezer Yudkowsky</.link>
+  </div>
+</div>
+
 <%= if @search do %>
   <Search.render authors={@authors} votings={@votings} search_tab={@search_tab} />
 <% else %>
