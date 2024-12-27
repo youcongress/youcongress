@@ -77,6 +77,8 @@ defmodule YouCongress.Votes do
                   END",
                   o.source_url
                 ),
+              desc: o.likes_count,
+              desc: o.descendants_count,
               desc:
                 fragment(
                   "CASE
@@ -85,9 +87,7 @@ defmodule YouCongress.Votes do
                 END",
                   v.answer_id,
                   v.answer_id
-                ),
-              desc: o.likes_count,
-              desc: o.descendants_count
+                )
             ]
 
         {:limit, limit}, query ->
