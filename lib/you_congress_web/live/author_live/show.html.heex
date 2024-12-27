@@ -57,6 +57,26 @@
   </div>
 </div>
 
+<div class="pt-2">
+  <%= for {hall_name, num_votes} <- @halls do %>
+    <.link
+      href={author_path(@author) <> (hall_name != @hall_name && "?hall=#{hall_name}" || "")}
+      class={"inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset mr-2 mb-2 #{
+        if hall_name == @hall_name do
+          "bg-blue-100 text-blue-700 ring-blue-700/10"
+        else
+          "bg-gray-50 text-gray-600 ring-gray-500/10"
+        end
+      }"}
+    >
+      <%= hall_name %> (<%= num_votes %>)
+      <%= if hall_name == @hall_name do %>
+        <span class="ml-1">×</span>
+      <% end %>
+    </.link>
+  <% end %>
+</div>
+
 <div class="space-x-2 flex">
   <SwitchComponent.render is_active={@order_by_date} label1="Top" label2="New" />
 </div>

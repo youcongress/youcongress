@@ -16,6 +16,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongressWeb.Tools.Tooltip
   alias YouCongressWeb.VotingLive.CastVoteComponent
   alias YouCongressWeb.Components.SwitchComponent
+  alias YouCongress.Halls
 
   @impl true
   def mount(_params, session, socket) do
@@ -34,10 +35,23 @@ defmodule YouCongressWeb.AuthorLive.Show do
   @impl true
   def handle_params(params, _, socket) do
     order_by_date = socket.assigns.order_by_date
+    hall_name = params["hall"]
 
     author = get_author!(params)
 
-    votes = load_votes(author.id, order_by_date)
+    votes = load_votes(author.id, order_by_date, hall_name)
+    halls =
+      votes
+      |> Enum.flat_map(fn vote ->
+        if vote.direct do
+          Enum.map(vote.voting.halls, fn hall -> hall.name end)
+        else
+          []
+        end
+      end)
+      |> Enum.frequencies()
+      |> Enum.sort_by(fn {_name, count} -> count end, :desc)
+      |> Enum.take(15)
 
     name = author.name || author.twitter_username || "Anonymous user"
     title = page_title(socket.assigns.live_action, name)
@@ -50,6 +64,8 @@ defmodule YouCongressWeb.AuthorLive.Show do
      |> assign(:page_description, "Delegate to #{name} to vote on your behalf.")
      |> assign(:author, author)
      |> assign(:votes, votes)
+     |> assign(:halls, halls)
+     |> assign(:hall_name, hall_name)
      |> assign(:regenerating_opinion_id, nil)
      |> assign(
        :current_user_votes_by_voting_id,
@@ -130,7 +146,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     socket =
       socket
       |> assign(:order_by_date, order_by_date)
-      |> assign(:votes, load_votes(author.id, order_by_date))
+      |> assign(:votes, load_votes(author.id, order_by_date, socket.assigns.hall_name))
 
     {:noreply, socket}
   end
@@ -204,19 +220,51 @@ defmodule YouCongressWeb.AuthorLive.Show do
     assign(socket, :delegating?, delegating)
   end
 
-  defp load_votes(author_id, false) do
-    Votes.list_votes(
+  defp load_votes(author_id, false, nil) do
+    args = [
       author_ids: [author_id],
       order_by_strong_opinions_first: true,
-      preload: [:voting, :answer, :opinion]
-    )
+      preload: [:answer, :opinion, voting: [:halls]]
+    ]
+
+    Votes.list_votes(args)
   end
 
-  defp load_votes(author_id, true) do
-    Votes.list_votes(
+  defp load_votes(author_id, false, hall_name) do
+    hall = Halls.get_by_name(hall_name, preload: [:votings])
+    voting_ids = Enum.map(hall.votings, fn voting -> voting.id end)
+
+    args = [
+      author_ids: [author_id],
+      order_by_strong_opinions_first: true,
+      preload: [:answer, :opinion, voting: [:halls]],
+      voting_ids: voting_ids
+    ]
+
+    Votes.list_votes(args)
+  end
+
+  defp load_votes(author_id, true, nil) do
+    args = [
       author_ids: [author_id],
       order_by: [desc: :id],
-      preload: [:voting, :answer, :opinion]
-    )
+      preload: [:answer, :opinion, voting: [:halls]]
+    ]
+
+    Votes.list_votes(args)
+  end
+
+  defp load_votes(author_id, true, hall_name) do
+    hall = Halls.get_by_name(hall_name, preload: [:votings])
+    voting_ids = Enum.map(hall.votings, fn voting -> voting.id end)
+
+    args = [
+      author_ids: [author_id],
+      order_by: [desc: :id],
+      preload: [:answer, :opinion, voting: [:halls]],
+      voting_ids: voting_ids
+    ]
+
+    Votes.list_votes(args)
   end
 end
