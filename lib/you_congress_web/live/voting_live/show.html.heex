@@ -63,9 +63,16 @@
       page={:voting_show}
     />
   </div>
+  <%= if !@current_user_vote do %>
+    <div class="pt-2">
+      <.link href={~p"/log_in"} class="underline text-sm">
+        Log in to comment
+      </.link>
+    </div>
+  <% end %>
 <% end %>
 <%= if @votes_from_delegates != [] || @votes_from_non_delegates != [] do %>
-  <div class="pt-2 pb-8">
+  <div class="pb-8">
     <.live_component
       module={CurrentUserVoteComponent}
       id={:v}
