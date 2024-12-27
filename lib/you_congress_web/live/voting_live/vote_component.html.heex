@@ -53,6 +53,10 @@
           <% end %>
           <%= if @vote.opinion do %>
             and says:
+          <% else %>
+            <span class="text-xs text-gray-500">
+              · <%= TimeAgo.short_time(@vote.inserted_at) %>
+            </span>
           <% end %>
         <% end %>
       </div>
