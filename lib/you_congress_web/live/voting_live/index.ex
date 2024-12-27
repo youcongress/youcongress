@@ -20,6 +20,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongressWeb.Components.SwitchComponent
   alias YouCongress.Votings.VotingQueries
   alias YouCongressWeb.Tools.TimeAgo
+  alias YouCongress.Halls
 
   @default_hall "ai"
 
@@ -32,6 +33,9 @@ defmodule YouCongressWeb.VotingLive.Index do
       socket
       |> assign(:search, nil)
       |> assign(:search_tab, :polls)
+      |> assign(:halls, [])
+      |> assign(:authors, [])
+      |> assign(:votings, [])
       |> assign(:order_by_date, true)
       |> assign(:hall_name, params["hall"] || @default_hall)
       |> assign(:new_poll_visible?, false)
@@ -101,11 +105,12 @@ defmodule YouCongressWeb.VotingLive.Index do
     Track.event("Search", socket.assigns.current_user)
     votings = Votings.list_votings(title_contains: search, preload: [:halls])
     authors = Authors.list_authors(search: search)
-
+    halls = Halls.list_halls(name_contains: search)
     search_tab =
       cond do
         Enum.any?(votings) -> :polls
         Enum.any?(authors) -> :delegates
+        Enum.any?(halls) -> :halls
         true -> :polls
       end
 
@@ -114,7 +119,8 @@ defmodule YouCongressWeb.VotingLive.Index do
        votings: votings,
        search: search,
        search_tab: search_tab,
-       authors: authors
+       authors: authors,
+       halls: halls
      )}
   end
 
@@ -124,6 +130,10 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   def handle_event("search-tab", %{"tab" => "delegates"}, socket) do
     {:noreply, assign(socket, search_tab: :delegates)}
+  end
+
+  def handle_event("search-tab", %{"tab" => "halls"}, socket) do
+    {:noreply, assign(socket, search_tab: :halls)}
   end
 
   def handle_event("toggle-switch", _, socket) do

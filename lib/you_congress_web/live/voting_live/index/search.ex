@@ -12,6 +12,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
   attr :search_tab, :atom, required: true
   attr :votings, :map, required: true
   attr :authors, :map, required: true
+  attr :halls, :map, required: true
 
   def render(assigns) do
     ~H"""
@@ -23,6 +24,11 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
             search_tab={@search_tab}
             tab={:delegates}
             label={"Delegates (#{length(@authors)})"}
+          />
+          <Search.tab
+            search_tab={@search_tab}
+            tab={:halls}
+            label={"Halls (#{length(@halls)})"}
           />
         </nav>
       </div>
@@ -44,6 +50,17 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
           <tr>
             <td class="py-4 border-b border-gray-200">
               <a href={author_path(author)}><%= author.name || "x/#{author.twitter_username}" %></a>
+            </td>
+          </tr>
+        <% end %>
+      </table>
+    <% end %>
+    <%= if @search_tab == :halls do %>
+      <table>
+        <%= for hall <- @halls do %>
+          <tr>
+            <td class="py-4 border-b border-gray-200">
+              <a href={~p"/halls/#{hall.name}"}><%= hall.name %></a>
             </td>
           </tr>
         <% end %>
