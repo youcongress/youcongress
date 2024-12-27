@@ -6,6 +6,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
   alias YouCongressWeb.Tools.Tooltip
   alias YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu
   alias YouCongressWeb.OpinionLive.OpinionComponent
+  alias YouCongressWeb.Tools.TimeAgo
 
   def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
     send(self(), {:put_flash, :warning, "Log in to like."})
