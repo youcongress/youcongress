@@ -4,6 +4,9 @@ const FactChecker = {
     const placeholder = editor.dataset.placeholder;
     let debounceTimer;
 
+    // Set initial height
+    this.adjustHeight();
+
     // Add placeholder initially
     editor.innerHTML = `<span class="text-gray-400">${placeholder}</span>`;
 
@@ -19,12 +22,19 @@ const FactChecker = {
       }
     });
 
+    // Add scroll event listener to adjust height
+    editor.addEventListener('scroll', () => {
+      if (editor.scrollHeight > editor.clientHeight &&
+          editor.scrollTop + editor.clientHeight >= editor.scrollHeight - 30) {
+        this.adjustHeight();
+      }
+    });
+
     const debounceAnalysis = (text) => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         if (text && text !== placeholder) {
           try {
-            // Dispatch custom events that app.js is already listening for
             window.dispatchEvent(new Event("phx:page-loading-start"));
             this.pushEventTo(this.el, "fact_check", { text });
           } catch (error) {
@@ -34,21 +44,19 @@ const FactChecker = {
       }, 1500);
     };
 
-    // Handle paste events to strip formatting
     editor.addEventListener('paste', (e) => {
       e.preventDefault();
       const text = e.clipboardData.getData('text/plain');
       document.execCommand('insertText', false, text);
+      this.adjustHeight();
       debounceAnalysis(text);
     });
 
-    // Handle input events for typing
     editor.addEventListener('input', () => {
       const text = editor.textContent.trim();
       debounceAnalysis(text);
     });
 
-    // Handle updates from server
     this.handleEvent("update_content", ({ analyzed_text }) => {
       try {
         let content = '';
@@ -66,19 +74,31 @@ const FactChecker = {
       } catch (error) {
         console.error("Error updating content:", error);
       } finally {
-        // Signal that loading is complete
         window.dispatchEvent(new Event("phx:page-loading-stop"));
       }
     });
   },
 
-  updated() {
-    // Keep focus and cursor position if needed
-    const selection = window.getSelection();
-    const range = selection.getRangeAt(0);
-    this.el.focus();
-    selection.removeAllRanges();
-    selection.addRange(range);
+  adjustHeight() {
+    const editor = this.el;
+
+    // Set initial height if not already set
+    if (!editor.style.height) {
+      editor.style.height = '150px';
+      return;
+    }
+
+    const viewportHeight = window.innerHeight;
+    const editorRect = editor.getBoundingClientRect();
+    const currentHeight = editorRect.height;
+
+    // Increase height by 100px or to fill available space
+    const newHeight = Math.min(
+      currentHeight + 100,
+      viewportHeight - editorRect.top - 40 // Leave 40px padding at bottom
+    );
+
+    editor.style.height = `${newHeight}px`;
   }
 };
 

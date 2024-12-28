@@ -1,12 +1,11 @@
 defmodule YouCongressWeb.FactCheckerLive.Index do
   use YouCongressWeb, :live_view
 
-  @max_text_length 3000
+  @max_text_length 2000
 
   import Logger
 
   alias YouCongress.FactChecker
-  alias YouCongress.Logger
 
   @impl true
   def mount(_params, _session, socket) do
