@@ -28,6 +28,7 @@ defmodule YouCongressWeb.Router do
     live "/", VotingLive.Index, :index
     live "/halls/:hall", VotingLive.Index, :index
     live "/comments/:id", OpinionLive.Show, :show
+    live "/fact-checker", FactCheckerLive.Index, :index
 
     get "/terms", PageController, :terms
     get "/privacy-policy", PageController, :privacy_policy

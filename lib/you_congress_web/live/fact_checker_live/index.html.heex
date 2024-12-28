@@ -1,0 +1,49 @@
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-bold mb-6">Fact Checker</h1>
+
+  <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+    <div class="flex gap-4">
+      <div class="flex items-center">
+        <div class="w-4 h-4 bg-green-200 rounded mr-2"></div>
+        <span>Fact</span>
+      </div>
+      <div class="flex items-center">
+        <div class="w-4 h-4 bg-red-200 rounded mr-2"></div>
+        <span>Opinion</span>
+      </div>
+      <div class="flex items-center">
+        <div class="w-4 h-4 bg-yellow-200 rounded mr-2"></div>
+        <span>Depends</span>
+      </div>
+    </div>
+  </div>
+
+  <form phx-submit="analyze" class="mb-8">
+    <textarea
+      name="text"
+      class="w-full h-48 p-4 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+      placeholder="Enter or paste your text here..."
+    ></textarea>
+    <button type="submit" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-500">
+      Analyze Text
+    </button>
+  </form>
+
+  <%= if assigns[:analyzed_text] do %>
+    <div class="prose max-w-none">
+      <%= for sentence <- @analyzed_text do %>
+        <span class={[
+          "px-1 rounded",
+          case sentence.classification do
+            "fact" -> "bg-green-200"
+            "opinion" -> "bg-red-200"
+            "depends" -> "bg-yellow-200"
+          end
+        ]}>
+          <%= sentence.text %>.
+        </span>
+        <span> </span>
+      <% end %>
+    </div>
+  <% end %>
+</div>
