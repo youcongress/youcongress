@@ -22,17 +22,18 @@ import { Socket } from "phoenix"
 import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import AIQuote from "./hooks/ai_quote"
-import hooks from "./hooks"
+import FactChecker from "./hooks/fact-checker"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 
-let Hooks = {};
-
-Hooks.AIQuote = AIQuote;
+let Hooks = {
+  AIQuote: AIQuote,
+  FactChecker: FactChecker
+};
 
 let liveSocket = new LiveSocket("/live", Socket, {
   params: {_csrf_token: csrfToken},
-  hooks: hooks
+  hooks: Hooks
 })
 
 // Show progress bar on live navigation and form submits

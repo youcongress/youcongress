@@ -1,4 +1,4 @@
-const Editor = {
+const FactChecker = {
   mounted() {
     const editor = this.el;
     const placeholder = editor.dataset.placeholder;
@@ -62,6 +62,4 @@ const Editor = {
   }
 };
 
-export default {
-  Editor
-};
+export default FactChecker;
