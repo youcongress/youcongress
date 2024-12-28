@@ -9,11 +9,15 @@
       </div>
       <div class="flex items-center">
         <div class="w-4 h-4 bg-red-200 rounded mr-2"></div>
+        <span>False</span>
+      </div>
+      <div class="flex items-center">
+        <div class="w-4 h-4 bg-blue-200 rounded mr-2"></div>
         <span>Opinion</span>
       </div>
       <div class="flex items-center">
         <div class="w-4 h-4 bg-yellow-200 rounded mr-2"></div>
-        <span>Depends</span>
+        <span>Unknown</span>
       </div>
     </div>
   </div>
@@ -34,13 +38,14 @@
       <%= for sentence <- @analyzed_text do %>
         <span class={[
           "px-1 rounded",
-          case sentence.classification do
+          case sentence["classification"] do
             "fact" -> "bg-green-200"
-            "opinion" -> "bg-red-200"
-            "depends" -> "bg-yellow-200"
+            "false" -> "bg-red-200"
+            "opinion" -> "bg-blue-200"
+            "unknown" -> "bg-yellow-200"
           end
         ]}>
-          <%= sentence.text %>.
+          <%= sentence["text"] %>
         </span>
         <span> </span>
       <% end %>

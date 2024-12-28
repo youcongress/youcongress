@@ -1,26 +1,11 @@
-defmodule YouCongressWeb.FactCheckerLive.Index do
-  use YouCongressWeb, :live_view
+defmodule YouCongress.FactChecker do
+  @moduledoc """
+  The FactChecker context.
+  """
 
   alias YouCongress.DigitalTwins.OpenAIModel
 
-  @impl true
-  def mount(_params, _session, socket) do
-    {:ok, socket}
-  end
-
-  @impl true
-  def handle_event("analyze", %{"text" => text}, socket) do
-    case classify_text(text) do
-      {:ok, analyzed} ->
-        {:noreply, assign(socket, :analyzed_text, analyzed)}
-
-      {:error, _error} ->
-        # Return empty list on error
-        {:noreply, assign(socket, :analyzed_text, [])}
-    end
-  end
-
-  defp classify_text(text) do
+  def classify_text(text) do
     prompt = """
     Return a json splitting it into chunks of text and indicating if each of them is a "fact", "false", "opinion", "unknown".
     If you're not sure it is a fact, classify it as "unknown".
