@@ -2,7 +2,7 @@ const FactChecker = {
   mounted() {
     const editor = this.el;
     const placeholder = editor.dataset.placeholder;
-    const form = editor.closest("form");
+    let debounceTimer;
 
     // Add placeholder initially
     editor.innerHTML = `<span class="text-gray-400">${placeholder}</span>`;
@@ -19,20 +19,27 @@ const FactChecker = {
       }
     });
 
+    const debounceAnalysis = (text) => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (text && text !== placeholder) {
+          this.pushEventTo(this.el, "fact_check", { text });
+        }
+      }, 1000);
+    };
+
     // Handle paste events to strip formatting
     editor.addEventListener('paste', (e) => {
       e.preventDefault();
       const text = e.clipboardData.getData('text/plain');
       document.execCommand('insertText', false, text);
+      debounceAnalysis(text);
     });
 
-    // Add hidden input on form submit
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
+    // Handle input events for typing
+    editor.addEventListener('input', () => {
       const text = editor.textContent.trim();
-      if (text && text !== placeholder) {
-        this.pushEvent("analyze", { text });
-      }
+      debounceAnalysis(text);
     });
 
     // Handle updates from server

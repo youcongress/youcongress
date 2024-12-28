@@ -9,7 +9,7 @@ defmodule YouCongressWeb.FactCheckerLive.Index do
   end
 
   @impl true
-  def handle_event("analyze", %{"text" => text}, socket) when is_binary(text) do
+  def handle_event("fact_check", %{"text" => text}, socket) when is_binary(text) do
     case FactChecker.classify_text(text) do
       {:ok, analyzed} ->
         {:noreply,
@@ -23,10 +23,5 @@ defmodule YouCongressWeb.FactCheckerLive.Index do
     end
   end
 
-  def handle_event("analyze", _, socket), do: {:noreply, socket}
-
-  @impl true
-  def handle_event("get_text", %{"text" => text}, socket) do
-    {:noreply, assign(socket, :current_text, text)}
-  end
+  def handle_event("fact_check", _, socket), do: {:noreply, socket}
 end
