@@ -23,33 +23,15 @@
   </div>
 
   <form phx-submit="analyze" class="mb-8">
-    <textarea
-      name="text"
-      rows="3"
-      class="w-full p-4 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-      placeholder="Enter or paste your text here..."
-    ></textarea>
+    <div
+      id="editor"
+      class="w-full p-4 border rounded-lg min-h-[96px] whitespace-pre-wrap focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      contenteditable="true"
+      phx-hook="Editor"
+      data-placeholder="Enter or paste your text here..."
+    ></div>
     <button type="submit" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-500">
       Analyze Text
     </button>
   </form>
-
-  <%= if assigns[:analyzed_text] do %>
-    <div class="prose max-w-none">
-      <%= for sentence <- @analyzed_text do %>
-        <span class={[
-          "px-1 rounded",
-          case sentence["classification"] do
-            "fact" -> "bg-green-200"
-            "false" -> "bg-red-200"
-            "opinion" -> "bg-blue-200"
-            "unknown" -> "bg-yellow-200"
-          end
-        ]}>
-          <%= sentence["text"] %>
-        </span>
-        <span> </span>
-      <% end %>
-    </div>
-  <% end %>
 </div>

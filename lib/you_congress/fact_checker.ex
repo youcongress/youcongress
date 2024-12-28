@@ -17,7 +17,7 @@ defmodule YouCongress.FactChecker do
     {
       "content": [
         {"text": "The Earth is not flat.", "classification": "fact"},
-        {"text": But it is beautiful", "classification": "opinion"}
+        {"text": "But it is beautiful", "classification": "opinion"}
       ]
     }
 
