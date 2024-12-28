@@ -23,9 +23,15 @@ const FactChecker = {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         if (text && text !== placeholder) {
-          this.pushEventTo(this.el, "fact_check", { text });
+          try {
+            // Dispatch custom events that app.js is already listening for
+            window.dispatchEvent(new Event("phx:page-loading-start"));
+            this.pushEventTo(this.el, "fact_check", { text });
+          } catch (error) {
+            console.error("Error during fact check:", error);
+          }
         }
-      }, 1000);
+      }, 1500);
     };
 
     // Handle paste events to strip formatting
@@ -44,18 +50,25 @@ const FactChecker = {
 
     // Handle updates from server
     this.handleEvent("update_content", ({ analyzed_text }) => {
-      let content = '';
-      analyzed_text.forEach(sentence => {
-        const bgColor = {
-          "fact": "bg-green-200",
-          "false": "bg-red-200",
-          "opinion": "bg-blue-200",
-          "unknown": "bg-yellow-200"
-        }[sentence.classification];
+      try {
+        let content = '';
+        analyzed_text.forEach(sentence => {
+          const bgColor = {
+            "fact": "bg-green-200",
+            "false": "bg-red-200",
+            "opinion": "bg-blue-200",
+            "unknown": "bg-yellow-200"
+          }[sentence.classification];
 
-        content += `<span class="${bgColor}">${sentence.text}&nbsp;</span>`;
-      });
-      editor.innerHTML = content;
+          content += `<span class="${bgColor}">${sentence.text}&nbsp;</span>`;
+        });
+        editor.innerHTML = content;
+      } catch (error) {
+        console.error("Error updating content:", error);
+      } finally {
+        // Signal that loading is complete
+        window.dispatchEvent(new Event("phx:page-loading-stop"));
+      }
     });
   },
 

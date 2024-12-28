@@ -1,11 +1,14 @@
 defmodule YouCongressWeb.FactCheckerLive.Index do
   use YouCongressWeb, :live_view
 
+  import Logger
+
   alias YouCongress.FactChecker
+  alias YouCongress.Logger
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, current_text: "")}
+    {:ok, assign(socket, current_text: "", loading: false)}
   end
 
   @impl true
@@ -18,8 +21,9 @@ defmodule YouCongressWeb.FactCheckerLive.Index do
          |> assign(:current_text, text)
          |> push_event("update_content", %{analyzed_text: analyzed})}
 
-      {:error, _error} ->
-        {:noreply, socket}
+      {:error, error} ->
+        Logger.error("Fact checker error: #{inspect(error)}")
+        {:noreply, put_flash(socket, :error, "Error analyzing text")}
     end
   end
 
