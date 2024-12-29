@@ -113,6 +113,7 @@ defmodule YouCongressWeb.HomeLive.Index do
         page_title: "Activity",
         page: 1
       )
+
     {:noreply, socket}
   end
 

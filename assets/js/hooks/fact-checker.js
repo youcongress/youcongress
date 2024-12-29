@@ -10,6 +10,26 @@ const FactChecker = {
     // Add placeholder initially
     editor.innerHTML = `<span class="text-gray-400">${placeholder}</span>`;
 
+    // Add paste example event listener
+    window.addEventListener("paste-example", () => {
+      const exampleText = `The Earth completes one rotation around its axis in approximately 24 hours, which gives us our day and night cycle. Many people believe that drinking hot water with lemon in the morning boosts metabolism and aids weight loss. Unicorns were commonly kept as pets by medieval European nobility until the 16th century. Studies have shown that listening to classical music while studying can improve concentration and memory retention.
+
+The Great Wall of China is actually visible from space with the naked eye. Coffee was first discovered when Ethiopian goats started dancing after eating certain berries. The human body replaces all of its cells every seven years, making you literally a different person. Recent research suggests that dolphins have developed their own cryptocurrency system for exchanging goods and services within their pods.`;
+
+      editor.innerHTML = exampleText;
+
+      // Use requestAnimationFrame to ensure content is rendered before measuring
+      requestAnimationFrame(() => {
+        editor.style.height = 'auto';
+        const newHeight = Math.max(200, editor.scrollHeight);
+        editor.style.height = `${newHeight}px`;
+      });
+
+      // Trigger analysis
+      const text = editor.textContent.trim();
+      debounceAnalysis(text);
+    });
+
     editor.addEventListener('focus', () => {
       if (editor.innerHTML.includes(placeholder)) {
         editor.innerHTML = '';

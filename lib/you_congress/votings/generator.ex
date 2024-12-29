@@ -6,7 +6,6 @@ defmodule YouCongress.Votings.Generator do
   def generate do
     with {:ok, %{voting_title: voting_title}} <- generator_implementation().generate(),
          {:ok, voting} <- Votings.create_voting(%{title: voting_title}) do
-
       %{voting_id: voting.id}
       |> PublicFiguresWorker.new()
       |> Oban.insert()

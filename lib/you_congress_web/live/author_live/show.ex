@@ -40,6 +40,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     author = get_author!(params)
 
     votes = load_votes(author.id, order_by_date, hall_name)
+
     halls =
       votes
       |> Enum.flat_map(fn vote ->

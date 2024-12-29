@@ -25,11 +25,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
             tab={:delegates}
             label={"Delegates (#{length(@authors)})"}
           />
-          <Search.tab
-            search_tab={@search_tab}
-            tab={:halls}
-            label={"Halls (#{length(@halls)})"}
-          />
+          <Search.tab search_tab={@search_tab} tab={:halls} label={"Halls (#{length(@halls)})"} />
         </nav>
       </div>
     </div>
