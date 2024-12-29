@@ -25,7 +25,7 @@ config :you_congress, :env, config_env()
 config :openai,
   api_key: System.get_env("OPENAI_API_KEY"),
   organization_key: System.get_env("OPENAI_ORGANIZATION_KEY"),
-  http_options: [recv_timeout: 30_000]
+  http_options: [recv_timeout: 60_000]
 
 config :extwitter, :oauth,
   consumer_key: System.get_env("TWITTER_CONSUMER_KEY"),
