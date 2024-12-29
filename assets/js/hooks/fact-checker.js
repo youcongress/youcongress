@@ -75,7 +75,7 @@ const FactChecker = {
       try {
         let content = '';
         analyzed_text.forEach(sentence => {
-          if (sentence.classification === "unknown") {
+          if (sentence.classification === "blank") {
             // For whitespace/newlines, add them directly without wrapping
             content += sentence.text;
           } else {
@@ -83,7 +83,8 @@ const FactChecker = {
             const bgColor = {
               "fact": "bg-green-200",
               "false": "bg-red-200",
-              "opinion": "bg-blue-200"
+              "opinion": "bg-blue-200",
+              "unknown": "bg-yellow-200"
             }[sentence.classification];
 
             content += `<span class="${bgColor}">${sentence.text}</span>`;

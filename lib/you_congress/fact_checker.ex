@@ -9,9 +9,9 @@ defmodule YouCongress.FactChecker do
 
   def classify_text(text) do
     prompt = """
-    Return a json splitting it into chunks of text and indicating if each of them is a "fact", "false", "opinion", "unknown".
-    If you're not sure it is a fact, classify it as "unknown".
-    Include the same spaces and newlines as unknown chunks.
+    Return a json splitting it into chunks of text and indicating if each of them is a "fact", "false", "opinion", "unknown", "blank".
+    If you're not sure it is a fact, but it could be, classify it as "unknown".
+    Include the same spaces and newlines as "blank" chunks.
 
     Example input:
     "The Earth is not flat. But it is beautiful."
@@ -20,7 +20,7 @@ defmodule YouCongress.FactChecker do
     {
       "content": [
         {"text": "The Earth is not flat.", "classification": "fact"},
-        {"text": " ", "classification": "unknown"},
+        {"text": " ", "classification": "blank"},
         {"text": "But it is beautiful", "classification": "opinion"}
       ]
     }
@@ -37,11 +37,11 @@ defmodule YouCongress.FactChecker do
     {
       "content": [
         {"text": "The Earth completes one rotation around its axis in approximately 24 hours, which gives us our day and night cycle.", "classification": "fact"},
-        {"text": "\n\n", "classification": "unknown"},
+        {"text": "\n\n", "classification": "blank"},
         {"text": "Many people believe that drinking hot water with lemon in the morning boosts metabolism and aids weight loss.", "classification": "opinion"},
-        {"text": "\n", "classification": "unknown"},
+        {"text": "\n", "classification": "blank"},
         {"text": "Unicorns were commonly kept as pets by medieval European nobility until the 16th century.", "classification": "false"},
-        {"text": "\n\n", "classification": "unknown"},
+        {"text": "\n\n", "classification": "blank"},
         {"text": "Studies have shown that listening to classical music while studying can improve concentration and memory retention.", "classification": "fact"}
       ]
     }
