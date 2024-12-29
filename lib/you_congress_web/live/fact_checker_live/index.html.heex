@@ -29,4 +29,11 @@
     phx-hook="FactChecker"
     data-placeholder="Paste your text here..."
   ></div>
+
+  <%= if !@current_user do %>
+    <div class="mt-3 text-sm text-gray-600 text-center">
+      <span>Want to analyze longer texts? </span>
+      <.link href={~p"/sign_up"} class="text-indigo-600 hover:text-indigo-800">Sign up</.link>
+    </div>
+  <% end %>
 </div>

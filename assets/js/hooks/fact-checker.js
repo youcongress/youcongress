@@ -66,14 +66,19 @@ const FactChecker = {
       try {
         let content = '';
         analyzed_text.forEach(sentence => {
-          const bgColor = {
-            "fact": "bg-green-200",
-            "false": "bg-red-200",
-            "opinion": "bg-blue-200",
-            "unknown": "bg-yellow-200"
-          }[sentence.classification];
+          if (sentence.classification === "unknown") {
+            // For whitespace/newlines, add them directly without wrapping
+            content += sentence.text;
+          } else {
+            // For actual content, wrap in colored spans
+            const bgColor = {
+              "fact": "bg-green-200",
+              "false": "bg-red-200",
+              "opinion": "bg-blue-200"
+            }[sentence.classification];
 
-          content += `<span class="${bgColor}">${sentence.text}&nbsp;</span>`;
+            content += `<span class="${bgColor}">${sentence.text}</span>`;
+          }
         });
         editor.innerHTML = content;
       } catch (error) {

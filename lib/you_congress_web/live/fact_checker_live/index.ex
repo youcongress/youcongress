@@ -1,14 +1,13 @@
 defmodule YouCongressWeb.FactCheckerLive.Index do
   use YouCongressWeb, :live_view
 
-  @max_text_length 2000
-
-  import Logger
+  require Logger
 
   alias YouCongress.FactChecker
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    socket = assign_current_user(socket, session["user_token"])
     {:ok, assign(socket, current_text: "")}
   end
 
@@ -18,7 +17,7 @@ defmodule YouCongressWeb.FactCheckerLive.Index do
   end
 
   def handle_event("fact_check", %{"text" => text}, socket) when is_binary(text) do
-    text = maybe_truncate_text(text)
+    text = maybe_truncate_text(text, socket.assigns.current_user)
 
     case FactChecker.classify_text(text) do
       {:ok, analyzed} ->
@@ -36,11 +35,18 @@ defmodule YouCongressWeb.FactCheckerLive.Index do
 
   def handle_event("fact_check", _, socket), do: {:noreply, socket}
 
-  defp maybe_truncate_text(text) do
+  defp maybe_truncate_text(text, current_user) do
+    max_length = if current_user, do: 5000, else: 1000
+
     text = String.trim(text)
     initial_length = String.length(text)
-    text = String.slice(text, 0, @max_text_length)
+    text = String.slice(text, 0, max_length)
     final_length = String.length(text)
-    text = if final_length < initial_length, do: "#{text}...", else: text
+
+    if final_length < initial_length do
+      "#{text}..."
+    else
+      text
+    end
   end
 end
