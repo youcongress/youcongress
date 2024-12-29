@@ -105,7 +105,7 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
           vote_frequencies={@vote_frequencies}
         />
 
-        <div class="pt-4" :if={@page == :votings_index && @current_user}>
+        <div :if={@page == :votings_index && @current_user} class="pt-4">
           <.live_component
             module={OpinateComponent}
             id={@id}
@@ -116,11 +116,9 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
           />
         </div>
 
-        <div class="pt-2" :if={@page == :votings_index && !@current_user}>
-          Read
-          <.link href={~p"/p/#{@voting.slug}"} class="cursor-pointer underline">arguments</.link>
-          or
-          <.link href={~p"/sign_up"} class="cursor-pointer underline">sign up</.link>
+        <div :if={@page == :votings_index && !@current_user} class="pt-2">
+          Read <.link href={~p"/p/#{@voting.slug}"} class="cursor-pointer underline">arguments</.link>
+          or <.link href={~p"/sign_up"} class="cursor-pointer underline">sign up</.link>
           to add your own and/or save your vote.
         </div>
       <% end %>

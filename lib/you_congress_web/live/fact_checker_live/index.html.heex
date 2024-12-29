@@ -22,6 +22,15 @@
     </div>
   </div>
 
+  <div class="mb-3">
+    <button
+      phx-click={JS.dispatch("paste-example")}
+      class="text-sm text-indigo-600 hover:text-indigo-800"
+    >
+      Try an example
+    </button>
+  </div>
+
   <div
     id="editor"
     class="w-full p-4 border rounded-lg whitespace-pre-wrap focus:outline-none focus:ring-2 focus:ring-indigo-500 overflow-y-auto h-[200px]"
@@ -33,7 +42,8 @@
   <%= if !@current_user do %>
     <div class="mt-3 text-sm text-gray-600 text-center">
       <span>Want to analyze longer texts? </span>
-      <.link href={~p"/sign_up"} class="text-indigo-600 hover:text-indigo-800">Sign up</.link> for free.
+      <.link href={~p"/sign_up"} class="text-indigo-600 hover:text-indigo-800">Sign up</.link>
+      for free.
     </div>
   <% end %>
 </div>

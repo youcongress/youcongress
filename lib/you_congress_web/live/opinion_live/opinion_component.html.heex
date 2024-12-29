@@ -48,7 +48,7 @@
       <span class="pr-2">
         <OpinionComponent.like_icon opinion={@opinion} liked={@liked} target={@myself} />
       </span>
-      <span class="pr-2" :if={@opinable}>
+      <span :if={@opinable} class="pr-2">
         <OpinionComponent.comment_icon opinion={@opinion} />
       </span>
       <OpinionComponent.x_icon

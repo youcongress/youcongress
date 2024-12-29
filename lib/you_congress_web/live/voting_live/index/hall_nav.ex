@@ -18,7 +18,12 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
           <div class="pt-1 space-x-8">
             <HallNav.tab url_hall_name={@hall_name} hall_name="ai" hall_link={~p"/"} hall_title="AI" />
-            <HallNav.tab url_hall_name={@hall_name} hall_name="public-interest-ai" hall_link={~p"/halls/public-interest-ai"} hall_title="Public interest AI" />
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="public-interest-ai"
+              hall_link={~p"/halls/public-interest-ai"}
+              hall_title="Public interest AI"
+            />
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="future-of-work"
@@ -32,7 +37,7 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
                 url_hall_name={@hall_name}
                 hall_name={@hall_name}
                 hall_link={~p"/halls/#{@hall_name}"}
-            hall_title={StringUtils.titleize_hall(@hall_name)}
+                hall_title={StringUtils.titleize_hall(@hall_name)}
               />
             <% else %>
               <HallNav.tab
