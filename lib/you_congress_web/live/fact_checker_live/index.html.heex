@@ -1,0 +1,39 @@
+<div class="max-w-4xl mx-auto px-4 min-h-screen flex flex-col">
+  <h1 class="text-2xl font-bold mb-6">Fact Checker</h1>
+
+  <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+    <div class="flex gap-4 text-xs md:text-base">
+      <div class="flex items-center">
+        <div class="w-4 h-4 bg-green-200 rounded mr-2"></div>
+        <span>Fact</span>
+      </div>
+      <div class="flex items-center">
+        <div class="w-4 h-4 bg-red-200 rounded mr-2"></div>
+        <span>False</span>
+      </div>
+      <div class="flex items-center">
+        <div class="w-4 h-4 bg-blue-200 rounded mr-2"></div>
+        <span>Opinion</span>
+      </div>
+      <div class="flex items-center">
+        <div class="w-4 h-4 bg-yellow-200 rounded mr-2"></div>
+        <span>Unknown</span>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="editor"
+    class="w-full p-4 border rounded-lg whitespace-pre-wrap focus:outline-none focus:ring-2 focus:ring-indigo-500 overflow-y-auto h-[200px]"
+    contenteditable="true"
+    phx-hook="FactChecker"
+    data-placeholder="Paste your text here..."
+  ></div>
+
+  <%= if !@current_user do %>
+    <div class="mt-3 text-sm text-gray-600 text-center">
+      <span>Want to analyze longer texts? </span>
+      <.link href={~p"/sign_up"} class="text-indigo-600 hover:text-indigo-800">Sign up</.link> for free.
+    </div>
+  <% end %>
+</div>
