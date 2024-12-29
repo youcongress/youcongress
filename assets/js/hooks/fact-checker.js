@@ -53,7 +53,16 @@ const FactChecker = {
       e.preventDefault();
       const text = e.clipboardData.getData('text/plain');
       document.execCommand('insertText', false, text);
-      this.adjustHeight();
+
+      // Use requestAnimationFrame to ensure content is rendered before measuring
+      requestAnimationFrame(() => {
+        // Temporarily set height to auto to get the proper scrollHeight
+        const originalHeight = editor.style.height;
+        editor.style.height = 'auto';
+        const newHeight = Math.max(200, editor.scrollHeight);
+        editor.style.height = `${newHeight}px`;
+      });
+
       debounceAnalysis(text);
     });
 
@@ -81,6 +90,13 @@ const FactChecker = {
           }
         });
         editor.innerHTML = content;
+
+        // Recalculate height after content update
+        requestAnimationFrame(() => {
+          editor.style.height = 'auto';
+          const newHeight = Math.max(200, editor.scrollHeight);
+          editor.style.height = `${newHeight}px`;
+        });
       } catch (error) {
         console.error("Error updating content:", error);
       } finally {
@@ -94,7 +110,7 @@ const FactChecker = {
 
     // Set initial height if not already set
     if (!editor.style.height) {
-      editor.style.height = '150px';
+      editor.style.height = '200px';
       return;
     }
 
