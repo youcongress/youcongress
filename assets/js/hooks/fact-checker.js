@@ -32,14 +32,19 @@ const FactChecker = {
 
     const debounceAnalysis = (text) => {
       clearTimeout(debounceTimer);
+      if (text && text !== placeholder) {
+        window.dispatchEvent(new Event("phx:page-loading-start"));
+      }
       debounceTimer = setTimeout(() => {
         if (text && text !== placeholder) {
           try {
-            window.dispatchEvent(new Event("phx:page-loading-start"));
             this.pushEventTo(this.el, "fact_check", { text });
           } catch (error) {
             console.error("Error during fact check:", error);
+            window.dispatchEvent(new Event("phx:page-loading-stop"));
           }
+        } else {
+          window.dispatchEvent(new Event("phx:page-loading-stop"));
         }
       }, 1500);
     };
