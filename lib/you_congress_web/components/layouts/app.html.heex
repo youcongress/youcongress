@@ -15,20 +15,6 @@
     </div>
   </div>
 <% end %>
-<%= if assigns[:page_title] && @page_title =="YouCongress: Shape the future with Liquid Democracy and AI Twins" do %>
-  <div class="bg-indigo-50 border-b border-indigo-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="py-1 text-center">
-        <span class="text-sm text-indigo-700 font-medium">
-          New:
-          <.link href={~p"/fact-checker"} class="underline hover:text-indigo-900">
-            Fact Checker
-          </.link>
-        </span>
-      </div>
-    </div>
-  </div>
-<% end %>
 <.top_header
   current_user={assigns[:current_user]}
   votes_count={if assigns[:votes_count], do: @votes_count}
