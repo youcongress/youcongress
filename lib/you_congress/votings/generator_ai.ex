@@ -17,6 +17,8 @@ defmodule YouCongress.Votings.GeneratorAI do
     - AI Innovation and culture
     - Trust in AI Global
     - Global AI governance
+    - AI Policies
+    - Existential risk due to AI
 
     Output example in JSON:
 
