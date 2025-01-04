@@ -16,7 +16,7 @@
 
   <%= if is_nil(@search) do %>
     <div class="flex">
-      <SwitchComponent.render is_active={@order_by_date} label1="Top" label2="New" />
+      <SwitchComponent.render is_active={@order_by_date} label1="Top" label2="Trending" />
       <div>
         <button
           id="create-poll-button"
@@ -82,10 +82,6 @@
         <div>
           <span class="text-xl">
             <.link href={~p"/p/#{voting.slug}"}><%= voting.title %></.link>
-          </span>
-
-          <span class="text-xs text-gray-500">
-            · <%= TimeAgo.short_time(voting.inserted_at) %>
           </span>
         </div>
         <div class="pt-2 pb-2">
