@@ -213,7 +213,7 @@ defmodule YouCongressWeb.VotingLive.Index do
 
     offset = (new_page - 1) * per_page
     order = if order_by_date, do: :inserted_at_desc, else: :opinion_likes_count_desc
-    args = [order: order, include_two_opinions: true, offset: offset, limit: per_page]
+    args = [order: order, offset: offset, limit: per_page]
 
     args =
       case hall_name do
