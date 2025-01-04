@@ -43,4 +43,14 @@ defmodule YouCongress.HallsVotings do
   def delete_halls_votings(%Voting{id: voting_id}) do
     Repo.delete_all(from h in HallVoting, where: h.voting_id == ^voting_id)
   end
+
+  def get_random_voting(hall_name) do
+    from(v in Voting,
+      join: h in assoc(v, :halls),
+      where: h.name == ^hall_name,
+      order_by: fragment("RANDOM()"),
+      limit: 1
+    )
+    |> Repo.one()
+  end
 end

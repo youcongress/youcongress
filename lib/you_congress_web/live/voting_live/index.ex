@@ -19,7 +19,6 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongressWeb.VotingLive.CastVoteComponent
   alias YouCongressWeb.Components.SwitchComponent
   alias YouCongress.Votings.VotingQueries
-  alias YouCongressWeb.Tools.TimeAgo
   alias YouCongress.Halls
 
   @default_hall "ai"
@@ -212,7 +211,7 @@ defmodule YouCongressWeb.VotingLive.Index do
     } = socket
 
     offset = (new_page - 1) * per_page
-    order = if order_by_date, do: :inserted_at_desc, else: :opinion_likes_count_desc
+    order = if order_by_date, do: :updated_at_desc, else: :opinion_likes_count_desc
     args = [order: order, offset: offset, limit: per_page]
 
     args =

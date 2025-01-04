@@ -270,4 +270,10 @@ defmodule YouCongress.Votings do
     from(v in Voting, where: v.inserted_at > ago(1, "hour"), select: count(v.id))
     |> Repo.one()
   end
+
+  def touch_voting(voting) do
+    voting
+    |> Voting.changeset(%{updated_at: DateTime.utc_now()})
+    |> Repo.update()
+  end
 end

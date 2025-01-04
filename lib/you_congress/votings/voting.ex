@@ -9,7 +9,6 @@ defmodule YouCongress.Votings.Voting do
   alias YouCongress.Votings
   alias YouCongress.Halls.Hall
   alias YouCongress.Opinions.Opinion
-  alias YouCongress.Likes.Like
   alias YouCongress.Accounts.User
 
   @max_title_slug_size 30
@@ -23,7 +22,6 @@ defmodule YouCongress.Votings.Voting do
 
     has_many :votes, Vote
     has_many :opinions, Opinion
-    has_many :likes, Like
 
     many_to_many(
       :halls,
@@ -57,7 +55,8 @@ defmodule YouCongress.Votings.Voting do
       :generating_total,
       :user_id,
       :slug,
-      :opinion_likes_count
+      :opinion_likes_count,
+      :updated_at
     ])
     |> validate_required([:title])
     |> unique_constraint(:title)

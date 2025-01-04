@@ -65,8 +65,10 @@ config :you_congress, Oban,
     Oban.Plugins.Pruner,
     {Oban.Plugins.Cron,
      crontab: [
-       # Generate a voting every day at 7am
-       {"0 7 * * *", YouCongress.Workers.VotingGeneratorWorker, args: %{}, max_attempts: 2}
+       # Touch a voting every day at 7am
+       {"0 7 * * *", YouCongress.Workers.TouchVotingWorker, args: %{}, max_attempts: 2},
+       # Touch a voting every day at 7pm
+       {"0 19 * * *", YouCongress.Workers.TouchVotingWorker, args: %{}, max_attempts: 2}
      ]}
   ],
   queues: [
