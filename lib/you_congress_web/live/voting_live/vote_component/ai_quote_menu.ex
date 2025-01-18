@@ -43,6 +43,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
               <.link
                 href={"/p/#{@voting.slug}/add-quote?twitter_username=#{@author.twitter_username}"}
                 class="hover:text-indigo-600"
+                rel="nofollow"
               >
                 Add a real quote
               </.link>
