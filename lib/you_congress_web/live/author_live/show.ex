@@ -225,7 +225,8 @@ defmodule YouCongressWeb.AuthorLive.Show do
     args = [
       author_ids: [author_id],
       order_by_strong_opinions_first: true,
-      preload: [:answer, :opinion, voting: [:halls]]
+      preload: [:answer, :opinion, voting: [:halls]],
+      without_opinion: false
     ]
 
     Votes.list_votes(args)
@@ -239,7 +240,8 @@ defmodule YouCongressWeb.AuthorLive.Show do
       author_ids: [author_id],
       order_by_strong_opinions_first: true,
       preload: [:answer, :opinion, voting: [:halls]],
-      voting_ids: voting_ids
+      voting_ids: voting_ids,
+      without_opinion: false
     ]
 
     Votes.list_votes(args)
@@ -249,7 +251,8 @@ defmodule YouCongressWeb.AuthorLive.Show do
     args = [
       author_ids: [author_id],
       order_by: [desc: :id],
-      preload: [:answer, :opinion, voting: [:halls]]
+      preload: [:answer, :opinion, voting: [:halls]],
+      without_opinion: false
     ]
 
     Votes.list_votes(args)
@@ -263,7 +266,8 @@ defmodule YouCongressWeb.AuthorLive.Show do
       author_ids: [author_id],
       order_by: [desc: :id],
       preload: [:answer, :opinion, voting: [:halls]],
-      voting_ids: voting_ids
+      voting_ids: voting_ids,
+      without_opinion: false
     ]
 
     Votes.list_votes(args)
