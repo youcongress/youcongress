@@ -62,7 +62,17 @@ defmodule YouCongress.Votings.Voting do
     |> unique_constraint(:title)
     |> generate_slug_if_empty()
     |> unique_constraint(:slug)
+    |> put_halls(attrs)
   end
+
+  defp put_halls(changeset, %{"halls" => halls}) when is_list(halls) do
+    case YouCongress.Halls.list_or_create_by_names(halls) do
+      {:ok, halls} -> put_assoc(changeset, :halls, halls)
+      :error -> add_error(changeset, :halls, "Invalid halls")
+    end
+  end
+
+  defp put_halls(changeset, _), do: changeset
 
   defp generate_slug_if_empty(changeset) do
     if get_field(changeset, :slug) do

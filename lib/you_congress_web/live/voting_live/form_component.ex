@@ -2,6 +2,9 @@ defmodule YouCongressWeb.VotingLive.FormComponent do
   use YouCongressWeb, :live_component
 
   alias YouCongress.Votings
+  alias YouCongress.Halls.Hall
+  alias YouCongress.Repo
+  alias YouCongressWeb.VotingLive.HallsInputComponent
 
   @impl true
   def render(assigns) do
@@ -19,6 +22,11 @@ defmodule YouCongressWeb.VotingLive.FormComponent do
         phx-submit="save"
       >
         <.input field={@form[:title]} type="text" label="Title" />
+        <.live_component
+          module={HallsInputComponent}
+          id="halls-input"
+          form={@form}
+        />
         <:actions>
           <.button phx-disable-with="Saving...">Save Voting</.button>
 
@@ -37,6 +45,7 @@ defmodule YouCongressWeb.VotingLive.FormComponent do
 
   @impl true
   def update(%{voting: voting} = assigns, socket) do
+    voting = Repo.preload(voting, :halls)
     changeset = Votings.change_voting(voting)
 
     {:ok,
