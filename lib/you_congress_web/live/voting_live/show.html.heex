@@ -190,16 +190,20 @@
 
 <%= if(@votes_from_delegates != [] || @votes_from_non_delegates != []) do %>
   <%= if @current_user do %>
-    <div class="text-sm text-gray-600 pt-8 pb-4 border-b border-gray-200">More votes</div>
-    <table>
-      <%= for random_voting <- @random_votings do %>
-        <tr>
-          <td class="py-4 border-b border-gray-200">
-            <a href={~p"/p/#{random_voting.slug}"}><%= random_voting.title %></a>
-          </td>
-        </tr>
-      <% end %>
-    </table>
+    <%= for {hall, votings} <- @random_votings_by_hall do %>
+      <div class="mt-6">
+        <div class="text-sm text-gray-600 pt-8 pb-4 border-b border-gray-200">More <strong><a href={~p"/h/#{hall.name}"}><%= hall.name %></a></strong> votes</div>
+        <table>
+          <%= for voting <- votings do %>
+            <tr>
+              <td class="py-4 border-b border-gray-200">
+                <a href={~p"/p/#{voting.slug}"}><%= voting.title %></a>
+              </td>
+            </tr>
+          <% end %>
+        </table>
+      </div>
+    <% end %>
   <% else %>
     <.link href={~p"/log_in"}>
       <button class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
