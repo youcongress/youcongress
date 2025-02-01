@@ -38,6 +38,7 @@ defmodule YouCongressWeb.VotingLive.HallsInputComponent do
                 placeholder="Type to search halls..."
                 autocomplete="off"
                 phx-change="suggest"
+                phx-keydown="handle_key"
                 phx-target={@myself}
                 phx-debounce="200"
                 class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
@@ -45,15 +46,17 @@ defmodule YouCongressWeb.VotingLive.HallsInputComponent do
 
               <%= if @matches != [] do %>
                 <div class="absolute z-50 w-full mt-1 bg-white rounded-md shadow-lg border border-gray-200">
-                  <ul class="py-1">
-                    <%= for {name, display_name} <- @matches do %>
+                  <ul class="py-1" id="halls-list" role="listbox">
+                    <%= for {{name, display_name}, index} <- Enum.with_index(@matches) do %>
                       <li>
                         <button
                           type="button"
                           phx-click="select_match"
                           phx-value-match={name}
                           phx-target={@myself}
-                          class="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                          class={"w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 #{if index == @selected_index, do: "bg-gray-100", else: ""}"}
+                          role="option"
+                          aria-selected={index == @selected_index}
                         >
                           <%= display_name %>
                         </button>
@@ -99,7 +102,8 @@ defmodule YouCongressWeb.VotingLive.HallsInputComponent do
       |> assign(
         selected_halls: selected_halls,
         typed_value: "",
-        matches: []
+        matches: [],
+        selected_index: 0
       )
 
     {:ok, socket}
@@ -115,8 +119,33 @@ defmodule YouCongressWeb.VotingLive.HallsInputComponent do
         []
       end
 
-    {:noreply, assign(socket, matches: matches, typed_value: prefix)}
+    {:noreply, assign(socket, matches: matches, typed_value: prefix, selected_index: 0)}
   end
+
+  def handle_event("handle_key", %{"key" => "ArrowDown"}, socket) do
+    new_index = min(socket.assigns.selected_index + 1, length(socket.assigns.matches) - 1)
+    {:noreply, assign(socket, :selected_index, new_index)}
+  end
+
+  def handle_event("handle_key", %{"key" => "ArrowUp"}, socket) do
+    new_index = max(socket.assigns.selected_index - 1, 0)
+    {:noreply, assign(socket, :selected_index, new_index)}
+  end
+
+  def handle_event("handle_key", %{"key" => "Enter"}, %{assigns: %{matches: [], typed_value: typed_value}} = socket) do
+    {:noreply, add_hall(socket, typed_value)}
+  end
+
+  def handle_event("handle_key", %{"key" => "Enter"}, %{assigns: %{matches: matches, selected_index: index}} = socket) do
+    if index >= 0 and index < length(matches) do
+      {name, _} = Enum.at(matches, index)
+      {:noreply, add_hall(socket, name)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("handle_key", _key, socket), do: {:noreply, socket}
 
   def handle_event("select_match", %{"match" => match}, socket) do
     {:noreply, add_hall(socket, match)}
@@ -152,12 +181,13 @@ defmodule YouCongressWeb.VotingLive.HallsInputComponent do
 
   defp add_hall(socket, hall) do
     if hall in socket.assigns.selected_halls do
-      assign(socket, typed_value: "", matches: [])
+      assign(socket, typed_value: "", matches: [], selected_index: 0)
     else
       assign(socket,
         selected_halls: [hall | socket.assigns.selected_halls],
         typed_value: "",
-        matches: []
+        matches: [],
+        selected_index: 0
       )
     end
   end
