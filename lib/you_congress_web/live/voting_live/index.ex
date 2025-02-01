@@ -193,7 +193,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(
-      page_title: "YouCongress: Shape the future with Liquid Democracy and AI Twins",
+      page_title: "YouCongress: Finding solutions to the most important problems",
       skip_page_suffix: true,
       page_description:
         "Finding agreements and understanding disagreements to improve our democracies. Open Source.",
