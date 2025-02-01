@@ -197,23 +197,16 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   defp load_random_votings(socket, voting_id) do
     voting = Votings.get_voting!(voting_id, preload: [:halls])
-    
-    random_votings_by_hall = 
+
+    {random_votings_by_hall, _} =
       voting.halls
-      |> Enum.map(fn hall -> 
-        votings = 
-          1..5
-          |> Enum.map(fn _ -> 
-            HallsVotings.get_random_voting(hall.name)
-          end)
-          |> Enum.reject(&is_nil/1)
-          |> Enum.reject(&(&1.id == voting_id))
-          |> Enum.uniq_by(&(&1.id))
-
-        {hall, votings}
+      |> Enum.reduce({[], [voting_id]}, fn hall, {acc_halls, exclude_ids} ->
+        votings = HallsVotings.get_random_votings(hall.name, 5, exclude_ids)
+        new_exclude_ids = exclude_ids ++ Enum.map(votings, & &1.id)
+        {acc_halls ++ [{hall, votings}], new_exclude_ids}
       end)
-      |> Enum.reject(fn {_hall, votings} -> Enum.empty?(votings) end)
 
+    random_votings_by_hall = Enum.reject(random_votings_by_hall, fn {_hall, votings} -> Enum.empty?(votings) end)
     assign(socket, :random_votings_by_hall, random_votings_by_hall)
   end
 end
