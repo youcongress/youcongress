@@ -41,6 +41,7 @@ defmodule YouCongressWeb.VotingLive.HallsInputComponent do
                 phx-keydown="handle_key"
                 phx-target={@myself}
                 phx-debounce="200"
+                onkeydown="if(event.key === 'Enter') { event.preventDefault(); return false; }"
                 class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
               />
 
@@ -139,7 +140,13 @@ defmodule YouCongressWeb.VotingLive.HallsInputComponent do
   def handle_event("handle_key", %{"key" => "Enter"}, %{assigns: %{matches: matches, selected_index: index}} = socket) do
     if index >= 0 and index < length(matches) do
       {name, _} = Enum.at(matches, index)
-      {:noreply, add_hall(socket, name)}
+      socket =
+        socket
+        |> add_hall(name)
+        |> assign(:typed_value, "")
+        |> assign(:selected_index, 0)
+
+      {:noreply, socket}
     else
       {:noreply, socket}
     end
