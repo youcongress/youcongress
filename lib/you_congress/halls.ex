@@ -94,6 +94,21 @@ defmodule YouCongress.Halls do
   end
 
   @doc """
+  Gets a list of halls by their names.
+
+  ## Examples
+
+      iex> get_halls_by_names(["hall1", "hall2"])
+      [%Hall{name: "hall1"}, %Hall{name: "hall2"}]
+  """
+  @spec get_halls_by_names([binary()]) :: [Hall.t()]
+  def get_halls_by_names(names) when is_list(names) do
+    Repo.all(from h in Hall, where: h.name in ^names)
+  end
+
+  def get_halls_by_names(_), do: []
+
+  @doc """
   Creates a hall.
 
   ## Examples

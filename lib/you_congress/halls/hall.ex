@@ -113,4 +113,6 @@ defmodule YouCongress.Halls.Hall do
   end
 
   def names_str, do: @names_str
+
+  def names, do: @names
 end
