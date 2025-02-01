@@ -145,34 +145,6 @@
   </ul>
 </div>
 
-<div class="mb-6">
-  <%= if @votes_without_opinion != [] do %>
-    <h2 class="mb-2">Votes without a comment:</h2>
-
-    <ul>
-      <%= for vote <- @votes_without_opinion do %>
-        <li class="pb-4">
-          <.live_component
-            module={VoteComponent}
-            id={vote.id}
-            voting={@voting}
-            vote={vote}
-            author={vote.author}
-            delegating?={@delegations[vote.author_id]}
-            current_user={@current_user}
-            show_vote={true}
-            show_opinion={true}
-            delegable={true}
-            liked={vote.opinion_id in @liked_opinion_ids}
-            regenerating_opinion_id={@regenerating_opinion_id}
-            page={:voting_show}
-          />
-        </li>
-      <% end %>
-    </ul>
-  <% end %>
-</div>
-
 <%= if @voting.generating_left > 0 do %>
   <div class="pt-2">
     Generating comments from public figures with AI...

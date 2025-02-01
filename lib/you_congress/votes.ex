@@ -47,6 +47,9 @@ defmodule YouCongress.Votes do
         {:direct, direct}, query ->
           where(query, [v], v.direct == ^direct)
 
+        {:without_opinion, without_opinion}, query ->
+          where(query, [v], is_nil(v.opinion_id) == ^without_opinion)
+
         {:order_by, order_by}, query ->
           order_by(query, ^order_by)
 
