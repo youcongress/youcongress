@@ -17,6 +17,7 @@ defmodule YouCongress.Halls.Hall do
     "world",
     "law",
     "climate",
+    "climate-change",
     "programming",
     "personal-finance",
     "health",
