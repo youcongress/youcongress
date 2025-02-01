@@ -1,5 +1,7 @@
 defmodule YouCongressWeb.VotingLive.HallsInputComponent do
   use YouCongressWeb, :live_component
+  import Phoenix.Component
+  import YouCongressWeb.CoreComponents
 
   alias YouCongress.Halls
 
@@ -82,7 +84,7 @@ defmodule YouCongressWeb.VotingLive.HallsInputComponent do
 
       <%= for {field, _} <- @form.errors do %>
         <div class="text-sm text-red-600">
-          <%= Phoenix.HTML.Form.error_tag(@form, field) %>
+          <.error><%= Phoenix.Naming.humanize(field) %> <%= elem(@form.errors[field], 0) %></.error>
         </div>
       <% end %>
 

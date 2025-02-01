@@ -192,7 +192,7 @@
   <%= if @current_user do %>
     <%= for {hall, votings} <- @random_votings_by_hall do %>
       <div class="mt-6">
-        <div class="text-sm text-gray-600 pt-8 pb-4 border-b border-gray-200">More <strong class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"><a href={~p"/h/#{hall.name}"}><%= hall.name %></a></strong> votes</div>
+        <div class="text-sm text-gray-600 pt-8 pb-4 border-b border-gray-200">More <strong class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"><a href={~p"/halls/#{hall.name}"}><%= hall.name %></a></strong> votes</div>
         <table>
           <%= for voting <- votings do %>
             <tr>
