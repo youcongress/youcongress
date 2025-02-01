@@ -53,4 +53,14 @@ defmodule YouCongress.HallsVotings do
     )
     |> Repo.one()
   end
+
+  def get_random_votings(hall_name, limit, exclude_ids \\ []) do
+    from(v in Voting,
+      join: h in assoc(v, :halls),
+      where: h.name == ^hall_name and v.id not in ^exclude_ids,
+      order_by: fragment("RANDOM()"),
+      limit: ^limit
+    )
+    |> Repo.all()
+  end
 end
