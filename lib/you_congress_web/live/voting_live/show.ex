@@ -17,6 +17,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Workers.PublicFiguresWorker
   alias YouCongress.Accounts.Permissions
   alias YouCongressWeb.VotingLive.CastVoteComponent
+  alias YouCongress.HallsVotings
 
   @impl true
   def mount(_, session, socket) do
@@ -195,6 +196,17 @@ defmodule YouCongressWeb.VotingLive.Show do
   defp page_title(:edit, _), do: "Edit Voting"
 
   defp load_random_votings(socket, voting_id) do
-    assign(socket, :random_votings, Votings.list_random_votings(voting_id, 5))
+    voting = Votings.get_voting!(voting_id, preload: [:halls])
+
+    {random_votings_by_hall, _} =
+      voting.halls
+      |> Enum.reduce({[], [voting_id]}, fn hall, {acc_halls, exclude_ids} ->
+        votings = HallsVotings.get_random_votings(hall.name, 5, exclude_ids)
+        new_exclude_ids = exclude_ids ++ Enum.map(votings, & &1.id)
+        {acc_halls ++ [{hall, votings}], new_exclude_ids}
+      end)
+
+    random_votings_by_hall = Enum.reject(random_votings_by_hall, fn {_hall, votings} -> Enum.empty?(votings) end)
+    assign(socket, :random_votings_by_hall, random_votings_by_hall)
   end
 end
