@@ -2,7 +2,6 @@ defmodule YouCongressWeb.VotingLive.FormComponent do
   use YouCongressWeb, :live_component
 
   alias YouCongress.Votings
-  alias YouCongress.Halls.Hall
   alias YouCongress.Repo
   alias YouCongressWeb.VotingLive.HallsInputComponent
 
