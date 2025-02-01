@@ -10,6 +10,7 @@ defmodule YouCongress.Votings.Voting do
   alias YouCongress.Halls.Hall
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Accounts.User
+  alias YouCongress.Halls
 
   @max_title_slug_size 30
 
@@ -66,7 +67,7 @@ defmodule YouCongress.Votings.Voting do
   end
 
   defp put_halls(changeset, %{"halls" => halls}) when is_list(halls) do
-    case YouCongress.Halls.list_or_create_by_names(halls) do
+    case Halls.list_or_create_by_names(halls) do
       {:ok, halls} -> put_assoc(changeset, :halls, halls)
       :error -> add_error(changeset, :halls, "Invalid halls")
     end
