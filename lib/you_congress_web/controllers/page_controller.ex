@@ -2,8 +2,6 @@ defmodule YouCongressWeb.PageController do
   use YouCongressWeb, :controller
 
   def home(conn, _params) do
-    # The home page is often custom made,
-    # so skip the default app layout.
     render(conn, :home, layout: false)
   end
 
@@ -41,9 +39,5 @@ defmodule YouCongressWeb.PageController do
     conn
     |> put_flash(:info, "Thanks for joining the waiting list! We'll be in touch.")
     |> redirect(to: ~p"/")
-  end
-
-  def home(conn, _params) do
-    render(conn, :home, layout: false)
   end
 end
