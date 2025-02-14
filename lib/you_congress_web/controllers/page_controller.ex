@@ -42,4 +42,12 @@ defmodule YouCongressWeb.PageController do
     |> put_flash(:info, "Thanks for joining the waiting list! We'll be in touch.")
     |> redirect(to: ~p"/")
   end
+
+  def home(conn, _params) do
+    if conn.assigns[:current_user] do
+      redirect(conn, to: ~p"/home")
+    else
+      render(conn, :home, layout: false)
+    end
+  end
 end
