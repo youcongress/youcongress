@@ -44,10 +44,6 @@ defmodule YouCongressWeb.PageController do
   end
 
   def home(conn, _params) do
-    if conn.assigns[:current_user] do
-      redirect(conn, to: ~p"/home")
-    else
-      render(conn, :home, layout: false)
-    end
+    render(conn, :home, layout: false)
   end
 end

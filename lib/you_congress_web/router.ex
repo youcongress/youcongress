@@ -29,7 +29,6 @@ defmodule YouCongressWeb.Router do
     live "/comments/:id", OpinionLive.Show, :show
     live "/fact-checker", FactCheckerLive.Index, :index
 
-    get "/", PageController, :home
     get "/terms", PageController, :terms
     get "/privacy-policy", PageController, :privacy_policy
 
@@ -97,6 +96,8 @@ defmodule YouCongressWeb.Router do
 
   scope "/", YouCongressWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
+
+    get "/", PageController, :home
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{YouCongressWeb.UserAuth, :redirect_if_user_is_authenticated}] do
