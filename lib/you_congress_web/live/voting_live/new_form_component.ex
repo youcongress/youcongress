@@ -18,7 +18,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
         phx-submit="ai-validate"
       >
         <div>
-          What solution or problem would you like we analyse and vote on? (no login required)
+          What solution or problem would you like we analyze and vote on? (no login required)
           <div class="text-sm text-gray-500 pl-3">
             Your prompt will be reviewed by AI before and offer you three suggestions before publishing it
           </div>
