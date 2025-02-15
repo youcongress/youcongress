@@ -18,7 +18,10 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
         phx-submit="ai-validate"
       >
         <div>
-          Create a new yes/no question
+          What solution or problem would you like we analyse and vote on? (no login required)
+          <div class="text-sm text-gray-500 pl-3">
+            Your prompt will be reviewed by AI before and offer you three suggestions before publishing it
+          </div>
           <.input
             field={@form[:title]}
             type="text"
