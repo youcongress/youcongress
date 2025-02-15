@@ -42,6 +42,9 @@ config :you_congress, YouCongressWeb.Endpoint,
     tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
   ]
 
+config :you_congress, Oban,
+  log: :debug
+
 # ## SSL Support
 #
 # In order to use HTTPS in development, a self-signed
