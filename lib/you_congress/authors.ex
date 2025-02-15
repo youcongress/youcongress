@@ -26,6 +26,9 @@ defmodule YouCongress.Authors do
       opts,
       base_query,
       fn
+        {:ids, ids}, query ->
+          where(query, [author], author.id in ^ids)
+
         {:search, search}, query ->
           where(
             query,
