@@ -31,12 +31,9 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
               field={@form[:title]}
               type="text"
               maxlength="150"
-              placeholder="e.g., Should we regulate AI?"
+              placeholder="e.g., Should we use more nuclear energy?"
               class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             />
-            <div class="absolute right-3 top-3 text-sm text-gray-400">
-              <%= String.length(@form[:title].value || "") %>/150
-            </div>
           </div>
 
           <%= if @suggested_titles != [] do %>

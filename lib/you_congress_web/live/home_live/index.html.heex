@@ -31,6 +31,20 @@
           <p class="mb-6">
             YouCongress is an open-source platform that brings people together to find solutions to society's biggest challenges and to elevate them into public discourse among the general population and decision-makers.
           </p>
+
+          <div class="mb-8">
+            <.live_component
+              module={NewFormComponent}
+              id={:new}
+              title={@page_title}
+              action={@live_action}
+              voting={%Voting{}}
+              current_user={@current_user}
+              patch={~p"/"}
+              cancel_link?={false}
+            />
+          </div>
+
           <div class="mt-8 space-y-8">
             <div class="bg-gradient-to-r from-indigo-50 to-white p-6 rounded-xl">
               <h3 class="text-xl font-semibold text-indigo-900 mb-2">Artificial Intelligence</h3>
@@ -46,19 +60,6 @@
               <h3 class="text-xl font-semibold text-blue-900 mb-2">European Union</h3>
               <p class="text-gray-700">Should we <a href="/p/eu-reduce-regulation" class="underline">reduce regulation</a> to make it more competitive? For example, <.link href="/p/start-eu-business-online" class="underline">starting businesses online in hours and without notaries or lawyers</.link>. </p>
             </div>
-          </div>
-
-          <div class="mb-8">
-            <.live_component
-              module={NewFormComponent}
-              id={:new}
-              title={@page_title}
-              action={@live_action}
-              voting={%Voting{}}
-              current_user={@current_user}
-              patch={~p"/"}
-              cancel_link?={false}
-            />
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12 text-left">
