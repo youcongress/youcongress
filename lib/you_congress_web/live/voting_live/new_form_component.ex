@@ -62,7 +62,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
               >
                 Send
               </button>
-              <.link href="#" phx-click="toggle-new-poll" class="text-xs pl-2">cancel</.link>
+              <.link :if={@cancel_link?} href="#" phx-click="toggle-new-poll" class="text-xs pl-2">cancel</.link>
             </div>
           <% end %>
         </div>
