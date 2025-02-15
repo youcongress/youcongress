@@ -11,7 +11,7 @@ defmodule YouCongress.Votings.TitleRewordingAI do
   - It should be a yes/no question which starts with "Should we...", "Shall we...?" or similar
   - It is neutral and not offensive as it's going to be voted and discussed among diverse people.
   - Ideally, it should be about topics that are relevant both locally and globally.
-  - The first one should be almost the same as the prompt with slight changes so it is a question and translated to English if it was in a different language.
+  - The first one should be as faithful to the prompt with proper grammar, in the form of a sensible yes/no question and translated to English if it was in a different language.
   - The others should be more creative
 
   Prompt: Nuclear energy

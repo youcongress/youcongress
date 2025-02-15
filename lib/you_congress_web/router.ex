@@ -25,7 +25,6 @@ defmodule YouCongressWeb.Router do
     live "/p/:slug", VotingLive.Show, :show
     live "/a/:id", AuthorLive.Show, :show
     live "/x/:twitter_username", AuthorLive.Show, :show
-    live "/", VotingLive.Index, :index
     live "/halls/:hall", VotingLive.Index, :index
     live "/comments/:id", OpinionLive.Show, :show
     live "/fact-checker", FactCheckerLive.Index, :index
@@ -63,6 +62,8 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    live "/home", VotingLive.Index, :index
+
     live "/welcome", WelcomeLive.Index, :index
     live "/p/:slug/add-quote", VotingLive.AddQuote, :add_quote
 
@@ -95,6 +96,8 @@ defmodule YouCongressWeb.Router do
 
   scope "/", YouCongressWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
+
+    live "/", HomeLive.Index, :index
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{YouCongressWeb.UserAuth, :redirect_if_user_is_authenticated}] do
