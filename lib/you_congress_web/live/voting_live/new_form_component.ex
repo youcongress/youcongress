@@ -136,7 +136,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
 
     case Votings.create_voting(%{title: suggested_title, user_id: user_id}) do
       {:ok, voting} ->
-        %{voting_id: voting.id}
+        %{voting_id: voting.id, current_user_author_id: current_user.author_id}
         |> PublicFiguresWorker.new()
         |> Oban.insert()
 

@@ -3,13 +3,15 @@ defmodule YouCongress.DigitalTwins.PublicFiguresAI do
   Generates a list of public figures who have publicly shared their views on a topic.
   """
 
+  require Logger
+
   alias YouCongress.DigitalTwins.OpenAIModel
   alias YouCongress.DigitalTwins.PublicFigures
 
   @spec generate_list(binary, OpenAIModel.t(), list | nil) ::
           {:error, binary} | {:ok, %{cost: float, votes: list}}
-  def generate_list(topic, model, exclude_names \\ []) do
-    prompt = get_prompt(topic, exclude_names)
+  def generate_list(topic, model, maybe_include_names, exclude_names \\ []) do
+    prompt = get_prompt(topic, maybe_include_names, exclude_names)
 
     with {:ok, data} <- ask_gpt(prompt, model),
          content <- OpenAIModel.get_content(data),
@@ -21,9 +23,13 @@ defmodule YouCongress.DigitalTwins.PublicFiguresAI do
     end
   end
 
-  @spec get_prompt(binary, [binary]) :: binary
-  defp get_prompt(topic, exclude_names) do
+  @spec get_prompt(binary, [binary], [binary]) :: binary
+  defp get_prompt(topic, maybe_include_names, exclude_names) do
     exclude_names = Enum.join(exclude_names, ",")
+    include_names = Enum.join(maybe_include_names, ",")
+    Logger.info("HEC Include names: #{include_names}")
+    Logger.info("HEC Exclude names: #{exclude_names}")
+
     num_opinions = PublicFigures.num_gen_opinions()
 
     """
@@ -48,6 +54,7 @@ defmodule YouCongress.DigitalTwins.PublicFiguresAI do
     Try to include diverse votes (e.g. not only "Strongly agree"), unless all public figures agree.
     It should be plausible that the public figure has that opinion about the topic (E.g. an actor probably won't have an opinion on programming languages, but well-known programmers might).
 
+    Include these public figures (if they have publicly shared their views): #{include_names}
     Exclude these public figures: #{exclude_names}
     """
   end

@@ -63,7 +63,7 @@
       page={:voting_show}
     />
   </div>
-  <%= if !@current_user_vote do %>
+  <%= if !@current_user_vote && !@current_user do %>
     <div class="pt-2">
       <.link href={~p"/log_in"} class="underline text-sm">
         Log in to comment
