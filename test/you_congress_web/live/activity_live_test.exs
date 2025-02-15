@@ -1,4 +1,4 @@
-defmodule YouCongressWeb.HomeLiveTest do
+defmodule YouCongressWeb.ActivityLiveTest do
   use YouCongressWeb.ConnCase
 
   import Phoenix.LiveViewTest
