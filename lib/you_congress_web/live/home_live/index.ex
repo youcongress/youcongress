@@ -8,7 +8,7 @@ defmodule YouCongressWeb.HomeLive.Index do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:page_title, "New Question")
+     |> assign(:page_title, "Finding Solutions to Our Most Important Problems")
      |> assign(:live_action, :new)
      |> assign(:current_user, nil),
      layout: false}
