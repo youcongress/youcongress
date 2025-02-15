@@ -21,6 +21,7 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through :browser
 
+    live "/", HomeLive.Index, :index
     live "/activity", ActivityLive.Index, :index
     live "/p/:slug", VotingLive.Show, :show
     live "/a/:id", AuthorLive.Show, :show

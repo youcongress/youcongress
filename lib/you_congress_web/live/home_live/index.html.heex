@@ -1,0 +1,93 @@
+<div class="bg-white">
+  <header class="absolute inset-x-0 top-0 z-50">
+    <nav class="flex items-center justify-between p-6 lg:px-8" aria-label="Global">
+      <div class="flex lg:flex-1">
+        <span class="text-xl font-semibold text-indigo-600">YouCongress</span>
+      </div>
+    </nav>
+  </header>
+
+  <div class="mx-auto max-w-4xl">
+    <.flash_group flash={@flash} />
+  </div>
+
+  <div class="relative isolate px-6 lg:px-8">
+    <div
+      class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"
+      aria-hidden="true"
+    >
+      <div
+        class="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
+        style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"
+      >
+      </div>
+    </div>
+    <div class="mx-auto max-w-3xl sm:py-20 lg:py-28">
+      <div class="text-center">
+        <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+          Finding Solutions to Our Most Important Problems
+        </h1>
+        <div class="mt-6 text-lg leading-8 text-gray-600">
+          <p class="mb-6">
+            YouCongress is an open-source platform that brings people together to find solutions to society's biggest challenges and to elevate them into public discourse among the general population and decision-makers.
+          </p>
+          <div class="mt-8 space-y-8">
+            <div class="bg-gradient-to-r from-indigo-50 to-white p-6 rounded-xl">
+              <h3 class="text-xl font-semibold text-indigo-900 mb-2">Artificial Intelligence</h3>
+              <p class="text-gray-700">Should we create a <.link href="/p/should-we-create-a-global-institute-for-ai-safety" class="underline">global (or European) institute like CERN for AI safety</.link>? If General AI leads to mass-unemployment, should we have a <.link href={~p"/p/universal-basic-income"} class="hover:text-indigo-700 underline">universal basic income</.link>?</p>
+            </div>
+
+            <div class="bg-gradient-to-r from-green-50 to-white p-6 rounded-xl">
+              <h3 class="text-xl font-semibold text-green-900 mb-2">Climate Action & Energy</h3>
+              <p class="text-gray-700">Besides renewables, <.link href={~p"/p/should-we-use-more-nuclear-energy"} class="underline">should we use more nuclear energy?</.link> How about having <.link href="/p/low-emission-zones" class="underline">low-emission zones in city centers?</.link></p>
+            </div>
+
+            <div class="bg-gradient-to-r from-blue-50 to-white p-6 rounded-xl">
+              <h3 class="text-xl font-semibold text-blue-900 mb-2">European Union</h3>
+              <p class="text-gray-700">Should we <a href="/p/eu-reduce-regulation" class="underline">reduce regulation</a> to make it more competitive? For example, enabling the <.link href="/p/start-eu-business-online" class="underline">start businesses online in hours and without notaries or lawyers</.link>. </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12 text-left">
+            <div class="p-4 rounded-lg bg-white shadow-sm border border-gray-100">
+              <div class="text-indigo-600 text-xl font-semibold mb-2">Create proposals</div>
+              <p class="text-gray-600 text-base">Send a proposal and we'll automatically add AI-gen perspectives of public figures. Then, users can upload real quotes from public figures to replace AI-gen perspectives.</p>
+            </div>
+            <div class="p-4 rounded-lg bg-white shadow-sm border border-gray-100">
+              <div class="text-indigo-600 text-xl font-semibold mb-2">AI digital twins</div>
+              <p class="text-gray-600 text-base">Besides the initial arguments from public figures' digital twins, leave a comment under their opinions and the digital twin will reply.</p>
+            </div>
+            <div class="p-4 rounded-lg bg-white shadow-sm border border-gray-100">
+              <div class="text-indigo-600 text-xl font-semibold mb-2">Liquid Democracy</div>
+              <p class="text-gray-600 text-base">Choose your delegates or experts (your own Concress) to vote as they do – unless you directly vote. It's useful to participate in many decisions without spending a lot of time.</p>
+            </div>
+          </div>
+          <div class="mt-12 p-6 bg-indigo-50 rounded-xl">
+            <div class="italic text-indigo-900">
+              "The biggest problem in the world is not climate change, war or poverty, but how we organise among ourselves to make good decisions and carry them out."
+            </div>
+            <div class="text-indigo-700 mt-2">- Alex Pentland, MIT Professor</div>
+          </div>
+        </div>
+        <div class="mt-10 flex items-center justify-center gap-6">
+          <.link
+            href={~p"/sign_up"}
+            class="rounded-md bg-indigo-600 px-5 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            Join the Movement
+          </.link>
+        </div>
+      </div>
+    </div>
+    <div
+      class="absolute inset-x-0 top-[calc(100%-13rem)] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-30rem)]"
+      aria-hidden="true"
+    >
+      <div
+        class="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem]"
+        style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"
+      >
+      </div>
+    </div>
+  </div>
+</div>
