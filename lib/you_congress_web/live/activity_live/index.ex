@@ -1,4 +1,4 @@
-defmodule YouCongressWeb.HomeLive.Index do
+defmodule YouCongressWeb.ActivityLive.Index do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Opinions
