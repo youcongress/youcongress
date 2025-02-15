@@ -27,8 +27,6 @@ defmodule YouCongress.DigitalTwins.PublicFiguresAI do
   defp get_prompt(topic, maybe_include_names, exclude_names) do
     exclude_names = Enum.join(exclude_names, ",")
     include_names = Enum.join(maybe_include_names, ",")
-    Logger.info("HEC Include names: #{include_names}")
-    Logger.info("HEC Exclude names: #{exclude_names}")
 
     num_opinions = PublicFigures.num_gen_opinions()
 
