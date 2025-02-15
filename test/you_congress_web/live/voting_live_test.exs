@@ -34,7 +34,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
     test "vote and create opinion", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
-      {:ok, index_live, html} = live(conn, ~p"/")
+      {:ok, index_live, html} = live(conn, ~p"/home")
 
       assert html =~ "YouCongress: Finding solutions to our most important problems"
 
@@ -115,7 +115,7 @@ defmodule YouCongressWeb.VotingLiveTest do
          [generate_rewordings: fn _, _ -> {:ok, @suggested_titles, 0} end]}
       ]) do
         conn = log_in_as_admin(conn)
-        {:ok, index_live, _html} = live(conn, ~p"/")
+        {:ok, index_live, _html} = live(conn, ~p"/home")
 
         index_live
         |> element("button#create-poll-button", "New Question")

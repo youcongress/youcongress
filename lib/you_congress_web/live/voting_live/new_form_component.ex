@@ -9,57 +9,68 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div>
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all hover:shadow-md">
       <.form
         for={@form}
         id="voting-form"
         phx-target={@myself}
         phx-change="validate"
         phx-submit="ai-validate"
+        class="space-y-6"
       >
         <div>
-          Create a new yes/no question
-          <.input
-            field={@form[:title]}
-            type="text"
-            maxlength="150"
-            placeholder="Should we regulate AI?"
-          />
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">
+            What solution or problem would you like us to analyze and vote on?
+          </h3>
+          <p class="text-sm text-gray-600 mb-4">
+            Your prompt will be reviewed by AI to ensure clarity and offer you three suggestions before publishing.
+            <span class="text-indigo-600">No login required!</span>
+          </p>
+          <div class="relative">
+            <.input
+              field={@form[:title]}
+              type="text"
+              maxlength="150"
+              placeholder="e.g., Should we use more nuclear energy?"
+              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            />
+          </div>
+
           <%= if @suggested_titles != [] do %>
-            <div>
-              <div class="py-2">
-                <div>Our AI proposes you these polls based on your prompt.</div>
-                <div class="text-sm text-gray-600">
-                  This guarantees that it's an understandable yes/no question in English.
-                </div>
-                <div class="pt-2">
-                  Choose one of these (or click <button type="submit" class="underline">3 more</button>):
+            <div class="mt-6 space-y-4">
+              <div class="bg-indigo-50 rounded-lg p-4">
+                <h4 class="font-medium text-indigo-900 mb-2">AI-Suggested Questions</h4>
+                <p class="text-sm text-indigo-700 mb-3">
+                  Choose one of these clear yes/no questions, or click <button type="submit" class="text-indigo-600 font-medium hover:text-indigo-500 underline">generate 3 more</button>
+                </p>
+                <div class="space-y-3">
+                  <%= for suggested_title <- @suggested_titles do %>
+                    <div class="transform transition-all hover:scale-[1.01]">
+                      <button
+                        phx-click="save"
+                        phx-value-suggested_title={suggested_title}
+                        phx-target={@myself}
+                        class="w-full text-left px-4 py-3 rounded-lg bg-white border border-indigo-200 text-gray-900 shadow-sm hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-200"
+                      >
+                        <%= suggested_title %>
+                      </button>
+                    </div>
+                  <% end %>
                 </div>
               </div>
-              <%= for suggested_title <- @suggested_titles do %>
-                <div class="py-2">
-                  <button
-                    phx-click="save"
-                    phx-value-suggested_title={suggested_title}
-                    phx-target={@myself}
-                    class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                  >
-                    <%= suggested_title %>
-                  </button>
-                </div>
-              <% end %>
             </div>
           <% else %>
-            <div>
+            <div class="mt-6">
               <button
-                class={[
-                  "mt-4 inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 bg-indigo-600 hover:bg-indigo-500"
-                ]}
-                phx-disable-with="Validating with ChatGPT. Please wait."
+                class="inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 rounded-lg bg-indigo-600 text-white font-medium shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-colors duration-200"
+                phx-disable-with="Validating with ChatGPT..."
               >
-                Send
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Generate Suggestions
               </button>
-              <.link href="#" phx-click="toggle-new-poll" class="text-xs pl-2">cancel</.link>
+              <.link :if={@cancel_link?} href="#" phx-click="toggle-new-poll" class="mt-2 inline-block text-sm text-gray-500 hover:text-gray-700">Cancel</.link>
             </div>
           <% end %>
         </div>
