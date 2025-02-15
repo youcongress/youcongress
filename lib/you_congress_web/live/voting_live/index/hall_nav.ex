@@ -18,20 +18,61 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
           <div class="pt-1 space-x-8">
             <HallNav.tab url_hall_name={@hall_name} hall_name="ai" hall_link={~p"/"} hall_title="AI" />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="public-interest-ai"
-              hall_link={~p"/halls/public-interest-ai"}
-              hall_title="Public interest AI"
-            />
+          </div>
+          <div class="hidden md:block pt-1 space-x-8">
+            <%= if @hall_name not in ["ai", "global-ai-governance", "future-of-work", "climate-change", "housing", "us", "eu", "all"] do %>
+              <HallNav.tab
+                url_hall_name={@hall_name}
+                hall_name={@hall_name}
+                hall_link={~p"/halls/#{@hall_name}"}
+                hall_title={StringUtils.titleize_hall(@hall_name)}
+              />
+            <% else %>
+              <HallNav.tab
+                url_hall_name={@hall_name}
+                hall_name="global-ai-governance"
+                hall_link={~p"/halls/global-ai-governance"}
+                hall_title="AI governance"
+              />
+            <% end %>
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="future-of-work"
               hall_link={~p"/halls/future-of-work"}
-              hall_title="Future of work"
+              hall_title="Future of Work"
+            />
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="climate-change"
+              hall_link={~p"/halls/climate-change"}
+              hall_title="Climate Change"
+            />
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="housing"
+              hall_link={~p"/halls/housing"}
+              hall_title="Housing"
+            />
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="eu"
+              hall_link={~p"/halls/eu"}
+              hall_title="European Union"
+            />
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="us"
+              hall_link={~p"/halls/us"}
+              hall_title="United States"
+            />
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="all"
+              hall_link={~p"/halls/all"}
+              hall_title="All"
             />
           </div>
-          <div class="hidden md:block pt-1 space-x-8">
+          <div class="space-x-8 md:hidden pt-1">
             <%= if @hall_name not in ["ai", "public-interest-ai", "future-of-work", "ai-innovation-and-culture", "trust-in-ai", "global-ai-governance", "all"] do %>
               <HallNav.tab
                 url_hall_name={@hall_name}
@@ -42,68 +83,52 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             <% else %>
               <HallNav.tab
                 url_hall_name={@hall_name}
-                hall_name="ai-innovation-and-culture"
-                hall_link={~p"/halls/ai-innovation-and-culture"}
-                hall_title="AI Innovation and culture"
+                hall_name="global-ai-governance"
+                hall_link={~p"/halls/global-ai-governance"}
+                hall_title="AI governance"
               />
             <% end %>
             <HallNav.tab
               url_hall_name={@hall_name}
-              hall_name="trust-in-ai"
-              hall_link={~p"/halls/trust-in-ai"}
-              hall_title="Trust in AI"
-            />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="global-ai-governance"
-              hall_link={~p"/halls/global-ai-governance"}
-              hall_title="Global AI governance"
-            />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="all"
-              hall_link={~p"/halls/all"}
-              hall_title="All"
+              hall_name="future-of-work"
+              hall_link={~p"/halls/future-of-work"}
+              hall_title="Future of Work"
             />
           </div>
         </nav>
-      </div>
-      <div class="-mb-px flex space-x-8 md:hidden">
-        <%= if @hall_name not in ["ai", "public-interest-ai", "future-of-work", "ai-innovation-and-culture", "trust-in-ai", "global-ai-governance", "all"] do %>
+        <nav class="flex space-x-4 md:hidden pt-4">
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="climate-change"
+              hall_link={~p"/halls/climate-change"}
+              hall_title="Climate Change"
+            />
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="housing"
+              hall_link={~p"/halls/housing"}
+              hall_title="Housing"
+            />
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="eu"
+              hall_link={~p"/halls/eu"}
+              hall_title="EU"
+            />
+            <HallNav.tab
+              url_hall_name={@hall_name}
+              hall_name="us"
+              hall_link={~p"/halls/us"}
+              hall_title="US"
+            />
+
           <HallNav.tab
             url_hall_name={@hall_name}
-            hall_name={@hall_name}
-            hall_link={~p"/halls/#{@hall_name}"}
-            hall_title={StringUtils.titleize_hall(@hall_name)}
+            hall_name="all"
+            hall_link={~p"/halls/all"}
+            hall_title="All"
           />
-        <% else %>
-          <HallNav.tab
-            url_hall_name={@hall_name}
-            hall_name="ai-innovation-and-culture"
-            hall_link={~p"/halls/ai-innovation-and-culture"}
-            hall_title="AI innovation and culture"
-          />
-        <% end %>
-        <HallNav.tab
-          url_hall_name={@hall_name}
-          hall_name="trust-in-ai"
-          hall_link={~p"/halls/trust-in-ai"}
-          hall_title="Trust in AI"
-        />
-      </div>
-      <div class="-mb-px flex space-x-8 md:hidden">
-        <HallNav.tab
-          url_hall_name={@hall_name}
-          hall_name="global-ai-governance"
-          hall_link={~p"/halls/global-ai-governance"}
-          hall_title="Global AI governance"
-        />
-        <HallNav.tab
-          url_hall_name={@hall_name}
-          hall_name="all"
-          hall_link={~p"/halls/all"}
-          hall_title="All"
-        />
+        </nav>
       </div>
     </div>
     """
