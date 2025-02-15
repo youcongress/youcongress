@@ -64,14 +64,15 @@ defmodule YouCongressWeb.VotingLive.Show do
   @spec handle_event(binary, map, Socket.t()) :: {:noreply, Socket.t()}
   def handle_event("generate-votes", %{"voting_id" => voting_id}, socket) do
     voting_id = String.to_integer(voting_id)
+    current_user = socket.assigns.current_user
 
-    %{voting_id: voting_id}
+    %{voting_id: voting_id, current_user_author_id: current_user.author_id}
     |> PublicFiguresWorker.new()
     |> Oban.insert()
 
     Track.event("Generate AI opinions", socket.assigns.current_user)
 
-    Process.send_after(self(), :reload, 1_000)
+    Process.send_after(self(), :reload, 100)
 
     {:noreply, clear_flash(socket)}
   end

@@ -11,8 +11,8 @@ defmodule YouCongress.DigitalTwins.PublicFigures do
 
   @spec generate_list(binary, OpenAIModel.t(), list | nil) ::
           {:error, binary} | {:ok, %{cost: float, votes: list}}
-  def generate_list(topic, model, exclude_names \\ []) do
-    implementation().generate_list(topic, model, exclude_names)
+  def generate_list(topic, model, maybe_include_names, exclude_names \\ []) do
+    implementation().generate_list(topic, model, maybe_include_names, exclude_names)
   end
 
   def num_gen_opinions do
