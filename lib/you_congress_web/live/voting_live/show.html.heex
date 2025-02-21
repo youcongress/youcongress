@@ -87,6 +87,7 @@
     />
   </div>
 <% end %>
+
 <div class="space-x-2 md:space-x-4 pt-4 pb-2 md:pb-0 text-right flex justify-end items-center" :if={@total_opinions > 0}>
   <span class="text-xs -mr-1">filter</span>
   <form phx-change="filter-answer" class="inline">
@@ -107,15 +108,14 @@
     phx-click="filter-ai"
     class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@twin_filter == true && "bg-gray-200"}"}
   >
-    AI <span class="text-xs">(<%= @ai_votes_count %>)</span>
+    AI (<%= @ai_votes_count %>)
   </span>
   <span
     phx-click="filter-human"
     class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@twin_filter == false && "bg-gray-200"}"}
   >
-    HUMAN <span class="text-xs">(<%= @human_votes_count %>)</span>
+    HUMAN (<%= @human_votes_count %>)
   </span>
-
 </div>
 
 <%= if @votes_from_delegates != [] do %>

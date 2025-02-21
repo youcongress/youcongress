@@ -148,7 +148,6 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   def handle_event("filter-answer", %{"answer" => answer}, socket) do
     %{assigns: %{voting: voting}} = socket
-    IO.inspect(answer, label: "answer")
 
     socket =
       socket
