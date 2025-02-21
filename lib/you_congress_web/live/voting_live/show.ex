@@ -46,6 +46,8 @@ defmodule YouCongressWeb.VotingLive.Show do
       )
       |> assign(reload: false)
       |> assign(:regenerating_opinion_id, nil)
+      |> assign(:twin_filter, nil)
+      |> assign(:answer_filter, nil)
       |> VotesLoader.load_voting_and_votes(voting.id)
       |> load_random_votings(voting.id)
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user, voting))
@@ -106,6 +108,53 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   def handle_event("edit", _, socket) do
     {:noreply, assign(socket, editing: true)}
+  end
+
+  def handle_event("filter-ai", _, socket) do
+    %{assigns: %{twin_filter: twin_filter, voting: voting}} = socket
+
+    twin_filter =
+      case twin_filter do
+        nil -> true
+        true -> nil
+        false -> true
+      end
+
+    socket =
+      socket
+      |> assign(:twin_filter, twin_filter)
+      |> VotesLoader.load_voting_and_votes(voting.id)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("filter-human", _, socket) do
+    %{assigns: %{twin_filter: twin_filter, voting: voting}} = socket
+
+    twin_filter =
+      case twin_filter do
+        nil -> false
+        true -> false
+        false -> nil
+      end
+
+    socket =
+      socket
+      |> assign(:twin_filter, twin_filter)
+      |> VotesLoader.load_voting_and_votes(voting.id)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("filter-answer", %{"answer" => answer}, socket) do
+    %{assigns: %{voting: voting}} = socket
+
+    socket =
+      socket
+      |> assign(:answer_filter, answer)
+      |> VotesLoader.load_voting_and_votes(voting.id)
+
+    {:noreply, socket}
   end
 
   @impl true

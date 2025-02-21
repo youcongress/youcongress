@@ -9,7 +9,10 @@ defmodule YouCongressWeb.VotingLiveTest do
   import YouCongress.VotesFixtures
   import YouCongress.OpinionsFixtures
   import YouCongress.VotesFixtures
+  import YouCongress.AuthorsFixtures
 
+
+  alias YouCongress.Votes.Answers
   alias YouCongress.Votings
   alias YouCongress.HallsVotings
 
@@ -372,6 +375,80 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       # We don't have a filled heart icon
       refute has_element?(show_live, "img[src='/images/filled-heart.svg']")
+    end
+
+    test "filters opinions correctly", %{conn: conn, voting: voting} do
+      # Create test data
+      user = user_fixture()
+      ai_author = author_fixture(%{twin: true})
+      human_author = author_fixture(%{twin: false})
+
+      # Create opinions with different responses and authors
+      _strongly_agree_ai = vote_fixture(%{
+        voting_id: voting.id,
+        author_id: ai_author.id,
+        answer_id: Answers.answer_id_by_response("Strongly agree"),
+        twin: true
+      }, true)
+      _agree_human = vote_fixture(%{
+        voting_id: voting.id,
+        author_id: human_author.id,
+        answer_id: Answers.answer_id_by_response("Agree"),
+        twin: false
+      }, true)
+      _disagree_ai = vote_fixture(%{
+        voting_id: voting.id,
+        author_id: ai_author.id,
+        answer_id: Answers.answer_id_by_response("Disagree"),
+        twin: true
+      }, true)
+
+      conn = log_in_user(conn, user)
+      {:ok, show_live, html} = live(conn, ~p"/p/#{voting.slug}")
+
+      # Test initial state shows all opinions
+      assert html =~ "All opinions (3)"
+      assert html =~ "AI (2)"
+      assert html =~ "HUMAN (1)"
+
+      # Test answer filter
+      html = show_live
+             |> form("form[phx-change='filter-answer']", %{"answer" => "Strongly agree"})
+             |> render_change()
+
+      assert html =~ "Strongly agree (1)"
+      assert html =~ ai_author.name
+      refute html =~ human_author.name
+
+      # Select all opinions
+      show_live
+             |> form("form[phx-change='filter-answer']", %{"answer" => ""})
+             |> render_change()
+
+      # Test AI filter
+      html = show_live
+             |> element("span", "AI")
+             |> render_click()
+
+      assert html =~ ai_author.name
+      refute html =~ human_author.name
+
+      # Test Human filter
+      html = show_live
+             |> element("span", "HUMAN")
+             |> render_click()
+
+      assert html =~ human_author.name
+      refute html =~ ai_author.name
+
+      # Test combined filters
+      html = show_live
+             |> form("form[phx-change='filter-answer']", %{"answer" => "Agree"})
+             |> render_change()
+
+      assert html =~ human_author.name
+      assert html =~ "Agree (1)"
+      refute html =~ ai_author.name
     end
   end
 end
