@@ -87,7 +87,7 @@
     />
   </div>
 <% end %>
-<div class="space-x-4 pt-4 text-right" :if={@ai_votes_count > 0 || @human_votes_count > 0}>
+<div class="space-x-4 pt-4 pb-2 text-right" :if={@ai_votes_count > 0 || @human_votes_count > 0}>
   <span class="text-xs -mr-1">filter</span>
   <span
     phx-click="filter-ai"
