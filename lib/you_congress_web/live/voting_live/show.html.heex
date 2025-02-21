@@ -87,20 +87,35 @@
     />
   </div>
 <% end %>
-<div class="space-x-4 pt-4 pb-2 md:pb-0 text-right" :if={@ai_votes_count > 0 || @human_votes_count > 0}>
+<div class="space-x-4 pt-4 pb-2 md:pb-0 text-right flex justify-end items-center" :if={@ai_votes_count > 0 || @human_votes_count > 0}>
   <span class="text-xs -mr-1">filter</span>
+  <form phx-change="filter-answer" class="inline">
+    <select
+      name="answer"
+      class="text-sm w-40 rounded-md border-2 border-gray-300 p-1 bg-white"
+    >
+      <option value="">All opinions (<%= @ai_votes_count + @human_votes_count %>)</option>
+      <option value="Strongly agree" selected={@answer_filter == "Strongly agree"}>Strongly agree</option>
+      <option value="Agree" selected={@answer_filter == "Agree"}>Agree</option>
+      <option value="Abstain" selected={@answer_filter == "Abstain"}>Abstain</option>
+      <option value="N/A" selected={@answer_filter == "N/A"}>N/A</option>
+      <option value="Disagree" selected={@answer_filter == "Disagree"}>Disagree</option>
+      <option value="Strongly disagree" selected={@answer_filter == "Strongly disagree"}>Strongly disagree</option>
+    </select>
+  </form>
   <span
     phx-click="filter-ai"
-    class={"text-sm rounded-md border-2 border-gray-300 p-1 #{@twin_filter == true && "bg-gray-200"}"}
+    class={"text-sm cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@twin_filter == true && "bg-gray-200"}"}
   >
     AI <span class="text-xs">(<%= @ai_votes_count %>)</span>
   </span>
   <span
     phx-click="filter-human"
-    class={"text-sm rounded-md border-2 border-gray-300 p-1 #{@twin_filter == false && "bg-gray-200"}"}
+    class={"text-sm cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@twin_filter == false && "bg-gray-200"}"}
   >
     HUMAN <span class="text-xs">(<%= @human_votes_count %>)</span>
   </span>
+
 </div>
 
 <%= if @votes_from_delegates != [] do %>

@@ -15,7 +15,7 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
 
   @spec load_voting_and_votes(Socket.t(), number) :: Socket.t()
   def load_voting_and_votes(socket, voting_id) do
-    %{assigns: %{current_user: current_user, twin_filter: twin_filter}} = socket
+    %{assigns: %{current_user: current_user, twin_filter: twin_filter, answer_filter: answer_filter}} = socket
     voting = Votings.get_voting!(voting_id, preload: [:halls])
     current_user_vote = get_current_user_vote(voting, current_user)
     exclude_ids = (current_user_vote && [current_user_vote.id]) || []
@@ -26,7 +26,8 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     opts = [
       include: [:author, :answer, :opinion],
       exclude_ids: exclude_ids,
-      twin_options: twin_options(twin_filter)
+      twin_options: twin_options(twin_filter),
+      answer_filter: answer_filter
     ]
     votes_with_opinion = Votes.list_votes_with_opinion(voting_id, opts)
     votes_without_opinion = Votes.list_votes_without_opinion(voting_id, opts)

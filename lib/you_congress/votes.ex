@@ -134,39 +134,33 @@ defmodule YouCongress.Votes do
     include_tables = Keyword.get(opts, :include, [])
     exclude_ids = Keyword.get(opts, :exclude_ids, [])
     twin_options = Keyword.get(opts, :twin_options, [true, false])
+    answer_filter = Keyword.get(opts, :answer_filter)
 
-    Vote
-    |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
-    |> join(:inner, [v], o in YouCongress.Opinions.Opinion, on: v.opinion_id == o.id)
-    |> where(
-      [v, a, o],
-      v.voting_id == ^voting_id and not is_nil(v.opinion_id) and
-        v.id not in ^exclude_ids and
-        v.twin in ^twin_options
-    )
+    base_query = Vote
+      |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
+      |> join(:inner, [v, a], o in YouCongress.Opinions.Opinion, on: v.opinion_id == o.id)
+      |> where(
+        [v, a, o],
+        v.voting_id == ^voting_id and not is_nil(v.opinion_id) and
+          v.id not in ^exclude_ids and
+          v.twin in ^twin_options
+      )
+
+    query = if answer_filter do
+      base_query
+      |> join(:inner, [v, a, o], ans in YouCongress.Votes.Answers.Answer, on: v.answer_id == ans.id)
+      |> where([v, a, o, ans], ans.response == ^answer_filter)
+    else
+      base_query
+    end
+
+    query
     |> order_by([v, a, o], [
       fragment("? DESC", o.descendants_count),
-      fragment("CASE
-            WHEN ? IS NOT NULL THEN 1
-            WHEN ? IS NOT NULL THEN 2
-            WHEN ? = FALSE THEN 3
-            ELSE 4
-          END", o.source_url, a.wikipedia_url, o.twin),
-      {:desc, o.updated_at}
+      fragment("? DESC", o.likes_count)
     ])
     |> preload(^include_tables)
     |> Repo.all()
-  end
-
-  def get_current_user_vote(voting_id, author_id) do
-    Vote
-    |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
-    |> where(
-      [v, a],
-      v.voting_id == ^voting_id and v.author_id == ^author_id
-    )
-    |> preload([:answer, :opinion])
-    |> Repo.one()
   end
 
   @doc """
@@ -177,14 +171,25 @@ defmodule YouCongress.Votes do
     include_tables = Keyword.get(opts, :include, [])
     exclude_ids = Keyword.get(opts, :exclude_ids, [])
     twin_options = Keyword.get(opts, :twin_options, [true, false])
+    answer_filter = Keyword.get(opts, :answer_filter)
 
-    Vote
-    |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
-    |> where(
-      [v, a],
-      v.voting_id == ^voting_id and is_nil(v.opinion_id) and v.id not in ^exclude_ids and
-        v.twin in ^twin_options
-    )
+    base_query = Vote
+      |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
+      |> where(
+        [v, a],
+        v.voting_id == ^voting_id and is_nil(v.opinion_id) and v.id not in ^exclude_ids and
+          v.twin in ^twin_options
+      )
+
+    query = if answer_filter do
+      base_query
+      |> join(:inner, [v, a], ans in YouCongress.Votes.Answers.Answer, on: v.answer_id == ans.id)
+      |> where([v, a, ans], ans.response == ^answer_filter)
+    else
+      base_query
+    end
+
+    query
     |> preload(^include_tables)
     |> Repo.all()
   end
@@ -422,6 +427,26 @@ def count_by(opts) when is_list(opts) do
   |> Repo.one()
 end
 
+  def get_current_user_vote(voting_id, author_id) do
+    Vote
+    |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
+    |> where(
+      [v, a],
+      v.voting_id == ^voting_id and v.author_id == ^author_id
+    )
+    |> preload([:answer, :opinion])
+    |> Repo.one()
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking vote changes.
+
+  ## Examples
+
+      iex> change_vote(vote)
+      %Ecto.Changeset{data: %Vote{}}
+
+  """
   def public?(%Vote{} = vote) do
     vote.answer_id not in YouCongress.Votes.Answers.private_ids()
   end

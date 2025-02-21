@@ -47,6 +47,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       |> assign(reload: false)
       |> assign(:regenerating_opinion_id, nil)
       |> assign(:twin_filter, nil)
+      |> assign(:answer_filter, nil)
       |> VotesLoader.load_voting_and_votes(voting.id)
       |> load_random_votings(voting.id)
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user, voting))
@@ -140,6 +141,18 @@ defmodule YouCongressWeb.VotingLive.Show do
     socket =
       socket
       |> assign(:twin_filter, twin_filter)
+      |> VotesLoader.load_voting_and_votes(voting.id)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("filter-answer", %{"answer" => answer}, socket) do
+    %{assigns: %{voting: voting}} = socket
+    IO.inspect(answer, label: "answer")
+
+    socket =
+      socket
+      |> assign(:answer_filter, answer)
       |> VotesLoader.load_voting_and_votes(voting.id)
 
     {:noreply, socket}
