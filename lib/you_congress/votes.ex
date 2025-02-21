@@ -412,6 +412,9 @@ def count_by(opts) when is_list(opts) do
       {:direct, direct}, query ->
         where(query, [v], v.direct == ^direct)
 
+      {:has_opinion_id, has_opinion_id}, query ->
+        where(query, [v], is_nil(v.opinion_id) != ^has_opinion_id)
+
       _, query ->
         query
     end

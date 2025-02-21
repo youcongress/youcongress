@@ -20,8 +20,8 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     current_user_vote = get_current_user_vote(voting, current_user)
     exclude_ids = (current_user_vote && [current_user_vote.id]) || []
 
-    ai_votes_count = Votes.count_by(twin: true, voting_id: voting_id)
-    human_votes_count = Votes.count_by(twin: false, voting_id: voting_id)
+    ai_votes_count = Votes.count_by(twin: true, voting_id: voting_id, has_opinion_id: true)
+    human_votes_count = Votes.count_by(twin: false, voting_id: voting_id, has_opinion_id: true)
 
     opts = [
       include: [:author, :answer, :opinion],
