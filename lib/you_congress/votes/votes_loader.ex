@@ -46,7 +46,8 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
       percentage: get_percentage(voting),
       share_to_x_text: share_to_x_text,
       ai_votes_count: ai_votes_count,
-      human_votes_count: human_votes_count
+      human_votes_count: human_votes_count,
+      total_votes: Votes.count_by(voting_id: voting_id)
     )
     |> assign_main_variables(voting, current_user)
   end

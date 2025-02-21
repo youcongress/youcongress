@@ -48,7 +48,7 @@
   <% end %>
 </div>
 
-<%= if(@votes_from_delegates != [] || @votes_from_non_delegates != []) do %>
+<%= if @total_votes > 0 do %>
   <div class="mt-4 mb-4">
     <div class="pb-1">
       Cast your vote:
@@ -71,8 +71,9 @@
     </div>
   <% end %>
 <% end %>
-<%= if @votes_from_delegates != [] || @votes_from_non_delegates != [] do %>
-  <div class="pb-8">
+
+<%= if @total_votes > 0 do %>
+  <div class="pb-2">
     <.live_component
       module={CurrentUserVoteComponent}
       id={:v}
@@ -86,7 +87,7 @@
     />
   </div>
 <% end %>
-<div class="flex space-x-4">
+<div class="flex space-x-4 pb-4" :if={@ai_votes_count > 0 || @human_votes_count > 0}>
   <div class="text-sm pt-1">Filter</div>
   <a
     href="#"
