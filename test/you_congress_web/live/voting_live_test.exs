@@ -384,19 +384,19 @@ defmodule YouCongressWeb.VotingLiveTest do
       human_author = author_fixture(%{twin: false})
 
       # Create opinions with different responses and authors
-      strongly_agree_ai = vote_fixture(%{
+      _strongly_agree_ai = vote_fixture(%{
         voting_id: voting.id,
         author_id: ai_author.id,
         answer_id: Answers.answer_id_by_response("Strongly agree"),
         twin: true
       }, true)
-      agree_human = vote_fixture(%{
+      _agree_human = vote_fixture(%{
         voting_id: voting.id,
         author_id: human_author.id,
         answer_id: Answers.answer_id_by_response("Agree"),
         twin: false
       }, true)
-      disagree_ai = vote_fixture(%{
+      _disagree_ai = vote_fixture(%{
         voting_id: voting.id,
         author_id: ai_author.id,
         answer_id: Answers.answer_id_by_response("Disagree"),
@@ -421,7 +421,7 @@ defmodule YouCongressWeb.VotingLiveTest do
       refute html =~ human_author.name
 
       # Select all opinions
-      html = show_live
+      show_live
              |> form("form[phx-change='filter-answer']", %{"answer" => ""})
              |> render_change()
 
