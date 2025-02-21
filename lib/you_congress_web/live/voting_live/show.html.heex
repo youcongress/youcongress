@@ -88,7 +88,7 @@
   </div>
 <% end %>
 
-<div class="space-x-2 md:space-x-4 pt-4 pb-2 md:pb-0 text-right flex justify-end items-center" :if={@total_opinions > 0}>
+<div class="space-x-2 md:space-x-4 pt-4 pb-2 text-right flex justify-end items-center" :if={@total_opinions > 0}>
   <span class="text-xs -mr-1">filter</span>
   <form phx-change="filter-answer" class="inline">
     <select
