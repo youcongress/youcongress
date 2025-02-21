@@ -88,21 +88,19 @@
   </div>
 <% end %>
 <div class="space-x-4 pt-4 text-right" :if={@ai_votes_count > 0 || @human_votes_count > 0}>
-  <span class="text-sm">filter</span>
-  <a
-    href="#"
+  <span class="text-xs -mr-1">filter</span>
+  <span
     phx-click="filter-ai"
     class={"text-sm rounded-md border-2 border-gray-300 p-1 #{@twin_filter == true && "bg-gray-200"}"}
   >
     AI <span class="text-xs">(<%= @ai_votes_count %>)</span>
-  </a>
-  <a
-    href="#"
+  </span>
+  <span
     phx-click="filter-human"
     class={"text-sm rounded-md border-2 border-gray-300 p-1 #{@twin_filter == false && "bg-gray-200"}"}
   >
     HUMAN <span class="text-xs">(<%= @human_votes_count %>)</span>
-  </a>
+  </span>
 </div>
 
 <%= if @votes_from_delegates != [] do %>
