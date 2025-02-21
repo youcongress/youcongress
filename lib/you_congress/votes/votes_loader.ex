@@ -48,9 +48,14 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
       share_to_x_text: share_to_x_text,
       ai_votes_count: ai_votes_count,
       human_votes_count: human_votes_count,
-      total_votes: Votes.count_by(voting_id: voting_id)
+      total_votes: Votes.count_by(voting_id: voting_id),
+      opinions_by_response: get_opinions_by_response(voting.id)
     )
     |> assign_main_variables(voting, current_user)
+  end
+
+  defp get_opinions_by_response(voting_id) do
+    Votes.count_by_response_map(voting_id, has_opinion_id: true)
   end
 
   defp twin_options(true), do: [true]

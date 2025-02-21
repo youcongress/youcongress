@@ -390,16 +390,29 @@ defmodule YouCongress.Votes do
 
   @doc """
   Returns the number of votes of a voting.
+
+  Example:
+  > count_by_response(1)
+  [{"Agree", 4}, {"Disagree", 2}, {"Strongly agree", 6}]
   """
-  def count_by_response(voting_id) do
-    from(v in Vote,
+  def count_by_response(voting_id, opts \\ []) do
+    has_opinion_id = Keyword.get(opts, :has_opinion_id, nil)
+    query = from(v in Vote,
       join: a in assoc(v, :answer),
       where: v.voting_id == ^voting_id,
       group_by: a.response,
       select: {a.response, count(a.response)}
     )
+    query = if has_opinion_id, do: from(v in query, where: is_nil(v.opinion_id) != ^has_opinion_id), else: query
+    query
     |> Repo.all()
   end
+
+  def count_by_response_map(voting_id, opts \\ []) do
+    count_by_response(voting_id, opts)
+    |> Enum.into(%{})
+  end
+
 
 def count_by(opts) when is_list(opts) do
   base_query = from(v in Vote, select: count(v.id))
