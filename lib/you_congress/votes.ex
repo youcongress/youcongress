@@ -156,7 +156,13 @@ defmodule YouCongress.Votes do
     query
     |> order_by([v, a, o], [
       fragment("? DESC", o.descendants_count),
-      fragment("? DESC", o.likes_count)
+      fragment("CASE
+            WHEN ? IS NOT NULL THEN 1
+            WHEN ? IS NOT NULL THEN 2
+            WHEN ? = FALSE THEN 3
+            ELSE 4
+          END", o.source_url, a.wikipedia_url, o.twin),
+      {:desc, o.updated_at}
     ])
     |> preload(^include_tables)
     |> Repo.all()
