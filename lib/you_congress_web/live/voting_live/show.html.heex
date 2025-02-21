@@ -86,6 +86,24 @@
     />
   </div>
 <% end %>
+<div class="flex space-x-4">
+  <div class="text-sm pt-1">Filter</div>
+  <a
+    href="#"
+    phx-click="filter-ai"
+    class={"text-sm border-2 border-gray-300 p-1 #{@twin_filter in [:ai, :ai_and_human] && "bg-gray-200"}"}
+  >
+    AI (<%= @ai_votes_count %>)
+  </a>
+  <a
+    href="#"
+    phx-click="filter-human"
+    class={"text-sm border-2 border-gray-300 p-1 #{@twin_filter in [:human, :ai_and_human] && "bg-gray-200"}"}
+  >
+    Human (<%= @human_votes_count %>)
+  </a>
+</div>
+
 <%= if @votes_from_delegates != [] do %>
   <div class="mb-8">
     <h2 class="mb-2">Comments from your delegates:</h2>

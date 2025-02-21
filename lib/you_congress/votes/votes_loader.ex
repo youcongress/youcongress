@@ -15,22 +15,21 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
 
   @spec load_voting_and_votes(Socket.t(), number) :: Socket.t()
   def load_voting_and_votes(socket, voting_id) do
-    %{assigns: %{current_user: current_user}} = socket
+    %{assigns: %{current_user: current_user, twin_filter: twin_filter}} = socket
     voting = Votings.get_voting!(voting_id, preload: [:halls])
     current_user_vote = get_current_user_vote(voting, current_user)
     exclude_ids = (current_user_vote && [current_user_vote.id]) || []
 
-    votes_with_opinion =
-      Votes.list_votes_with_opinion(voting_id,
-        include: [:author, :answer, :opinion],
-        exclude_ids: exclude_ids
-      )
+    ai_votes_count = Votes.count_by(twin: true, voting_id: voting_id)
+    human_votes_count = Votes.count_by(twin: false, voting_id: voting_id)
 
-    votes_without_opinion =
-      Votes.list_votes_without_opinion(voting_id,
-        include: [:author, :answer, :opinion],
-        exclude_ids: exclude_ids
-      )
+    opts = [
+      include: [:author, :answer, :opinion],
+      exclude_ids: exclude_ids,
+      twin_options: twin_options(twin_filter)
+    ]
+    votes_with_opinion = Votes.list_votes_with_opinion(voting_id, opts)
+    votes_without_opinion = Votes.list_votes_without_opinion(voting_id, opts)
 
     votes_from_delegates = get_votes_from_delegates(votes_with_opinion, current_user)
 
@@ -45,10 +44,17 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
       votes_without_opinion: votes_without_opinion,
       current_user_vote: current_user_vote,
       percentage: get_percentage(voting),
-      share_to_x_text: share_to_x_text
+      share_to_x_text: share_to_x_text,
+      ai_votes_count: ai_votes_count,
+      human_votes_count: human_votes_count
     )
     |> assign_main_variables(voting, current_user)
   end
+
+  defp twin_options(:ai), do: [true]
+  defp twin_options(:human), do: [false]
+  defp twin_options(:ai_and_human), do: [true, false]
+  defp twin_options(:none), do: []
 
   defp x_post(nil, voting), do: voting.title
 

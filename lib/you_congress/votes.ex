@@ -133,6 +133,7 @@ defmodule YouCongress.Votes do
   def list_votes_with_opinion(voting_id, opts \\ []) do
     include_tables = Keyword.get(opts, :include, [])
     exclude_ids = Keyword.get(opts, :exclude_ids, [])
+    twin_options = Keyword.get(opts, :twin_options, [true, false])
 
     Vote
     |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
@@ -140,7 +141,8 @@ defmodule YouCongress.Votes do
     |> where(
       [v, a, o],
       v.voting_id == ^voting_id and not is_nil(v.opinion_id) and
-        v.id not in ^exclude_ids
+        v.id not in ^exclude_ids and
+        v.twin in ^twin_options
     )
     |> order_by([v, a, o], [
       fragment("? DESC", o.descendants_count),
@@ -174,12 +176,14 @@ defmodule YouCongress.Votes do
   def list_votes_without_opinion(voting_id, opts \\ []) do
     include_tables = Keyword.get(opts, :include, [])
     exclude_ids = Keyword.get(opts, :exclude_ids, [])
+    twin_options = Keyword.get(opts, :twin_options, [true, false])
 
     Vote
     |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
     |> where(
       [v, a],
-      v.voting_id == ^voting_id and is_nil(v.opinion_id) and v.id not in ^exclude_ids
+      v.voting_id == ^voting_id and is_nil(v.opinion_id) and v.id not in ^exclude_ids and
+        v.twin in ^twin_options
     )
     |> preload(^include_tables)
     |> Repo.all()
@@ -391,6 +395,29 @@ defmodule YouCongress.Votes do
     )
     |> Repo.all()
   end
+
+def count_by(opts) when is_list(opts) do
+  base_query = from(v in Vote, select: count(v.id))
+
+  Enum.reduce(
+    opts,
+    base_query,
+    fn
+      {:voting_id, voting_id}, query ->
+        where(query, [v], v.voting_id == ^voting_id)
+
+      {:twin, twin}, query ->
+        where(query, [v], v.twin == ^twin)
+
+      {:direct, direct}, query ->
+        where(query, [v], v.direct == ^direct)
+
+      _, query ->
+        query
+    end
+  )
+  |> Repo.one()
+end
 
   def public?(%Vote{} = vote) do
     vote.answer_id not in YouCongress.Votes.Answers.private_ids()
