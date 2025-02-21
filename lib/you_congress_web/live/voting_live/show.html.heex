@@ -92,14 +92,14 @@
   <a
     href="#"
     phx-click="filter-ai"
-    class={"text-sm border-2 border-gray-300 p-1 #{@twin_filter in [:ai, :ai_and_human] && "bg-gray-200"}"}
+    class={"text-sm border-2 border-gray-300 p-1 #{@twin_filter && "bg-gray-200"}"}
   >
     AI (<%= @ai_votes_count %>)
   </a>
   <a
     href="#"
     phx-click="filter-human"
-    class={"text-sm border-2 border-gray-300 p-1 #{@twin_filter in [:human, :ai_and_human] && "bg-gray-200"}"}
+    class={"text-sm border-2 border-gray-300 p-1 #{@twin_filter == false && "bg-gray-200"}"}
   >
     Human (<%= @human_votes_count %>)
   </a>

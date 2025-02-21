@@ -46,7 +46,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       )
       |> assign(reload: false)
       |> assign(:regenerating_opinion_id, nil)
-      |> assign(:twin_filter, :ai_and_human)
+      |> assign(:twin_filter, nil)
       |> VotesLoader.load_voting_and_votes(voting.id)
       |> load_random_votings(voting.id)
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user, voting))
@@ -114,10 +114,9 @@ defmodule YouCongressWeb.VotingLive.Show do
 
     twin_filter =
       case twin_filter do
-        :ai_and_human -> :human
-        :human -> :ai_and_human
-        :ai -> :none
-        :none -> :ai
+        nil -> true
+        true -> nil
+        false -> true
       end
 
     socket =
@@ -133,10 +132,9 @@ defmodule YouCongressWeb.VotingLive.Show do
 
     twin_filter =
       case twin_filter do
-        :ai_and_human -> :ai
-        :ai -> :ai_and_human
-        :human -> :none
-        :none -> :human
+        nil -> false
+        true -> false
+        false -> nil
       end
 
     socket =

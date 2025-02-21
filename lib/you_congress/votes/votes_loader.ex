@@ -52,10 +52,9 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     |> assign_main_variables(voting, current_user)
   end
 
-  defp twin_options(:ai), do: [true]
-  defp twin_options(:human), do: [false]
-  defp twin_options(:ai_and_human), do: [true, false]
-  defp twin_options(:none), do: []
+  defp twin_options(true), do: [true]
+  defp twin_options(false), do: [false]
+  defp twin_options(nil), do: [true, false]
 
   defp x_post(nil, voting), do: voting.title
 
