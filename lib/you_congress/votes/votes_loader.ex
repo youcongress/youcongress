@@ -22,16 +22,16 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
 
     count_opts = [voting_id: voting_id, has_opinion_id: true]
     answer_id = if answer_filter == "", do: nil, else: Answers.answer_id_by_response(answer_filter)
-    count_opts = if answer_id, do: [{:answer_id, answer_id} | count_opts], else: [{:has_opinion_id, true} | count_opts]
+    count_opts = if answer_id, do: [{:answer_id, answer_id} | count_opts], else: count_opts
     ai_votes_count = Votes.count_by([{:twin, true} | count_opts])
     human_votes_count = Votes.count_by([{:twin, false} | count_opts])
 
     opts = [
       include: [:author, :answer, :opinion],
       exclude_ids: exclude_ids,
-      twin_options: twin_options(twin_filter),
-      answer_filter: answer_filter
+      twin_options: twin_options(twin_filter)
     ]
+    opts = if answer_filter == "", do: opts, else: [{:answer_id, answer_id} | opts]
     votes_with_opinion = Votes.list_votes_with_opinion(voting_id, opts)
     votes_without_opinion = Votes.list_votes_without_opinion(voting_id, opts)
 

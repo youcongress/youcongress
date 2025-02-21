@@ -134,7 +134,7 @@ defmodule YouCongress.Votes do
     include_tables = Keyword.get(opts, :include, [])
     exclude_ids = Keyword.get(opts, :exclude_ids, [])
     twin_options = Keyword.get(opts, :twin_options, [true, false])
-    answer_filter = Keyword.get(opts, :answer_filter)
+    answer_id = Keyword.get(opts, :answer_id)
 
     base_query = Vote
       |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
@@ -146,10 +146,9 @@ defmodule YouCongress.Votes do
           v.twin in ^twin_options
       )
 
-    query = if answer_filter do
+    query = if answer_id do
       base_query
-      |> join(:inner, [v, a, o], ans in YouCongress.Votes.Answers.Answer, on: v.answer_id == ans.id)
-      |> where([v, a, o, ans], ans.response == ^answer_filter)
+      |> where([v, a, o], v.answer_id == ^answer_id)
     else
       base_query
     end
