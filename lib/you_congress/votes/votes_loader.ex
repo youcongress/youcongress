@@ -20,8 +20,11 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     current_user_vote = get_current_user_vote(voting, current_user)
     exclude_ids = (current_user_vote && [current_user_vote.id]) || []
 
-    ai_votes_count = Votes.count_by(twin: true, voting_id: voting_id, has_opinion_id: true)
-    human_votes_count = Votes.count_by(twin: false, voting_id: voting_id, has_opinion_id: true)
+    count_opts = [voting_id: voting_id, has_opinion_id: true]
+    answer_id = if answer_filter == "", do: nil, else: Answers.answer_id_by_response(answer_filter)
+    count_opts = if answer_id, do: [{:answer_id, answer_id} | count_opts], else: [{:has_opinion_id, true} | count_opts]
+    ai_votes_count = Votes.count_by([{:twin, true} | count_opts])
+    human_votes_count = Votes.count_by([{:twin, false} | count_opts])
 
     opts = [
       include: [:author, :answer, :opinion],
@@ -48,14 +51,14 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
       share_to_x_text: share_to_x_text,
       ai_votes_count: ai_votes_count,
       human_votes_count: human_votes_count,
-      total_votes: Votes.count_by(voting_id: voting_id),
-      opinions_by_response: get_opinions_by_response(voting.id)
+      total_opinions: Votes.count_by(voting_id: voting_id),
+      opinions_by_response: get_opinions_by_response(voting.id, twin_filter)
     )
     |> assign_main_variables(voting, current_user)
   end
 
-  defp get_opinions_by_response(voting_id) do
-    Votes.count_by_response_map(voting_id, has_opinion_id: true)
+  defp get_opinions_by_response(voting_id, twin_filter) do
+    Votes.count_by_response_map(voting_id, has_opinion_id: true, twin: twin_filter)
   end
 
   defp twin_options(true), do: [true]

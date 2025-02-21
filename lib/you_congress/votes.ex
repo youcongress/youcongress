@@ -397,6 +397,8 @@ defmodule YouCongress.Votes do
   """
   def count_by_response(voting_id, opts \\ []) do
     has_opinion_id = Keyword.get(opts, :has_opinion_id, nil)
+    twin = Keyword.get(opts, :twin)
+
     query = from(v in Vote,
       join: a in assoc(v, :answer),
       where: v.voting_id == ^voting_id,
@@ -404,6 +406,8 @@ defmodule YouCongress.Votes do
       select: {a.response, count(a.response)}
     )
     query = if has_opinion_id, do: from(v in query, where: is_nil(v.opinion_id) != ^has_opinion_id), else: query
+    query = if not is_nil(twin), do: from(v in query, where: v.twin == ^twin), else: query
+
     query
     |> Repo.all()
   end
@@ -431,7 +435,14 @@ def count_by(opts) when is_list(opts) do
         where(query, [v], v.direct == ^direct)
 
       {:has_opinion_id, has_opinion_id}, query ->
-        where(query, [v], is_nil(v.opinion_id) != ^has_opinion_id)
+        if has_opinion_id do
+          where(query, [v], not is_nil(v.opinion_id))
+        else
+          where(query, [v], is_nil(v.opinion_id))
+        end
+
+      {:answer_id, answer_id}, query ->
+        where(query, [v], v.answer_id == ^answer_id)
 
       _, query ->
         query

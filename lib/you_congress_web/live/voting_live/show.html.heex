@@ -48,7 +48,7 @@
   <% end %>
 </div>
 
-<%= if @total_votes > 0 do %>
+<%= if @total_opinions > 0 do %>
   <div class="mt-4 mb-4">
     <div class="pb-1">
       Cast your vote:
@@ -72,7 +72,7 @@
   <% end %>
 <% end %>
 
-<%= if @total_votes > 0 do %>
+<%= if @total_opinions > 0 do %>
   <div class="pb-2">
     <.live_component
       module={CurrentUserVoteComponent}
@@ -87,14 +87,14 @@
     />
   </div>
 <% end %>
-<div class="space-x-2 md:space-x-4 pt-4 pb-2 md:pb-0 text-right flex justify-end items-center" :if={@ai_votes_count > 0 || @human_votes_count > 0}>
+<div class="space-x-2 md:space-x-4 pt-4 pb-2 md:pb-0 text-right flex justify-end items-center" :if={@total_opinions > 0}>
   <span class="text-xs -mr-1">filter</span>
   <form phx-change="filter-answer" class="inline">
     <select
       name="answer"
       class="text-xs w-40 rounded-md border-2 border-gray-300 p-1 bg-white"
     >
-      <option value="">All opinions (<%= @ai_votes_count + @human_votes_count %>)</option>
+      <option value="">All opinions (<%= @opinions_by_response |> Map.values() |> Enum.sum() %>)</option>
       <option value="Strongly agree" selected={@answer_filter == "Strongly agree"}>Strongly agree (<%= Map.get(@opinions_by_response, "Strongly agree", 0) %>)</option>
       <option value="Agree" selected={@answer_filter == "Agree"}>Agree (<%= Map.get(@opinions_by_response, "Agree", 0) %>)</option>
       <option value="Abstain" selected={@answer_filter == "Abstain"}>Abstain (<%= Map.get(@opinions_by_response, "Abstain", 0) %>)</option>
