@@ -41,7 +41,13 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
               <div class="bg-indigo-50 rounded-lg p-4">
                 <h4 class="font-medium text-indigo-900 mb-2">AI-Suggested Questions</h4>
                 <p class="text-sm text-indigo-700 mb-3">
-                  Choose one of these clear yes/no questions, or click <button type="submit" class="text-indigo-600 font-medium hover:text-indigo-500 underline">generate 3 more</button>
+                  Choose one of these clear yes/no questions, or click
+                  <button
+                    type="submit"
+                    class="text-indigo-600 font-medium hover:text-indigo-500 underline"
+                  >
+                    generate 3 more
+                  </button>
                 </p>
                 <div class="space-y-3">
                   <%= for suggested_title <- @suggested_titles do %>
@@ -66,11 +72,23 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
                 phx-disable-with="Validating with ChatGPT..."
               >
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
                 </svg>
                 Generate Suggestions
               </button>
-              <.link :if={@cancel_link?} href="#" phx-click="toggle-new-poll" class="mt-2 inline-block text-sm text-gray-500 hover:text-gray-700">Cancel</.link>
+              <.link
+                :if={@cancel_link?}
+                href="#"
+                phx-click="toggle-new-poll"
+                class="mt-2 inline-block text-sm text-gray-500 hover:text-gray-700"
+              >
+                Cancel
+              </.link>
             </div>
           <% end %>
         </div>
@@ -152,11 +170,9 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
         |> Oban.insert()
 
         Track.event("Create Voting", current_user)
+        notify_parent({:put_flash, :info, "Voting created successfully"})
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "Voting created successfully")
-         |> redirect(to: ~p"/p/#{voting.slug}")}
+        {:noreply, redirect(socket, to: ~p"/p/#{voting.slug}")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}
