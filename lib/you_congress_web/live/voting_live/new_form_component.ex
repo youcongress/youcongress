@@ -1,6 +1,8 @@
 defmodule YouCongressWeb.VotingLive.NewFormComponent do
   use YouCongressWeb, :live_component
 
+  require Logger
+
   alias YouCongress.Votings
   alias YouCongress.Votings.TitleRewording
   alias YouCongress.Track
@@ -147,7 +149,8 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
         {:ok, suggested_titles, _} ->
           {:noreply, assign(socket, suggested_titles: suggested_titles)}
 
-        {:error, _} ->
+        {:error, error} ->
+          Logger.error("Error validating the voting: #{inspect(error)}")
           notify_parent({:put_flash, :error, "Error validating the voting"})
           {:noreply, socket}
       end
