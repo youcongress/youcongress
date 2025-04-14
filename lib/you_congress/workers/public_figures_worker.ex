@@ -21,7 +21,9 @@ defmodule YouCongress.Workers.PublicFiguresWorker do
     {:cancel, "Max attempts reached."}
   end
 
-  def perform(%Oban.Job{args: %{"voting_id" => voting_id, "current_user_author_id" => current_user_author_id}}) do
+  def perform(%Oban.Job{
+        args: %{"voting_id" => voting_id, "current_user_author_id" => current_user_author_id}
+      }) do
     voting = Votings.get_voting!(voting_id, preload: [votes: :author])
     exclude_existent = Enum.map(voting.votes, & &1.author.name)
 
@@ -33,11 +35,15 @@ defmodule YouCongress.Workers.PublicFiguresWorker do
     exclude_names = exclude_existent ++ exclude_twin_disabled
 
     maybe_include_names =
-      current_user_author_id
-      |> Delegations.delegate_ids_by_deleguee_id()
-      |> then(&Authors.list_authors(ids: &1))
-      |> Enum.map(& &1.name)
-      |> Enum.uniq()
+      if current_user_author_id do
+        current_user_author_id
+        |> Delegations.delegate_ids_by_deleguee_id()
+        |> then(&Authors.list_authors(ids: &1))
+        |> Enum.map(& &1.name)
+        |> Enum.uniq()
+      else
+        []
+      end
 
     maybe_include_names = maybe_include_names -- exclude_names
     provisional_num = PublicFigures.num_gen_opinions()
@@ -48,7 +54,12 @@ defmodule YouCongress.Workers.PublicFiguresWorker do
              generating_total: provisional_num
            }),
          {:ok, %{votes: votes}} <-
-           PublicFigures.generate_list(voting.title, :"gpt-4o", maybe_include_names, exclude_names),
+           PublicFigures.generate_list(
+             voting.title,
+             :"gpt-4o",
+             maybe_include_names,
+             exclude_names
+           ),
          true <- is_list(votes),
          {:ok, _} <-
            Votings.update_voting(voting, %{
