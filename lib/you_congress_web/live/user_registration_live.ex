@@ -13,7 +13,6 @@ defmodule YouCongressWeb.UserRegistrationLive do
     <div class="mx-auto max-w-sm">
       <%= if @step == :enter_email_password do %>
         <.header class="text-center">
-          Register for an account
           <:subtitle>
             Already registered?
             <.link navigate={~p"/log_in"} class="font-semibold text-brand hover:underline">
@@ -42,7 +41,9 @@ defmodule YouCongressWeb.UserRegistrationLive do
         </div>
 
         <div class="pt-2 md:pt-4 text-xs text-center">or</div>
-
+        <.header class="text-center pt-6">
+          Register for an account
+        </.header>
         <.simple_form
           for={@form}
           id="registration_form"
