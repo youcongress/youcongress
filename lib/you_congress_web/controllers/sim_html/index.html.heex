@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGI Personal Wealth & Universal Basic Income Simulator</title>
+
+    <!-- Social Media Meta Tags -->
+    <meta property="og:title" content="Post-AGI UBI Simulator">
+    <meta property="og:description" content="Simulate your financial future: How much savings would you need if you're unable to find a job after AGI—at least until UBI is implemented?">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://post-agi-ubi.hecperez.com/">
+    <meta property="og:image" content="screenshot.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Post-AGI UBI Simulator">
+    <meta name="twitter:description" content="Simulate your financial future: How much savings would you need if you're unable to find a job after AGI—at least until UBI is implemented?">
+    <meta name="twitter:image" content="screenshot.png">
+    <meta name="twitter:site" content="@arpahector">
+    <meta name="twitter:creator" content="@arpahector">
+
+    <%= if Application.get_env(:you_congress, :env) == :prod do %>
+      <script defer data-domain="youcongress.com" src="https://plausible.io/js/script.js">
+      </script>
+    <% end %>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/sim.js"}></script>
+    <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 pt-2 xl:pt-8">
+        <div class="flex justify-between items-center">
+            <div class="w-32"></div>
+            <h1 class="text-3xl font-bold text-center flex-grow">AGI Personal Wealth & Universal Basic Income Simulator</h1>
+        </div>
+        <h2 class="text-lg text-gray-600 text-center mb-2 xl:mb-8 xl:pt-2">Simulate your financial future: How much savings would you need if you're unable to find a job after AGI—at least until UBI is implemented?</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-7 gap-8">
+            <!-- Initial Values / Assumptions Section -->
+            <div class="bg-white p-4 rounded-lg shadow-lg md:col-span-2">
+                <h2 class="text-xl font-semibold mb-2">Your Investments</h2>
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-gray-700">Your investments in 2024</label>
+                            <span id="currentInvestmentValue" class="text-sm font-medium text-gray-900">$30,000</span>
+                        </div>
+                        <input type="range" id="currentInvestment" min="0" max="1000000" value="30000" step="10000" class="w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-gray-700">Your new monthly investment until AGI</label>
+                            <span id="monthlyAdditionValue" class="text-sm font-medium text-gray-900">$300</span>
+                        </div>
+                        <input type="range" id="monthlyAddition" min="0" max="10000" value="300" step="100" class="w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-gray-700">Your monthly withdrawal after AGI</label>
+                            <span id="monthlyWithdrawalValue" class="text-sm font-medium text-gray-900">$1,000</span>
+                        </div>
+                        <input type="range" id="monthlyWithdrawal" min="0" max="50000" value="1000" step="500" class="w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-gray-700">Annual investment return until AGI</label>
+                            <span id="profitabilityPreAGIValue" class="text-sm font-medium text-gray-900">5%</span>
+                        </div>
+                        <input type="range" id="profitabilityPreAGI" min="0" max="20" value="5" class="w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-gray-700">Annual investment return after AGI</label>
+                            <span id="profitabilityPostAGIValue" class="text-sm font-medium text-gray-900">15%</span>
+                        </div>
+                        <input type="range" id="profitabilityPostAGI" min="0" max="50" value="15" class="w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-gray-700">Annual inflation rate</label>
+                            <span id="inflationRateValue" class="text-sm font-medium text-gray-900">4%</span>
+                        </div>
+                        <input type="range" id="inflationRate" min="0" max="10" value="4" class="w-full">
+                    </div>
+
+                    <div>
+                        <div class="pt-2">
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" id="isDonating" class="rounded text-blue-600">
+                                <span class="text-sm font-medium text-gray-700">I am part of the UBI donors or taxed</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Section -->
+            <div class="bg-white p-4 rounded-lg shadow-lg md:col-span-2">
+                <h2 class="text-2xl font-semibold mb-4">UBI Parameters</h2>
+
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-gray-700">Percentage of people donating (or taxed)</label>
+                            <span id="donatingPopulationValue" class="text-sm font-medium text-gray-900">10%</span>
+                        </div>
+                        <input type="range" id="donatingPopulation" min="0" max="100" value="10" class="w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-gray-700">Percentage of income donated (or taxed)</label>
+                            <span id="donationPercentageValue" class="text-sm font-medium text-gray-900">10%</span>
+                        </div>
+                        <input type="range" id="donationPercentage" min="0" max="100" value="10" class="w-full">
+                    </div>
+
+                    <div class="text-2xl font-semibold pt-4 mb-4">AGI & Growth Parameters</div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-gray-700">Years until AGI</label>
+                            <span id="yearsToAGIValue" class="text-sm font-medium text-gray-900">10 years (2035)</span>
+                        </div>
+                        <input type="range" id="yearsToAGI" min="0" max="100" value="10" class="w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-gray-700">World GDP growth until AGI</label>
+                            <span id="gdpGrowthPreAGIValue" class="text-sm font-medium text-gray-900">3%</span>
+                        </div>
+                        <input type="range" id="gdpGrowthPreAGI" min="0" max="20" value="3" class="w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-gray-700">Annual World GDP growth after AGI</label>
+                            <span id="gdpGrowthPostAGIValue" class="text-sm font-medium text-gray-900">30%</span>
+                        </div>
+                        <input type="range" id="gdpGrowthPostAGI" min="0" max="50" value="30" class="w-full">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="bg-white p-4 rounded-lg shadow-lg md:col-span-3">
+                <h2 class="text-2xl font-semibold mb-4">Results</h2>
+                <div class="h-96">
+                    <canvas id="ubiChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Facts Section -->
+        <div class="bg-white p-4 rounded-lg shadow-lg mt-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h2 class="text-xl font-semibold mb-2">Facts</h2>
+                    <div class="space-y-2 text-sm">
+                        <div>
+                            <span class="font-medium text-gray-600">2024 GDP:</span>
+                            <span class="text-gray-900 ml-2">$110T</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-600">2024 Population:</span>
+                            <span class="text-gray-900 ml-2">8B</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold mb-2">Assumptions</h2>
+                    <div class="space-y-2 text-sm">
+                        <div>
+                            <span class="text-gray-600">2100 Population:</span>
+                            <span class="text-gray-900 ml-2">10B</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-700">UBI is funded and distributed globally. While ambitious, initiatives like <a href="https://www.givingwhatwecan.org/pledge" class="underline hover:text-gray-800">The 🔸10% Pledge</a> might lead to this.</span>
+                        </div>
+                        <div class="pt-2">
+                            <span class="text-gray-700">Wealth proportionally distributed between donors and non-donors.</span>
+                        </div>
+                        <div class="pt-2">
+                            <span class="text-gray-700">Constant GDP growth and inflation.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
