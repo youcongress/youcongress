@@ -149,13 +149,22 @@ function calculatePersonalWealth(initialInvestment, monthlyAddition, monthlyWith
         const isPreAGI = y < agiYear;
         const growthRate = isPreAGI ? preAGIGrowth : postAGIGrowth;
         const investmentReturn = isPreAGI ? parseFloat(profitabilityPreAGI.value) : parseFloat(profitabilityPostAGI.value);
+        const monthlyInvestmentReturn = Math.pow(1 + investmentReturn/100, 1/12) - 1;
+
+        // Calculate GDP for the current year for UBI calculation
+        let yearGDP = INITIAL_GDP;
+        for (let gdpYear = CURRENT_YEAR; gdpYear <= y; gdpYear++) {
+            const isGdpYearPreAGI = gdpYear < agiYear;
+            const gdpGrowthRate = isGdpYearPreAGI ? preAGIGrowth : postAGIGrowth;
+            yearGDP = calculateGDP(yearGDP, gdpGrowthRate);
+        }
 
         if (isPreAGI) {
             // Pre-AGI: Add monthly contributions and apply monthly growth
             let wealthAtStartOfYear = wealth;
             for (let month = 0; month < 12; month++) {
                 wealth += monthlyAddition;
-                wealth = wealth * Math.pow(1 + investmentReturn/100, 1/12);
+                wealth *= (1 + monthlyInvestmentReturn);
             }
             // Apply donation/tax if applicable (on the increase in wealth)
             if (isDonating) {
@@ -165,9 +174,20 @@ function calculatePersonalWealth(initialInvestment, monthlyAddition, monthlyWith
         } else {
             // Post-AGI: Apply monthly withdrawals and growth
             let wealthAtStartOfYear = wealth;
+
+            // Calculate UBI for the current year
+            const ubiAmount = calculateUBI(yearGDP, donationPercent, parseFloat(donatingPopulation.value), y);
+            const monthlyUBI = ubiAmount / 12;
+
             for (let month = 0; month < 12; month++) {
-                wealth -= monthlyWithdrawal;
-                wealth = wealth * Math.pow(1 + investmentReturn/100, 1/12);
+                // Add monthly UBI income and subtract monthly withdrawal
+                wealth += monthlyUBI;
+                if (wealth > monthlyWithdrawal) {
+                    wealth -= monthlyWithdrawal;
+                } else {
+                    wealth = 0;
+                }
+                wealth *= (1 + monthlyInvestmentReturn);
             }
             // Apply donation/tax if applicable (on the increase in wealth)
             if (isDonating) {
