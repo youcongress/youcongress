@@ -4,70 +4,71 @@ defmodule YouCongressWeb.Router do
   import YouCongressWeb.UserAuth
 
   pipeline :browser do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :fetch_live_flash
-    plug :put_root_layout, html: {YouCongressWeb.Layouts, :root}
-    plug :protect_from_forgery
-    plug :put_secure_browser_headers
-    plug :fetch_current_user
-    plug :redirect_to_user_registration_if_email_or_phone_unconfirmed
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:put_root_layout, html: {YouCongressWeb.Layouts, :root})
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(:fetch_current_user)
+    plug(:redirect_to_user_registration_if_email_or_phone_unconfirmed)
   end
 
   pipeline :api do
-    plug :accepts, ["json"]
+    plug(:accepts, ["json"])
   end
 
   scope "/", YouCongressWeb do
-    pipe_through :browser
+    pipe_through(:browser)
 
-    live "/activity", ActivityLive.Index, :index
-    live "/p/:slug", VotingLive.Show, :show
-    live "/a/:id", AuthorLive.Show, :show
-    live "/x/:twitter_username", AuthorLive.Show, :show
-    live "/halls/:hall", VotingLive.Index, :index
-    live "/comments/:id", OpinionLive.Show, :show
-    live "/fact-checker", FactCheckerLive.Index, :index
+    get("/sim", SimController, :index)
+    live("/activity", ActivityLive.Index, :index)
+    live("/p/:slug", VotingLive.Show, :show)
+    live("/a/:id", AuthorLive.Show, :show)
+    live("/x/:twitter_username", AuthorLive.Show, :show)
+    live("/halls/:hall", VotingLive.Index, :index)
+    live("/comments/:id", OpinionLive.Show, :show)
+    live("/fact-checker", FactCheckerLive.Index, :index)
 
-    get "/terms", PageController, :terms
-    get "/privacy-policy", PageController, :privacy_policy
+    get("/terms", PageController, :terms)
+    get("/privacy-policy", PageController, :privacy_policy)
 
-    get "/waiting_list", PageController, :waiting_list
-    get "/about", PageController, :about
-    get "/x_log_in", TwitterLogInController, :pre_login
-    post "/x_log_in", TwitterLogInController, :log_in
-    get "/twitter-callback", TwitterLogInController, :callback
-    get "/faq", PageController, :faq
-    get "/email-login-waiting-list", PageController, :email_login_waiting_list
-    get "/email-login-waiting-list/thanks", PageController, :email_login_waiting_list_thanks
-    live "/sign_up", UserRegistrationLive, :new
+    get("/waiting_list", PageController, :waiting_list)
+    get("/about", PageController, :about)
+    get("/x_log_in", TwitterLogInController, :pre_login)
+    post("/x_log_in", TwitterLogInController, :log_in)
+    get("/twitter-callback", TwitterLogInController, :callback)
+    get("/faq", PageController, :faq)
+    get("/email-login-waiting-list", PageController, :email_login_waiting_list)
+    get("/email-login-waiting-list/thanks", PageController, :email_login_waiting_list_thanks)
+    live("/sign_up", UserRegistrationLive, :new)
 
     # Legacy redirection from /v/:slug to /p/:slug
-    get "/v/:slug", VotingController, :redirect_to_p
+    get("/v/:slug", VotingController, :redirect_to_p)
   end
 
   scope "/", YouCongressWeb do
-    pipe_through [:browser, :require_admin_user]
+    pipe_through([:browser, :require_admin_user])
 
-    live "/p/new", VotingLive.Index, :new
-    live "/p/:slug/edit", VotingLive.Show, :edit
-    live "/p/:slug/show/edit", VotingLive.Show, :edit
+    live("/p/new", VotingLive.Index, :new)
+    live("/p/:slug/edit", VotingLive.Show, :edit)
+    live("/p/:slug/show/edit", VotingLive.Show, :edit)
 
-    live "/authors", AuthorLive.Index, :index
-    live "/authors/new", AuthorLive.Index, :new
-    live "/authors/:id/edit", AuthorLive.Show, :edit
-    live "/authors/:id/show/edit", AuthorLive.Show, :edit
+    live("/authors", AuthorLive.Index, :index)
+    live("/authors/new", AuthorLive.Index, :new)
+    live("/authors/:id/edit", AuthorLive.Show, :edit)
+    live("/authors/:id/show/edit", AuthorLive.Show, :edit)
   end
 
   scope "/", YouCongressWeb do
-    pipe_through [:browser, :require_authenticated_user]
+    pipe_through([:browser, :require_authenticated_user])
 
-    live "/home", VotingLive.Index, :index
+    live("/home", VotingLive.Index, :index)
 
-    live "/welcome", WelcomeLive.Index, :index
-    live "/p/:slug/add-quote", VotingLive.AddQuote, :add_quote
+    live("/welcome", WelcomeLive.Index, :index)
+    live("/p/:slug/add-quote", VotingLive.AddQuote, :add_quote)
 
-    live "/settings", SettingsLive, :settings
+    live("/settings", SettingsLive, :settings)
   end
 
   # Other scopes may use custom stacks.
@@ -85,41 +86,41 @@ defmodule YouCongressWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
-      pipe_through :browser
+      pipe_through(:browser)
 
-      live_dashboard "/dashboard", metrics: YouCongressWeb.Telemetry
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
+      live_dashboard("/dashboard", metrics: YouCongressWeb.Telemetry)
+      forward("/mailbox", Plug.Swoosh.MailboxPreview)
     end
   end
 
   ## Authentication routes
 
   scope "/", YouCongressWeb do
-    pipe_through [:browser, :redirect_if_user_is_authenticated]
+    pipe_through([:browser, :redirect_if_user_is_authenticated])
 
-    live "/", HomeLive.Index, :index
+    live("/", HomeLive.Index, :index)
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{YouCongressWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/log_in", UserLoginLive, :new
+      live("/log_in", UserLoginLive, :new)
     end
 
-    post "/log_in", UserSessionController, :create
+    post("/log_in", UserSessionController, :create)
   end
 
   scope "/", YouCongressWeb do
-    pipe_through [:browser, :fetch_current_user, :redirect_if_user_is_authenticated]
+    pipe_through([:browser, :fetch_current_user, :redirect_if_user_is_authenticated])
 
-    live "/reset_password", ResetPasswordLive, :new
-    live "/reset_password/:token", ResetPasswordTokenLive, :edit
+    live("/reset_password", ResetPasswordLive, :new)
+    live("/reset_password/:token", ResetPasswordTokenLive, :edit)
   end
 
   scope "/", YouCongressWeb do
-    pipe_through [:browser]
+    pipe_through([:browser])
 
-    get "/log_out", UserSessionController, :delete
-    delete "/log_out", UserSessionController, :delete
-    get "/users/confirm/:token", UserConfirmationController, :confirm
+    get("/log_out", UserSessionController, :delete)
+    delete("/log_out", UserSessionController, :delete)
+    get("/users/confirm/:token", UserConfirmationController, :confirm)
 
     live_session :current_user,
       on_mount: [{YouCongressWeb.UserAuth, :mount_current_user}] do
