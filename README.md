@@ -17,15 +17,15 @@ We're still shaping YouCongress, but you already can:
 You can read more about the project on the LessWrong post:
 - [Tackling Moloch: How YouCongress Offers a Novel Coordination Mechanism](https://www.lesswrong.com/posts/4KjiZeAWc7Yv9oyCb/tackling-moloch-how-youcongress-offers-a-novel-coordination)
 
+# Other projects within YouCongress
+- [Future Financial Simulator](https://youcongress.com/sim) ([html](https://github.com/youcongress/youcongress/blob/main/lib/you_congress_web/controllers/sim_html/index.html.heex), [js](https://github.com/youcongress/youcongress/blob/main/assets/js/sim.js))
+- [Fact-checker](https://youcongress.com/fact-checker)
+
 # How to contribute
 Welcome to YouCongress! Feel free to:
 - Use [Discussions](https://github.com/youcongress/youcongress/discussions) to introduce yourself, ask questions and propose ideas.
 - [Take any unassigned issue](https://github.com/youcongress/youcongress/issues)
 - Add documentation, refactor existent code, etc.
-
-# Other projects within YouCongress
-- [Future Financial Simulator](https://youcongress.com/sim) ([html](https://github.com/youcongress/youcongress/blob/main/lib/you_congress_web/controllers/sim_html/index.html.heex), [js](https://github.com/youcongress/youcongress/blob/main/assets/js/sim.js))
-- [Fact-checker](https://youcongress.com/fact-checker)
 
 # Contributors
 - [Hector Perez](https://www.linkedin.com/in/hectorperezarenas)
