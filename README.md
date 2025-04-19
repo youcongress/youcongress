@@ -23,6 +23,10 @@ Welcome to YouCongress! Feel free to:
 - [Take any unassigned issue](https://github.com/youcongress/youcongress/issues)
 - Add documentation, refactor existent code, etc.
 
+# Other projects within YouCongress
+- [Future Financial Simulator](https://youcongress.com/sim) ([html](https://github.com/youcongress/youcongress/blob/main/lib/you_congress_web/controllers/sim_html/index.html.heex), [js](https://github.com/youcongress/youcongress/blob/main/assets/js/sim.js))
+- [Fact-checker](https://youcongress.com/fact-checker)
+
 # Contributors
 - [Hector Perez](https://www.linkedin.com/in/hectorperezarenas)
 - [Gonzalo Cardenete](https://www.linkedin.com/in/gonzalo-cardenete-burgos-519a1b43)
