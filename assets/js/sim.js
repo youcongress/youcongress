@@ -34,8 +34,10 @@ const monthlyWithdrawal = document.getElementById('monthlyWithdrawal');
 const monthlyWithdrawalValue = document.getElementById('monthlyWithdrawalValue');
 const profitabilityPreAGI = document.getElementById('profitabilityPreAGI');
 const profitabilityPreAGIValue = document.getElementById('profitabilityPreAGIValue');
-const profitabilityPostAGI = document.getElementById('profitabilityPostAGI');
-const profitabilityPostAGIValue = document.getElementById('profitabilityPostAGIValue');
+const profitabilityFirstDecadePostAGI = document.getElementById('profitabilityFirstDecadePostAGI');
+const profitabilityFirstDecadePostAGIValue = document.getElementById('profitabilityFirstDecadePostAGIValue');
+const profitabilityLongTerm = document.getElementById('profitabilityLongTerm');
+const profitabilityLongTermValue = document.getElementById('profitabilityLongTermValue');
 const isDonating = document.getElementById('isDonating');
 const resultsDiv = document.getElementById('results');
 let ubiChart = null;
@@ -48,6 +50,9 @@ function calculate() {
     const preAGIGrowth = parseFloat(gdpGrowthPreAGI.value);
     const postAGIGrowth = parseFloat(gdpGrowthPostAGI.value);
     const longTermGrowth = parseFloat(gdpGrowthLongTerm.value);
+    const preAGIProfitability = parseFloat(profitabilityPreAGI.value);
+    const firstDecadePostAGIProfitability = parseFloat(profitabilityFirstDecadePostAGI.value);
+    const longTermProfitability = parseFloat(profitabilityLongTerm.value);
     const inflationPreAGI = parseFloat(inflationRatePreAGI.value);
     const inflationPostAGI = parseFloat(inflationRatePostAGI.value);
     const initialInvestment = parseFloat(currentInvestment.value);
@@ -65,6 +70,7 @@ function calculate() {
         const isPreAGI = year < CURRENT_YEAR + yearsUntilAGI;
         const isFirstDecadePostAGI = !isPreAGI && year < CURRENT_YEAR + yearsUntilAGI + 10;
         const growthRate = isPreAGI ? preAGIGrowth : (isFirstDecadePostAGI ? postAGIGrowth : longTermGrowth);
+        const profitabilityRate = isPreAGI ? preAGIProfitability : (isFirstDecadePostAGI ? firstDecadePostAGIProfitability : longTermProfitability);
         const inflationRate = isPreAGI ? inflationPreAGI : inflationPostAGI;
 
         currentGDP = calculateGDP(currentGDP, growthRate);
@@ -77,6 +83,9 @@ function calculate() {
             preAGIGrowth,
             postAGIGrowth,
             longTermGrowth,
+            preAGIProfitability,
+            firstDecadePostAGIProfitability,
+            longTermProfitability,
             yearsUntilAGI,
             isDonatingChecked,
             donationPercent
@@ -159,8 +168,12 @@ profitabilityPreAGI.addEventListener('input', () => {
     updateSliderValue(profitabilityPreAGI, profitabilityPreAGIValue);
 });
 
-profitabilityPostAGI.addEventListener('input', () => {
-    updateSliderValue(profitabilityPostAGI, profitabilityPostAGIValue);
+profitabilityFirstDecadePostAGI.addEventListener('input', () => {
+    updateSliderValue(profitabilityFirstDecadePostAGI, profitabilityFirstDecadePostAGIValue);
+});
+
+profitabilityLongTerm.addEventListener('input', () => {
+    updateSliderValue(profitabilityLongTerm, profitabilityLongTermValue);
 });
 
 isDonating.addEventListener('change', () => {
@@ -176,26 +189,28 @@ function calculatePersonalWealth(
     preAGIGrowth,
     postAGIGrowth,
     longTermGrowth,
+    preAGIProfitability,
+    firstDecadePostAGIProfitability,
+    longTermProfitability,
     yearsUntilAGI,
     isDonating,
     donationPercent
 ) {
-    const monthlyInvestmentReturn = Math.pow(1 + (preAGIGrowth + postAGIGrowth + longTermGrowth)/100, 1/12) - 1;
-    const monthlyInflation = (preAGIGrowth + postAGIGrowth + longTermGrowth)/1200;
-
     let wealth = initialInvestment;
 
     for (let y = CURRENT_YEAR; y <= year; y++) {
         const isPreAGI = y < CURRENT_YEAR + yearsUntilAGI;
         const isFirstDecadePostAGI = !isPreAGI && y < CURRENT_YEAR + yearsUntilAGI + 10;
-        const growthRate = isPreAGI ? preAGIGrowth : (isFirstDecadePostAGI ? postAGIGrowth : longTermGrowth);
-        const inflationRate = isPreAGI ? (preAGIGrowth + postAGIGrowth + longTermGrowth)/200 : (postAGIGrowth + longTermGrowth)/200;
+        const profitabilityRate = isPreAGI ? preAGIProfitability : (isFirstDecadePostAGI ? firstDecadePostAGIProfitability : longTermProfitability);
+        const monthlyInvestmentReturn = Math.pow(1 + profitabilityRate/100, 1/12) - 1;
+        const monthlyInflation = (preAGIGrowth + postAGIGrowth + longTermGrowth)/1200;
 
         // Calculate GDP for the current year for UBI calculation
         let yearGDP = INITIAL_GDP;
         for (let gdpYear = CURRENT_YEAR; gdpYear <= y; gdpYear++) {
             const isGdpYearPreAGI = gdpYear < CURRENT_YEAR + yearsUntilAGI;
-            const gdpGrowthRate = isGdpYearPreAGI ? preAGIGrowth : (isGdpYearPreAGI && gdpYear < CURRENT_YEAR + yearsUntilAGI + 10 ? postAGIGrowth : longTermGrowth);
+            const isGdpYearFirstDecadePostAGI = !isGdpYearPreAGI && gdpYear < CURRENT_YEAR + yearsUntilAGI + 10;
+            const gdpGrowthRate = isGdpYearPreAGI ? preAGIGrowth : (isGdpYearFirstDecadePostAGI ? postAGIGrowth : longTermGrowth);
             yearGDP = calculateGDP(yearGDP, gdpGrowthRate);
         }
 
