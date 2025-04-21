@@ -42,12 +42,16 @@ const profitabilityLongTerm = document.getElementById('profitabilityLongTerm');
 const profitabilityLongTermValue = document.getElementById('profitabilityLongTermValue');
 const isDonating = document.getElementById('isDonating');
 const resultsDiv = document.getElementById('results');
+const averageTaxPressure = document.getElementById('averageTaxPressure');
+const averageTaxPressureValue = document.getElementById('averageTaxPressureValue');
+const personalTaxPressure = document.getElementById('personalTaxPressure');
+const personalTaxPressureValue = document.getElementById('personalTaxPressureValue');
 let ubiChart = null;
 
 // Main calculation function
 function calculate() {
-    const donationPercent = parseFloat(donationPercentage.value);
-    const donatingPopulationPercent = parseFloat(donatingPopulation.value);
+    const averageTaxPercent = parseFloat(averageTaxPressure.value);
+    const personalTaxPercent = parseFloat(personalTaxPressure.value);
     const yearsUntilAGI = parseInt(yearsToAGI.value);
     const yearsUntilUBI = parseInt(yearsToUBI.value);
     const preAGIGrowth = parseFloat(gdpGrowthPreAGI.value);
@@ -61,7 +65,6 @@ function calculate() {
     const initialInvestment = parseFloat(currentInvestment.value);
     const monthlyAdditionAmount = parseFloat(monthlyAddition.value);
     const monthlyWithdrawalAmount = parseFloat(monthlyWithdrawal.value);
-    const isDonatingChecked = isDonating.checked;
 
     let currentGDP = INITIAL_GDP;
     const years = [];
@@ -78,7 +81,7 @@ function calculate() {
         const inflationRate = isPreAGI ? inflationPreAGI : inflationPostAGI;
 
         currentGDP = calculateGDP(currentGDP, growthRate);
-        const ubi = isUBIEstablished ? calculateUBI(currentGDP, donationPercent, donatingPopulationPercent, year) : 0;
+        const ubi = isUBIEstablished ? calculateUBI(currentGDP, averageTaxPercent, year) : 0;
         const wealth = calculatePersonalWealth(
             initialInvestment,
             monthlyAdditionAmount,
@@ -89,13 +92,22 @@ function calculate() {
             longTermGrowth,
             profitabilityRate,
             yearsUntilAGI,
-            isDonatingChecked,
-            donationPercent
+            personalTaxPercent
         );
 
-        // Calculate inflation-adjusted UBI
+        // Calculate inflation-adjusted UBI properly accounting for both periods
         const yearsFromNow = year - CURRENT_YEAR;
-        const inflationFactor = Math.pow(1 + inflationRate/100, yearsFromNow);
+        let inflationFactor;
+        if (isPreAGI) {
+            // Only pre-AGI inflation
+            inflationFactor = Math.pow(1 + inflationPreAGI/100, yearsFromNow);
+        } else {
+            // Pre-AGI inflation for yearsUntilAGI years, then post-AGI inflation for remaining years
+            const preAGIInflation = Math.pow(1 + inflationPreAGI/100, yearsUntilAGI);
+            const postAGIYears = yearsFromNow - yearsUntilAGI;
+            const postAGIInflation = Math.pow(1 + inflationPostAGI/100, postAGIYears);
+            inflationFactor = preAGIInflation * postAGIInflation;
+        }
         const ubiAdjusted = ubi / inflationFactor;
 
         years.push(year);
@@ -126,9 +138,10 @@ donatingPopulation.addEventListener('input', () => {
     updateSliderValue(donatingPopulation, donatingPopulationValue);
 });
 
-donationPercentage.addEventListener('input', () => {
-    updateSliderValue(donationPercentage, donationPercentageValue);
-});
+// Remove the donationPercentage event listener since the element was removed from HTML
+// donationPercentage.addEventListener('input', () => {
+//     updateSliderValue(donationPercentage, donationPercentageValue);
+// });
 
 yearsToAGI.addEventListener('input', () => {
     updateSliderValue(yearsToAGI, yearsToAGIValue, ' years', true);
@@ -182,8 +195,12 @@ profitabilityLongTerm.addEventListener('input', () => {
     updateSliderValue(profitabilityLongTerm, profitabilityLongTermValue);
 });
 
-isDonating.addEventListener('change', () => {
-    calculate();
+averageTaxPressure.addEventListener('input', () => {
+    updateSliderValue(averageTaxPressure, averageTaxPressureValue);
+});
+
+personalTaxPressure.addEventListener('input', () => {
+    updateSliderValue(personalTaxPressure, personalTaxPressureValue);
 });
 
 // Calculate personal wealth
@@ -197,17 +214,19 @@ function calculatePersonalWealth(
     longTermGrowth,
     profitabilityRate,
     yearsUntilAGI,
-    isDonating,
-    donationPercent
+    taxPercent
 ) {
     let wealth = initialInvestment;
     const yearsUntilUBI = parseInt(yearsToUBI.value);
+    const inflationPreAGI = parseFloat(inflationRatePreAGI.value);
+    const inflationPostAGI = parseFloat(inflationRatePostAGI.value);
 
     for (let y = CURRENT_YEAR; y <= year; y++) {
         const isPreAGI = y < CURRENT_YEAR + yearsUntilAGI;
         const isUBIEstablished = !isPreAGI && y >= CURRENT_YEAR + yearsUntilAGI + yearsUntilUBI;
         const monthlyInvestmentReturn = Math.pow(1 + profitabilityRate/100, 1/12) - 1;
-        const monthlyInflation = (preAGIGrowth + postAGIGrowth + longTermGrowth)/1200;
+        const currentInflationRate = isPreAGI ? inflationPreAGI : inflationPostAGI;
+        const monthlyInflation = Math.pow(1 + currentInflationRate/100, 1/12) - 1;
 
         // Calculate GDP for the current year for UBI calculation
         let yearGDP = INITIAL_GDP;
@@ -218,43 +237,57 @@ function calculatePersonalWealth(
             yearGDP = calculateGDP(yearGDP, gdpGrowthRate);
         }
 
+        let wealthAtStartOfYear = wealth;
+        let totalIncome = 0;
+        let totalInvestmentGains = 0;
+
         if (isPreAGI) {
             // Pre-AGI: Add monthly contributions and apply monthly growth
-            let wealthAtStartOfYear = wealth;
             for (let month = 0; month < 12; month++) {
+                // Add monthly contribution
                 wealth += monthlyAddition;
-                wealth *= (1 + monthlyInvestmentReturn);
-            }
-            // Apply donation/tax if applicable (on the increase in wealth)
-            if (isDonating) {
-                const wealthIncrease = wealth - wealthAtStartOfYear;
-                wealth -= wealthIncrease * (donationPercent / 100);
+                totalIncome += monthlyAddition;
+
+                // Calculate investment gains
+                const investmentGains = wealth * monthlyInvestmentReturn;
+                wealth += investmentGains;
+                totalInvestmentGains += investmentGains;
+
+                // Adjust for inflation
+                wealth /= (1 + monthlyInflation);
             }
         } else {
             // Post-AGI: Apply monthly withdrawals and growth
-            let wealthAtStartOfYear = wealth;
-
             // Calculate UBI for the current year if it's established
-            const ubiAmount = isUBIEstablished ? calculateUBI(yearGDP, donationPercent, parseFloat(donatingPopulation.value), y) : 0;
+            const ubiAmount = isUBIEstablished ? calculateUBI(yearGDP, taxPercent, y) : 0;
             const monthlyUBI = ubiAmount / 12;
 
             for (let month = 0; month < 12; month++) {
-                // Add monthly UBI income and subtract monthly withdrawal
+                // Add monthly UBI income
                 wealth += monthlyUBI;
+                totalIncome += monthlyUBI;
+
+                // Subtract monthly withdrawal
                 if (wealth > monthlyWithdrawal) {
                     wealth -= monthlyWithdrawal;
                 } else {
                     wealth = 0;
                 }
-                wealth *= (1 + monthlyInvestmentReturn);
-                wealth /= (1 + monthlyInflation); // Adjust for inflation
-            }
-            // Apply donation/tax if applicable (on the increase in wealth)
-            if (isDonating) {
-                const wealthIncrease = wealth - wealthAtStartOfYear;
-                wealth -= wealthIncrease * (donationPercent / 100);
+
+                // Calculate investment gains
+                const investmentGains = wealth * monthlyInvestmentReturn;
+                wealth += investmentGains;
+                totalInvestmentGains += investmentGains;
+
+                // Adjust for inflation
+                wealth /= (1 + monthlyInflation);
             }
         }
+
+        // Apply tax on total income and investment gains
+        const totalTaxableIncome = totalIncome + totalInvestmentGains;
+        const taxOwed = totalTaxableIncome * (taxPercent / 100);
+        wealth -= taxOwed;
     }
 
     return wealth;
@@ -269,10 +302,12 @@ function calculatePopulation(year) {
 }
 
 // Calculate UBI for a given year
-function calculateUBI(gdp, donationPercent, donatingPopulationPercent, year) {
-    const totalDonations = gdp * (donationPercent / 100) * (donatingPopulationPercent / 100);
+function calculateUBI(gdp, taxPercent, year) {
+    const totalTaxes = gdp * (taxPercent / 100);
     const currentPopulation = calculatePopulation(year);
-    return totalDonations / currentPopulation;
+    const donatingPopulationPercent = parseFloat(donatingPopulation.value);
+    const effectivePopulation = currentPopulation * (donatingPopulationPercent / 100);
+    return totalTaxes / effectivePopulation;
 }
 
 // Calculate GDP growth
@@ -400,8 +435,22 @@ function updateChart(years, ubiAmounts, ubiAmountsAdjusted, personalWealth) {
                         afterBody: function(context) {
                             const year = parseInt(context[0].label);
                             const yearsFromNow = year - CURRENT_YEAR;
-                            const inflation = parseFloat(inflationRatePreAGI.value);
-                            const inflationFactor = Math.pow(1 + inflation/100, yearsFromNow);
+                            const yearsUntilAGI = parseInt(yearsToAGI.value);
+                            const isPreAGI = year < CURRENT_YEAR + yearsUntilAGI;
+
+                            // Calculate inflation factor properly accounting for both periods
+                            let inflationFactor;
+                            if (isPreAGI) {
+                                // Only pre-AGI inflation
+                                inflationFactor = Math.pow(1 + parseFloat(inflationRatePreAGI.value)/100, yearsFromNow);
+                            } else {
+                                // Pre-AGI inflation for yearsUntilAGI years, then post-AGI inflation for remaining years
+                                const preAGIInflation = Math.pow(1 + parseFloat(inflationRatePreAGI.value)/100, yearsUntilAGI);
+                                const postAGIYears = yearsFromNow - yearsUntilAGI;
+                                const postAGIInflation = Math.pow(1 + parseFloat(inflationRatePostAGI.value)/100, postAGIYears);
+                                inflationFactor = preAGIInflation * postAGIInflation;
+                            }
+
                             return `Inflation factor: ${inflationFactor.toFixed(2)}x`;
                         }
                     }
