@@ -161,10 +161,40 @@
 
             <div>
               <div class="flex justify-between items-center mb-1">
-                <label class="text-sm font-medium text-gray-700">Annual inflation rate</label>
-                <span id="inflationRateValue" class="text-sm font-medium text-gray-900">4%</span>
+                <label class="text-sm font-medium text-gray-700">
+                  Annual inflation rate until AGI
+                </label>
+                <span id="inflationRatePreAGIValue" class="text-sm font-medium text-gray-900">
+                  4%
+                </span>
               </div>
-              <input type="range" id="inflationRate" min="0" max="10" value="4" class="w-full" />
+              <input
+                type="range"
+                id="inflationRatePreAGI"
+                min="0"
+                max="10"
+                value="4"
+                class="w-full"
+              />
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-sm font-medium text-gray-700">
+                  Annual inflation rate after AGI
+                </label>
+                <span id="inflationRatePostAGIValue" class="text-sm font-medium text-gray-900">
+                  4%
+                </span>
+              </div>
+              <input
+                type="range"
+                id="inflationRatePostAGI"
+                min="0"
+                max="10"
+                value="4"
+                class="w-full"
+              />
             </div>
 
             <div>
