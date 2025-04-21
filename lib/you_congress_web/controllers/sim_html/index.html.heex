@@ -281,18 +281,37 @@
             <div>
               <div class="flex justify-between items-center mb-1">
                 <label class="text-sm font-medium text-gray-700">
-                  Annual World GDP growth after AGI
+                  World GDP growth the first 10 years after AGI
                 </label>
                 <span id="gdpGrowthPostAGIValue" class="text-sm font-medium text-gray-900">
-                  30%
+                  7%
                 </span>
               </div>
               <input
                 type="range"
                 id="gdpGrowthPostAGI"
                 min="0"
-                max="50"
-                value="30"
+                max="100"
+                value="7"
+                class="w-full"
+              />
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-sm font-medium text-gray-700">
+                  World GDP growth from year 10 to 2100
+                </label>
+                <span id="gdpGrowthLongTermValue" class="text-sm font-medium text-gray-900">
+                  30%
+                </span>
+              </div>
+              <input
+                type="range"
+                id="gdpGrowthLongTerm"
+                min="0"
+                max="100"
+                value="10"
                 class="w-full"
               />
             </div>
