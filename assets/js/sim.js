@@ -20,8 +20,10 @@ const gdpGrowthPreAGI = document.getElementById('gdpGrowthPreAGI');
 const gdpGrowthPreAGIValue = document.getElementById('gdpGrowthPreAGIValue');
 const gdpGrowthPostAGI = document.getElementById('gdpGrowthPostAGI');
 const gdpGrowthPostAGIValue = document.getElementById('gdpGrowthPostAGIValue');
-const inflationRate = document.getElementById('inflationRate');
-const inflationRateValue = document.getElementById('inflationRateValue');
+const inflationRatePreAGI = document.getElementById('inflationRatePreAGI');
+const inflationRatePreAGIValue = document.getElementById('inflationRatePreAGIValue');
+const inflationRatePostAGI = document.getElementById('inflationRatePostAGI');
+const inflationRatePostAGIValue = document.getElementById('inflationRatePostAGIValue');
 const currentInvestment = document.getElementById('currentInvestment');
 const currentInvestmentValue = document.getElementById('currentInvestmentValue');
 const monthlyAddition = document.getElementById('monthlyAddition');
@@ -43,7 +45,8 @@ function calculate() {
     const yearsUntilAGI = parseInt(yearsToAGI.value);
     const preAGIGrowth = parseFloat(gdpGrowthPreAGI.value);
     const postAGIGrowth = parseFloat(gdpGrowthPostAGI.value);
-    const inflation = parseFloat(inflationRate.value);
+    const inflationPreAGI = parseFloat(inflationRatePreAGI.value);
+    const inflationPostAGI = parseFloat(inflationRatePostAGI.value);
     const initialInvestment = parseFloat(currentInvestment.value);
     const monthlyAdditionAmount = parseFloat(monthlyAddition.value);
     const monthlyWithdrawalAmount = parseFloat(monthlyWithdrawal.value);
@@ -58,14 +61,25 @@ function calculate() {
     for (let year = CURRENT_YEAR; year <= FINAL_YEAR; year++) {
         const isPreAGI = year < CURRENT_YEAR + yearsUntilAGI;
         const growthRate = isPreAGI ? preAGIGrowth : postAGIGrowth;
+        const inflationRate = isPreAGI ? inflationPreAGI : inflationPostAGI;
 
         currentGDP = calculateGDP(currentGDP, growthRate);
         const ubi = calculateUBI(currentGDP, donationPercent, donatingPopulationPercent, year);
-        const wealth = calculatePersonalWealth(initialInvestment, monthlyAdditionAmount, monthlyWithdrawalAmount, year, preAGIGrowth, postAGIGrowth, yearsUntilAGI, isDonatingChecked, donationPercent);
+        const wealth = calculatePersonalWealth(
+            initialInvestment,
+            monthlyAdditionAmount,
+            monthlyWithdrawalAmount,
+            year,
+            preAGIGrowth,
+            postAGIGrowth,
+            yearsUntilAGI,
+            isDonatingChecked,
+            donationPercent
+        );
 
         // Calculate inflation-adjusted UBI
         const yearsFromNow = year - CURRENT_YEAR;
-        const inflationFactor = Math.pow(1 + inflation/100, yearsFromNow);
+        const inflationFactor = Math.pow(1 + inflationRate/100, yearsFromNow);
         const ubiAdjusted = ubi / inflationFactor;
 
         years.push(year);
@@ -112,8 +126,12 @@ gdpGrowthPostAGI.addEventListener('input', () => {
     updateSliderValue(gdpGrowthPostAGI, gdpGrowthPostAGIValue);
 });
 
-inflationRate.addEventListener('input', () => {
-    updateSliderValue(inflationRate, inflationRateValue);
+inflationRatePreAGI.addEventListener('input', () => {
+    updateSliderValue(inflationRatePreAGI, inflationRatePreAGIValue);
+});
+
+inflationRatePostAGI.addEventListener('input', () => {
+    updateSliderValue(inflationRatePostAGI, inflationRatePostAGIValue);
 });
 
 currentInvestment.addEventListener('input', () => {
@@ -136,20 +154,7 @@ profitabilityPostAGI.addEventListener('input', () => {
     updateSliderValue(profitabilityPostAGI, profitabilityPostAGIValue);
 });
 
-isDonating.addEventListener('change', () => {
-    calculate();
-});
-
-// Calculate personal wealth for a given year
-function calculatePersonalWealth(initialInvestment, monthlyAddition, monthlyWithdrawal, year, preAGIGrowth, postAGIGrowth, yearsUntilAGI, isDonating, donationPercent) {
-    const agiYear = CURRENT_YEAR + yearsUntilAGI;
-    let wealth = initialInvestment;
-
-    for (let y = CURRENT_YEAR; y < year; y++) {
-        const isPreAGI = y < agiYear;
-        const growthRate = isPreAGI ? preAGIGrowth : postAGIGrowth;
-        const investmentReturn = isPreAGI ? parseFloat(profitabilityPreAGI.value) : parseFloat(profitabilityPostAGI.value);
-        const monthlyInvestmentReturn = Math.pow(1 + investmentReturn/100, 1/12) - 1;
+isDonating.addEventListener(        const monthlyInvestmentReturn = Math.pow(1 + investmentReturn/100, 1/12) - 1;
 
         // Calculate GDP for the current year for UBI calculation
         let yearGDP = INITIAL_GDP;
@@ -188,6 +193,28 @@ function calculatePersonalWealth(initialInvestment, monthlyAddition, monthlyWith
                     wealth = 0;
                 }
                 wealth *= (1 + monthlyInvestmentReturn);
+ing) {
+                const wealthIncrease = wealth - wealthAtStartOfYear;
+                wealth -= wealthIncrease * (donationPercent / 100);
+            }
+        } else {
+            // Post-AGI: Apply monthly withdrawals and growth
+            let wealthAtStartOfYear = wealth;
+
+            // Calculate UBI for the current year
+            const ubiAmount = calculateUBI(yearGDP, donationPercent, parseFloat(donatingPopulation.value), y);
+            const monthlyUBI = ubiAmount / 12;
+
+            for (let month = 0; month < 12; month++) {
+                // Add monthly UBI income and subtract monthly withdrawal
+                wealth += monthlyUBI;
+                if (wealth > monthlyWithdrawal) {
+                    wealth -= monthlyWithdrawal;
+                } else {
+                    wealth = 0;
+                }
+                wealth *= (1 + monthlyInvestmentReturn);
+                wealth /= (1 + monthlyInflation); // Adjust for inflation
             }
             // Apply donation/tax if applicable (on the increase in wealth)
             if (isDonating) {
@@ -340,7 +367,7 @@ function updateChart(years, ubiAmounts, ubiAmountsAdjusted, personalWealth) {
                         afterBody: function(context) {
                             const year = parseInt(context[0].label);
                             const yearsFromNow = year - CURRENT_YEAR;
-                            const inflation = parseFloat(inflationRate.value);
+                            const inflation = parseFloat(inflationRatePreAGI.value);
                             const inflationFactor = Math.pow(1 + inflation/100, yearsFromNow);
                             return `Inflation factor: ${inflationFactor.toFixed(2)}x`;
                         }
