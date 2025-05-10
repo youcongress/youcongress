@@ -24,6 +24,9 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
           <h3 class="text-lg font-semibold text-gray-900 mb-2">
             What solution or problem would you like us to analyze and vote on?
           </h3>
+          <p class="text-sm text-orange-600 mb-4">
+            AI-generated opinions of public figures will be added automatically.
+          </p>
           <p class="text-sm text-gray-600 mb-4">
             Your prompt will be reviewed by AI to ensure clarity and offer you three suggestions before publishing.
             <span class="text-indigo-600">No login required!</span>
