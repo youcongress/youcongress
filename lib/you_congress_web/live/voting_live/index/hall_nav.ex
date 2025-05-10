@@ -97,30 +97,30 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
           </div>
         </nav>
         <nav class="flex space-x-4 md:hidden pt-4">
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="climate-change"
-              hall_link={~p"/halls/climate-change"}
-              hall_title="Climate Change"
-            />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="housing"
-              hall_link={~p"/halls/housing"}
-              hall_title="Housing"
-            />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="eu"
-              hall_link={~p"/halls/eu"}
-              hall_title="EU"
-            />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="us"
-              hall_link={~p"/halls/us"}
-              hall_title="US"
-            />
+          <HallNav.tab
+            url_hall_name={@hall_name}
+            hall_name="climate-change"
+            hall_link={~p"/halls/climate-change"}
+            hall_title="Climate Change"
+          />
+          <HallNav.tab
+            url_hall_name={@hall_name}
+            hall_name="housing"
+            hall_link={~p"/halls/housing"}
+            hall_title="Housing"
+          />
+          <HallNav.tab
+            url_hall_name={@hall_name}
+            hall_name="eu"
+            hall_link={~p"/halls/eu"}
+            hall_title="EU"
+          />
+          <HallNav.tab
+            url_hall_name={@hall_name}
+            hall_name="us"
+            hall_link={~p"/halls/us"}
+            hall_title="US"
+          />
 
           <HallNav.tab
             url_hall_name={@hall_name}

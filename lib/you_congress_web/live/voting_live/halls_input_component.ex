@@ -135,13 +135,22 @@ defmodule YouCongressWeb.VotingLive.HallsInputComponent do
     {:noreply, assign(socket, :selected_index, new_index)}
   end
 
-  def handle_event("handle_key", %{"key" => "Enter"}, %{assigns: %{matches: [], typed_value: typed_value}} = socket) do
+  def handle_event(
+        "handle_key",
+        %{"key" => "Enter"},
+        %{assigns: %{matches: [], typed_value: typed_value}} = socket
+      ) do
     {:noreply, add_hall(socket, typed_value)}
   end
 
-  def handle_event("handle_key", %{"key" => "Enter"}, %{assigns: %{matches: matches, selected_index: index}} = socket) do
+  def handle_event(
+        "handle_key",
+        %{"key" => "Enter"},
+        %{assigns: %{matches: matches, selected_index: index}} = socket
+      ) do
     if index >= 0 and index < length(matches) do
       {name, _} = Enum.at(matches, index)
+
       socket =
         socket
         |> add_hall(name)
@@ -177,14 +186,19 @@ defmodule YouCongressWeb.VotingLive.HallsInputComponent do
 
   defp get_selected_halls(form) do
     values = Phoenix.HTML.Form.input_value(form, :halls)
+
     case values do
       halls when is_list(halls) ->
         Enum.map(halls, fn
           %{name: name} -> name
           name when is_binary(name) -> name
         end)
-      %Ecto.Association.NotLoaded{} -> []
-      nil -> []
+
+      %Ecto.Association.NotLoaded{} ->
+        []
+
+      nil ->
+        []
     end
   end
 
