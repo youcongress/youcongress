@@ -23,6 +23,7 @@ defmodule YouCongressWeb.Router do
 
     get("/sim", SimController, :index)
     live("/activity", ActivityLive.Index, :index)
+    live("/home", VotingLive.Index, :index)
     live("/p/:slug", VotingLive.Show, :show)
     live("/a/:id", AuthorLive.Show, :show)
     live("/x/:twitter_username", AuthorLive.Show, :show)
@@ -62,8 +63,6 @@ defmodule YouCongressWeb.Router do
 
   scope "/", YouCongressWeb do
     pipe_through([:browser, :require_authenticated_user])
-
-    live("/home", VotingLive.Index, :index)
 
     live("/welcome", WelcomeLive.Index, :index)
     live("/p/:slug/add-quote", VotingLive.AddQuote, :add_quote)
