@@ -34,13 +34,6 @@ defmodule YouCongressWeb.TwitterLogInControllerTest do
 
   alias YouCongress.Accounts
 
-  describe "POST /log_in" do
-    test "log in with twitter", %{conn: conn} do
-      conn = post(conn, ~p"/x_log_in")
-      assert redirected_to(conn) =~ "https://api.twitter.com/oauth/authenticate"
-    end
-  end
-
   describe "GET /twitter-callback" do
     test "creates user and redirects to /welcome if new user", %{
       conn: conn

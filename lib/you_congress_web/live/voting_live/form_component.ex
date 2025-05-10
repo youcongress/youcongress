@@ -21,11 +21,7 @@ defmodule YouCongressWeb.VotingLive.FormComponent do
         phx-submit="save"
       >
         <.input field={@form[:title]} type="text" label="Title" />
-        <.live_component
-          module={HallsInputComponent}
-          id="halls-input"
-          form={@form}
-        />
+        <.live_component module={HallsInputComponent} id="halls-input" form={@form} />
         <:actions>
           <.button phx-disable-with="Saving...">Save Voting</.button>
 

@@ -136,7 +136,8 @@ defmodule YouCongress.Votes do
     twin_options = Keyword.get(opts, :twin_options, [true, false])
     answer_id = Keyword.get(opts, :answer_id)
 
-    base_query = Vote
+    base_query =
+      Vote
       |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
       |> join(:inner, [v, a], o in YouCongress.Opinions.Opinion, on: v.opinion_id == o.id)
       |> where(
@@ -146,12 +147,13 @@ defmodule YouCongress.Votes do
           v.twin in ^twin_options
       )
 
-    query = if answer_id do
-      base_query
-      |> where([v, a, o], v.answer_id == ^answer_id)
-    else
-      base_query
-    end
+    query =
+      if answer_id do
+        base_query
+        |> where([v, a, o], v.answer_id == ^answer_id)
+      else
+        base_query
+      end
 
     query
     |> order_by([v, a, o], [
@@ -178,7 +180,8 @@ defmodule YouCongress.Votes do
     twin_options = Keyword.get(opts, :twin_options, [true, false])
     answer_filter = Keyword.get(opts, :answer_filter)
 
-    base_query = Vote
+    base_query =
+      Vote
       |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
       |> where(
         [v, a],
@@ -186,13 +189,16 @@ defmodule YouCongress.Votes do
           v.twin in ^twin_options
       )
 
-    query = if answer_filter do
-      base_query
-      |> join(:inner, [v, a], ans in YouCongress.Votes.Answers.Answer, on: v.answer_id == ans.id)
-      |> where([v, a, ans], ans.response == ^answer_filter)
-    else
-      base_query
-    end
+    query =
+      if answer_filter do
+        base_query
+        |> join(:inner, [v, a], ans in YouCongress.Votes.Answers.Answer,
+          on: v.answer_id == ans.id
+        )
+        |> where([v, a, ans], ans.response == ^answer_filter)
+      else
+        base_query
+      end
 
     query
     |> preload(^include_tables)
@@ -404,13 +410,19 @@ defmodule YouCongress.Votes do
     has_opinion_id = Keyword.get(opts, :has_opinion_id, nil)
     twin = Keyword.get(opts, :twin)
 
-    query = from(v in Vote,
-      join: a in assoc(v, :answer),
-      where: v.voting_id == ^voting_id,
-      group_by: a.response,
-      select: {a.response, count(a.response)}
-    )
-    query = if has_opinion_id, do: from(v in query, where: is_nil(v.opinion_id) != ^has_opinion_id), else: query
+    query =
+      from(v in Vote,
+        join: a in assoc(v, :answer),
+        where: v.voting_id == ^voting_id,
+        group_by: a.response,
+        select: {a.response, count(a.response)}
+      )
+
+    query =
+      if has_opinion_id,
+        do: from(v in query, where: is_nil(v.opinion_id) != ^has_opinion_id),
+        else: query
+
     query = if not is_nil(twin), do: from(v in query, where: v.twin == ^twin), else: query
 
     query
@@ -422,39 +434,38 @@ defmodule YouCongress.Votes do
     |> Enum.into(%{})
   end
 
+  def count_by(opts) when is_list(opts) do
+    base_query = from(v in Vote, select: count(v.id))
 
-def count_by(opts) when is_list(opts) do
-  base_query = from(v in Vote, select: count(v.id))
+    Enum.reduce(
+      opts,
+      base_query,
+      fn
+        {:voting_id, voting_id}, query ->
+          where(query, [v], v.voting_id == ^voting_id)
 
-  Enum.reduce(
-    opts,
-    base_query,
-    fn
-      {:voting_id, voting_id}, query ->
-        where(query, [v], v.voting_id == ^voting_id)
+        {:twin, twin}, query ->
+          where(query, [v], v.twin == ^twin)
 
-      {:twin, twin}, query ->
-        where(query, [v], v.twin == ^twin)
+        {:direct, direct}, query ->
+          where(query, [v], v.direct == ^direct)
 
-      {:direct, direct}, query ->
-        where(query, [v], v.direct == ^direct)
+        {:has_opinion_id, has_opinion_id}, query ->
+          if has_opinion_id do
+            where(query, [v], not is_nil(v.opinion_id))
+          else
+            where(query, [v], is_nil(v.opinion_id))
+          end
 
-      {:has_opinion_id, has_opinion_id}, query ->
-        if has_opinion_id do
-          where(query, [v], not is_nil(v.opinion_id))
-        else
-          where(query, [v], is_nil(v.opinion_id))
-        end
+        {:answer_id, answer_id}, query ->
+          where(query, [v], v.answer_id == ^answer_id)
 
-      {:answer_id, answer_id}, query ->
-        where(query, [v], v.answer_id == ^answer_id)
-
-      _, query ->
-        query
-    end
-  )
-  |> Repo.one()
-end
+        _, query ->
+          query
+      end
+    )
+    |> Repo.one()
+  end
 
   def get_current_user_vote(voting_id, author_id) do
     Vote

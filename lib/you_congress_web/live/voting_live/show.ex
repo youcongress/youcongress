@@ -256,7 +256,9 @@ defmodule YouCongressWeb.VotingLive.Show do
         {acc_halls ++ [{hall, votings}], new_exclude_ids}
       end)
 
-    random_votings_by_hall = Enum.reject(random_votings_by_hall, fn {_hall, votings} -> Enum.empty?(votings) end)
+    random_votings_by_hall =
+      Enum.reject(random_votings_by_hall, fn {_hall, votings} -> Enum.empty?(votings) end)
+
     assign(socket, :random_votings_by_hall, random_votings_by_hall)
   end
 end
