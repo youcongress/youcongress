@@ -20,7 +20,7 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             <HallNav.tab url_hall_name={@hall_name} hall_name="ai" hall_link={~p"/"} hall_title="AI" />
           </div>
           <div class="hidden md:block pt-1 space-x-8">
-            <%= if @hall_name not in ["ai", "global-ai-governance", "future-of-work", "climate-change", "housing", "us", "eu", "all"] do %>
+            <%= if @hall_name not in ["ai", "ai-governance", "future-of-work", "climate-change", "housing", "us", "eu", "all"] do %>
               <HallNav.tab
                 url_hall_name={@hall_name}
                 hall_name={@hall_name}
@@ -30,8 +30,8 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             <% else %>
               <HallNav.tab
                 url_hall_name={@hall_name}
-                hall_name="global-ai-governance"
-                hall_link={~p"/halls/global-ai-governance"}
+                hall_name="ai-governance"
+                hall_link={~p"/halls/ai-governance"}
                 hall_title="AI governance"
               />
             <% end %>
@@ -73,7 +73,7 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             />
           </div>
           <div class="space-x-8 md:hidden pt-1">
-            <%= if @hall_name not in ["ai", "public-interest-ai", "future-of-work", "ai-innovation-and-culture", "trust-in-ai", "global-ai-governance", "all"] do %>
+            <%= if @hall_name not in ["ai", "public-interest-ai", "future-of-work", "ai-innovation-and-culture", "trust-in-ai", "ai-governance", "all"] do %>
               <HallNav.tab
                 url_hall_name={@hall_name}
                 hall_name={@hall_name}
@@ -83,8 +83,8 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             <% else %>
               <HallNav.tab
                 url_hall_name={@hall_name}
-                hall_name="global-ai-governance"
-                hall_link={~p"/halls/global-ai-governance"}
+                hall_name="ai-governance"
+                hall_link={~p"/halls/ai-governance"}
                 hall_title="AI governance"
               />
             <% end %>
