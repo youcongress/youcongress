@@ -89,7 +89,7 @@ defmodule YouCongress.Halls.Hall do
     "future-of-work",
     "ai-innovation-and-culture",
     "trust-in-ai",
-    "global-ai-governance"
+    "ai-governance"
   ]
   @names_str Enum.join(@names, ",")
 
