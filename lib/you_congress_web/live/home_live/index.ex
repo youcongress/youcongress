@@ -11,8 +11,9 @@ defmodule YouCongressWeb.HomeLive.Index do
       |> assign(:page_title, "Finding Solutions to Our Most Important Problems")
       |> assign(:live_action, :new)
       |> assign(:current_user, nil)
+      |> assign(:page, :home)
 
-    {:ok, socket, layout: false}
+    {:ok, socket}
   end
 
   @impl true
