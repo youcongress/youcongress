@@ -11,7 +11,6 @@ defmodule YouCongressWeb.Router do
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)
     plug(:fetch_current_user)
-    plug(:redirect_to_user_registration_if_email_or_phone_unconfirmed)
   end
 
   pipeline :api do
@@ -95,9 +94,13 @@ defmodule YouCongressWeb.Router do
   ## Authentication routes
 
   scope "/", YouCongressWeb do
-    pipe_through([:browser, :redirect_if_user_is_authenticated])
+    pipe_through([:browser, :redirect_home_if_user_is_authenticated])
 
     live("/", HomeLive.Index, :index)
+  end
+
+  scope "/", YouCongressWeb do
+    pipe_through([:browser, :redirect_if_user_is_authenticated])
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{YouCongressWeb.UserAuth, :redirect_if_user_is_authenticated}] do
