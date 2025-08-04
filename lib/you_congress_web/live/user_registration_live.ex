@@ -62,14 +62,10 @@ defmodule YouCongressWeb.UserRegistrationLive do
       <% end %>
 
       <%= if @step == :enter_mobile_phone do %>
-        <.header class="text-center">
+        <.header class="text-center text-xs">
           Enter your mobile phone number
           <:subtitle>
-            We'll also need to verify your phone number
-            <ul class="text-xs">
-              <li>To help us mitigate spam and abuse.</li>
-              <li>Also, to prevent many votes from the same person in a single poll.</li>
-            </ul>
+            This verification helps us mitigate spam and abuse.
           </:subtitle>
         </.header>
 
@@ -98,6 +94,12 @@ defmodule YouCongressWeb.UserRegistrationLive do
             </.button>
           </:actions>
         </.simple_form>
+
+        <div class="mt-4 text-center">
+          <.link navigate={~p"/welcome"} class="text-sm text-gray-600 hover:text-gray-800 underline">
+            Skip for now
+          </.link>
+        </div>
       <% end %>
 
       <%= if @step == :validate_phone do %>
@@ -137,6 +139,10 @@ defmodule YouCongressWeb.UserRegistrationLive do
         <div class="mt-4 text-center">
           <.link href="#" phx-click="resend_phone_code" class="text-sm text-blue-600 hover:underline">
             Change phone number or/and resend code
+          </.link>
+          <span class="mx-2 text-gray-400">|</span>
+          <.link navigate={~p"/welcome"} class="text-sm text-gray-600 hover:text-gray-800 underline">
+            Skip for now
           </.link>
         </div>
       <% end %>

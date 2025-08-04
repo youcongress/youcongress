@@ -9,7 +9,7 @@ defmodule YouCongressWeb.UserConfirmationController do
       {:ok, user} ->
         conn
         |> UserAuth.log_in_user_without_redirect(user)
-        |> redirect(to: ~p"/")
+        |> redirect(to: ~p"/sign_up")
 
       :error ->
         conn

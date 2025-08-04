@@ -5,12 +5,15 @@ defmodule YouCongressWeb.HomeLive.Index do
   alias YouCongressWeb.VotingLive.NewFormComponent
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    socket = assign_current_user(socket, session["user_token"])
+    current_user = socket.assigns.current_user
+
     socket =
       socket
       |> assign(:page_title, "Finding Solutions to Our Most Important Problems")
       |> assign(:live_action, :new)
-      |> assign(:current_user, nil)
+      |> assign(:current_user, current_user)
       |> assign(:page, :home)
 
     {:ok, socket}
