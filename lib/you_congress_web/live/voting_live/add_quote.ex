@@ -143,16 +143,9 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
       author ->
         voting = socket.assigns.voting
 
-        {:noreply,
-         if author.twitter_username do
-           push_patch(socket,
-             to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
-           )
-         else
-           push_patch(socket,
-             to: ~p"/p/#{voting.slug}/add-quote?wikipedia_url=#{author.wikipedia_url}"
-           )
-         end}
+        url = add_quote_url(voting, author)
+
+        {:noreply, push_patch(socket, to: url)}
     end
   end
 
