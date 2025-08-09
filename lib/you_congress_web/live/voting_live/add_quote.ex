@@ -29,15 +29,25 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
     voting = Votings.get_by!(slug: slug)
 
     twitter_username = params["twitter_username"]
+    wikipedia_url = params["wikipedia_url"]
+    author_id = params["a"]
 
-    case Authors.get_author_by_twitter_username(twitter_username) do
+    author =
+      cond do
+        twitter_username -> Authors.get_author_by(twitter_username: twitter_username)
+        wikipedia_url -> Authors.get_author_by(wikipedia_url: wikipedia_url)
+        author_id -> Authors.get_author!(author_id)
+        true -> nil
+      end
+
+    case author do
       nil ->
         form =
           to_form(%{
             "twitter_username" => nil,
+            "wikipedia_url" => nil,
             "name" => nil,
             "bio" => nil,
-            "wikipedia_url" => nil,
             "agree_rate" => nil,
             "opinion" => nil,
             "source_url" => nil
@@ -51,9 +61,9 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
            errors: nil,
            author: nil,
            twitter_username: nil,
+           wikipedia_url: nil,
            name: nil,
-           bio: nil,
-           wikipedia_url: nil
+           bio: nil
          )}
 
       author ->
@@ -73,10 +83,10 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
             agree_rate_options: Answers.basic_responses(),
             errors: nil,
             author: author,
-            twitter_username: twitter_username,
+            twitter_username: author.twitter_username,
+            wikipedia_url: author.wikipedia_url,
             name: nil,
-            bio: nil,
-            wikipedia_url: nil
+            bio: nil
           )
 
         {:noreply, socket}
@@ -94,27 +104,55 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
   def handle_event(
         "add-author",
         %{"twitter_username" => "@" <> twitter_username} = params,
-        %{assigns: %{twitter_username: nil}} = socket
+        %{assigns: %{twitter_username: nil, wikipedia_url: nil}} = socket
       ) do
     params = Map.put(params, "twitter_username", twitter_username)
     handle_event("add-author", params, socket)
   end
 
-  def handle_event("add-author", params, %{assigns: %{twitter_username: nil}} = socket) do
+  def handle_event(
+        "add-author",
+        params,
+        %{assigns: %{twitter_username: nil, wikipedia_url: nil}} = socket
+      ) do
     twitter_username = params["twitter_username"]
+    wikipedia_url = params["wikipedia_url"]
 
-    case Authors.get_author_by_twitter_username(twitter_username) do
+    author =
+      cond do
+        twitter_username && twitter_username != "" ->
+          Authors.get_author_by(twitter_username: twitter_username)
+
+        wikipedia_url && wikipedia_url != "" ->
+          Authors.get_author_by(wikipedia_url: wikipedia_url)
+
+        true ->
+          nil
+      end
+
+    case author do
       nil ->
-        socket = assign(socket, twitter_username: twitter_username)
+        socket =
+          assign(socket,
+            twitter_username: twitter_username,
+            wikipedia_url: wikipedia_url
+          )
+
         {:noreply, put_flash(socket, :info, "Author not found. Please fill the form.")}
 
       author ->
         voting = socket.assigns.voting
 
         {:noreply,
-         push_patch(socket,
-           to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
-         )}
+         if author.twitter_username do
+           push_patch(socket,
+             to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
+           )
+         else
+           push_patch(socket,
+             to: ~p"/p/#{voting.slug}/add-quote?wikipedia_url=#{author.wikipedia_url}"
+           )
+         end}
     end
   end
 
@@ -132,11 +170,12 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
       {:ok, author} ->
         voting = socket.assigns.voting
 
+        url = add_quote_url(voting, author)
+
         socket =
           socket
-          |> push_patch(
-            to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
-          )
+          |> push_patch(to: url)
+          |> assign(:author, author)
           |> put_flash(:info, "Author created.")
 
         {:noreply, socket}
@@ -201,12 +240,12 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
            }) do
       Track.event("Add Quote", current_user)
 
+      url = add_quote_url(voting, author)
+
       socket =
         socket
         |> put_flash(:info, "Quote added.")
-        |> redirect(
-          to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
-        )
+        |> redirect(to: url)
 
       {:noreply, socket}
     else
@@ -244,12 +283,12 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
            }) do
       Track.event("Add Quote", current_user)
 
+      url = add_quote_url(voting, author)
+
       socket =
         socket
         |> put_flash(:info, "Quote added.")
-        |> redirect(
-          to: ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
-        )
+        |> redirect(to: url)
 
       {:noreply, socket}
     else
@@ -261,6 +300,19 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
 
         {:noreply,
          socket |> put_flash(:error, "Error. Please try again") |> assign(:errors, error_message)}
+    end
+  end
+
+  defp add_quote_url(voting, author) do
+    cond do
+      !is_nil(author.twitter_username) ->
+        ~p"/p/#{voting.slug}/add-quote?twitter_username=#{author.twitter_username}"
+
+      !is_nil(author.wikipedia_url) ->
+        ~p"/p/#{voting.slug}/add-quote?wikipedia_url=#{author.wikipedia_url}"
+
+      true ->
+        ~p"/p/#{voting.slug}/add-quote?a=#{author.id}"
     end
   end
 end
