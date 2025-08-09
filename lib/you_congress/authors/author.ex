@@ -71,14 +71,27 @@ defmodule YouCongress.Authors.Author do
         changeset
 
       wikipedia_url ->
-        if starts_with_http(wikipedia_url) do
-          changeset
-        else
-          add_error(changeset, :wikipedia_url, "is not a valid URL")
+        cond do
+          not starts_with_https(wikipedia_url) ->
+            add_error(changeset, :wikipedia_url, "must start with https://")
+
+          not contains_wikipedia_wiki(wikipedia_url) ->
+            add_error(
+              changeset,
+              :wikipedia_url,
+              "must be a valid Wikipedia URL containing '.wikipedia.org/wiki/'"
+            )
+
+          true ->
+            changeset
         end
     end
   end
 
-  defp starts_with_http("http" <> _), do: true
-  defp starts_with_http(_), do: false
+  defp starts_with_https("https://" <> _), do: true
+  defp starts_with_https(_), do: false
+
+  defp contains_wikipedia_wiki(url) do
+    String.contains?(url, ".wikipedia.org/wiki/")
+  end
 end

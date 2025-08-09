@@ -103,15 +103,6 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
 
   def handle_event(
         "add-author",
-        %{"twitter_username" => "@" <> twitter_username} = params,
-        %{assigns: %{twitter_username: nil, wikipedia_url: nil}} = socket
-      ) do
-    params = Map.put(params, "twitter_username", twitter_username)
-    handle_event("add-author", params, socket)
-  end
-
-  def handle_event(
-        "add-author",
         params,
         %{assigns: %{twitter_username: nil, wikipedia_url: nil}} = socket
       ) do
@@ -124,7 +115,13 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
           Authors.get_author_by(twitter_username: twitter_username)
 
         wikipedia_url && wikipedia_url != "" ->
-          Authors.get_author_by(wikipedia_url: wikipedia_url)
+          original_wikipedia_url = wikipedia_url
+
+          en_wikipedia_url =
+            String.replace(original_wikipedia_url, ~r/https?:\/\/\w+\./, "https://en.")
+
+          Authors.get_author_by(wikipedia_url: en_wikipedia_url) ||
+            Authors.get_author_by(wikipedia_url: original_wikipedia_url)
 
         true ->
           nil
@@ -145,13 +142,27 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
 
         url = add_quote_url(voting, author)
 
-        {:noreply, push_patch(socket, to: url)}
+        socket =
+          socket
+          |> push_patch(to: url)
+          |> assign(:author, author)
+          |> assign(:wikipedia_url, author.wikipedia_url)
+
+        {:noreply, socket}
     end
   end
 
   def handle_event("add-author", params, socket) do
+    twitter_username =
+      case params["twitter_username"] do
+        "@" <> username -> username
+        "https://x.com/" <> username -> username
+        "https://twitter.com/" <> username -> username
+        username -> username
+      end
+
     args = %{
-      twitter_username: params["twitter_username"],
+      twitter_username: twitter_username,
       name: params["name"],
       bio: params["bio"],
       wikipedia_url: params["wikipedia_url"],

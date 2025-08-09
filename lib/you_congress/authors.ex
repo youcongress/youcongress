@@ -96,13 +96,15 @@ defmodule YouCongress.Authors do
           query
 
         {:wikipedia_url, wikipedia_url}, query ->
-          from a in query, where: a.wikipedia_url == ^wikipedia_url
+          wikipedia_url = String.downcase(wikipedia_url)
+          from a in query, where: fragment("lower(?)", a.wikipedia_url) == ^wikipedia_url
 
         {:twitter_username, nil}, query ->
           query
 
         {:twitter_username, twitter_username}, query ->
-          from a in query, where: ilike(a.twitter_username, ^twitter_username)
+          twitter_username = String.downcase(twitter_username)
+          from a in query, where: fragment("lower(?)", a.twitter_username) == ^twitter_username
 
         _, query ->
           query
