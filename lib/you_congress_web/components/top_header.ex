@@ -22,9 +22,6 @@ defmodule YouCongressWeb.TopHeaderComponent do
           <.link href={~p"/home"} class="px-3 py-2 hover:text-zinc-700 transition-colors">
             Activity
           </.link>
-          <.link href={~p"/polls"} class="px-3 py-2 hover:text-zinc-700 transition-colors">
-            AI polls
-          </.link>
           <.link href={~p"/about"} class="px-3 py-2 hover:text-zinc-700 transition-colors">
             About
           </.link>
