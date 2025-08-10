@@ -36,7 +36,7 @@ defmodule YouCongressWeb.ActivityLive.Index do
 
     socket =
       socket
-      |> assign(:include_opinions_from_twins, true)
+      |> assign(:include_opinions_from_twins, false)
       |> load_opinions_and_votes()
       |> assign(
         page_title: "Activity",

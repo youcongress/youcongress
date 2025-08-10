@@ -20,7 +20,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
 
         <div class="text-sm flex items-center gap-3 leading-6 text-zinc-900">
           <.link href={~p"/home"}>
-            AI polls
+            Recent activity
           </.link>
           <.link href={~p"/about"}>
             About
