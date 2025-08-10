@@ -148,7 +148,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       |> form("form",
         name: "Someone",
         bio: "Someone bio",
-        wikipedia_url: "http://example.com/someone"
+        wikipedia_url: "https://en.wikipedia.org/wiki/Someone"
       )
       |> render_submit()
 
@@ -159,7 +159,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       author = Authors.get_author_by(twitter_username: "someone")
       assert author.name == "Someone"
       assert author.bio == "Someone bio"
-      assert author.wikipedia_url == "http://example.com/someone"
+      assert author.wikipedia_url == "https://en.wikipedia.org/wiki/Someone"
 
       add_quote_live
       |> form("form",

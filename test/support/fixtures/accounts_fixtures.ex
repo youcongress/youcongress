@@ -28,7 +28,7 @@ defmodule YouCongress.AccountsFixtures do
           name: Faker.Person.name(),
           twitter_username: Faker.Internet.user_name(),
           bio: Faker.Lorem.sentence(),
-          wikipedia_url: "https://wikipedia.org/wiki/#{Faker.Internet.user_name()}",
+          wikipedia_url: "https://en.wikipedia.org/wiki/#{Faker.Internet.user_name()}",
           twin_origin: false
         }
 

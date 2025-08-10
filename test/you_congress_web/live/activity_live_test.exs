@@ -40,7 +40,12 @@ defmodule YouCongressWeb.ActivityLiveTest do
           twin: false
         })
 
-      {:ok, index_live, _html} = live(conn, ~p"/activity")
+      {:ok, index_live, _html} = live(conn, ~p"/home")
+
+      # Toggle switch to include AI twins so we can see all opinions
+      index_live
+      |> element("button[phx-click='toggle-switch']")
+      |> render_click()
 
       html = render(index_live)
 
@@ -54,10 +59,10 @@ defmodule YouCongressWeb.ActivityLiveTest do
     test "like icon click changes from heart.svg to filled-heart.svg", %{conn: conn} do
       current_user = user_fixture()
       conn = log_in_user(conn, current_user)
-      voting_fixture()
-      opinion_fixture()
+      voting = voting_fixture()
+      opinion_fixture(%{voting_id: voting.id, twin: false})
 
-      {:ok, view, _html} = live(conn, "/activity")
+      {:ok, view, _html} = live(conn, "/home")
 
       # We have a heart icon
       assert has_element?(view, "img[src='/images/heart.svg']")
