@@ -11,7 +11,10 @@ defmodule YouCongressWeb.HomeLive.Index do
 
     socket =
       socket
-      |> assign(:page_title, "Clarifying Policy via delegation-based polling and expert opinion")
+      |> assign(
+        :page_title,
+        "Clarifying AI-safety policy via delegation-based polling and expert opinion"
+      )
       |> assign(:live_action, :new)
       |> assign(:current_user, current_user)
       |> assign(:page, :home)
