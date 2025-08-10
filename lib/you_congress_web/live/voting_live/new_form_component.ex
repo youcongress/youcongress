@@ -24,8 +24,13 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
           <h3 class="text-lg font-semibold text-gray-900 mb-2">
             What solution or problem would you like us to analyze and vote on?
           </h3>
-          <p class="text-sm text-orange-600 mb-4">
-            AI-generated opinions of public figures will be added automatically.
+          <p class="text-sm mb-4">
+            <span class="text-orange-600">
+              AI-generated opinions of public figures will be added automatically.
+            </span>
+            <span>
+              Then, users will be able to replace them with <strong>real quotes</strong>.
+            </span>
           </p>
           <p class="text-sm text-gray-600 mb-4">
             Your prompt will be reviewed by AI to ensure clarity and offer you three suggestions before publishing.
@@ -36,7 +41,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
               field={@form[:title]}
               type="text"
               maxlength="150"
-              placeholder="e.g., Should we use more nuclear energy?"
+              placeholder="Should we...?"
               class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             />
           </div>
