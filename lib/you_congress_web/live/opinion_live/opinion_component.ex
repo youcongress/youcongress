@@ -47,10 +47,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
 
     case Likes.like(opinion_id, current_user) do
       {:ok, _} ->
-        opinion =
-          opinion
-          |> Map.put(:likes_count, opinion.likes_count + 1)
-          |> Map.put(:descendants_count, opinion.descendants_count + 1)
+        opinion = %{opinion | likes_count: opinion.likes_count + 1}
 
         socket =
           socket
