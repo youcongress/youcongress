@@ -20,7 +20,7 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             <HallNav.tab
               url_hall_name={@hall_name}
               hall_name="ai"
-              hall_link={~p"/home"}
+              hall_link={~p"/polls"}
               hall_title="AI"
             />
           </div>
