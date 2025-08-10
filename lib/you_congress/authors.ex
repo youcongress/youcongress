@@ -77,6 +77,11 @@ defmodule YouCongress.Authors do
     Repo.one(query)
   end
 
+  def get_author_by!(opts) do
+    query = build_query(opts)
+    Repo.one!(query)
+  end
+
   defp build_query(opts) do
     base_query = from(a in Author)
 
@@ -87,28 +92,24 @@ defmodule YouCongress.Authors do
         {:name, name}, query ->
           from a in query, where: a.name == ^name
 
+        {:wikipedia_url, nil}, query ->
+          query
+
         {:wikipedia_url, wikipedia_url}, query ->
-          from a in query, where: a.wikipedia_url == ^wikipedia_url
+          wikipedia_url = String.downcase(wikipedia_url)
+          from a in query, where: fragment("lower(?)", a.wikipedia_url) == ^wikipedia_url
+
+        {:twitter_username, nil}, query ->
+          query
 
         {:twitter_username, twitter_username}, query ->
-          from a in query, where: a.twitter_username == ^twitter_username
+          twitter_username = String.downcase(twitter_username)
+          from a in query, where: fragment("lower(?)", a.twitter_username) == ^twitter_username
 
         _, query ->
           query
       end
     )
-  end
-
-  def get_author_by_twitter_username(nil), do: nil
-
-  def get_author_by_twitter_username(twitter_username) do
-    from(a in Author, where: ilike(a.twitter_username, ^twitter_username))
-    |> Repo.one()
-  end
-
-  def get_author_by_twitter_username!(twitter_username) do
-    from(a in Author, where: ilike(a.twitter_username, ^twitter_username))
-    |> Repo.one!()
   end
 
   @doc """

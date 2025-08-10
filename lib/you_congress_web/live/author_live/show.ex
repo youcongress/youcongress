@@ -89,7 +89,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   defp get_author!(%{"twitter_username" => twitter_username}) do
-    Authors.get_author_by_twitter_username!(twitter_username)
+    Authors.get_author_by!(twitter_username: twitter_username)
   end
 
   @impl true
