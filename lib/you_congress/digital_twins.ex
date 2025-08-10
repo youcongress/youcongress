@@ -60,7 +60,30 @@ defmodule YouCongress.DigitalTwins do
       "answer_id" => answer.id
     }
 
-    {:ok, author} = Authors.find_by_wikipedia_url_or_create(author_data)
+    author =
+      case Authors.find_by_wikipedia_url_or_create(author_data) do
+        {:ok, author} ->
+          author
+
+        {:error, _changeset} ->
+          # If the author creation fails (e.g., invalid Wikipedia URL),
+          # try again using find_by_name_or_create
+          case Authors.find_by_name_or_create(author_data) do
+            {:ok, author} ->
+              author
+
+            {:error, _changeset} ->
+              # If both fail, create a minimal author with just the name
+              minimal_author_data = %{
+                "name" => author_data["name"],
+                "bio" => author_data["bio"] || "No bio available",
+                "twin_origin" => true
+              }
+
+              {:ok, author} = Authors.create_author(minimal_author_data)
+              author
+          end
+      end
 
     if author.twin_enabled do
       {:ok, opinion} =

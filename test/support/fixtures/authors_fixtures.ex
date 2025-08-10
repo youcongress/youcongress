@@ -16,7 +16,9 @@ defmodule YouCongress.AuthorsFixtures do
         twin_origin: true,
         name: Faker.Person.name() |> String.replace("'", ""),
         twitter_username: Faker.Internet.user_name(),
-        wikipedia_url: "https://wikipedia.org/wiki/" <> Faker.Internet.user_name()
+        wikipedia_url:
+          "https://en.wikipedia.org/wiki/" <>
+            String.replace(Faker.Internet.user_name(), ~r/[^a-zA-Z0-9_]/, "_")
       })
       |> YouCongress.Authors.create_author()
 
