@@ -10,7 +10,7 @@ kill_signal = 'SIGTERM'
 [build]
 
 [env]
-  PHX_HOST = 'youcongress.com'
+  PHX_HOST = 'youcongress.org'
   PORT = '8080'
 
 [http_service]
