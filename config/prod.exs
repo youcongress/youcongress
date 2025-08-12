@@ -8,7 +8,7 @@ import Config
 config :you_congress, YouCongressWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
   check_origin: [
-    "https://youcongress.com",
+    "https://youcongress.org",
     "https://youcongress-production.fly.dev",
     "https://staging.youcongress.com"
   ]
