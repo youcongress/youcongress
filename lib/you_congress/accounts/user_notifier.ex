@@ -15,7 +15,7 @@ defmodule YouCongress.Accounts.UserNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"YouCongress", "hello@youcongress.com"})
+      |> from({"YouCongress", "hello@youcongress.org"})
       |> subject(subject)
       |> text_body(body)
 

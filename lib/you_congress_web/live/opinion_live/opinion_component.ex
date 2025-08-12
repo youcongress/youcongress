@@ -12,7 +12,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   alias YouCongressWeb.Tools.TimeAgo
 
   @max_x_length 280
-  @url_length String.length("youcongress.com/p/should-tech-")
+  @url_length String.length("youcongress.org/p/should-tech-")
 
   def update(assigns, socket) do
     %{

@@ -10,7 +10,7 @@ config :you_congress, YouCongressWeb.Endpoint,
   check_origin: [
     "https://youcongress.org",
     "https://youcongress-production.fly.dev",
-    "https://staging.youcongress.com"
+    "https://staging.youcongress.org"
   ]
 
 # Configures Swoosh API Client

@@ -63,7 +63,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
             </span>
           <% end %>
           <.link
-            href="mailto:hi@youcongress.com"
+            href="mailto:hi@youcongress.org"
             target="_blank"
             class="block p-2 hover:text-indigo-600"
           >
