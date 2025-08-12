@@ -177,6 +177,8 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
 
   @impl true
   def handle_event("vote", %{"response" => response}, %{assigns: %{current_user: nil}} = socket) do
+    send(self(), {:put_flash, :warning, "Please sign up so your vote is saved."})
+
     socket =
       socket
       |> assign(:display_results, true)
