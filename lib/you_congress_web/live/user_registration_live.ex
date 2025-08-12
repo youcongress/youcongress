@@ -48,7 +48,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
       <%= if @step == :check_email do %>
         <.header class="text-center">
-          Please check your email
+          Please check your email & spam folder
           <:subtitle>
             We've sent you instructions to validate your email
           </:subtitle>
