@@ -18,8 +18,8 @@ You can read more about the project on the LessWrong post:
 - [Tackling Moloch: How YouCongress Offers a Novel Coordination Mechanism](https://www.lesswrong.com/posts/4KjiZeAWc7Yv9oyCb/tackling-moloch-how-youcongress-offers-a-novel-coordination)
 
 # Other projects within YouCongress
-- [Future Financial Simulator](https://youcongress.com/sim) ([html](https://github.com/youcongress/youcongress/blob/main/lib/you_congress_web/controllers/sim_html/index.html.heex), [js](https://github.com/youcongress/youcongress/blob/main/assets/js/sim.js))
-- [Fact-checker](https://youcongress.com/fact-checker)
+- [Future Financial Simulator](https://youcongress.org/sim) ([html](https://github.com/youcongress/youcongress/blob/main/lib/you_congress_web/controllers/sim_html/index.html.heex), [js](https://github.com/youcongress/youcongress/blob/main/assets/js/sim.js))
+- [Fact-checker](https://youcongress.org/fact-checker)
 
 # How to contribute
 Welcome to YouCongress! Feel free to:

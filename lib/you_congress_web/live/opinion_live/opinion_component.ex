@@ -214,7 +214,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   end
 
   defp x_url(opinion, voting, author, current_user) do
-    url = " https://youcongress.com#{x_path(voting)}"
+    url = " https://youcongress.org#{x_path(voting)}"
 
     opinion
     |> x_post(voting, author, current_user)
