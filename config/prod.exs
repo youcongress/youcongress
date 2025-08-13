@@ -9,6 +9,9 @@ config :you_congress, YouCongressWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
   check_origin: [
     "https://youcongress.org",
+    "https://www.youcongress.org",
+    "https://youcongress.com",
+    "https://www.youcongress.com",
     "https://youcongress-production.fly.dev",
     "https://staging.youcongress.org"
   ]
