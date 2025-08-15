@@ -29,11 +29,18 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
               AI-generated opinions of public figures will be added automatically.
             </span>
             <span>
-              Then, users will be able to replace them with <strong>real quotes</strong>.
+              Then, users can replace them with real <strong>sourced quotes</strong>.
+            </span>
+            <span class="text-xs">
+              Contact&nbsp;<.link
+                href="mailto:hector@youcongress.org?subject=Quotes"
+                target="_blank"
+                class="underline"
+              >Hector</.link>&nbsp;if you'd like to help build a system that automatically finds sourced quotes to replace AI digital twins.
             </span>
           </p>
           <p class="text-sm text-gray-600 mb-4">
-            Your prompt will be reviewed by AI to ensure clarity and offer you three suggestions before publishing.
+            Your prompt will be reviewed by AI to ensure clarity and offer you suggestions before publishing.
             <span class="text-indigo-600">No login required!</span>
           </p>
           <div class="relative">
