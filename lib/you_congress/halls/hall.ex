@@ -97,7 +97,8 @@ defmodule YouCongress.Halls.Hall do
     "ai-regulation",
     "ai-ethics",
     "ai-risk",
-    "existential-risk"
+    "existential-risk",
+    "cern-for-ai"
   ]
   @names_str Enum.join(@names, ",")
 
