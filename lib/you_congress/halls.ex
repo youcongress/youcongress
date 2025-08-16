@@ -173,11 +173,11 @@ defmodule YouCongress.Halls do
     Hall.changeset(hall, attrs)
   end
 
-  def classify(text, model \\ :"gpt-5") do
+  def classify(text, model \\ :"gpt-5-nano") do
     classifier_impl().classify(text, model)
   end
 
-  def classify!(text, model \\ :"gpt-5") do
+  def classify!(text, model \\ :"gpt-5-nano") do
     {:ok, %{tags: tags}} = classifier_impl().classify(text, model)
     tags
   end
