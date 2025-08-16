@@ -9,7 +9,6 @@ defmodule YouCongress.Opinions.AIReplier do
 
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
-  alias YouCongress.Votings
   alias YouCongress.Authors
   alias YouCongress.Opinions.AIReplier.AIComment
 
@@ -28,41 +27,46 @@ defmodule YouCongress.Opinions.AIReplier do
   end
 
   defp reply(opinion) do
-    voting = Votings.get_voting!(opinion.voting_id)
-    ancestor_and_self_ids = Opinion.path_ids(opinion)
+    voting = Opinion.primary_voting(opinion)
 
-    ancestors_and_self =
-      Opinions.list_opinions(
-        ids: ancestor_and_self_ids,
-        preload: [:author],
-        order_by: [desc: :id]
-      )
+    if voting do
+      ancestor_and_self_ids = Opinion.path_ids(opinion)
 
-    case AIComment.generate_comment(
-           voting.title,
-           ancestors_and_self,
-           :"gpt-4o"
-         ) do
-      {:ok, %{reply: content, author_id: author_id}} ->
-        case Opinions.create_opinion(%{
-               "content" => content,
-               "author_id" => author_id,
-               "voting_id" => opinion.voting_id,
-               "ancestry" => set_ancestry(opinion),
-               "twin" => true
-             }) do
-          {:ok, _} ->
-            :ok
+      ancestors_and_self =
+        Opinions.list_opinions(
+          ids: ancestor_and_self_ids,
+          preload: [:author],
+          order_by: [desc: :id]
+        )
 
-          {:error, error} ->
-            Logger.error("Digital twin failed to reply #{inspect(error)}")
-            do_nothing()
-        end
+      case AIComment.generate_comment(
+             voting.title,
+             ancestors_and_self,
+             :"gpt-4o"
+           ) do
+        {:ok, %{reply: content, author_id: author_id}} ->
+          case Opinions.create_opinion(%{
+                 "content" => content,
+                 "author_id" => author_id,
+                 "voting_id" => voting.id,
+                 "ancestry" => set_ancestry(opinion),
+                 "twin" => true
+               }) do
+            {:ok, _} ->
+              :ok
 
-        :ok
+            {:error, error} ->
+              Logger.error("Digital twin failed to reply #{inspect(error)}")
+              do_nothing()
+          end
 
-      {:error, _} ->
-        do_nothing()
+          :ok
+
+        {:error, _} ->
+          do_nothing()
+      end
+    else
+      do_nothing()
     end
   end
 

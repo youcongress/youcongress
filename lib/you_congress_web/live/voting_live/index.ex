@@ -8,6 +8,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongress.Likes
   alias YouCongress.Votes
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
   alias YouCongress.DigitalTwins.Regenerate
@@ -269,7 +270,8 @@ defmodule YouCongressWeb.VotingLive.Index do
       )
 
     Map.new(opinions, fn opinion ->
-      {opinion.voting_id, opinion}
+      voting_id = Opinion.primary_voting_id(opinion)
+      {voting_id, opinion}
     end)
   end
 

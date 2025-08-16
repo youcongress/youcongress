@@ -179,7 +179,10 @@ defmodule YouCongress.Opinions do
         from q in query, where: q.author_id in ^author_ids
 
       {:voting_ids, voting_ids}, query ->
-        from q in query, where: q.voting_id in ^voting_ids
+        from q in query,
+          join: ov in "opinions_votings",
+          on: ov.opinion_id == q.id,
+          where: ov.voting_id in ^voting_ids
 
       {:content, content}, query ->
         from q in query, where: q.content == ^content

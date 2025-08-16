@@ -2,7 +2,7 @@
   <.link href={
     if @parent_opinion,
       do: ~p"/comments/#{@parent_opinion.id}",
-      else: ~p"/p/#{@opinion.voting.slug}"
+      else: ~p"/p/#{YouCongress.Opinions.Opinion.primary_voting(@opinion).slug}"
   }>
     <img
       src="/images/arrow-left.svg"
@@ -19,7 +19,7 @@
   opinion={@opinion}
   current_user={@current_user}
   delegating={@delegating}
-  voting={@opinion.voting}
+  voting={YouCongress.Opinions.Opinion.primary_voting(@opinion)}
   liked={@opinion.id in @liked_opinion_ids}
   page={:opinion_show}
 />
@@ -68,7 +68,7 @@
         opinion={child_opinion}
         current_user={@current_user}
         delegating={@child_opinions_delegations[child_opinion.author_id]}
-        voting={@opinion.voting}
+        voting={YouCongress.Opinions.Opinion.primary_voting(@opinion)}
         opinable={true}
         liked={child_opinion.id in @liked_opinion_ids}
         page={:opinion_show}

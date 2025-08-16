@@ -59,9 +59,11 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
     ancestry = if opinion.ancestry, do: "#{opinion.ancestry}/#{opinion.id}", else: "#{opinion.id}"
 
+    voting_id = Opinion.primary_voting_id(opinion)
+
     opinion_params = %{
       "content" => content,
-      "voting_id" => opinion.voting_id,
+      "voting_id" => voting_id,
       "author_id" => current_user.author_id,
       "user_id" => current_user.id,
       "ancestry" => ancestry
@@ -121,9 +123,9 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   def handle_event("delete-comment", %{"opinion_id" => opinion_id}, socket) do
-    opinion = Opinions.get_opinion!(opinion_id)
+    opinion = Opinions.get_opinion!(opinion_id, preload: [:votings])
     opinion_id = opinion.id
-    voting_id = opinion.voting_id
+    voting_id = Opinion.primary_voting_id(opinion)
 
     {_count, nil} =
       Opinions.delete_opinion_and_descendants(opinion)
@@ -150,7 +152,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   defp load_opinion!(socket, opinion_id) do
-    opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :voting])
+    opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :votings])
     assign(socket, opinion: opinion)
   end
 

@@ -150,7 +150,7 @@ defmodule YouCongressWeb.VotingLive.Index.OpinateComponent do
       "twin" => false
     }
 
-    opinion = Opinions.get_opinion!(opinion.id)
+    opinion = Opinions.get_opinion!(opinion.id, preload: [:votings])
 
     with {:ok, opinion} <- Opinions.update_opinion(opinion, opinion_params),
          {:ok, vote} <-

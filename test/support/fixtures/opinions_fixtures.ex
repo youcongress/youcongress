@@ -26,6 +26,7 @@ defmodule YouCongress.OpinionsFixtures do
       })
       |> YouCongress.Opinions.create_opinion()
 
-    opinion
+    # Reload from database to match what list_opinions() returns (no preloaded associations)
+    YouCongress.Opinions.get_opinion!(opinion.id)
   end
 end

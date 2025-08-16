@@ -23,13 +23,17 @@ defmodule YouCongress.Opinions.AIReplier.AIReplierFake do
   end
 
   defp reply(opinion, parent) do
-    Opinions.create_opinion(%{
-      "content" => Lorem.sentence(),
-      "author_id" => parent.author_id,
-      "voting_id" => opinion.voting_id,
-      "ancestry" => set_ancestry(opinion),
-      "twin" => true
-    })
+    voting_id = Opinion.primary_voting_id(opinion)
+
+    if voting_id do
+      Opinions.create_opinion(%{
+        "content" => Lorem.sentence(),
+        "author_id" => parent.author_id,
+        "voting_id" => voting_id,
+        "ancestry" => set_ancestry(opinion),
+        "twin" => true
+      })
+    end
 
     :ok
   end

@@ -2,6 +2,7 @@ defmodule YouCongressWeb.ActivityLive.Index do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Track
   alias YouCongress.Likes
   alias YouCongress.Delegations
@@ -61,7 +62,7 @@ defmodule YouCongressWeb.ActivityLive.Index do
 
   defp list_opinions(socket) do
     Opinions.list_opinions(
-      preload: [:voting, :author],
+      preload: [:votings, :author],
       include_twins: socket.assigns.include_opinions_from_twins,
       order_by: [desc: :id],
       limit: @per_page
@@ -70,7 +71,7 @@ defmodule YouCongressWeb.ActivityLive.Index do
 
   defp list_opinions(socket, offset) do
     Opinions.list_opinions(
-      preload: [:voting, :author],
+      preload: [:votings, :author],
       include_twins: socket.assigns.include_opinions_from_twins,
       order_by: [desc: :id],
       limit: @per_page,
