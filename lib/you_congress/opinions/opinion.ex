@@ -19,10 +19,12 @@ defmodule YouCongress.Opinions.Opinion do
     belongs_to :author, YouCongress.Authors.Author
     belongs_to :user, YouCongress.Accounts.User
 
+    has_many :opinion_votings, YouCongress.Opinions.OpinionVoting
+
     many_to_many(
       :votings,
       YouCongress.Votings.Voting,
-      join_through: "opinions_votings",
+      join_through: YouCongress.Opinions.OpinionVoting,
       on_replace: :delete
     )
 

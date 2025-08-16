@@ -39,7 +39,10 @@ defmodule YouCongressWeb.OpinionLive.Show do
        page_title: "Opinion",
        opinion: opinion,
        parent_opinion: parent_opinion,
-       changeset: changeset
+       changeset: changeset,
+       search_query: "",
+       search_results: [],
+       show_search: false
      )}
   end
 
@@ -138,6 +141,56 @@ defmodule YouCongressWeb.OpinionLive.Show do
       |> put_flash(:info, "Opinion deleted successfully.")
 
     {:noreply, socket}
+  end
+
+  def handle_event("toggle-search", _params, socket) do
+    {:noreply, assign(socket, :show_search, !socket.assigns.show_search)}
+  end
+
+  def handle_event("search-votings", %{"value" => query}, socket) do
+    %{assigns: %{opinion: opinion}} = socket
+
+    search_results =
+      if String.length(query) >= 2 do
+        # Get existing voting IDs for this opinion
+        existing_voting_ids = Enum.map(opinion.votings, & &1.id)
+
+        # Search for votings and exclude ones already associated
+        Votings.list_votings(title_contains: query, limit: 10)
+        |> Enum.reject(fn voting -> voting.id in existing_voting_ids end)
+      else
+        []
+      end
+
+    {:noreply,
+     socket
+     |> assign(:search_query, query)
+     |> assign(:search_results, search_results)}
+  end
+
+  def handle_event("add-to-voting", %{"voting_id" => voting_id}, socket) do
+    %{assigns: %{opinion: opinion, current_user: current_user}} = socket
+
+    case Opinions.add_opinion_to_voting(opinion, String.to_integer(voting_id)) do
+      {:ok, _updated_opinion} ->
+        Track.event("Add Opinion to Voting", current_user)
+
+        socket =
+          socket
+          |> load_opinion!(opinion.id)
+          |> assign(:show_search, false)
+          |> assign(:search_query, "")
+          |> assign(:search_results, [])
+          |> put_flash(:info, "Opinion added to voting successfully.")
+
+        {:noreply, socket}
+
+      {:error, :already_associated} ->
+        {:noreply, socket |> put_flash(:error, "Opinion is already associated with this voting.")}
+
+      {:error, _} ->
+        {:noreply, socket |> put_flash(:error, "Failed to add opinion to voting.")}
+    end
   end
 
   defp redirect_or_load_variables(%{assigns: %{opinion: %{id: id}}} = socket, id, voting_id) do

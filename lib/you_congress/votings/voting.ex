@@ -23,10 +23,12 @@ defmodule YouCongress.Votings.Voting do
 
     has_many :votes, Vote
 
+    has_many :opinion_votings, YouCongress.Opinions.OpinionVoting
+
     many_to_many(
       :opinions,
       Opinion,
-      join_through: "opinions_votings",
+      join_through: YouCongress.Opinions.OpinionVoting,
       on_replace: :delete
     )
 

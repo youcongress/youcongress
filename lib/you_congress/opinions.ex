@@ -273,4 +273,63 @@ defmodule YouCongress.Opinions do
     from(o in Opinion, select: count(o.id))
     |> Repo.one()
   end
+
+  @doc """
+  Adds an opinion to a voting by creating an association in the opinions_votings table.
+
+  ## Examples
+
+      iex> add_opinion_to_voting(opinion, voting)
+      {:ok, %Opinion{}}
+
+      iex> add_opinion_to_voting(opinion, voting)
+      {:error, %Ecto.Changeset{}}
+  """
+  def add_opinion_to_voting(%Opinion{} = opinion, voting_id) when is_integer(voting_id) do
+    voting = YouCongress.Votings.get_voting!(voting_id)
+    add_opinion_to_voting(opinion, voting)
+  end
+
+  def add_opinion_to_voting(%Opinion{} = opinion, %YouCongress.Votings.Voting{} = voting) do
+    add_opinion_to_voting(opinion, voting, opinion.user_id)
+  end
+
+  def add_opinion_to_voting(%Opinion{} = opinion, %YouCongress.Votings.Voting{} = voting, user_id)
+      when not is_nil(user_id) do
+    # Check if the opinion is already associated with this voting
+    existing_association =
+      Repo.get_by(YouCongress.Opinions.OpinionVoting,
+        opinion_id: opinion.id,
+        voting_id: voting.id
+      )
+
+    if existing_association do
+      {:error, :already_associated}
+    else
+      # Create the association with the user_id
+      %YouCongress.Opinions.OpinionVoting{}
+      |> YouCongress.Opinions.OpinionVoting.changeset(%{
+        opinion_id: opinion.id,
+        voting_id: voting.id,
+        user_id: user_id
+      })
+      |> Repo.insert()
+      |> case do
+        {:ok, _opinion_voting} ->
+          # Return the updated opinion for consistency
+          {:ok, Repo.preload(opinion, :votings, force: true)}
+
+        {:error, changeset} ->
+          {:error, changeset}
+      end
+    end
+  end
+
+  def add_opinion_to_voting(
+        %Opinion{} = _opinion,
+        %YouCongress.Votings.Voting{} = _voting,
+        _user_id
+      ) do
+    {:error, :user_id_required}
+  end
 end
