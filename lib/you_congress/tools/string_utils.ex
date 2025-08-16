@@ -5,8 +5,17 @@ defmodule YouCongress.Tools.StringUtils do
 
   def titleize(string) do
     string
-    |> String.split()
-    |> Enum.map_join(" ", &String.capitalize/1)
+    |> String.split("-")
+    |> Enum.map_join(" ", fn word ->
+      word
+      |> String.capitalize()
+      |> String.replace("Cern", "CERN")
+      |> String.replace("For", "for")
+      |> String.replace("Us", "US")
+      |> String.replace("Eu", "EU")
+      |> String.replace("Ai", "AI")
+      |> String.replace("Uk", "UK")
+    end)
   end
 
   def titleize_hall("us"), do: "US"
