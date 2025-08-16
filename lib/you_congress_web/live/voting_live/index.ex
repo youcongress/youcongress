@@ -21,7 +21,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongress.Votings.VotingQueries
   alias YouCongress.Halls
 
-  @default_hall "ai"
+  @default_hall "ai-safety-policy"
 
   @impl true
   def mount(params, session, socket) do
