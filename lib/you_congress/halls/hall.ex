@@ -94,6 +94,7 @@ defmodule YouCongress.Halls.Hall do
     "ai-alignment",
     "ai-deployment",
     "ai-policy",
+    "ai-safety-policy",
     "ai-regulation",
     "ai-ethics",
     "ai-risk",
