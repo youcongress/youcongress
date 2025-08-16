@@ -1,6 +1,6 @@
 defmodule YouCongress.Opinions.Opinion do
   @moduledoc """
-  The schema for opinions/comments/quotes.
+  The schema for opinions/c/quotes.
   """
 
   use Ecto.Schema

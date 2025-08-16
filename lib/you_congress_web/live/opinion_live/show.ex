@@ -79,7 +79,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
         {:noreply,
          socket
          |> put_flash(:info, "Opinion created successfully.")
-         |> redirect(to: "/comments/#{opinion.id}")}
+         |> redirect(to: "/c/#{opinion.id}")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}

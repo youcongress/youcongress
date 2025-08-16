@@ -126,7 +126,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
 
   def comment_icon(assigns) do
     ~H"""
-    <.link href={~p"/comments/#{@opinion.id}"}>
+    <.link href={~p"/c/#{@opinion.id}"}>
       <img
         src="/images/comment.svg"
         alt="Comment"

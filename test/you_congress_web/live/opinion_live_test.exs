@@ -23,7 +23,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
           twin: false
         })
 
-      {:ok, index_live, _html} = live(conn, ~p"/comments/#{opinion.id}")
+      {:ok, index_live, _html} = live(conn, ~p"/c/#{opinion.id}")
 
       index_live
       |> form("form", opinion: %{content: "Opinion2"})
@@ -48,7 +48,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
           twin: true
         })
 
-      {:ok, index_live, _html} = live(conn, ~p"/comments/#{opinion.id}")
+      {:ok, index_live, _html} = live(conn, ~p"/c/#{opinion.id}")
 
       index_live
       |> form("form", opinion: %{content: "Opinion2"})

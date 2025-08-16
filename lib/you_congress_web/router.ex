@@ -27,7 +27,7 @@ defmodule YouCongressWeb.Router do
     live("/a/:id", AuthorLive.Show, :show)
     live("/x/:twitter_username", AuthorLive.Show, :show)
     live("/halls/:hall", VotingLive.Index, :index)
-    live("/comments/:id", OpinionLive.Show, :show)
+    live("/c/:id", OpinionLive.Show, :show)
     live("/fact-checker", FactCheckerLive.Index, :index)
 
     get("/terms", PageController, :terms)

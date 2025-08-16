@@ -1,7 +1,7 @@
 <div class="pb-6">
   <.link href={
     if @parent_opinion,
-      do: ~p"/comments/#{@parent_opinion.id}",
+      do: ~p"/c/#{@parent_opinion.id}",
       else: ~p"/p/#{YouCongress.Opinions.Opinion.primary_voting(@opinion).slug}"
   }>
     <img
@@ -23,6 +23,17 @@
   liked={@opinion.id in @liked_opinion_ids}
   page={:opinion_show}
 />
+
+<%= if @opinion.votings != [] do %>
+  <div class="pb-2">Polls</div>
+  <div class="bg-gray-100 rounded-md p-4 mb-6">
+    <%= for voting <- @opinion.votings do %>
+      <.link href={~p"/p/#{voting.slug}"} class="underline">
+        <%= voting.title %>
+      </.link>
+    <% end %>
+  </div>
+<% end %>
 
 <div class="pb-2" id="reply">replying to <%= @opinion.author.name %></div>
 
