@@ -72,19 +72,13 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             />
             <HallNav.tab
               url_hall_name={@hall_name}
-              hall_name="ai"
-              hall_link={~p"/halls/ai"}
-              hall_title="AI"
-            />
-            <HallNav.tab
-              url_hall_name={@hall_name}
               hall_name="all"
               hall_link={~p"/halls/all"}
               hall_title="All"
             />
           </div>
           <div class="space-x-8 md:hidden pt-1">
-            <%= if @hall_name not in ["ai", "public-interest-ai", "future-of-work", "ai-innovation-and-culture", "trust-in-ai", "ai-governance", "all"] do %>
+            <%= if @hall_name not in ["ai-safety-policy", "ai-governance", "cern-for-ai", "existential-risk", "eu", "us", "ai", "all"] do %>
               <HallNav.tab
                 url_hall_name={@hall_name}
                 hall_name={@hall_name}
@@ -99,26 +93,27 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
                 hall_title="AI governance"
               />
             <% end %>
+
             <HallNav.tab
               url_hall_name={@hall_name}
-              hall_name="future-of-work"
-              hall_link={~p"/halls/future-of-work"}
-              hall_title="Future of Work"
+              hall_name="ai"
+              hall_link={~p"/halls/ai"}
+              hall_title="AI"
             />
           </div>
         </nav>
         <nav class="flex space-x-4 md:hidden pt-4">
           <HallNav.tab
             url_hall_name={@hall_name}
-            hall_name="climate-change"
-            hall_link={~p"/halls/climate-change"}
-            hall_title="Climate Change"
+            hall_name="cern-for-ai"
+            hall_link={~p"/halls/cern-for-ai"}
+            hall_title="CERN for AI"
           />
           <HallNav.tab
             url_hall_name={@hall_name}
-            hall_name="housing"
-            hall_link={~p"/halls/housing"}
-            hall_title="Housing"
+            hall_name="existential-risk"
+            hall_link={~p"/halls/existential-risk"}
+            hall_title="Existential risk"
           />
           <HallNav.tab
             url_hall_name={@hall_name}
@@ -132,7 +127,6 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             hall_link={~p"/halls/us"}
             hall_title="US"
           />
-
           <HallNav.tab
             url_hall_name={@hall_name}
             hall_name="all"
