@@ -8,7 +8,9 @@ defmodule YouCongress.DigitalTwins.OpenAIModel do
   @token_cost %{
     :"gpt-4o" => %{completion_tokens: 0.02, prompt_tokens: 0.005},
     :"gpt-4o-mini" => %{completion_tokens: 0.0024, prompt_tokens: 0.0006},
-    :"gpt-5" => %{completion_tokens: 0.01, prompt_tokens: 0.00125}
+    :"gpt-5" => %{completion_tokens: 0.01, prompt_tokens: 0.00125},
+    :"gpt-5-mini" => %{completion_tokens: 0.002, prompt_tokens: 0.00025},
+    :"gpt-5-nano" => %{completion_tokens: 0.0004, prompt_tokens: 0.00005}
   }
 
   @spec get_content(map) :: [binary]
