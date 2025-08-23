@@ -35,4 +35,11 @@ defmodule YouCongress.Accounts.Permissions do
   def can_regenerate_opinion?(%User{role: "admin"}), do: true
   def can_regenerate_opinion?(%User{role: "moderator"}), do: true
   def can_regenerate_opinion?(_), do: false
+
+  @doc """
+  Checks if the user can add an opinion to a voting.
+  """
+  def can_add_opinion_to_voting?(%User{role: "admin"}), do: true
+  def can_add_opinion_to_voting?(%User{role: "moderator"}), do: true
+  def can_add_opinion_to_voting?(_), do: false
 end

@@ -8,6 +8,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.Delegations
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongress.Votings
+  alias YouCongress.Accounts.Permissions
 
   @impl true
   def mount(_params, session, socket) do
