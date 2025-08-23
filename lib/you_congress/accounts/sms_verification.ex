@@ -1,4 +1,8 @@
 defmodule YouCongress.Accounts.SmsVerification do
+  @moduledoc """
+  Handles SMS verification functionality using Twilio's Verify service.
+  """
+
   def send_verification_code(phone_number) do
     twilio_account_sid = Application.get_env(:you_congress, :twilio_account_sid)
     twilio_auth_token = Application.get_env(:you_congress, :twilio_auth_token)
