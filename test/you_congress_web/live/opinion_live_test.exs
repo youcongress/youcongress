@@ -35,7 +35,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
              ]
     end
 
-    test "comment under a comment from a digital twin", %{conn: conn} do
+    test "comment under a comment from a digital twin and the twin replies", %{conn: conn} do
       conn = log_in_as_user(conn)
       author1 = author_fixture(%{name: "Someone1"})
       voting = voting_fixture(%{author_id: author1.id})
@@ -44,7 +44,6 @@ defmodule YouCongressWeb.OpinionLiveTest do
         opinion_fixture(%{
           author_id: author1.id,
           content: "Opinion1",
-          voting_id: voting.id,
           twin: true
         })
 
@@ -54,6 +53,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
       |> form("form", opinion: %{content: "Opinion2"})
       |> render_submit()
 
+      #  The previous two opinions plus the twin reply
       assert length(Opinions.list_opinions()) == 3
 
       opinion = Opinions.get_by(content: "Opinion2")

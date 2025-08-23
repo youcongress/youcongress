@@ -1,16 +1,16 @@
-defmodule YouCongress.Opinions.AIReplier do
+defmodule YouCongress.Opinions.Replier.AIReplier do
   @moduledoc """
   Generate a reply from a digital twin via OpenAI's API.
   """
 
-  @behaviour YouCongress.Opinions.AIReplier.AIReplierBehaviour
+  @behaviour YouCongress.Opinions.Replier.AIReplierBehaviour
 
   require Logger
 
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Authors
-  alias YouCongress.Opinions.AIReplier.AIComment
+  alias YouCongress.Opinions.Replier.AIComment
 
   def maybe_reply(%{twin: true}), do: do_nothing()
   def maybe_reply(%{ancestry: nil}), do: do_nothing()

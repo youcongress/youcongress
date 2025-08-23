@@ -10,6 +10,7 @@ defmodule YouCongress.Opinions do
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsVotings.OpinionVoting
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
+  alias YouCongress.Opinions.Replier
 
   @doc """
   Returns the list of opinions.
@@ -90,7 +91,6 @@ defmodule YouCongress.Opinions do
     |> Ecto.Multi.insert(:opinion, Opinion.changeset(%Opinion{}, attrs))
     |> enqueue_update_ancestor_counts(attrs["ancestry"])
     |> Repo.transaction()
-    |> handle_transaction_result()
   end
 
   defp enqueue_update_ancestor_counts(multi, nil), do: multi
@@ -256,11 +256,7 @@ defmodule YouCongress.Opinions do
   end
 
   def maybe_reply_by_ai(opinion) do
-    ai_replier_impl().maybe_reply(opinion)
-  end
-
-  def ai_replier_impl do
-    Application.get_env(:you_congress, :ai_replier, YouCongress.Opinions.AIReplier)
+    Replier.maybe_reply(opinion)
   end
 
   def delete_subopinions(%Opinion{} = opinion) do

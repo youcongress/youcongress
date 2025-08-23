@@ -1,4 +1,4 @@
-defmodule YouCongress.Opinions.AIReplier.AIReplierBehaviour do
+defmodule YouCongress.Opinions.Replier.AIReplierBehaviour do
   @moduledoc """
   The behaviour for AI repliers.
   """

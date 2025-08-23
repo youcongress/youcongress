@@ -74,7 +74,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
     }
 
     case Opinions.create_opinion(opinion_params) do
-      {:ok, opinion} ->
+      {:ok, %{opinion: opinion}} ->
         Track.event("New Opinion", current_user)
 
         # We do this synchronous as we want the reply be ready when we redirect
@@ -128,7 +128,6 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
   def handle_event("delete-comment", %{"opinion_id" => opinion_id}, socket) do
     opinion = Opinions.get_opinion!(opinion_id, preload: [:votings])
-    opinion_id = opinion.id
 
     {_count, nil} =
       Opinions.delete_opinion_and_descendants(opinion)

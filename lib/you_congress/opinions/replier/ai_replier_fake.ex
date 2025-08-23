@@ -1,9 +1,9 @@
-defmodule YouCongress.Opinions.AIReplier.AIReplierFake do
+defmodule YouCongress.Opinions.Replier.AIReplierFake do
   @moduledoc """
   Fake reply from a digital twin via OpenAI's API.
   """
 
-  @behaviour YouCongress.Opinions.AIReplier.AIReplierBehaviour
+  @behaviour YouCongress.Opinions.Replier.AIReplierBehaviour
 
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Opinions
