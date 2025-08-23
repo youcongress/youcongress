@@ -4,7 +4,7 @@ defmodule YouCongress.OpinionsFixtures do
   entities via the `YouCongress.Opinions` context.
   """
 
-  alias YouCongress.{VotingsFixtures, AccountsFixtures, AuthorsFixtures}
+  alias YouCongress.{AccountsFixtures, AuthorsFixtures}
 
   @doc """
   Generate an opinion.
@@ -13,7 +13,7 @@ defmodule YouCongress.OpinionsFixtures do
     author_id = attrs[:author_id] || AuthorsFixtures.author_fixture().id
     user_id = attrs[:user_id] || AccountsFixtures.user_fixture(%{author_id: author_id}).id
 
-    {:ok, opinion} =
+    {:ok, %{opinion: opinion}} =
       attrs
       |> Enum.into(%{
         content: "some content",

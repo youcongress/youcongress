@@ -185,6 +185,12 @@ defmodule YouCongress.Opinions do
           on: ov.opinion_id == q.id,
           where: ov.voting_id in ^voting_ids
 
+      {:has_votings, true}, query ->
+        from q in query,
+          join: ov in "opinions_votings",
+          on: ov.opinion_id == q.id,
+          distinct: q.id
+
       {:content, content}, query ->
         from q in query, where: q.content == ^content
 

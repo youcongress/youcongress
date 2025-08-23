@@ -17,7 +17,7 @@ defmodule YouCongress.DigitalTwins.Regenerate do
   def regenerate(opinion_id, current_user) do
     with :ok <- has_permission?(current_user),
          %Opinion{} = opinion <- Opinions.get_opinion(opinion_id, preload: [:author, :votings]),
-         voting when not is_nil(voting) <- Opinion.primary_voting(opinion),
+         voting when not is_nil(voting) <- Opinion.first_voting(opinion),
          :ok <- delete_likes(opinion),
          :ok <- delete_subcomments(opinion),
          %Vote{} = vote <-

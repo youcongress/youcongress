@@ -38,7 +38,6 @@ defmodule YouCongressWeb.OpinionLiveTest do
     test "comment under a comment from a digital twin and the twin replies", %{conn: conn} do
       conn = log_in_as_user(conn)
       author1 = author_fixture(%{name: "Someone1"})
-      voting = voting_fixture(%{author_id: author1.id})
 
       opinion =
         opinion_fixture(%{

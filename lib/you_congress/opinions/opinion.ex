@@ -93,14 +93,14 @@ defmodule YouCongress.Opinions.Opinion do
   def path_str(%{ancestry: ancestry, id: id}), do: "#{ancestry}/#{id}"
 
   @doc """
-  Gets the primary voting ID for an opinion.
+  Gets the first voting ID for an opinion (replacement for primary_voting_id).
   """
-  def primary_voting_id(%{votings: [voting | _]}) when not is_nil(voting), do: voting.id
-  def primary_voting_id(_), do: nil
+  def first_voting_id(%{votings: [voting | _]}) when not is_nil(voting), do: voting.id
+  def first_voting_id(_), do: nil
 
   @doc """
-  Gets the primary voting for an opinion.
+  Gets the first voting for an opinion (replacement for primary_voting).
   """
-  def primary_voting(%{votings: [voting | _]}) when not is_nil(voting), do: voting
-  def primary_voting(_), do: nil
+  def first_voting(%{votings: [voting | _]}) when not is_nil(voting), do: voting
+  def first_voting(_), do: nil
 end

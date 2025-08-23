@@ -64,6 +64,7 @@ defmodule YouCongressWeb.ActivityLive.Index do
     Opinions.list_opinions(
       preload: [:votings, :author],
       include_twins: socket.assigns.include_opinions_from_twins,
+      has_votings: true,
       order_by: [desc: :id],
       limit: @per_page
     )
@@ -73,6 +74,7 @@ defmodule YouCongressWeb.ActivityLive.Index do
     Opinions.list_opinions(
       preload: [:votings, :author],
       include_twins: socket.assigns.include_opinions_from_twins,
+      has_votings: true,
       order_by: [desc: :id],
       limit: @per_page,
       offset: offset

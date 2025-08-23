@@ -195,7 +195,7 @@ defmodule YouCongressWeb.VotingLive.Index.OpinateComponent do
       "twin" => false
     }
 
-    with {:ok, opinion} <- Opinions.create_opinion(opinion_params),
+    with {:ok, %{opinion: opinion}} <- Opinions.create_opinion(opinion_params),
          {:ok, vote} <-
            create_or_update_vote(vote, %{
              current_user: current_user,

@@ -36,16 +36,12 @@ defmodule YouCongress.Opinions.Replier.AIReplier do
         order_by: [desc: :id]
       )
 
-    # Get the primary voting ID from the opinion's votings
-    voting_id = Opinion.primary_voting_id(opinion)
-
     with {:ok, %{reply: content, author_id: author_id}} <-
            AIComment.generate_comment(ancestors_and_self, :"gpt-4o"),
          {:ok, _} <-
            Opinions.create_opinion(%{
              "content" => content,
              "author_id" => author_id,
-             "voting_id" => voting_id,
              "ancestry" => set_ancestry(opinion),
              "twin" => true
            }) do
