@@ -19,12 +19,12 @@ defmodule YouCongress.Opinions.Opinion do
     belongs_to :author, YouCongress.Authors.Author
     belongs_to :user, YouCongress.Accounts.User
 
-    has_many :opinion_votings, YouCongress.Opinions.OpinionVoting
+    has_many :opinion_votings, YouCongress.OpinionsVotings.OpinionVoting
 
     many_to_many(
       :votings,
       YouCongress.Votings.Voting,
-      join_through: YouCongress.Opinions.OpinionVoting,
+      join_through: YouCongress.OpinionsVotings.OpinionVoting,
       on_replace: :delete
     )
 
@@ -93,32 +93,14 @@ defmodule YouCongress.Opinions.Opinion do
   def path_str(%{ancestry: ancestry, id: id}), do: "#{ancestry}/#{id}"
 
   @doc """
-  Get the primary voting for an opinion. This is a helper function for backward compatibility.
-  Returns the first voting if the opinion is associated with multiple votings.
+  Gets the primary voting ID for an opinion.
   """
-  def primary_voting(%__MODULE__{} = opinion) do
-    case opinion.votings do
-      [voting | _] ->
-        voting
-
-      [] ->
-        nil
-
-      %Ecto.Association.NotLoaded{} ->
-        opinion
-        |> YouCongress.Repo.preload(:votings)
-        |> primary_voting()
-    end
-  end
+  def primary_voting_id(%{votings: [voting | _]}) when not is_nil(voting), do: voting.id
+  def primary_voting_id(_), do: nil
 
   @doc """
-  Get the primary voting ID for an opinion. This is a helper function for backward compatibility.
-  Returns the first voting ID if the opinion is associated with multiple votings.
+  Gets the primary voting for an opinion.
   """
-  def primary_voting_id(%__MODULE__{} = opinion) do
-    case primary_voting(opinion) do
-      nil -> nil
-      voting -> voting.id
-    end
-  end
+  def primary_voting(%{votings: [voting | _]}) when not is_nil(voting), do: voting
+  def primary_voting(_), do: nil
 end

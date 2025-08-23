@@ -7,8 +7,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongress.Delegations
   alias YouCongress.Likes
   alias YouCongress.Votes
-  alias YouCongress.Opinions
-  alias YouCongress.Opinions.Opinion
+  alias YouCongress.OpinionsVotings
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
   alias YouCongress.DigitalTwins.Regenerate
@@ -263,16 +262,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   defp load_opinions(_, nil), do: %{}
 
   defp load_opinions(voting_ids, current_user) do
-    opinions =
-      Opinions.list_opinions(
-        voting_ids: voting_ids,
-        author_ids: [current_user.author_id]
-      )
-
-    Map.new(opinions, fn opinion ->
-      voting_id = Opinion.primary_voting_id(opinion)
-      {voting_id, opinion}
-    end)
+    OpinionsVotings.get_opinions_by_voting_ids(voting_ids, current_user)
   end
 
   defp load_delegate_ids(nil), do: []

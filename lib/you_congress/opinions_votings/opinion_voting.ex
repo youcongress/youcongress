@@ -1,4 +1,4 @@
-defmodule YouCongress.Opinions.OpinionVoting do
+defmodule YouCongress.OpinionsVotings.OpinionVoting do
   @moduledoc """
   Join schema for the many-to-many relationship between opinions and votings.
   Includes user_id to track who associated the opinion with the voting.

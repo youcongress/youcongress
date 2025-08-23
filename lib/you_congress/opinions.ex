@@ -8,6 +8,7 @@ defmodule YouCongress.Opinions do
 
   alias YouCongress.Likes
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.OpinionsVotings.OpinionVoting
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
 
   @doc """
@@ -298,7 +299,7 @@ defmodule YouCongress.Opinions do
       when not is_nil(user_id) do
     # Check if the opinion is already associated with this voting
     existing_association =
-      Repo.get_by(YouCongress.Opinions.OpinionVoting,
+      Repo.get_by(OpinionVoting,
         opinion_id: opinion.id,
         voting_id: voting.id
       )
@@ -307,8 +308,8 @@ defmodule YouCongress.Opinions do
       {:error, :already_associated}
     else
       # Create the association with the user_id
-      %YouCongress.Opinions.OpinionVoting{}
-      |> YouCongress.Opinions.OpinionVoting.changeset(%{
+      %OpinionVoting{}
+      |> OpinionVoting.changeset(%{
         opinion_id: opinion.id,
         voting_id: voting.id,
         user_id: user_id

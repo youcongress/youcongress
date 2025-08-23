@@ -27,46 +27,33 @@ defmodule YouCongress.Opinions.AIReplier do
   end
 
   defp reply(opinion) do
-    voting = Opinion.primary_voting(opinion)
+    ancestor_and_self_ids = Opinion.path_ids(opinion)
 
-    if voting do
-      ancestor_and_self_ids = Opinion.path_ids(opinion)
+    ancestors_and_self =
+      Opinions.list_opinions(
+        ids: ancestor_and_self_ids,
+        preload: [:author, :votings],
+        order_by: [desc: :id]
+      )
 
-      ancestors_and_self =
-        Opinions.list_opinions(
-          ids: ancestor_and_self_ids,
-          preload: [:author],
-          order_by: [desc: :id]
-        )
+    # Get the primary voting ID from the opinion's votings
+    voting_id = Opinion.primary_voting_id(opinion)
 
-      case AIComment.generate_comment(
-             voting.title,
-             ancestors_and_self,
-             :"gpt-4o"
-           ) do
-        {:ok, %{reply: content, author_id: author_id}} ->
-          case Opinions.create_opinion(%{
-                 "content" => content,
-                 "author_id" => author_id,
-                 "voting_id" => voting.id,
-                 "ancestry" => set_ancestry(opinion),
-                 "twin" => true
-               }) do
-            {:ok, _} ->
-              :ok
-
-            {:error, error} ->
-              Logger.error("Digital twin failed to reply #{inspect(error)}")
-              do_nothing()
-          end
-
-          :ok
-
-        {:error, _} ->
-          do_nothing()
-      end
+    with {:ok, %{reply: content, author_id: author_id}} <-
+           AIComment.generate_comment(ancestors_and_self, :"gpt-4o"),
+         {:ok, _} <-
+           Opinions.create_opinion(%{
+             "content" => content,
+             "author_id" => author_id,
+             "voting_id" => voting_id,
+             "ancestry" => set_ancestry(opinion),
+             "twin" => true
+           }) do
+      :ok
     else
-      do_nothing()
+      {:error, error} ->
+        Logger.error("Digital twin failed to reply #{inspect(error)}")
+        do_nothing()
     end
   end
 

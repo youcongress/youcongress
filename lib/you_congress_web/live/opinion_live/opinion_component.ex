@@ -214,7 +214,12 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   end
 
   defp x_url(opinion, voting, author, current_user) do
-    url = " https://youcongress.org#{x_path(voting)}"
+    url =
+      if voting do
+        " https://youcongress.org#{x_path(voting)}"
+      else
+        " https://youcongress.org/c/#{opinion.id}"
+      end
 
     opinion
     |> x_post(voting, author, current_user)
@@ -228,8 +233,16 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
     ~p"/p/#{voting.slug}"
   end
 
+  defp x_post(opinion, nil, %{id: id} = _author, %{id: id} = _current_user) do
+    opinion.content
+  end
+
   defp x_post(opinion, voting, %{id: id} = _author, %{id: id} = _current_user) do
     "#{voting.title} My take: #{opinion.content}"
+  end
+
+  defp x_post(opinion, nil, author, _current_user) do
+    "#{print_author(author, opinion.twin)}: #{opinion.content}"
   end
 
   defp x_post(opinion, voting, author, _current_user) do
