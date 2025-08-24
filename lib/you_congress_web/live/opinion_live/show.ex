@@ -327,4 +327,10 @@ defmodule YouCongressWeb.OpinionLive.Show do
   defp get_delegate_ids(%{author_id: author_id}) do
     Delegations.list_delegation_ids(deleguee_id: author_id)
   end
+
+  defp quote?(%Opinion{} = opinion) do
+    !is_nil(opinion.source_url) && !opinion.twin && is_nil(opinion.ancestry)
+  end
+
+  defp quote?(_), do: false
 end

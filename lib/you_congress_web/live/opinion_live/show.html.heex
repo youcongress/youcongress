@@ -34,7 +34,7 @@
   </div>
 <% end %>
 
-<%= if Permissions.can_add_opinion_to_voting?(@current_user) do %>
+<%= if quote?(@opinion) && Permissions.can_add_opinion_to_voting?(@current_user) do %>
   <div class="mb-6">
     <button
       phx-click="toggle-search"
