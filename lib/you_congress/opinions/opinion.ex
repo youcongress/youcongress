@@ -48,29 +48,7 @@ defmodule YouCongress.Opinions.Opinion do
     ])
     |> validate_required([:content, :twin])
     |> validate_source_url_if_present()
-    |> put_votings(attrs)
   end
-
-  defp put_votings(changeset, %{"votings" => votings}) when is_list(votings) do
-    put_assoc(changeset, :votings, votings)
-  end
-
-  defp put_votings(changeset, %{votings: votings}) when is_list(votings) do
-    put_assoc(changeset, :votings, votings)
-  end
-
-  # Handle backward compatibility for voting_id
-  defp put_votings(changeset, %{"voting_id" => voting_id}) when not is_nil(voting_id) do
-    voting = YouCongress.Votings.get_voting!(voting_id)
-    put_assoc(changeset, :votings, [voting])
-  end
-
-  defp put_votings(changeset, %{voting_id: voting_id}) when not is_nil(voting_id) do
-    voting = YouCongress.Votings.get_voting!(voting_id)
-    put_assoc(changeset, :votings, [voting])
-  end
-
-  defp put_votings(changeset, _), do: changeset
 
   defp validate_source_url_if_present(changeset) do
     case get_field(changeset, :source_url) do
