@@ -5,10 +5,8 @@ defmodule YouCongress.Opinions.Replier.AIComment do
 
   alias YouCongress.DigitalTwins.OpenAIModel
 
-  @spec generate_comment(
-          any(),
-          :"gpt-3.5-turbo-0125" | :"gpt-4" | :"gpt-4-turbo-2024-04-09" | :"gpt-4o"
-        ) :: {:error, binary() | Jason.DecodeError.t()} | {:ok, %{author_id: any(), reply: any()}}
+  @spec generate_comment(any(), OpenAIModel.t()) ::
+          {:error, binary() | Jason.DecodeError.t()} | {:ok, %{author_id: any(), reply: any()}}
   def generate_comment(ancestors_and_self, model) do
     {prompt, author} = get_prompt(ancestors_and_self)
 
