@@ -1,12 +1,14 @@
-defmodule YouCongress.Opinions.AIReplier.AIComment do
+defmodule YouCongress.Opinions.Replier.AIComment do
   @moduledoc """
   Generate a reply from a digital twin via OpenAI's API.
   """
 
   alias YouCongress.DigitalTwins.OpenAIModel
 
-  def generate_comment(voting_title, ancestors_and_self, model) do
-    {prompt, author} = get_prompt(voting_title, ancestors_and_self)
+  @spec generate_comment(any(), OpenAIModel.t()) ::
+          {:error, binary() | Jason.DecodeError.t()} | {:ok, %{author_id: any(), reply: any()}}
+  def generate_comment(ancestors_and_self, model) do
+    {prompt, author} = get_prompt(ancestors_and_self)
 
     with {:ok, data} <- ask_gpt(prompt, model),
          content <- OpenAIModel.get_content(data),
@@ -17,13 +19,11 @@ defmodule YouCongress.Opinions.AIReplier.AIComment do
     end
   end
 
-  defp get_prompt(voting_title, ancestors_and_self) do
+  defp get_prompt(ancestors_and_self) do
     {opinions, user_author, digital_twin_author} = print_opinions(ancestors_and_self)
 
     prompt =
       """
-      Poll: #{voting_title}
-
       #{opinions}
 
        Generate a reply in first person as if you were #{digital_twin_author.name} (#{digital_twin_author.bio}).

@@ -12,13 +12,16 @@ defmodule YouCongress.Workers.UpdateOpinionLikesCountWorker do
 
   @impl true
   def perform(%Oban.Job{args: %{"opinion_id" => opinion_id}}) do
-    opinion = Opinions.get_opinion!(opinion_id)
+    opinion = Opinions.get_opinion!(opinion_id, preload: [:votings])
 
     case Opinions.update_opinion_likes_count(opinion) do
       {:ok, opinion} ->
-        %{voting_id: opinion.voting_id}
-        |> SyncVotingLikesCountWorker.new()
-        |> Oban.insert()
+        # Update all voting likes counts for all votings this opinion belongs to
+        Enum.each(opinion.votings, fn voting ->
+          %{voting_id: voting.id}
+          |> SyncVotingLikesCountWorker.new()
+          |> Oban.insert()
+        end)
 
       _ ->
         Logger.error("Failed to update opinion likes count for opinion #{opinion.id}")

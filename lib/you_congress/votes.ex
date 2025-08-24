@@ -419,11 +419,18 @@ defmodule YouCongress.Votes do
       )
 
     query =
-      if has_opinion_id,
-        do: from(v in query, where: is_nil(v.opinion_id) != ^has_opinion_id),
-        else: query
+      if has_opinion_id do
+        from(v in query, where: not is_nil(v.opinion_id))
+      else
+        query
+      end
 
-    query = if not is_nil(twin), do: from(v in query, where: v.twin == ^twin), else: query
+    query =
+      if is_nil(twin) do
+        query
+      else
+        from(v in query, where: v.twin == ^twin)
+      end
 
     query
     |> Repo.all()

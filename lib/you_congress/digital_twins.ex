@@ -86,7 +86,7 @@ defmodule YouCongress.DigitalTwins do
       end
 
     if author.twin_enabled do
-      {:ok, opinion} =
+      {:ok, %{opinion: opinion}} =
         Opinions.create_opinion(%{
           author_id: author.id,
           voting_id: voting_id,

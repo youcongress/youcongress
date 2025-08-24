@@ -22,7 +22,15 @@ defmodule YouCongress.Votings.Voting do
     field :opinion_likes_count, :integer, default: 0
 
     has_many :votes, Vote
-    has_many :opinions, Opinion
+
+    has_many :opinion_votings, YouCongress.OpinionsVotings.OpinionVoting
+
+    many_to_many(
+      :opinions,
+      Opinion,
+      join_through: YouCongress.OpinionsVotings.OpinionVoting,
+      on_replace: :delete
+    )
 
     many_to_many(
       :halls,

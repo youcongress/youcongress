@@ -53,7 +53,7 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
       twin: false
     }
 
-    with {:ok, opinion} <- Opinions.create_opinion(args),
+    with {:ok, %{opinion: opinion}} <- Opinions.create_opinion(args),
          {:ok, _} <-
            Votes.create_vote(%{
              voting_id: voting.id,
@@ -103,7 +103,7 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
       voting_id: voting.id
     }
 
-    with {:ok, opinion} <- Opinions.create_opinion(args),
+    with {:ok, %{opinion: opinion}} <- Opinions.create_opinion(args),
          {:ok, _} <- Votes.update_vote(current_user_vote, %{opinion_id: opinion.id, twin: false}) do
       current_user_vote =
         Votes.get_current_user_vote(voting.id, socket.assigns.current_user.author_id)
