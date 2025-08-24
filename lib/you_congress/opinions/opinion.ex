@@ -24,7 +24,8 @@ defmodule YouCongress.Opinions.Opinion do
     many_to_many(
       :votings,
       YouCongress.Votings.Voting,
-      join_through: YouCongress.OpinionsVotings.OpinionVoting,
+      join_through: "opinions_votings",
+      join_keys: [opinion_id: :id, voting_id: :id],
       on_replace: :delete
     )
 

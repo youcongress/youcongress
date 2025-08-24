@@ -320,7 +320,7 @@ defmodule YouCongress.Opinions do
       |> case do
         {:ok, _opinion_voting} ->
           # Return the updated opinion for consistency
-          {:ok, Repo.preload(opinion, :votings, force: true)}
+          {:ok, Repo.preload(opinion, :votings)}
 
         {:error, changeset} ->
           {:error, changeset}
