@@ -135,9 +135,12 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
     Track.event("Delete Opinion", socket.assigns.current_user)
 
+    parent_opinion_id = Opinion.parent_id(opinion)
+    url = if parent_opinion_id, do: "/c/#{parent_opinion_id}", else: "/home"
+
     socket =
       socket
-      |> redirect_or_load_variables(opinion)
+      |> redirect(to: url)
       |> put_flash(:info, "Opinion deleted successfully.")
 
     {:noreply, socket}
@@ -269,18 +272,6 @@ defmodule YouCongressWeb.OpinionLive.Show do
     }
 
     Votes.create_or_update(vote_params)
-  end
-
-  defp redirect_or_load_variables(socket, opinion) do
-    parent_opinion_id = Opinion.parent_id(opinion)
-
-    if parent_opinion_id do
-      socket
-      |> load_opinion!(parent_opinion_id)
-      |> load_delegations()
-    else
-      redirect(socket, to: "/home")
-    end
   end
 
   defp load_opinion!(socket, opinion_id) do
