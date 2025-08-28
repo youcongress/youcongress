@@ -19,13 +19,13 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
           <div class="pt-1 space-x-8">
             <HallNav.tab
               url_hall_name={@hall_name}
-              hall_name="ai-safety-policy"
+              hall_name="ai-safety"
               hall_link={~p"/polls"}
-              hall_title="AI safety policy"
+              hall_title="AI safety"
             />
           </div>
           <div class="hidden md:block pt-1 space-x-8">
-            <%= if @hall_name not in ["ai-safety-policy", "ai-governance", "future-of-work", "ai", "cern-for-ai", "existential-risk", "us", "eu", "all"] do %>
+            <%= if @hall_name not in ["ai-safety", "ai-governance", "future-of-work", "ai", "cern-for-ai", "existential-risk", "us", "eu", "all"] do %>
               <HallNav.tab
                 url_hall_name={@hall_name}
                 hall_name={@hall_name}
@@ -78,7 +78,7 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             />
           </div>
           <div class="space-x-8 md:hidden pt-1">
-            <%= if @hall_name not in ["ai-safety-policy", "ai-governance", "cern-for-ai", "existential-risk", "eu", "us", "ai", "all"] do %>
+            <%= if @hall_name not in ["ai-safety", "ai-governance", "cern-for-ai", "existential-risk", "eu", "us", "ai", "all"] do %>
               <HallNav.tab
                 url_hall_name={@hall_name}
                 hall_name={@hall_name}

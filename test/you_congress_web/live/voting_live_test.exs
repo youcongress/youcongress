@@ -26,7 +26,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
   defp create_voting(_) do
     voting = voting_fixture()
-    {:ok, _} = HallsVotings.sync!(voting.id, ["ai-safety-policy"])
+    {:ok, _} = HallsVotings.sync!(voting.id, ["ai-safety"])
 
     %{voting: voting}
   end
