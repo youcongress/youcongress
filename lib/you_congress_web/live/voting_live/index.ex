@@ -6,6 +6,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongress.Authors
   alias YouCongress.Delegations
   alias YouCongress.Likes
+  alias YouCongress.Opinions
   alias YouCongress.Votes
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
