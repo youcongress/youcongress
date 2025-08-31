@@ -29,14 +29,14 @@ defmodule YouCongress.OpinionsTest do
         voting_id: voting_fixture().id
       }
 
-      assert {:ok, %Opinion{} = opinion} = Opinions.create_opinion(valid_attrs)
+      assert {:ok, %{opinion: %Opinion{} = opinion}} = Opinions.create_opinion(valid_attrs)
       assert opinion.source_url == "https://some.source_url.com"
       assert opinion.content == "some content"
       assert opinion.twin == true
     end
 
     test "create_opinion/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Opinions.create_opinion(@invalid_attrs)
+      assert {:error, :opinion, %Ecto.Changeset{}, %{}} = Opinions.create_opinion(@invalid_attrs)
     end
 
     test "update_opinion/2 with valid data updates the opinion" do

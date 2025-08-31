@@ -1,17 +1,16 @@
-defmodule YouCongress.Opinions.AIReplier do
+defmodule YouCongress.Opinions.Replier.AIReplier do
   @moduledoc """
   Generate a reply from a digital twin via OpenAI's API.
   """
 
-  @behaviour YouCongress.Opinions.AIReplier.AIReplierBehaviour
+  @behaviour YouCongress.Opinions.Replier.AIReplierBehaviour
 
   require Logger
 
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
-  alias YouCongress.Votings
   alias YouCongress.Authors
-  alias YouCongress.Opinions.AIReplier.AIComment
+  alias YouCongress.Opinions.Replier.AIComment
 
   def maybe_reply(%{twin: true}), do: do_nothing()
   def maybe_reply(%{ancestry: nil}), do: do_nothing()
@@ -28,40 +27,28 @@ defmodule YouCongress.Opinions.AIReplier do
   end
 
   defp reply(opinion) do
-    voting = Votings.get_voting!(opinion.voting_id)
     ancestor_and_self_ids = Opinion.path_ids(opinion)
 
     ancestors_and_self =
       Opinions.list_opinions(
         ids: ancestor_and_self_ids,
-        preload: [:author],
+        preload: [:author, :votings],
         order_by: [desc: :id]
       )
 
-    case AIComment.generate_comment(
-           voting.title,
-           ancestors_and_self,
-           :"gpt-4o"
-         ) do
-      {:ok, %{reply: content, author_id: author_id}} ->
-        case Opinions.create_opinion(%{
-               "content" => content,
-               "author_id" => author_id,
-               "voting_id" => opinion.voting_id,
-               "ancestry" => set_ancestry(opinion),
-               "twin" => true
-             }) do
-          {:ok, _} ->
-            :ok
-
-          {:error, error} ->
-            Logger.error("Digital twin failed to reply #{inspect(error)}")
-            do_nothing()
-        end
-
-        :ok
-
-      {:error, _} ->
+    with {:ok, %{reply: content, author_id: author_id}} <-
+           AIComment.generate_comment(ancestors_and_self, :"gpt-4o"),
+         {:ok, _} <-
+           Opinions.create_opinion(%{
+             "content" => content,
+             "author_id" => author_id,
+             "ancestry" => set_ancestry(opinion),
+             "twin" => true
+           }) do
+      :ok
+    else
+      {:error, error} ->
+        Logger.error("Digital twin failed to reply #{inspect(error)}")
         do_nothing()
     end
   end

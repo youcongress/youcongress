@@ -1,4 +1,8 @@
 defmodule YouCongress.Votings.Generator do
+  @moduledoc """
+  Main module for generating new voting topics and managing the generation process.
+  """
+
   alias YouCongress.Votings
   alias YouCongress.Votings.GeneratorAI
   alias YouCongress.Workers.PublicFiguresWorker

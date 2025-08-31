@@ -1,4 +1,8 @@
 defmodule YouCongress.Votings.VotingQueries do
+  @moduledoc """
+  Provides query functions for retrieving voting-related data from the database.
+  """
+
   import Ecto.Query, warn: false
   alias YouCongress.Repo
 

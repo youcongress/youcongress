@@ -1,6 +1,6 @@
 defmodule YouCongress.Opinions.Opinion do
   @moduledoc """
-  The schema for opinions/comments/quotes.
+  The schema for opinions/c/quotes.
   """
 
   use Ecto.Schema
@@ -18,7 +18,16 @@ defmodule YouCongress.Opinions.Opinion do
 
     belongs_to :author, YouCongress.Authors.Author
     belongs_to :user, YouCongress.Accounts.User
-    belongs_to :voting, YouCongress.Votings.Voting
+
+    has_many :opinion_votings, YouCongress.OpinionsVotings.OpinionVoting
+
+    many_to_many(
+      :votings,
+      YouCongress.Votings.Voting,
+      join_through: "opinions_votings",
+      join_keys: [opinion_id: :id, voting_id: :id],
+      on_replace: :delete
+    )
 
     has_many :likes, YouCongress.Likes.Like
 
@@ -34,7 +43,6 @@ defmodule YouCongress.Opinions.Opinion do
       :twin,
       :author_id,
       :user_id,
-      :voting_id,
       :ancestry,
       :descendants_count,
       :likes_count
@@ -62,4 +70,10 @@ defmodule YouCongress.Opinions.Opinion do
 
   def path_str(%{ancestry: nil, id: id}), do: "#{id}"
   def path_str(%{ancestry: ancestry, id: id}), do: "#{ancestry}/#{id}"
+
+  @doc """
+  Gets the first voting for an opinion (replacement for primary_voting).
+  """
+  def first_voting(%{votings: [voting | _]}) when not is_nil(voting), do: voting
+  def first_voting(_), do: nil
 end

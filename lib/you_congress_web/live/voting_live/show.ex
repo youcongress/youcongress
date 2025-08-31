@@ -163,7 +163,7 @@ defmodule YouCongressWeb.VotingLive.Show do
 
     case Regenerate.regenerate(opinion_id, current_user) do
       {:ok, {opinion, _vote}} ->
-        opinion = Opinions.get_opinion(opinion.id, preload: [:author, :voting])
+        opinion = Opinions.get_opinion(opinion.id, preload: [:author, :votings])
 
         socket =
           socket
