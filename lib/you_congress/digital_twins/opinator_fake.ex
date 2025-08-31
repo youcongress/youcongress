@@ -1,4 +1,8 @@
 defmodule YouCongress.DigitalTwins.OpinatorFake do
+  @moduledoc """
+  A fake implementation of the opinator for testing purposes.
+  """
+
   def generate_opinion(_topic, _model, _next_response, _name) do
     opinion = %{
       "name" => Faker.Person.name(),

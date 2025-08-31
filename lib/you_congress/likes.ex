@@ -87,7 +87,9 @@ defmodule YouCongress.Likes do
   def get_liked_opinion_ids(%User{id: user_id}, %Voting{} = voting) do
     from(o in Opinion,
       join: l in assoc(o, :likes),
-      where: l.user_id == ^user_id and o.voting_id == ^voting.id,
+      join: ov in "opinions_votings",
+      on: ov.opinion_id == o.id,
+      where: l.user_id == ^user_id and ov.voting_id == ^voting.id,
       select: o.id
     )
     |> Repo.all()

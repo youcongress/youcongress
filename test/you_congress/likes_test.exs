@@ -6,6 +6,7 @@ defmodule YouCongress.LikesTest do
   import YouCongress.VotingsFixtures
 
   alias YouCongress.Likes
+  alias YouCongress.Opinions
 
   test "count/1 returns the correct number of likes for an opinion" do
     opinion = opinion_fixture()
@@ -71,8 +72,10 @@ defmodule YouCongress.LikesTest do
 
   test "get_liked_opinion_ids/2 returns the list of liked opinion ids for a user and voting" do
     voting = voting_fixture()
-    opinion = opinion_fixture(%{voting_id: voting.id})
+    opinion = opinion_fixture()
     user = user_fixture()
+
+    Opinions.add_opinion_to_voting(opinion, voting)
 
     {:ok, _} = Likes.like(opinion.id, user)
 

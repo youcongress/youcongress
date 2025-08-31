@@ -1,4 +1,8 @@
 defmodule YouCongressWeb.Components.SwitchComponent do
+  @moduledoc """
+  A toggle switch component for Phoenix LiveView that allows users to switch between two states.
+  """
+
   use Phoenix.Component
 
   attr :is_active, :boolean

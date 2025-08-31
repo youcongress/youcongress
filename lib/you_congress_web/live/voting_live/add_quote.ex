@@ -225,7 +225,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
   defp create_vote_and_opinion(voting, author, answer_id, opinion, source_url, socket) do
     %{assigns: %{current_user: current_user}} = socket
 
-    with {:ok, opinion} <-
+    with {:ok, %{opinion: opinion}} <-
            Opinions.create_opinion(%{
              content: opinion,
              author_id: author.id,
@@ -269,7 +269,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
   defp create_opinion_and_update_vote(vote, author, answer_id, opinion, source_url, socket) do
     %{assigns: %{current_user: current_user, voting: voting}} = socket
 
-    with {:ok, opinion} <-
+    with {:ok, %{opinion: opinion}} <-
            Opinions.create_opinion(%{
              content: opinion,
              author_id: author.id,

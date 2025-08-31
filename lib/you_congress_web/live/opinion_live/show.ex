@@ -8,6 +8,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.Delegations
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongress.Votings
+  alias YouCongress.Accounts.Permissions
 
   @impl true
   def mount(_params, session, socket) do
@@ -39,7 +40,13 @@ defmodule YouCongressWeb.OpinionLive.Show do
        page_title: "Opinion",
        opinion: opinion,
        parent_opinion: parent_opinion,
-       changeset: changeset
+       changeset: changeset,
+       search_query: "",
+       search_results: [],
+       show_search: false,
+       show_vote_modal: false,
+       selected_voting_id: nil,
+       selected_voting_title: nil
      )}
   end
 
@@ -57,18 +64,18 @@ defmodule YouCongressWeb.OpinionLive.Show do
   def handle_event("save", %{"opinion" => %{"content" => content}}, socket) do
     %{assigns: %{opinion: opinion, current_user: current_user}} = socket
 
-    ancestry = if opinion.ancestry, do: "#{opinion.ancestry}/#{opinion.id}", else: "#{opinion.id}"
+    ancestry =
+      if opinion.ancestry, do: "#{opinion.ancestry}/#{opinion.id}", else: "#{opinion.id}"
 
     opinion_params = %{
       "content" => content,
-      "voting_id" => opinion.voting_id,
       "author_id" => current_user.author_id,
       "user_id" => current_user.id,
       "ancestry" => ancestry
     }
 
     case Opinions.create_opinion(opinion_params) do
-      {:ok, opinion} ->
+      {:ok, %{opinion: opinion}} ->
         Track.event("New Opinion", current_user)
 
         # We do this synchronous as we want the reply be ready when we redirect
@@ -77,7 +84,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
         {:noreply,
          socket
          |> put_flash(:info, "Opinion created successfully.")
-         |> redirect(to: "/comments/#{opinion.id}")}
+         |> redirect(to: "/c/#{opinion.id}")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
@@ -121,36 +128,154 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   def handle_event("delete-comment", %{"opinion_id" => opinion_id}, socket) do
-    opinion = Opinions.get_opinion!(opinion_id)
-    opinion_id = opinion.id
-    voting_id = opinion.voting_id
+    opinion = Opinions.get_opinion!(opinion_id, preload: [:votings])
 
     {_count, nil} =
       Opinions.delete_opinion_and_descendants(opinion)
 
     Track.event("Delete Opinion", socket.assigns.current_user)
 
+    parent_opinion_id = Opinion.parent_id(opinion)
+    url = if parent_opinion_id, do: "/c/#{parent_opinion_id}", else: "/home"
+
     socket =
       socket
-      |> redirect_or_load_variables(opinion_id, voting_id)
+      |> redirect(to: url)
       |> put_flash(:info, "Opinion deleted successfully.")
 
     {:noreply, socket}
   end
 
-  defp redirect_or_load_variables(%{assigns: %{opinion: %{id: id}}} = socket, id, voting_id) do
-    voting = Votings.get_voting!(voting_id)
-    redirect(socket, to: "/p/#{voting.slug}")
+  def handle_event("toggle-search", _params, socket) do
+    {:noreply, assign(socket, :show_search, !socket.assigns.show_search)}
   end
 
-  defp redirect_or_load_variables(socket, _, _voting_id) do
-    socket
-    |> load_opinion!(socket.assigns.opinion.id)
-    |> load_delegations()
+  def handle_event("search-votings", %{"value" => query}, socket) do
+    %{assigns: %{opinion: opinion}} = socket
+
+    search_results =
+      if String.length(query) >= 2 do
+        # Get existing voting IDs for this opinion
+        existing_voting_ids = Enum.map(opinion.votings, & &1.id)
+
+        # Search for votings and exclude ones already associated
+        Votings.list_votings(title_contains: query, limit: 10)
+        |> Enum.reject(fn voting -> voting.id in existing_voting_ids end)
+      else
+        []
+      end
+
+    {:noreply,
+     socket
+     |> assign(:search_query, query)
+     |> assign(:search_results, search_results)}
+  end
+
+  def handle_event("show-vote-options", %{"voting_id" => voting_id}, socket) do
+    %{assigns: %{search_results: search_results}} = socket
+
+    voting_id_int = String.to_integer(voting_id)
+    voting = Enum.find(search_results, fn v -> v.id == voting_id_int end)
+
+    socket =
+      socket
+      |> assign(:show_search, false)
+      |> assign(:show_vote_modal, true)
+      |> assign(:selected_voting_id, voting_id_int)
+      |> assign(:selected_voting_title, voting.title)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("cancel-vote-modal", _params, socket) do
+    socket =
+      socket
+      |> assign(:show_vote_modal, false)
+      |> assign(:selected_voting_id, nil)
+      |> assign(:selected_voting_title, nil)
+
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "add-to-voting-with-vote",
+        %{"voting_id" => voting_id, "answer" => answer},
+        socket
+      ) do
+    %{assigns: %{opinion: opinion, current_user: current_user}} = socket
+
+    with {:ok, _updated_opinion} <-
+           Opinions.add_opinion_to_voting(opinion, String.to_integer(voting_id)),
+         {:ok, _vote} <-
+           create_or_update_vote(current_user, opinion, String.to_integer(voting_id), answer) do
+      Track.event("Add Opinion to Voting with Vote", current_user)
+
+      socket =
+        socket
+        |> load_opinion!(opinion.id)
+        |> assign(:show_search, false)
+        |> assign(:search_query, "")
+        |> assign(:search_results, [])
+        |> assign(:show_vote_modal, false)
+        |> assign(:selected_voting_id, nil)
+        |> assign(:selected_voting_title, nil)
+        |> put_flash(:info, "Opinion added to voting with your vote (#{answer}) successfully.")
+
+      {:noreply, socket}
+    else
+      {:error, :already_associated} ->
+        {:noreply, socket |> put_flash(:error, "Opinion is already associated with this voting.")}
+
+      {:error, _} ->
+        {:noreply, socket |> put_flash(:error, "Failed to add opinion to voting.")}
+    end
+  end
+
+  def handle_event("add-to-voting", %{"voting_id" => voting_id}, socket) do
+    %{assigns: %{opinion: opinion, current_user: current_user}} = socket
+
+    case Opinions.add_opinion_to_voting(opinion, String.to_integer(voting_id)) do
+      {:ok, _updated_opinion} ->
+        Track.event("Add Opinion to Voting", current_user)
+
+        socket =
+          socket
+          |> load_opinion!(opinion.id)
+          |> assign(:show_search, false)
+          |> assign(:search_query, "")
+          |> assign(:search_results, [])
+          |> put_flash(:info, "Opinion added to voting successfully.")
+
+        {:noreply, socket}
+
+      {:error, :already_associated} ->
+        {:noreply, socket |> put_flash(:error, "Opinion is already associated with this voting.")}
+
+      {:error, _} ->
+        {:noreply, socket |> put_flash(:error, "Failed to add opinion to voting.")}
+    end
+  end
+
+  defp create_or_update_vote(current_user, opinion, voting_id, answer) do
+    alias YouCongress.Votes
+    alias YouCongress.Votes.Answers
+
+    answer_id = Answers.answer_id_by_response(answer)
+
+    vote_params = %{
+      author_id: current_user.author_id,
+      voting_id: voting_id,
+      answer_id: answer_id,
+      opinion_id: opinion.id,
+      direct: true,
+      twin: false
+    }
+
+    Votes.create_or_update(vote_params)
   end
 
   defp load_opinion!(socket, opinion_id) do
-    opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :voting])
+    opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :votings])
     assign(socket, opinion: opinion)
   end
 
@@ -193,4 +318,10 @@ defmodule YouCongressWeb.OpinionLive.Show do
   defp get_delegate_ids(%{author_id: author_id}) do
     Delegations.list_delegation_ids(deleguee_id: author_id)
   end
+
+  defp quote?(%Opinion{} = opinion) do
+    !is_nil(opinion.source_url) && !opinion.twin && is_nil(opinion.ancestry)
+  end
+
+  defp quote?(_), do: false
 end

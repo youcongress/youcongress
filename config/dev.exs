@@ -5,7 +5,7 @@ if !System.get_env("OPENAI_API_KEY") do
   config :you_congress, :hall_classifier, YouCongress.Halls.ClassificationFake
 
   # Use a fake to reply to comments under digital-twin comments
-  config :you_congress, :ai_replier, YouCongress.Opinions.AIReplier.AIReplierFake
+  config :you_congress, :ai_replier, YouCongress.Opinions.Replier.AIReplierFake
 
   config :you_congress, :public_figures_generator, YouCongress.DigitalTwins.PublicFiguresFake
   config :you_congress, :opinator_implementation, YouCongress.DigitalTwins.OpinatorFake

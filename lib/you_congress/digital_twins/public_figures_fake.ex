@@ -1,4 +1,8 @@
 defmodule YouCongress.DigitalTwins.PublicFiguresFake do
+  @moduledoc """
+  A fake implementation of the public figures generator for testing purposes.
+  """
+
   alias YouCongress.DigitalTwins.PublicFigures
   alias YouCongress.DigitalTwins.PublicFigures
 

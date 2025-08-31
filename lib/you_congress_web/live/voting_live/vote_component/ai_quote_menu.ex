@@ -39,15 +39,17 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
             <.link href="/faq#change-ai-profile" class="block p-2 hover:text-indigo-600">
               I am <%= @author.name %>
             </.link>
-            <span class="block p-2">
-              <.link
-                href={"/p/#{@voting.slug}/add-quote?twitter_username=#{@author.twitter_username}"}
-                class="hover:text-indigo-600"
-                rel="nofollow"
-              >
-                Add a real quote
-              </.link>
-            </span>
+            <%= if @voting do %>
+              <span class="block p-2">
+                <.link
+                  href={"/p/#{@voting.slug}/add-quote?twitter_username=#{@author.twitter_username}"}
+                  class="hover:text-indigo-600"
+                  rel="nofollow"
+                >
+                  Add a sourced quote
+                </.link>
+              </span>
+            <% end %>
           <% end %>
           <%= if @opinion && @opinion.twin && @page in [:voting_index, :voting_show, :author_show] && Permissions.can_regenerate_opinion?(@current_user) do %>
             <span class="block p-2">

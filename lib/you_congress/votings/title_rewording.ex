@@ -1,4 +1,8 @@
 defmodule YouCongress.Votings.TitleRewording do
+  @moduledoc """
+  Provides functionality for generating alternative wordings of voting titles.
+  """
+
   def generate_rewordings(prompt, model) do
     implementation().generate_rewordings(prompt, model)
   end

@@ -1,4 +1,8 @@
 defmodule YouCongress.Workers.VotingHallsGeneratorWorker do
+  @moduledoc """
+  Oban worker for generating and syncing voting halls data.
+  """
+
   @max_attempts 2
 
   use Oban.Worker, max_attempts: @max_attempts

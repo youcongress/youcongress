@@ -7,6 +7,8 @@ defmodule YouCongressWeb.ActivityLiveTest do
   import YouCongress.VotingsFixtures
   import YouCongress.AccountsFixtures
 
+  alias YouCongress.Opinions
+
   describe "Index" do
     test "lists recent opinions", %{conn: conn} do
       author1 = author_fixture(%{name: "Someone1"})
@@ -17,7 +19,6 @@ defmodule YouCongressWeb.ActivityLiveTest do
         opinion_fixture(%{
           author_id: author1.id,
           content: "Opinion1",
-          voting_id: voting.id,
           twin: true
         })
 
@@ -27,7 +28,6 @@ defmodule YouCongressWeb.ActivityLiveTest do
         opinion_fixture(%{
           author_id: author2.id,
           content: "Opinion2",
-          voting_id: voting.id,
           twin: true
         })
 
@@ -35,10 +35,13 @@ defmodule YouCongressWeb.ActivityLiveTest do
         opinion_fixture(%{
           author_id: author2.id,
           content: "Opinion3",
-          voting_id: voting.id,
           ancestry: "#{opinion2.id}",
           twin: false
         })
+
+      Opinions.add_opinion_to_voting(opinion1, voting)
+      Opinions.add_opinion_to_voting(opinion2, voting)
+      Opinions.add_opinion_to_voting(opinion3, voting)
 
       {:ok, index_live, _html} = live(conn, ~p"/home")
 
@@ -60,7 +63,8 @@ defmodule YouCongressWeb.ActivityLiveTest do
       current_user = user_fixture()
       conn = log_in_user(conn, current_user)
       voting = voting_fixture()
-      opinion_fixture(%{voting_id: voting.id, twin: false})
+      opinion = opinion_fixture(%{twin: false})
+      Opinions.add_opinion_to_voting(opinion, voting)
 
       {:ok, view, _html} = live(conn, "/home")
 

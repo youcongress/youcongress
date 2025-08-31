@@ -8,7 +8,9 @@ defmodule YouCongress.Opinions do
 
   alias YouCongress.Likes
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.OpinionsVotings.OpinionVoting
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
+  alias YouCongress.Opinions.Replier
 
   @doc """
   Returns the list of opinions.
@@ -89,7 +91,6 @@ defmodule YouCongress.Opinions do
     |> Ecto.Multi.insert(:opinion, Opinion.changeset(%Opinion{}, attrs))
     |> enqueue_update_ancestor_counts(attrs["ancestry"])
     |> Repo.transaction()
-    |> handle_transaction_result()
   end
 
   defp enqueue_update_ancestor_counts(multi, nil), do: multi
@@ -179,7 +180,16 @@ defmodule YouCongress.Opinions do
         from q in query, where: q.author_id in ^author_ids
 
       {:voting_ids, voting_ids}, query ->
-        from q in query, where: q.voting_id in ^voting_ids
+        from q in query,
+          join: ov in "opinions_votings",
+          on: ov.opinion_id == q.id,
+          where: ov.voting_id in ^voting_ids
+
+      {:has_votings, true}, query ->
+        from q in query,
+          join: ov in "opinions_votings",
+          on: ov.opinion_id == q.id,
+          distinct: q.id
 
       {:content, content}, query ->
         from q in query, where: q.content == ^content
@@ -252,11 +262,7 @@ defmodule YouCongress.Opinions do
   end
 
   def maybe_reply_by_ai(opinion) do
-    ai_replier_impl().maybe_reply(opinion)
-  end
-
-  def ai_replier_impl do
-    Application.get_env(:you_congress, :ai_replier, YouCongress.Opinions.AIReplier)
+    Replier.maybe_reply(opinion)
   end
 
   def delete_subopinions(%Opinion{} = opinion) do
@@ -269,5 +275,64 @@ defmodule YouCongress.Opinions do
   def count do
     from(o in Opinion, select: count(o.id))
     |> Repo.one()
+  end
+
+  @doc """
+  Adds an opinion to a voting by creating an association in the opinions_votings table.
+
+  ## Examples
+
+      iex> add_opinion_to_voting(opinion, voting)
+      {:ok, %Opinion{}}
+
+      iex> add_opinion_to_voting(opinion, voting)
+      {:error, %Ecto.Changeset{}}
+  """
+  def add_opinion_to_voting(%Opinion{} = opinion, voting_id) when is_integer(voting_id) do
+    voting = YouCongress.Votings.get_voting!(voting_id)
+    add_opinion_to_voting(opinion, voting)
+  end
+
+  def add_opinion_to_voting(%Opinion{} = opinion, %YouCongress.Votings.Voting{} = voting) do
+    add_opinion_to_voting(opinion, voting, opinion.user_id)
+  end
+
+  def add_opinion_to_voting(%Opinion{} = opinion, %YouCongress.Votings.Voting{} = voting, user_id)
+      when not is_nil(user_id) do
+    # Check if the opinion is already associated with this voting
+    existing_association =
+      Repo.get_by(OpinionVoting,
+        opinion_id: opinion.id,
+        voting_id: voting.id
+      )
+
+    if existing_association do
+      {:error, :already_associated}
+    else
+      # Create the association with the user_id
+      %OpinionVoting{}
+      |> OpinionVoting.changeset(%{
+        opinion_id: opinion.id,
+        voting_id: voting.id,
+        user_id: user_id
+      })
+      |> Repo.insert()
+      |> case do
+        {:ok, _opinion_voting} ->
+          # Return the updated opinion for consistency
+          {:ok, Repo.preload(opinion, :votings)}
+
+        {:error, changeset} ->
+          {:error, changeset}
+      end
+    end
+  end
+
+  def add_opinion_to_voting(
+        %Opinion{} = _opinion,
+        %YouCongress.Votings.Voting{} = _voting,
+        _user_id
+      ) do
+    {:error, :user_id_required}
   end
 end
