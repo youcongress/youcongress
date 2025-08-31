@@ -6,8 +6,8 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongress.Authors
   alias YouCongress.Delegations
   alias YouCongress.Likes
-  alias YouCongress.Votes
   alias YouCongress.OpinionsVotings
+  alias YouCongress.Votes
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
   alias YouCongress.DigitalTwins.Regenerate
@@ -21,7 +21,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongress.Votings.VotingQueries
   alias YouCongress.Halls
 
-  @default_hall "ai-safety-policy"
+  @default_hall "ai-safety"
 
   @impl true
   def mount(params, session, socket) do
@@ -41,7 +41,7 @@ defmodule YouCongressWeb.VotingLive.Index do
       |> assign(:current_user_delegation_ids, get_current_user_delegation_ids(current_user))
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
       |> assign(:page, 1)
-      |> assign(:per_page, 5)
+      |> assign(:per_page, 15)
       |> assign(:has_more_votings, true)
       |> stream(:votings, [])
       |> assign_votes(1)
