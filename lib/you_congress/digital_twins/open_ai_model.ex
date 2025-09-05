@@ -13,16 +13,15 @@ defmodule YouCongress.DigitalTwins.OpenAIModel do
     :"gpt-5-nano" => %{completion_tokens: 0.0004, prompt_tokens: 0.00005}
   }
 
-  @spec get_content(map) :: [binary]
+  @spec get_content(map) :: binary
   def get_content(data) do
-    hd(data.choices)["message"]["content"]
-    |> String.split("\n\n")
+    hd(data["choices"])["message"]["content"]
   end
 
   @spec get_cost(map, __MODULE__.t()) :: number
   def get_cost(data, model) do
-    completion = data.usage["completion_tokens"] * @token_cost[model][:completion_tokens] / 1000
-    prompt = data.usage["prompt_tokens"] * @token_cost[model][:prompt_tokens] / 1000
+    completion = data["usage"]["completion_tokens"] * @token_cost[model][:completion_tokens] / 1000
+    prompt = data["usage"]["prompt_tokens"] * @token_cost[model][:prompt_tokens] / 1000
     completion + prompt
   end
 end
