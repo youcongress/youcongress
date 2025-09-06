@@ -1,30 +1,63 @@
 defmodule YouCongress.Quotes.QuotatorAI do
   @moduledoc """
-  Find and return a single relevant public-figure quote about a question using OpenAI.
+  Find and return 20 relevant public-figure quotes about a question using OpenAI.
   """
 
   alias YouCongress.DigitalTwins.OpenAIModel
 
   @model :"gpt-5"
+  @timeout_in_min 25
 
   @doc """
-  Generate a quote for a question.
+  Generate 20 quotes for a question.
 
   ## Examples
 
       iex> YouCongress.Quotes.QuotatorAI.generate_quote("Should we build a CERN for AI?")
-      {:ok, %{quote: %{...}, cost: 0.0001}}
+      {:ok,
+        %{
+          cost: 0.18691525000000004,
+          quotes: [
+            %{
+              "agree_rate" => "Agree",
+              "author" => %{
+                "bio" => "EU Commission President",
+                "name" => "Ursula von der Leyen",
+                "twitter_username" => "",
+                "wikipedia_url" => "https://en.wikipedia.org/wiki/Ursula_von_der_Leyen"
+              },
+              "quote" => "We want to replicate the success story of CERN in Geneva. As you all know, CERN holds the largest particle accelerator in the world, and it allows the best and the brightest minds in the world to work together. And we want the same to happen in our AI Gigafactory.",
+              "source_url" => "https://www.reuters.com/technology/artificial-intelligence/quotes-eu-chief-von-der-leyens-ai-speech-paris-summit-2025-02-11/",
+              "year" => "2025"
+            },
+            %{
+              "agree_rate" => "Agree",
+              "author" => %{
+                "bio" => "DeepMind cofounder, CEO",
+                "name" => "Demis Hassabis",
+                "twitter_username" => "",
+                "wikipedia_url" => "https://en.wikipedia.org/wiki/Demis_Hassabis"
+              },
+              "quote" => "I’d love for there to be an International CERN, basically, for AI, where you get the top researchers in the world and you go: Look, let’s focus on the final few years of this project […] and really get it right.",
+              "source_url" => "https://cfg.eu/cern-for-ai/",
+              "year" => "2025"
+            },
+            ...
+          ]
+        }
   """
-  @spec generate_quote(binary, list(binary)) :: {:ok, map} | {:error, binary}
+  @spec generate_quote(binary, list(binary)) :: {:ok, %{quotes: list, cost: number}} | {:error, binary}
   def generate_quote(question_title, exclude_author_names \\ []) do
     prompt = get_prompt(question_title, exclude_author_names)
 
     with {:ok, data} <- ask_gpt(prompt, @model),
          content <- OpenAIModel.get_content(data),
-         {:ok, quote} <- Jason.decode(content),
+         {:ok, decoded} <- Jason.decode(content),
+         quotes when is_list(quotes) <- Map.get(decoded, "quotes"),
          cost <- OpenAIModel.get_cost(data, @model) do
-      {:ok, %{quote: quote, cost: cost}}
+      {:ok, %{quotes: quotes, cost: cost}}
     else
+      quotes when is_nil(quotes) -> {:error, "Missing quotes in response"}
       {:error, error} -> {:error, error}
     end
   end
@@ -42,17 +75,22 @@ defmodule YouCongress.Quotes.QuotatorAI do
     """
     Question: #{question_title}
 
-    Task: find one quote of a public figure about the question above. Make sure the quote is relevant to what the question is asking, not just to a part of it. Determine whether the author agrees or disagrees with the question based on their quote and set the agree_rate field accordingly.
+    Task: find 20 quotes from different public figures where its clear that they agree or disagree with the question above. Each quote must be relevant to the whole question, not just to a part of it.
 
     Constraints:
-    - The quote must be verbatim and attributable.
-    - Prefer the original or primary source.
+    - Each of the 20 quotes must be verbatim and attributable.
+    - Quotes must be relevant to the whole question and not just a part of it. For example, if the question is "Should a CERN for AI have a location with thousands of researchers?", quotes should make reference to a centralized or partially centralized CERN of AI with thousands of researchers in the same place – not just quotes about a CERN for AI or a CERN for AI as a network of AI researchers.
+    - Quotes should be of two or three paragraphs long and at least three sentences long, if possible.
+    - Ideally, quotes should be informative about the reasons why they agree or provide other useful information related to the question.
+    - Prefer the original or primary source or, in its absence, a reliable secondary source.
     - The source_url must include the exact quote text.
-    - If the quote is from a document/open letter/paper with multiple signers, return the first 15 authors in order and indicate whether there are more than 15 authors.
+    - Authors must be experts, public figures or relevant organisations.
+    - Do not include quotes from a document/open letter/paper with multiple signers.
     - Fill all fields in the JSON. Use empty string when unavailable.
-    - Carefully analyze the quote to determine the author's agreement level and set agree_rate appropriately.#{exclusion_text}
+    - Carefully analyze each quote to determine the author's agreement level and set agree_rate appropriately.
+    - Do not repeat any author across the 20 quotes. No name that appears in any item's authors.name may appear in any other item.#{exclusion_text}
 
-    Output: Return ONLY a valid JSON object matching the schema.
+    Output: Return ONLY a valid JSON object matching the schema with 20 items (if there are enough quotes that are relevant to the whole question).
     """
   end
 
@@ -75,7 +113,7 @@ defmodule YouCongress.Quotes.QuotatorAI do
         "tool_choice" => "auto",
         "text" => %{
           "format" => %{
-            "name" => "QuoteResult",
+            "name" => "QuotesResult",
             "type" => "json_schema",
             "schema" => json_schema()
           }
@@ -103,7 +141,7 @@ defmodule YouCongress.Quotes.QuotatorAI do
 
       req = Finch.build(:post, url, headers, Jason.encode!(body))
 
-      case Finch.request(req, Swoosh.Finch, receive_timeout: 600_000) do
+      case Finch.request(req, Swoosh.Finch, receive_timeout: @timeout_in_min * 60*1000) do
         {:ok, %Finch.Response{status: status, body: resp_body}} when status in 200..299 ->
           with {:ok, resp} <- Jason.decode(resp_body) do
             IO.inspect(resp, label: "----------------- resp")
@@ -111,11 +149,12 @@ defmodule YouCongress.Quotes.QuotatorAI do
               Map.get(resp, "output_text") ||
                 extract_output_text(resp)
 
-            usage = Map.get(resp, "usage", %{})
-            prompt_tokens = Map.get(usage, "input_tokens") || Map.get(usage, "prompt_tokens") || 0
+            cached_input_tokens = resp["usage"]["input_tokens_details"]["cached_tokens"] || 0
+
+            prompt_tokens = resp["usage"]["input_tokens"] - cached_input_tokens
 
             completion_tokens =
-              Map.get(usage, "output_tokens") || Map.get(usage, "completion_tokens") || 0
+              resp["usage"]["output_tokens"] || 0
 
             compat = %{
               "choices" => [
@@ -123,7 +162,8 @@ defmodule YouCongress.Quotes.QuotatorAI do
               ],
               "usage" => %{
                 "prompt_tokens" => prompt_tokens,
-                "completion_tokens" => completion_tokens
+                "completion_tokens" => completion_tokens,
+                "cached_input_tokens" => cached_input_tokens
               }
             }
 
@@ -176,64 +216,54 @@ defmodule YouCongress.Quotes.QuotatorAI do
       type: "object",
       additionalProperties: false,
       properties: %{
-        "quote" => %{
-          type: "object",
-          additionalProperties: false,
-          properties: %{
-            "quote" => %{type: "string", description: "The exact quote string (one-two paragraphs maximum, verbatim, ideally not too short)"},
-            "source_url" => %{type: "string", description: "Primary source URL that includes the exact quote"},
-            "source_text" => %{type: "string", description: "One or a few words that describe the source (e.g. 'BBC')"},
-            "context" => %{type: "string", description: "Exact quote with surrounding text before and after (if available)"}
-          },
-          required: [
-            "quote",
-            "source_url",
-            "source_text",
-            "context"
-          ]
-        },
-        "authors" => %{
+        "quotes" => %{
           type: "array",
-          description:
-            "First 15 authors in original order if multi-signer; otherwise, single author",
+          description: "20 quotes (if the quotes are relevant to the whole question), each with author and metadata. Do not repeat any author across items.",
+          minItems: 20,
+          maxItems: 20,
           items: %{
             type: "object",
             additionalProperties: false,
             properties: %{
-              "name" => %{type: "string", description: "Author name"},
-              "bio" => %{type: "string", description: "Author bio (max 7 words)"},
-              "wikipedia_url" => %{type: "string", description: "Author Wikipedia page URL"},
-              "twitter_username" => %{
+              "quote" => %{type: "string", description: "The exact quote string (one-three paragraphs maximum, verbatim, ideally of at least three sentences long)"},
+              "source_url" => %{type: "string", description: "Primary source URL that includes the exact quote"},
+              "year" => %{type: "string", description: "Year of the quote"},
+              "author" => %{
+                type: "object",
+                additionalProperties: false,
+                properties: %{
+                  "name" => %{type: "string", description: "Author name"},
+                  "bio" => %{type: "string", description: "Author bio (max 7 words)"},
+                  "wikipedia_url" => %{type: "string", description: "Author Wikipedia page URL"},
+                  "twitter_username" => %{
+                    type: "string",
+                    description: "Author Twitter handle without @"
+                  }
+                },
+                required: ["name", "bio", "wikipedia_url", "twitter_username"]
+              },
+              "agree_rate" => %{
                 type: "string",
-                description: "Author Twitter handle without @"
+                description: "How much the author agrees with the question",
+                enum: [
+                  "Strongly agree",
+                  "Agree",
+                  "Disagree",
+                  "Strongly disagree"
+                ]
               }
             },
-            required: ["name", "bio", "wikipedia_url", "twitter_username"]
-          },
-          minItems: 1,
-          maxItems: 15
-        },
-        "more_than_15_authors" => %{
-          type: "boolean",
-          description: "Whether there are more than 15 authors"
-        },
-        "agree_rate" => %{
-          type: "string",
-          description: "How much the author agrees with the question",
-          enum: [
-            "Strongly agree",
-            "Agree",
-            "Abstain",
-            "Disagree",
-            "Strongly disagree"
-          ]
+            required: [
+              "quote",
+              "source_url",
+              "author",
+              "agree_rate"
+            ]
+          }
         }
       },
       required: [
-        "quote",
-        "agree_rate",
-        "authors",
-        "more_than_15_authors"
+        "quotes"
       ]
     }
   end
