@@ -15,6 +15,7 @@ defmodule YouCongress.Opinions.Opinion do
     field :ancestry, :string
     field :descendants_count, :integer, default: 0
     field :likes_count, :integer, default: 0
+    field :year, :integer
 
     belongs_to :author, YouCongress.Authors.Author
     belongs_to :user, YouCongress.Accounts.User
@@ -45,7 +46,8 @@ defmodule YouCongress.Opinions.Opinion do
       :user_id,
       :ancestry,
       :descendants_count,
-      :likes_count
+      :likes_count,
+      :year
     ])
     |> validate_required([:content, :twin])
     |> validate_source_url_if_present()
