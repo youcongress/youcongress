@@ -1,4 +1,4 @@
-defmodule YouCongress.Quotes.QuotatorAI do
+defmodule YouCongress.Opinions.Quotes.QuotatorAI do
   @moduledoc """
   Find and return 20 relevant public-figure quotes about a question using OpenAI.
   """
@@ -13,7 +13,7 @@ defmodule YouCongress.Quotes.QuotatorAI do
 
   ## Examples
 
-      iex> YouCongress.Quotes.QuotatorAI.generate_quote("Should we build a CERN for AI?")
+      iex> YouCongress.Opinions.Quotes.QuotatorAI.generate_quote("Should we build a CERN for AI?")
       {:ok,
         %{
           cost: 0.18691525000000004,

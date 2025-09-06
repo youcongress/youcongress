@@ -15,6 +15,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongressWeb.VotingLive.Show.Comments
   alias YouCongress.Track
   alias YouCongress.Workers.PublicFiguresWorker
+  alias YouCongress.Workers.QuotatorWorker
   alias YouCongress.Accounts.Permissions
   alias YouCongressWeb.VotingLive.CastVoteComponent
   alias YouCongress.HallsVotings
@@ -73,6 +74,21 @@ defmodule YouCongressWeb.VotingLive.Show do
     |> Oban.insert()
 
     Track.event("Generate AI opinions", socket.assigns.current_user)
+
+    Process.send_after(self(), :reload, 100)
+
+    {:noreply, clear_flash(socket)}
+  end
+
+  def handle_event("find-sourced-quotes", %{"voting_id" => voting_id}, socket) do
+    voting_id = String.to_integer(voting_id)
+    current_user = socket.assigns.current_user
+
+    %{voting_id: voting_id}
+    |> QuotatorWorker.new()
+    |> Oban.insert()
+
+    Track.event("Find quotes", current_user)
 
     Process.send_after(self(), :reload, 100)
 
