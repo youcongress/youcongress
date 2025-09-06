@@ -9,7 +9,6 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   alias YouCongress.Authors
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
-  alias YouCongress.Opinions.Quotes.QuotatorAI
   alias YouCongress.Votes
   alias YouCongress.Votes.Answers
   alias YouCongress.Votings
@@ -20,41 +19,52 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   @doc """
   Find and save quotes for the given voting.
   """
-  def find_and_save_quotes(voting_id, exclude_existent_names) do
-    {:ok, _} = Votings.update_voting(voting, %{
-      generating_left: 20,
-      generating_total: 20
-    })
+  @spec find_and_save_quotes(integer(), list(binary()), integer()) :: {:ok, integer()} | {:error, any()}
+  def find_and_save_quotes(voting_id, exclude_existent_names, user_id) do
     voting = Votings.get_voting!(voting_id)
-    quotes = QuotatorAI.generate_quote(voting.title, exclude_existent_names)
-    {:ok, saved_count} = save_quotes(%{voting_id: voting_id, quotes: quotes}) do
-    {:ok, _} = Votings.update_voting(voting, %{
-      generating_left: 0,
-      generating_total: 0
-    })
-    {:ok, saved_count}
+
+    {:ok, _} =
+      Votings.update_voting(voting, %{
+        generating_left: 20,
+        generating_total: 20
+      })
+
+    case implementation().find_quotes(voting.title, exclude_existent_names) do
+      {:ok, %{quotes: quotes}} when is_list(quotes) ->
+        {:ok, saved_count} = save_quotes(%{voting_id: voting_id, quotes: quotes, user_id: user_id})
+
+        {:ok, _} =
+          Votings.update_voting(voting, %{
+            generating_left: 0,
+            generating_total: 0
+          })
+
+        {:ok, saved_count}
+
+      {:error, reason} ->
+        _ = Votings.update_voting(voting, %{generating_left: 0})
+        {:error, reason}
+    end
   end
 
-  @doc """
-  Save a list of quotes for the given voting.
-
-  Expects a map with keys:
-    - :voting_id (integer)
-    - :quotes (list of quote maps)
-  """
-  defp save_quotes(%{voting_id: voting_id, quotes: quotes}) when is_integer(voting_id) and is_list(quotes) do
+  # Save a list of quotes for the given voting.
+  #
+  # Expects a map with keys:
+  #   - :voting_id (integer)
+  #   - :quotes (list of quote maps)
+  defp save_quotes(%{voting_id: voting_id, quotes: quotes} = args) when is_integer(voting_id) and is_list(quotes) do
+    user_id = Map.get(args, :user_id)
     saved_count =
       Enum.map(quotes, fn quote ->
-        persist_quote(voting_id, quote)
+        persist_quote(voting_id, quote, user_id)
       end)
       |> Enum.filter(& &1 == :ok)
       |> length()
 
-      {:ok, saved_count}
-    end
+    {:ok, saved_count}
   end
 
-  defp persist_quote(voting_id, quote) do
+  defp persist_quote(voting_id, quote, user_id) do
     try do
       with {:ok, author} <- upsert_author(quote["author"] || %{}),
            %{} = vote_attrs <- build_vote_attrs(voting_id, author, quote["agree_rate"]),
@@ -69,9 +79,13 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
                voting_id: voting_id
              }),
            {:ok, _} <- Votes.update_vote(vote, %{opinion_id: opinion.id, twin: false}),
-           :ok <- associate_opinion_with_voting(opinion, voting_id) do
+           :ok <- associate_opinion_with_voting(opinion, voting_id, user_id) do
         :ok
       else
+        {:error, :user_id_required} ->
+          Logger.debug("Skipping association due to missing user_id")
+          :error
+
         {:error, reason} ->
           Logger.error("Failed to persist sourced quote: #{inspect(reason)}")
           :error
@@ -148,13 +162,21 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
     end
   end
 
-  defp associate_opinion_with_voting(%Opinion{} = opinion, voting_id) do
+  defp associate_opinion_with_voting(%Opinion{} = opinion, voting_id, user_id) do
     voting = Votings.get_voting!(voting_id)
 
-    case Opinions.add_opinion_to_voting(opinion, voting, opinion.user_id) do
+    case Opinions.add_opinion_to_voting(opinion, voting, user_id) do
       {:ok, _op} -> :ok
       {:error, :already_associated} -> :ok
       {:error, _} = error -> error
     end
+  end
+
+  defp implementation do
+    Application.get_env(
+      :you_congress,
+      :quotator_implementation,
+      YouCongress.Opinions.Quotes.QuotatorAI
+    )
   end
 end

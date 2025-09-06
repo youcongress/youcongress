@@ -84,15 +84,19 @@ defmodule YouCongressWeb.VotingLive.Show do
     voting_id = String.to_integer(voting_id)
     current_user = socket.assigns.current_user
 
-    %{voting_id: voting_id}
-    |> QuotatorWorker.new()
-    |> Oban.insert()
+    if is_nil(current_user) do
+      {:noreply, put_flash(socket, :error, "Please log in to find quotes.")}
+    else
+      %{voting_id: voting_id, user_id: current_user.id}
+      |> QuotatorWorker.new()
+      |> Oban.insert()
 
-    Track.event("Find quotes", current_user)
+      Track.event("Find quotes", current_user)
 
-    Process.send_after(self(), :reload, 100)
+      Process.send_after(self(), :reload, 100)
 
-    {:noreply, clear_flash(socket)}
+      {:noreply, clear_flash(socket)}
+    end
   end
 
   def handle_event("post", %{"comment" => opinion}, socket) do

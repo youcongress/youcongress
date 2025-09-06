@@ -13,7 +13,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
 
   ## Examples
 
-      iex> YouCongress.Opinions.Quotes.QuotatorAI.generate_quote("Should we build a CERN for AI?")
+      iex> YouCongress.Opinions.Quotes.QuotatorAI.find_quotes("Should we build a CERN for AI?")
       {:ok,
         %{
           cost: 0.18691525000000004,
@@ -46,8 +46,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
           ]
         }
   """
-  @spec generate_quote(binary, list(binary)) :: {:ok, %{quotes: list, cost: number}} | {:error, binary}
-  def generate_quote(question_title, exclude_author_names \\ []) do
+  @spec find_quotes(binary, list(binary)) :: {:ok, %{quotes: list, cost: number}} | {:error, binary}
+  def find_quotes(question_title, exclude_author_names \\ []) do
     prompt = get_prompt(question_title, exclude_author_names)
 
     with {:ok, data} <- ask_gpt(prompt, @model),
@@ -256,6 +256,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
             required: [
               "quote",
               "source_url",
+              "year",
               "author",
               "agree_rate"
             ]
