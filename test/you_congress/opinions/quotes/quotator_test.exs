@@ -8,7 +8,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
   alias YouCongress.{Votes, Opinions}
   alias YouCongress.Votes.Answers
 
-  describe "find_and_save_quotes/2 with QuotatorFake" do
+  describe "find_and_save_quotes/3 with QuotatorFake" do
     test "forwards exclude list, sets generating counters, and creates votes/opinions" do
       voting = voting_fixture(%{title: "Test Voting Title"})
       user = user_fixture(%{name: "Test User"})
@@ -17,10 +17,10 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
 
       assert {:ok, saved_count} = Quotator.find_and_save_quotes(voting.id, exclude, user.id)
       # Association step requires user_id for join table; we expect 0 persisted in that step
-      assert saved_count == 20
+      assert saved_count == Quotator.number_of_quotes()
 
       # 20 votes should be created for the generated quotes
-      assert Votes.count_by_voting(voting.id) == 20
+      assert Votes.count_by_voting(voting.id) == Quotator.number_of_quotes()
 
       votes = Votes.list_votes(voting.id)
       # Votes should be direct and not twins
@@ -30,7 +30,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
       assert Enum.all?(votes, fn v -> not is_nil(Answers.get_answer(v.answer_id)) end)
 
       # Opinions should be created and linked to the votes
-      assert Enum.count(votes, &(not is_nil(&1.opinion_id))) == 20
+      assert Enum.count(votes, &(not is_nil(&1.opinion_id))) == Quotator.number_of_quotes()
 
       # Opinions should have parsed year as integer
       Enum.each(votes, fn v ->

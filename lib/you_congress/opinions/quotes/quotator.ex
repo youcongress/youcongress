@@ -14,7 +14,11 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   alias YouCongress.Votings
   alias YouCongress.OpinatorWorker.GeneratingLeftServer
 
+  @number_of_quotes 5
   @type quote_item :: map()
+
+  @spec number_of_quotes() :: integer()
+  def number_of_quotes, do: @number_of_quotes
 
   @doc """
   Find and save quotes for the given voting.
@@ -25,8 +29,8 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
 
     {:ok, _} =
       Votings.update_voting(voting, %{
-        generating_left: 20,
-        generating_total: 20
+        generating_left: @number_of_quotes,
+        generating_total: @number_of_quotes
       })
 
     case implementation().find_quotes(voting.title, exclude_existent_names) do

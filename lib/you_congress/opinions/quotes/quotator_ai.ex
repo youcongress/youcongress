@@ -3,10 +3,15 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
   Find and return 20 relevant public-figure quotes about a question using OpenAI.
   """
 
+  require Logger
+
   alias YouCongress.DigitalTwins.OpenAIModel
+  alias YouCongress.Opinions.Quotes.Quotator
 
   @model :"gpt-5"
-  @timeout_in_min 25
+  @timeout_in_min 45
+
+  def number_of_quotes, do: Quotator.number_of_quotes()
 
   @doc """
   Generate 20 quotes for a question.
@@ -75,12 +80,13 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     """
     Question: #{question_title}
 
-    Task: find 20 quotes from different public figures where its clear that they agree or disagree with the question above. Each quote must be relevant to the whole question, not just to a part of it.
+    Task: find #{number_of_quotes()} quotes from different public figures where its clear that they agree or disagree the wholequestion above – not just a part of it.
 
     Constraints:
-    - Each of the 20 quotes must be verbatim and attributable.
-    - Quotes must be relevant to the whole question and not just a part of it. For example, if the question is "Should a CERN for AI have a location with thousands of researchers?", quotes should make reference to a centralized or partially centralized CERN of AI with thousands of researchers in the same place – not just quotes about a CERN for AI or a CERN for AI as a network of AI researchers.
+    - Each of the #{number_of_quotes()} quotes must be verbatim and attributable.
+    - Quotes must refer to the whole question and not just a part of it. For example, if the question is "Should a CERN for AI have a location with thousands of researchers?", quotes should make reference to a centralized or partially centralized CERN of AI with thousands of researchers in the same place – not just quotes about a CERN for AI or a CERN for AI as a network of AI researchers.
     - Quotes should be of two or three paragraphs long and at least three sentences long, if possible.
+    - If the quote is in a different language, it should be translated to English.
     - Ideally, quotes should be informative about the reasons why they agree or provide other useful information related to the question.
     - Prefer the original or primary source or, in its absence, a reliable secondary source.
     - The source_url must include the exact quote text.
@@ -88,9 +94,9 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     - Do not include quotes from a document/open letter/paper with multiple signers.
     - Fill all fields in the JSON. Use empty string when unavailable.
     - Carefully analyze each quote to determine the author's agreement level and set agree_rate appropriately.
-    - Do not repeat any author across the 20 quotes. No name that appears in any item's authors.name may appear in any other item.#{exclusion_text}
+    - Do not repeat any author across the #{number_of_quotes()} quotes. No name that appears in any item's authors.name may appear in any other item.#{exclusion_text}
 
-    Output: Return ONLY a valid JSON object matching the schema with 20 items (if there are enough quotes that are relevant to the whole question).
+    Output: Return ONLY a valid JSON object matching the schema with #{number_of_quotes()} items (if there are enough quotes that are relevant to the whole question).
     """
   end
 
@@ -144,7 +150,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
       case Finch.request(req, Swoosh.Finch, receive_timeout: @timeout_in_min * 60*1000) do
         {:ok, %Finch.Response{status: status, body: resp_body}} when status in 200..299 ->
           with {:ok, resp} <- Jason.decode(resp_body) do
-            IO.inspect(resp, label: "----------------- resp")
+            Logger.warning("----------------- resp: #{inspect(resp)}")
             content =
               Map.get(resp, "output_text") ||
                 extract_output_text(resp)
@@ -173,9 +179,11 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
           end
 
         {:ok, %Finch.Response{status: status, body: resp_body}} ->
+          Logger.warning("ERROR ----------------- resp_body: #{inspect(resp_body)}")
           {:error, "OpenAI API error (#{status}): #{truncate_body(resp_body)}"}
 
         {:error, reason} ->
+          Logger.warning("ERROR ----------------- reason: #{inspect(reason)}")
           {:error, "HTTP error: #{inspect(reason)}"}
       end
     end
@@ -218,14 +226,14 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
       properties: %{
         "quotes" => %{
           type: "array",
-          description: "20 quotes (if the quotes are relevant to the whole question), each with author and metadata. Do not repeat any author across items.",
-          minItems: 20,
-          maxItems: 20,
+          description: "#{number_of_quotes()} quotes (if the quotes are relevant to the whole question), each with author and metadata. Do not repeat any author across items.",
+          minItems: number_of_quotes(),
+          maxItems: number_of_quotes(),
           items: %{
             type: "object",
             additionalProperties: false,
             properties: %{
-              "quote" => %{type: "string", description: "The exact quote string (one-three paragraphs maximum, verbatim, ideally of at least three sentences long)"},
+              "quote" => %{type: "string", description: "The exact quote string (one-three paragraphs maximum, verbatim, ideally of at least three sentences long). Don't use quotation marks."},
               "source_url" => %{type: "string", description: "Primary source URL that includes the exact quote"},
               "year" => %{type: "string", description: "Year of the quote"},
               "author" => %{
