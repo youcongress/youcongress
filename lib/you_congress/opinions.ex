@@ -1,6 +1,6 @@
 defmodule YouCongress.Opinions do
   @moduledoc """
-  The Opinions context.
+  The context for sourced quotes and user opinions.
   """
 
   import Ecto.Query, warn: false
