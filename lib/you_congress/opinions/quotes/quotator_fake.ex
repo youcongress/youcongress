@@ -13,7 +13,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorFake do
   @spec find_quotes(binary, list(binary)) :: {:ok, %{quotes: list, cost: number}}
   def find_quotes(question_title, exclude_author_names \\ []) do
     quotes =
-      1..(Quotator.number_of_quotes())
+      1..Quotator.number_of_quotes()
       |> Enum.map(fn _ -> build_quote(question_title) end)
       |> ensure_unique_names(exclude_author_names)
 

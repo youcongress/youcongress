@@ -84,18 +84,26 @@ defmodule YouCongressWeb.VotingLive.Show do
     voting_id = String.to_integer(voting_id)
     current_user = socket.assigns.current_user
 
-    if is_nil(current_user) do
-      {:noreply, put_flash(socket, :error, "Please log in to find quotes.")}
-    else
-      %{voting_id: voting_id, user_id: current_user.id}
-      |> QuotatorWorker.new()
-      |> Oban.insert()
+    cond do
+      Application.get_env(:you_congress, :environment) == :prod ->
+        {:noreply, put_flash(socket, :error, "This feature is not available in production.")}
 
-      Track.event("Find quotes", current_user)
+      is_nil(current_user) ->
+        {:noreply, put_flash(socket, :error, "Please log in to find quotes.")}
 
-      Process.send_after(self(), :reload, 100)
+      not Permissions.can_generate_ai_votes?(current_user) ->
+        {:noreply, put_flash(socket, :error, "You don't have permission to find quotes.")}
 
-      {:noreply, clear_flash(socket)}
+      true ->
+        %{voting_id: voting_id, user_id: current_user.id}
+        |> QuotatorWorker.new()
+        |> Oban.insert()
+
+        Track.event("Find quotes", current_user)
+
+        Process.send_after(self(), :reload, 100)
+
+        {:noreply, clear_flash(socket)}
     end
   end
 

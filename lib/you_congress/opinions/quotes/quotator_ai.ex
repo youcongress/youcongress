@@ -51,7 +51,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
           ]
         }
   """
-  @spec find_quotes(binary, list(binary)) :: {:ok, %{quotes: list, cost: number}} | {:error, binary}
+  @spec find_quotes(binary, list(binary)) ::
+          {:ok, %{quotes: list, cost: number}} | {:error, binary}
   def find_quotes(question_title, exclude_author_names \\ []) do
     prompt = get_prompt(question_title, exclude_author_names)
 
@@ -147,10 +148,11 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
 
       req = Finch.build(:post, url, headers, Jason.encode!(body))
 
-      case Finch.request(req, Swoosh.Finch, receive_timeout: @timeout_in_min * 60*1000) do
+      case Finch.request(req, Swoosh.Finch, receive_timeout: @timeout_in_min * 60 * 1000) do
         {:ok, %Finch.Response{status: status, body: resp_body}} when status in 200..299 ->
           with {:ok, resp} <- Jason.decode(resp_body) do
             Logger.warning("----------------- resp: #{inspect(resp)}")
+
             content =
               Map.get(resp, "output_text") ||
                 extract_output_text(resp)
@@ -226,15 +228,23 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
       properties: %{
         "quotes" => %{
           type: "array",
-          description: "#{number_of_quotes()} quotes (if the quotes are relevant to the whole question), each with author and metadata. Do not repeat any author across items.",
+          description:
+            "#{number_of_quotes()} quotes (if the quotes are relevant to the whole question), each with author and metadata. Do not repeat any author across items.",
           minItems: number_of_quotes(),
           maxItems: number_of_quotes(),
           items: %{
             type: "object",
             additionalProperties: false,
             properties: %{
-              "quote" => %{type: "string", description: "The exact quote string (one-three paragraphs maximum, verbatim, ideally of at least three sentences long). Don't use quotation marks."},
-              "source_url" => %{type: "string", description: "Primary source URL that includes the exact quote"},
+              "quote" => %{
+                type: "string",
+                description:
+                  "The exact quote string (one-three paragraphs maximum, verbatim, ideally of at least three sentences long). Don't use quotation marks."
+              },
+              "source_url" => %{
+                type: "string",
+                description: "Primary source URL that includes the exact quote"
+              },
               "year" => %{type: "string", description: "Year of the quote"},
               "author" => %{
                 type: "object",

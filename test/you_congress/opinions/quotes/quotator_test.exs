@@ -45,7 +45,13 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
 
       prev_impl = Application.get_env(:you_congress, :quotator_implementation)
       on_exit(fn -> Application.put_env(:you_congress, :quotator_implementation, prev_impl) end)
-      Application.put_env(:you_congress, :quotator_implementation, YouCongress.Opinions.Quotes.QuotatorAI)
+
+      Application.put_env(
+        :you_congress,
+        :quotator_implementation,
+        YouCongress.Opinions.Quotes.QuotatorAI
+      )
+
       System.put_env("OPENAI_API_KEY", "")
 
       assert {:error, _} = Quotator.find_and_save_quotes(voting.id, [], user.id)

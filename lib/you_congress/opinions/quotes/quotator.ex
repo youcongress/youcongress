@@ -23,7 +23,8 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   @doc """
   Find and save quotes for the given voting.
   """
-  @spec find_and_save_quotes(integer(), list(binary()), integer()) :: {:ok, integer()} | {:error, any()}
+  @spec find_and_save_quotes(integer(), list(binary()), integer()) ::
+          {:ok, integer()} | {:error, any()}
   def find_and_save_quotes(voting_id, exclude_existent_names, user_id) do
     voting = Votings.get_voting!(voting_id)
 
@@ -35,7 +36,8 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
 
     case implementation().find_quotes(voting.title, exclude_existent_names) do
       {:ok, %{quotes: quotes}} when is_list(quotes) ->
-        {:ok, saved_count} = save_quotes(%{voting_id: voting_id, quotes: quotes, user_id: user_id})
+        {:ok, saved_count} =
+          save_quotes(%{voting_id: voting_id, quotes: quotes, user_id: user_id})
 
         {:ok, _} =
           Votings.update_voting(voting, %{
@@ -56,13 +58,15 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   # Expects a map with keys:
   #   - :voting_id (integer)
   #   - :quotes (list of quote maps)
-  defp save_quotes(%{voting_id: voting_id, quotes: quotes} = args) when is_integer(voting_id) and is_list(quotes) do
+  defp save_quotes(%{voting_id: voting_id, quotes: quotes} = args)
+       when is_integer(voting_id) and is_list(quotes) do
     user_id = Map.get(args, :user_id)
+
     saved_count =
       Enum.map(quotes, fn quote ->
         persist_quote(voting_id, quote, user_id)
       end)
-      |> Enum.filter(& &1 == :ok)
+      |> Enum.filter(&(&1 == :ok))
       |> length()
 
     {:ok, saved_count}
@@ -99,8 +103,10 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
     end
   end
 
-  defp upsert_author(%{"wikipedia_url" => wikipedia_url} = attrs) when wikipedia_url not in [nil, ""] do
+  defp upsert_author(%{"wikipedia_url" => wikipedia_url} = attrs)
+       when wikipedia_url not in [nil, ""] do
     normalized = normalize_author_attrs(attrs)
+
     case Authors.find_by_wikipedia_url_or_create(normalized) do
       {:ok, author} -> {:ok, author}
       {:error, _} -> Authors.find_by_name_or_create(normalized)
@@ -126,6 +132,7 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
 
   defp normalize_wikipedia_url(nil), do: nil
   defp normalize_wikipedia_url(""), do: nil
+
   defp normalize_wikipedia_url(url) when is_binary(url) do
     String.replace(url, ~r/https?:\/\/\w+\./, "https://en.")
   end
@@ -159,6 +166,7 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   defp parse_year(nil), do: nil
   defp parse_year(""), do: nil
   defp parse_year(year) when is_integer(year), do: year
+
   defp parse_year(year) when is_binary(year) do
     case Integer.parse(year) do
       {y, _} -> y
