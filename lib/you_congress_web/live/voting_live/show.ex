@@ -15,6 +15,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongressWeb.VotingLive.Show.Comments
   alias YouCongress.Track
   alias YouCongress.Workers.PublicFiguresWorker
+  alias YouCongress.Workers.QuotatorWorker
   alias YouCongress.Accounts.Permissions
   alias YouCongressWeb.VotingLive.CastVoteComponent
   alias YouCongress.HallsVotings
@@ -77,6 +78,33 @@ defmodule YouCongressWeb.VotingLive.Show do
     Process.send_after(self(), :reload, 100)
 
     {:noreply, clear_flash(socket)}
+  end
+
+  def handle_event("find-sourced-quotes", %{"voting_id" => voting_id}, socket) do
+    voting_id = String.to_integer(voting_id)
+    current_user = socket.assigns.current_user
+
+    cond do
+      Application.get_env(:you_congress, :environment) == :prod ->
+        {:noreply, put_flash(socket, :error, "This feature is not available in production.")}
+
+      is_nil(current_user) ->
+        {:noreply, put_flash(socket, :error, "Please log in to find quotes.")}
+
+      not Permissions.can_generate_ai_votes?(current_user) ->
+        {:noreply, put_flash(socket, :error, "You don't have permission to find quotes.")}
+
+      true ->
+        %{voting_id: voting_id, user_id: current_user.id}
+        |> QuotatorWorker.new()
+        |> Oban.insert()
+
+        Track.event("Find quotes", current_user)
+
+        Process.send_after(self(), :reload, 100)
+
+        {:noreply, clear_flash(socket)}
+    end
   end
 
   def handle_event("post", %{"comment" => opinion}, socket) do
