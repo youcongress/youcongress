@@ -32,9 +32,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
               Then, users can replace them with real <strong>sourced quotes</strong>.
             </span>
             <span class="text-xs">
-              Contact
-              <.link href="mailto:hello@youcongress.org" target="_blank" class="underline">us</.link>
-              to help replace all AI digital twins with sourced quotes.
+              In the future, we may replace all AI digital twins with sourced quotes.
             </span>
           </p>
           <p class="text-sm text-gray-600 mb-4">

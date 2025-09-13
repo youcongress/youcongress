@@ -13,7 +13,7 @@ defmodule YouCongressWeb.HomeLive.Index do
       socket
       |> assign(
         :page_title,
-        "Measuring Citizen Preferences on AI Policy Through Liquid Democracy"
+        "Delegated Polling for AI Safety Policy"
       )
       |> assign(:live_action, :new)
       |> assign(:current_user, current_user)
