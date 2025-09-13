@@ -17,11 +17,11 @@
     <div class="mx-auto max-w-3xl py-4 sm:py-8 lg:pt-24">
       <div class="text-center">
         <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-4xl font-bold tracking-tight text-gray-900">
-          Delegated Polling for AI Safety Policy
+          Liquid Democracy on AI Safety Policy
         </h1>
         <div class="mt-6 text-lg leading-8 text-gray-600">
           <p class="mb-6">
-            An open-source platform aggregating public and expert opinions on AI risks. Vote directly, delegate to trusted authorities, and access sourced quotes to inform policymakers.
+            Vote directly or delegate to trusted experts. When someone hasn't participated on YouCongress, their stance is grounded in verifiable, sourced quotes—clear evidence of what citizens prefer on concrete safety proposals.
           </p>
 
           <div class="pt-4 text-sm">
@@ -183,19 +183,6 @@
             </.link>
           </div>
 
-          <div class="mb-12 bg-gradient-to-r from-indigo-50 via-purple-50 to-white p-8 rounded-2xl shadow-sm">
-            <.live_component
-              module={NewFormComponent}
-              id={:new}
-              title={@page_title}
-              action={@live_action}
-              voting={%Voting{}}
-              current_user={@current_user}
-              patch={~p"/"}
-              cancel_link?={false}
-            />
-          </div>
-
           <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
             <div class="p-6 rounded-xl bg-white shadow-md border border-gray-100 hover:shadow-lg transition duration-300">
               <div class="flex items-center mb-4">
@@ -214,33 +201,10 @@
                   >
                   </path>
                 </svg>
-                <div class="text-indigo-600 text-xl font-bold">AI-Powered Analysis</div>
+                <div class="text-indigo-600 text-xl font-bold">Experts and public figures</div>
               </div>
               <p class="text-gray-700 text-base leading-relaxed">
-                Experience the future of policy discussion with AI-generated perspectives from public figures, enriched by community contributions and real-world quotes.
-              </p>
-            </div>
-            <div class="p-6 rounded-xl bg-white shadow-md border border-gray-100 hover:shadow-lg transition duration-300">
-              <div class="flex items-center mb-4">
-                <svg
-                  class="w-8 h-8 text-indigo-600 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
-                  >
-                  </path>
-                </svg>
-                <div class="text-indigo-600 text-xl font-bold">Digital Dialogue</div>
-              </div>
-              <p class="text-gray-700 text-base leading-relaxed">
-                Engage in meaningful discussions with AI digital twins of experts and thought leaders. Get instant feedback and explore diverse perspectives on complex issues.
+                Experience policy views from experts and public figures, grounded in verifiable quotes.
               </p>
             </div>
             <div class="p-6 rounded-xl bg-white shadow-md border border-gray-100 hover:shadow-lg transition duration-300">
@@ -260,10 +224,33 @@
                   >
                   </path>
                 </svg>
-                <div class="text-indigo-600 text-xl font-bold">Smart Democracy</div>
+                <div class="text-indigo-600 text-xl font-bold">Liquid Democracy</div>
               </div>
               <p class="text-gray-700 text-base leading-relaxed">
-                Choose trusted delegates to represent your voice. Participate efficiently in democratic decision-making while learning from experts you trust.
+                Choose trusted delegates and vote with the majority of them – unless you vote directly.
+              </p>
+            </div>
+            <div class="p-6 rounded-xl bg-white shadow-md border border-gray-100 hover:shadow-lg transition duration-300">
+              <div class="flex items-center mb-4">
+                <svg
+                  class="w-8 h-8 text-indigo-600 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
+                  >
+                  </path>
+                </svg>
+                <div class="text-indigo-600 text-xl font-bold">Community Contributions</div>
+              </div>
+              <p class="text-gray-700 text-base leading-relaxed">
+                Explore community contributions and share why you agree or disagree.
               </p>
             </div>
           </div>
