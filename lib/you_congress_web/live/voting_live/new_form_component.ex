@@ -21,16 +21,15 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
       >
         <div>
           <h3 class="text-lg font-semibold text-gray-900 mb-2">
-            What solution or problem would you like us to analyze and vote on?
+            What policy would you like to analyze and vote on?
           </h3>
           <p class="text-sm mb-4">
             <span>
-              You'll be able to add real <strong>sourced quotes</strong> from public figures.
+              You'll be able to add real <strong>sourced quotes</strong> from experts and public figures.
             </span>
           </p>
           <p class="text-sm text-gray-600 mb-4">
             Your prompt will be reviewed by AI to ensure clarity and offer you suggestions before publishing.
-            <span class="text-indigo-600">No login required!</span>
           </p>
           <div class="relative">
             <.input
@@ -85,7 +84,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
                     d="M13 10V3L4 14h7v7l9-11h-7z"
                   />
                 </svg>
-                Generate Suggestions
+                Next
               </button>
               <.link
                 :if={@cancel_link?}

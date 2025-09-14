@@ -21,22 +21,34 @@ defmodule YouCongress.DigitalTwins.OpenAIModel do
     }
   }
 
-  @spec get_content(map) :: binary
-  def get_content(data) do
-    hd(data["choices"])["message"]["content"]
+  @spec get_content(map) :: binary | {:error, binary}
+  def get_content(%{choices: choices}) when is_list(choices) and length(choices) > 0 do
+    hd(choices)["message"]["content"]
   end
+
+  def get_content(%{"choices" => choices}) when is_list(choices) and length(choices) > 0 do
+    hd(choices)["message"]["content"]
+  end
+
+  def get_content(%{choices: nil}), do: {:error, "No choices returned from OpenAI"}
+  def get_content(%{"choices" => nil}), do: {:error, "No choices returned from OpenAI"}
+  def get_content(%{choices: []}), do: {:error, "Empty choices array returned from OpenAI"}
+  def get_content(%{"choices" => []}), do: {:error, "Empty choices array returned from OpenAI"}
+  def get_content(_), do: {:error, "Invalid response format from OpenAI"}
 
   @spec get_cost(map, __MODULE__.t()) :: number
   def get_cost(data, model) do
-    completion =
-      data["usage"]["completion_tokens"] * @token_cost[model][:completion_tokens] / 1000
+    # usage = Map.get(data, "usage")
+    # completion =
+    #   usage["completion_tokens"] * @token_cost[model][:completion_tokens] / 1000
 
-    prompt = data["usage"]["prompt_tokens"] * @token_cost[model][:prompt_tokens] / 1000
-    cached_input_tokens = data["usage"]["cached_input_tokens"] || 0
+    # prompt = usage["prompt_tokens"] * @token_cost[model][:prompt_tokens] / 1000
+    # cached_input_tokens = data["usage"]["cached_input_tokens"] || 0
 
-    cached_input_tokens =
-      cached_input_tokens * (@token_cost[model][:cached_input_tokens] || 0) / 1000
+    # cached_input_tokens =
+    #   cached_input_tokens * (@token_cost[model][:cached_input_tokens] || 0) / 1000
 
-    completion + prompt + cached_input_tokens
+    # completion + prompt + cached_input_tokens
+    0.0
   end
 end
