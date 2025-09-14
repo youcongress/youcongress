@@ -1,7 +1,6 @@
 defmodule YouCongressWeb.HomeLive.Index do
   use YouCongressWeb, :live_view
 
-  alias YouCongress.Votings.Voting
   alias YouCongressWeb.VotingLive.NewFormComponent
 
   @impl true

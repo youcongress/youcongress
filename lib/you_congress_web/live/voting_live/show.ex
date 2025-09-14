@@ -6,8 +6,6 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   alias YouCongress.Likes
   alias YouCongress.Votings
-  alias YouCongress.Opinions
-  alias YouCongress.Opinions.Opinion
   alias YouCongressWeb.VotingLive.Show.VotesLoader
   alias YouCongressWeb.VotingLive.Show.CurrentUserVoteComponent
   alias YouCongressWeb.VotingLive.VoteComponent
@@ -196,41 +194,6 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   def handle_info(_, socket), do: {:noreply, socket}
 
-  defp replace_opinion(socket, opinion) do
-    %{
-      assigns: %{
-        votes_from_delegates: votes_from_delegates,
-        votes_from_non_delegates: votes_from_non_delegates,
-        current_user_vote: current_user_vote
-      }
-    } = socket
-
-    socket
-    |> assign(
-      :votes_from_delegates,
-      Enum.map(votes_from_delegates, &replace_opinion_in_vote(&1, opinion))
-    )
-    |> assign(
-      :votes_from_non_delegates,
-      Enum.map(
-        votes_from_non_delegates,
-        &replace_opinion_in_vote(&1, opinion)
-      )
-    )
-    |> assign(
-      :current_user_vote,
-      replace_opinion_in_vote(current_user_vote, opinion)
-    )
-  end
-
-  defp replace_opinion_in_vote(
-         %{opinion: %{id: opinion_id}} = vote,
-         %Opinion{id: opinion_id} = opinion
-       ) do
-    Map.put(vote, :opinion, opinion)
-  end
-
-  defp replace_opinion_in_vote(vote, _), do: vote
 
   @spec page_title(atom, binary) :: binary
   defp page_title(:show, voting_title), do: voting_title

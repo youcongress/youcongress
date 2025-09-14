@@ -7,7 +7,6 @@ defmodule YouCongressWeb.OpinionLiveTest do
   import YouCongress.VotingsFixtures
 
   alias YouCongress.Opinions
-  alias YouCongress.Opinions.Opinion
 
   describe "Index" do
     test "comment under a comment", %{conn: conn} do

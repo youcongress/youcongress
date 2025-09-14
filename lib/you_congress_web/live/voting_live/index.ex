@@ -10,7 +10,6 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongress.Votes
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
-  alias YouCongress.DigitalTwins.Regenerate
   alias YouCongress.Track
   alias YouCongressWeb.VotingLive.Index.HallNav
   alias YouCongressWeb.VotingLive.NewFormComponent

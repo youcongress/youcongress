@@ -6,7 +6,6 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
   """
   use Phoenix.Component
 
-  alias YouCongress.Accounts.Permissions
 
   attr :id, :map, required: true
   attr :author, :map, required: true

@@ -6,7 +6,6 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors
   alias YouCongress.Delegations
-  alias YouCongress.DigitalTwins.Regenerate
   alias Phoenix.LiveView.Socket
   alias YouCongress.Votes
   alias YouCongress.Likes
@@ -146,6 +145,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     {:noreply, socket}
   end
 
+  @impl true
   def handle_info(:update_current_user_votes_by_voting_id, socket) do
     current_user = socket.assigns.current_user
 
@@ -159,6 +159,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     {:noreply, socket}
   end
 
+  @impl true
   def handle_info({:put_flash, kind, msg}, socket) do
     socket =
       socket
@@ -168,6 +169,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     {:noreply, socket}
   end
 
+  @impl true
   def handle_info(_, socket), do: {:noreply, socket}
 
   def author_path(%{twitter_username: nil, id: author_id}) do
