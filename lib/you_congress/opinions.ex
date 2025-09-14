@@ -10,7 +10,6 @@ defmodule YouCongress.Opinions do
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsVotings.OpinionVoting
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
-  alias YouCongress.Opinions.Replier
 
   @doc """
   Returns the list of opinions.
@@ -259,10 +258,6 @@ defmodule YouCongress.Opinions do
 
     changeset = Opinion.changeset(opinion, %{likes_count: count})
     Repo.update(changeset)
-  end
-
-  def maybe_reply_by_ai(opinion) do
-    Replier.maybe_reply(opinion)
   end
 
   def delete_subopinions(%Opinion{} = opinion) do

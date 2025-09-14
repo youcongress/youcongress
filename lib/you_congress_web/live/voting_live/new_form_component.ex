@@ -6,7 +6,6 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
   alias YouCongress.Votings
   alias YouCongress.Votings.TitleRewording
   alias YouCongress.Track
-  alias YouCongress.Workers.PublicFiguresWorker
 
   @impl true
   def render(assigns) do
@@ -25,14 +24,8 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
             What solution or problem would you like us to analyze and vote on?
           </h3>
           <p class="text-sm mb-4">
-            <span class="text-orange-600">
-              AI-generated opinions of public figures will be added automatically.
-            </span>
             <span>
-              Then, users can replace them with real <strong>sourced quotes</strong>.
-            </span>
-            <span class="text-xs">
-              In the future, we may replace all AI digital twins with sourced quotes.
+              You'll be able to add real <strong>sourced quotes</strong> from public figures.
             </span>
           </p>
           <p class="text-sm text-gray-600 mb-4">
@@ -52,7 +45,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
           <%= if @suggested_titles != [] do %>
             <div class="mt-6 space-y-4">
               <div class="bg-indigo-50 rounded-lg p-4">
-                <h4 class="font-medium text-indigo-900 mb-2">AI-Suggested Questions</h4>
+                <h4 class="font-medium text-indigo-900 mb-2">Suggested Questions</h4>
                 <p class="text-sm text-indigo-700 mb-3">
                   Choose one of these clear yes/no questions, or click
                   <button
@@ -82,7 +75,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
             <div class="mt-6">
               <button
                 class="inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 rounded-lg bg-indigo-600 text-white font-medium shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-colors duration-200"
-                phx-disable-with="Validating with ChatGPT..."
+                phx-disable-with="Validating..."
               >
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -179,10 +172,6 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
 
     case Votings.create_voting(%{title: suggested_title, user_id: user_id}) do
       {:ok, voting} ->
-        %{voting_id: voting.id, current_user_author_id: current_user && current_user.author_id}
-        |> PublicFiguresWorker.new()
-        |> Oban.insert()
-
         Track.event("Create Voting", current_user)
         notify_parent({:put_flash, :info, "Voting created successfully"})
 

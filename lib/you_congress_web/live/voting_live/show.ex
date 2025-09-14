@@ -6,7 +6,6 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   alias YouCongress.Likes
   alias YouCongress.Votings
-  alias YouCongress.DigitalTwins.Regenerate
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongressWeb.VotingLive.Show.VotesLoader
@@ -14,7 +13,6 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongressWeb.VotingLive.VoteComponent
   alias YouCongressWeb.VotingLive.Show.Comments
   alias YouCongress.Track
-  alias YouCongress.Workers.PublicFiguresWorker
   alias YouCongress.Workers.QuotatorWorker
   alias YouCongress.Accounts.Permissions
   alias YouCongressWeb.VotingLive.CastVoteComponent
@@ -65,20 +63,6 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   @impl true
   @spec handle_event(binary, map, Socket.t()) :: {:noreply, Socket.t()}
-  def handle_event("generate-votes", %{"voting_id" => voting_id}, socket) do
-    voting_id = String.to_integer(voting_id)
-    current_user = socket.assigns.current_user
-
-    %{voting_id: voting_id, current_user_author_id: current_user.author_id}
-    |> PublicFiguresWorker.new()
-    |> Oban.insert()
-
-    Track.event("Generate AI opinions", socket.assigns.current_user)
-
-    Process.send_after(self(), :reload, 100)
-
-    {:noreply, clear_flash(socket)}
-  end
 
   def handle_event("find-sourced-quotes", %{"voting_id" => voting_id}, socket) do
     voting_id = String.to_integer(voting_id)
@@ -186,27 +170,6 @@ defmodule YouCongressWeb.VotingLive.Show do
   end
 
   @impl true
-  def handle_info({:regenerate, opinion_id}, socket) do
-    %{assigns: %{current_user: current_user, voting: voting}} = socket
-
-    case Regenerate.regenerate(opinion_id, current_user) do
-      {:ok, {opinion, _vote}} ->
-        opinion = Opinions.get_opinion(opinion.id, preload: [:author, :votings])
-
-        socket =
-          socket
-          |> replace_opinion(opinion)
-          |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user, voting))
-          |> assign(:regenerating_opinion_id, nil)
-          |> put_flash(:info, "Opinion regenerated.")
-
-        {:noreply, socket}
-
-      error ->
-        Logger.debug("Error regenerating opinion. #{inspect(error)}")
-        {:noreply, put_flash(socket, :error, "Error regenerating opinion.")}
-    end
-  end
 
   def handle_info(:reload, socket) do
     socket = VotesLoader.load_voting_and_votes(socket, socket.assigns.voting.id)

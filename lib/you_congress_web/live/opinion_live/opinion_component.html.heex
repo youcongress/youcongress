@@ -11,7 +11,7 @@
           <div>
             <strong>
               <.link href={AuthorLive.Show.author_path(@opinion.author)}>
-                <%= @opinion.author.name %><%= if @opinion.twin, do: " AI" %>
+                <%= @opinion.author.name %>
               </.link>
             </strong>
           </div>
@@ -30,11 +30,7 @@
       />
     </div>
   </div>
-  <%= if @opinion.twin do %>
-    <div class="pt-1 text-xs text-gray-600">
-      would say according to AI:
-    </div>
-  <% end %>
+
   <div class="pt-2">
     <%= @opinion.content %>
     <%= if @opinion.source_url do %>

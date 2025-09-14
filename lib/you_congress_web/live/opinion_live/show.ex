@@ -78,9 +78,6 @@ defmodule YouCongressWeb.OpinionLive.Show do
       {:ok, %{opinion: opinion}} ->
         Track.event("New Opinion", current_user)
 
-        # We do this synchronous as we want the reply be ready when we redirect
-        YouCongress.Opinions.maybe_reply_by_ai(opinion)
-
         {:noreply,
          socket
          |> put_flash(:info, "Opinion created successfully.")

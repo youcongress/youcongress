@@ -1,9 +1,8 @@
 defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
   @moduledoc """
   Displays links to:
-  - About AI profiles
   - I am <%= @author.name %>
-  - Add a real quote
+  - Add a sourced quote
   """
   use Phoenix.Component
 
@@ -32,9 +31,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
       </button>
       <div class="hidden absolute right-0 lg:right-0 z-10 lg:mt-5 flex lg:w-screen max-w-full lg:max-w-min lg:-translate-x-1/2 lg:px-1/2">
         <div class="w-56 shrink rounded-xl bg-white p-4 text-sm font-semibold leading-6 text-gray-900 shadow-lg ring-1 ring-gray-900/5">
-          <%= if @opinion && @opinion.twin do %>
-            <a href="/faq#ai-profiles" class="block p-2 hover:text-indigo-600">About AI profiles</a>
-          <% end %>
+
           <%= if @opinion && (@opinion.twin || @opinion.source_url) && is_nil(@opinion.ancestry) do %>
             <.link href="/faq#change-ai-profile" class="block p-2 hover:text-indigo-600">
               I am <%= @author.name %>
@@ -51,19 +48,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
               </span>
             <% end %>
           <% end %>
-          <%= if @opinion && @opinion.twin && @page in [:voting_index, :voting_show, :author_show] && Permissions.can_regenerate_opinion?(@current_user) do %>
-            <span class="block p-2">
-              <.link
-                href="#"
-                class="hover:text-indigo-600"
-                phx-click="regenerate"
-                phx-target={@myself}
-                phx-value-opinion_id={@opinion.id}
-              >
-                Regenerate AI (& delete likes/comments)
-              </.link>
-            </span>
-          <% end %>
+
           <.link
             href="mailto:hi@youcongress.org"
             target="_blank"

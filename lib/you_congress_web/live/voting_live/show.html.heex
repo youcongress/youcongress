@@ -8,9 +8,6 @@
 
     <%= if @voting.generating_left == 0 do %>
       <%= if Permissions.can_generate_ai_votes?(@current_user) do %>
-        <.link phx-click="generate-votes" phx-value-voting_id={@voting.id}>
-          <.button>Generate AI comments</.button>
-        </.link>
         <%!-- This is not production ready yet --%>
         <%= if Application.get_env(:you_congress, :environment) != :prod do %>
           <.link phx-click="find-sourced-quotes" phx-value-voting_id={@voting.id}>
@@ -199,7 +196,7 @@
 
 <%= if @voting.generating_left > 0 do %>
   <div class="pt-2">
-    Generating comments from public figures with AI...
+    Finding sourced quotes...
     <img src="/images/loading.gif" alt="Loading" />
   </div>
   <div class="mb-8 bg-gray-200 w-full rounded-full">
