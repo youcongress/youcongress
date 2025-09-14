@@ -18,7 +18,7 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     %{
       assigns: %{
         current_user: current_user,
-        twin_filter: twin_filter,
+        source_filter: source_filter,
         answer_filter: answer_filter
       }
     } = socket
@@ -27,24 +27,23 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     current_user_vote = get_current_user_vote(voting, current_user)
     exclude_ids = (current_user_vote && [current_user_vote.id]) || []
 
-    count_opts = [voting_id: voting_id, has_opinion_id: true]
-
-    answer_id =
-      if answer_filter == "", do: nil, else: Answers.answer_id_by_response(answer_filter)
-
-    count_opts = if answer_id, do: [{:answer_id, answer_id} | count_opts], else: count_opts
-    ai_votes_count = Votes.count_by([{:twin, true} | count_opts])
-    human_votes_count = Votes.count_by([{:twin, false} | count_opts])
+    answer_id = if answer_filter == "", do: nil, else: Answers.answer_id_by_response(answer_filter)
+    quotes_votes_count = Votes.count_with_opinion_source(voting_id, source_filter: :quotes, answer_id: answer_id)
+    users_votes_count = Votes.count_with_opinion_source(voting_id, source_filter: :users, answer_id: answer_id)
 
     opts = [
       include: [:author, :answer, :opinion],
       exclude_ids: exclude_ids,
-      twin_options: twin_options(twin_filter)
+      source_filter: source_filter
     ]
 
     opts = if answer_filter == "", do: opts, else: [{:answer_id, answer_id} | opts]
     votes_with_opinion = Votes.list_votes_with_opinion(voting_id, opts)
-    votes_without_opinion = Votes.list_votes_without_opinion(voting_id, opts)
+    votes_without_opinion =
+      case source_filter do
+        nil -> Votes.list_votes_without_opinion(voting_id, opts)
+        _ -> []
+      end
 
     votes_from_delegates = get_votes_from_delegates(votes_with_opinion, current_user)
 
@@ -60,21 +59,21 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
       current_user_vote: current_user_vote,
       percentage: get_percentage(voting),
       share_to_x_text: share_to_x_text,
-      ai_votes_count: ai_votes_count,
-      human_votes_count: human_votes_count,
+      quotes_votes_count: quotes_votes_count,
+      users_votes_count: users_votes_count,
       total_opinions: Votes.count_by(voting_id: voting_id),
-      opinions_by_response: get_opinions_by_response(voting.id, twin_filter)
+      opinions_by_response: get_opinions_by_response(voting.id, source_filter)
     )
     |> assign_main_variables(voting, current_user)
   end
 
-  defp get_opinions_by_response(voting_id, twin_filter) do
-    Votes.count_by_response_map(voting_id, has_opinion_id: true, twin: twin_filter)
+  defp get_opinions_by_response(voting_id, source_filter) do
+    case source_filter do
+      :quotes -> Votes.count_by_response_map_by_source(voting_id, source_filter: :quotes)
+      :users -> Votes.count_by_response_map_by_source(voting_id, source_filter: :users)
+      _ -> Votes.count_by_response_map(voting_id, has_opinion_id: true)
+    end
   end
-
-  defp twin_options(true), do: [true]
-  defp twin_options(false), do: [false]
-  defp twin_options(nil), do: [true, false]
 
   defp x_post(nil, voting), do: voting.title
 

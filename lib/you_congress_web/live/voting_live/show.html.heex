@@ -122,16 +122,16 @@
     </select>
   </form>
   <span
-    phx-click="filter-ai"
-    class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@twin_filter == true && "bg-gray-200"}"}
+    phx-click="filter-quotes"
+    class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :quotes && "bg-gray-200"}"}
   >
-    AI (<%= @ai_votes_count %>)
+    Quotes (<%= @quotes_votes_count %>)
   </span>
   <span
-    phx-click="filter-human"
-    class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@twin_filter == false && "bg-gray-200"}"}
+    phx-click="filter-users"
+    class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :users && "bg-gray-200"}"}
   >
-    HUMAN (<%= @human_votes_count %>)
+    Users (<%= @users_votes_count %>)
   </span>
 </div>
 

@@ -43,7 +43,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       )
       |> assign(reload: false)
       |> assign(:regenerating_opinion_id, nil)
-      |> assign(:twin_filter, nil)
+      |> assign(:source_filter, nil)
       |> assign(:answer_filter, nil)
       |> VotesLoader.load_voting_and_votes(voting.id)
       |> load_random_votings(voting.id)
@@ -120,37 +120,37 @@ defmodule YouCongressWeb.VotingLive.Show do
     {:noreply, assign(socket, editing: true)}
   end
 
-  def handle_event("filter-ai", _, socket) do
-    %{assigns: %{twin_filter: twin_filter, voting: voting}} = socket
+  def handle_event("filter-quotes", _, socket) do
+    %{assigns: %{source_filter: source_filter, voting: voting}} = socket
 
-    twin_filter =
-      case twin_filter do
-        nil -> true
-        true -> nil
-        false -> true
+    source_filter =
+      case source_filter do
+        nil -> :quotes
+        :quotes -> nil
+        :users -> :quotes
       end
 
     socket =
       socket
-      |> assign(:twin_filter, twin_filter)
+      |> assign(:source_filter, source_filter)
       |> VotesLoader.load_voting_and_votes(voting.id)
 
     {:noreply, socket}
   end
 
-  def handle_event("filter-human", _, socket) do
-    %{assigns: %{twin_filter: twin_filter, voting: voting}} = socket
+  def handle_event("filter-users", _, socket) do
+    %{assigns: %{source_filter: source_filter, voting: voting}} = socket
 
-    twin_filter =
-      case twin_filter do
-        nil -> false
-        true -> false
-        false -> nil
+    source_filter =
+      case source_filter do
+        nil -> :users
+        :quotes -> :users
+        :users -> nil
       end
 
     socket =
       socket
-      |> assign(:twin_filter, twin_filter)
+      |> assign(:source_filter, source_filter)
       |> VotesLoader.load_voting_and_votes(voting.id)
 
     {:noreply, socket}
