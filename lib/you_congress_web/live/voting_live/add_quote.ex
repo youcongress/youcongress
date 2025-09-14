@@ -9,6 +9,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
   alias YouCongress.Votes.Answers
   alias YouCongress.Votes
   alias YouCongress.Opinions
+  alias YouCongress.OpinionsVotings
   alias YouCongress.Track
 
   @impl true
@@ -232,8 +233,12 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              source_url: source_url,
              user_id: current_user.id,
              direct: true,
-             twin: false,
-             voting_id: voting.id
+             twin: false
+           }),
+          {:ok, _opinion_voting} <- OpinionsVotings.create_opinion_voting(%{
+             opinion_id: opinion.id,
+             voting_id: voting.id,
+             user_id: current_user.id
            }),
          {:ok, _vote} <-
            Votes.create_vote(%{
@@ -276,8 +281,12 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              source_url: source_url,
              user_id: current_user.id,
              direct: true,
-             twin: false,
-             voting_id: vote.voting_id
+             twin: false
+           }),
+          {:ok, _opinion_voting} <- OpinionsVotings.create_opinion_voting(%{
+             opinion_id: opinion.id,
+             voting_id: voting.id,
+             user_id: current_user.id
            }),
          {:ok, _vote} <-
            Votes.update_vote(vote, %{
