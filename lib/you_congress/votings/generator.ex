@@ -7,9 +7,8 @@ defmodule YouCongress.Votings.Generator do
   alias YouCongress.Votings.GeneratorAI
 
   def generate do
-    with {:ok, %{voting_title: voting_title}} <- generator_implementation().generate(),
-         {:ok, voting} <- Votings.create_voting(%{title: voting_title}) do
-      {:ok, voting}
+    with {:ok, %{voting_title: voting_title}} <- generator_implementation().generate() do
+      Votings.create_voting(%{title: voting_title})
     end
   end
 

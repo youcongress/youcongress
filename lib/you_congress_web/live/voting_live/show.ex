@@ -194,7 +194,6 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   def handle_info(_, socket), do: {:noreply, socket}
 
-
   @spec page_title(atom, binary) :: binary
   defp page_title(:show, voting_title), do: voting_title
   defp page_title(:edit, _), do: "Edit Voting"
