@@ -25,7 +25,7 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             />
           </div>
           <div class="hidden md:block pt-1 space-x-8">
-            <%= if @hall_name not in ["ai-safety", "ai-governance", "future-of-work", "ai", "cern-for-ai", "existential-risk", "us", "eu", "all"] do %>
+            <%= if @hall_name not in ["ai-safety", "ai-governance", "future-of-work", "ai", "cern-for-ai", "existential-risk", "all"] do %>
               <HallNav.tab
                 url_hall_name={@hall_name}
                 hall_name={@hall_name}
@@ -60,25 +60,13 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             />
             <HallNav.tab
               url_hall_name={@hall_name}
-              hall_name="eu"
-              hall_link={~p"/halls/eu"}
-              hall_title="EU"
-            />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="us"
-              hall_link={~p"/halls/us"}
-              hall_title="US"
-            />
-            <HallNav.tab
-              url_hall_name={@hall_name}
               hall_name="all"
               hall_link={~p"/halls/all"}
               hall_title="All"
             />
           </div>
           <div class="space-x-8 md:hidden pt-1">
-            <%= if @hall_name not in ["ai-safety", "ai-governance", "cern-for-ai", "existential-risk", "eu", "us", "ai", "all"] do %>
+            <%= if @hall_name not in ["ai-safety", "ai-governance", "cern-for-ai", "existential-risk", "ai", "all"] do %>
               <HallNav.tab
                 url_hall_name={@hall_name}
                 hall_name={@hall_name}
@@ -114,18 +102,6 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
             hall_name="existential-risk"
             hall_link={~p"/halls/existential-risk"}
             hall_title="Existential risk"
-          />
-          <HallNav.tab
-            url_hall_name={@hall_name}
-            hall_name="eu"
-            hall_link={~p"/halls/eu"}
-            hall_title="EU"
-          />
-          <HallNav.tab
-            url_hall_name={@hall_name}
-            hall_name="us"
-            hall_link={~p"/halls/us"}
-            hall_title="US"
           />
           <HallNav.tab
             url_hall_name={@hall_name}
