@@ -235,7 +235,8 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              direct: true,
              twin: false
            }),
-          {:ok, _opinion_voting} <- OpinionsVotings.create_opinion_voting(%{
+         {:ok, _opinion_voting} <-
+           OpinionsVotings.create_opinion_voting(%{
              opinion_id: opinion.id,
              voting_id: voting.id,
              user_id: current_user.id
@@ -283,7 +284,8 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              direct: true,
              twin: false
            }),
-          {:ok, _opinion_voting} <- OpinionsVotings.create_opinion_voting(%{
+         {:ok, _opinion_voting} <-
+           OpinionsVotings.create_opinion_voting(%{
              opinion_id: opinion.id,
              voting_id: voting.id,
              user_id: current_user.id

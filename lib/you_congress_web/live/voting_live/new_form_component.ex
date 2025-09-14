@@ -25,7 +25,8 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
           </h3>
           <p class="text-sm mb-4">
             <span>
-              You'll be able to add real <strong>sourced quotes</strong> from experts and public figures.
+              You'll be able to add real <strong>sourced quotes</strong>
+              from experts and public figures.
             </span>
           </p>
           <p class="text-sm text-gray-600 mb-4">

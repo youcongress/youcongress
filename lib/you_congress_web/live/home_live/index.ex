@@ -14,7 +14,8 @@ defmodule YouCongressWeb.HomeLive.Index do
         :page_title,
         "YouCongress: Liquid Democracy for AI Safety Policy"
       )
-      |> assign(:page_description,
+      |> assign(
+        :page_description,
         "Vote directly or delegate to trusted experts. When someone hasn't participated on YouCongress, their stance is grounded in verifiable, sourced quotes—clear evidence of what citizens prefer on concrete safety proposals."
       )
       |> assign(:skip_page_suffix, true)

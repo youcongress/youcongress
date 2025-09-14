@@ -34,7 +34,10 @@ defmodule YouCongressWeb.ActivityLive.Index do
       |> load_opinions_and_votes()
       |> assign(page_title: "Activity")
       |> assign(page: 1)
-      |> assign(:current_user_votes_by_voting_id, get_current_user_votes_by_voting_id(current_user))
+      |> assign(
+        :current_user_votes_by_voting_id,
+        get_current_user_votes_by_voting_id(current_user)
+      )
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
 
     {:noreply, socket}
