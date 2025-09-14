@@ -17,13 +17,6 @@ defmodule YouCongressWeb.ActivityLive.Index do
   def mount(_params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
 
-    socket =
-      socket
-      |> assign(
-        :current_user_votes_by_voting_id,
-        get_current_user_votes_by_voting_id(socket.assigns.current_user)
-      )
-
     if connected?(socket) do
       Track.event("View Activity", socket.assigns.current_user)
     end
@@ -39,10 +32,9 @@ defmodule YouCongressWeb.ActivityLive.Index do
       socket
       |> assign(:include_user_opinions, false)
       |> load_opinions_and_votes()
-      |> assign(
-        page_title: "Activity",
-        page: 1
-      )
+      |> assign(page_title: "Activity")
+      |> assign(page: 1)
+      |> assign(:current_user_votes_by_voting_id, get_current_user_votes_by_voting_id(current_user))
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
 
     {:noreply, socket}
