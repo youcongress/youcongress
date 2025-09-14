@@ -27,9 +27,14 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     current_user_vote = get_current_user_vote(voting, current_user)
     exclude_ids = (current_user_vote && [current_user_vote.id]) || []
 
-    answer_id = if answer_filter == "", do: nil, else: Answers.answer_id_by_response(answer_filter)
-    quotes_votes_count = Votes.count_with_opinion_source(voting_id, source_filter: :quotes, answer_id: answer_id)
-    users_votes_count = Votes.count_with_opinion_source(voting_id, source_filter: :users, answer_id: answer_id)
+    answer_id =
+      if answer_filter == "", do: nil, else: Answers.answer_id_by_response(answer_filter)
+
+    quotes_votes_count =
+      Votes.count_with_opinion_source(voting_id, source_filter: :quotes, answer_id: answer_id)
+
+    users_votes_count =
+      Votes.count_with_opinion_source(voting_id, source_filter: :users, answer_id: answer_id)
 
     opts = [
       include: [:author, :answer, :opinion],
@@ -39,6 +44,7 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
 
     opts = if answer_filter == "", do: opts, else: [{:answer_id, answer_id} | opts]
     votes_with_opinion = Votes.list_votes_with_opinion(voting_id, opts)
+
     votes_without_opinion =
       case source_filter do
         nil -> Votes.list_votes_without_opinion(voting_id, opts)
