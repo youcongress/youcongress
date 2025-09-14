@@ -170,7 +170,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(
-      page_title: "YouCongress: Liquid Democracy for AI Safety Policy",
+      page_title: "YouCongress: Liquid Democracy Polls for AI Safety Policy",
       skip_page_suffix: true,
       page_description:
         "Vote directly or delegate to trusted experts. When someone hasn't participated on YouCongress, their stance is grounded in verifiable, sourced quotes—clear evidence of what citizens prefer on concrete safety proposals.",
