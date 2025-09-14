@@ -32,7 +32,6 @@ defmodule YouCongress.Votings.TitleRewordingAI do
   @spec generate_rewordings(binary, OpenAIModel.t()) :: {:ok, list, number} | {:error, binary}
   def generate_rewordings(prompt, model) do
     with {:ok, data} <- ask_gpt("Prompt: #{prompt}", model),
-         _<- IO.inspect(data),
          content when is_binary(content) <- OpenAIModel.get_content(data),
          {:ok, %{"questions" => votings}} <- Jason.decode(content),
          cost <- OpenAIModel.get_cost(data, model) do
