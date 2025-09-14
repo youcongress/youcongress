@@ -37,7 +37,7 @@ defmodule YouCongressWeb.ActivityLive.Index do
 
     socket =
       socket
-      |> assign(:include_opinions_from_twins, false)
+      |> assign(:include_user_opinions, false)
       |> load_opinions_and_votes()
       |> assign(
         page_title: "Activity",
@@ -61,24 +61,40 @@ defmodule YouCongressWeb.ActivityLive.Index do
   end
 
   defp list_opinions(socket) do
-    Opinions.list_opinions(
+    base_opts = [
       preload: [:votings, :author],
-      include_twins: socket.assigns.include_opinions_from_twins,
       has_votings: true,
       order_by: [desc: :id],
       limit: @per_page
-    )
+    ]
+
+    opts =
+      if socket.assigns.include_user_opinions do
+        base_opts
+      else
+        Keyword.put(base_opts, :only_quotes, true)
+      end
+
+    Opinions.list_opinions(opts)
   end
 
   defp list_opinions(socket, offset) do
-    Opinions.list_opinions(
+    base_opts = [
       preload: [:votings, :author],
-      include_twins: socket.assigns.include_opinions_from_twins,
       has_votings: true,
       order_by: [desc: :id],
       limit: @per_page,
       offset: offset
-    )
+    ]
+
+    opts =
+      if socket.assigns.include_user_opinions do
+        base_opts
+      else
+        Keyword.put(base_opts, :only_quotes, true)
+      end
+
+    Opinions.list_opinions(opts)
   end
 
   defp current_user_delegation_ids(nil), do: []
@@ -106,11 +122,11 @@ defmodule YouCongressWeb.ActivityLive.Index do
   end
 
   def handle_event("toggle-switch", _, socket) do
-    %{assigns: %{include_opinions_from_twins: include_opinions_from_twins}} = socket
+    %{assigns: %{include_user_opinions: include_user_opinions}} = socket
 
     socket =
       socket
-      |> assign(:include_opinions_from_twins, !include_opinions_from_twins)
+      |> assign(:include_user_opinions, !include_user_opinions)
       |> load_opinions_and_votes()
       |> assign(
         page_title: "Activity",

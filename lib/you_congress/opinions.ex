@@ -202,6 +202,9 @@ defmodule YouCongress.Opinions do
       {:ancestry, ancestry}, query ->
         from q in query, where: q.ancestry == ^"#{ancestry}"
 
+      {:only_quotes, true}, query ->
+        from q in query, where: not is_nil(q.source_url)
+
       {:twin, twin_value}, query ->
         from q in query, where: q.twin == ^twin_value
 
