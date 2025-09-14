@@ -21,8 +21,7 @@ defmodule YouCongressWeb.Router do
     pipe_through(:browser)
 
     get("/sim", SimController, :index)
-    live("/home", ActivityLive.Index, :index)
-    live("/polls", VotingLive.Index, :index)
+    live("/home", VotingLive.Index, :index)
     live("/p/:slug", VotingLive.Show, :show)
     live("/a/:id", AuthorLive.Show, :show)
     live("/x/:twitter_username", AuthorLive.Show, :show)

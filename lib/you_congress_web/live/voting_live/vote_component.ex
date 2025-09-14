@@ -112,12 +112,6 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
     end
   end
 
-  def handle_event("regenerate", %{"opinion_id" => opinion_id}, socket) do
-    opinion_id = String.to_integer(opinion_id)
-    send(self(), {:regenerate, opinion_id})
-    {:noreply, assign(socket, :regenerating_opinion_id, opinion_id)}
-  end
-
   defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
 
   defp response(assigns, response) do

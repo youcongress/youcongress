@@ -5,16 +5,10 @@ defmodule YouCongress.Votings.Generator do
 
   alias YouCongress.Votings
   alias YouCongress.Votings.GeneratorAI
-  alias YouCongress.Workers.PublicFiguresWorker
 
   def generate do
-    with {:ok, %{voting_title: voting_title}} <- generator_implementation().generate(),
-         {:ok, voting} <- Votings.create_voting(%{title: voting_title}) do
-      %{voting_id: voting.id}
-      |> PublicFiguresWorker.new()
-      |> Oban.insert()
-
-      {:ok, voting}
+    with {:ok, %{voting_title: voting_title}} <- generator_implementation().generate() do
+      Votings.create_voting(%{title: voting_title})
     end
   end
 

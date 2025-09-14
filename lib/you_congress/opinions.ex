@@ -10,7 +10,6 @@ defmodule YouCongress.Opinions do
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsVotings.OpinionVoting
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
-  alias YouCongress.Opinions.Replier
 
   @doc """
   Returns the list of opinions.
@@ -203,6 +202,9 @@ defmodule YouCongress.Opinions do
       {:ancestry, ancestry}, query ->
         from q in query, where: q.ancestry == ^"#{ancestry}"
 
+      {:only_quotes, true}, query ->
+        from q in query, where: not is_nil(q.source_url)
+
       {:twin, twin_value}, query ->
         from q in query, where: q.twin == ^twin_value
 
@@ -259,10 +261,6 @@ defmodule YouCongress.Opinions do
 
     changeset = Opinion.changeset(opinion, %{likes_count: count})
     Repo.update(changeset)
-  end
-
-  def maybe_reply_by_ai(opinion) do
-    Replier.maybe_reply(opinion)
   end
 
   def delete_subopinions(%Opinion{} = opinion) do

@@ -1,5 +1,4 @@
 Application.put_env(:you_congress, :hall_classifier, YouCongress.Halls.ClassificationFake)
-Application.put_env(:you_congress, :ai_replier, YouCongress.Opinions.Replier.AIReplierFake)
 
 Application.put_env(
   :you_congress,

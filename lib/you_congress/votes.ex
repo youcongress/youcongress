@@ -134,6 +134,7 @@ defmodule YouCongress.Votes do
     include_tables = Keyword.get(opts, :include, [])
     exclude_ids = Keyword.get(opts, :exclude_ids, [])
     twin_options = Keyword.get(opts, :twin_options, [true, false])
+    source_filter = Keyword.get(opts, :source_filter)
     answer_id = Keyword.get(opts, :answer_id)
 
     base_query =
@@ -148,11 +149,18 @@ defmodule YouCongress.Votes do
       )
 
     query =
+      case source_filter do
+        :quotes -> where(base_query, [v, a, o], not is_nil(o.source_url))
+        :users -> where(base_query, [v, a, o], is_nil(o.source_url))
+        _ -> base_query
+      end
+
+    query =
       if answer_id do
-        base_query
+        query
         |> where([v, a, o], v.answer_id == ^answer_id)
       else
-        base_query
+        query
       end
 
     query
@@ -438,6 +446,58 @@ defmodule YouCongress.Votes do
 
   def count_by_response_map(voting_id, opts \\ []) do
     count_by_response(voting_id, opts)
+    |> Enum.into(%{})
+  end
+
+  def count_with_opinion_source(voting_id, opts \\ []) do
+    source_filter = Keyword.get(opts, :source_filter)
+    answer_id = Keyword.get(opts, :answer_id)
+
+    base_query =
+      from v in Vote,
+        join: o in YouCongress.Opinions.Opinion,
+        on: v.opinion_id == o.id,
+        where: v.voting_id == ^voting_id and not is_nil(v.opinion_id),
+        select: count(v.id)
+
+    query =
+      case source_filter do
+        :quotes -> from [v, o] in base_query, where: not is_nil(o.source_url)
+        :users -> from [v, o] in base_query, where: is_nil(o.source_url)
+        _ -> base_query
+      end
+
+    query =
+      if answer_id do
+        from [v, o] in query, where: v.answer_id == ^answer_id
+      else
+        query
+      end
+
+    Repo.one(query)
+  end
+
+  def count_by_response_map_by_source(voting_id, opts \\ []) do
+    source_filter = Keyword.get(opts, :source_filter)
+
+    base_query =
+      from v in Vote,
+        join: a in assoc(v, :answer),
+        join: o in YouCongress.Opinions.Opinion,
+        on: v.opinion_id == o.id,
+        where: v.voting_id == ^voting_id and not is_nil(v.opinion_id),
+        group_by: a.response,
+        select: {a.response, count(a.response)}
+
+    query =
+      case source_filter do
+        :quotes -> from [v, a, o] in base_query, where: not is_nil(o.source_url)
+        :users -> from [v, a, o] in base_query, where: is_nil(o.source_url)
+        _ -> base_query
+      end
+
+    query
+    |> Repo.all()
     |> Enum.into(%{})
   end
 

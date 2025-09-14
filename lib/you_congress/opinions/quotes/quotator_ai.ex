@@ -150,34 +150,36 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
 
       case Finch.request(req, Swoosh.Finch, receive_timeout: @timeout_in_min * 60 * 1000) do
         {:ok, %Finch.Response{status: status, body: resp_body}} when status in 200..299 ->
-          with {:ok, resp} <- Jason.decode(resp_body) do
-            Logger.warning("----------------- resp: #{inspect(resp)}")
+          case Jason.decode(resp_body) do
+            {:ok, resp} ->
+              Logger.warning("----------------- resp: #{inspect(resp)}")
 
-            content =
-              Map.get(resp, "output_text") ||
-                extract_output_text(resp)
+              content =
+                Map.get(resp, "output_text") ||
+                  extract_output_text(resp)
 
-            cached_input_tokens = resp["usage"]["input_tokens_details"]["cached_tokens"] || 0
+              cached_input_tokens = resp["usage"]["input_tokens_details"]["cached_tokens"] || 0
 
-            prompt_tokens = resp["usage"]["input_tokens"] - cached_input_tokens
+              prompt_tokens = resp["usage"]["input_tokens"] - cached_input_tokens
 
-            completion_tokens =
-              resp["usage"]["output_tokens"] || 0
+              completion_tokens =
+                resp["usage"]["output_tokens"] || 0
 
-            compat = %{
-              "choices" => [
-                %{"message" => %{"content" => content || ""}}
-              ],
-              "usage" => %{
-                "prompt_tokens" => prompt_tokens,
-                "completion_tokens" => completion_tokens,
-                "cached_input_tokens" => cached_input_tokens
+              compat = %{
+                "choices" => [
+                  %{"message" => %{"content" => content || ""}}
+                ],
+                "usage" => %{
+                  "prompt_tokens" => prompt_tokens,
+                  "completion_tokens" => completion_tokens,
+                  "cached_input_tokens" => cached_input_tokens
+                }
               }
-            }
 
-            {:ok, compat}
-          else
-            _ -> {:error, "Failed to parse OpenAI response"}
+              {:ok, compat}
+
+            _ ->
+              {:error, "Failed to parse OpenAI response"}
           end
 
         {:ok, %Finch.Response{status: status, body: resp_body}} ->

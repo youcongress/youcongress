@@ -10,7 +10,6 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongress.Votes
   alias YouCongress.Votings
   alias YouCongress.Votings.Voting
-  alias YouCongress.DigitalTwins.Regenerate
   alias YouCongress.Track
   alias YouCongressWeb.VotingLive.Index.HallNav
   alias YouCongressWeb.VotingLive.NewFormComponent
@@ -155,28 +154,6 @@ defmodule YouCongressWeb.VotingLive.Index do
       |> put_flash(kind, msg)
 
     {:noreply, socket}
-  end
-
-  def handle_info({:regenerate, opinion_id}, socket) do
-    %{assigns: %{current_user: current_user, votes_by_voting_id: votes_by_voting_id}} = socket
-
-    case Regenerate.regenerate(opinion_id, current_user) do
-      {:ok, {_, vote}} ->
-        vote = Votes.get_vote(vote.id, preload: [:answer, :opinion, :author])
-        votes_by_voting_id = Map.put(votes_by_voting_id, vote.voting_id, vote)
-
-        socket =
-          socket
-          |> assign(:votes_by_voting_id, votes_by_voting_id)
-          |> assign(:regenerating_opinion_id, nil)
-          |> put_flash(:info, "Opinion regenerated.")
-
-        {:noreply, socket}
-
-      error ->
-        Logger.debug("Error regenerating opinion. #{inspect(error)}")
-        {:noreply, put_flash(socket, :error, "Error regenerating opinion.")}
-    end
   end
 
   def handle_info(_, socket), do: {:noreply, socket}

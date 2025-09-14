@@ -36,7 +36,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
     test "vote and create opinion", %{conn: conn, voting: voting} do
       conn = log_in_as_user(conn)
-      {:ok, index_live, html} = live(conn, ~p"/polls")
+      {:ok, index_live, html} = live(conn, ~p"/home")
 
       assert html =~ voting.title
 
@@ -112,10 +112,10 @@ defmodule YouCongressWeb.VotingLiveTest do
          [generate_rewordings: fn _, _ -> {:ok, @suggested_titles, 0} end]}
       ]) do
         conn = log_in_as_admin(conn)
-        {:ok, index_live, _html} = live(conn, ~p"/polls")
+        {:ok, index_live, _html} = live(conn, ~p"/home")
 
         index_live
-        |> element("button#create-poll-button", "New Poll")
+        |> element("button#create-poll-button", "New")
         |> render_click()
 
         assert index_live
@@ -377,8 +377,8 @@ defmodule YouCongressWeb.VotingLiveTest do
       ai_author = author_fixture(%{twin: true})
       human_author = author_fixture(%{twin: false})
 
-      # Create opinions with different responses and authors
-      _strongly_agree_ai =
+      # Two quote opinions (with source_url) and one user opinion (no source_url)
+      _strongly_agree_quote =
         vote_fixture(
           %{
             voting_id: voting.id,
@@ -389,18 +389,7 @@ defmodule YouCongressWeb.VotingLiveTest do
           true
         )
 
-      _agree_human =
-        vote_fixture(
-          %{
-            voting_id: voting.id,
-            author_id: human_author.id,
-            answer_id: Answers.answer_id_by_response("Agree"),
-            twin: false
-          },
-          true
-        )
-
-      _disagree_ai =
+      _disagree_quote =
         vote_fixture(
           %{
             voting_id: voting.id,
@@ -411,13 +400,27 @@ defmodule YouCongressWeb.VotingLiveTest do
           true
         )
 
+      user_opinion = opinion_fixture(%{author_id: human_author.id, source_url: nil, twin: false})
+
+      _agree_user =
+        vote_fixture(
+          %{
+            voting_id: voting.id,
+            author_id: human_author.id,
+            answer_id: Answers.answer_id_by_response("Agree"),
+            twin: false,
+            opinion_id: user_opinion.id
+          },
+          false
+        )
+
       conn = log_in_user(conn, user)
       {:ok, show_live, html} = live(conn, ~p"/p/#{voting.slug}")
 
       # Test initial state shows all opinions
       assert html =~ "All opinions (3)"
-      assert html =~ "AI (2)"
-      assert html =~ "HUMAN (1)"
+      assert html =~ "Quotes (2)"
+      assert html =~ "Users (1)"
 
       # Test answer filter
       html =
@@ -434,19 +437,19 @@ defmodule YouCongressWeb.VotingLiveTest do
       |> form("form[phx-change='filter-answer']", %{"answer" => ""})
       |> render_change()
 
-      # Test AI filter
+      # Test Quotes filter
       html =
         show_live
-        |> element("span", "AI")
+        |> element("span", "Quotes")
         |> render_click()
 
       assert html =~ ai_author.name
       refute html =~ human_author.name
 
-      # Test Human filter
+      # Test Users filter
       html =
         show_live
-        |> element("span", "HUMAN")
+        |> element("span", "Users")
         |> render_click()
 
       assert html =~ human_author.name

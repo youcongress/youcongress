@@ -6,6 +6,7 @@ defmodule YouCongress.OpinionsVotings do
   import Ecto.Query, warn: false
   alias YouCongress.Repo
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.OpinionsVotings.OpinionVoting
 
   @doc """
   Returns a map of {voting_id, opinion} pairs for the given voting_ids and current_user's author_id.
@@ -30,4 +31,21 @@ defmodule YouCongress.OpinionsVotings do
 
   def get_opinions_by_voting_ids(_, nil), do: %{}
   def get_opinions_by_voting_ids([], _), do: %{}
+
+  @doc """
+  Creates an opinion voting.
+
+  ## Examples
+
+      iex> create_opinion_voting(%{opinion_id: 1, voting_id: 1, user_id: 1})
+      {:ok, %OpinionVoting{}}
+
+      iex> create_opinion_voting(%{opinion_id: 1, voting_id: 1, user_id: 1})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_opinion_voting(params) do
+    %OpinionVoting{}
+    |> OpinionVoting.changeset(params)
+    |> Repo.insert()
+  end
 end
