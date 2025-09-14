@@ -73,33 +73,30 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   end
 
   defp persist_quote(voting_id, quote, user_id) do
-    try do
-      with {:ok, author} <- upsert_author(quote["author"] || %{}),
-           %{} = vote_attrs <- build_vote_attrs(voting_id, author, quote["agree_rate"]),
-           {:ok, vote} <- create_or_update_vote(vote_attrs),
-           {:ok, %{opinion: opinion}} <-
-             Opinions.create_opinion(%{
-               content: quote["quote"],
-               source_url: quote["source_url"],
-               year: parse_year(quote["year"]),
-               author_id: author.id,
-               twin: false,
-               voting_id: voting_id
-             }),
-           {:ok, _} <- Votes.update_vote(vote, %{opinion_id: opinion.id, twin: false}),
-           :ok <- associate_opinion_with_voting(opinion, voting_id, user_id) do
-        :ok
-      else
-        {:error, :user_id_required} ->
-          Logger.debug("Skipping association due to missing user_id")
-          :error
-
-        {:error, reason} ->
-          Logger.error("Failed to persist sourced quote: #{inspect(reason)}")
-          :error
-      end
-    after
+    with {:ok, author} <- upsert_author(quote["author"] || %{}),
+         %{} = vote_attrs <- build_vote_attrs(voting_id, author, quote["agree_rate"]),
+         {:ok, vote} <- create_or_update_vote(vote_attrs),
+         {:ok, %{opinion: opinion}} <-
+           Opinions.create_opinion(%{
+             content: quote["quote"],
+             source_url: quote["source_url"],
+             year: parse_year(quote["year"]),
+             author_id: author.id,
+             twin: false,
+             voting_id: voting_id
+           }),
+         {:ok, _} <- Votes.update_vote(vote, %{opinion_id: opinion.id, twin: false}),
+         :ok <- associate_opinion_with_voting(opinion, voting_id, user_id) do
       GeneratingLeftServer.decrease_generating_left(voting_id)
+      :ok
+    else
+      {:error, :user_id_required} ->
+        Logger.debug("Skipping association due to missing user_id")
+        :error
+
+      {:error, reason} ->
+        Logger.error("Failed to persist sourced quote: #{inspect(reason)}")
+        :error
     end
   end
 

@@ -1,7 +1,6 @@
 defmodule YouCongressWeb.HomeLive.Index do
   use YouCongressWeb, :live_view
 
-  alias YouCongress.Votings.Voting
   alias YouCongressWeb.VotingLive.NewFormComponent
 
   @impl true
@@ -13,7 +12,7 @@ defmodule YouCongressWeb.HomeLive.Index do
       socket
       |> assign(
         :page_title,
-        "Delegated Polling for AI Safety Policy"
+        "Liquid Democracy on AI Policy"
       )
       |> assign(:live_action, :new)
       |> assign(:current_user, current_user)

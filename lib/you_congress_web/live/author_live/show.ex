@@ -6,7 +6,6 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors
   alias YouCongress.Delegations
-  alias YouCongress.DigitalTwins.Regenerate
   alias Phoenix.LiveView.Socket
   alias YouCongress.Votes
   alias YouCongress.Likes
@@ -134,12 +133,6 @@ defmodule YouCongressWeb.AuthorLive.Show do
     end
   end
 
-  def handle_event("regenerate", %{"opinion_id" => opinion_id}, socket) do
-    opinion_id = String.to_integer(opinion_id)
-    send(self(), {:regenerate, opinion_id})
-    {:noreply, assign(socket, :regenerating_opinion_id, opinion_id)}
-  end
-
   def handle_event("toggle-switch", _, socket) do
     %{assigns: %{order_by_date: order_by_date, author: author}} = socket
     order_by_date = !order_by_date
@@ -153,29 +146,6 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   @impl true
-  def handle_info({:regenerate, opinion_id}, socket) do
-    %{assigns: %{current_user: current_user, votes: votes}} = socket
-
-    case Regenerate.regenerate(opinion_id, current_user) do
-      {:ok, {_, vote}} ->
-        vote = Votes.get_vote(vote.id, preload: [:voting, :answer, :opinion])
-        votes = Enum.map(votes, fn v -> if v.id == vote.id, do: vote, else: v end)
-
-        socket =
-          socket
-          |> assign(:votes, votes)
-          |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
-          |> assign(:regenerating_opinion_id, nil)
-          |> put_flash(:info, "Opinion regenerated.")
-
-        {:noreply, socket}
-
-      error ->
-        Logger.debug("Error regenerating opinion. #{inspect(error)}")
-        {:noreply, put_flash(socket, :error, "Error regenerating opinion.")}
-    end
-  end
-
   def handle_info(:update_current_user_votes_by_voting_id, socket) do
     current_user = socket.assigns.current_user
 
@@ -189,6 +159,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     {:noreply, socket}
   end
 
+  @impl true
   def handle_info({:put_flash, kind, msg}, socket) do
     socket =
       socket
@@ -198,6 +169,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     {:noreply, socket}
   end
 
+  @impl true
   def handle_info(_, socket), do: {:noreply, socket}
 
   def author_path(%{twitter_username: nil, id: author_id}) do
