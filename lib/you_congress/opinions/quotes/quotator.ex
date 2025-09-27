@@ -12,7 +12,6 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   alias YouCongress.Votes
   alias YouCongress.Votes.Answers
   alias YouCongress.Votings
-  alias YouCongress.OpinatorWorker.GeneratingLeftServer
 
   @number_of_quotes 5
   @type quote_item :: map()
@@ -88,7 +87,7 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
            }),
          {:ok, _} <- Votes.update_vote(vote, %{opinion_id: opinion.id, twin: false}),
          :ok <- associate_opinion_with_voting(opinion, voting_id, user_id) do
-      GeneratingLeftServer.decrease_generating_left(voting_id)
+      decrease_generating_left(voting_id)
       :ok
     else
       {:error, :user_id_required} ->
@@ -179,6 +178,30 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
       {:ok, _op} -> :ok
       {:error, :already_associated} -> :ok
       {:error, _} = error -> error
+    end
+  end
+
+  defp decrease_generating_left(voting_id) do
+    case Votings.get_voting(voting_id) do
+      nil ->
+        :ok
+
+      voting ->
+        new_left = max(voting.generating_left - 1, 0)
+
+        attrs =
+          if new_left == 0 do
+            %{generating_total: 0, generating_left: new_left}
+          else
+            %{generating_left: new_left}
+          end
+
+        case Votings.update_voting(voting, attrs) do
+          {:ok, _} -> :ok
+          {:error, reason} ->
+            Logger.error("Failed to decrease generating_left for voting #{voting_id}: #{inspect(reason)}")
+            :error
+        end
     end
   end
 
