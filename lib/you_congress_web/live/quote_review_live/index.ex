@@ -3,6 +3,8 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
 
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.Votes
+  alias YouCongress.Votes.Answers
 
   @impl true
   def mount(_params, session, socket) do
@@ -14,7 +16,9 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
      |> assign(:pending_quotes, [])
      |> assign(:page, 1)
      |> assign(:per_page, 20)
-     |> assign(:has_more, true)}
+     |> assign(:has_more, true)
+     |> assign(:editing_quote_id, nil)
+     |> assign(:edit_form, nil)}
   end
 
   @impl true
@@ -53,6 +57,90 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
     end
   end
 
+  def handle_event("edit", %{"id" => id}, socket) do
+    quote_id = String.to_integer(id)
+    quote = Enum.find(socket.assigns.pending_quotes, &(&1.id == quote_id))
+
+    if quote do
+      # Create changeset with current quote data
+      changeset = Opinion.changeset(quote, %{
+        content: quote.content,
+        year: quote.year,
+        source_url: quote.source_url
+      })
+      form = to_form(changeset)
+
+      {:noreply,
+       socket
+       |> assign(:editing_quote_id, quote_id)
+       |> assign(:edit_form, form)}
+    else
+      {:noreply, put_flash(socket, :error, "Quote not found")}
+    end
+  end
+
+  def handle_event("cancel_edit", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:editing_quote_id, nil)
+     |> assign(:edit_form, nil)}
+  end
+
+  def handle_event("validate_edit", params, socket) do
+    # Extract opinion params, filtering out vote-related params
+    opinion_params =
+      params
+      |> Map.drop(["quote_id"])
+      |> Enum.reject(fn {key, _value} -> String.starts_with?(key, "vote_") end)
+      |> Map.new()
+
+    # Get the current quote being edited
+    quote_id = socket.assigns.editing_quote_id
+    quote = Enum.find(socket.assigns.pending_quotes, &(&1.id == quote_id))
+
+    changeset =
+      (quote || %Opinion{})
+      |> Opinion.changeset(opinion_params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, :edit_form, to_form(changeset))}
+  end
+
+  def handle_event("save_edit", params, socket) do
+    quote_id = String.to_integer(params["quote_id"])
+
+    # Extract opinion params, filtering out vote-related params
+    opinion_params =
+      params
+      |> Map.drop(["quote_id"])
+      |> Enum.reject(fn {key, _value} -> String.starts_with?(key, "vote_") end)
+      |> Map.new()
+
+    quote = Opinions.get_opinion!(quote_id, preload: [:author, :votings])
+
+    case Opinions.update_opinion(quote, opinion_params) do
+      {:ok, updated_quote} ->
+        # Update votes if they were changed
+        update_author_votes(params, quote, socket)
+
+        # Update the quote in the list
+        updated_quotes = update_quote_in_list(socket.assigns.pending_quotes, updated_quote)
+
+        {:noreply,
+         socket
+         |> assign(:pending_quotes, updated_quotes)
+         |> assign(:editing_quote_id, nil)
+         |> assign(:edit_form, nil)
+         |> put_flash(:info, "Quote updated successfully")}
+
+      {:error, changeset} ->
+        {:noreply,
+         socket
+         |> assign(:edit_form, to_form(changeset))
+         |> put_flash(:error, "Failed to update quote")}
+    end
+  end
+
   defp remove_from_list(socket, id) do
     list = Enum.reject(socket.assigns.pending_quotes, &(&1.id == id))
     assign(socket, :pending_quotes, list)
@@ -87,23 +175,69 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
     Enum.map(quotes, fn quote ->
       if quote.author && quote.votings && quote.votings != [] do
         voting_ids = Enum.map(quote.votings, & &1.id)
-        
+
         # Get author's votes for these votings
         votes = YouCongress.Votes.list_votes(
           author_ids: [quote.author.id],
           voting_ids: voting_ids,
           preload: [:answer]
         )
-        
+
         # Create a map of voting_id -> vote for easy lookup
         votes_by_voting = Map.new(votes, fn vote -> {vote.voting_id, vote} end)
-        
+
         # Add votes to each voting
         votings_with_votes = Enum.map(quote.votings, fn voting ->
           Map.put(voting, :author_vote, Map.get(votes_by_voting, voting.id))
         end)
-        
+
         Map.put(quote, :votings, votings_with_votes)
+      else
+        quote
+      end
+    end)
+  end
+
+  defp update_author_votes(params, quote, _socket) do
+    if quote.author do
+      # Process vote updates for each voting
+      Enum.each(quote.votings, fn voting ->
+        vote_param_key = "vote_#{voting.id}"
+
+        if Map.has_key?(params, vote_param_key) do
+          response = params[vote_param_key]
+
+          if response != "" do
+            # Create or update the vote
+            answer_id = Answers.get_answer_id(response)
+
+            Votes.create_or_update(%{
+              voting_id: voting.id,
+              author_id: quote.author.id,
+              answer_id: answer_id,
+              direct: true
+            })
+          else
+            # Delete the vote if "No position" is selected
+            case Votes.get_by(voting_id: voting.id, author_id: quote.author.id) do
+              nil -> :ok
+              vote -> Votes.delete_vote(vote)
+            end
+          end
+        end
+      end)
+    end
+  end
+
+  defp update_quote_in_list(quotes, updated_quote) do
+    # Reload the quote with all necessary preloads to get updated votes
+    reloaded_quote = Opinions.get_opinion!(updated_quote.id, preload: [:author, :votings])
+    quotes_with_votes = load_author_votes_for_quotes([reloaded_quote])
+    updated_quote_with_votes = List.first(quotes_with_votes)
+
+    Enum.map(quotes, fn quote ->
+      if quote.id == updated_quote.id do
+        updated_quote_with_votes
       else
         quote
       end
