@@ -33,16 +33,16 @@ defmodule YouCongress.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:bcrypt_elixir, "~> 3.0"},
+      {:bcrypt_elixir, "~> 3.3.2"},
       {:phoenix, "~> 1.7.7"},
       {:phoenix_ecto, "~> 4.4"},
       {:ecto_sql, "~> 3.11"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 3.3"},
-      {:phoenix_live_reload, "~> 1.5", only: :dev},
-      {:phoenix_live_view, "~> 0.20.17"},
+      {:phoenix_live_reload, "~> 1.6", only: :dev},
+      {:phoenix_live_view, "~> 1.1.13"},
       {:floki, ">= 0.36.3", only: :test},
-      {:phoenix_live_dashboard, "~> 0.8.3"},
+      {:phoenix_live_dashboard, "~> 0.8.7"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2.2", runtime: Mix.env() == :dev},
       {:swoosh, "~> 1.17"},
@@ -59,10 +59,12 @@ defmodule YouCongress.MixProject do
       {:credo, "~> 1.7.5", only: [:dev, :test]},
       {:extwitter, github: "youcongress/extwitter"},
       {:slugify, "~> 1.3.1"},
-      {:appsignal, "~> 2.8.0"},
-      {:appsignal_phoenix, "~> 2.3.5"},
+      {:appsignal, "~> 2.15.10"},
+      {:appsignal_phoenix, "~> 2.7.0"},
       {:libcluster, "~> 3.3.3"},
-      {:ancestry, "~> 0.1.3"}
+      {:ancestry, "~> 0.1.3"},
+      {:lazy_html, ">= 0.1.8", only: :test},
+      {:tidewave, "~> 0.5", only: :dev}
     ]
   end
 
