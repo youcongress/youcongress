@@ -12,10 +12,15 @@
         <div class="border rounded p-4 bg-white shadow-sm">
           <%= if @editing_quote_id == quote.id do %>
             <!-- Edit Form -->
-            <.form for={@edit_form} phx-submit="save_edit" phx-change="validate_edit" class="space-y-4">
+            <.form
+              for={@edit_form}
+              phx-submit="save_edit"
+              phx-change="validate_edit"
+              class="space-y-4"
+            >
               <input type="hidden" name="quote_id" value={quote.id} />
-
-              <!-- Quote Content -->
+              
+<!-- Quote Content -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Quote Content</label>
                 <.input
@@ -25,8 +30,8 @@
                   class="w-full"
                 />
               </div>
-
-              <!-- Year -->
+              
+<!-- Year -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
                 <.input
@@ -36,8 +41,8 @@
                   class="w-32"
                 />
               </div>
-
-              <!-- Source URL -->
+              
+<!-- Source URL -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Source URL</label>
                 <.input
@@ -47,23 +52,25 @@
                   class="w-full"
                 />
               </div>
-
-              <!-- Author Information -->
+              
+<!-- Author Information -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Author</label>
                 <div class="text-gray-900 font-medium">
-                  <%= if quote.author, do: quote.author.name, else: "Unknown" %>
+                  {if quote.author, do: quote.author.name, else: "Unknown"}
                 </div>
               </div>
-
-              <!-- Answer for each voting -->
+              
+<!-- Answer for each voting -->
               <%= if quote.votings && quote.votings != [] do %>
                 <div class="space-y-3">
                   <label class="block text-sm font-medium text-gray-700">Author's Position</label>
                   <%= for voting <- quote.votings do %>
                     <div class="border rounded p-3 bg-gray-50">
                       <div class="text-sm font-medium mb-2">
-                        <a href={~p"/p/#{voting.slug}"} class="text-indigo-600 hover:underline"><%= voting.title %></a>
+                        <a href={~p"/p/#{voting.slug}"} class="text-indigo-600 hover:underline">
+                          {voting.title}
+                        </a>
                       </div>
                       <select
                         name={"vote_#{voting.id}"}
@@ -72,9 +79,12 @@
                         <%= for response <- ["Strongly agree", "Agree", "Abstain", "N/A", "Disagree", "Strongly disagree"] do %>
                           <option
                             value={response}
-                            selected={voting.author_vote && voting.author_vote.answer && voting.author_vote.answer.response == response}
+                            selected={
+                              voting.author_vote && voting.author_vote.answer &&
+                                voting.author_vote.answer.response == response
+                            }
                           >
-                            <%= response %>
+                            {response}
                           </option>
                         <% end %>
                       </select>
@@ -82,47 +92,88 @@
                   <% end %>
                 </div>
               <% end %>
-
-              <!-- Form Actions -->
+              
+<!-- Form Actions -->
               <div class="flex gap-2 pt-2">
-                <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
-                <button type="button" phx-click="cancel_edit" class="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Cancel</button>
+                <button
+                  type="submit"
+                  class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  phx-click="cancel_edit"
+                  class="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
               </div>
             </.form>
           <% else %>
             <!-- Display Mode -->
-            <div class="text-gray-900 whitespace-pre-wrap"><%= quote.content %></div>
+            <div class="text-gray-900 whitespace-pre-wrap">{quote.content}</div>
             <div class="text-sm text-gray-600 mt-2">
               <span>Author:</span>
-              <%= if quote.author, do: quote.author.name, else: "Unknown" %>
+              {if quote.author, do: quote.author.name, else: "Unknown"}
               <%= if quote.year do %>
-                · <span><%= quote.year %></span>
+                · <span>{quote.year}</span>
               <% end %>
               <%= if quote.source_url do %>
-                · <a href={quote.source_url} class="text-indigo-600 hover:underline" target="_blank" rel="noopener">Source</a>
+                ·
+                <a
+                  href={quote.source_url}
+                  class="text-indigo-600 hover:underline"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Source
+                </a>
               <% end %>
               <%= if quote.votings && quote.votings != [] do %>
-                · In <%= for voting <- quote.votings do %>
-                  <a href={~p"/p/#{voting.slug}"} class="text-indigo-600 hover:underline"><%= voting.title %></a>
+                · In
+                <%= for voting <- quote.votings do %>
+                  <a href={~p"/p/#{voting.slug}"} class="text-indigo-600 hover:underline">
+                    {voting.title}
+                  </a>
                   <%= if voting.author_vote && voting.author_vote.answer do %>
                     <span class={[
                       "ml-1 px-2 py-0.5 text-xs font-medium rounded-full",
                       get_vote_style(voting.author_vote.answer.response)
                     ]}>
-                      <%= voting.author_vote.answer.response %>
+                      {voting.author_vote.answer.response}
                     </span>
                   <% else %>
                     <span class="ml-1 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
                       No position
                     </span>
-                  <% end %><%= if voting != List.last(quote.votings), do: ", " %>
+                  <% end %>
+                  {if voting != List.last(quote.votings), do: ", "}
                 <% end %>
               <% end %>
             </div>
             <div class="mt-3 flex gap-2">
-              <button phx-click="edit" phx-value-id={quote.id} class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Edit</button>
-              <button phx-click="verify" phx-value-id={quote.id} class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">Verify</button>
-              <button phx-click="delete" phx-value-id={quote.id} class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+              <button
+                phx-click="edit"
+                phx-value-id={quote.id}
+                class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Edit
+              </button>
+              <button
+                phx-click="verify"
+                phx-value-id={quote.id}
+                class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                Verify
+              </button>
+              <button
+                phx-click="delete"
+                phx-value-id={quote.id}
+                class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Delete
+              </button>
             </div>
           <% end %>
         </div>
@@ -131,7 +182,9 @@
 
     <%= if @has_more do %>
       <div class="mt-6">
-        <button phx-click="load-more" class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">Load more</button>
+        <button phx-click="load-more" class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">
+          Load more
+        </button>
       </div>
     <% end %>
   <% end %>

@@ -63,11 +63,13 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
 
     if quote do
       # Create changeset with current quote data
-      changeset = Opinion.changeset(quote, %{
-        content: quote.content,
-        year: quote.year,
-        source_url: quote.source_url
-      })
+      changeset =
+        Opinion.changeset(quote, %{
+          content: quote.content,
+          year: quote.year,
+          source_url: quote.source_url
+        })
+
       form = to_form(changeset)
 
       {:noreply,
@@ -166,7 +168,13 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
     has_more = length(quotes) == per_page
 
     socket
-    |> assign(:pending_quotes, if(page == 1, do: quotes_with_votes, else: socket.assigns.pending_quotes ++ quotes_with_votes))
+    |> assign(
+      :pending_quotes,
+      if(page == 1,
+        do: quotes_with_votes,
+        else: socket.assigns.pending_quotes ++ quotes_with_votes
+      )
+    )
     |> assign(:page, page)
     |> assign(:has_more, has_more)
   end
@@ -177,19 +185,21 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
         voting_ids = Enum.map(quote.votings, & &1.id)
 
         # Get author's votes for these votings
-        votes = YouCongress.Votes.list_votes(
-          author_ids: [quote.author.id],
-          voting_ids: voting_ids,
-          preload: [:answer]
-        )
+        votes =
+          YouCongress.Votes.list_votes(
+            author_ids: [quote.author.id],
+            voting_ids: voting_ids,
+            preload: [:answer]
+          )
 
         # Create a map of voting_id -> vote for easy lookup
         votes_by_voting = Map.new(votes, fn vote -> {vote.voting_id, vote} end)
 
         # Add votes to each voting
-        votings_with_votes = Enum.map(quote.votings, fn voting ->
-          Map.put(voting, :author_vote, Map.get(votes_by_voting, voting.id))
-        end)
+        votings_with_votes =
+          Enum.map(quote.votings, fn voting ->
+            Map.put(voting, :author_vote, Map.get(votes_by_voting, voting.id))
+          end)
 
         Map.put(quote, :votings, votings_with_votes)
       else

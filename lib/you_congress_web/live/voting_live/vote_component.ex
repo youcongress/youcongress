@@ -72,7 +72,10 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
       if opinion.id == opinion_id do
         verifier_id = current_user && current_user.id
 
-        case Opinions.update_opinion(opinion, %{is_verified: true, verified_by_user_id: verifier_id}) do
+        case Opinions.update_opinion(opinion, %{
+               is_verified: true,
+               verified_by_user_id: verifier_id
+             }) do
           {:ok, updated_opinion} ->
             updated_vote = Map.put(vote, :opinion, updated_opinion)
             {:noreply, assign(socket, :vote, updated_vote)}
@@ -182,7 +185,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
 
     ~H"""
     <span class={"#{@color} font-bold"}>
-      <%= @response %>
+      {@response}
     </span>
     """
   end
@@ -193,7 +196,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
 
     ~H"""
     <span class={"#{@color} font-bold"}>
-      <%= @response %>
+      {@response}
     </span>
     """
   end

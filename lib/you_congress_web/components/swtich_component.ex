@@ -12,7 +12,7 @@ defmodule YouCongressWeb.Components.SwitchComponent do
   def render(assigns) do
     ~H"""
     <div class="text-gray-600 pt-3 text-xs">
-      <%= @label1 %>
+      {@label1}
     </div>
     <div class="pt-2 px-1">
       <button
@@ -39,7 +39,7 @@ defmodule YouCongressWeb.Components.SwitchComponent do
       </button>
     </div>
     <div class="text-gray-600 pt-3 text-xs pr-2">
-      <%= @label2 %>
+      {@label2}
     </div>
     """
   end

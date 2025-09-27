@@ -37,7 +37,7 @@
 <% end %>
 
 <h1 class="pt-4 text-2xl font-bold">
-  <%= @voting.title %>
+  {@voting.title}
 </h1>
 
 <div class="pt-2">
@@ -46,7 +46,7 @@
       href={~p"/halls/#{hall.name}"}
       class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
     >
-      <%= hall.name %>
+      {hall.name}
     </.link>
   <% end %>
 </div>
@@ -99,25 +99,25 @@
   <form phx-change="filter-answer" class="inline">
     <select name="answer" class="text-xs w-40 rounded-md border-2 border-gray-300 p-1 bg-white">
       <option value="">
-        All opinions (<%= @opinions_by_response |> Map.values() |> Enum.sum() %>)
+        All opinions ({@opinions_by_response |> Map.values() |> Enum.sum()})
       </option>
       <option value="Strongly agree" selected={@answer_filter == "Strongly agree"}>
-        Strongly agree (<%= Map.get(@opinions_by_response, "Strongly agree", 0) %>)
+        Strongly agree ({Map.get(@opinions_by_response, "Strongly agree", 0)})
       </option>
       <option value="Agree" selected={@answer_filter == "Agree"}>
-        Agree (<%= Map.get(@opinions_by_response, "Agree", 0) %>)
+        Agree ({Map.get(@opinions_by_response, "Agree", 0)})
       </option>
       <option value="Abstain" selected={@answer_filter == "Abstain"}>
-        Abstain (<%= Map.get(@opinions_by_response, "Abstain", 0) %>)
+        Abstain ({Map.get(@opinions_by_response, "Abstain", 0)})
       </option>
       <option value="N/A" selected={@answer_filter == "N/A"}>
-        N/A (<%= Map.get(@opinions_by_response, "N/A", 0) %>)
+        N/A ({Map.get(@opinions_by_response, "N/A", 0)})
       </option>
       <option value="Disagree" selected={@answer_filter == "Disagree"}>
-        Disagree (<%= Map.get(@opinions_by_response, "Disagree", 0) %>)
+        Disagree ({Map.get(@opinions_by_response, "Disagree", 0)})
       </option>
       <option value="Strongly disagree" selected={@answer_filter == "Strongly disagree"}>
-        Strongly disagree (<%= Map.get(@opinions_by_response, "Strongly disagree", 0) %>)
+        Strongly disagree ({Map.get(@opinions_by_response, "Strongly disagree", 0)})
       </option>
     </select>
   </form>
@@ -125,13 +125,13 @@
     phx-click="filter-quotes"
     class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :quotes && "bg-gray-200"}"}
   >
-    Quotes (<%= @quotes_votes_count %>)
+    Quotes ({@quotes_votes_count})
   </span>
   <span
     phx-click="filter-users"
     class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :users && "bg-gray-200"}"}
   >
-    Users (<%= @users_votes_count %>)
+    Users ({@users_votes_count})
   </span>
 </div>
 
@@ -203,7 +203,7 @@
       class="bg-blue-600 text-md font-medium text-blue-100 text-center p-0.5 leading-none rounded-l-full"
       style={"width: #{@percentage}%;"}
     >
-      <%= "#{@percentage}%" %>
+      {"#{@percentage}%"}
     </div>
   </div>
 <% end %>
@@ -215,7 +215,7 @@
         <div class="text-sm text-gray-600 pt-8 pb-4 border-b border-gray-200">
           More
           <strong class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
-            <a href={~p"/halls/#{hall.name}"}><%= hall.name %></a>
+            <a href={~p"/halls/#{hall.name}"}>{hall.name}</a>
           </strong>
           votes
         </div>
@@ -223,7 +223,7 @@
           <%= for voting <- votings do %>
             <tr>
               <td class="py-4 border-b border-gray-200">
-                <a href={~p"/p/#{voting.slug}"}><%= voting.title %></a>
+                <a href={~p"/p/#{voting.slug}"}>{voting.title}</a>
               </td>
             </tr>
           <% end %>

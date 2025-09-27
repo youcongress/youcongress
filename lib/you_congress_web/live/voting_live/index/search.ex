@@ -34,7 +34,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         <%= for voting <- @votings do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={~p"/p/#{voting.slug}"}><%= voting.title %></a>
+              <a href={~p"/p/#{voting.slug}"}>{voting.title}</a>
             </td>
           </tr>
         <% end %>
@@ -45,7 +45,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         <%= for author <- @authors do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={author_path(author)}><%= author.name || "x/#{author.twitter_username}" %></a>
+              <a href={author_path(author)}>{author.name || "x/#{author.twitter_username}"}</a>
             </td>
           </tr>
         <% end %>
@@ -56,7 +56,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         <%= for hall <- @halls do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={~p"/halls/#{hall.name}"}><%= hall.name %></a>
+              <a href={~p"/halls/#{hall.name}"}>{hall.name}</a>
             </td>
           </tr>
         <% end %>
@@ -80,7 +80,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         ]}
         aria-current="page"
       >
-        <%= @label %>
+        {@label}
       </a>
     </div>
     """

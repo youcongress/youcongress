@@ -15,7 +15,7 @@ defmodule YouCongressWeb.VotingLive.HallsInputComponent do
       <div class="flex flex-wrap gap-2 mb-2">
         <%= for hall_name <- @selected_halls do %>
           <span class="inline-flex items-center gap-1 rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
-            <%= String.replace(hall_name, "-", " ") %>
+            {String.replace(hall_name, "-", " ")}
             <button
               type="button"
               phx-click="remove_hall"
@@ -61,7 +61,7 @@ defmodule YouCongressWeb.VotingLive.HallsInputComponent do
                           role="option"
                           aria-selected={index == @selected_index}
                         >
-                          <%= display_name %>
+                          {display_name}
                         </button>
                       </li>
                     <% end %>
@@ -84,7 +84,7 @@ defmodule YouCongressWeb.VotingLive.HallsInputComponent do
 
       <%= for {field, _} <- @form.errors do %>
         <div class="text-sm text-red-600">
-          <.error><%= Phoenix.Naming.humanize(field) %> <%= elem(@form.errors[field], 0) %></.error>
+          <.error>{Phoenix.Naming.humanize(field)} {elem(@form.errors[field], 0)}</.error>
         </div>
       <% end %>
 

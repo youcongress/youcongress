@@ -11,11 +11,11 @@
           <div>
             <strong>
               <.link href={author_path(@author)}>
-                <%= @author.name %><%= if @vote.twin, do: " AI" %>
+                {@author.name}{if @vote.twin, do: " AI"}
               </.link>
             </strong>
             <div class="text-sm">
-              <%= @author.bio || @author.description %>
+              {@author.bio || @author.description}
             </div>
           </div>
         </div>
@@ -39,15 +39,15 @@
         <OpinionComponent.avatar_icon :if={@page == :author_show} is_human={!@vote.twin} />
         <%= if @vote.twin do %>
           <%= if @page == :author_show do %>
-            <%= "#{@author.name} AI" %>
+            {"#{@author.name} AI"}
           <% end %>
-          would <%= response(assigns, @vote.answer.response) %> and say according to AI:
+          would {response(assigns, @vote.answer.response)} and say according to AI:
         <% else %>
-          <%= if @page == :author_show, do: @author.name || "Anonymous" %>
-          <%= response_with_s(
+          {if @page == :author_show, do: @author.name || "Anonymous"}
+          {response_with_s(
             assigns,
             @vote.answer.response
-          ) %>
+          )}
           <%= unless @vote.direct do %>
             via delegates
           <% end %>
@@ -55,7 +55,7 @@
             and says:
           <% else %>
             <span class="text-xs text-gray-500">
-              · <%= TimeAgo.short_time(@vote.inserted_at) %>
+              · {TimeAgo.short_time(@vote.inserted_at)}
             </span>
           <% end %>
         <% end %>
@@ -77,10 +77,10 @@
     <div>
       <%= if @current_user && @current_user.author_id == @author.id do %>
         <.link href={"/p/#{@voting.slug}"}>
-          <%= @vote.opinion.content %>
+          {@vote.opinion.content}
         </.link>
       <% else %>
-        <%= @vote.opinion.content %>
+        {@vote.opinion.content}
       <% end %>
       <%= if @regenerating_opinion_id == @vote.opinion.id do %>
         <img src="/images/loading.gif" alt="Loading" />
@@ -92,9 +92,23 @@
         <span class="ml-2">
           <%= if @current_user && YouCongress.Accounts.Permissions.can_verify_opinion?(@current_user) do %>
             <%= if @vote.opinion.is_verified do %>
-              <span class="bg-green-100 text-green-800 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-pointer" phx-click="unverify-opinion" phx-value-opinion_id={@vote.opinion.id} phx-target={@myself}>Verified</span>
+              <span
+                class="bg-green-100 text-green-800 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-pointer"
+                phx-click="unverify-opinion"
+                phx-value-opinion_id={@vote.opinion.id}
+                phx-target={@myself}
+              >
+                Verified
+              </span>
             <% else %>
-              <span class="bg-yellow-100 text-yellow-800 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-pointer" phx-click="verify-opinion" phx-value-opinion_id={@vote.opinion.id} phx-target={@myself}>Unverified</span>
+              <span
+                class="bg-yellow-100 text-yellow-800 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-pointer"
+                phx-click="verify-opinion"
+                phx-value-opinion_id={@vote.opinion.id}
+                phx-target={@myself}
+              >
+                Unverified
+              </span>
             <% end %>
           <% else %>
             <.link
@@ -105,7 +119,7 @@
                 !@vote.opinion.is_verified && "bg-yellow-100 text-yellow-800"
               ]}
             >
-              <%= if @vote.opinion.is_verified, do: "Verified", else: "Unverified" %>
+              {if @vote.opinion.is_verified, do: "Verified", else: "Unverified"}
             </.link>
           <% end %>
         </span>
@@ -131,7 +145,7 @@
           current_user={@current_user}
         />
         <span class="text-xs text-gray-500 pl-3">
-          <%= TimeAgo.short_time(@vote.inserted_at) %>
+          {TimeAgo.short_time(@vote.inserted_at)}
         </span>
       </div>
     <% end %>

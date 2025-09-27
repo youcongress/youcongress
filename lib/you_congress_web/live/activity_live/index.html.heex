@@ -15,7 +15,7 @@
       <% first_voting = Opinion.first_voting(opinion) %>
       <%= if first_voting do %>
         <div class="pb-2 text-xl">
-          <.link patch={~p"/p/#{first_voting.slug}"}><%= first_voting.title %></.link>
+          <.link patch={~p"/p/#{first_voting.slug}"}>{first_voting.title}</.link>
         </div>
         <.live_component
           module={CastVoteComponent}

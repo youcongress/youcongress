@@ -1,5 +1,5 @@
 <.header>
-  <%= @author.name || "Anonymous" %>
+  {@author.name || "Anonymous"}
   <:actions>
     <%= if @current_user && @current_user.author_id == @author.id do %>
       <.link patch={~p"/settings"} phx-click={JS.push_focus()}>
@@ -29,7 +29,7 @@
 </.header>
 
 <div>
-  <div><%= @author.bio || @author.description %></div>
+  <div>{@author.bio || @author.description}</div>
 
   <div class="pt-6 space-y-2">
     <%= if @author.twitter_username do %>
@@ -38,7 +38,7 @@
         target="_blank"
         class="hover:underline"
       >
-        X: @<%= @author.twitter_username %>
+        X: @{@author.twitter_username}
       </.link>
       <%= if @author.wikipedia_url do %>
         ·
@@ -51,7 +51,7 @@
     <% end %>
     <%= if @author.country || @author.location do %>
       <div>
-        Location: <%= @author.country || @author.location %>
+        Location: {@author.country || @author.location}
       </div>
     <% end %>
   </div>
@@ -69,7 +69,7 @@
         end
       }"}
     >
-      <%= hall_name %> (<%= num_votes %>)
+      {hall_name} ({num_votes})
       <%= if hall_name == @hall_name do %>
         <span class="ml-1">×</span>
       <% end %>
@@ -86,7 +86,7 @@
     <%= if (@author.twin_enabled || !vote.twin) && (Votes.public?(vote) || (@current_user && @current_user.author_id == @author.id)) do %>
       <li class="pb-4">
         <.link patch={~p"/p/#{vote.voting.slug}"} class="text-xl font-bold">
-          <%= vote.voting.title %>
+          {vote.voting.title}
         </.link>
         <div class="py-2">
           <.live_component

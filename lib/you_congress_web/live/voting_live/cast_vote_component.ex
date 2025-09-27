@@ -158,17 +158,17 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
       >
         <%= if assigns[:label1] && assigns[:label2] do %>
           <div>
-            <%= if @current_user_vote && @current_user_vote.answer.response == @response,
-              do: "✓ " %>
-            <%= @label1 %>
+            {if @current_user_vote && @current_user_vote.answer.response == @response,
+              do: "✓ "}
+            {@label1}
           </div>
           <div>
-            <%= @label2 %>
+            {@label2}
           </div>
         <% else %>
-          <%= if @current_user_vote && @current_user_vote.answer.response == @response,
-            do: "✓ " %>
-          <div><%= @response %></div>
+          {if @current_user_vote && @current_user_vote.answer.response == @response,
+            do: "✓ "}
+          <div>{@response}</div>
         <% end %>
       </button>
     </div>

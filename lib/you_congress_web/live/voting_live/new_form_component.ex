@@ -64,7 +64,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
                         phx-target={@myself}
                         class="w-full text-left px-4 py-3 rounded-lg bg-white border border-indigo-200 text-gray-900 shadow-sm hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-200"
                       >
-                        <%= suggested_title %>
+                        {suggested_title}
                       </button>
                     </div>
                   <% end %>

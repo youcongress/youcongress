@@ -54,7 +54,7 @@ defmodule YouCongressWeb.VotingLive.Index.OpinateComponent do
             disabled={is_nil(@current_user)}
           ><%= @form[:content].value %></textarea>
           <%= for error <- Keyword.get_values(@form.errors, :content) do %>
-            <div class="mt-1 text-sm text-red-600"><%= translate_error(error) %></div>
+            <div class="mt-1 text-sm text-red-600">{translate_error(error)}</div>
           <% end %>
         </div>
         <div class="flex items-center space-x-2">
@@ -64,7 +64,7 @@ defmodule YouCongressWeb.VotingLive.Index.OpinateComponent do
             phx-disable-with="Saving..."
             disabled={is_nil(@current_user)}
           >
-            <%= if @form.data.id, do: "Update", else: "Publish" %> Arguments
+            {if @form.data.id, do: "Update", else: "Publish"} Arguments
           </button>
           <%= if @current_user do %>
             <%= if @form.data.id do %>

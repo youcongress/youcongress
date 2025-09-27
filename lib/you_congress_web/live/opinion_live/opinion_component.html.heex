@@ -11,12 +11,12 @@
           <div>
             <strong>
               <.link href={AuthorLive.Show.author_path(@opinion.author)}>
-                <%= @opinion.author.name %>
+                {@opinion.author.name}
               </.link>
             </strong>
           </div>
           <div class="text-sm">
-            <%= @opinion.author.bio || @opinion.author.description %>
+            {@opinion.author.bio || @opinion.author.description}
           </div>
         </div>
       </div>
@@ -32,7 +32,7 @@
   </div>
 
   <div class="pt-2">
-    <%= @opinion.content %>
+    {@opinion.content}
     <%= if @opinion.source_url do %>
       <span class="text-xs">
         (<.link href={@opinion.source_url} target="_blank" class="underline">source</.link>)
@@ -46,7 +46,7 @@
             !@opinion.is_verified && "bg-yellow-100 text-yellow-800"
           ]}
         >
-          <%= if @opinion.is_verified, do: "Verified", else: "Unverified" %>
+          {if @opinion.is_verified, do: "Verified", else: "Unverified"}
         </.link>
       </span>
     <% end %>
@@ -66,7 +66,7 @@
         current_user={@current_user}
       />
       <span class="text-xs text-gray-500 pl-3">
-        <%= TimeAgo.short_time(@opinion.inserted_at) %>
+        {TimeAgo.short_time(@opinion.inserted_at)}
       </span>
     </div>
     <div>

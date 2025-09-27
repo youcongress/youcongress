@@ -8,7 +8,7 @@ defmodule YouCongressWeb.AuthorLive.FormComponent do
     ~H"""
     <div>
       <.header>
-        <%= @title %>
+        {@title}
         <:subtitle>Use this form to manage author records in your database.</:subtitle>
       </.header>
 

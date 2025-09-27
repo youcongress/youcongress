@@ -133,7 +133,7 @@ defmodule YouCongressWeb.VotingLive.Index.HallNav do
       ]}
       aria-current="page"
     >
-      <%= @hall_title %>
+      {@hall_title}
     </a>
     """
   end
