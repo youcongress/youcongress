@@ -90,16 +90,24 @@
           (<.link href={@vote.opinion.source_url} target="_blank" class="underline">source</.link>)
         </span>
         <span class="ml-2">
-          <.link
-            href="/faq#verify-quotes"
-            class={[
-              "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium",
-              @vote.opinion.is_verified && "bg-green-100 text-green-800",
-              !@vote.opinion.is_verified && "bg-yellow-100 text-yellow-800"
-            ]}
-          >
-            <%= if @vote.opinion.is_verified, do: "Verified", else: "Unverified" %>
-          </.link>
+          <%= if @current_user && YouCongress.Accounts.Permissions.can_verify_opinion?(@current_user) do %>
+            <%= if @vote.opinion.is_verified do %>
+              <span class="bg-green-100 text-green-800 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-pointer" phx-click="unverify-opinion" phx-value-opinion_id={@vote.opinion.id} phx-target={@myself}>Verified</span>
+            <% else %>
+              <span class="bg-yellow-100 text-yellow-800 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-pointer" phx-click="verify-opinion" phx-value-opinion_id={@vote.opinion.id} phx-target={@myself}>Unverified</span>
+            <% end %>
+          <% else %>
+            <.link
+              href="/faq#verify-quotes"
+              class={[
+                "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium",
+                @vote.opinion.is_verified && "bg-green-100 text-green-800",
+                !@vote.opinion.is_verified && "bg-yellow-100 text-yellow-800"
+              ]}
+            >
+              <%= if @vote.opinion.is_verified, do: "Verified", else: "Unverified" %>
+            </.link>
+          <% end %>
         </span>
       <% end %>
     </div>
