@@ -50,6 +50,7 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
       author_id: current_user.author_id,
       user_id: current_user.id,
       voting_id: voting.id,
+      is_verified: true,
       twin: false
     }
 
@@ -99,6 +100,7 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
       content: opinion_content,
       author_id: current_user_vote.author_id,
       user_id: socket.assigns.current_user.id,
+      is_verified: true,
       twin: false,
       voting_id: voting.id
     }

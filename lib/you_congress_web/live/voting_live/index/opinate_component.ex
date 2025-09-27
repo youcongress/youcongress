@@ -147,6 +147,7 @@ defmodule YouCongressWeb.VotingLive.Index.OpinateComponent do
       "voting_id" => voting.id,
       "author_id" => current_user.author_id,
       "user_id" => current_user.id,
+      "is_verified" => true,
       "twin" => false
     }
 

@@ -245,6 +245,20 @@ defmodule YouCongressWeb.UserAuth do
     end
   end
 
+  def require_admin_or_moderator_user(conn, _opts) do
+    case conn.assigns[:current_user] do
+      %YouCongress.Accounts.User{role: role} when role in ["admin", "moderator"] ->
+        conn
+
+      _ ->
+        conn
+        |> put_flash(:error, "You must be an admin or moderator to access this page.")
+        |> maybe_store_return_to()
+        |> redirect(to: ~p"/log_in")
+        |> halt()
+    end
+  end
+
   @doc """
   Redirects to / if user is authenticated.
   """

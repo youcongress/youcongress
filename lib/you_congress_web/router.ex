@@ -60,6 +60,12 @@ defmodule YouCongressWeb.Router do
   end
 
   scope "/", YouCongressWeb do
+    pipe_through([:browser, :require_admin_or_moderator_user])
+
+    live("/quotes/review", QuoteReviewLive.Index, :index)
+  end
+
+  scope "/", YouCongressWeb do
     pipe_through([:browser, :require_authenticated_user])
 
     live("/welcome", WelcomeLive.Index, :index)
