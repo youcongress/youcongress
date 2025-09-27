@@ -2,14 +2,13 @@
 
 Welcome to YouCongress!
 
-YouCongress is an open-source project to find agreement and understand disagreement.
-We use liquid democracy with sourced quotes from experts and public figures.
+YouCongress is a non-profit and open-source platform that helps policymakers, journalists, companies, and citizens see what people actually want on AI-safety questions. You can vote directly or choose trusted voices to vote on your behalf, and every poll is enriched with verifiable, sourced quotes so positions are clear and accountable.
 
 We're still shaping YouCongress, but you already can:
 - create a liquid-democracy poll
-- vote or delegate to trusted experts. You'll vote as the majority of your delegates — unless you vote directly.
+- vote directly or delegate to trusted experts and public figures. When you don't vote, you'll follow the majority of your chosen delegates—unless you cast a direct vote.
 - add arguments
-- add sourced quotes from experts and public figures
+- add sourced quotes from researchers, officials, and public figures
 - add comments
 
 You can read more about the project on the LessWrong post:
