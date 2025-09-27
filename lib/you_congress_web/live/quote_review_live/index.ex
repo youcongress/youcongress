@@ -91,10 +91,14 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
   def handle_event("validate_edit", params, socket) do
     # Extract opinion params, filtering out vote-related params
     opinion_params =
-      params
-      |> Map.drop(["quote_id"])
-      |> Enum.reject(fn {key, _value} -> String.starts_with?(key, "vote_") end)
-      |> Map.new()
+      case params do
+        %{"opinion" => opinion} -> opinion
+        _ ->
+          params
+          |> Map.drop(["quote_id"])
+          |> Enum.reject(fn {key, _value} -> String.starts_with?(key, "vote_") end)
+          |> Map.new()
+      end
 
     # Get the current quote being edited
     quote_id = socket.assigns.editing_quote_id
@@ -113,10 +117,14 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
 
     # Extract opinion params, filtering out vote-related params
     opinion_params =
-      params
-      |> Map.drop(["quote_id"])
-      |> Enum.reject(fn {key, _value} -> String.starts_with?(key, "vote_") end)
-      |> Map.new()
+      case params do
+        %{"opinion" => opinion} -> opinion
+        _ ->
+          params
+          |> Map.drop(["quote_id"])
+          |> Enum.reject(fn {key, _value} -> String.starts_with?(key, "vote_") end)
+          |> Map.new()
+      end
 
     quote = Opinions.get_opinion!(quote_id, preload: [:author, :votings])
 
