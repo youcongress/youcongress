@@ -34,9 +34,6 @@ defmodule YouCongressWeb.Router do
 
     get("/waiting_list", PageController, :waiting_list)
     get("/about", PageController, :about)
-    get("/x_log_in", TwitterLogInController, :pre_login)
-    post("/x_log_in", TwitterLogInController, :log_in)
-    get("/twitter-callback", TwitterLogInController, :callback)
     get("/faq", PageController, :faq)
     get("/email-login-waiting-list", PageController, :email_login_waiting_list)
     get("/email-login-waiting-list/thanks", PageController, :email_login_waiting_list_thanks)
