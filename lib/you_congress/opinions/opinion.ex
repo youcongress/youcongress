@@ -12,6 +12,7 @@ defmodule YouCongress.Opinions.Opinion do
     field :source_url, :string
     field :content, :string
     field :twin, :boolean, default: false
+    field :is_verified, :boolean, default: false
     field :ancestry, :string
     field :descendants_count, :integer, default: 0
     field :likes_count, :integer, default: 0
@@ -19,6 +20,7 @@ defmodule YouCongress.Opinions.Opinion do
 
     belongs_to :author, YouCongress.Authors.Author
     belongs_to :user, YouCongress.Accounts.User
+    belongs_to :verified_by_user, YouCongress.Accounts.User
 
     has_many :opinion_votings, YouCongress.OpinionsVotings.OpinionVoting
 
@@ -42,6 +44,8 @@ defmodule YouCongress.Opinions.Opinion do
       :content,
       :source_url,
       :twin,
+      :is_verified,
+      :verified_by_user_id,
       :author_id,
       :user_id,
       :ancestry,
