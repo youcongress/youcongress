@@ -164,7 +164,7 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
       Opinions.list_opinions(
         only_quotes: true,
         is_verified: false,
-        order_by: [desc: :inserted_at],
+        order_by: [desc: :id],
         limit: per_page,
         offset: offset,
         preload: [:author, :votings]

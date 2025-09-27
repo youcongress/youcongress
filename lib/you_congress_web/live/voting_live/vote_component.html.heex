@@ -55,7 +55,7 @@
             and says:
           <% else %>
             <span class="text-xs text-gray-500">
-              · {TimeAgo.short_time(@vote.inserted_at)}
+              · Added {TimeAgo.short_time(@vote.inserted_at)}
             </span>
           <% end %>
         <% end %>
@@ -85,9 +85,12 @@
       <%= if @regenerating_opinion_id == @vote.opinion.id do %>
         <img src="/images/loading.gif" alt="Loading" />
       <% end %>
+      <%= if @vote.opinion.year do %>
+        <span class="text-xs text-gray-500">({@vote.opinion.year})</span>
+      <% end %>
       <%= if @vote.opinion_id && @vote.opinion.source_url do %>
         <span class="text-xs">
-          (<.link href={@vote.opinion.source_url} target="_blank" class="underline">source</.link>)
+          <.link href={@vote.opinion.source_url} target="_blank" class="underline">source</.link>
         </span>
         <span class="ml-2">
           <%= if @current_user && YouCongress.Accounts.Permissions.can_verify_opinion?(@current_user) do %>
@@ -145,7 +148,7 @@
           current_user={@current_user}
         />
         <span class="text-xs text-gray-500 pl-3">
-          {TimeAgo.short_time(@vote.inserted_at)}
+          Added {TimeAgo.short_time(@vote.inserted_at)}
         </span>
       </div>
     <% end %>
