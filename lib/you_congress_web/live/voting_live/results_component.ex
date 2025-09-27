@@ -12,7 +12,7 @@ defmodule YouCongressWeb.VotingLive.ResultsComponent do
   def horizontal_bar(assigns) do
     ~H"""
     <div class="pt-6 pb-1">
-      Results (<%= @total_votes %>):
+      Results ({@total_votes}):
     </div>
     <div class="space-y-1">
       <div class="mb-2">

@@ -134,7 +134,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
         cache-control="public, max-age=2592000"
       />
       <span class="text-gray-600 pl-1 text-xs">
-        <%= if @opinion.descendants_count > 0, do: @opinion.descendants_count %>
+        {if @opinion.descendants_count > 0, do: @opinion.descendants_count}
       </span>
     </.link>
     """
@@ -156,7 +156,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
       cache-control="public, max-age=2592000"
     />
     <span class="text-gray-600 pl-1 text-xs">
-      <%= if @opinion.likes_count > 0, do: @opinion.likes_count %>
+      {if @opinion.likes_count > 0, do: @opinion.likes_count}
     </span>
     """
   end

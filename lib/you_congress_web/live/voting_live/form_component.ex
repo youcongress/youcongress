@@ -10,7 +10,7 @@ defmodule YouCongressWeb.VotingLive.FormComponent do
     ~H"""
     <div>
       <.header>
-        <%= @title %>
+        {@title}
       </.header>
 
       <.simple_form

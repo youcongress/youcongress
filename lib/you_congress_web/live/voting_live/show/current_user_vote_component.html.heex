@@ -65,7 +65,7 @@
             ]}
             disabled={!@current_user}
           >
-            <%= if @current_user_vote && @current_user_vote.opinion, do: "Update", else: "Post" %>
+            {if @current_user_vote && @current_user_vote.opinion, do: "Update", else: "Post"}
           </button>
         </div>
       </form>

@@ -197,9 +197,14 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
           end
 
         case Votings.update_voting(voting, attrs) do
-          {:ok, _} -> :ok
+          {:ok, _} ->
+            :ok
+
           {:error, reason} ->
-            Logger.error("Failed to decrease generating_left for voting #{voting_id}: #{inspect(reason)}")
+            Logger.error(
+              "Failed to decrease generating_left for voting #{voting_id}: #{inspect(reason)}"
+            )
+
             :error
         end
     end

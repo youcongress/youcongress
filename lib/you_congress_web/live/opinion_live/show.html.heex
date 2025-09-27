@@ -28,7 +28,7 @@
   <div class="bg-gray-100 rounded-md p-4 mb-6">
     <%= for voting <- @opinion.votings do %>
       <.link href={~p"/p/#{voting.slug}"} class="underline block mb-2">
-        <%= voting.title %>
+        {voting.title}
       </.link>
     <% end %>
   </div>
@@ -70,9 +70,9 @@
             <%= for voting <- @search_results do %>
               <div class="flex justify-between items-center p-2 bg-white rounded border mb-2">
                 <div class="flex-1">
-                  <p class="text-sm font-medium text-gray-900"><%= voting.title %></p>
+                  <p class="text-sm font-medium text-gray-900">{voting.title}</p>
                   <p class="text-xs text-gray-500">
-                    Created <%= Calendar.strftime(voting.inserted_at, "%B %d, %Y") %>
+                    Created {Calendar.strftime(voting.inserted_at, "%B %d, %Y")}
                   </p>
                 </div>
                 <button
@@ -88,7 +88,7 @@
         <% else %>
           <%= if String.length(@search_query) >= 2 do %>
             <p class="mt-2 text-sm text-gray-500">
-              No polls found matching "<%= @search_query %>"
+              No polls found matching "{@search_query}"
             </p>
           <% end %>
         <% end %>
@@ -101,7 +101,7 @@
           How much does the author agree with this poll?
         </h4>
         <p class="text-xs text-gray-600 mb-3">
-          <%= @selected_voting_title %>
+          {@selected_voting_title}
         </p>
         <div class="grid grid-cols-2 gap-2">
           <button
@@ -164,7 +164,7 @@
   </div>
 <% end %>
 
-<div class="pb-2" id="reply">replying to <%= @opinion.author.name %></div>
+<div class="pb-2" id="reply">replying to {@opinion.author.name}</div>
 
 <.form :let={f} for={@changeset} id="opinion-form" phx-submit="save" phx-change="validate">
   <.input

@@ -54,17 +54,17 @@ defmodule YouCongressWeb.Tools.Tooltip do
 
     ~H"""
     <div id={assigns[:id]} class="group relative inline-block pr-2">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
       <div {@tooltip_attrs}>
         <%= cond do %>
           <% is_list(@content) -> %>
             <%= Enum.map(@content, fn line -> %>
-              <div><%= line %></div>
+              <div>{line}</div>
             <% end) %>
           <% is_bitstring(@content) -> %>
-            <%= @content %>
+            {@content}
           <% true -> %>
-            <%= render_slot(@content) %>
+            {render_slot(@content)}
         <% end %>
       </div>
     </div>

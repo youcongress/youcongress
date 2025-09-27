@@ -6,11 +6,11 @@
     <meta name="csrf-token" content={get_csrf_token()} />
     <%= if assigns[:page_title] do %>
       <%= if assigns[:skip_page_suffix] do %>
-        <title><%= assigns[:page_title] %></title>
+        <title>{assigns[:page_title]}</title>
         <meta content={assigns[:page_title]} property="og:title" />
       <% else %>
         <.live_title suffix=" / YouCongress">
-          <%= assigns[:page_title] %>
+          {assigns[:page_title]}
         </.live_title>
         <meta content={"#{assigns[:page_title]} / YouCongress"} property="og:title" />
       <% end %>
@@ -31,6 +31,6 @@
     <% end %>
   </head>
   <body class="bg-white antialiased">
-    <%= @inner_content %>
+    {@inner_content}
   </body>
 </html>

@@ -106,7 +106,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
         <.header class="text-center">
           Verify your phone number
           <:subtitle>
-            We've sent a code to <%= @user.phone_number %>
+            We've sent a code to {@user.phone_number}
           </:subtitle>
         </.header>
 

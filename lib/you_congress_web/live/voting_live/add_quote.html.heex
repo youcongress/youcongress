@@ -1,12 +1,12 @@
 <h1 class="text-xl">Add a quote</h1>
 <div class="pt-4 block text-sm font-semibold leading-6 text-zinc-800">Question</div>
-<div class="pt-2"><%= @voting.title %></div>
+<div class="pt-2">{@voting.title}</div>
 <%= if @author do %>
   <div class="pt-4 block text-sm font-semibold leading-6 text-zinc-800">Author</div>
   <div class="pt-2">
-    <%= @author.name %>, <%= @author.bio %>
+    {@author.name}, {@author.bio}
     <%= if @author.twitter_username do %>
-      , @<%= @author.twitter_username %>
+      , @{@author.twitter_username}
     <% end %>
     <%= if @author.wikipedia_url do %>
       ,
