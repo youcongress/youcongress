@@ -71,7 +71,8 @@ defmodule YouCongress.Opinions.Opinion do
     end
   end
 
-  defp starts_with_http("http" <> _), do: true
+  defp starts_with_http("http://" <> _), do: true
+  defp starts_with_http("https://" <> _), do: true
   defp starts_with_http(_), do: false
 
   def path_str(%{ancestry: nil, id: id}), do: "#{id}"
