@@ -27,12 +27,6 @@ config :openai,
   organization_key: System.get_env("OPENAI_ORGANIZATION_KEY"),
   http_options: [recv_timeout: 60_000]
 
-config :extwitter, :oauth,
-  consumer_key: System.get_env("TWITTER_CONSUMER_KEY"),
-  consumer_secret: System.get_env("TWITTER_CONSUMER_SECRET"),
-  access_token: System.get_env("TWITTER_ACCESS_TOKEN"),
-  access_token_secret: System.get_env("TWITTER_ACCESS_SECRET")
-
 config :you_congress, :amplitude_api_key, System.get_env("AMPLITUDE_KEY")
 config :you_congress, :base_url, System.get_env("BASE_URL")
 
