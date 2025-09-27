@@ -165,6 +165,7 @@ defmodule YouCongress.Votes do
 
     query
     |> order_by([v, a, o], [
+      {:desc, o.likes_count},
       fragment("? DESC", o.descendants_count),
       fragment("CASE
             WHEN ? IS NOT NULL THEN 1
