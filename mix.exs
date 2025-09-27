@@ -39,7 +39,7 @@ defmodule YouCongress.MixProject do
       {:ecto_sql, "~> 3.11"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 3.3"},
-      {:phoenix_live_reload, "~> 1.5", only: :dev},
+      {:phoenix_live_reload, "~> 1.6", only: :dev},
       {:phoenix_live_view, "~> 1.1.13"},
       {:floki, ">= 0.36.3", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.7"},
@@ -63,7 +63,8 @@ defmodule YouCongress.MixProject do
       {:appsignal_phoenix, "~> 2.7.0"},
       {:libcluster, "~> 3.3.3"},
       {:ancestry, "~> 0.1.3"},
-      {:lazy_html, ">= 0.1.8", only: :test}
+      {:lazy_html, ">= 0.1.8", only: :test},
+      {:tidewave, "~> 0.5", only: :dev}
     ]
   end
 
