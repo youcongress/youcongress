@@ -89,6 +89,18 @@
         <span class="text-xs">
           (<.link href={@vote.opinion.source_url} target="_blank" class="underline">source</.link>)
         </span>
+        <span class="ml-2">
+          <.link
+            href="/faq#verify-quotes"
+            class={[
+              "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium",
+              @vote.opinion.is_verified && "bg-green-100 text-green-800",
+              !@vote.opinion.is_verified && "bg-yellow-100 text-yellow-800"
+            ]}
+          >
+            <%= if @vote.opinion.is_verified, do: "Verified", else: "Unverified" %>
+          </.link>
+        </span>
       <% end %>
     </div>
   <% end %>
