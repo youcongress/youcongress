@@ -93,6 +93,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     - The source_url must include the exact quote text.
     - Authors must be experts, public figures or relevant organisations.
     - Do not include quotes from a document/open letter/paper with multiple signers.
+    - The quote must have one single author, a person or an organisation.
     - Fill all fields in the JSON. Use empty string when unavailable.
     - Carefully analyze each quote to determine the author's agreement level and set agree_rate appropriately.
     - Do not repeat any author across the #{number_of_quotes()} quotes. No name that appears in any item's authors.name may appear in any other item.#{exclusion_text}
