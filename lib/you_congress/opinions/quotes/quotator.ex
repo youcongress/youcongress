@@ -80,6 +80,7 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
            Opinions.create_opinion(%{
              content: quote["quote"],
              source_url: quote["source_url"],
+             is_verified: false,
              year: parse_year(quote["year"]),
              author_id: author.id,
              twin: false,

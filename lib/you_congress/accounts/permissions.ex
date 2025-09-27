@@ -42,4 +42,8 @@ defmodule YouCongress.Accounts.Permissions do
   def can_add_opinion_to_voting?(%User{role: "admin"}), do: true
   def can_add_opinion_to_voting?(%User{role: "moderator"}), do: true
   def can_add_opinion_to_voting?(_), do: false
+
+  def can_verify_opinion?(%User{role: "admin"}), do: true
+  def can_verify_opinion?(%User{role: "moderator"}), do: true
+  def can_verify_opinion?(_), do: false
 end
