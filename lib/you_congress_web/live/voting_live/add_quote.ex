@@ -232,7 +232,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              author_id: author.id,
              source_url: source_url,
              user_id: current_user.id,
-             is_verified: false,
+             verified_at: nil,
              direct: true,
              twin: false
            }),
@@ -282,7 +282,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
              author_id: author.id,
              source_url: source_url,
              user_id: current_user.id,
-             is_verified: false,
+             verified_at: nil,
              direct: true,
              twin: false
            }),

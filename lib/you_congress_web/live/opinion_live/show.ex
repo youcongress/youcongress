@@ -71,7 +71,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
       "content" => content,
       "author_id" => current_user.author_id,
       "user_id" => current_user.id,
-      "is_verified" => true,
+      "verified_at" => DateTime.utc_now(),
       "ancestry" => ancestry
     }
 

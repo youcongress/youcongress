@@ -36,7 +36,7 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
 
     verifier_id = socket.assigns.current_user && socket.assigns.current_user.id
 
-    case Opinions.update_opinion(opinion, %{is_verified: true, verified_by_user_id: verifier_id}) do
+    case Opinions.update_opinion(opinion, %{verified_at: DateTime.utc_now(), verified_by_user_id: verifier_id}) do
       {:ok, _} ->
         {:noreply, remove_from_list(socket, opinion.id)}
 

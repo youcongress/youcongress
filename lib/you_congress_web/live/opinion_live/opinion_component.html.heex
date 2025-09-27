@@ -42,11 +42,11 @@
           href="/faq#verify-quotes"
           class={[
             "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium",
-            @opinion.is_verified && "bg-green-100 text-green-800",
-            !@opinion.is_verified && "bg-yellow-100 text-yellow-800"
+            YouCongress.Opinions.Opinion.verified?(@opinion) && "bg-green-100 text-green-800",
+            !YouCongress.Opinions.Opinion.verified?(@opinion) && "bg-yellow-100 text-yellow-800"
           ]}
         >
-          {if @opinion.is_verified, do: "Verified", else: "Unverified"}
+          {if YouCongress.Opinions.Opinion.verified?(@opinion), do: "Verified", else: "Unverified"}
         </.link>
       </span>
     <% end %>
