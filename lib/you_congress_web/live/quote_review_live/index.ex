@@ -72,11 +72,54 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
         preload: [:author, :votings]
       )
 
+    # Load author votes for each quote's votings
+    quotes_with_votes = load_author_votes_for_quotes(quotes)
+
     has_more = length(quotes) == per_page
 
     socket
-    |> assign(:pending_quotes, if(page == 1, do: quotes, else: socket.assigns.pending_quotes ++ quotes))
+    |> assign(:pending_quotes, if(page == 1, do: quotes_with_votes, else: socket.assigns.pending_quotes ++ quotes_with_votes))
     |> assign(:page, page)
     |> assign(:has_more, has_more)
+  end
+
+  defp load_author_votes_for_quotes(quotes) do
+    Enum.map(quotes, fn quote ->
+      if quote.author && quote.votings && quote.votings != [] do
+        voting_ids = Enum.map(quote.votings, & &1.id)
+        
+        # Get author's votes for these votings
+        votes = YouCongress.Votes.list_votes(
+          author_ids: [quote.author.id],
+          voting_ids: voting_ids,
+          preload: [:answer]
+        )
+        
+        # Create a map of voting_id -> vote for easy lookup
+        votes_by_voting = Map.new(votes, fn vote -> {vote.voting_id, vote} end)
+        
+        # Add votes to each voting
+        votings_with_votes = Enum.map(quote.votings, fn voting ->
+          Map.put(voting, :author_vote, Map.get(votes_by_voting, voting.id))
+        end)
+        
+        Map.put(quote, :votings, votings_with_votes)
+      else
+        quote
+      end
+    end)
+  end
+
+  # Helper function to get styling classes based on vote response
+  defp get_vote_style(response) do
+    case response do
+      "Strongly agree" -> "bg-green-700 text-white"
+      "Agree" -> "bg-green-600 text-white"
+      "Abstain" -> "bg-blue-600 text-white"
+      "N/A" -> "bg-gray-600 text-white"
+      "Disagree" -> "bg-orange-600 text-white"
+      "Strongly disagree" -> "bg-red-600 text-white"
+      _ -> "bg-gray-100 text-gray-600"
+    end
   end
 end

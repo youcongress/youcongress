@@ -22,7 +22,19 @@
             <% end %>
             <%= if quote.votings && quote.votings != [] do %>
               · In <%= for voting <- quote.votings do %>
-                <a href={~p"/p/#{voting.slug}"} class="text-indigo-600 hover:underline"><%= voting.title %></a><%= if voting != List.last(quote.votings), do: ", " %>
+                <a href={~p"/p/#{voting.slug}"} class="text-indigo-600 hover:underline"><%= voting.title %></a>
+                <%= if voting.author_vote && voting.author_vote.answer do %>
+                  <span class={[
+                    "ml-1 px-2 py-0.5 text-xs font-medium rounded-full",
+                    get_vote_style(voting.author_vote.answer.response)
+                  ]}>
+                    <%= voting.author_vote.answer.response %>
+                  </span>
+                <% else %>
+                  <span class="ml-1 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                    No position
+                  </span>
+                <% end %><%= if voting != List.last(quote.votings), do: ", " %>
               <% end %>
             <% end %>
           </div>
