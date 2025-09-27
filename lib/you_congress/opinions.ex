@@ -211,6 +211,12 @@ defmodule YouCongress.Opinions do
       {:include_twins, include_twins}, query ->
         from q in query, where: q.twin == ^include_twins or q.twin == false
 
+      {:is_verified, true}, query ->
+        from q in query, where: not is_nil(q.verified_at)
+
+      {:is_verified, false}, query ->
+        from q in query, where: is_nil(q.verified_at)
+
       {:preload, preloads}, query ->
         from q in query, preload: ^preloads
 

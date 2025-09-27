@@ -12,7 +12,7 @@ defmodule YouCongress.Opinions.Opinion do
     field :source_url, :string
     field :content, :string
     field :twin, :boolean, default: false
-    field :is_verified, :boolean, default: false
+    field :verified_at, :utc_datetime
     field :ancestry, :string
     field :descendants_count, :integer, default: 0
     field :likes_count, :integer, default: 0
@@ -44,7 +44,7 @@ defmodule YouCongress.Opinions.Opinion do
       :content,
       :source_url,
       :twin,
-      :is_verified,
+      :verified_at,
       :verified_by_user_id,
       :author_id,
       :user_id,
@@ -83,4 +83,11 @@ defmodule YouCongress.Opinions.Opinion do
   """
   def first_voting(%{votings: [voting | _]}) when not is_nil(voting), do: voting
   def first_voting(_), do: nil
+
+  @doc """
+  Returns true if the opinion is verified (has a verified_at timestamp).
+  """
+  def verified?(%{verified_at: nil}), do: false
+  def verified?(%{verified_at: verified_at}) when not is_nil(verified_at), do: true
+  def verified?(_), do: false
 end
