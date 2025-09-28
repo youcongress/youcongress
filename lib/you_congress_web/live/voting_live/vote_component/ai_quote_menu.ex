@@ -55,7 +55,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
           >
             Report comment
           </.link>
-          <%= if Permissions.can_edit_opinion?(@opinion, @current_user) do %>
+          <%= if (@current_user && @opinion && @current_user.author_id == @opinion.author_id) || @page == :opinion_show && Permissions.can_edit_opinion?(@opinion, @current_user) do %>
             <.link
               phx-click="edit"
               phx-value-opinion_id={@opinion.id}
