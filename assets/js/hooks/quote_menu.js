@@ -1,4 +1,4 @@
-const AIQuote = {
+const QuoteMenu = {
   mounted() {
     this.el.addEventListener("click", (e) => {
       const button = this.el.querySelector('button');
@@ -15,4 +15,4 @@ const AIQuote = {
   }
 };
 
-export default AIQuote;
+export default QuoteMenu;

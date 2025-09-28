@@ -4,7 +4,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
   alias YouCongress.Delegations
   alias YouCongress.Likes
   alias YouCongressWeb.Tools.Tooltip
-  alias YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu
+  alias YouCongressWeb.VotingLive.VoteComponent.QuoteMenu
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongressWeb.Tools.TimeAgo
   alias YouCongress.Accounts.Permissions

@@ -1,4 +1,4 @@
-defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
+defmodule YouCongressWeb.VotingLive.VoteComponent.QuoteMenu do
   @moduledoc """
   Displays links to:
   - I am <%= @author.name %>
@@ -18,7 +18,7 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
 
   def render(assigns) do
     ~H"""
-    <div class="justify-end" phx-hook="AIQuote" id={"ai-menu-#{@id}"}>
+    <div class="justify-end" phx-hook="QuoteMenu" id={"ai-menu-#{@id}"}>
       <button
         type="button"
         class="inline-flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900"
