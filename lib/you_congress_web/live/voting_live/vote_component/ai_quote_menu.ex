@@ -6,6 +6,8 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
   """
   use Phoenix.Component
 
+  alias YouCongress.Accounts.Permissions
+
   attr :id, :map, required: true
   attr :author, :map, required: true
   attr :opinion, :map, required: true
@@ -53,16 +55,14 @@ defmodule YouCongressWeb.VotingLive.VoteComponent.AiQuoteMenu do
           >
             Report comment
           </.link>
-          <%= if @current_user && @opinion && @current_user.author_id == @opinion.author_id do %>
-            <%= if @page == :voting_show && !@opinion.ancestry do %>
-              <.link
-                phx-click="edit"
-                phx-value-opinion_id={@opinion.id}
-                class="block p-2 hover:text-indigo-600"
-              >
-                Edit comment
-              </.link>
-            <% end %>
+          <%= if (@current_user && @opinion && @current_user.author_id == @opinion.author_id) || @page == :opinion_show && Permissions.can_edit_opinion?(@opinion, @current_user) do %>
+            <.link
+              phx-click="edit"
+              phx-value-opinion_id={@opinion.id}
+              class="block p-2 hover:text-indigo-600"
+            >
+              Edit comment
+            </.link>
             <.link
               phx-click="delete-comment"
               phx-value-opinion_id={@opinion.id}
