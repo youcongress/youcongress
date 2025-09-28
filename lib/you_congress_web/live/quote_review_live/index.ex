@@ -2,9 +2,6 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Opinions
-  alias YouCongress.Opinions.Opinion
-  alias YouCongress.Votes
-  alias YouCongress.Votes.Answers
 
   @impl true
   def mount(_params, session, socket) do
@@ -17,8 +14,7 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
      |> assign(:page, 1)
      |> assign(:per_page, 20)
      |> assign(:has_more, true)
-     |> assign(:editing_quote_id, nil)
-     |> assign(:edit_form, nil)}
+     |> assign(:editing_quote_id, nil)}
   end
 
   @impl true
@@ -36,7 +32,10 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
 
     verifier_id = socket.assigns.current_user && socket.assigns.current_user.id
 
-    case Opinions.update_opinion(opinion, %{verified_at: DateTime.utc_now(), verified_by_user_id: verifier_id}) do
+    case Opinions.update_opinion(opinion, %{
+           verified_at: DateTime.utc_now(),
+           verified_by_user_id: verifier_id
+         }) do
       {:ok, _} ->
         {:noreply, remove_from_list(socket, opinion.id)}
 
@@ -59,96 +58,27 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
 
   def handle_event("edit", %{"id" => id}, socket) do
     quote_id = String.to_integer(id)
-    quote = Enum.find(socket.assigns.pending_quotes, &(&1.id == quote_id))
-
-    if quote do
-      # Create changeset with current quote data
-      changeset =
-        Opinion.changeset(quote, %{
-          content: quote.content,
-          year: quote.year,
-          source_url: quote.source_url
-        })
-
-      form = to_form(changeset)
-
-      {:noreply,
-       socket
-       |> assign(:editing_quote_id, quote_id)
-       |> assign(:edit_form, form)}
-    else
-      {:noreply, put_flash(socket, :error, "Quote not found")}
-    end
+    {:noreply, assign(socket, :editing_quote_id, quote_id)}
   end
 
-  def handle_event("cancel_edit", _params, socket) do
+  @impl true
+  def handle_info({:opinion_updated, updated_opinion}, socket) do
+    # Update the quote in the list
+    updated_quotes = update_quote_in_list(socket.assigns.pending_quotes, updated_opinion)
+
     {:noreply,
      socket
+     |> assign(:pending_quotes, updated_quotes)
      |> assign(:editing_quote_id, nil)
-     |> assign(:edit_form, nil)}
+     |> put_flash(:info, "Quote updated successfully")}
   end
 
-  def handle_event("validate_edit", params, socket) do
-    # Extract opinion params, filtering out vote-related params
-    opinion_params =
-      case params do
-        %{"opinion" => opinion} -> opinion
-        _ ->
-          params
-          |> Map.drop(["quote_id"])
-          |> Enum.reject(fn {key, _value} -> String.starts_with?(key, "vote_") end)
-          |> Map.new()
-      end
-
-    # Get the current quote being edited
-    quote_id = socket.assigns.editing_quote_id
-    quote = Enum.find(socket.assigns.pending_quotes, &(&1.id == quote_id))
-
-    changeset =
-      (quote || %Opinion{})
-      |> Opinion.changeset(opinion_params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign(socket, :edit_form, to_form(changeset))}
+  def handle_info({:opinion_update_error, _changeset}, socket) do
+    {:noreply, put_flash(socket, :error, "Failed to update quote")}
   end
 
-  def handle_event("save_edit", params, socket) do
-    quote_id = String.to_integer(params["quote_id"])
-
-    # Extract opinion params, filtering out vote-related params
-    opinion_params =
-      case params do
-        %{"opinion" => opinion} -> opinion
-        _ ->
-          params
-          |> Map.drop(["quote_id"])
-          |> Enum.reject(fn {key, _value} -> String.starts_with?(key, "vote_") end)
-          |> Map.new()
-      end
-
-    quote = Opinions.get_opinion!(quote_id, preload: [:author, :votings])
-
-    case Opinions.update_opinion(quote, opinion_params) do
-      {:ok, updated_quote} ->
-        # Update votes if they were changed
-        update_author_votes(params, quote, socket)
-
-        # Update the quote in the list
-        updated_quotes = update_quote_in_list(socket.assigns.pending_quotes, updated_quote)
-
-        {:noreply,
-         socket
-         |> assign(:pending_quotes, updated_quotes)
-         |> assign(:editing_quote_id, nil)
-         |> assign(:edit_form, nil)
-         |> put_flash(:info, "Quote updated successfully")}
-
-      {:error, changeset} ->
-        {:noreply,
-         socket
-         |> assign(:edit_form, to_form(changeset))
-         |> put_flash(:error, "Failed to update quote")}
-    end
+  def handle_info(:opinion_edit_cancelled, socket) do
+    {:noreply, assign(socket, :editing_quote_id, nil)}
   end
 
   defp remove_from_list(socket, id) do
@@ -214,37 +144,6 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
         quote
       end
     end)
-  end
-
-  defp update_author_votes(params, quote, _socket) do
-    if quote.author do
-      # Process vote updates for each voting
-      Enum.each(quote.votings, fn voting ->
-        vote_param_key = "vote_#{voting.id}"
-
-        if Map.has_key?(params, vote_param_key) do
-          response = params[vote_param_key]
-
-          if response != "" do
-            # Create or update the vote
-            answer_id = Answers.get_answer_id(response)
-
-            Votes.create_or_update(%{
-              voting_id: voting.id,
-              author_id: quote.author.id,
-              answer_id: answer_id,
-              direct: true
-            })
-          else
-            # Delete the vote if "No position" is selected
-            case Votes.get_by(voting_id: voting.id, author_id: quote.author.id) do
-              nil -> :ok
-              vote -> Votes.delete_vote(vote)
-            end
-          end
-        end
-      end)
-    end
   end
 
   defp update_quote_in_list(quotes, updated_quote) do

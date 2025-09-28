@@ -12,16 +12,28 @@
   </div>
 <% end %>
 
-<.live_component
-  module={OpinionComponent}
-  id={@opinion.id}
-  opinion={@opinion}
-  current_user={@current_user}
-  delegating={@delegating}
-  voting={nil}
-  liked={@opinion.id in @liked_opinion_ids}
-  page={:opinion_show}
-/>
+<%= if @editing_opinion_id == @opinion.id do %>
+  <.live_component
+    module={YouCongressWeb.OpinionEditComponent}
+    id={"edit_#{@opinion.id}"}
+    opinion={@opinion}
+    show_content_label={false}
+    show_author={true}
+    show_voting_positions={true}
+  />
+<% else %>
+  <.live_component
+    module={OpinionComponent}
+    id={@opinion.id}
+    opinion={@opinion}
+    current_user={@current_user}
+    delegating={@delegating}
+    voting={nil}
+    liked={@opinion.id in @liked_opinion_ids}
+    page={:opinion_show}
+    editing_opinion_id={@editing_opinion_id}
+  />
+<% end %>
 
 <%= if @opinion.votings != [] do %>
   <div class="pb-2">Polls</div>
@@ -200,17 +212,29 @@
   <% end %>
   <%= for child_opinion <- @child_opinions do %>
     <div class="pt-6 mb-4 pl-4 border-l-2 border-gray-200">
-      <.live_component
-        module={OpinionComponent}
-        id={child_opinion.id}
-        opinion={child_opinion}
-        current_user={@current_user}
-        delegating={@child_opinions_delegations[child_opinion.author_id]}
-        voting={nil}
-        opinable={true}
-        liked={child_opinion.id in @liked_opinion_ids}
-        page={:opinion_show}
-      />
+      <%= if @editing_opinion_id == child_opinion.id do %>
+        <.live_component
+          module={YouCongressWeb.OpinionEditComponent}
+          id={"edit_#{child_opinion.id}"}
+          opinion={child_opinion}
+          show_content_label={false}
+          show_author={true}
+          show_voting_positions={false}
+        />
+      <% else %>
+        <.live_component
+          module={OpinionComponent}
+          id={child_opinion.id}
+          opinion={child_opinion}
+          current_user={@current_user}
+          delegating={@child_opinions_delegations[child_opinion.author_id]}
+          voting={nil}
+          opinable={true}
+          liked={child_opinion.id in @liked_opinion_ids}
+          page={:opinion_show}
+          editing_opinion_id={@editing_opinion_id}
+        />
+      <% end %>
     </div>
   <% end %>
 </div>

@@ -8,6 +8,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.Delegations
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongress.Votings
+  alias YouCongress.Votes
   alias YouCongress.Accounts.Permissions
 
   @impl true
@@ -46,7 +47,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
        show_search: false,
        show_vote_modal: false,
        selected_voting_id: nil,
-       selected_voting_title: nil
+       selected_voting_title: nil,
+       editing_opinion_id: nil
      )}
   end
 
@@ -123,6 +125,11 @@ defmodule YouCongressWeb.OpinionLive.Show do
       {:error, _} ->
         {:noreply, socket |> put_flash(:error, "Failed to delegate.")}
     end
+  end
+
+  def handle_event("edit", %{"opinion_id" => opinion_id}, socket) do
+    opinion_id = String.to_integer(opinion_id)
+    {:noreply, assign(socket, :editing_opinion_id, opinion_id)}
   end
 
   def handle_event("delete-comment", %{"opinion_id" => opinion_id}, socket) do
@@ -254,6 +261,26 @@ defmodule YouCongressWeb.OpinionLive.Show do
     end
   end
 
+  @impl true
+  def handle_info({:opinion_updated, updated_opinion}, socket) do
+    socket =
+      socket
+      |> load_opinion!(updated_opinion.id)
+      |> load_delegations()
+      |> assign(:editing_opinion_id, nil)
+      |> put_flash(:info, "Opinion updated successfully")
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:opinion_update_error, _changeset}, socket) do
+    {:noreply, put_flash(socket, :error, "Failed to update opinion")}
+  end
+
+  def handle_info(:opinion_edit_cancelled, socket) do
+    {:noreply, assign(socket, :editing_opinion_id, nil)}
+  end
+
   defp create_or_update_vote(current_user, opinion, voting_id, answer) do
     alias YouCongress.Votes
     alias YouCongress.Votes.Answers
@@ -274,7 +301,35 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
   defp load_opinion!(socket, opinion_id) do
     opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :votings])
-    assign(socket, opinion: opinion)
+    opinion_with_votes = load_author_votes_for_opinion(opinion)
+    assign(socket, opinion: opinion_with_votes)
+  end
+
+  defp load_author_votes_for_opinion(opinion) do
+    if opinion.author && opinion.votings && opinion.votings != [] do
+      voting_ids = Enum.map(opinion.votings, & &1.id)
+
+      # Get author's votes for these votings
+      votes =
+        YouCongress.Votes.list_votes(
+          author_ids: [opinion.author.id],
+          voting_ids: voting_ids,
+          preload: [:answer]
+        )
+
+      # Create a map of voting_id -> vote for easy lookup
+      votes_by_voting = Map.new(votes, fn vote -> {vote.voting_id, vote} end)
+
+      # Add votes to each voting
+      votings_with_votes =
+        Enum.map(opinion.votings, fn voting ->
+          Map.put(voting, :author_vote, Map.get(votes_by_voting, voting.id))
+        end)
+
+      Map.put(opinion, :votings, votings_with_votes)
+    else
+      opinion
+    end
   end
 
   defp load_delegations(socket) do
