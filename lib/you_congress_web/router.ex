@@ -69,6 +69,7 @@ defmodule YouCongressWeb.Router do
     live("/p/:slug/add-quote", VotingLive.AddQuote, :add_quote)
 
     live("/settings", SettingsLive, :settings)
+    live("/landing", HomeLive.Index, :index)
   end
 
   # Other scopes may use custom stacks.
