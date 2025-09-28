@@ -92,44 +92,12 @@
         <span class="text-xs">
           <.link href={@vote.opinion.source_url} target="_blank" class="underline">source</.link>
         </span>
-        <span class="ml-2">
-          <%= if @current_user && YouCongress.Accounts.Permissions.can_verify_opinion?(@current_user) do %>
-            <%= if YouCongress.Opinions.Opinion.verified?(@vote.opinion) do %>
-              <span
-                class="bg-green-100 text-green-800 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-pointer"
-                phx-click="unverify-opinion"
-                phx-value-opinion_id={@vote.opinion.id}
-                phx-target={@myself}
-              >
-                Verified
-              </span>
-            <% else %>
-              <span
-                class="bg-yellow-100 text-yellow-800 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-pointer"
-                phx-click="verify-opinion"
-                phx-value-opinion_id={@vote.opinion.id}
-                phx-target={@myself}
-              >
-                Unverified
-              </span>
-            <% end %>
-          <% else %>
-            <.link
-              href="/faq#verify-quotes"
-              class={[
-                "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium",
-                YouCongress.Opinions.Opinion.verified?(@vote.opinion) &&
-                  "bg-green-100 text-green-800",
-                !YouCongress.Opinions.Opinion.verified?(@vote.opinion) &&
-                  "bg-yellow-100 text-yellow-800"
-              ]}
-            >
-              {if YouCongress.Opinions.Opinion.verified?(@vote.opinion),
-                do: "Verified",
-                else: "Unverified"}
-            </.link>
-          <% end %>
-        </span>
+        <.live_component
+          module={YouCongressWeb.Components.VerificationBadge}
+          id={"verification_badge_#{@vote.opinion.id}"}
+          opinion={@vote.opinion}
+          current_user={@current_user}
+        />
       <% end %>
     </div>
   <% end %>
