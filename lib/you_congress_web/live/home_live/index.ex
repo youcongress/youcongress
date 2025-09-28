@@ -12,7 +12,7 @@ defmodule YouCongressWeb.HomeLive.Index do
       socket
       |> assign(
         :page_title,
-        "YouCongress: Liquid Democracy for AI Safety"
+        "Quote-Backed AI Safety Polls with Delegation | YouCongress"
       )
       |> assign(
         :page_description,
