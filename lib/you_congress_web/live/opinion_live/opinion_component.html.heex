@@ -34,8 +34,11 @@
   <div class="pt-2">
     {@opinion.content}
     <%= if @opinion.source_url do %>
+      <%= if @opinion.year do %>
+        <span class="text-xs text-gray-500">({@opinion.year})</span>
+      <% end %>
       <span class="text-xs">
-        (<.link href={@opinion.source_url} target="_blank" class="underline">source</.link>)
+        <.link href={@opinion.source_url} target="_blank" class="underline">source</.link>
       </span>
       <span class="ml-2">
         <.link

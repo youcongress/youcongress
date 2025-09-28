@@ -43,6 +43,14 @@ defmodule YouCongress.Accounts.Permissions do
   def can_add_opinion_to_voting?(%User{role: "moderator"}), do: true
   def can_add_opinion_to_voting?(_), do: false
 
+  @doc """
+  Checks if the user can edit the given opinion.
+  """
+  def can_edit_opinion?(%{user_id: id}, %User{id: id}), do: true
+  def can_edit_opinion?(_opinion, %User{role: "admin"}), do: true
+  def can_edit_opinion?(_opinion, %User{role: "moderator"}), do: true
+  def can_edit_opinion?(_opinion, _user), do: false
+
   def can_verify_opinion?(%User{role: "admin"}), do: true
   def can_verify_opinion?(%User{role: "moderator"}), do: true
   def can_verify_opinion?(_), do: false
