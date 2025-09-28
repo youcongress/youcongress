@@ -7,8 +7,6 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
   alias YouCongressWeb.VotingLive.VoteComponent.QuoteMenu
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongressWeb.Tools.TimeAgo
-  alias YouCongress.Accounts.Permissions
-  alias YouCongress.Opinions
 
   def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
     send(self(), {:put_flash, :warning, "Log in to like."})
@@ -54,69 +52,6 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Error unliking opinion.")}
-    end
-  end
-
-  def handle_event("verify-opinion", _, %{assigns: %{current_user: nil}} = socket) do
-    send(self(), {:put_flash, :warning, "Log in to verify quotes."})
-    {:noreply, socket}
-  end
-
-  def handle_event("verify-opinion", %{"opinion_id" => opinion_id}, socket) do
-    %{assigns: %{current_user: current_user, vote: vote}} = socket
-    opinion_id = String.to_integer(opinion_id)
-
-    if Permissions.can_verify_opinion?(current_user) do
-      opinion = vote.opinion
-
-      if opinion.id == opinion_id do
-        verifier_id = current_user && current_user.id
-
-        case Opinions.update_opinion(opinion, %{
-               verified_at: DateTime.utc_now(),
-               verified_by_user_id: verifier_id
-             }) do
-          {:ok, updated_opinion} ->
-            updated_vote = Map.put(vote, :opinion, updated_opinion)
-            {:noreply, assign(socket, :vote, updated_vote)}
-
-          {:error, _changeset} ->
-            {:noreply, put_flash(socket, :error, "Failed to verify quote.")}
-        end
-      else
-        {:noreply, socket}
-      end
-    else
-      {:noreply, put_flash(socket, :error, "You don't have permission to verify.")}
-    end
-  end
-
-  def handle_event("unverify-opinion", _, %{assigns: %{current_user: nil}} = socket) do
-    send(self(), {:put_flash, :warning, "Log in to verify quotes."})
-    {:noreply, socket}
-  end
-
-  def handle_event("unverify-opinion", %{"opinion_id" => opinion_id}, socket) do
-    %{assigns: %{current_user: current_user, vote: vote}} = socket
-    opinion_id = String.to_integer(opinion_id)
-
-    if Permissions.can_verify_opinion?(current_user) do
-      opinion = vote.opinion
-
-      if opinion.id == opinion_id do
-        case Opinions.update_opinion(opinion, %{verified_at: nil, verified_by_user_id: nil}) do
-          {:ok, updated_opinion} ->
-            updated_vote = Map.put(vote, :opinion, updated_opinion)
-            {:noreply, assign(socket, :vote, updated_vote)}
-
-          {:error, _changeset} ->
-            {:noreply, put_flash(socket, :error, "Failed to unverify quote.")}
-        end
-      else
-        {:noreply, socket}
-      end
-    else
-      {:noreply, put_flash(socket, :error, "You don't have permission to verify.")}
     end
   end
 
