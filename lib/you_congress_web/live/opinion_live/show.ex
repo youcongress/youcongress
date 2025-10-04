@@ -1,6 +1,8 @@
 defmodule YouCongressWeb.OpinionLive.Show do
   use YouCongressWeb, :live_view
 
+  require Logger
+
   alias YouCongress.Likes
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
@@ -209,6 +211,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
       ) do
     %{assigns: %{opinion: opinion, current_user: current_user}} = socket
 
+    opinion = Map.put(opinion, :user_id, current_user.id)
+
     with {:ok, _updated_opinion} <-
            Opinions.add_opinion_to_voting(opinion, String.to_integer(voting_id)),
          {:ok, _vote} <-
@@ -231,13 +235,16 @@ defmodule YouCongressWeb.OpinionLive.Show do
       {:error, :already_associated} ->
         {:noreply, socket |> put_flash(:error, "Opinion is already associated with this voting.")}
 
-      {:error, _} ->
+      {:error, error} ->
+        Logger.error("Error adding opinion to voting: #{inspect(error)}")
         {:noreply, socket |> put_flash(:error, "Failed to add opinion to voting.")}
     end
   end
 
   def handle_event("add-to-voting", %{"voting_id" => voting_id}, socket) do
     %{assigns: %{opinion: opinion, current_user: current_user}} = socket
+
+    opinion = Map.put(opinion, :user_id, current_user.id)
 
     case Opinions.add_opinion_to_voting(opinion, String.to_integer(voting_id)) do
       {:ok, _updated_opinion} ->
@@ -256,7 +263,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
       {:error, :already_associated} ->
         {:noreply, socket |> put_flash(:error, "Opinion is already associated with this voting.")}
 
-      {:error, _} ->
+      {:error, error} ->
+        Logger.error("Error adding opinion to voting: #{inspect(error)}")
         {:noreply, socket |> put_flash(:error, "Failed to add opinion to voting.")}
     end
   end
