@@ -92,6 +92,68 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert render(show_live) =~ "Updated content"
     end
 
+    test "edit opinion author from opinion show page", %{conn: conn} do
+      # Create a user and two authors
+      user = user_fixture()
+      original_author = author_fixture(%{user_id: user.id, name: "Original Author"})
+      new_author = author_fixture(%{user_id: user.id, name: "New Author"})
+      conn = log_in_user(conn, user)
+
+      # Create an opinion by the original author
+      opinion =
+        opinion_fixture(%{
+          author_id: original_author.id,
+          user_id: user.id,
+          content: "Original content",
+          twin: false,
+          source_url: "https://example.com/source"
+        })
+
+      # Visit the opinion show page
+      {:ok, show_live, html} = live(conn, ~p"/c/#{opinion.id}")
+
+      # Check that the original author is displayed
+      assert html =~ "Original Author"
+
+      # Trigger the edit event directly (since menu is JS-controlled)
+      _html = render_click(show_live, "edit", %{"opinion_id" => "#{opinion.id}"})
+
+      # Check that the edit form is now displayed
+      assert has_element?(show_live, "form[phx-target]")
+      assert has_element?(show_live, "input[name='author_search']")
+
+      # Simulate author search and selection
+      render_click(show_live, "search_author", %{"value" => "New Author"})
+      render_click(show_live, "select_author", %{"author_id" => "#{new_author.id}"})
+
+      # Update the opinion content using the edit component form
+      show_live
+      |> form("form[phx-target]", %{
+        opinion: %{
+          content: "Updated content",
+          year: "2023",
+          source_url: "https://example.com/updated-source"
+        }
+      })
+      |> render_submit()
+
+      # Check that we get a success message
+      assert render(show_live) =~ "Opinion updated successfully"
+
+      # Verify the opinion was actually updated in the database
+      updated_opinion = Opinions.get_opinion!(opinion.id, preload: [:author])
+      assert updated_opinion.content == "Updated content"
+      assert updated_opinion.year == 2023
+      assert updated_opinion.source_url == "https://example.com/updated-source"
+      assert updated_opinion.author_id == new_author.id
+      assert updated_opinion.author.name == "New Author"
+
+      # Check that the edit form is hidden again
+      refute has_element?(show_live, "form[phx-target]")
+      assert render(show_live) =~ "Updated content"
+      assert render(show_live) =~ "New Author"
+    end
+
     test "cancel edit opinion from opinion show page", %{conn: conn} do
       # Create a user and author
       user = user_fixture()
