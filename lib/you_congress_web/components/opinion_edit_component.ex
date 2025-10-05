@@ -72,7 +72,12 @@ defmodule YouCongressWeb.OpinionEditComponent do
     opinion_params =
       case params do
         %{"opinion" => opinion} ->
-          opinion
+          # If we have a selected_author_id in the component state, use it
+          if socket.assigns.selected_author_id do
+            Map.put(opinion, "author_id", socket.assigns.selected_author_id)
+          else
+            opinion
+          end
 
         # Handle simple comment form
         %{"comment" => comment} ->
@@ -92,6 +97,12 @@ defmodule YouCongressWeb.OpinionEditComponent do
         # Update votes if they were changed (only for full form mode)
         if socket.assigns[:show_voting_positions] do
           update_author_votes(params, opinion)
+        end
+
+        # If author was changed, update the associated votes' author_id
+        if socket.assigns.selected_author_id &&
+           socket.assigns.selected_author_id != opinion.author_id do
+          Votes.update_author_for_opinion_votes(opinion.id, socket.assigns.selected_author_id)
         end
 
         # Send success message to parent
@@ -136,11 +147,25 @@ defmodule YouCongressWeb.OpinionEditComponent do
   def handle_event("select_author", %{"author_id" => author_id}, socket) do
     selected_author = Enum.find(socket.assigns.authors, &(&1.id == String.to_integer(author_id)))
 
+    # Update the form with the new author_id
+    opinion_params = %{
+      "content" => socket.assigns.opinion.content,
+      "year" => socket.assigns.opinion.year,
+      "source_url" => socket.assigns.opinion.source_url,
+      "author_id" => selected_author.id
+    }
+
+    changeset =
+      socket.assigns.opinion
+      |> Opinion.changeset(opinion_params)
+      |> Map.put(:action, :validate)
+
     {:noreply,
      socket
      |> assign(:author_search, selected_author.name)
      |> assign(:show_author_dropdown, false)
-     |> assign(:selected_author_id, selected_author.id)}
+     |> assign(:selected_author_id, selected_author.id)
+     |> assign(:form, to_form(changeset))}
   end
 
   @impl true
@@ -215,12 +240,6 @@ defmodule YouCongressWeb.OpinionEditComponent do
                 phx-click="toggle_author_dropdown"
                 placeholder="Search for an author..."
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
-              <input
-                type="hidden"
-                name="opinion[author_id]"
-                value={@selected_author_id}
-                id="selected_author_id"
               />
               <%= if @show_author_dropdown do %>
                 <div
@@ -349,4 +368,5 @@ defmodule YouCongressWeb.OpinionEditComponent do
       end)
     end
   end
+
 end
