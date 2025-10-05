@@ -332,6 +332,25 @@ defmodule YouCongress.Votes do
   end
 
   @doc """
+  Updates the author_id for all votes associated with a given opinion.
+
+  This is used when an opinion's author is changed, to ensure votes
+  remain associated with the correct author.
+
+  ## Examples
+
+      iex> update_author_for_opinion_votes(123, 456)
+      {2, nil}
+
+  """
+  def update_author_for_opinion_votes(opinion_id, new_author_id) do
+    query = from v in Vote,
+            where: v.opinion_id == ^opinion_id
+
+    Repo.update_all(query, set: [author_id: new_author_id])
+  end
+
+  @doc """
   Creates, updates or deletes a vote.
   """
   @spec create_or_update(map) :: {:ok, Vote.t()} | {:ok, :deleted} | {:error, String.t()}

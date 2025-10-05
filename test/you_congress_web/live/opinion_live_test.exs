@@ -5,9 +5,11 @@ defmodule YouCongressWeb.OpinionLiveTest do
   import YouCongress.AuthorsFixtures
   import YouCongress.OpinionsFixtures
   import YouCongress.VotingsFixtures
+  import YouCongress.VotesFixtures
   import YouCongress.AccountsFixtures
 
   alias YouCongress.Opinions
+  alias YouCongress.Votes
 
   describe "Index" do
     test "comment under a comment", %{conn: conn} do
@@ -99,7 +101,9 @@ defmodule YouCongressWeb.OpinionLiveTest do
       new_author = author_fixture(%{user_id: user.id, name: "New Author"})
       conn = log_in_user(conn, user)
 
-      # Create an opinion by the original author
+      # Create a voting and opinion by the original author
+      voting = voting_fixture()
+
       opinion =
         opinion_fixture(%{
           author_id: original_author.id,
@@ -108,6 +112,13 @@ defmodule YouCongressWeb.OpinionLiveTest do
           twin: false,
           source_url: "https://example.com/source"
         })
+
+      # Create a vote for the original author on this voting with this opinion
+      vote = vote_fixture(%{
+        author_id: original_author.id,
+        voting_id: voting.id,
+        opinion_id: opinion.id
+      })
 
       # Visit the opinion show page
       {:ok, show_live, html} = live(conn, ~p"/c/#{opinion.id}")
@@ -122,9 +133,20 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert has_element?(show_live, "form[phx-target]")
       assert has_element?(show_live, "input[name='author_search']")
 
-      # Simulate author search and selection
-      render_click(show_live, "search_author", %{"value" => "New Author"})
-      render_click(show_live, "select_author", %{"author_id" => "#{new_author.id}"})
+      # Open the author dropdown by clicking on the search input
+      show_live
+      |> element("input[name='author_search']")
+      |> render_click()
+
+      # Search for the new author to filter the list
+      show_live
+      |> element("input[name='author_search']")
+      |> render_change(%{author_search: "New Author"})
+
+      # Click on the new author from the dropdown
+      show_live
+      |> element("#author_option_#{new_author.id}")
+      |> render_click()
 
       # Update the opinion content using the edit component form
       show_live
@@ -147,6 +169,11 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert updated_opinion.source_url == "https://example.com/updated-source"
       assert updated_opinion.author_id == new_author.id
       assert updated_opinion.author.name == "New Author"
+
+      # Verify that the vote's author_id was also updated to the new author
+      updated_vote = Votes.get_vote!(vote.id)
+      assert updated_vote.author_id == new_author.id,
+        "Vote's author_id should be updated to match the new opinion author"
 
       # Check that the edit form is hidden again
       refute has_element?(show_live, "form[phx-target]")
