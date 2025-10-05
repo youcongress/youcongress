@@ -37,7 +37,7 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
       Votes.count_with_opinion_source(voting_id, source_filter: :users, answer_id: answer_id)
 
     opts = [
-      include: [:author, :answer, :opinion],
+      include: [:author, :answer, opinion: :author],
       exclude_ids: exclude_ids,
       source_filter: source_filter
     ]
