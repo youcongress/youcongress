@@ -146,8 +146,8 @@
             id={vote.id}
             voting={@voting}
             vote={vote}
-            author={vote.author}
-            delegating?={@delegations[vote.author_id]}
+            author={vote.opinion.author}
+            delegating?={@delegations[vote.opinion.author_id]}
             show_vote={true}
             show_opinion={true}
             current_user={@current_user}
@@ -179,8 +179,8 @@
           id={vote.id}
           voting={@voting}
           vote={vote}
-          author={vote.author}
-          delegating?={@delegations[vote.author_id]}
+          author={vote.opinion.author}
+          delegating?={@delegations[vote.opinion.author_id]}
           show_vote={true}
           show_opinion={true}
           current_user={@current_user}

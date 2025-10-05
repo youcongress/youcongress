@@ -18,7 +18,7 @@ defmodule YouCongress.OpinionsFixtures do
       |> Enum.into(%{
         content: "some content",
         source_url: Faker.Internet.url(),
-        twin: true,
+        twin: attrs[:twin] || true,
         user_id: user_id,
         author_id: author_id
       })

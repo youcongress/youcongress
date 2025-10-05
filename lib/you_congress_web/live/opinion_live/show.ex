@@ -289,14 +289,14 @@ defmodule YouCongressWeb.OpinionLive.Show do
     {:noreply, assign(socket, :editing_opinion_id, nil)}
   end
 
-  defp create_or_update_vote(current_user, opinion, voting_id, answer) do
+  defp create_or_update_vote(_current_user, opinion, voting_id, answer) do
     alias YouCongress.Votes
     alias YouCongress.Votes.Answers
 
     answer_id = Answers.answer_id_by_response(answer)
 
     vote_params = %{
-      author_id: current_user.author_id,
+      author_id: opinion.author_id,
       voting_id: voting_id,
       answer_id: answer_id,
       opinion_id: opinion.id,
