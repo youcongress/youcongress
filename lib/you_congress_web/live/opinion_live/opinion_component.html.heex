@@ -42,7 +42,7 @@
       </span>
       <.live_component
         module={YouCongressWeb.Components.VerificationBadge}
-        id={"#{@opinion.id}-#{@voting.id}"}
+        id={"#{@opinion.id}-#{if @voting, do: @voting.id}"}
         opinion={@opinion}
         current_user={@current_user}
       />
