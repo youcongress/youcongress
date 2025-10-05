@@ -53,6 +53,7 @@ defmodule YouCongress.Authors.Author do
     |> validate_required([:twin_origin])
     |> validate_required_if_twin_origin()
     |> unique_constraint(:twitter_username)
+    |> unique_constraint(:twitter_id_str)
     |> unique_constraint(:wikipedia_url)
     |> validate_wikipedia_url_if_present()
   end
