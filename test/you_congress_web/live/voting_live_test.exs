@@ -165,7 +165,7 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       assert show_live
              |> element("a", "Edit")
-             |> render_click() =~ "Edit Voting"
+             |> render_click() =~ "Edit Poll"
 
       assert_patch(show_live, ~p"/p/#{voting.slug}/show/edit")
 
