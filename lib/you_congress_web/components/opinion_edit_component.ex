@@ -15,15 +15,27 @@ defmodule YouCongressWeb.OpinionEditComponent do
       Opinion.changeset(opinion, %{
         content: opinion.content,
         year: opinion.year,
-        source_url: opinion.source_url
+        source_url: opinion.source_url,
+        author_id: opinion.author_id
       })
 
     form = to_form(changeset)
 
+    # Load available authors for the dropdown
+    authors = YouCongress.Authors.list_authors()
+
+    # Initialize author search with current author name
+    current_author_name = if opinion.author, do: opinion.author.name, else: ""
+
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:form, form)}
+     |> assign(:form, form)
+     |> assign(:authors, authors)
+     |> assign(:author_search, current_author_name)
+     |> assign(:filtered_authors, authors)
+     |> assign(:show_author_dropdown, false)
+     |> assign(:selected_author_id, opinion.author_id)}
   end
 
   @impl true
@@ -102,6 +114,46 @@ defmodule YouCongressWeb.OpinionEditComponent do
   end
 
   @impl true
+  def handle_event("search_author", %{"author_search" => search_term}, socket) do
+    filtered_authors =
+      if String.trim(search_term) == "" do
+        socket.assigns.authors
+      else
+        socket.assigns.authors
+        |> Enum.filter(fn author ->
+          String.contains?(String.downcase(author.name || ""), String.downcase(search_term))
+        end)
+      end
+
+    {:noreply,
+     socket
+     |> assign(:author_search, search_term)
+     |> assign(:filtered_authors, filtered_authors)
+     |> assign(:show_author_dropdown, true)}
+  end
+
+  @impl true
+  def handle_event("select_author", %{"author_id" => author_id}, socket) do
+    selected_author = Enum.find(socket.assigns.authors, &(&1.id == String.to_integer(author_id)))
+
+    {:noreply,
+     socket
+     |> assign(:author_search, selected_author.name)
+     |> assign(:show_author_dropdown, false)
+     |> assign(:selected_author_id, selected_author.id)}
+  end
+
+  @impl true
+  def handle_event("toggle_author_dropdown", _params, socket) do
+    {:noreply, assign(socket, :show_author_dropdown, !socket.assigns.show_author_dropdown)}
+  end
+
+  @impl true
+  def handle_event("close_author_dropdown", _params, socket) do
+    {:noreply, assign(socket, :show_author_dropdown, false)}
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div>
@@ -113,7 +165,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
         class="space-y-4"
       >
         <input type="hidden" name="opinion_id" value={@opinion.id} />
-        
+
     <!-- Opinion Content -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -126,7 +178,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-full"
           />
         </div>
-        
+
     <!-- Year -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
@@ -137,7 +189,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-32"
           />
         </div>
-        
+
     <!-- Source URL -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Source URL</label>
@@ -148,17 +200,64 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-full"
           />
         </div>
-        
-    <!-- Author Information -->
+
+    <!-- Author Selection -->
         <%= if assigns[:show_author] do %>
-          <div>
+          <div class="relative">
             <label class="block text-sm font-medium text-gray-700 mb-1">Author</label>
-            <div class="text-gray-900 font-medium">
-              {if @opinion.author, do: @opinion.author.name, else: "Unknown"}
+            <div class="relative">
+              <input
+                type="text"
+                name="author_search"
+                value={@author_search}
+                phx-target={@myself}
+                phx-change="search_author"
+                phx-click="toggle_author_dropdown"
+                placeholder="Search for an author..."
+                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+              <input
+                type="hidden"
+                name="opinion[author_id]"
+                value={@selected_author_id}
+                id="selected_author_id"
+              />
+              <%= if @show_author_dropdown do %>
+                <div
+                  class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+                  phx-click-away="close_author_dropdown"
+                  phx-target={@myself}
+                >
+                  <%= if @filtered_authors == [] do %>
+                    <div class="cursor-default select-none relative py-2 pl-3 pr-9 text-gray-500">
+                      No authors found
+                    </div>
+                  <% else %>
+                    <%= for author <- @filtered_authors do %>
+                      <div
+                        class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 hover:text-indigo-900"
+                        phx-click="select_author"
+                        phx-value-author_id={author.id}
+                        phx-target={@myself}
+                        id={"author_option_#{author.id}"}
+                      >
+                        <span class="font-normal block truncate">{author.name}</span>
+                        <%= if @selected_author_id == author.id do %>
+                          <span class="absolute inset-y-0 right-0 flex items-center pr-4">
+                            <svg class="h-5 w-5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                          </span>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
             </div>
           </div>
         <% end %>
-        
+
     <!-- Voting Positions -->
         <%= if assigns[:show_voting_positions] && @opinion.votings && @opinion.votings != [] do %>
           <div class="space-y-3">
@@ -190,7 +289,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             <% end %>
           </div>
         <% end %>
-        
+
     <!-- Form Actions -->
         <div class="flex gap-2 pt-2">
           <button
