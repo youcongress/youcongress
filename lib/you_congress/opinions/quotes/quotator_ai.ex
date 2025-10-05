@@ -91,6 +91,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     - Ideally, quotes should be informative about the reasons why they agree or provide other useful information related to the question.
     - Prefer the original or primary source or, in its absence, a reliable secondary source.
     - The source_url must include the exact quote text.
+    - wikipedia_url and https://x.com/[twitter_username] must exist and belong to the author.
     - Authors must be experts, public figures or relevant organisations.
     - Do not include quotes from a document/open letter/paper with multiple signers.
     - The quote must have one single author, a person or an organisation.
