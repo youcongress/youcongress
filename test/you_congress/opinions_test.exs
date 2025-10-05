@@ -66,6 +66,65 @@ defmodule YouCongress.OpinionsTest do
       assert_raise Ecto.NoResultsError, fn -> Opinions.get_opinion!(opinion.id) end
     end
 
+    test "delete_opinion/1 deletes associated votes via database cascade" do
+      alias YouCongress.Votes.Vote
+      alias YouCongress.Repo
+
+      opinion = opinion_fixture()
+      voting = voting_fixture()
+
+      # Create a vote associated with the opinion
+      vote_attrs = %{
+        author_id: opinion.author_id,
+        voting_id: voting.id,
+        answer_id: 1,
+        opinion_id: opinion.id
+      }
+
+      {:ok, vote} = %Vote{}
+      |> Vote.changeset(vote_attrs)
+      |> Repo.insert()
+
+      # Verify the vote exists
+      assert Repo.get(Vote, vote.id) != nil
+
+      # Delete the opinion (votes will be deleted by database cascade)
+      assert {:ok, %Opinion{}} = Opinions.delete_opinion(opinion)
+
+      # Verify the vote is also deleted by database cascade
+      assert Repo.get(Vote, vote.id) == nil
+    end
+
+    test "delete_opinion_and_descendants/1 deletes opinion and associated votes via database cascade" do
+      alias YouCongress.Votes.Vote
+      alias YouCongress.Repo
+
+      opinion = opinion_fixture()
+      voting = voting_fixture()
+
+      # Create a vote associated with the opinion
+      vote_attrs = %{
+        author_id: opinion.author_id,
+        voting_id: voting.id,
+        answer_id: 1,
+        opinion_id: opinion.id
+      }
+
+      {:ok, vote} = %Vote{}
+      |> Vote.changeset(vote_attrs)
+      |> Repo.insert()
+
+      # Verify the vote exists
+      assert Repo.get(Vote, vote.id) != nil
+
+      # Delete the opinion and descendants (votes will be deleted by database cascade)
+      {count, _} = Opinions.delete_opinion_and_descendants(opinion)
+      assert count == 1
+
+      # Verify the vote is also deleted by database cascade
+      assert Repo.get(Vote, vote.id) == nil
+    end
+
     test "change_opinion/1 returns a opinion changeset" do
       opinion = opinion_fixture()
       assert %Ecto.Changeset{} = Opinions.change_opinion(opinion)
