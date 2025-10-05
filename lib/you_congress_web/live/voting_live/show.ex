@@ -59,6 +59,23 @@ defmodule YouCongressWeb.VotingLive.Show do
     {:noreply, socket}
   end
 
+  def handle_params(%{"slug" => slug}, "edit", socket) do
+    voting = Votings.get_by!(slug: slug)
+    current_user = socket.assigns.current_user
+
+    socket =
+      socket
+      |> assign(:page_title, page_title(socket.assigns.live_action, voting.title))
+      |> assign(
+        :page_description,
+        "Find agreement, understand disagreement."
+      )
+      |> assign(:voting, voting)
+      |> assign(:current_user, current_user)
+
+    {:noreply, socket}
+  end
+
   @impl true
   @spec handle_event(binary, map, Socket.t()) :: {:noreply, Socket.t()}
 
@@ -192,11 +209,18 @@ defmodule YouCongressWeb.VotingLive.Show do
     {:noreply, assign(socket, :current_user_vote, vote)}
   end
 
+  def handle_info({YouCongressWeb.VotingLive.FormComponent, {:saved, voting}}, socket) do
+    {:noreply,
+     socket
+     |> put_flash(:info, "Voting updated successfully")
+     |> push_patch(to: ~p"/p/#{voting.slug}")}
+  end
+
   def handle_info(_, socket), do: {:noreply, socket}
 
   @spec page_title(atom, binary) :: binary
   defp page_title(:show, voting_title), do: voting_title
-  defp page_title(:edit, _), do: "Edit Voting"
+  defp page_title(:edit, _), do: "Edit Poll"
 
   defp load_random_votings(socket, voting_id) do
     voting = Votings.get_voting!(voting_id, preload: [:halls])
