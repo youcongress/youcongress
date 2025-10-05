@@ -94,7 +94,7 @@
         </span>
         <.live_component
           module={YouCongressWeb.Components.VerificationBadge}
-          id={"verification_badge_#{@vote.opinion.id}"}
+          id={"#{@vote.opinion.id}-#{@voting.id}"}
           opinion={@vote.opinion}
           current_user={@current_user}
         />
