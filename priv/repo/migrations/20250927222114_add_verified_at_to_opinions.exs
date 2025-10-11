@@ -16,4 +16,3 @@ defmodule YouCongress.Repo.Migrations.AddVerifiedAtToOpinions do
     end
   end
 end
-
