@@ -344,8 +344,9 @@ defmodule YouCongress.Votes do
 
   """
   def update_author_for_opinion_votes(opinion_id, new_author_id) do
-    query = from v in Vote,
-            where: v.opinion_id == ^opinion_id
+    query =
+      from v in Vote,
+        where: v.opinion_id == ^opinion_id
 
     Repo.update_all(query, set: [author_id: new_author_id])
   end

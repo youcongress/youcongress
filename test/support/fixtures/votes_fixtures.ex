@@ -35,7 +35,13 @@ defmodule YouCongress.VotesFixtures do
     if !generate_opinion || attrs[:opinion_id] do
       {attrs, nil}
     else
-      opinion = opinion_fixture(%{voting_id: voting_id, author_id: attrs[:author_id], twin: !!attrs[:twin]})
+      opinion =
+        opinion_fixture(%{
+          voting_id: voting_id,
+          author_id: attrs[:author_id],
+          twin: !!attrs[:twin]
+        })
+
       attrs = attrs |> Map.put(:opinion_id, opinion.id)
       {attrs, opinion}
     end

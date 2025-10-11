@@ -114,11 +114,12 @@ defmodule YouCongressWeb.OpinionLiveTest do
         })
 
       # Create a vote for the original author on this voting with this opinion
-      vote = vote_fixture(%{
-        author_id: original_author.id,
-        voting_id: voting.id,
-        opinion_id: opinion.id
-      })
+      vote =
+        vote_fixture(%{
+          author_id: original_author.id,
+          voting_id: voting.id,
+          opinion_id: opinion.id
+        })
 
       # Visit the opinion show page
       {:ok, show_live, html} = live(conn, ~p"/c/#{opinion.id}")
@@ -172,8 +173,9 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
       # Verify that the vote's author_id was also updated to the new author
       updated_vote = Votes.get_vote!(vote.id)
+
       assert updated_vote.author_id == new_author.id,
-        "Vote's author_id should be updated to match the new opinion author"
+             "Vote's author_id should be updated to match the new opinion author"
 
       # Check that the edit form is hidden again
       refute has_element?(show_live, "form[phx-target]")

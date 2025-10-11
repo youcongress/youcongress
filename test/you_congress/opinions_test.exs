@@ -81,9 +81,10 @@ defmodule YouCongress.OpinionsTest do
         opinion_id: opinion.id
       }
 
-      {:ok, vote} = %Vote{}
-      |> Vote.changeset(vote_attrs)
-      |> Repo.insert()
+      {:ok, vote} =
+        %Vote{}
+        |> Vote.changeset(vote_attrs)
+        |> Repo.insert()
 
       # Verify the vote exists
       assert Repo.get(Vote, vote.id) != nil
@@ -110,9 +111,10 @@ defmodule YouCongress.OpinionsTest do
         opinion_id: opinion.id
       }
 
-      {:ok, vote} = %Vote{}
-      |> Vote.changeset(vote_attrs)
-      |> Repo.insert()
+      {:ok, vote} =
+        %Vote{}
+        |> Vote.changeset(vote_attrs)
+        |> Repo.insert()
 
       # Verify the vote exists
       assert Repo.get(Vote, vote.id) != nil

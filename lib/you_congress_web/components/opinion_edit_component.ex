@@ -101,7 +101,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
 
         # If author was changed, update the associated votes' author_id
         if socket.assigns.selected_author_id &&
-           socket.assigns.selected_author_id != opinion.author_id do
+             socket.assigns.selected_author_id != opinion.author_id do
           Votes.update_author_for_opinion_votes(opinion.id, socket.assigns.selected_author_id)
         end
 
@@ -190,7 +190,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
         class="space-y-4"
       >
         <input type="hidden" name="opinion_id" value={@opinion.id} />
-
+        
     <!-- Opinion Content -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -203,7 +203,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-full"
           />
         </div>
-
+        
     <!-- Year -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
@@ -214,7 +214,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-32"
           />
         </div>
-
+        
     <!-- Source URL -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Source URL</label>
@@ -225,7 +225,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-full"
           />
         </div>
-
+        
     <!-- Author Selection -->
         <%= if assigns[:show_author] do %>
           <div class="relative">
@@ -263,8 +263,16 @@ defmodule YouCongressWeb.OpinionEditComponent do
                         <span class="font-normal block truncate">{author.name}</span>
                         <%= if @selected_author_id == author.id do %>
                           <span class="absolute inset-y-0 right-0 flex items-center pr-4">
-                            <svg class="h-5 w-5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
-                              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            <svg
+                              class="h-5 w-5 text-indigo-600"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fill-rule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clip-rule="evenodd"
+                              />
                             </svg>
                           </span>
                         <% end %>
@@ -276,7 +284,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             </div>
           </div>
         <% end %>
-
+        
     <!-- Voting Positions -->
         <%= if assigns[:show_voting_positions] && @opinion.votings && @opinion.votings != [] do %>
           <div class="space-y-3">
@@ -308,7 +316,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             <% end %>
           </div>
         <% end %>
-
+        
     <!-- Form Actions -->
         <div class="flex gap-2 pt-2">
           <button
@@ -368,5 +376,4 @@ defmodule YouCongressWeb.OpinionEditComponent do
       end)
     end
   end
-
 end

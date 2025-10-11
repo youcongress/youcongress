@@ -195,7 +195,6 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
     end)
   end
 
-
   # Helper function to get styling classes based on vote response
   defp get_vote_style(response) do
     case response do
