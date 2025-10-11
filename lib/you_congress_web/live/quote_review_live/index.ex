@@ -3,6 +3,7 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
 
   alias YouCongress.Opinions
   alias YouCongress.Halls
+  import YouCongressWeb.Tools.TimeAgo
 
   @impl true
   def mount(_params, session, socket) do

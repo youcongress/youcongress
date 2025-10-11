@@ -53,7 +53,10 @@
               {if quote.author, do: quote.author.name, else: "Unknown"}
               <%= if quote.year do %>
                 · <span>{quote.year}</span>
+              <% else %>
+                · <span>Unknown year</span>
               <% end %>
+              · <span>Added {short_time(quote.inserted_at)}</span>
               <%= if quote.source_url do %>
                 ·
                 <a
