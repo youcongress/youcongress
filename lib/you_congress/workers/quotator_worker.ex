@@ -14,7 +14,6 @@ defmodule YouCongress.Workers.QuotatorWorker do
 
   @impl Oban.Worker
   @spec perform(Oban.Job.t()) :: :ok | :error
-
   def perform(%Oban.Job{args: %{"voting_id" => voting_id, "user_id" => user_id}}) do
     voting = Votings.get_voting!(voting_id, preload: [votes: [:author]])
 
