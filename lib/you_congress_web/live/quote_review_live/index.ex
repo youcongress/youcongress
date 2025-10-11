@@ -14,7 +14,8 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
      |> assign(:page, 1)
      |> assign(:per_page, 20)
      |> assign(:has_more, true)
-     |> assign(:editing_quote_id, nil)}
+     |> assign(:editing_quote_id, nil)
+     |> assign(:sort_by, :desc)}
   end
 
   @impl true
@@ -61,6 +62,17 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
     {:noreply, assign(socket, :editing_quote_id, quote_id)}
   end
 
+  def handle_event("toggle-sort", _params, socket) do
+    new_sort_by = if socket.assigns.sort_by == :desc, do: :asc, else: :desc
+
+    {:noreply,
+     socket
+     |> assign(:sort_by, new_sort_by)
+     |> assign(:pending_quotes, [])
+     |> assign(:page, 1)
+     |> load_pending_quotes(1)}
+  end
+
   @impl true
   def handle_info({:opinion_updated, updated_opinion}, socket) do
     # Update the quote in the list
@@ -87,14 +99,14 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
   end
 
   defp load_pending_quotes(socket, page) do
-    %{assigns: %{per_page: per_page}} = socket
+    %{assigns: %{per_page: per_page, sort_by: sort_by}} = socket
     offset = (page - 1) * per_page
 
     quotes =
       Opinions.list_opinions(
         only_quotes: true,
         is_verified: false,
-        order_by: [desc: :id],
+        order_by: [{sort_by, :id}],
         limit: per_page,
         offset: offset,
         preload: [:author, :votings]
