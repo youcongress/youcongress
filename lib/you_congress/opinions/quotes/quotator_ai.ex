@@ -9,7 +9,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
   alias YouCongress.Opinions.Quotes.Quotator
 
   @model :"gpt-5"
-  @timeout_in_min 45
+  @timeout_in_min 60
 
   def number_of_quotes, do: Quotator.number_of_quotes()
 
@@ -81,7 +81,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     """
     Question: #{question_title}
 
-    Task: find #{number_of_quotes()} quotes from different public figures where its clear that they agree or disagree the wholequestion above – not just a part of it.
+    Task: find #{number_of_quotes()} quotes from different public figures where its clear that they agree or disagree the whole question above – not just a part of it (this is vital).
 
     Constraints:
     - Each of the #{number_of_quotes()} quotes must be verbatim and attributable.
@@ -93,6 +93,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     - The source_url must include the exact quote text.
     - wikipedia_url and https://x.com/[twitter_username] must exist and belong to the author.
     - Authors must be experts, public figures or relevant organisations.
+    - The author is the person who wrote the quote. Do not use the media outlet as the author unless the quote is from an editorial by that outlet.
     - Do not include quotes from a document/open letter/paper with multiple signers.
     - The quote must have one single author, a person or an organisation.
     - Fill all fields in the JSON. Use empty string when unavailable.
