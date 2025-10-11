@@ -87,11 +87,11 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     - Each of the #{number_of_quotes()} quotes must be verbatim and attributable.
     - Quotes must refer to the whole question and not just a part of it. For example, if the question is "Should a CERN for AI have a location with thousands of researchers?", quotes should make reference to a centralized or partially centralized CERN of AI with thousands of researchers in the same place – not just quotes about a CERN for AI or a CERN for AI as a network of AI researchers.
     - Quotes should be of two or three paragraphs long and at least three sentences long, if possible.
-    - If the quote is in a different language, it should be translated to English.
+    - If the quote is in a different language, translate it to English.
     - Ideally, quotes should be informative about the reasons why they agree or provide other useful information related to the question.
     - Prefer the original or primary source or, in its absence, a reliable secondary source.
     - The source_url must include the exact quote text.
-    - wikipedia_url and https://x.com/[twitter_username] must exist and belong to the author.
+    - If you provide wikipedia_url and https://x.com/[twitter_username], the pages must exist and belong to the author.
     - Authors must be experts, public figures or relevant organisations.
     - The author is the person who wrote the quote. Do not use the media outlet as the author unless the quote is from an editorial by that outlet.
     - Do not include quotes from a document/open letter/paper with multiple signers.
