@@ -182,6 +182,28 @@ defmodule YouCongress.Halls do
     tags
   end
 
+  @doc """
+  Returns halls that have pending quotes (unverified quotes with source URLs).
+  """
+  def list_halls_with_pending_quotes do
+    import Ecto.Query, warn: false
+
+    from(h in Hall,
+      join: hv in "halls_votings",
+      on: hv.hall_id == h.id,
+      join: v in "votings",
+      on: hv.voting_id == v.id,
+      join: ov in "opinions_votings",
+      on: ov.voting_id == v.id,
+      join: o in "opinions",
+      on: ov.opinion_id == o.id,
+      where: not is_nil(o.source_url) and is_nil(o.verified_at),
+      distinct: h.id,
+      order_by: h.name
+    )
+    |> Repo.all()
+  end
+
   defp classifier_impl do
     Application.get_env(:you_congress, :hall_classifier, YouCongress.Halls.Classification)
   end

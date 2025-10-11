@@ -1,22 +1,36 @@
 <div class="max-w-5xl mx-auto py-6">
   <h1 class="text-2xl font-semibold mb-4">Pending Quotes for Review</h1>
 
+  <div class="mb-3 flex justify-between items-center">
+    <div class="text-sm text-gray-700">
+      Only verify if the source includes the author's quote and it is relevant to the poll.
+    </div>
+    <div class="flex gap-2">
+      <form phx-change="filter-hall">
+        <select
+          name="hall"
+          class="px-3 py-1 text-sm rounded bg-gray-200 text-gray-700 hover:bg-gray-300 border border-gray-300"
+        >
+          <option value="">All halls</option>
+          <%= for hall <- @halls do %>
+            <option value={hall.name} selected={@selected_hall == hall.name}>
+              {hall.name}
+            </option>
+          <% end %>
+        </select>
+      </form>
+      <button
+        phx-click="toggle-sort"
+        class="px-3 py-1 text-sm rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+      >
+        Sort by date {if @sort_by == :desc, do: "↓", else: "↑"}
+      </button>
+    </div>
+  </div>
+
   <%= if @pending_quotes == [] do %>
     <div class="text-gray-600">No quotes pending review.</div>
   <% else %>
-    <div class="mb-3 flex justify-between items-center">
-      <div class="text-sm text-gray-700">
-        Only verify if the source includes the author's quote and it is relevant to the poll.
-      </div>
-      <div class="flex gap-2">
-        <button
-          phx-click="toggle-sort"
-          class="px-3 py-1 text-sm rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
-        >
-          Sort by date {if @sort_by == :desc, do: "↓", else: "↑"}
-        </button>
-      </div>
-    </div>
     <div class="space-y-4">
       <%= for quote <- @pending_quotes do %>
         <div class="border rounded p-4 bg-white shadow-sm">
