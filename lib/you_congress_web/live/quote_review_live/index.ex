@@ -2,10 +2,13 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Opinions
+  alias YouCongress.Halls
 
   @impl true
   def mount(_params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
+
+    halls_with_pending_quotes = Halls.list_halls_with_pending_quotes()
 
     {:ok,
      socket
@@ -15,7 +18,9 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
      |> assign(:per_page, 20)
      |> assign(:has_more, true)
      |> assign(:editing_quote_id, nil)
-     |> assign(:sort_by, :desc)}
+     |> assign(:sort_by, :desc)
+     |> assign(:selected_hall, nil)
+     |> assign(:halls, halls_with_pending_quotes)}
   end
 
   @impl true
@@ -73,6 +78,19 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
      |> load_pending_quotes(1)}
   end
 
+  def handle_event("filter-hall", params, socket) do
+    hall_name = params["hall"] || params["value"]
+
+    selected_hall = if hall_name == "", do: nil, else: hall_name
+
+    {:noreply,
+     socket
+     |> assign(:selected_hall, selected_hall)
+     |> assign(:pending_quotes, [])
+     |> assign(:page, 1)
+     |> load_pending_quotes(1)}
+  end
+
   @impl true
   def handle_info({:opinion_updated, updated_opinion}, socket) do
     # Update the quote in the list
@@ -99,18 +117,21 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
   end
 
   defp load_pending_quotes(socket, page) do
-    %{assigns: %{per_page: per_page, sort_by: sort_by}} = socket
+    %{assigns: %{per_page: per_page, sort_by: sort_by, selected_hall: selected_hall}} = socket
     offset = (page - 1) * per_page
 
-    quotes =
-      Opinions.list_opinions(
-        only_quotes: true,
-        is_verified: false,
-        order_by: [{sort_by, :id}],
-        limit: per_page,
-        offset: offset,
-        preload: [:author, :votings]
-      )
+    opts = [
+      only_quotes: true,
+      is_verified: false,
+      order_by: [{sort_by, :id}],
+      limit: per_page,
+      offset: offset,
+      preload: [:author, :votings]
+    ]
+
+    opts = if selected_hall, do: Keyword.put(opts, :hall_name, selected_hall), else: opts
+
+    quotes = Opinions.list_opinions(opts)
 
     # Load author votes for each quote's votings
     quotes_with_votes = load_author_votes_for_quotes(quotes)
@@ -172,6 +193,7 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
       end
     end)
   end
+
 
   # Helper function to get styling classes based on vote response
   defp get_vote_style(response) do

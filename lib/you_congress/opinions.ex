@@ -184,6 +184,23 @@ defmodule YouCongress.Opinions do
           on: ov.opinion_id == q.id,
           where: ov.voting_id in ^voting_ids
 
+      {:hall_name, hall_name}, query when not is_nil(hall_name) ->
+        # Use a subquery to avoid DISTINCT ON ordering issues
+        hall_opinion_ids =
+          from q in Opinion,
+            join: ov in "opinions_votings",
+            on: ov.opinion_id == q.id,
+            join: v in "votings",
+            on: ov.voting_id == v.id,
+            join: hv in "halls_votings",
+            on: hv.voting_id == v.id,
+            join: h in "halls",
+            on: hv.hall_id == h.id,
+            where: h.name == ^hall_name,
+            select: q.id
+
+        from q in query, where: q.id in subquery(hall_opinion_ids)
+
       {:has_votings, true}, query ->
         from q in query,
           join: ov in "opinions_votings",
