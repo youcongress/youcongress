@@ -13,7 +13,7 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   alias YouCongress.Votes.Answers
   alias YouCongress.Votings
 
-  @number_of_quotes 10
+  @number_of_quotes 5
   @type quote_item :: map()
 
   @spec number_of_quotes() :: integer()
