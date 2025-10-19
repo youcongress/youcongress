@@ -94,7 +94,7 @@ defmodule YouCongressWeb.VotingLive.Show do
         {:noreply, put_flash(socket, :error, "You don't have permission to find quotes.")}
 
       true ->
-        %{voting_id: voting_id, user_id: current_user.id}
+        %{voting_id: voting_id, user_id: current_user.id, num_times: 5}
         |> QuotatorWorker.new()
         |> Oban.insert()
 
