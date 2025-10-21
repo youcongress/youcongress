@@ -12,11 +12,11 @@ defmodule YouCongressWeb.HomeLive.Index do
       socket
       |> assign(
         :page_title,
-        "Quote-Backed AI Safety Polls with Delegation | YouCongress"
+        "AI Safety & Governance liquid democracy polls with verifiable quotes | YouCongress"
       )
       |> assign(
         :page_description,
-        "Vote directly or delegate to trusted experts. When someone hasn't participated on YouCongress, their stance is grounded in verifiable, sourced quotes—clear evidence of what citizens prefer on concrete safety proposals."
+        "Platform that informs citizens, finds solutions and shows legislators how people want to solve our most pressing challenges. Uses verifiable quotes and liquid democracy polls. Starting with AI Safety & Governance."
       )
       |> assign(:skip_page_suffix, true)
       |> assign(:live_action, :new)
