@@ -210,6 +210,9 @@ defmodule YouCongress.Opinions do
       {:content, content}, query ->
         from q in query, where: q.content == ^content
 
+      {:content_contains, content}, query ->
+        from q in query, where: ilike(q.content, ^"%#{content}%")
+
       {:initial_ancestry, ancestry}, query ->
         from q in query, where: fragment("? LIKE ?", q.ancestry, ^"#{ancestry}/%")
 

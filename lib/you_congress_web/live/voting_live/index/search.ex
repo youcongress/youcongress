@@ -1,6 +1,6 @@
 defmodule YouCongressWeb.VotingLive.Index.Search do
   @moduledoc """
-  Search polls and delegates
+  Search polls, delegates, halls, and quotes
   """
   use Phoenix.Component
   use Phoenix.VerifiedRoutes, endpoint: YouCongressWeb.Endpoint, router: YouCongressWeb.Router
@@ -13,6 +13,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
   attr :votings, :map, required: true
   attr :authors, :map, required: true
   attr :halls, :map, required: true
+  attr :quotes, :map, required: true
 
   def render(assigns) do
     ~H"""
@@ -25,6 +26,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
             tab={:delegates}
             label={"Delegates (#{length(@authors)})"}
           />
+          <Search.tab search_tab={@search_tab} tab={:quotes} label={"Quotes (#{length(@quotes)})"} />
           <Search.tab search_tab={@search_tab} tab={:halls} label={"Halls (#{length(@halls)})"} />
         </nav>
       </div>
@@ -57,6 +59,35 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
           <tr>
             <td class="py-4 border-b border-gray-200">
               <a href={~p"/halls/#{hall.name}"}>{hall.name}</a>
+            </td>
+          </tr>
+        <% end %>
+      </table>
+    <% end %>
+    <%= if @search_tab == :quotes do %>
+      <table>
+        <%= for quote <- @quotes do %>
+          <tr>
+            <td class="py-4 border-b border-gray-200">
+              <div class="space-y-2">
+                <div class="text-sm text-gray-600">
+                  <a href={author_path(quote.author)} class="font-medium hover:underline">
+                    {quote.author.name || "x/#{quote.author.twitter_username}"}
+                  </a>
+                </div>
+                <div class="text-sm">
+                  <a href={~p"/c/#{quote.id}"} class="hover:bg-gray-50 block p-2 -m-2 rounded">
+                    {quote.content}
+                  </a>
+                </div>
+                <%= if quote.source_url do %>
+                  <div class="text-xs text-gray-500">
+                    <a href={quote.source_url} target="_blank" class="hover:underline">
+                      Source
+                    </a>
+                  </div>
+                <% end %>
+              </div>
             </td>
           </tr>
         <% end %>

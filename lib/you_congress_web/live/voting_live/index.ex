@@ -6,6 +6,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   alias YouCongress.Authors
   alias YouCongress.Delegations
   alias YouCongress.Likes
+  alias YouCongress.Opinions
   alias YouCongress.OpinionsVotings
   alias YouCongress.Votes
   alias YouCongress.Votings
@@ -34,6 +35,7 @@ defmodule YouCongressWeb.VotingLive.Index do
       |> assign(:halls, [])
       |> assign(:authors, [])
       |> assign(:votings, [])
+      |> assign(:quotes, [])
       |> assign(:order_by_date, true)
       |> assign(:hall_name, params["hall"] || @default_hall)
       |> assign(:new_poll_visible?, false)
@@ -104,11 +106,13 @@ defmodule YouCongressWeb.VotingLive.Index do
     votings = Votings.list_votings(title_contains: search, preload: [:halls])
     authors = Authors.list_authors(search: search)
     halls = Halls.list_halls(name_contains: search)
+    quotes = Opinions.list_opinions(content_contains: search, preload: [:author])
 
     search_tab =
       cond do
         Enum.any?(votings) -> :polls
         Enum.any?(authors) -> :delegates
+        Enum.any?(quotes) -> :quotes
         Enum.any?(halls) -> :halls
         true -> :polls
       end
@@ -119,7 +123,8 @@ defmodule YouCongressWeb.VotingLive.Index do
        search: search,
        search_tab: search_tab,
        authors: authors,
-       halls: halls
+       halls: halls,
+       quotes: quotes
      )}
   end
 
@@ -133,6 +138,10 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   def handle_event("search-tab", %{"tab" => "halls"}, socket) do
     {:noreply, assign(socket, search_tab: :halls)}
+  end
+
+  def handle_event("search-tab", %{"tab" => "quotes"}, socket) do
+    {:noreply, assign(socket, search_tab: :quotes)}
   end
 
   def handle_event("toggle-switch", _, socket) do

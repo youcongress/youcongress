@@ -46,7 +46,7 @@
 </div>
 
 <%= if @search do %>
-  <Search.render authors={@authors} votings={@votings} halls={@halls} search_tab={@search_tab} />
+  <Search.render authors={@authors} votings={@votings} halls={@halls} quotes={@quotes} search_tab={@search_tab} />
 <% else %>
   <div :if={@new_poll_visible?}>
     <.live_component
