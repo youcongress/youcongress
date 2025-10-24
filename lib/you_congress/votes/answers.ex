@@ -8,24 +8,6 @@ defmodule YouCongress.Votes.Answers do
   alias YouCongress.Repo
   alias YouCongress.Votes.Answers.Answer
 
-  @basic_answer_id_response_map %{
-    1 => "Strongly agree",
-    2 => "Agree",
-    3 => "Abstain",
-    4 => "N/A",
-    5 => "Disagree",
-    6 => "Strongly disagree"
-  }
-
-  @basic_response_answer_id_map %{
-    "Strongly agree" => 1,
-    "Agree" => 2,
-    "Abstain" => 3,
-    "N/A" => 4,
-    "Disagree" => 5,
-    "Strongly disagree" => 6
-  }
-
   @basic_responses [
     "Strongly agree",
     "Agree",
@@ -37,27 +19,33 @@ defmodule YouCongress.Votes.Answers do
 
   @private_ids [4]
 
-  def basic_response_answer_id_map, do: @basic_response_answer_id_map
-
-  def basic_answer_id_response_map, do: @basic_answer_id_response_map
-
-  def get_answer(id) do
-    @basic_answer_id_response_map[id]
-  end
-
-  def answer_id_by_response(response) do
-    @basic_response_answer_id_map[response]
-  end
-
-  def get_answer_id(response) do
-    @basic_response_answer_id_map[response]
-  end
-
   def basic_responses, do: @basic_responses
 
   def private_ids, do: @private_ids
 
-  def no_answer_id, do: @basic_response_answer_id_map["N/A"]
+  def basic_response_answer_id_map do
+    list_answers()
+    |> Enum.into(%{}, fn %Answer{id: id, response: response} -> {response, id} end)
+  end
+
+  def basic_answer_id_response_map do
+    list_answers()
+    |> Enum.into(%{}, fn %Answer{id: id, response: response} -> {id, response} end)
+  end
+
+  def get_answer(id) do
+    basic_answer_id_response_map()[id]
+  end
+
+  def answer_id_by_response(response) do
+    basic_response_answer_id_map()[response]
+  end
+
+  def get_answer_id(response) do
+    basic_response_answer_id_map()[response]
+  end
+
+  def no_answer_id, do: get_answer_id("N/A")
 
   @doc """
   Returns the list of answers.
@@ -69,6 +57,7 @@ defmodule YouCongress.Votes.Answers do
 
   """
   def list_answers do
+    ensure_basic_answers()
     Repo.all(Answer)
   end
 
@@ -100,6 +89,7 @@ defmodule YouCongress.Votes.Answers do
       nil
   """
   def get_answer_by_response(response) do
+    ensure_basic_answers()
     Repo.get_by(Answer, response: response)
   end
 
@@ -113,11 +103,15 @@ defmodule YouCongress.Votes.Answers do
 
   """
   def get_random_answer do
+    ensure_basic_answers()
     Repo.one(from(a in Answer, order_by: [asc: fragment("RANDOM()")], limit: 1))
   end
 
   def get_basic_answer_id(response) do
-    @basic_response_answer_id_map[response]
+    case get_answer_by_response(response) do
+      %Answer{id: id} -> id
+      _ -> nil
+    end
   end
 
   @doc """
@@ -183,5 +177,21 @@ defmodule YouCongress.Votes.Answers do
   """
   def change_answer(%Answer{} = answer, attrs \\ %{}) do
     Answer.changeset(answer, attrs)
+  end
+
+  defp ensure_basic_answers do
+    existing_responses =
+      Answer
+      |> select([a], a.response)
+      |> Repo.all()
+      |> MapSet.new()
+
+    @basic_responses
+    |> Enum.reject(&MapSet.member?(existing_responses, &1))
+    |> Enum.each(fn response ->
+      %Answer{}
+      |> Answer.changeset(%{response: response})
+      |> Repo.insert!()
+    end)
   end
 end
