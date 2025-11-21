@@ -16,7 +16,7 @@ defmodule YouCongressWeb.HomeLive.Index do
       )
       |> assign(
         :page_description,
-        "Platform that informs citizens, finds solutions and shows legislators how people want to solve our most pressing challenges. Uses verifiable quotes and liquid democracy polls. Starting with AI Safety & Governance."
+        "We gather verifiable policy quotes and use liquid democracy polling to surface what experts and citizens are signaling — beginning with AI safety and governance."
       )
       |> assign(:skip_page_suffix, true)
       |> assign(:live_action, :new)
