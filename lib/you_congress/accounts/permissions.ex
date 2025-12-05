@@ -54,4 +54,11 @@ defmodule YouCongress.Accounts.Permissions do
   def can_verify_opinion?(%User{role: "admin"}), do: true
   def can_verify_opinion?(%User{role: "moderator"}), do: true
   def can_verify_opinion?(_), do: false
+
+  @doc """
+  Checks if a user has a blocked role (spam or blocked).
+  """
+  @spec blocked?(User.t() | nil) :: boolean()
+  def blocked?(%User{role: role}) when role in ["spam", "blocked"], do: true
+  def blocked?(_), do: false
 end
