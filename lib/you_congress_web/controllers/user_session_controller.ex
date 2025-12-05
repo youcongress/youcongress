@@ -2,6 +2,7 @@ defmodule YouCongressWeb.UserSessionController do
   use YouCongressWeb, :controller
 
   alias YouCongress.Accounts
+  alias YouCongress.Accounts.User
   alias YouCongressWeb.UserAuth
 
   def create(conn, %{"_action" => "registered"} = params) do
@@ -21,16 +22,32 @@ defmodule YouCongressWeb.UserSessionController do
   defp create(conn, %{"user" => user_params}, info) do
     %{"email" => email, "password" => password} = user_params
 
-    if user = Accounts.get_user_by_email_and_password(email, password) do
-      conn
-      |> put_flash(:info, info)
-      |> UserAuth.log_in_user(user, user_params)
-    else
-      # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
-      conn
-      |> put_flash(:error, "Invalid email or password")
-      |> put_flash(:email, String.slice(email, 0, 160))
-      |> redirect(to: ~p"/log_in")
+    user = Accounts.get_user_by_email(email)
+
+    cond do
+      user && Accounts.blocked_role?(user) ->
+        # Check password to avoid timing attacks
+        _ = User.valid_password?(user, password)
+
+        conn
+        |> put_flash(
+          :error,
+          "Your account has been blocked as it seemed spam. If you're a real person or a useful bot, please contact support@youcongress.org if this is an error."
+        )
+        |> put_flash(:email, String.slice(email, 0, 160))
+        |> redirect(to: ~p"/log_in")
+
+      user = Accounts.get_user_by_email_and_password(email, password) ->
+        conn
+        |> put_flash(:info, info)
+        |> UserAuth.log_in_user(user, user_params)
+
+      true ->
+        # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
+        conn
+        |> put_flash(:error, "Invalid email or password")
+        |> put_flash(:email, String.slice(email, 0, 160))
+        |> redirect(to: ~p"/log_in")
     end
   end
 

@@ -94,8 +94,19 @@ defmodule YouCongress.Accounts do
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
     user = Repo.get_by(User, email: email)
-    if User.valid_password?(user, password), do: user
+
+    if user && User.valid_password?(user, password) && !blocked_role?(user) do
+      user
+    else
+      nil
+    end
   end
+
+  @doc """
+  Checks if a user has a blocked role (spam or blocked).
+  """
+  def blocked_role?(%User{role: role}) when role in ["spam", "blocked"], do: true
+  def blocked_role?(_), do: false
 
   @doc """
   Gets a single user.
@@ -326,8 +337,13 @@ defmodule YouCongress.Accounts do
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
 
-    Repo.one(query)
-    |> Repo.preload(:author)
+    user = Repo.one(query)
+
+    if user && !blocked_role?(user) do
+      Repo.preload(user, :author)
+    else
+      nil
+    end
   end
 
   @doc """

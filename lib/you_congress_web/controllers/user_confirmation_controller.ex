@@ -7,9 +7,18 @@ defmodule YouCongressWeb.UserConfirmationController do
   def confirm(conn, %{"token" => token}) do
     case Accounts.confirm_user(token) do
       {:ok, user} ->
-        conn
-        |> UserAuth.log_in_user_without_redirect(user)
-        |> redirect(to: ~p"/sign_up")
+        if Accounts.blocked_role?(user) do
+          conn
+          |> put_flash(
+            :error,
+            "Your account has been blocked as it seemed spam. If you're a real person or a useful bot, please contact support@youcongress.org if this is an error."
+          )
+          |> redirect(to: ~p"/log_in")
+        else
+          conn
+          |> UserAuth.log_in_user_without_redirect(user)
+          |> redirect(to: ~p"/sign_up")
+        end
 
       :error ->
         conn

@@ -29,11 +29,20 @@ defmodule YouCongressWeb.UserAuth do
   if you are not using LiveView.
   """
   def log_in_user(conn, user, params \\ %{}) do
-    user_return_to = get_session(conn, :user_return_to)
+    if user && Accounts.blocked_role?(user) do
+      conn
+      |> put_flash(
+        :error,
+        "Your account has been blocked as it seemed spam. If you're a real person or a useful bot, please contact support@youcongress.org if this is an error."
+      )
+      |> redirect(to: ~p"/log_in")
+    else
+      user_return_to = get_session(conn, :user_return_to)
 
-    conn
-    |> log_in_user_without_redirect(user, params)
-    |> redirect(to: user_return_to || signed_in_path(conn))
+      conn
+      |> log_in_user_without_redirect(user, params)
+      |> redirect(to: user_return_to || signed_in_path(conn))
+    end
   end
 
   def log_in_user_without_redirect(conn, user, params \\ %{}) do
