@@ -3,8 +3,10 @@ defmodule YouCongressWeb.UserAuthTest do
 
   alias Phoenix.LiveView
   alias YouCongress.Accounts
+  alias YouCongress.Repo
   alias YouCongressWeb.UserAuth
   import YouCongress.AccountsFixtures
+  import Ecto.Changeset
 
   @remember_me_cookie "_you_congress_web_user_remember_me"
 
@@ -267,6 +269,95 @@ defmodule YouCongressWeb.UserAuthTest do
       conn = conn |> assign(:current_user, user) |> UserAuth.require_authenticated_user([])
       refute conn.halted
       refute conn.status
+    end
+  end
+
+  describe "reject_blocked_user/2" do
+    test "logs out user with spam role and redirects", %{conn: conn, user: user} do
+      # Update user role to spam directly (bypassing validation)
+      user_token = Accounts.generate_user_session_token(user)
+      live_socket_id = "users_sessions:#{Base.url_encode64(user_token)}"
+      YouCongressWeb.Endpoint.subscribe(live_socket_id)
+
+      {:ok, blocked_user} =
+        user
+        |> change(role: "spam")
+        |> Repo.update()
+
+      conn =
+        conn
+        |> assign(:current_user, blocked_user)
+        |> put_session(:user_token, user_token)
+        |> put_session(:live_socket_id, live_socket_id)
+        |> put_req_cookie(@remember_me_cookie, user_token)
+        |> fetch_cookies()
+        |> fetch_flash()
+        |> UserAuth.reject_blocked_user([])
+
+      assert conn.halted
+      assert redirected_to(conn) == ~p"/"
+      refute get_session(conn, :user_token)
+      assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Your account has been blocked as it seemed spam. If you're a real person or a useful bot, please contact support@youcongress.org if this is an error."
+
+      assert_receive %Phoenix.Socket.Broadcast{event: "disconnect", topic: ^live_socket_id}
+      refute Accounts.get_user_by_session_token(user_token)
+    end
+
+    test "logs out user with blocked role and redirects", %{conn: conn, user: user} do
+      # Update user role to blocked directly (bypassing validation)
+      user_token = Accounts.generate_user_session_token(user)
+      live_socket_id = "users_sessions:#{Base.url_encode64(user_token)}"
+      YouCongressWeb.Endpoint.subscribe(live_socket_id)
+
+      {:ok, blocked_user} =
+        user
+        |> change(role: "blocked")
+        |> Repo.update()
+
+      conn =
+        conn
+        |> assign(:current_user, blocked_user)
+        |> put_session(:user_token, user_token)
+        |> put_session(:live_socket_id, live_socket_id)
+        |> put_req_cookie(@remember_me_cookie, user_token)
+        |> fetch_cookies()
+        |> fetch_flash()
+        |> UserAuth.reject_blocked_user([])
+
+      assert conn.halted
+      assert redirected_to(conn) == ~p"/"
+      refute get_session(conn, :user_token)
+      assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Your account has been blocked as it seemed spam. If you're a real person or a useful bot, please contact support@youcongress.org if this is an error."
+
+      assert_receive %Phoenix.Socket.Broadcast{event: "disconnect", topic: ^live_socket_id}
+      refute Accounts.get_user_by_session_token(user_token)
+    end
+
+    test "does not log out user with normal role", %{conn: conn, user: user} do
+      user_token = Accounts.generate_user_session_token(user)
+
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> put_session(:user_token, user_token)
+        |> UserAuth.reject_blocked_user([])
+
+      refute conn.halted
+      assert get_session(conn, :user_token) == user_token
+      assert conn.assigns.current_user.id == user.id
+    end
+
+    test "does not log out if user is nil", %{conn: conn} do
+      conn = UserAuth.reject_blocked_user(conn, [])
+
+      refute conn.halted
+      refute get_session(conn, :user_token)
     end
   end
 end
