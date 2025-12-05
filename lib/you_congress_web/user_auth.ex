@@ -29,20 +29,11 @@ defmodule YouCongressWeb.UserAuth do
   if you are not using LiveView.
   """
   def log_in_user(conn, user, params \\ %{}) do
-    if user && Accounts.blocked_role?(user) do
-      conn
-      |> put_flash(
-        :error,
-        "Your account has been blocked as it seemed spam. If you're a real person or a useful bot, please contact support@youcongress.org if this is an error."
-      )
-      |> redirect(to: ~p"/log_in")
-    else
-      user_return_to = get_session(conn, :user_return_to)
+    user_return_to = get_session(conn, :user_return_to)
 
-      conn
-      |> log_in_user_without_redirect(user, params)
-      |> redirect(to: user_return_to || signed_in_path(conn))
-    end
+    conn
+    |> log_in_user_without_redirect(user, params)
+    |> redirect(to: user_return_to || signed_in_path(conn))
   end
 
   def log_in_user_without_redirect(conn, user, params \\ %{}) do
@@ -110,6 +101,35 @@ defmodule YouCongressWeb.UserAuth do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && Accounts.get_user_by_session_token(user_token)
     assign(conn, :current_user, user)
+  end
+
+  @doc """
+  Checks if the current user has a blocked role (spam or blocked)
+  and logs them out if they do.
+  """
+  def reject_blocked_user(conn, _opts) do
+    user = conn.assigns[:current_user]
+
+    if YouCongress.Accounts.Permissions.blocked?(user) do
+      user_token = get_session(conn, :user_token)
+      user_token && Accounts.delete_user_session_token(user_token)
+
+      if live_socket_id = get_session(conn, :live_socket_id) do
+        YouCongressWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
+      end
+
+      conn
+      |> renew_session()
+      |> delete_resp_cookie(@remember_me_cookie)
+      |> put_flash(
+        :error,
+        "Your account has been blocked as it seemed spam. If you're a real person or a useful bot, please contact support@youcongress.org if this is an error."
+      )
+      |> redirect(to: ~p"/")
+      |> halt()
+    else
+      conn
+    end
   end
 
   def redirect_to_user_registration_if_email_or_phone_unconfirmed(conn, _opts) do

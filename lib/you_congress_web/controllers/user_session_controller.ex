@@ -4,6 +4,7 @@ defmodule YouCongressWeb.UserSessionController do
   alias YouCongress.Accounts
   alias YouCongress.Accounts.User
   alias YouCongressWeb.UserAuth
+  alias YouCongress.Accounts.Permissions
 
   def create(conn, %{"_action" => "registered"} = params) do
     create(conn, params, "Account created successfully!")
@@ -25,7 +26,7 @@ defmodule YouCongressWeb.UserSessionController do
     user = Accounts.get_user_by_email(email)
 
     cond do
-      user && Accounts.blocked_role?(user) ->
+      user && Permissions.blocked?(user) ->
         # Check password to avoid timing attacks
         _ = User.valid_password?(user, password)
 
@@ -34,7 +35,6 @@ defmodule YouCongressWeb.UserSessionController do
           :error,
           "Your account has been blocked as it seemed spam. If you're a real person or a useful bot, please contact support@youcongress.org if this is an error."
         )
-        |> put_flash(:email, String.slice(email, 0, 160))
         |> redirect(to: ~p"/log_in")
 
       user = Accounts.get_user_by_email_and_password(email, password) ->

@@ -2,12 +2,13 @@ defmodule YouCongressWeb.UserConfirmationController do
   use YouCongressWeb, :controller
 
   alias YouCongress.Accounts
+  alias YouCongress.Accounts.Permissions
   alias YouCongressWeb.UserAuth
 
   def confirm(conn, %{"token" => token}) do
     case Accounts.confirm_user(token) do
       {:ok, user} ->
-        if Accounts.blocked_role?(user) do
+        if Permissions.blocked?(user) do
           conn
           |> put_flash(
             :error,
