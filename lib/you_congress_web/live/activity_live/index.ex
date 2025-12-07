@@ -146,7 +146,7 @@ defmodule YouCongressWeb.ActivityLive.Index do
   def get_current_user_votes_by_voting_id(nil), do: %{}
 
   def get_current_user_votes_by_voting_id(current_user) do
-    [author_ids: [current_user.author_id], preload: [:answer]]
+    [author_ids: [current_user.author_id]]
     |> Votes.list_votes()
     |> Enum.reduce(%{}, fn vote, acc -> Map.put(acc, vote.voting_id, vote) end)
   end

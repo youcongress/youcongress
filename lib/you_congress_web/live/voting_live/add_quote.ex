@@ -6,7 +6,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
   alias Phoenix.LiveView.Socket
   alias YouCongress.Votings
   alias YouCongress.Authors
-  alias YouCongress.Votes.Answers
+
   alias YouCongress.Votes
   alias YouCongress.Opinions
   alias YouCongress.OpinionsVotings
@@ -58,7 +58,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
          assign(socket,
            voting: voting,
            form: form,
-           agree_rate_options: Answers.basic_responses(),
+           agree_rate_options: ["For", "Against", "Abstain"],
            errors: nil,
            author: nil,
            twitter_username: nil,
@@ -81,7 +81,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
           |> assign(
             voting: voting,
             form: form,
-            agree_rate_options: Answers.basic_responses(),
+            agree_rate_options: ["For", "Against", "Abstain"],
             errors: nil,
             author: author,
             twitter_username: author.twitter_username,
@@ -212,18 +212,18 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
         socket
       ) do
     %{assigns: %{voting: voting, author: author}} = socket
-    answer_id = Answers.get_answer_id(response)
+    answer = String.downcase(response || "") |> String.to_existing_atom()
 
     case Votes.get_by(voting_id: voting.id, author_id: author.id) do
       nil ->
-        create_vote_and_opinion(voting, author, answer_id, opinion, source_url, socket)
+        create_vote_and_opinion(voting, author, answer, opinion, source_url, socket)
 
       vote ->
-        create_opinion_and_update_vote(vote, author, answer_id, opinion, source_url, socket)
+        create_opinion_and_update_vote(vote, author, answer, opinion, source_url, socket)
     end
   end
 
-  defp create_vote_and_opinion(voting, author, answer_id, opinion, source_url, socket) do
+  defp create_vote_and_opinion(voting, author, answer, opinion, source_url, socket) do
     %{assigns: %{current_user: current_user}} = socket
 
     with {:ok, %{opinion: opinion}} <-
@@ -246,7 +246,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
            Votes.create_vote(%{
              voting_id: voting.id,
              author_id: author.id,
-             answer_id: answer_id,
+             answer: answer,
              opinion_id: opinion.id
            }) do
       Track.event("Add Quote", current_user)
@@ -273,7 +273,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
     end
   end
 
-  defp create_opinion_and_update_vote(vote, author, answer_id, opinion, source_url, socket) do
+  defp create_opinion_and_update_vote(vote, author, answer, opinion, source_url, socket) do
     %{assigns: %{current_user: current_user, voting: voting}} = socket
 
     with {:ok, %{opinion: opinion}} <-
@@ -295,7 +295,7 @@ defmodule YouCongressWeb.VotingLive.AddQuote do
          {:ok, _vote} <-
            Votes.update_vote(vote, %{
              opinion_id: opinion.id,
-             answer_id: answer_id,
+             answer: answer,
              twin: false
            }) do
       Track.event("Add Quote", current_user)

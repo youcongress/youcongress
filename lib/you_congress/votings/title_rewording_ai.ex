@@ -8,7 +8,7 @@ defmodule YouCongress.Votings.TitleRewordingAI do
   @prompt """
   Generate two questions from the prompt so:
   - It is short (more like a title) and grammatically correct in English. Translate to English if it's in a different language.
-  - It should be a yes/no question which starts with "Should we...", "Shall we...?" or similar
+  - It should be a policy title such as "Build a CERN for AI" or "Carbon tax" instead of a yes/no question which starts with "Should we...", "Shall we...?" or similar
   - It is neutral and not offensive as it's going to be voted and discussed among diverse people.
   - Ideally, it should be about topics that are relevant both locally and globally.
   - The first one should be faithful to the prompt but with correct grammar, in the form of a sensible yes/no question and translated to English if it was in a different language.
@@ -22,9 +22,9 @@ defmodule YouCongress.Votings.TitleRewordingAI do
   @answer """
   {
     "questions": [
-      "Should we use more nuclear energy?",
-      "Is nuclear energy safe?",
-      "Shall we invest in nuclear energy?"
+      "Build a CERN for AI",
+      "Carbon tax",
+      "Space exploration"
     ]
   }
   """

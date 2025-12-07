@@ -4,8 +4,6 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
   require Logger
 
   alias YouCongress.Votes
-  alias YouCongress.Votes.Answers
-  alias YouCongress.Votes.Answers.Answer
   alias YouCongress.Votes.Vote
   alias YouCongress.Votes.VoteFrequencies
   alias YouCongress.Track
@@ -21,21 +19,11 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
       <div class="flex">
         <CastVoteComponent.button
           voting={@voting}
-          response="Strongly agree"
-          label1="Strongly"
-          label2="Agree"
-          myself={@myself}
-          current_user_vote={@current_user_vote}
-          current_user={@current_user}
-          button_id="vote-strongly-agree"
-        />
-        <CastVoteComponent.button
-          voting={@voting}
-          response="Agree"
+          response="For"
           current_user_vote={@current_user_vote}
           current_user={@current_user}
           myself={@myself}
-          button_id="vote-agree"
+          button_id="vote-for"
         />
         <CastVoteComponent.button
           voting={@voting}
@@ -47,32 +35,14 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
         />
         <CastVoteComponent.button
           voting={@voting}
-          response="N/A"
+          response="Against"
           current_user_vote={@current_user_vote}
           current_user={@current_user}
           myself={@myself}
-          button_id="vote-na"
-        />
-        <CastVoteComponent.button
-          voting={@voting}
-          response="Disagree"
-          current_user_vote={@current_user_vote}
-          current_user={@current_user}
-          myself={@myself}
-          button_id="vote-disagree"
-        />
-        <CastVoteComponent.button
-          voting={@voting}
-          response="Strongly disagree"
-          label1="Strongly"
-          label2="Disagree"
-          myself={@myself}
-          current_user_vote={@current_user_vote}
-          current_user={@current_user}
-          button_id="vote-strongly-disagree"
+          button_id="vote-against"
         />
 
-        <%= if @current_user_vote do %>
+        <%= if @current_user_vote && @current_user_vote.answer do %>
           <%= if @current_user_vote.direct do %>
             <div class="pt-3 pl-1 hidden md:block text-xs">
               <button phx-click="delete-direct-vote" phx-target={@myself} class="text-sm">
@@ -86,7 +56,7 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
           <% end %>
         <% end %>
       </div>
-      <%= if @current_user_vote do %>
+      <%= if @current_user_vote && @current_user_vote.answer do %>
         <%= if @current_user_vote.direct do %>
           <div class="text-xs md:hidden">
             <button phx-click="delete-direct-vote" phx-target={@myself} class="text-sm">
@@ -152,13 +122,13 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
       <button
         id={"#{@voting.id}-#{@button_id}"}
         phx-click="vote"
-        phx-value-response={@response}
+        phx-value-response={String.downcase(@response)}
         phx-target={@myself}
         class={"rounded-lg bg-#{ResultsComponent.response_color(@response)}-500 h-12 w-14 md:w-20 flex md:p-4 flex-col justify-center items-center p-1 text-xs font-semibold text-white shadow-sm ring-1 ring-inset ring-#{ResultsComponent.response_color(@response)}-300 hover:bg-#{ResultsComponent.response_color(@response)}-600"}
       >
         <%= if assigns[:label1] && assigns[:label2] do %>
           <div>
-            {if @current_user_vote && @current_user_vote.answer.response == @response,
+            {if @current_user_vote && @current_user_vote.answer == String.downcase(@response) |> String.to_existing_atom(),
               do: "✓ "}
             {@label1}
           </div>
@@ -166,7 +136,7 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
             {@label2}
           </div>
         <% else %>
-          {if @current_user_vote && @current_user_vote.answer.response == @response,
+          {if @current_user_vote && @current_user_vote.answer == String.downcase(@response) |> String.to_existing_atom(),
             do: "✓ "}
           <div>{@response}</div>
         <% end %>
@@ -183,7 +153,7 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
       socket
       |> assign(:display_results, true)
       |> assign_results_variables()
-      |> assign(:current_user_vote, %Vote{answer: %Answer{response: response}})
+      |> assign(:current_user_vote, %Vote{answer: String.to_existing_atom(response)})
 
     {:noreply, socket}
   end
@@ -196,18 +166,16 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
       }
     } = socket
 
-    answer_id = Answers.get_basic_answer_id(response)
-
     case Votes.create_or_update(%{
            voting_id: voting.id,
-           answer_id: answer_id,
+           answer: response,
            author_id: current_user.author_id,
            direct: true
          }) do
       {:ok, vote} ->
-        vote = Votes.get_vote(vote.id, preload: [:answer, :opinion])
+        vote = Votes.get_vote(vote.id, preload: [:opinion])
         send(self(), {:voted, vote})
-        send(self(), {:put_flash, :info, "You voted #{response}."})
+        send(self(), {:put_flash, :info, "You voted #{String.capitalize(response)}."})
         Track.event("Vote", current_user)
 
         socket =
@@ -237,7 +205,14 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
       assigns: %{current_user_vote: current_user_vote, current_user: current_user, voting: voting}
     } = socket
 
-    case Votes.delete_vote(current_user_vote) do
+    result =
+      if current_user_vote.opinion_id do
+        Votes.update_vote(current_user_vote, %{answer: nil})
+      else
+        Votes.delete_vote(current_user_vote)
+      end
+
+    case result do
       {:ok, _} ->
         Track.event("Delete Vote", current_user)
 
@@ -250,7 +225,7 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
         vote =
           Votes.get_by(
             [author_id: current_user.author_id, voting_id: voting.id],
-            preload: [:answer]
+            preload: [:opinion]
           )
 
         socket =
