@@ -115,8 +115,9 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
   defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
 
   defp response(assigns, response) do
+    response_Text = response(response)
     assigns =
-      assign(assigns, color: response_color(response), response: String.downcase(response))
+      assign(assigns, color: response_color(response), response: response_Text)
 
     ~H"""
     <span class={"#{@color} font-bold"}>
@@ -136,17 +137,27 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
     """
   end
 
-  defp with_s("Agree"), do: "agrees"
-  defp with_s("Strongly agree"), do: "strongly agrees"
-  defp with_s("Disagree"), do: "disagrees"
-  defp with_s("Strongly disagree"), do: "strongly disagrees"
-  defp with_s("Abstain"), do: "abstains"
-  defp with_s("N/A"), do: "N/A"
+  defp response(:for), do: "vote For"
+  defp response("for"), do: "vote For"
+  defp response(:against), do: "vote Against"
+  defp response("against"), do: "vote Against"
+  defp response(:abstain), do: "Abstain"
+  defp response("abstain"), do: "Abstain"
+  defp response(val), do: to_string(val)
 
-  defp response_color("Agree"), do: "text-lime-800"
-  defp response_color("Strongly agree"), do: "text-green-800"
-  defp response_color("Disagree"), do: "text-orange-800"
-  defp response_color("Strongly disagree"), do: "text-red-800"
-  defp response_color("Abstain"), do: "text-blue-800"
-  defp response_color("N/A"), do: "text-gray-800"
+  defp with_s(:for), do: "votes For"
+  defp with_s("for"), do: "votes For"
+  defp with_s(:against), do: "votes Against"
+  defp with_s("against"), do: "votes Against"
+  defp with_s(:abstain), do: "abstains"
+  defp with_s("abstain"), do: "abstains"
+  defp with_s(val), do: to_string(val)
+
+  defp response_color(:for), do: "text-green-800"
+  defp response_color("for"), do: "text-green-800"
+  defp response_color(:against), do: "text-red-800"
+  defp response_color("against"), do: "text-red-800"
+  defp response_color(:abstain), do: "text-blue-800"
+  defp response_color("abstain"), do: "text-blue-800"
+  defp response_color(_), do: "text-gray-800"
 end

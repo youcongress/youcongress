@@ -7,7 +7,7 @@ defmodule YouCongressWeb.VotingLive.Index.OpinateComponent do
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Votes
-  alias YouCongress.Votes.Answers
+
 
   @impl true
   def update(assigns, socket) do
@@ -245,7 +245,7 @@ defmodule YouCongressWeb.VotingLive.Index.OpinateComponent do
     %{current_user: current_user, voting: voting, opinion_id: opinion_id, vote: vote} = params
 
     %{
-      "answer_id" => (vote && vote.answer_id) || Answers.answer_id_by_response("N/A"),
+      "answer" => (vote && vote.answer) || :abstain,
       "author_id" => current_user.author_id,
       "voting_id" => voting.id,
       "opinion_id" => opinion_id,

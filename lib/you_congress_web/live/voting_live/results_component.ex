@@ -18,43 +18,22 @@ defmodule YouCongressWeb.VotingLive.ResultsComponent do
       <div class="mb-2">
         <div class="w-full h-2 bar-bg rounded-full flex">
           <ResultsComponent.result
-            response="Strongly agree"
-            percentage={elem(@vote_frequencies["Strongly agree"] || {0, 0}, 1)}
+            response="For"
+            percentage={elem(@vote_frequencies[:for] || {0, 0}, 1)}
           />
-          <%= if @vote_frequencies["Strongly agree"] && @vote_frequencies["Agree"] do %>
+          <%= if @vote_frequencies[:for] && @vote_frequencies[:abstain] do %>
             <div class="bg-black w-px"></div>
-          <% end %>
-          <ResultsComponent.result
-            response="Agree"
-            percentage={elem(@vote_frequencies["Agree"] || {0, 0}, 1)}
-          />
-          <%= if @vote_frequencies["Strongly agree"] || @vote_frequencies["Agree"] do %>
-            <div class="bg-white w-0.5"></div>
           <% end %>
           <ResultsComponent.result
             response="Abstain"
-            percentage={elem(@vote_frequencies["Abstain"] || {0, 0}, 1)}
+            percentage={elem(@vote_frequencies[:abstain] || {0, 0}, 1)}
           />
-          <%= if @vote_frequencies["N/A"] && @vote_frequencies["Abstain"] do %>
-            <div class="bg-black w-px"></div>
-          <% end %>
-          <ResultsComponent.result
-            response="N/A"
-            percentage={elem(@vote_frequencies["N/A"] || {0, 0}, 1)}
-          />
-          <%= if (@vote_frequencies["Abstain"] || @vote_frequencies["N/A"]) && (@vote_frequencies["Disagree"] || @vote_frequencies["Strongly disagree"]) do %>
+          <%= if (@vote_frequencies[:abstain] || @vote_frequencies[:for]) && @vote_frequencies[:against] do %>
             <div class="bg-white w-0.5"></div>
           <% end %>
           <ResultsComponent.result
-            response="Disagree"
-            percentage={elem(@vote_frequencies["Disagree"] || {0, 0}, 1)}
-          />
-          <%= if @vote_frequencies["Disagree"] && @vote_frequencies["Strongly disagree"] do %>
-            <div class="bg-black w-px"></div>
-          <% end %>
-          <ResultsComponent.result
-            response="Strongly disagree"
-            percentage={elem(@vote_frequencies["Strongly disagree"] || {0, 0}, 1)}
+            response="Against"
+            percentage={elem(@vote_frequencies[:against] || {0, 0}, 1)}
           />
         </div>
       </div>
@@ -76,10 +55,8 @@ defmodule YouCongressWeb.VotingLive.ResultsComponent do
     """
   end
 
-  def response_color("Strongly agree"), do: "green"
-  def response_color("Agree"), do: "lime"
-  def response_color("Disagree"), do: "orange"
-  def response_color("Strongly disagree"), do: "red"
+  def response_color("For"), do: "green"
+  def response_color("Against"), do: "red"
   def response_color("Abstain"), do: "blue"
   def response_color(_), do: "gray"
 end

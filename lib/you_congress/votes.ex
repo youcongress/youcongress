@@ -83,14 +83,7 @@ defmodule YouCongress.Votes do
               desc: o.likes_count,
               desc: o.descendants_count,
               desc:
-                fragment(
-                  "CASE
-                WHEN ? = 1 OR ? = 6 THEN 1
-                ELSE 0
-                END",
-                  v.answer_id,
-                  v.answer_id
-                )
+                  v.answer
             ]
 
         {:limit, limit}, query ->
@@ -135,7 +128,7 @@ defmodule YouCongress.Votes do
     exclude_ids = Keyword.get(opts, :exclude_ids, [])
     twin_options = Keyword.get(opts, :twin_options, [true, false])
     source_filter = Keyword.get(opts, :source_filter)
-    answer_id = Keyword.get(opts, :answer_id)
+    answer = Keyword.get(opts, :answer)
 
     base_query =
       Vote
@@ -156,9 +149,9 @@ defmodule YouCongress.Votes do
       end
 
     query =
-      if answer_id do
+      if answer do
         query
-        |> where([v, a, o], v.answer_id == ^answer_id)
+        |> where([v, a, o], v.answer == ^answer)
       else
         query
       end
@@ -201,10 +194,7 @@ defmodule YouCongress.Votes do
     query =
       if answer_filter do
         base_query
-        |> join(:inner, [v, a], ans in YouCongress.Votes.Answers.Answer,
-          on: v.answer_id == ans.id
-        )
-        |> where([v, a, ans], ans.response == ^answer_filter)
+        |> where([v, a], v.answer == ^answer_filter)
       else
         base_query
       end
@@ -435,16 +425,14 @@ defmodule YouCongress.Votes do
   > count_by_response(1)
   [{"Agree", 4}, {"Disagree", 2}, {"Strongly agree", 6}]
   """
-  def count_by_response(voting_id, opts \\ []) do
+  def count_by_response(_voting_id, opts \\ []) do
     has_opinion_id = Keyword.get(opts, :has_opinion_id, nil)
     twin = Keyword.get(opts, :twin)
 
     query =
       from(v in Vote,
-        join: a in assoc(v, :answer),
-        where: v.voting_id == ^voting_id,
-        group_by: a.response,
-        select: {a.response, count(a.response)}
+        group_by: v.answer,
+        select: {v.answer, count(v.answer)}
       )
 
     query =
@@ -472,7 +460,7 @@ defmodule YouCongress.Votes do
 
   def count_with_opinion_source(voting_id, opts \\ []) do
     source_filter = Keyword.get(opts, :source_filter)
-    answer_id = Keyword.get(opts, :answer_id)
+    answer = Keyword.get(opts, :answer)
 
     base_query =
       from v in Vote,
@@ -489,8 +477,8 @@ defmodule YouCongress.Votes do
       end
 
     query =
-      if answer_id do
-        from [v, o] in query, where: v.answer_id == ^answer_id
+      if answer do
+        from [v, o] in query, where: v.answer == ^answer
       else
         query
       end
@@ -503,17 +491,16 @@ defmodule YouCongress.Votes do
 
     base_query =
       from v in Vote,
-        join: a in assoc(v, :answer),
         join: o in YouCongress.Opinions.Opinion,
         on: v.opinion_id == o.id,
         where: v.voting_id == ^voting_id and not is_nil(v.opinion_id),
-        group_by: a.response,
-        select: {a.response, count(a.response)}
+        group_by: v.answer,
+        select: {v.answer, count(v.answer)}
 
     query =
       case source_filter do
-        :quotes -> from [v, a, o] in base_query, where: not is_nil(o.source_url)
-        :users -> from [v, a, o] in base_query, where: is_nil(o.source_url)
+        :quotes -> from [v, o] in base_query, where: not is_nil(o.source_url)
+        :users -> from [v, o] in base_query, where: is_nil(o.source_url)
         _ -> base_query
       end
 
@@ -545,8 +532,8 @@ defmodule YouCongress.Votes do
             where(query, [v], is_nil(v.opinion_id))
           end
 
-        {:answer_id, answer_id}, query ->
-          where(query, [v], v.answer_id == ^answer_id)
+        {:answer, answer}, query ->
+          where(query, [v], v.answer == ^answer)
 
         _, query ->
           query
@@ -562,7 +549,7 @@ defmodule YouCongress.Votes do
       [v, a],
       v.voting_id == ^voting_id and v.author_id == ^author_id
     )
-    |> preload([:answer, :opinion])
+    |> preload([:opinion])
     |> Repo.one()
   end
 
@@ -575,7 +562,7 @@ defmodule YouCongress.Votes do
       %Ecto.Changeset{data: %Vote{}}
 
   """
-  def public?(%Vote{} = vote) do
-    vote.answer_id not in YouCongress.Votes.Answers.private_ids()
+  def public?(%Vote{} = _vote) do
+    true
   end
 end

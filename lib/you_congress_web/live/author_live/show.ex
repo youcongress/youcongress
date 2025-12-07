@@ -78,7 +78,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
   def get_current_user_votes_by_voting_id(nil), do: %{}
 
   def get_current_user_votes_by_voting_id(current_user) do
-    [author_ids: [current_user.author_id], preload: [:answer]]
+    [author_ids: [current_user.author_id]]
     |> Votes.list_votes()
     |> Enum.reduce(%{}, fn vote, acc -> Map.put(acc, vote.voting_id, vote) end)
   end
@@ -197,7 +197,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     args = [
       author_ids: [author_id],
       order_by_strong_opinions_first: true,
-      preload: [:answer, :opinion, voting: [:halls]],
+      preload: [:opinion, voting: [:halls]],
       without_opinion: false
     ]
 
@@ -211,7 +211,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     args = [
       author_ids: [author_id],
       order_by_strong_opinions_first: true,
-      preload: [:answer, :opinion, voting: [:halls]],
+      preload: [:opinion, voting: [:halls]],
       voting_ids: voting_ids,
       without_opinion: false
     ]
@@ -223,7 +223,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     args = [
       author_ids: [author_id],
       order_by: [desc: :id],
-      preload: [:answer, :opinion, voting: [:halls]],
+      preload: [:opinion, voting: [:halls]],
       without_opinion: false
     ]
 
@@ -237,7 +237,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     args = [
       author_ids: [author_id],
       order_by: [desc: :id],
-      preload: [:answer, :opinion, voting: [:halls]],
+      preload: [:opinion, voting: [:halls]],
       voting_ids: voting_ids,
       without_opinion: false
     ]

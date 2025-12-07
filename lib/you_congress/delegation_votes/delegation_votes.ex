@@ -8,7 +8,6 @@ defmodule YouCongress.DelegationVotes do
 
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
-  alias YouCongress.Votes.Answers
   alias YouCongress.Delegations
 
   @doc """
@@ -18,13 +17,12 @@ defmodule YouCongress.DelegationVotes do
   def update_author_delegated_votes(author_id) do
     voting_ids_with_author_direct_votes = voting_ids_with_author_direct_votes(author_id)
     delegate_ids = Delegations.delegate_ids_by_deleguee_id(author_id)
-    answers = Answers.basic_response_answer_id_map()
 
     for voting_id <- voting_ids_voted_by([author_id | delegate_ids]) do
       if voting_id in voting_ids_with_author_direct_votes do
         {:ok, :direct_vote_exists}
       else
-        update_votes(voting_id, author_id, delegate_ids, answers)
+        update_votes(voting_id, author_id, delegate_ids)
       end
     end
 
@@ -34,13 +32,12 @@ defmodule YouCongress.DelegationVotes do
   def update_delegated_votes(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
     voting_ids_with_deleguee_direct_votes = voting_ids_with_author_direct_votes(deleguee_id)
     delegate_ids = Delegations.delegate_ids_by_deleguee_id(deleguee_id)
-    answers = Answers.basic_response_answer_id_map()
 
     for voting_id <- voting_ids_voted_by([delegate_id]) do
       if voting_id in voting_ids_with_deleguee_direct_votes do
         {:ok, :direct_vote_exists}
       else
-        update_votes(voting_id, deleguee_id, delegate_ids, answers)
+        update_votes(voting_id, deleguee_id, delegate_ids)
       end
     end
 
@@ -52,13 +49,12 @@ defmodule YouCongress.DelegationVotes do
       :direct_vote_exists
     else
       delegate_ids = Delegations.delegate_ids_by_deleguee_id(author_id)
-      answers = Answers.basic_response_answer_id_map()
-      update_votes(voting_id, author_id, delegate_ids, answers)
+      update_votes(voting_id, author_id, delegate_ids)
       :ok
     end
   end
 
-  defp update_votes(voting_id, author_id, delegate_ids, answers) do
+  defp update_votes(voting_id, author_id, delegate_ids) do
     {in_favour, against, neutral} = get_counters(voting_id, delegate_ids)
 
     cond do
@@ -66,13 +62,13 @@ defmodule YouCongress.DelegationVotes do
         delete_vote_if_exists(voting_id, author_id)
 
       in_favour > against && in_favour > neutral ->
-        vote(voting_id, author_id, answers["Agree"])
+        vote(voting_id, author_id, :for)
 
       against > in_favour && against > neutral ->
-        vote(voting_id, author_id, answers["Disagree"])
+        vote(voting_id, author_id, :against)
 
       neutral > in_favour && neutral > against ->
-        vote(voting_id, author_id, answers["Abstain"])
+        vote(voting_id, author_id, :abstain)
 
       true ->
         delete_vote_if_exists(voting_id, author_id)
@@ -85,25 +81,24 @@ defmodule YouCongress.DelegationVotes do
       :direct_vote_exists
     else
       delegate_ids = Delegations.delegate_ids_by_deleguee_id(author_id)
-      answers = Answers.basic_response_answer_id_map()
-      update_votes(voting_id, author_id, delegate_ids, answers)
+      update_votes(voting_id, author_id, delegate_ids)
       :ok
     end
   end
 
-  defp vote(voting_id, author_id, answer_id) do
+  defp vote(voting_id, author_id, answer) do
     case Votes.get_by(voting_id: voting_id, author_id: author_id) do
       nil ->
         Votes.create_vote(%{
           voting_id: voting_id,
           author_id: author_id,
-          answer_id: answer_id,
+          answer: answer,
           direct: false
         })
 
       vote ->
-        if vote.answer_id != answer_id do
-          Votes.update_vote(vote, %{answer_id: answer_id})
+        if vote.answer != answer do
+          Votes.update_vote(vote, %{answer: answer})
         else
           {:ok, vote}
         end
@@ -118,15 +113,15 @@ defmodule YouCongress.DelegationVotes do
   defp get_counters(voting_id, delegate_ids) do
     votes = votes_from_delegates(voting_id, delegate_ids)
 
-    in_favour = count(votes, ["Strongly agree", "Agree"])
-    against = count(votes, ["Strongly disagree", "Disagree"])
-    abstain = count(votes, ["Abstain"])
+    in_favour = count(votes, [:for])
+    against = count(votes, [:against])
+    abstain = count(votes, [:abstain])
     {in_favour, against, abstain}
   end
 
   defp count(votes, responses) do
     Enum.count(votes, fn vote ->
-      Answers.basic_answer_id_response_map()[vote.answer_id] in responses
+      vote.answer in responses
     end)
   end
 

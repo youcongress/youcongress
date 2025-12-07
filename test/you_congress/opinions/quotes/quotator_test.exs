@@ -6,7 +6,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
 
   alias YouCongress.Opinions.Quotes.Quotator
   alias YouCongress.{Votes, Opinions}
-  alias YouCongress.Votes.Answers
+
 
   describe "find_and_save_quotes/3 with QuotatorFake" do
     test "forwards exclude list, sets generating counters, and creates votes/opinions" do
@@ -26,8 +26,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
       # Votes should be direct and not twins
       assert Enum.all?(votes, &(&1.direct == true and &1.twin == false))
 
-      # Each vote should have a valid answer id
-      assert Enum.all?(votes, fn v -> not is_nil(Answers.get_answer(v.answer_id)) end)
+      # Each vote should have a valid answer
+      assert Enum.all?(votes, fn v -> v.answer in [:for, :against, :abstain] end)
 
       # Opinions should be created and linked to the votes
       assert Enum.count(votes, &(not is_nil(&1.opinion_id))) == Quotator.number_of_quotes()

@@ -41,12 +41,12 @@
           <%= if @page == :author_show do %>
             {"#{@author.name} AI"}
           <% end %>
-          would {response(assigns, @vote.answer.response)} and say according to AI:
+          would {response(assigns, @vote.answer)} and say according to AI:
         <% else %>
           {if @page == :author_show, do: @author.name || "Anonymous"}
           {response_with_s(
             assigns,
-            @vote.answer.response
+            @vote.answer
           )}
           <%= unless @vote.direct do %>
             via delegates

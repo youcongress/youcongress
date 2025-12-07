@@ -291,14 +291,13 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
   defp create_or_update_vote(_current_user, opinion, voting_id, answer) do
     alias YouCongress.Votes
-    alias YouCongress.Votes.Answers
 
-    answer_id = Answers.answer_id_by_response(answer)
+    answer_atom = String.downcase(answer) |> String.to_existing_atom()
 
     vote_params = %{
       author_id: opinion.author_id,
       voting_id: voting_id,
-      answer_id: answer_id,
+      answer: answer_atom,
       opinion_id: opinion.id,
       direct: true,
       twin: false
@@ -322,7 +321,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
         YouCongress.Votes.list_votes(
           author_ids: [opinion.author.id],
           voting_ids: voting_ids,
-          preload: [:answer]
+          preload: []
         )
 
       # Create a map of voting_id -> vote for easy lookup

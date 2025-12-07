@@ -157,21 +157,21 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       {:ok, show_live, _html} = live(conn, ~p"/x/asimov")
 
-      # Vote strongly agree
+      # Vote For
       show_live
-      |> element("button##{voting.id}-vote-strongly-agree")
+      |> element("button##{voting.id}-vote-for")
       |> render_click()
 
       html = render(show_live)
-      assert html =~ "You voted Strongly agree"
+      assert html =~ "You voted For"
 
-      # Vote agree
+      # Vote Against
       show_live
-      |> element("button##{voting.id}-vote-agree")
+      |> element("button##{voting.id}-vote-against")
       |> render_click()
 
       html = render(show_live)
-      assert html =~ "You voted Agree"
+      assert html =~ "You voted Against"
 
       # Vote Abstain
       show_live
@@ -180,30 +180,6 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       html = render(show_live)
       assert html =~ "You voted Abstain"
-
-      # Vote N/A
-      show_live
-      |> element("button##{voting.id}-vote-na")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "You voted N/A"
-
-      # Vote disagree
-      show_live
-      |> element("button##{voting.id}-vote-disagree")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "You voted Disagree"
-
-      # Vote strongly disagree
-      show_live
-      |> element("button##{voting.id}-vote-strongly-disagree")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "You voted Strongly disagree"
     end
   end
 end

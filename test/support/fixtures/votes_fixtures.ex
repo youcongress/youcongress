@@ -6,7 +6,7 @@ defmodule YouCongress.VotesFixtures do
 
   import YouCongress.AuthorsFixtures
   import YouCongress.VotingsFixtures
-  import YouCongress.Votes.AnswersFixtures
+
   import YouCongress.OpinionsFixtures
   alias YouCongress.Votes
 
@@ -22,7 +22,7 @@ defmodule YouCongress.VotesFixtures do
       |> Enum.into(%{
         author_id: author_fixture().id,
         voting_id: voting_id,
-        answer_id: answer_fixture().id
+        answer: :for
       })
 
     {attrs, _opinion} = add_opinion_if_not_present(attrs, voting_id, generate_opinion)
