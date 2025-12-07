@@ -13,7 +13,7 @@ defmodule YouCongress.Votings.VotingQueries do
       from(v in Vote,
         join: o in assoc(v, :opinion),
         where: v.voting_id in ^voting_ids and not is_nil(v.opinion_id),
-        preload: [:author, :answer, :opinion]
+        preload: [:author, :opinion]
       )
 
     query =

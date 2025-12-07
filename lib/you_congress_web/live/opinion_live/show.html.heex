@@ -115,54 +115,30 @@
         <p class="text-xs text-gray-600 mb-3">
           {@selected_voting_title}
         </p>
-        <div class="grid grid-cols-2 gap-2">
+        <div class="grid grid-cols-3 gap-2">
           <button
             phx-click="add-to-voting-with-vote"
             phx-value-voting_id={@selected_voting_id}
-            phx-value-answer="Strongly agree"
-            class="inline-flex items-center justify-center rounded-md bg-green-700 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
+            phx-value-answer="For"
+            class="inline-flex items-center justify-center rounded-md bg-green-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
           >
-            Strongly Agree
+            For
           </button>
           <button
             phx-click="add-to-voting-with-vote"
             phx-value-voting_id={@selected_voting_id}
-            phx-value-answer="Agree"
-            class="inline-flex items-center justify-center rounded-md bg-green-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+            phx-value-answer="Against"
+            class="inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
           >
-            Agree
+            Against
           </button>
           <button
             phx-click="add-to-voting-with-vote"
             phx-value-voting_id={@selected_voting_id}
             phx-value-answer="Abstain"
-            class="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-          >
-            Neutral
-          </button>
-          <button
-            phx-click="add-to-voting-with-vote"
-            phx-value-voting_id={@selected_voting_id}
-            phx-value-answer="N/A"
             class="inline-flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
           >
-            N/A
-          </button>
-          <button
-            phx-click="add-to-voting-with-vote"
-            phx-value-voting_id={@selected_voting_id}
-            phx-value-answer="Disagree"
-            class="inline-flex items-center justify-center rounded-md bg-orange-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-orange-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600"
-          >
-            Disagree
-          </button>
-          <button
-            phx-click="add-to-voting-with-vote"
-            phx-value-voting_id={@selected_voting_id}
-            phx-value-answer="Strongly disagree"
-            class="inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
-          >
-            Strongly Disagree
+            Abstain
           </button>
         </div>
         <button

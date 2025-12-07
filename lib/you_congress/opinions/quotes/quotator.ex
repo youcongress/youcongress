@@ -10,7 +10,7 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Votes
-  alias YouCongress.Votes.Answers
+
   alias YouCongress.Votings
 
   @number_of_quotes 5
@@ -142,16 +142,24 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   defp normalize_twitter(handle), do: handle
 
   defp build_vote_attrs(voting_id, author, agree_rate) do
-    answer_id = Answers.get_answer_id(agree_rate)
+    answer = map_agree_rate_to_answer(agree_rate)
 
     %{
       voting_id: voting_id,
       author_id: author.id,
-      answer_id: answer_id,
+      answer: answer,
       direct: true,
       twin: false
     }
   end
+
+  defp map_agree_rate_to_answer("Strongly agree"), do: :for
+  defp map_agree_rate_to_answer("Agree"), do: :for
+  defp map_agree_rate_to_answer("Strongly disagree"), do: :against
+  defp map_agree_rate_to_answer("Disagree"), do: :against
+  defp map_agree_rate_to_answer("Abstain"), do: :abstain
+  defp map_agree_rate_to_answer("N/A"), do: :abstain
+  defp map_agree_rate_to_answer(_), do: :abstain
 
   defp create_or_update_vote(attrs) do
     case Votes.get_by(voting_id: attrs.voting_id, author_id: attrs.author_id) do

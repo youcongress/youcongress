@@ -161,7 +161,7 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
           YouCongress.Votes.list_votes(
             author_ids: [quote.author.id],
             voting_ids: voting_ids,
-            preload: [:answer]
+            preload: []
           )
 
         # Create a map of voting_id -> vote for easy lookup

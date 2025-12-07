@@ -7,7 +7,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Votes
-  alias YouCongress.Votes.Answers
+
 
   @impl true
   def update(%{opinion: opinion} = assigns, socket) do
@@ -190,7 +190,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
         class="space-y-4"
       >
         <input type="hidden" name="opinion_id" value={@opinion.id} />
-        
+
     <!-- Opinion Content -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -203,7 +203,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-full"
           />
         </div>
-        
+
     <!-- Year -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
@@ -214,7 +214,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-32"
           />
         </div>
-        
+
     <!-- Source URL -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Source URL</label>
@@ -225,7 +225,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-full"
           />
         </div>
-        
+
     <!-- Author Selection -->
         <%= if assigns[:show_author] do %>
           <div class="relative">
@@ -284,7 +284,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             </div>
           </div>
         <% end %>
-        
+
     <!-- Voting Positions -->
         <%= if assigns[:show_voting_positions] && @opinion.votings && @opinion.votings != [] do %>
           <div class="space-y-3">
@@ -300,23 +300,23 @@ defmodule YouCongressWeb.OpinionEditComponent do
                   name={"vote_#{voting.id}"}
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 >
-                  <%= for response <- ["Strongly agree", "Agree", "Abstain", "N/A", "Disagree", "Strongly disagree"] do %>
-                    <option
-                      value={response}
-                      selected={
-                        Map.get(voting, :author_vote) && voting.author_vote.answer &&
-                          voting.author_vote.answer.response == response
-                      }
-                    >
-                      {response}
-                    </option>
-                  <% end %>
+                  <%= for {label, value} <- [{"For", "for"}, {"Against", "against"}, {"Abstain", "abstain"}] do %>
+                <option
+                  value={value}
+                  selected={
+                   Map.get(voting, :author_vote) && voting.author_vote.answer &&
+                      to_string(voting.author_vote.answer) == value
+                  }
+                >
+                  {label}
+                </option>
+              <% end %>
                 </select>
               </div>
             <% end %>
           </div>
         <% end %>
-        
+
     <!-- Form Actions -->
         <div class="flex gap-2 pt-2">
           <button
@@ -357,12 +357,10 @@ defmodule YouCongressWeb.OpinionEditComponent do
 
           if response != "" do
             # Create or update the vote
-            answer_id = Answers.get_answer_id(response)
-
             Votes.create_or_update(%{
               voting_id: voting.id,
               author_id: opinion.author.id,
-              answer_id: answer_id,
+              answer: response,
               direct: true
             })
           else

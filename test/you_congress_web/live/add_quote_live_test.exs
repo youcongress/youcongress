@@ -8,7 +8,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
   alias YouCongress.Authors
   alias YouCongress.Votes
-  alias YouCongress.Votes.Answers
+
   alias YouCongress.Opinions
 
   defp create_voting(_) do
@@ -33,7 +33,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
              |> form("form",
                opinion: "Democracy is essential.",
                source_url: "http://example.com/democracy_quote",
-               agree_rate: "Strongly agree"
+               agree_rate: "For"
              )
              |> render_submit()
 
@@ -43,7 +43,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       # Verify the data was saved
       [vote] = Votes.list_votes()
       assert vote.voting_id == voting.id
-      assert vote.answer_id == Answers.get_answer_id("Strongly agree")
+      assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
       assert opinion.author_id == author.id
@@ -75,7 +75,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       |> form("form",
         opinion: "Democracy is essential.",
         source_url: "http://example.com/democracy_quote",
-        agree_rate: "Strongly agree"
+        agree_rate: "For"
       )
       |> render_submit()
 
@@ -85,7 +85,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       # Verify the data was saved
       [vote] = Votes.list_votes()
       assert vote.voting_id == voting.id
-      assert vote.answer_id == Answers.get_answer_id("Strongly agree")
+      assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
       assert opinion.author_id == author.id
@@ -104,7 +104,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       |> form("form",
         opinion: "Democracy is essential 2.",
         source_url: "http://example.com/democracy_quote2",
-        agree_rate: "Strongly disagree"
+        agree_rate: "Against"
       )
       |> render_submit()
 
@@ -113,7 +113,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       # Verify the data was saved
       [vote] = Votes.list_votes()
       assert vote.voting_id == voting.id
-      assert vote.answer_id == Answers.get_answer_id("Strongly disagree")
+      assert vote.answer == :against
 
       opinion = Opinions.get_opinion!(vote.opinion_id)
       assert opinion.author_id == author.id
@@ -165,7 +165,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       |> form("form",
         opinion: "Democracy is essential.",
         source_url: "http://example.com/democracy_quote",
-        agree_rate: "Strongly agree"
+        agree_rate: "For"
       )
       |> render_submit()
 
@@ -174,7 +174,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       # Verify the data was saved
       [vote] = Votes.list_votes()
       assert vote.voting_id == voting.id
-      assert vote.answer_id == Answers.get_answer_id("Strongly agree")
+      assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
       assert opinion.author_id == author.id
@@ -207,7 +207,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
              |> form("form",
                opinion: "Imagination is more important than knowledge.",
                source_url: "http://example.com/einstein_quote",
-               agree_rate: "Strongly agree"
+               agree_rate: "For"
              )
              |> render_submit()
 
@@ -220,7 +220,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       # Verify the data was saved
       [vote] = Votes.list_votes()
       assert vote.voting_id == voting.id
-      assert vote.answer_id == Answers.get_answer_id("Strongly agree")
+      assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
       assert opinion.author_id == author.id
@@ -262,7 +262,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       |> form("form",
         opinion: "Imagination is more important than knowledge.",
         source_url: "http://example.com/einstein_quote",
-        agree_rate: "Strongly agree"
+        agree_rate: "For"
       )
       |> render_submit()
 
@@ -275,7 +275,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       # Verify the data was saved
       [vote] = Votes.list_votes()
       assert vote.voting_id == voting.id
-      assert vote.answer_id == Answers.get_answer_id("Strongly agree")
+      assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
       assert opinion.author_id == author.id
@@ -323,7 +323,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       |> form("form",
         opinion: "If I have seen further it is by standing on the shoulders of Giants.",
         source_url: "http://example.com/newton_quote",
-        agree_rate: "Strongly agree"
+        agree_rate: "For"
       )
       |> render_submit()
 
@@ -335,7 +335,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       # Verify the data was saved
       [vote] = Votes.list_votes()
       assert vote.voting_id == voting.id
-      assert vote.answer_id == Answers.get_answer_id("Strongly agree")
+      assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
       assert opinion.author_id == author.id

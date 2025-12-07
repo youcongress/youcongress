@@ -11,7 +11,7 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
   alias YouCongress.Votes.Vote
   alias YouCongress.Delegations
   alias YouCongress.Accounts.User
-  alias YouCongress.Votes.Answers
+
 
   @spec load_voting_and_votes(Socket.t(), number) :: Socket.t()
   def load_voting_and_votes(socket, voting_id) do
@@ -27,22 +27,22 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     current_user_vote = get_current_user_vote(voting, current_user)
     exclude_ids = (current_user_vote && [current_user_vote.id]) || []
 
-    answer_id =
-      if answer_filter == "", do: nil, else: Answers.answer_id_by_response(answer_filter)
+    answer =
+      if answer_filter == "" || is_nil(answer_filter), do: nil, else: String.downcase(answer_filter) |> String.to_existing_atom()
 
     quotes_votes_count =
-      Votes.count_with_opinion_source(voting_id, source_filter: :quotes, answer_id: answer_id)
+      Votes.count_with_opinion_source(voting_id, source_filter: :quotes, answer: answer)
 
     users_votes_count =
-      Votes.count_with_opinion_source(voting_id, source_filter: :users, answer_id: answer_id)
+      Votes.count_with_opinion_source(voting_id, source_filter: :users, answer: answer)
 
     opts = [
-      include: [:author, :answer, opinion: :author],
+      include: [:author, opinion: :author],
       exclude_ids: exclude_ids,
       source_filter: source_filter
     ]
 
-    opts = if answer_filter == "", do: opts, else: [{:answer_id, answer_id} | opts]
+    opts = if is_nil(answer), do: opts, else: [{:answer, answer} | opts]
     votes_with_opinion = Votes.list_votes_with_opinion(voting_id, opts)
 
     votes_without_opinion =
@@ -84,11 +84,11 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
   defp x_post(nil, voting), do: voting.title
 
   defp x_post(%{opinion_id: nil, direct: false} = current_user_vote, voting) do
-    voting.title <> " " <> Answers.get_answer(current_user_vote.answer_id) <> " via delegates"
+    voting.title <> " " <> to_string(current_user_vote.answer) <> " via delegates"
   end
 
   defp x_post(%{opinion_id: nil} = current_user_vote, voting) do
-    voting.title <> " " <> Answers.get_answer(current_user_vote.answer_id)
+    voting.title <> " " <> to_string(current_user_vote.answer)
   end
 
   defp x_post(current_user_vote, voting) do

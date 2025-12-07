@@ -77,7 +77,7 @@ defmodule YouCongress.OpinionsTest do
       vote_attrs = %{
         author_id: opinion.author_id,
         voting_id: voting.id,
-        answer_id: 1,
+        answer: :for,
         opinion_id: opinion.id
       }
 
@@ -107,7 +107,7 @@ defmodule YouCongress.OpinionsTest do
       vote_attrs = %{
         author_id: opinion.author_id,
         voting_id: voting.id,
-        answer_id: 1,
+        answer: :for,
         opinion_id: opinion.id
       }
 

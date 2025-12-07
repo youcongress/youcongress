@@ -9,7 +9,7 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
   import Phoenix.Component, only: [assign: 2]
   import YouCongressWeb.VotingLive.Show.VotesLoader, only: [load_voting_and_votes: 2]
 
-  alias YouCongress.Votes.Answers
+
   alias YouCongress.Votes
   alias YouCongress.Opinions
 
@@ -28,13 +28,13 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
     %{assigns: %{current_user_vote: current_user_vote, voting: voting}} = socket
 
     opinion = clean_opinion(opinion)
-    no_answer_id = Answers.answer_id_by_response("N/A")
+    no_answer = :abstain
 
     cond do
       is_nil(opinion) && is_nil(current_user_vote.opinion) ->
         {:noreply, put_flash(socket, :error, "Comment can't be blank.")}
 
-      opinion || current_user_vote.answer_id != no_answer_id ->
+      opinion || current_user_vote.answer != no_answer ->
         update_comment(voting, current_user_vote, opinion, socket)
 
       true ->
@@ -60,7 +60,7 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
              voting_id: voting.id,
              author_id: current_user.author_id,
              opinion_id: opinion.id,
-             answer_id: Answers.answer_id_by_response("N/A")
+             answer: :abstain
            }) do
       socket =
         socket

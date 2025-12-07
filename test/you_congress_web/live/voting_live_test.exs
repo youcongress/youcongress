@@ -11,7 +11,7 @@ defmodule YouCongressWeb.VotingLiveTest do
   import YouCongress.VotesFixtures
   import YouCongress.AuthorsFixtures
 
-  alias YouCongress.Votes.Answers
+
   alias YouCongress.Votings
   alias YouCongress.HallsVotings
 
@@ -40,21 +40,21 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       assert html =~ voting.title
 
-      #  Vote strongly agree
+      # Vote For
       index_live
-      |> element("button##{voting.id}-vote-strongly-agree")
+      |> element("button##{voting.id}-vote-for")
       |> render_click()
 
       html = render(index_live)
-      assert html =~ "You voted Strongly agree"
+      assert html =~ "You voted For"
 
-      # Vote agree
+      # Vote Against
       index_live
-      |> element("button##{voting.id}-vote-agree")
+      |> element("button##{voting.id}-vote-against")
       |> render_click()
 
       html = render(index_live)
-      assert html =~ "You voted Agree"
+      assert html =~ "You voted Against"
 
       # Vote Abstain
       index_live
@@ -63,30 +63,6 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       html = render(index_live)
       assert html =~ "You voted Abstain"
-
-      # Vote N/A
-      index_live
-      |> element("button##{voting.id}-vote-na")
-      |> render_click()
-
-      html = render(index_live)
-      assert html =~ "You voted N/A"
-
-      # Vote disagree
-      index_live
-      |> element("button##{voting.id}-vote-disagree")
-      |> render_click()
-
-      html = render(index_live)
-      assert html =~ "You voted Disagree"
-
-      # Vote strongly disagree
-      index_live
-      |> element("button##{voting.id}-vote-strongly-disagree")
-      |> render_click()
-
-      html = render(index_live)
-      assert html =~ "You voted Strongly disagree"
 
       # Create a comment
       index_live
@@ -207,21 +183,21 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       {:ok, show_live, _html} = live(conn, ~p"/p/#{voting.slug}")
 
-      #  Vote strongly agree
+      # Vote For
       show_live
-      |> element("button##{voting.id}-vote-strongly-agree")
+      |> element("button##{voting.id}-vote-for")
       |> render_click()
 
       html = render(show_live)
-      assert html =~ "You voted Strongly agree"
+      assert html =~ "You voted For"
 
-      # Vote agree
+      # Vote Against
       show_live
-      |> element("button##{voting.id}-vote-agree")
+      |> element("button##{voting.id}-vote-against")
       |> render_click()
 
       html = render(show_live)
-      assert html =~ "You voted Agree"
+      assert html =~ "You voted Against"
 
       # Vote Abstain
       show_live
@@ -230,30 +206,6 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       html = render(show_live)
       assert html =~ "You voted Abstain"
-
-      # Vote N/A
-      show_live
-      |> element("button##{voting.id}-vote-na")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "You voted N/A"
-
-      # Vote disagree
-      show_live
-      |> element("button##{voting.id}-vote-disagree")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "You voted Disagree"
-
-      # Vote strongly disagree
-      show_live
-      |> element("button##{voting.id}-vote-strongly-disagree")
-      |> render_click()
-
-      html = render(show_live)
-      assert html =~ "You voted Strongly disagree"
     end
 
     test "creates a comment", %{conn: conn, voting: voting} do
@@ -281,8 +233,8 @@ defmodule YouCongressWeb.VotingLiveTest do
       assert html =~ "Comment created successfully"
       assert html =~ "some comment"
 
-      # Check that the vote is N/A
-      assert html =~ "N/A"
+      # Check that the vote is Abstain
+      assert html =~ "Abstain"
 
       # Check that there is non- AI-generated comment
       assert html =~ "and says"
@@ -375,26 +327,27 @@ defmodule YouCongressWeb.VotingLiveTest do
       # Create test data
       user = user_fixture()
       ai_author = author_fixture(%{twin: true})
+      ai_author_2 = author_fixture(%{twin: true})
       human_author = author_fixture(%{twin: false})
 
       # Two quote opinions (with source_url) and one user opinion (no source_url)
-      _strongly_agree_quote =
+      _for_quote =
         vote_fixture(
           %{
             voting_id: voting.id,
             author_id: ai_author.id,
-            answer_id: Answers.answer_id_by_response("Strongly agree"),
+            answer: :for,
             twin: true
           },
           true
         )
 
-      _disagree_quote =
+      _against_quote =
         vote_fixture(
           %{
             voting_id: voting.id,
-            author_id: ai_author.id,
-            answer_id: Answers.answer_id_by_response("Disagree"),
+            author_id: ai_author_2.id,
+            answer: :against,
             twin: true
           },
           true
@@ -402,12 +355,25 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       user_opinion = opinion_fixture(%{author_id: human_author.id, source_url: nil, twin: false})
 
-      _agree_user =
+      abstain_opinion = opinion_fixture(%{author_id: user.author_id, source_url: nil, twin: false})
+
+      _abstain_user =
+        vote_fixture(
+          %{
+            voting_id: voting.id,
+            author_id: user.author_id,
+            answer: :abstain,
+            opinion_id: abstain_opinion.id
+          },
+          false
+        )
+
+      _for_user =
         vote_fixture(
           %{
             voting_id: voting.id,
             author_id: human_author.id,
-            answer_id: Answers.answer_id_by_response("Agree"),
+            answer: :for,
             twin: false,
             opinion_id: user_opinion.id
           },
@@ -418,19 +384,19 @@ defmodule YouCongressWeb.VotingLiveTest do
       {:ok, show_live, html} = live(conn, ~p"/p/#{voting.slug}")
 
       # Test initial state shows all opinions
-      assert html =~ "All opinions (3)"
+      assert html =~ "All opinions (4)"
       assert html =~ "Quotes (2)"
-      assert html =~ "Users (1)"
+      assert html =~ "Users (2)"
 
       # Test answer filter
       html =
         show_live
-        |> form("form[phx-change='filter-answer']", %{"answer" => "Strongly agree"})
+        |> form("form[phx-change='filter-answer']", %{"answer" => "For"})
         |> render_change()
 
-      assert html =~ "Strongly agree (1)"
+      assert html =~ "For (2)"
       assert html =~ ai_author.name
-      refute html =~ human_author.name
+      assert html =~ human_author.name
 
       # Select all opinions
       show_live
@@ -458,11 +424,11 @@ defmodule YouCongressWeb.VotingLiveTest do
       # Test combined filters
       html =
         show_live
-        |> form("form[phx-change='filter-answer']", %{"answer" => "Agree"})
+        |> form("form[phx-change='filter-answer']", %{"answer" => "For"})
         |> render_change()
 
       assert html =~ human_author.name
-      assert html =~ "Agree (1)"
+      assert html =~ "For (1)"
       refute html =~ ai_author.name
     end
   end

@@ -25,8 +25,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
           </h3>
           <p class="text-sm mb-4">
             <span>
-              You'll be able to add real <strong>sourced quotes</strong>
-              from experts and public figures.
+              You'll be able to add <strong>sourced quotes</strong> from experts and public figures.
             </span>
           </p>
           <p class="text-sm text-gray-600 mb-4">
@@ -37,7 +36,7 @@ defmodule YouCongressWeb.VotingLive.NewFormComponent do
               field={@form[:title]}
               type="text"
               maxlength="150"
-              placeholder="Should we...?"
+              placeholder="E.g. Build a CERN for AI"
               class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             />
           </div>

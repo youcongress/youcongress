@@ -101,23 +101,14 @@
       <option value="">
         All opinions ({@opinions_by_response |> Map.values() |> Enum.sum()})
       </option>
-      <option value="Strongly agree" selected={@answer_filter == "Strongly agree"}>
-        Strongly agree ({Map.get(@opinions_by_response, "Strongly agree", 0)})
+      <option value="For" selected={@answer_filter == "For"}>
+        For ({Map.get(@opinions_by_response, :for, 0) + Map.get(@opinions_by_response, "for", 0)})
       </option>
-      <option value="Agree" selected={@answer_filter == "Agree"}>
-        Agree ({Map.get(@opinions_by_response, "Agree", 0)})
+      <option value="Against" selected={@answer_filter == "Against"}>
+        Against ({Map.get(@opinions_by_response, :against, 0) + Map.get(@opinions_by_response, "against", 0)})
       </option>
       <option value="Abstain" selected={@answer_filter == "Abstain"}>
-        Abstain ({Map.get(@opinions_by_response, "Abstain", 0)})
-      </option>
-      <option value="N/A" selected={@answer_filter == "N/A"}>
-        N/A ({Map.get(@opinions_by_response, "N/A", 0)})
-      </option>
-      <option value="Disagree" selected={@answer_filter == "Disagree"}>
-        Disagree ({Map.get(@opinions_by_response, "Disagree", 0)})
-      </option>
-      <option value="Strongly disagree" selected={@answer_filter == "Strongly disagree"}>
-        Strongly disagree ({Map.get(@opinions_by_response, "Strongly disagree", 0)})
+        Abstain ({Map.get(@opinions_by_response, :abstain, 0) + Map.get(@opinions_by_response, "abstain", 0)})
       </option>
     </select>
   </form>

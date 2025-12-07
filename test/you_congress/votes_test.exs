@@ -5,7 +5,7 @@ defmodule YouCongress.VotesTest do
   import YouCongress.VotingsFixtures
   import YouCongress.VotesFixtures
 
-  import YouCongress.Votes.AnswersFixtures
+
   import YouCongress.OpinionsFixtures
 
   alias YouCongress.Votes
@@ -29,7 +29,7 @@ defmodule YouCongress.VotesTest do
         opinion_id: opinion_fixture().id,
         author_id: author_fixture().id,
         voting_id: voting_fixture().id,
-        answer_id: answer_fixture().id
+        answer: :for
       }
 
       assert {:ok, %Vote{}} = Votes.create_vote(valid_attrs)

@@ -238,7 +238,7 @@ defmodule YouCongressWeb.VotingLive.Index do
       Votes.list_votes(
         voting_ids: voting_ids,
         author_ids: [current_user.author_id],
-        preload: [:answer]
+        preload: []
       )
 
     Map.new(votes, fn vote ->

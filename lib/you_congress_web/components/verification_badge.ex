@@ -48,7 +48,7 @@ defmodule YouCongressWeb.Components.VerificationBadge do
           </span>
         <% else %>
           <span
-            class="bg-yellow-100 text-yellow-800 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-pointer"
+            class="bg-gray-100 text-gray-800 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-pointer"
             phx-click="verify-opinion"
             phx-value-opinion_id={@opinion.id}
             phx-target={@myself}
@@ -62,7 +62,7 @@ defmodule YouCongressWeb.Components.VerificationBadge do
           class={[
             "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium",
             Opinion.verified?(@opinion) && "bg-green-100 text-green-800",
-            !Opinion.verified?(@opinion) && "bg-yellow-100 text-yellow-800"
+            !Opinion.verified?(@opinion) && "bg-gray-100 text-gray-800"
           ]}
         >
           {if Opinion.verified?(@opinion), do: "Verified", else: "Unverified"}
