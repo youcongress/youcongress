@@ -17,13 +17,26 @@ defmodule YouCongress.Halls do
       [%Hall{}, ...]
 
   """
-  def list_halls do
-    Repo.all(Hall)
-  end
+  def list_halls(opts \\ []) do
+    base_query = from h in Hall
 
-  def list_halls(name_contains: txt) do
-    txt = String.replace(txt, " ", "-")
-    Repo.all(from(h in Hall, where: ilike(h.name, ^"%#{txt}%")))
+    Enum.reduce(opts, base_query, fn
+      {:name_contains, txt}, query ->
+        txt = String.replace(txt, " ", "-")
+        from h in query, where: ilike(h.name, ^"%#{txt}%")
+
+      {:search, search}, query ->
+        terms = YouCongress.SearchParser.parse(search)
+
+        Enum.reduce(terms, query, fn term, query_acc ->
+          term_slug = String.replace(term, " ", "-")
+          from h in query_acc, where: ilike(h.name, ^"%#{term_slug}%")
+        end)
+
+      _, query ->
+        query
+    end)
+    |> Repo.all()
   end
 
   @doc """
