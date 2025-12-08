@@ -34,7 +34,7 @@ defmodule YouCongress.Authors do
             query,
             [author],
             fragment(
-              "to_tsvector('english', ?) || to_tsvector('english', ?) @@ websearch_to_tsquery('english', ?)",
+              "to_tsvector('english', coalesce(?, ' ')) || to_tsvector('english', coalesce(?, ' ')) @@ websearch_to_tsquery('english', ?)",
               author.name,
               author.twitter_username,
               ^search
