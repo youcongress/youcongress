@@ -152,6 +152,39 @@ defmodule YouCongressWeb.ManifestoLive.Show do
   end
 
   @impl true
+  def handle_event("sign_up_and_sign", %{"name" => name, "email" => email} = params, socket) do
+    password = Base.encode64(:crypto.strong_rand_bytes(32))
+    newsletter = Map.get(params, "newsletter") == "on"
+    user_attrs = %{"email" => email, "password" => password, "newsletter" => newsletter}
+    author_attrs = %{"name" => name}
+
+    case YouCongress.Accounts.register_user(user_attrs, author_attrs) do
+      {:ok, %{user: user}} ->
+        manifesto = socket.assigns.manifesto
+        YouCongress.Accounts.deliver_user_confirmation_instructions(
+          user,
+          &url(~p"/users/confirm/#{&1}?manifesto_slug=#{manifesto.slug}")
+        )
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Account created. Please check your email to confirm and sign the manifesto.")}
+
+      {:error, _failed_op, changeset, _changes} ->
+        error_msg =
+          Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+            Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
+              opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+            end)
+          end)
+          |> Enum.map(fn {k, v} -> "#{k} #{Enum.join(v, ", ")}" end)
+          |> Enum.join("; ")
+
+        {:noreply, put_flash(socket, :error, "Could not create account: #{error_msg}")}
+    end
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-serif">
@@ -169,7 +202,7 @@ defmodule YouCongressWeb.ManifestoLive.Show do
           <div :if={@manifesto.user} class="mt-4 relative z-10">
             <span class="text-slate-400 text-sm font-sans">Created by <%= @manifesto.user.email %></span>
             <%= if @current_user && @current_user.id == @manifesto.user_id do %>
-              <.link navigate={~p"/manifestos/#{@manifesto.slug}/edit"} class="ml-2 text-indigo-400 hover:text-indigo-300 text-sm font-sans underline">
+              <.link navigate={~p"/m/#{@manifesto.slug}/edit"} class="ml-2 text-indigo-400 hover:text-indigo-300 text-sm font-sans underline">
                 Edit
               </.link>
             <% end %>
@@ -268,9 +301,35 @@ defmodule YouCongressWeb.ManifestoLive.Show do
                   By signing, you automatically vote <strong>For</strong> on all associated motions (unless you have already voted).
                 </p>
               <% else %>
-                <.link navigate={~p"/log_in"} class="font-sans bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-8 rounded-full shadow transition">
-                  Log in to Sign
-                </.link>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 w-full max-w-md">
+                  <h3 class="text-xl font-bold text-gray-900 mb-4 font-sans text-center">Sign this Manifesto</h3>
+                  <form phx-submit="sign_up_and_sign" class="space-y-4">
+                    <div>
+                      <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                      <input type="text" name="name" id="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border" placeholder="Your Name">
+                    </div>
+                    <div>
+                  <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                  <input type="email" name="email" id="email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border" placeholder="you@example.com">
+                </div>
+
+                <div class="flex items-start">
+                  <div class="flex items-center h-5">
+                    <input id="newsletter" name="newsletter" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                  </div>
+                  <div class="ml-3 text-sm">
+                    <label for="newsletter" class="text-gray-700">I want to receive updates about this and other manifestos and motions.</label>
+                  </div>
+                </div>
+
+                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 font-sans font-bold text-lg">
+                  Sign
+                </button>
+                    <p class="text-xs text-gray-500 text-center mt-2">
+                      By signing, you agree to our <a href="#" class="underline">Terms of Service</a> and <a href="#" class="underline">Privacy Policy</a>.
+                    </p>
+                  </form>
+                </div>
               <% end %>
             <% end %>
 

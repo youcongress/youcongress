@@ -12,7 +12,7 @@ defmodule YouCongressWeb.ManifestoManagementTest do
       conn = log_in_user(conn, user)
       manifesto = manifesto_fixture(user_id: user.id)
 
-      {:ok, view, _html} = live(conn, ~p"/manifestos/#{manifesto.slug}/edit")
+      {:ok, view, _html} = live(conn, ~p"/m/#{manifesto.slug}/edit")
 
       assert view
              |> form("form", manifesto_section: %{body: "New Paragraph", voting_id: ""})
@@ -27,7 +27,7 @@ defmodule YouCongressWeb.ManifestoManagementTest do
       manifesto = manifesto_fixture(user_id: user.id)
       YouCongress.Manifestos.create_section(%{manifesto_id: manifesto.id, body: "To be deleted"})
 
-      {:ok, view, _html} = live(conn, ~p"/manifestos/#{manifesto.slug}/edit")
+      {:ok, view, _html} = live(conn, ~p"/m/#{manifesto.slug}/edit")
 
       assert has_element?(view, "#sections", "To be deleted")
 
@@ -44,7 +44,7 @@ defmodule YouCongressWeb.ManifestoManagementTest do
       manifesto = manifesto_fixture(user_id: user.id)
       voting = voting_fixture(title: "AI Safety")
 
-      {:ok, view, _html} = live(conn, ~p"/manifestos/#{manifesto.slug}/edit")
+      {:ok, view, _html} = live(conn, ~p"/m/#{manifesto.slug}/edit")
 
       assert view
              |> form("form", manifesto_section: %{body: "With Motion", voting_id: voting.id})

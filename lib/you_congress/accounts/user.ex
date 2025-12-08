@@ -39,7 +39,7 @@ defmodule YouCongress.Accounts.User do
 
   def password_registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password, :author_id])
+    |> cast(attrs, [:email, :password, :author_id, :newsletter])
     |> validate_email(opts)
     |> validate_password(opts)
   end
