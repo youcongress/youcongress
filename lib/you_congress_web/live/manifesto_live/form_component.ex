@@ -1,7 +1,7 @@
-defmodule YouCongressWeb.ManifestLive.FormComponent do
+defmodule YouCongressWeb.ManifestoLive.FormComponent do
   use YouCongressWeb, :live_component
 
-  alias YouCongress.Manifests
+  alias YouCongress.Manifestos
 
   @impl true
   def render(assigns) do
@@ -9,12 +9,12 @@ defmodule YouCongressWeb.ManifestLive.FormComponent do
     <div>
       <.header>
         <%= @title %>
-        <:subtitle>Use this form to manage manifest records.</:subtitle>
+        <:subtitle>Use this form to manage manifesto records.</:subtitle>
       </.header>
 
       <.simple_form
         for={@form}
-        id="manifest-form"
+        id="manifesto-form"
         phx-target={@myself}
         phx-change="validate"
         phx-submit="save"
@@ -24,7 +24,7 @@ defmodule YouCongressWeb.ManifestLive.FormComponent do
         <.input field={@form[:active]} type="checkbox" label="Active" />
 
         <:actions>
-          <.button phx-disable-with="Saving...">Save Manifest</.button>
+          <.button phx-disable-with="Saving...">Save Manifesto</.button>
         </:actions>
       </.simple_form>
     </div>
@@ -32,8 +32,8 @@ defmodule YouCongressWeb.ManifestLive.FormComponent do
   end
 
   @impl true
-  def update(%{manifest: manifest} = assigns, socket) do
-    changeset = Manifests.change_manifest(manifest)
+  def update(%{manifesto: manifesto} = assigns, socket) do
+    changeset = Manifestos.change_manifesto(manifesto)
 
     {:ok,
      socket
@@ -42,30 +42,30 @@ defmodule YouCongressWeb.ManifestLive.FormComponent do
   end
 
   @impl true
-  def handle_event("validate", %{"manifest" => manifest_params}, socket) do
+  def handle_event("validate", %{"manifesto" => manifesto_params}, socket) do
     changeset =
-      socket.assigns.manifest
-      |> Manifests.change_manifest(manifest_params)
+      socket.assigns.manifesto
+      |> Manifestos.change_manifesto(manifesto_params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign_form(socket, changeset)}
   end
 
-  def handle_event("save", %{"manifest" => manifest_params}, socket) do
-    save_manifest(socket, socket.assigns.action, manifest_params)
+  def handle_event("save", %{"manifesto" => manifesto_params}, socket) do
+    save_manifesto(socket, socket.assigns.action, manifesto_params)
   end
 
-  defp save_manifest(socket, :new, manifest_params) do
+  defp save_manifesto(socket, :new, manifesto_params) do
     current_user = socket.assigns[:current_user]
-    params = if current_user, do: Map.put(manifest_params, "user_id", current_user.id), else: manifest_params
+    params = if current_user, do: Map.put(manifesto_params, "user_id", current_user.id), else: manifesto_params
 
-    case Manifests.create_manifest(params) do
-      {:ok, manifest} ->
-        notify_parent({:saved, manifest})
+    case Manifestos.create_manifesto(params) do
+      {:ok, manifesto} ->
+        notify_parent({:saved, manifesto})
 
         {:noreply,
          socket
-         |> put_flash(:info, "Manifest created successfully")
+         |> put_flash(:info, "Manifesto created successfully")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
