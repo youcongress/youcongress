@@ -213,6 +213,17 @@ defmodule YouCongress.Opinions do
       {:content_contains, content}, query ->
         from q in query, where: ilike(q.content, ^"%#{content}%")
 
+      {:search, search}, query ->
+        from q in query,
+          join: a in assoc(q, :author),
+          where:
+            fragment(
+              "to_tsvector('english', ?) || to_tsvector('english', ?) @@ websearch_to_tsquery('english', ?)",
+              q.content,
+              a.name,
+              ^search
+            )
+
       {:initial_ancestry, ancestry}, query ->
         from q in query, where: fragment("? LIKE ?", q.ancestry, ^"#{ancestry}/%")
 

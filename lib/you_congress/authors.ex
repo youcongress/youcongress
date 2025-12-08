@@ -33,7 +33,12 @@ defmodule YouCongress.Authors do
           where(
             query,
             [author],
-            ilike(author.name, ^"%#{search}%") or ilike(author.twitter_username, ^"%#{search}%")
+            fragment(
+              "to_tsvector('english', ?) || to_tsvector('english', ?) @@ websearch_to_tsquery('english', ?)",
+              author.name,
+              author.twitter_username,
+              ^search
+            )
           )
 
         {:twin_origin, twin_origin}, query ->

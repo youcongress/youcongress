@@ -106,7 +106,7 @@ defmodule YouCongressWeb.VotingLive.Index do
     votings = Votings.list_votings(title_contains: search, preload: [:halls])
     authors = Authors.list_authors(search: search)
     halls = Halls.list_halls(name_contains: search)
-    quotes = Opinions.list_opinions(content_contains: search, preload: [:author])
+    quotes = Opinions.list_opinions(search: search, preload: [:author])
 
     search_tab =
       cond do
