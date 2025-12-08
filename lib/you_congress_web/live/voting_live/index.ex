@@ -31,7 +31,7 @@ defmodule YouCongressWeb.VotingLive.Index do
     socket =
       socket
       |> assign(:search, nil)
-      |> assign(:search_tab, :polls)
+      |> assign(:search_tab, :motions)
       |> assign(:halls, [])
       |> assign(:authors, [])
       |> assign(:votings, [])
@@ -110,11 +110,11 @@ defmodule YouCongressWeb.VotingLive.Index do
 
     search_tab =
       cond do
-        Enum.any?(votings) -> :polls
+        Enum.any?(votings) -> :motions
         Enum.any?(authors) -> :delegates
         Enum.any?(quotes) -> :quotes
         Enum.any?(halls) -> :halls
-        true -> :polls
+        true -> :motions
       end
 
     {:noreply,
@@ -128,8 +128,8 @@ defmodule YouCongressWeb.VotingLive.Index do
      )}
   end
 
-  def handle_event("search-tab", %{"tab" => "polls"}, socket) do
-    {:noreply, assign(socket, search_tab: :polls)}
+  def handle_event("search-tab", %{"tab" => "motions"}, socket) do
+    {:noreply, assign(socket, search_tab: :motions)}
   end
 
   def handle_event("search-tab", %{"tab" => "delegates"}, socket) do

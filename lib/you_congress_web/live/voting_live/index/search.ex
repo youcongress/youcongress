@@ -1,6 +1,6 @@
 defmodule YouCongressWeb.VotingLive.Index.Search do
   @moduledoc """
-  Search polls, delegates, halls, and quotes
+  Search motions, delegates, halls, and quotes
   """
   use Phoenix.Component
   use Phoenix.VerifiedRoutes, endpoint: YouCongressWeb.Endpoint, router: YouCongressWeb.Router
@@ -20,7 +20,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
     <div class="border-b border-gray-200 pt-4">
       <div class="pb-2">
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-          <Search.tab search_tab={@search_tab} tab={:polls} label={"Polls (#{length(@votings)})"} />
+          <Search.tab search_tab={@search_tab} tab={:motions} label={"Motions (#{length(@votings)})"} />
           <Search.tab
             search_tab={@search_tab}
             tab={:delegates}
@@ -31,7 +31,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         </nav>
       </div>
     </div>
-    <%= if @search_tab == :polls do %>
+    <%= if @search_tab == :motions do %>
       <table>
         <%= for voting <- @votings do %>
           <tr>
