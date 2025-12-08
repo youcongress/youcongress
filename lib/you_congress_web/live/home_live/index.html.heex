@@ -26,8 +26,10 @@
           <div class="max-w-xl mx-auto mb-8">
             <form phx-submit="search">
               <input
+                id="home-search"
                 phx-debounce="300"
                 phx-change="search"
+                phx-mounted={JS.focus(to: "#home-search")}
                 type="search"
                 name="search"
                 value={@search}
