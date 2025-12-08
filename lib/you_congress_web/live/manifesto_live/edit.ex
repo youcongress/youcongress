@@ -1,23 +1,23 @@
-defmodule YouCongressWeb.ManifestLive.Edit do
+defmodule YouCongressWeb.ManifestoLive.Edit do
   use YouCongressWeb, :live_view
 
-  alias YouCongress.Manifests
-  alias YouCongress.Manifests.ManifestSection
+  alias YouCongress.Manifestos
+  alias YouCongress.Manifestos.ManifestoSection
   alias YouCongress.Votings
   alias YouCongress.Repo
 
   @impl true
   def mount(%{"slug" => slug}, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
-    manifest = Manifests.get_manifest_by_slug!(slug)
+    manifesto = Manifestos.get_manifesto_by_slug!(slug)
 
     # TODO: Add authorization check here
 
     {:ok,
      socket
-     |> assign(:manifest, manifest)
-     |> assign(:section_form, to_form(ManifestSection.changeset(%ManifestSection{}, %{})))
-     |> stream(:sections, manifest.sections)}
+     |> assign(:manifesto, manifesto)
+     |> assign(:section_form, to_form(ManifestoSection.changeset(%ManifestoSection{}, %{})))
+     |> stream(:sections, manifesto.sections)}
   end
 
   @impl true
@@ -27,25 +27,25 @@ defmodule YouCongressWeb.ManifestLive.Edit do
 
   defp apply_action(socket, :edit, _params) do
     socket
-    |> assign(:page_title, "Edit Manifest")
+    |> assign(:page_title, "Edit Manifesto")
   end
 
   @impl true
-  def handle_event("save_section", %{"manifest_section" => section_params}, socket) do
-    manifest = socket.assigns.manifest
-    params = Map.put(section_params, "manifest_id", manifest.id)
+  def handle_event("save_section", %{"manifesto_section" => section_params}, socket) do
+    manifesto = socket.assigns.manifesto
+    params = Map.put(section_params, "manifesto_id", manifesto.id)
 
-    case Manifests.create_section(params) do
+    case Manifestos.create_section(params) do
       {:ok, section} ->
-        # Refresh manifest to get updated sections if needed or just stream insert
-        # Need to reload manifest really for simplicity or just append
+        # Refresh manifesto to get updated sections if needed or just stream insert
+        # Need to reload manifesto really for simplicity or just append
         section = Repo.preload(section, :voting)
 
         {:noreply,
          socket
          |> put_flash(:info, "Section added")
          |> stream_insert(:sections, section)
-         |> assign(:section_form, to_form(ManifestSection.changeset(%ManifestSection{}, %{})))}
+         |> assign(:section_form, to_form(ManifestoSection.changeset(%ManifestoSection{}, %{})))}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :section_form, to_form(changeset))}
@@ -53,13 +53,13 @@ defmodule YouCongressWeb.ManifestLive.Edit do
   end
 
   def handle_event("delete_section", %{"id" => id}, socket) do
-    section = Manifests.get_section!(id)
-    {:ok, _} = Manifests.delete_section(section)
+    section = Manifestos.get_section!(id)
+    {:ok, _} = Manifestos.delete_section(section)
 
     {:noreply, stream_delete(socket, :sections, section)}
   end
 
-  # TODO: Implement editing main manifest details via FormComponent if needed,
+  # TODO: Implement editing main manifesto details via FormComponent if needed,
   # or just focus on sections as requested.
 
   @impl true
@@ -67,12 +67,12 @@ defmodule YouCongressWeb.ManifestLive.Edit do
     ~H"""
     <div class="mx-auto max-w-4xl px-4 py-8">
       <div class="mb-8">
-        <.link navigate={~p"/manifests/#{@manifest.slug}"} class="text-indigo-600 hover:text-indigo-800">
-           &larr; Back to Manifest
+        <.link navigate={~p"/manifestos/#{@manifesto.slug}"} class="text-indigo-600 hover:text-indigo-800">
+           &larr; Back to Manifesto
         </.link>
       </div>
 
-      <h1 class="text-2xl font-bold mb-6">Manage Manifest: <%= @manifest.title %></h1>
+      <h1 class="text-2xl font-bold mb-6">Manage Manifesto: <%= @manifesto.title %></h1>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Sections List -->

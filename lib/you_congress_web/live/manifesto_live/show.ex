@@ -1,7 +1,7 @@
-defmodule YouCongressWeb.ManifestLive.Show do
+defmodule YouCongressWeb.ManifestoLive.Show do
   use YouCongressWeb, :live_view
 
-  alias YouCongress.Manifests
+  alias YouCongress.Manifestos
 
   @impl true
   def mount(_params, session, socket) do
@@ -14,25 +14,25 @@ defmodule YouCongressWeb.ManifestLive.Show do
 
   @impl true
   def handle_params(%{"slug" => slug}, _uri, socket) do
-    manifest = Manifests.get_manifest_by_slug!(slug)
+    manifesto = Manifestos.get_manifesto_by_slug!(slug)
 
     socket =
       socket
-      |> assign(:manifest, manifest)
-      |> assign(:page_title, manifest.title)
-      |> assign_signatures_data(manifest)
-      |> assign_voting_data(manifest)
+      |> assign(:manifesto, manifesto)
+      |> assign(:page_title, manifesto.title)
+      |> assign_signatures_data(manifesto)
+      |> assign_voting_data(manifesto)
 
     {:noreply, socket}
   end
 
   alias YouCongress.Votes.VoteFrequencies
 
-  defp assign_voting_data(socket, manifest) do
+  defp assign_voting_data(socket, manifesto) do
     current_user = socket.assigns.current_user
 
     voting_data =
-      Enum.reduce(manifest.sections, %{}, fn section, acc ->
+      Enum.reduce(manifesto.sections, %{}, fn section, acc ->
         if section.voting_id do
            frequencies = VoteFrequencies.get(section.voting_id)
            total_votes = Votes.count_by_voting(section.voting_id)
@@ -55,11 +55,11 @@ defmodule YouCongressWeb.ManifestLive.Show do
     assign(socket, :voting_data, voting_data)
   end
 
-  defp assign_signatures_data(socket, manifest) do
+  defp assign_signatures_data(socket, manifesto) do
     current_user = socket.assigns.current_user
 
-    signed? = if current_user, do: Manifests.signed?(manifest, current_user), else: false
-    count = Manifests.signatures_count(manifest)
+    signed? = if current_user, do: Manifestos.signed?(manifesto, current_user), else: false
+    count = Manifestos.signatures_count(manifesto)
 
     socket
     |> assign(:signed?, signed?)
@@ -82,7 +82,7 @@ defmodule YouCongressWeb.ManifestLive.Show do
       case Votes.create_or_update(vote_params) do
         {:ok, _vote} ->
           # Refresh data
-          socket = assign_voting_data(socket, socket.assigns.manifest)
+          socket = assign_voting_data(socket, socket.assigns.manifesto)
           {:noreply, put_flash(socket, :info, "Vote recorded")}
 
         {:error, _} ->
@@ -102,7 +102,7 @@ defmodule YouCongressWeb.ManifestLive.Show do
       Votes.delete_vote(%{voting_id: voting_id, author_id: user.author_id})
 
       # Refresh data
-      socket = assign_voting_data(socket, socket.assigns.manifest)
+      socket = assign_voting_data(socket, socket.assigns.manifesto)
       {:noreply, put_flash(socket, :info, "Vote removed")}
     else
       {:noreply, redirect(socket, to: ~p"/log_in")}
@@ -112,18 +112,18 @@ defmodule YouCongressWeb.ManifestLive.Show do
   @impl true
   def handle_event("unsign", _, socket) do
     user = socket.assigns.current_user
-    manifest = socket.assigns.manifest
+    manifesto = socket.assigns.manifesto
 
     if user do
-      case Manifests.unsign_manifest(manifest, user) do
+      case Manifestos.unsign_manifesto(manifesto, user) do
         {:ok, _} ->
           {:noreply,
            socket
-           |> put_flash(:info, "You have removed your signature from the manifest. You can manually change your vote on the motions.")
-           |> assign_signatures_data(manifest)
-           |> assign_voting_data(manifest)}
+           |> put_flash(:info, "You have removed your signature from the manifesto. You can manually change your vote on the motions.")
+           |> assign_signatures_data(manifesto)
+           |> assign_voting_data(manifesto)}
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Could not unsign manifest.")}
+          {:noreply, put_flash(socket, :error, "Could not unsign manifesto.")}
       end
     else
       {:noreply, redirect(socket, to: ~p"/log_in")}
@@ -133,18 +133,18 @@ defmodule YouCongressWeb.ManifestLive.Show do
   @impl true
   def handle_event("sign", _, socket) do
     user = socket.assigns.current_user
-    manifest = socket.assigns.manifest
+    manifesto = socket.assigns.manifesto
 
     if user do
-      case Manifests.sign_manifest(manifest, user) do
+      case Manifestos.sign_manifesto(manifesto, user) do
         {:ok, _} ->
           {:noreply,
            socket
-           |> put_flash(:info, "You have successfully signed the manifest.")
-           |> assign_signatures_data(manifest)
-           |> assign_voting_data(manifest)}
+           |> put_flash(:info, "You have successfully signed the manifesto.")
+           |> assign_signatures_data(manifesto)
+           |> assign_voting_data(manifesto)}
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Could not sign manifest.")}
+          {:noreply, put_flash(socket, :error, "Could not sign manifesto.")}
       end
     else
       {:noreply, redirect(socket, to: ~p"/log_in")}
@@ -161,15 +161,15 @@ defmodule YouCongressWeb.ManifestLive.Show do
         <div class="bg-slate-900 px-8 py-10 text-center text-white relative overflow-hidden">
           <div class="absolute inset-0 opacity-10 bg-[url('/images/noise.png')]"></div>
           <h1 class="text-4xl md:text-5xl font-bold tracking-tight relative z-10 mb-2 font-sans">
-            <%= @manifest.title %>
+            <%= @manifesto.title %>
           </h1>
           <p class="text-slate-300 italic relative z-10 uppercase tracking-widest text-sm">
             Manifesto
           </p>
-          <div :if={@manifest.user} class="mt-4 relative z-10">
-            <span class="text-slate-400 text-sm font-sans">Created by <%= @manifest.user.email %></span>
-            <%= if @current_user && @current_user.id == @manifest.user_id do %>
-              <.link navigate={~p"/manifests/#{@manifest.slug}/edit"} class="ml-2 text-indigo-400 hover:text-indigo-300 text-sm font-sans underline">
+          <div :if={@manifesto.user} class="mt-4 relative z-10">
+            <span class="text-slate-400 text-sm font-sans">Created by <%= @manifesto.user.email %></span>
+            <%= if @current_user && @current_user.id == @manifesto.user_id do %>
+              <.link navigate={~p"/manifestos/#{@manifesto.slug}/edit"} class="ml-2 text-indigo-400 hover:text-indigo-300 text-sm font-sans underline">
                 Edit
               </.link>
             <% end %>
@@ -178,7 +178,7 @@ defmodule YouCongressWeb.ManifestLive.Show do
 
         <!-- Body -->
         <div class="px-8 py-10 space-y-8 text-lg text-gray-800 leading-relaxed">
-          <div :for={section <- @manifest.sections} class="prose prose-lg max-w-none">
+          <div :for={section <- @manifesto.sections} class="prose prose-lg max-w-none">
             <p>
               <%= section.body %>
             </p>
@@ -256,13 +256,13 @@ defmodule YouCongressWeb.ManifestLive.Show do
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
-                <span>You have signed this manifest</span>
+                <span>You have signed this manifesto</span>
                 <button phx-click="unsign" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded">Unsign</button>
               </div>
             <% else %>
               <%= if @current_user do %>
                 <button phx-click="sign" phx-disable-with="Signing..." class="font-sans bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-10 rounded-full shadow-lg transform transition hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-indigo-300 text-xl">
-                  Sign Manifest
+                  Sign Manifesto
                 </button>
                 <p class="text-sm text-gray-500 mt-2 text-center max-w-md">
                   By signing, you automatically vote <strong>For</strong> on all associated motions (unless you have already voted).
