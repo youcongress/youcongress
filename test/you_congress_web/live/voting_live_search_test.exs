@@ -13,7 +13,7 @@ defmodule YouCongressWeb.VotingLiveSearchTest do
 
       {:ok, _view, html} = live(conn, ~p"/?search=AI", on_error: :warn)
 
-      assert html =~ "AI Safety Bill"
+      assert html =~ "<b>AI</b> Safety Bill"
       refute html =~ "Tax Reform"
     end
 
@@ -25,7 +25,7 @@ defmodule YouCongressWeb.VotingLiveSearchTest do
 
       # Check if delegates tab is active (assuming class "bg-blue-100" or similar indicates active state,
       # but simpler is to check if author is listed)
-      assert html =~ "Isaac Asimov"
+      assert html =~ "Isaac <b>Asimov</b>"
     end
   end
 end

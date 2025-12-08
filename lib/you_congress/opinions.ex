@@ -214,41 +214,15 @@ defmodule YouCongress.Opinions do
         from q in query, where: ilike(q.content, ^"%#{content}%")
 
       {:search, search}, query ->
-        parts =
-          if String.contains?(search, ["\"", "-"]) do
-            []
-          else
-            search
-            |> String.replace(~r/[^\w\s]/u, "")
-            |> String.split()
-          end
+        terms = String.split(search)
 
-        case parts do
-          [] ->
-            from q in query,
-              join: a in assoc(q, :author),
-              where:
-                fragment(
-                  "to_tsvector('english', ?) || to_tsvector('english', ?) @@ websearch_to_tsquery('english', ?)",
-                  q.content,
-                  a.name,
-                  ^search
-                )
+        Enum.reduce(terms, query, fn term, query_acc ->
+          term_pattern = "%#{term}%"
 
-          _ ->
-            prefix_search = Enum.map_join(parts, " & ", &"#{&1}:*")
-
-            from q in query,
-              join: a in assoc(q, :author),
-              where:
-                fragment(
-                  "to_tsvector('english', ?) || to_tsvector('english', ?) @@ (websearch_to_tsquery('english', ?) || to_tsquery('english', ?))",
-                  q.content,
-                  a.name,
-                  ^search,
-                  ^prefix_search
-                )
-        end
+          from q in query_acc,
+            join: a in assoc(q, :author),
+            where: ilike(q.content, ^term_pattern) or ilike(a.name, ^term_pattern)
+        end)
 
       {:initial_ancestry, ancestry}, query ->
         from q in query, where: fragment("? LIKE ?", q.ancestry, ^"#{ancestry}/%")

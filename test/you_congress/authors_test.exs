@@ -22,6 +22,27 @@ defmodule YouCongress.AuthorsTest do
       assert Authors.list_authors() == [author]
     end
 
+    test "list_authors/1 with search returns matched authors" do
+      author1 = author_fixture(name: "Stephen Hawking")
+      author2 = author_fixture(name: "Albert Einstein")
+
+      assert Authors.list_authors(search: "hawki") == [author1]
+      assert Authors.list_authors(search: "steph") == [author1]
+      assert Authors.list_authors(search: "einstein") == [author2]
+      assert Authors.list_authors(search: "bert") == [author2]
+    end
+
+    test "list_authors/1 with multiple search terms (AND logic)" do
+      author = author_fixture(name: "Stephen Hawking")
+
+      # "hawking" and "stephen" both present
+      assert Authors.list_authors(search: "stephen hawking") == [author]
+      # Order shouldn't matter
+      assert Authors.list_authors(search: "hawking stephen") == [author]
+      # Partial matching for both
+      assert Authors.list_authors(search: "hawki steph") == [author]
+    end
+
     test "get_author!/1 returns the author with given id" do
       author = author_fixture()
       assert Authors.get_author!(author.id) == author
