@@ -183,7 +183,7 @@ defmodule YouCongressWeb.VotingLive.Index do
         "AI Safety & Governance liquid democracy polls with verifiable quotes | YouCongress",
       skip_page_suffix: true,
       page_description:
-        "We gather verifiable policy quotes and use liquid democracy polling to surface what experts and citizens are signaling — beginning with AI safety and governance.",
+        "We gather verifiable expert quotes and use liquid democracy to surface consensus on AI governance.",
       voting: nil
     )
   end
