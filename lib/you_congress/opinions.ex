@@ -214,15 +214,41 @@ defmodule YouCongress.Opinions do
         from q in query, where: ilike(q.content, ^"%#{content}%")
 
       {:search, search}, query ->
-        from q in query,
-          join: a in assoc(q, :author),
-          where:
-            fragment(
-              "to_tsvector('english', ?) || to_tsvector('english', ?) @@ websearch_to_tsquery('english', ?)",
-              q.content,
-              a.name,
-              ^search
-            )
+        parts =
+          if String.contains?(search, ["\"", "-"]) do
+            []
+          else
+            search
+            |> String.replace(~r/[^\w\s]/u, "")
+            |> String.split()
+          end
+
+        case parts do
+          [] ->
+            from q in query,
+              join: a in assoc(q, :author),
+              where:
+                fragment(
+                  "to_tsvector('english', ?) || to_tsvector('english', ?) @@ websearch_to_tsquery('english', ?)",
+                  q.content,
+                  a.name,
+                  ^search
+                )
+
+          _ ->
+            prefix_search = Enum.map_join(parts, " & ", &"#{&1}:*")
+
+            from q in query,
+              join: a in assoc(q, :author),
+              where:
+                fragment(
+                  "to_tsvector('english', ?) || to_tsvector('english', ?) @@ (websearch_to_tsquery('english', ?) || to_tsquery('english', ?))",
+                  q.content,
+                  a.name,
+                  ^search,
+                  ^prefix_search
+                )
+        end
 
       {:initial_ancestry, ancestry}, query ->
         from q in query, where: fragment("? LIKE ?", q.ancestry, ^"#{ancestry}/%")

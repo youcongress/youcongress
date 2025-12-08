@@ -20,13 +20,13 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
     <div class="border-b border-gray-200 pt-4">
       <div class="pb-2">
         <nav class="-mb-px grid grid-cols-2 md:flex md:space-x-8" aria-label="Tabs">
-          <Search.tab search_tab={@search_tab} tab={:motions} label={"Motions (#{length(@votings)})"} />
+          <Search.tab search_tab={@search_tab} tab={:quotes} label={"Quotes (#{length(@quotes)})"} />
           <Search.tab
             search_tab={@search_tab}
             tab={:delegates}
             label={"Delegates (#{length(@authors)})"}
           />
-          <Search.tab search_tab={@search_tab} tab={:quotes} label={"Quotes (#{length(@quotes)})"} />
+          <Search.tab search_tab={@search_tab} tab={:motions} label={"Motions (#{length(@votings)})"} />
           <Search.tab search_tab={@search_tab} tab={:halls} label={"Halls (#{length(@halls)})"} />
         </nav>
       </div>

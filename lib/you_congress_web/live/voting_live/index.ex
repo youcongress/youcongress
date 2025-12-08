@@ -31,7 +31,7 @@ defmodule YouCongressWeb.VotingLive.Index do
     socket =
       socket
       |> assign(:search, nil)
-      |> assign(:search_tab, :motions)
+      |> assign(:search_tab, :quotes)
       |> assign(:halls, [])
       |> assign(:authors, [])
       |> assign(:votings, [])
@@ -272,11 +272,11 @@ defmodule YouCongressWeb.VotingLive.Index do
 
     search_tab =
       cond do
-        Enum.any?(votings) -> :motions
-        Enum.any?(authors) -> :delegates
         Enum.any?(quotes) -> :quotes
+        Enum.any?(authors) -> :delegates
+        Enum.any?(votings) -> :motions
         Enum.any?(halls) -> :halls
-        true -> :motions
+        true -> :quotes
       end
 
     assign(socket,
