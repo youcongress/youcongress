@@ -153,12 +153,9 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
     }
   end
 
-  defp map_agree_rate_to_answer("Strongly agree"), do: :for
-  defp map_agree_rate_to_answer("Agree"), do: :for
-  defp map_agree_rate_to_answer("Strongly disagree"), do: :against
-  defp map_agree_rate_to_answer("Disagree"), do: :against
+  defp map_agree_rate_to_answer("For"), do: :for
+  defp map_agree_rate_to_answer("Against"), do: :against
   defp map_agree_rate_to_answer("Abstain"), do: :abstain
-  defp map_agree_rate_to_answer("N/A"), do: :abstain
   defp map_agree_rate_to_answer(_), do: :abstain
 
   defp create_or_update_vote(attrs) do

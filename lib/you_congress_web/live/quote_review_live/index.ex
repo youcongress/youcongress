@@ -198,12 +198,9 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
   # Helper function to get styling classes based on vote response
   defp get_vote_style(response) do
     case response do
-      "Strongly agree" -> "bg-green-700 text-white"
-      "Agree" -> "bg-green-600 text-white"
-      "Abstain" -> "bg-blue-600 text-white"
-      "N/A" -> "bg-gray-600 text-white"
-      "Disagree" -> "bg-orange-600 text-white"
-      "Strongly disagree" -> "bg-red-600 text-white"
+      :for -> "bg-green-700 text-white"
+      :abstain -> "bg-blue-600 text-white"
+      :against -> "bg-red-600 text-white"
       _ -> "bg-gray-100 text-gray-600"
     end
   end
