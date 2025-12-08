@@ -78,6 +78,18 @@ defmodule YouCongressWeb.ManifestoLiveTest do
       assert html =~ manifesto.user.author.name
       assert html =~ ~p"/x/#{manifesto.user.author.twitter_username}"
     end
+
+    test "toggles creator name visibility", %{conn: conn} do
+      user = YouCongress.AccountsFixtures.user_fixture()
+      manifesto = manifesto_fixture(user_id: user.id, show_author: false)
+
+      {:ok, _show_live, html} = live(conn, ~p"/m/#{manifesto.slug}")
+      refute html =~ "Created by"
+
+      {:ok, manifesto} = YouCongress.Manifestos.update_manifesto(manifesto, %{show_author: true})
+      {:ok, _show_live, html} = live(conn, ~p"/m/#{manifesto.slug}")
+      assert html =~ "Created by"
+    end
   end
 
   describe "manifesto creation requires authentication" do

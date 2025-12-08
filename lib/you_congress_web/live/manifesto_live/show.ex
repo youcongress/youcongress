@@ -199,8 +199,8 @@ defmodule YouCongressWeb.ManifestoLive.Show do
           <p class="text-slate-300 italic relative z-10 uppercase tracking-widest text-sm">
             Manifesto
           </p>
-          <div :if={@manifesto.user} class="mt-4 relative z-10">
-            <span class="text-slate-400 text-sm font-sans">
+          <div :if={@manifesto.user && @manifesto.show_author} class="mt-4 relative z-10">
+            <span class="text-slate-400 text-xs font-sans">
               Created by
               <.link navigate={~p"/x/#{@manifesto.user.author.twitter_username}"} class="hover:underline hover:text-white transition"><%= @manifesto.user.author.name %></.link>
             </span>

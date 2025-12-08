@@ -22,6 +22,7 @@ defmodule YouCongressWeb.ManifestoLive.FormComponent do
         <.input field={@form[:title]} type="text" label="Title" />
         <.input field={@form[:slug]} type="text" label="Slug" />
         <.input field={@form[:active]} type="checkbox" label="Active" />
+        <.input field={@form[:show_author]} type="checkbox" label="Show 'Created by'" />
 
         <:actions>
           <.button phx-disable-with="Saving...">Save Manifesto</.button>
