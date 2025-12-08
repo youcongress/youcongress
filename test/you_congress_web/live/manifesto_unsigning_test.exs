@@ -19,12 +19,12 @@ defmodule YouCongressWeb.ManifestoLive.UnsigningTest do
       assert Manifestos.signed?(manifesto, user)
       assert Manifestos.signatures_count(manifesto) == 1
 
-      {:ok, show_live, _html} = live(conn, ~p"/manifestos/#{manifesto.slug}")
+      {:ok, show_live, _html} = live(conn, ~p"/m/#{manifesto.slug}")
 
       # Log in via test helper if necessary, or assume live acting as user
       # Actually, better to log in first
       conn = log_in_user(conn, user)
-      {:ok, show_live, _html} = live(conn, ~p"/manifestos/#{manifesto.slug}")
+      {:ok, show_live, _html} = live(conn, ~p"/m/#{manifesto.slug}")
 
       assert show_live |> element("button", "Unsign") |> has_element?()
 

@@ -56,20 +56,28 @@ defmodule YouCongressWeb.ManifestoLive.FormComponent do
   end
 
   defp save_manifesto(socket, :new, manifesto_params) do
-    current_user = socket.assigns[:current_user]
-    params = if current_user, do: Map.put(manifesto_params, "user_id", current_user.id), else: manifesto_params
-
-    case Manifestos.create_manifesto(params) do
-      {:ok, manifesto} ->
-        notify_parent({:saved, manifesto})
-
+    case socket.assigns[:current_user] do
+      nil ->
         {:noreply,
          socket
-         |> put_flash(:info, "Manifesto created successfully")
-         |> push_patch(to: socket.assigns.patch)}
+         |> put_flash(:error, "You must log in to create a manifesto.")
+         |> push_navigate(to: ~p"/log_in")}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign_form(socket, changeset)}
+      current_user ->
+        params = Map.put(manifesto_params, "user_id", current_user.id)
+
+        case Manifestos.create_manifesto(params) do
+          {:ok, manifesto} ->
+            notify_parent({:saved, manifesto})
+
+            {:noreply,
+             socket
+             |> put_flash(:info, "Manifesto created successfully")
+             |> push_patch(to: socket.assigns.patch)}
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:noreply, assign_form(socket, changeset)}
+        end
     end
   end
 

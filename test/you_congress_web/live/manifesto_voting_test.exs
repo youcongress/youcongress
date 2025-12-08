@@ -16,7 +16,7 @@ defmodule YouCongressWeb.ManifestoVotingTest do
       manifesto = manifesto_fixture()
       manifesto_section_fixture(%{manifesto_id: manifesto.id, voting_id: voting.id, body: "Paragraph 1"})
 
-      {:ok, view, _html} = live(conn, ~p"/manifestos/#{manifesto.slug}")
+      {:ok, view, _html} = live(conn, ~p"/m/#{manifesto.slug}")
 
       assert has_element?(view, "h3", "AI Safety")
 
@@ -49,7 +49,7 @@ defmodule YouCongressWeb.ManifestoVotingTest do
       manifesto = manifesto_fixture()
       manifesto_section_fixture(%{manifesto_id: manifesto.id, voting_id: voting.id, body: "Paragraph 1"})
 
-      {:ok, view, _html} = live(conn, ~p"/manifestos/#{manifesto.slug}")
+      {:ok, view, _html} = live(conn, ~p"/m/#{manifesto.slug}")
 
       # Vote For
       view
@@ -80,7 +80,7 @@ defmodule YouCongressWeb.ManifestoVotingTest do
       # Create some initial votes
       Votes.create_vote(%{voting_id: voting.id, author_id: user.author_id, answer: :for, direct: true})
 
-      {:ok, view, _html} = live(conn, ~p"/manifestos/#{manifesto.slug}")
+      {:ok, view, _html} = live(conn, ~p"/m/#{manifesto.slug}")
 
       # Check if results component is rendered (it renders percentages/bars)
       assert render(view) =~ "Results"

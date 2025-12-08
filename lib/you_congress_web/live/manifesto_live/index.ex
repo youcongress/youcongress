@@ -22,9 +22,16 @@ defmodule YouCongressWeb.ManifestoLive.Index do
   end
 
   defp apply_action(socket, :new, _params) do
-    socket
-    |> assign(:page_title, "New Manifesto")
-    |> assign(:manifesto, %YouCongress.Manifestos.Manifesto{})
+    if socket.assigns.current_user do
+      socket
+      |> assign(:page_title, "New Manifesto")
+      |> assign(:manifesto, %YouCongress.Manifestos.Manifesto{})
+    else
+      socket
+      |> assign(:manifesto, %YouCongress.Manifestos.Manifesto{})
+      |> put_flash(:error, "You must log in to create a manifesto.")
+      |> push_navigate(to: ~p"/log_in")
+    end
   end
 
   @impl true
@@ -41,20 +48,22 @@ defmodule YouCongressWeb.ManifestoLive.Index do
     <div class="mx-auto max-w-4xl px-4 py-8">
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-serif font-bold text-gray-900 text-center">Manifestos</h1>
-        <.link patch={~p"/manifestos/new"} class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded shadow">
-          New Manifesto
-        </.link>
+        <%= if @current_user do %>
+          <.link patch={~p"/m/new"} class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded shadow">
+            New Manifesto
+          </.link>
+        <% end %>
       </div>
 
       <div class="grid gap-6 md:grid-cols-2" id="manifestos" phx-update="stream">
         <div :for={{id, manifesto} <- @streams.manifestos} id={id} class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
           <h2 class="text-xl font-bold mb-2">
-            <.link navigate={~p"/manifestos/#{manifesto.slug}"} class="hover:underline">
+            <.link navigate={~p"/m/#{manifesto.slug}"} class="hover:underline">
               <%= manifesto.title %>
             </.link>
           </h2>
           <div class="mt-4 flex justify-end">
-             <.link navigate={~p"/manifestos/#{manifesto.slug}"} class="text-sm font-semibold text-indigo-600 hover:text-indigo-500">
+             <.link navigate={~p"/m/#{manifesto.slug}"} class="text-sm font-semibold text-indigo-600 hover:text-indigo-500">
               Read & Sign <span aria-hidden="true">&rarr;</span>
             </.link>
           </div>

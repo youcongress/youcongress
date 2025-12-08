@@ -67,7 +67,7 @@ defmodule YouCongressWeb.ManifestoLive.Edit do
     ~H"""
     <div class="mx-auto max-w-4xl px-4 py-8">
       <div class="mb-8">
-        <.link navigate={~p"/manifestos/#{@manifesto.slug}"} class="text-indigo-600 hover:text-indigo-800">
+        <.link navigate={~p"/m/#{@manifesto.slug}"} class="text-indigo-600 hover:text-indigo-800">
            &larr; Back to Manifesto
         </.link>
       </div>
