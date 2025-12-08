@@ -44,5 +44,9 @@ defmodule YouCongressWeb.WelcomeLive.Index do
     end
   end
 
+  def handle_event("search", %{"value" => query}, socket) do
+    {:noreply, redirect(socket, to: ~p"/?search=#{query}&tab=quotes")}
+  end
+
   @impl true
 end
