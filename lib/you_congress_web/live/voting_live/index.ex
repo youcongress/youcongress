@@ -102,31 +102,10 @@ defmodule YouCongressWeb.VotingLive.Index do
   end
 
   def handle_event("search", %{"search" => search}, socket) do
-    Track.event("Search", socket.assigns.current_user)
-    votings = Votings.list_votings(title_contains: search, preload: [:halls])
-    authors = Authors.list_authors(search: search)
-    halls = Halls.list_halls(name_contains: search)
-    quotes = Opinions.list_opinions(search: search, preload: [:author])
-
-    search_tab =
-      cond do
-        Enum.any?(votings) -> :motions
-        Enum.any?(authors) -> :delegates
-        Enum.any?(quotes) -> :quotes
-        Enum.any?(halls) -> :halls
-        true -> :motions
-      end
-
-    {:noreply,
-     assign(socket,
-       votings: votings,
-       search: search,
-       search_tab: search_tab,
-       authors: authors,
-       halls: halls,
-       quotes: quotes
-     )}
+    {:noreply, perform_search(socket, search)}
   end
+
+
 
   def handle_event("search-tab", %{"tab" => "motions"}, socket) do
     {:noreply, assign(socket, search_tab: :motions)}
@@ -283,5 +262,30 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   defp get_current_user_delegation_ids(current_user) do
     Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
+  end
+  defp perform_search(socket, search) do
+    Track.event("Search", socket.assigns.current_user)
+    votings = Votings.list_votings(title_contains: search, preload: [:halls])
+    authors = Authors.list_authors(search: search)
+    halls = Halls.list_halls(name_contains: search)
+    quotes = Opinions.list_opinions(search: search, preload: [:author])
+
+    search_tab =
+      cond do
+        Enum.any?(votings) -> :motions
+        Enum.any?(authors) -> :delegates
+        Enum.any?(quotes) -> :quotes
+        Enum.any?(halls) -> :halls
+        true -> :motions
+      end
+
+    assign(socket,
+      votings: votings,
+      search: search,
+      search_tab: search_tab,
+      authors: authors,
+      halls: halls,
+      quotes: quotes
+    )
   end
 end

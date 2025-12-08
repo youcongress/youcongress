@@ -14,20 +14,46 @@
       >
       </div>
     </div>
-    <div class="mx-auto max-w-3xl py-4 sm:py-8 lg:pt-24">
+    <div class="mx-auto max-w-3xl pb-4 sm:pb-8">
       <div class="text-center">
-        <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-4xl font-bold tracking-tight text-gray-900">
-          YouCongress
-        </h1>
-        <div class="mt-6 text-2xl leading-8 text-gray-600">
-          <p class="mb-6 mx-24">
+        <div class="text-2xl leading-8 text-gray-600">
+          <p class="mb-6 md:mx-24">
             <b>Verifiable expert quotes</b>
             and <b>liquid democracy</b>
             to surface <b>consensus</b>
             on <b class="text-indigo-600">AI governance</b>.
           </p>
 
-          <div class="pt-4 text-sm">
+          <div class="max-w-xl mx-auto mb-8">
+            <form phx-submit="search">
+              <input
+                phx-change="search"
+                type="search"
+                name="search"
+                value={@search}
+                placeholder="search quotes, people, motions..."
+                class="block w-full rounded-lg text-zinc-900 focus:ring-1 focus:ring-indigo-600 sm:text-sm sm:leading-6 border-zinc-300"
+              />
+            </form>
+          </div>
+
+          </div>
+
+          <%= if @search do %>
+            <div class="text-left">
+              <div class="mt-4">
+                <Search.render
+                  authors={@authors}
+                  votings={@votings}
+                  halls={@halls}
+                  quotes={@quotes}
+                  search_tab={@search_tab}
+                />
+              </div>
+            </div>
+          <% else %>
+            <div class="mt-6 text-2xl leading-8 text-gray-600">
+              <div class="pt-4 text-sm">
             <div class="pb-2 text-xl">Delegates</div>
             <div class="">
               <.link href={~p"/a/282"} class="underline">Stuart Russell</.link>, <.link
@@ -41,7 +67,7 @@
             </div>
           </div>
 
-          <div class="mt-8 text-xl">Resolutions</div>
+          <div class="mt-8 text-xl">Motions</div>
           <div class="space-y-6">
             <div class="bg-gradient-to-r from-emerald-50 to-white p-6 rounded-2xl hover:shadow-lg transition duration-300">
               <div class="flex text-left items-center mb-3">
@@ -262,7 +288,8 @@
             </div>
             <div class="text-indigo-700 mt-4 font-semibold">- Alex Pentland, MIT Professor</div>
           </div>
-        </div>
+            </div>
+
         <div class="pt-8 flex items-center justify-center gap-6">
           <.link
             href={~p"/sign_up"}
@@ -271,6 +298,7 @@
             Sign up
           </.link>
         </div>
+  <% end %>
       </div>
     </div>
   </div>
