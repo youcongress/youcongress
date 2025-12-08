@@ -6,6 +6,7 @@ defmodule YouCongress.Manifestos.Manifesto do
     field :title, :string
     field :slug, :string
     field :active, :boolean, default: false
+    field :show_author, :boolean, default: true
 
     belongs_to :user, YouCongress.Accounts.User
     has_many :sections, YouCongress.Manifestos.ManifestoSection
@@ -17,7 +18,7 @@ defmodule YouCongress.Manifestos.Manifesto do
   @doc false
   def changeset(manifesto, attrs) do
     manifesto
-    |> cast(attrs, [:title, :slug, :active, :user_id])
+    |> cast(attrs, [:title, :slug, :active, :user_id, :show_author])
     |> validate_required([:title, :slug, :user_id])
     |> validate_length(:title, min: 3, max: 255)
     |> validate_length(:slug, min: 3, max: 255)
