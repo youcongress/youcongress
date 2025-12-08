@@ -30,16 +30,16 @@ defmodule YouCongress.Authors do
           where(query, [author], author.id in ^ids)
 
         {:search, search}, query ->
-          where(
-            query,
-            [author],
-            fragment(
-              "to_tsvector('english', coalesce(?, ' ')) || to_tsvector('english', coalesce(?, ' ')) @@ websearch_to_tsquery('english', ?)",
-              author.name,
-              author.twitter_username,
-              ^search
-            )
-          )
+          terms = YouCongress.SearchParser.parse(search)
+
+          Enum.reduce(terms, query, fn term, query_acc ->
+            term_pattern = "%#{term}%"
+
+            from a in query_acc,
+              where:
+                ilike(a.name, ^term_pattern) or
+                  ilike(a.twitter_username, ^term_pattern)
+          end)
 
         {:twin_origin, twin_origin}, query ->
           where(query, [author], author.twin_origin == ^twin_origin)
