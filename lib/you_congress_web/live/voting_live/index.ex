@@ -57,7 +57,12 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+    socket =
+      socket
+      |> apply_action(socket.assigns.live_action, params)
+      |> maybe_apply_search_params(params)
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -166,6 +171,21 @@ defmodule YouCongressWeb.VotingLive.Index do
       voting: nil
     )
   end
+
+  defp maybe_apply_search_params(socket, %{"search" => search} = params)
+       when is_binary(search) and search != "" do
+    socket
+    |> perform_search(search)
+    |> assign_tab_from_params(Map.get(params, "tab"))
+  end
+
+  defp maybe_apply_search_params(socket, _params), do: socket
+
+  defp assign_tab_from_params(socket, tab) when tab in ["quotes", "delegates", "motions", "halls"] do
+    assign(socket, :search_tab, String.to_existing_atom(tab))
+  end
+
+  defp assign_tab_from_params(socket, _tab), do: socket
 
   defp assign_votings(socket, new_page) do
     %{
