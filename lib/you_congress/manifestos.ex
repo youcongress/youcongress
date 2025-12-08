@@ -37,6 +37,7 @@ defmodule YouCongress.Manifestos do
   def get_manifesto_by_slug!(slug) do
     Repo.get_by!(Manifesto, slug: slug)
     |> Repo.preload([:user, sections: [:voting]])
+    |> Repo.preload(user: :author)
   end
 
   def get_manifesto_by_slug(slug) do
