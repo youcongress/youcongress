@@ -10,6 +10,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
   defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
 
   attr :search_tab, :atom, required: true
+  attr :search_term, :string, required: true
   attr :votings, :map, required: true
   attr :authors, :map, required: true
   attr :halls, :map, required: true
@@ -36,7 +37,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         <%= for voting <- @votings do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={~p"/p/#{voting.slug}"}>{voting.title}</a>
+              <a href={~p"/p/#{voting.slug}"}><.highlight text={voting.title} terms={String.split(@search_term, " ", trim: true)} /></a>
             </td>
           </tr>
         <% end %>
@@ -47,7 +48,18 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         <%= for author <- @authors do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={author_path(author)}>{author.name || "x/#{author.twitter_username}"}</a>
+              <% bio = author_bio(author) %>
+              <div class="flex flex-col gap-1 text-sm sm:flex-row sm:items-start sm:justify-between">
+                <a
+                  href={author_path(author)}
+                  class="font-medium text-gray-900 hover:underline"
+                >
+                  <.highlight text={author.name || "x/#{author.twitter_username}"} terms={String.split(@search_term, " ", trim: true)} />
+                </a>
+                <p :if={bio} class="text-xs text-gray-500 sm:text-right sm:text-sm sm:pl-6">
+                  {bio}
+                </p>
+              </div>
             </td>
           </tr>
         <% end %>
@@ -58,7 +70,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         <%= for hall <- @halls do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={~p"/halls/#{hall.name}"}>{hall.name}</a>
+              <a href={~p"/halls/#{hall.name}"}><.highlight text={hall.name} terms={String.split(@search_term, " ", trim: true)} /></a>
             </td>
           </tr>
         <% end %>
@@ -71,20 +83,30 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
             <td class="py-4 border-b border-gray-200">
               <div class="space-y-2">
                 <div class="text-sm text-gray-600">
-                  <a href={author_path(quote.author)} class="font-medium hover:underline">
-                    {quote.author.name || "x/#{quote.author.twitter_username}"}
-                  </a>
+                  <% bio = author_bio(quote.author) %>
+                  <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                    <a href={author_path(quote.author)} class="font-medium hover:underline">
+                      <.highlight
+                        text={quote.author.name || "x/#{quote.author.twitter_username}"}
+                        terms={String.split(@search_term, " ", trim: true)}
+                      />
+                    </a>
+                    <p :if={bio} class="text-xs text-gray-500 sm:text-right sm:text-sm sm:pl-6">
+                      {bio}
+                    </p>
+                  </div>
                 </div>
                 <div class="text-sm">
                   <a href={~p"/c/#{quote.id}"} class="hover:bg-gray-50 block p-2 -m-2 rounded">
-                    {quote.content}
+                    <.highlight text={quote.content} terms={String.split(@search_term, " ", trim: true)} />
                   </a>
                 </div>
                 <%= if quote.source_url do %>
-                  <div class="text-xs text-gray-500">
+                  <div class="text-xs text-gray-500 flex items-center gap-2">
                     <a href={quote.source_url} target="_blank" class="hover:underline">
                       Source
                     </a>
+                    <span :if={quote.year} class="text-gray-400">{quote.year}</span>
                   </div>
                 <% end %>
               </div>
@@ -116,4 +138,37 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
     </div>
     """
   end
+  attr :text, :string, required: true
+  attr :term, :string, default: nil
+  attr :terms, :list, default: nil
+
+  def highlight(assigns) do
+    terms = (assigns.terms || [assigns.term]) |> Enum.reject(&is_nil/1) |> Enum.reject(&(&1 == ""))
+
+    if terms == [] do
+      ~H"<%= @text %>"
+    else
+      pattern = terms |> Enum.map(&Regex.escape/1) |> Enum.join("|")
+      regex = Regex.compile!(pattern, "i")
+      parts = Regex.split(regex, assigns.text, include_captures: true)
+      assigns = assign(assigns, parts: parts, regex: regex)
+
+      ~H"""
+      <%= for part <- @parts do %><%= if String.match?(part, @regex) do %><b><%= part %></b><% else %><%= part %><% end %><% end %>
+      """
+    end
+  end
+
+  defp author_bio(%{bio: bio, description: description}) do
+    cond do
+      present?(bio) -> bio
+      present?(description) -> description
+      true -> nil
+    end
+  end
+
+  defp author_bio(_), do: nil
+
+  defp present?(value) when is_binary(value), do: String.trim(value) != ""
+  defp present?(_), do: false
 end
