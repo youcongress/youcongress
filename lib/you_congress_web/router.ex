@@ -29,6 +29,10 @@ defmodule YouCongressWeb.Router do
     live("/halls/:hall", VotingLive.Index, :index)
     live("/c/:id", OpinionLive.Show, :show)
     live("/fact-checker", FactCheckerLive.Index, :index)
+    live("/manifests", ManifestLive.Index, :index)
+    live("/manifests/new", ManifestLive.Index, :new)
+    live("/manifests/:slug/edit", ManifestLive.Edit, :edit)
+    live("/manifests/:slug", ManifestLive.Show, :show)
 
     get("/terms", PageController, :terms)
     get("/privacy-policy", PageController, :privacy_policy)
