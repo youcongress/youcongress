@@ -423,7 +423,7 @@ defmodule YouCongress.Votes do
 
   Example:
   > count_by_response(1)
-  [{"Agree", 4}, {"Disagree", 2}, {"Strongly agree", 6}]
+  [{"for", 4}, {"against", 2}, {"abstain", 6}]
   """
   def count_by_response(_voting_id, opts \\ []) do
     has_opinion_id = Keyword.get(opts, :has_opinion_id, nil)

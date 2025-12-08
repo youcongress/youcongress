@@ -24,7 +24,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
           cost: 0.18691525000000004,
           quotes: [
             %{
-              "agree_rate" => "Agree",
+              "agree_rate" => "For",
               "author" => %{
                 "bio" => "EU Commission President",
                 "name" => "Ursula von der Leyen",
@@ -36,7 +36,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
               "year" => "2025"
             },
             %{
-              "agree_rate" => "Agree",
+              "agree_rate" => "For",
               "author" => %{
                 "bio" => "DeepMind cofounder, CEO",
                 "name" => "Demis Hassabis",
@@ -100,8 +100,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     - Do not include quotes from a document/open letter/paper with multiple signers.
     - The quote must have one single author, a person or an organisation.
     - Fill all fields in the JSON. Use empty string when unavailable.
-    - Carefully analyze each quote to determine the author's agreement level and set agree_rate appropriately.
-    - If the quote is in a different language, translate it to English.
+    - Carefully analyze each quote to determine the author's agreement level and set agree_rate appropriately to one of "For", "Against" or "Abstain".
     - Do not repeat any author across the #{number_of_quotes()} quotes. No name that appears in any item's authors.name may appear in any other item.#{exclusion_text}
 
     Output: Return ONLY a valid JSON object matching the schema with #{number_of_quotes()} items (if there are enough quotes that are relevant to the WHOLE question).
@@ -273,10 +272,9 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
                 type: "string",
                 description: "How much the author agrees with the question",
                 enum: [
-                  "Strongly agree",
-                  "Agree",
-                  "Disagree",
-                  "Strongly disagree"
+                  "For",
+                  "Against",
+                  "Abstain"
                 ]
               }
             },

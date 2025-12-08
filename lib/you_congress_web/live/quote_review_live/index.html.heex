@@ -77,9 +77,9 @@
                   <%= if voting.author_vote && voting.author_vote.answer do %>
                     <span class={[
                       "ml-1 px-2 py-0.5 text-xs font-medium rounded-full",
-                      get_vote_style(voting.author_vote.answer.response)
+                      get_vote_style(voting.author_vote.answer)
                     ]}>
-                      {voting.author_vote.answer.response}
+                      {voting.author_vote.answer |> Atom.to_string() |> String.capitalize()}
                     </span>
                   <% else %>
                     <span class="ml-1 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
