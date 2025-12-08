@@ -187,11 +187,11 @@ defmodule YouCongressWeb.ManifestoLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-serif">
-      <div class="max-w-3xl mx-auto bg-white shadow-xl rounded-lg overflow-hidden">
+    <div class="min-h-screen bg-gray-50 py-12 px-2 sm:px-4 font-serif">
+      <div class="max-w-6xl mx-auto bg-white shadow-xl rounded-lg overflow-hidden">
 
         <!-- Header -->
-        <div class="bg-slate-900 px-8 py-10 text-center text-white relative overflow-hidden">
+        <div class="bg-slate-900 px-5 py-10 text-center text-white relative overflow-hidden">
           <div class="absolute inset-0 opacity-10 bg-[url('/images/noise.png')]"></div>
           <h1 class="text-4xl md:text-5xl font-bold tracking-tight relative z-10 mb-2 font-sans">
             <%= @manifesto.title %>
@@ -212,130 +212,134 @@ defmodule YouCongressWeb.ManifestoLive.Show do
           </div>
         </div>
 
-        <!-- Body -->
-        <div class="px-8 py-10 space-y-8 text-lg text-gray-800 leading-relaxed">
-          <div :for={section <- @manifesto.sections} class="prose prose-lg max-w-none">
-            <p>
-              <%= section.body %>
-            </p>
+        <div class="md:flex md:items-start">
+          <!-- Body -->
+          <div class="px-5 py-10 space-y-8 text-lg text-gray-800 leading-relaxed md:w-2/3">
+            <div :for={section <- @manifesto.sections} class="prose prose-lg max-w-none">
+              <p>
+                <%= section.body %>
+              </p>
 
-            <div :if={section.voting} class="mt-6 p-6 bg-gray-50 border border-gray-200 rounded-lg not-prose font-sans">
-              <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
-                <div>
-                   <p class="text-xs text-indigo-500 uppercase font-bold tracking-wider mb-1">
-                    Linked Motion
-                  </p>
-                  <h3 class="font-bold text-gray-900 text-lg leading-tight">
-                    <.link navigate={~p"/p/#{section.voting.slug}"} class="hover:underline hover:text-indigo-700 transition">
-                      <%= section.voting.title %> &rarr;
-                    </.link>
-                  </h3>
+              <div :if={section.voting} class="mt-6 p-6 bg-gray-50 border border-gray-200 rounded-lg not-prose font-sans">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                  <div>
+                     <p class="text-xs text-indigo-500 uppercase font-bold tracking-wider mb-1">
+                      Linked Motion
+                    </p>
+                    <h3 class="font-bold text-gray-900 text-lg leading-tight">
+                      <.link navigate={~p"/p/#{section.voting.slug}"} class="hover:underline hover:text-indigo-700 transition">
+                        <%= section.voting.title %> &rarr;
+                      </.link>
+                    </h3>
+                  </div>
                 </div>
-              </div>
 
-              <% data = @voting_data[section.voting_id] %>
+                <% data = @voting_data[section.voting_id] %>
 
-              <div class="mt-4">
-                <ResultsComponent.horizontal_bar
-                  total_votes={data.total_votes}
-                  vote_frequencies={data.frequencies}
-                />
-
-                <div class="mt-6 flex flex-wrap gap-3">
-                  <.vote_button
-                    label="For"
-                    value="for"
-                    color="green"
-                    voting_id={section.voting_id}
-                    current_vote={data.user_vote}
-                  />
-                  <.vote_button
-                    label="Abstain"
-                    value="abstain"
-                    color="blue"
-                    voting_id={section.voting_id}
-                    current_vote={data.user_vote}
-                  />
-                   <.vote_button
-                    label="Against"
-                    value="against"
-                    color="red"
-                    voting_id={section.voting_id}
-                    current_vote={data.user_vote}
+                <div class="mt-4">
+                  <ResultsComponent.horizontal_bar
+                    total_votes={data.total_votes}
+                    vote_frequencies={data.frequencies}
                   />
 
-                  <button
-                    :if={data.user_vote}
-                    phx-click="clear_vote"
-                    phx-value-voting_id={section.voting_id}
-                    class="ml-2 text-xs text-gray-500 underline hover:text-gray-700 self-center"
-                  >
-                    clear
-                  </button>
+                  <div class="mt-6 flex flex-wrap gap-3">
+                    <.vote_button
+                      label="For"
+                      value="for"
+                      color="green"
+                      voting_id={section.voting_id}
+                      current_vote={data.user_vote}
+                    />
+                    <.vote_button
+                      label="Abstain"
+                      value="abstain"
+                      color="blue"
+                      voting_id={section.voting_id}
+                      current_vote={data.user_vote}
+                    />
+                     <.vote_button
+                      label="Against"
+                      value="against"
+                      color="red"
+                      voting_id={section.voting_id}
+                      current_vote={data.user_vote}
+                    />
+
+                    <button
+                      :if={data.user_vote}
+                      phx-click="clear_vote"
+                      phx-value-voting_id={section.voting_id}
+                      class="ml-2 text-xs text-gray-500 underline hover:text-gray-700 self-center"
+                    >
+                      clear
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Signatures & Action -->
-        <div class="bg-gray-100 px-8 py-8 border-t border-gray-200 mt-12">
-          <div class="flex flex-col items-center justify-center space-y-4">
+          <!-- Signatures & Action -->
+          <div class="bg-gray-50 px-5 py-8 mt-12 md:mt-0 md:w-1/3 md:border-l md:border-gray-200 md:min-h-full">
+            <div class="sticky top-6 flex flex-col items-center justify-center space-y-4">
 
-            <div class="text-center mb-4">
-              <p class="text-3xl font-bold text-indigo-600 font-sans"><%= @signatures_count %></p>
-              <p class="text-gray-500 text-sm uppercase tracking-wide font-sans">Signatures</p>
-            </div>
-
-            <%= if @signed? do %>
-              <div class="flex items-center space-x-2 text-green-700 bg-green-100 px-6 py-3 rounded-full font-sans font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>You have signed this manifesto</span>
-                <button phx-click="unsign" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded">Unsign</button>
-              </div>
-            <% else %>
-              <%= if @current_user do %>
-                <button phx-click="sign" phx-disable-with="Signing..." class="font-sans bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-10 rounded-full shadow-lg transform transition hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-indigo-300 text-xl">
-                  Sign Manifesto
-                </button>
-                <p class="text-sm text-gray-500 mt-2 text-center max-w-md">
-                  By signing, you automatically vote <strong>For</strong> on all associated motions (unless you have already voted).
-                </p>
-              <% else %>
-                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 w-full max-w-md">
-                  <h3 class="text-xl font-bold text-gray-900 mb-4 font-sans text-center">Sign this Manifesto</h3>
-                  <form phx-submit="sign_up_and_sign" class="space-y-4">
-                    <div>
-                      <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
-                      <input type="text" name="name" id="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border" placeholder="Your Name">
-                    </div>
-                    <div>
-                  <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                  <input type="email" name="email" id="email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border" placeholder="you@example.com">
-                </div>
-
-                <div class="flex items-start">
-                  <div class="flex items-center h-5">
-                    <input id="newsletter" name="newsletter" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                  </div>
-                  <div class="ml-3 text-sm">
-                    <label for="newsletter" class="text-gray-700">I want to receive updates about this and other manifestos and motions.</label>
-                  </div>
-                </div>
-
-                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 font-sans font-bold text-lg">
-                  Sign Manifesto
-                </button>
-                    <p class="text-xs text-gray-500 text-center mt-2">
-                      By signing, you agree to our <a href="#" class="underline">Terms of Service</a> and <a href="#" class="underline">Privacy Policy</a>.
-                    </p>
-                  </form>
+              <%= if @signatures_count > 45 do %>
+                <div class="text-center mb-4">
+                  <p class="text-3xl font-bold text-indigo-600 font-sans"><%= @signatures_count %></p>
+                  <p class="text-gray-500 text-sm uppercase tracking-wide font-sans">Signatures</p>
                 </div>
               <% end %>
-            <% end %>
 
+              <%= if @signed? do %>
+                <div class="flex flex-col items-center space-y-2 text-green-700 bg-green-100 px-6 py-6 rounded-lg font-sans font-medium w-full text-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>You have signed this manifesto</span>
+                  <button phx-click="unsign" class="mt-4 bg-white text-red-600 border border-red-200 hover:bg-red-50 font-bold py-2 px-4 rounded text-sm w-full">Unsign</button>
+                </div>
+              <% else %>
+                <%= if @current_user do %>
+                  <button phx-click="sign" phx-disable-with="Signing..." class="font-sans bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-10 rounded-full shadow-lg transform transition hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-indigo-300 text-xl w-full">
+                    Sign Manifesto
+                  </button>
+                  <p class="text-sm text-gray-500 mt-2 text-center">
+                    By signing, you automatically vote <strong>For</strong> on all associated motions (unless you have already voted).
+                  </p>
+                <% else %>
+                  <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 w-full">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4 font-sans text-center">Sign this Manifesto</h3>
+                    <form phx-submit="sign_up_and_sign" class="space-y-4">
+                      <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                        <input type="text" name="name" id="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border" placeholder="Your Name">
+                      </div>
+                      <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" name="email" id="email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border" placeholder="you@example.com">
+                  </div>
+
+                  <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                      <input id="newsletter" name="newsletter" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                    </div>
+                    <div class="ml-3 text-sm">
+                      <label for="newsletter" class="text-gray-700">I want to receive updates about this and other manifestos and motions.</label>
+                    </div>
+                  </div>
+
+                  <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 font-sans font-bold text-lg">
+                    Sign Manifesto
+                  </button>
+                      <p class="text-xs text-gray-500 text-center mt-2">
+                        By signing, you'll <strong> vote 'For' in all motions</strong> in this manifesto (unless you vote directly on a motion) and agree to our <a href="#" class="underline">Terms of Service</a> and <a href="#" class="underline">Privacy Policy</a>.
+                      </p>
+                    </form>
+                  </div>
+                <% end %>
+              <% end %>
+
+            </div>
           </div>
         </div>
 
