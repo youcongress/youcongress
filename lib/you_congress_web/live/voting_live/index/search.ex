@@ -37,7 +37,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         <%= for voting <- @votings do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={~p"/p/#{voting.slug}"}><.highlight text={voting.title} terms={String.split(@search_term, " ", trim: true)} /></a>
+              <a href={~p"/p/#{voting.slug}"}><.highlight text={voting.title} terms={YouCongress.SearchParser.parse(@search_term)} /></a>
             </td>
           </tr>
         <% end %>
@@ -54,7 +54,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
                   href={author_path(author)}
                   class="font-medium text-gray-900 hover:underline"
                 >
-                  <.highlight text={author.name || "x/#{author.twitter_username}"} terms={String.split(@search_term, " ", trim: true)} />
+                  <.highlight text={author.name || "x/#{author.twitter_username}"} terms={YouCongress.SearchParser.parse(@search_term)} />
                 </a>
                 <p :if={bio} class="text-xs text-gray-500 sm:text-right sm:text-sm sm:pl-6">
                   {bio}
@@ -70,7 +70,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         <%= for hall <- @halls do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={~p"/halls/#{hall.name}"}><.highlight text={hall.name} terms={String.split(@search_term, " ", trim: true)} /></a>
+              <a href={~p"/halls/#{hall.name}"}><.highlight text={hall.name} terms={YouCongress.SearchParser.parse(@search_term)} /></a>
             </td>
           </tr>
         <% end %>
@@ -88,7 +88,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
                     <a href={author_path(quote.author)} class="font-medium hover:underline">
                       <.highlight
                         text={quote.author.name || "x/#{quote.author.twitter_username}"}
-                        terms={String.split(@search_term, " ", trim: true)}
+                        terms={YouCongress.SearchParser.parse(@search_term)}
                       />
                     </a>
                     <p :if={bio} class="text-xs text-gray-500 sm:text-right sm:text-sm sm:pl-6">
@@ -98,7 +98,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
                 </div>
                 <div class="text-sm">
                   <a href={~p"/c/#{quote.id}"} class="hover:bg-gray-50 block p-2 -m-2 rounded">
-                    <.highlight text={quote.content} terms={String.split(@search_term, " ", trim: true)} />
+                    <.highlight text={quote.content} terms={YouCongress.SearchParser.parse(@search_term)} />
                   </a>
                 </div>
                 <%= if quote.source_url do %>

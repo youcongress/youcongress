@@ -53,6 +53,14 @@ defmodule YouCongress.Votings do
           {:title_contains, title}, query ->
             where(query, [v], ilike(v.title, ^"%#{title}%"))
 
+          {:search, search}, query ->
+            terms = YouCongress.SearchParser.parse(search)
+
+            Enum.reduce(terms, query, fn term, query_acc ->
+              term_pattern = "%#{term}%"
+              where(query_acc, [v], ilike(v.title, ^term_pattern))
+            end)
+
           {:order, :updated_at_desc}, query ->
             order_by(query, desc: :updated_at)
 

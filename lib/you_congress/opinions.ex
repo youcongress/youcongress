@@ -214,7 +214,7 @@ defmodule YouCongress.Opinions do
         from q in query, where: ilike(q.content, ^"%#{content}%")
 
       {:search, search}, query ->
-        terms = String.split(search)
+        terms = YouCongress.SearchParser.parse(search)
 
         Enum.reduce(terms, query, fn term, query_acc ->
           term_pattern = "%#{term}%"

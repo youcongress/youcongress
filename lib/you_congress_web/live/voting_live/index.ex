@@ -265,9 +265,9 @@ defmodule YouCongressWeb.VotingLive.Index do
   end
   defp perform_search(socket, search) do
     Track.event("Search", socket.assigns.current_user)
-    votings = Votings.list_votings(title_contains: search, preload: [:halls])
+    votings = Votings.list_votings(search: search, preload: [:halls])
     authors = Authors.list_authors(search: search)
-    halls = Halls.list_halls(name_contains: search)
+    halls = Halls.list_halls(search: search)
     quotes = Opinions.list_opinions(search: search, preload: [:author])
 
     search_tab =
