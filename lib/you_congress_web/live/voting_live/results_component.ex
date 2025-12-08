@@ -22,14 +22,14 @@ defmodule YouCongressWeb.VotingLive.ResultsComponent do
             percentage={elem(@vote_frequencies[:for] || {0, 0}, 1)}
           />
           <%= if @vote_frequencies[:for] && @vote_frequencies[:abstain] do %>
-            <div class="bg-black w-px"></div>
+            <div class="bg-white w-px"></div>
           <% end %>
           <ResultsComponent.result
             response="Abstain"
             percentage={elem(@vote_frequencies[:abstain] || {0, 0}, 1)}
           />
           <%= if (@vote_frequencies[:abstain] || @vote_frequencies[:for]) && @vote_frequencies[:against] do %>
-            <div class="bg-white w-0.5"></div>
+            <div class="bg-white w-px"></div>
           <% end %>
           <ResultsComponent.result
             response="Against"
