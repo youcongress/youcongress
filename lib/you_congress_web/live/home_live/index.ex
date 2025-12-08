@@ -16,7 +16,7 @@ defmodule YouCongressWeb.HomeLive.Index do
       )
       |> assign(
         :page_description,
-        "We gather verifiable policy quotes and use liquid democracy polling to surface what experts and citizens are signaling — beginning with AI safety and governance."
+        "We gather verifiable expert quotes and use liquid democracy to surface consensus on AI governance."
       )
       |> assign(:skip_page_suffix, true)
       |> assign(:live_action, :new)
