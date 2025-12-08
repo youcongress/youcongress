@@ -1,9 +1,8 @@
 <div :if={!@new_poll_visible?} class="pt-4 md:flex md:justify-between">
   <div class="w-80 pb-4 md:pb-0">
-    <form>
+    <form phx-change="search" phx-submit="search">
       <input
-        phx-change="search"
-        field={@search}
+        phx-debounce="300"
         type="search"
         name="search"
         value={@search}
