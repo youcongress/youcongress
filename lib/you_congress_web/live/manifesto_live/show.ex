@@ -200,7 +200,10 @@ defmodule YouCongressWeb.ManifestoLive.Show do
             Manifesto
           </p>
           <div :if={@manifesto.user} class="mt-4 relative z-10">
-            <span class="text-slate-400 text-sm font-sans">Created by <%= @manifesto.user.email %></span>
+            <span class="text-slate-400 text-sm font-sans">
+              Created by
+              <.link navigate={~p"/x/#{@manifesto.user.author.twitter_username}"} class="hover:underline hover:text-white transition"><%= @manifesto.user.author.name %></.link>
+            </span>
             <%= if @current_user && @current_user.id == @manifesto.user_id do %>
               <.link navigate={~p"/m/#{@manifesto.slug}/edit"} class="ml-2 text-indigo-400 hover:text-indigo-300 text-sm font-sans underline">
                 Edit

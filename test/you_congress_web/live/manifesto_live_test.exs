@@ -65,6 +65,19 @@ defmodule YouCongressWeb.ManifestoLiveTest do
       user = YouCongress.Accounts.get_user_by_email(email)
       assert user.newsletter == true
     end
+
+    test "shows creator name and link", %{conn: conn} do
+      user = YouCongress.AccountsFixtures.user_fixture()
+      manifesto = manifesto_fixture(user_id: user.id)
+      # Ensure author is loaded for the fixture or fetch it
+      manifesto = YouCongress.Manifestos.get_manifesto!(manifesto.id) |> YouCongress.Repo.preload(user: :author)
+
+      {:ok, _show_live, html} = live(conn, ~p"/m/#{manifesto.slug}")
+
+      assert html =~ "Created by"
+      assert html =~ manifesto.user.author.name
+      assert html =~ ~p"/x/#{manifesto.user.author.twitter_username}"
+    end
   end
 
   describe "manifesto creation requires authentication" do
