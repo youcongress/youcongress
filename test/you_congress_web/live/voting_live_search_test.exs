@@ -4,12 +4,11 @@ defmodule YouCongressWeb.VotingLiveSearchTest do
   import Phoenix.LiveViewTest
   import YouCongress.VotingsFixtures
   import YouCongress.AuthorsFixtures
-  import YouCongress.OpinionsFixtures
 
   describe "VotingLive search via URL params" do
     test "renders search results when search param is present", %{conn: conn} do
-      voting = voting_fixture(title: "AI Safety Bill")
-      other_voting = voting_fixture(title: "Tax Reform")
+      _voting = voting_fixture(title: "AI Safety Bill")
+      _other_voting = voting_fixture(title: "Tax Reform")
 
       {:ok, _view, html} = live(conn, ~p"/?search=AI", on_error: :warn)
 
