@@ -126,64 +126,59 @@
   </span>
 </div>
 
-<%= if @votes_from_delegates != [] do %>
+<%= if @votes_from_delegates != [] || (@current_user && @votes_from_non_delegates != []) do %>
   <div class="mb-8">
-    <h2 class="mb-2">Comments from your delegates:</h2>
-    <ul>
-      <%= for vote <- @votes_from_delegates do %>
-        <li class="pb-4">
-          <.live_component
-            module={VoteComponent}
-            id={vote.id}
-            voting={@voting}
-            vote={vote}
-            author={vote.opinion.author}
-            delegating?={@delegations[vote.opinion.author_id]}
-            show_vote={true}
-            show_opinion={true}
-            current_user={@current_user}
-            delegable={true}
-            liked={vote.opinion_id in @liked_opinion_ids}
-            regenerating_opinion_id={@regenerating_opinion_id}
-            page={:voting_show}
-          />
-        </li>
+    <h2 class="mb-2">Comments:</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <%= for answer <- [:for, :abstain, :against] do %>
+        <div>
+          <h3 class="font-bold text-center mb-4"><%= String.capitalize(to_string(answer)) %></h3>
+          <ul>
+            <%= for vote <- Enum.filter(@votes_from_delegates, &(&1.answer == answer)) do %>
+              <li class="pb-4">
+                <.live_component
+                  module={VoteComponent}
+                  id={vote.id}
+                  voting={@voting}
+                  vote={vote}
+                  author={vote.opinion.author}
+                  delegating?={@delegations[vote.opinion.author_id]}
+                  show_vote={true}
+                  show_opinion={true}
+                  current_user={@current_user}
+                  delegable={true}
+                  liked={vote.opinion_id in @liked_opinion_ids}
+                  regenerating_opinion_id={@regenerating_opinion_id}
+                  page={:voting_show}
+                />
+              </li>
+            <% end %>
+            <%= for vote <- Enum.filter(@votes_from_non_delegates, &(&1.answer == answer)) do %>
+              <li class="pb-4">
+                <.live_component
+                  module={VoteComponent}
+                  id={vote.id}
+                  voting={@voting}
+                  vote={vote}
+                  author={vote.opinion.author}
+                  delegating?={@delegations[vote.opinion.author_id]}
+                  show_vote={true}
+                  show_opinion={true}
+                  current_user={@current_user}
+                  delegable={true}
+                  liked={vote.opinion_id in @liked_opinion_ids}
+                  regenerating_opinion_id={@regenerating_opinion_id}
+                  page={:voting_show}
+                />
+              </li>
+            <% end %>
+          </ul>
+        </div>
       <% end %>
-    </ul>
+    </div>
   </div>
 <% end %>
-<div class="mb-6">
-  <%= if @current_user && @votes_from_non_delegates != [] do %>
-    <h2 class="mb-2">
-      <%= if @votes_from_delegates == [] do %>
-        Comments:
-      <% else %>
-        Other comments:
-      <% end %>
-    </h2>
-  <% end %>
-  <ul>
-    <%= for vote <- @votes_from_non_delegates do %>
-      <li class="pb-4">
-        <.live_component
-          module={VoteComponent}
-          id={vote.id}
-          voting={@voting}
-          vote={vote}
-          author={vote.opinion.author}
-          delegating?={@delegations[vote.opinion.author_id]}
-          show_vote={true}
-          show_opinion={true}
-          current_user={@current_user}
-          delegable={true}
-          liked={vote.opinion_id in @liked_opinion_ids}
-          regenerating_opinion_id={@regenerating_opinion_id}
-          page={:voting_show}
-        />
-      </li>
-    <% end %>
-  </ul>
-</div>
+
 
 <%= if @voting.generating_left > 0 do %>
   <div class="pt-2">
