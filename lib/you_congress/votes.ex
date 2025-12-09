@@ -425,12 +425,13 @@ defmodule YouCongress.Votes do
   > count_by_response(1)
   [{"for", 4}, {"against", 2}, {"abstain", 6}]
   """
-  def count_by_response(_voting_id, opts \\ []) do
+  def count_by_response(voting_id, opts \\ []) do
     has_opinion_id = Keyword.get(opts, :has_opinion_id, nil)
     twin = Keyword.get(opts, :twin)
 
     query =
       from(v in Vote,
+        where: v.voting_id == ^voting_id,
         group_by: v.answer,
         select: {v.answer, count(v.answer)}
       )
