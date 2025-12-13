@@ -93,7 +93,7 @@
           <h3 class="font-bold text-center mb-4"><%= String.capitalize(to_string(answer)) %></h3>
           <ul>
             <%= for vote <- Enum.filter(@votes_from_delegates, &(&1.answer == answer)) do %>
-              <li class="pb-4">
+              <li class="pb-12">
                 <.live_component
                   module={VoteComponent}
                   id={vote.id}
@@ -112,7 +112,7 @@
               </li>
             <% end %>
             <%= for vote <- Enum.filter(@votes_from_non_delegates, &(&1.answer == answer)) do %>
-              <li class="pb-4">
+              <li class="pb-12">
                 <.live_component
                   module={VoteComponent}
                   id={vote.id}
