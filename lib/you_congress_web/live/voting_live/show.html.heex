@@ -1,11 +1,5 @@
 <.header>
   <:actions>
-    <.link href={"https://x.com/intent/tweet?text=#{@share_to_x_text}"} target="blank_">
-      <.button>
-        Share on X
-      </.button>
-    </.link>
-
     <%= if @voting.generating_left == 0 do %>
       <%= if Permissions.can_generate_ai_votes?(@current_user) do %>
         <%!-- This is not production ready yet --%>
@@ -36,20 +30,9 @@
   </div>
 <% end %>
 
-<h1 class="pt-4 text-2xl font-bold">
+<h1 class="text-2xl font-bold">
   {@voting.title}
 </h1>
-
-<div class="pt-2">
-  <%= for hall <- @voting.halls do %>
-    <.link
-      href={~p"/halls/#{hall.name}"}
-      class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"
-    >
-      {hall.name}
-    </.link>
-  <% end %>
-</div>
 
 <%= if @total_opinions > 0 do %>
   <div class="mt-4 mb-4">
@@ -66,13 +49,6 @@
       page={:voting_show}
     />
   </div>
-  <%= if !@current_user_vote && !@current_user do %>
-    <div class="pt-2">
-      <.link href={~p"/log_in"} class="underline text-sm">
-        Log in to comment
-      </.link>
-    </div>
-  <% end %>
 <% end %>
 
 <%= if @total_opinions > 0 do %>
@@ -93,25 +69,8 @@
 
 <div
   :if={@total_opinions > 0}
-  class="space-x-2 md:space-x-4 pt-4 pb-2 text-right flex justify-end items-center"
+  class="space-x-2 md:space-x-4 pb-2 text-right flex justify-end items-center"
 >
-  <span class="text-xs -mr-1">filter</span>
-  <form phx-change="filter-answer" class="inline">
-    <select name="answer" class="text-xs w-40 rounded-md border-2 border-gray-300 p-1 bg-white">
-      <option value="">
-        All opinions ({@opinions_by_response |> Map.values() |> Enum.sum()})
-      </option>
-      <option value="For" selected={@answer_filter == "For"}>
-        For ({Map.get(@opinions_by_response, :for, 0) + Map.get(@opinions_by_response, "for", 0)})
-      </option>
-      <option value="Against" selected={@answer_filter == "Against"}>
-        Against ({Map.get(@opinions_by_response, :against, 0) + Map.get(@opinions_by_response, "against", 0)})
-      </option>
-      <option value="Abstain" selected={@answer_filter == "Abstain"}>
-        Abstain ({Map.get(@opinions_by_response, :abstain, 0) + Map.get(@opinions_by_response, "abstain", 0)})
-      </option>
-    </select>
-  </form>
   <span
     phx-click="filter-quotes"
     class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :quotes && "bg-gray-200"}"}
@@ -128,7 +87,6 @@
 
 <%= if @votes_from_delegates != [] || @votes_from_non_delegates != [] do %>
   <div class="mb-8">
-    <h2 class="mb-2">Comments:</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <%= for answer <- [:for, :abstain, :against] do %>
         <div>
