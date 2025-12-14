@@ -69,8 +69,28 @@
 
 <div
   :if={@total_opinions > 0}
-  class="space-x-2 md:space-x-4 pb-2 text-right flex justify-end items-center"
+  class="md:space-x-4 pb-2 text-right flex justify-end items-center"
 >
+  <div class="md:hidden">
+    <span class="text-xs -mr-1">filter</span>
+    <form phx-change="filter-answer" class="pl-2 inline">
+      <select name="answer" class="text-xs w-40 rounded-md border-2 border-gray-300 p-1 bg-white">
+        <option value="">
+          All opinions ({@opinions_by_response |> Map.values() |> Enum.sum()})
+        </option>
+        <option value="For" selected={@answer_filter == "For"}>
+          For ({Map.get(@opinions_by_response, :for, 0) + Map.get(@opinions_by_response, "for", 0)})
+        </option>
+        <option value="Against" selected={@answer_filter == "Against"}>
+          Against ({Map.get(@opinions_by_response, :against, 0) + Map.get(@opinions_by_response, "against", 0)})
+        </option>
+        <option value="Abstain" selected={@answer_filter == "Abstain"}>
+          Abstain ({Map.get(@opinions_by_response, :abstain, 0) + Map.get(@opinions_by_response, "abstain", 0)})
+        </option>
+      </select>
+    </form>
+  </div>
+
   <span
     phx-click="filter-quotes"
     class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :quotes && "bg-gray-200"}"}
