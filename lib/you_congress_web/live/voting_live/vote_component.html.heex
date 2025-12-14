@@ -95,9 +95,6 @@
       <%= if @regenerating_opinion_id == @vote.opinion.id do %>
         <img src="/images/loading.gif" alt="Loading" />
       <% end %>
-      <%= if @vote.opinion.year do %>
-        <span class="text-xs text-gray-500">({@vote.opinion.year})</span>
-      <% end %>
       <%= if @vote.opinion_id && @vote.opinion.source_url do %>
         <.live_component
           module={YouCongressWeb.Components.VerificationBadge}
@@ -108,6 +105,9 @@
         <span class="text-xs">
           <.link href={@vote.opinion.source_url} target="_blank" class="underline">source</.link>
         </span>
+      <% end %>
+      <%= if @vote.opinion.year do %>
+        <span class="text-xs text-gray-500">({@vote.opinion.year})</span>
       <% end %>
     </div>
   <% end %>
