@@ -70,20 +70,19 @@
   class="md:space-x-4 pb-2 text-right flex justify-end items-center"
 >
   <div class="md:hidden">
-    <span class="text-xs -mr-1">filter</span>
     <form phx-change="filter-answer" class="pl-2 inline">
-      <select name="answer" class="text-xs w-40 rounded-md border-2 border-gray-300 p-1 bg-white">
+      <select name="answer" class="text-xs w-64 rounded-md border-2 border-gray-300 p-1 bg-white">
         <option value="">
-          All opinions ({@opinions_by_response |> Map.values() |> Enum.sum()})
+          For ({Map.get(@opinions_by_response, :for, 0)}) + Abstain ({Map.get(@opinions_by_response, :abstain, 0)}) + Against ({Map.get(@opinions_by_response, :against, 0)})
         </option>
         <option value="For" selected={@answer_filter == "For"}>
           For ({Map.get(@opinions_by_response, :for, 0) + Map.get(@opinions_by_response, "for", 0)})
         </option>
-        <option value="Against" selected={@answer_filter == "Against"}>
-          Against ({Map.get(@opinions_by_response, :against, 0) + Map.get(@opinions_by_response, "against", 0)})
-        </option>
         <option value="Abstain" selected={@answer_filter == "Abstain"}>
           Abstain ({Map.get(@opinions_by_response, :abstain, 0) + Map.get(@opinions_by_response, "abstain", 0)})
+        </option>
+        <option value="Against" selected={@answer_filter == "Against"}>
+          Against ({Map.get(@opinions_by_response, :against, 0) + Map.get(@opinions_by_response, "against", 0)})
         </option>
       </select>
     </form>
@@ -91,13 +90,13 @@
   <span :if={!@current_user} class="hidden md:block text-xs text-gray-500"><.link href="/login" class="underline">Log in</.link> to comment or vote</span>
   <span
     phx-click="filter-quotes"
-    class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :quotes && "bg-gray-200"}"}
+    class={"hidden md:block text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :quotes && "bg-gray-200"}"}
   >
     Quotes ({@quotes_votes_count})
   </span>
   <span
     phx-click="filter-users"
-    class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :users && "bg-gray-200"}"}
+    class={"hidden md:block text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :users && "bg-gray-200"}"}
   >
     Users ({@users_votes_count})
   </span>
@@ -108,7 +107,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <%= for answer <- [:for, :abstain, :against] do %>
         <div>
-          <h3 class="font-bold text-center mb-4"><%= String.capitalize(to_string(answer)) %> ({Map.get(@opinions_by_response, answer, 0)})</h3>
+          <h3 class="hidden md:block font-bold text-center mb-4"><%= String.capitalize(to_string(answer)) %> ({Map.get(@opinions_by_response, answer, 0)})</h3>
           <ul>
             <%= for vote <- Enum.filter(@votes_from_delegates, &(&1.answer == answer)) do %>
               <li class="pb-12">
