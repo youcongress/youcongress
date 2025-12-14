@@ -20,7 +20,7 @@ defmodule YouCongress.Halls.Classification do
     Possible tags:
     #{YouCongress.Halls.Hall.names_str()}
 
-    Classify the following question and return a list of tags in json format:
+    Classify the following question and return 1-3 tags in json format:
 
     Question:#{text}
     """
