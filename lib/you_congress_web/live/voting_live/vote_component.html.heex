@@ -77,10 +77,20 @@
     <div>
       <%= if @current_user && @current_user.author_id == @author.id do %>
         <.link href={"/p/#{@voting.slug}"}>
-          {@vote.opinion.content}
+          {@truncated_content}
         </.link>
       <% else %>
-        {@vote.opinion.content}
+        {@truncated_content}
+      <% end %>
+
+      <%= if @show_more do %>
+        <.link
+          phx-click="toggle-expand"
+          phx-target={@myself}
+          class="text-indigo-600 hover:underline cursor-pointer text-sm"
+        >
+          more
+        </.link>
       <% end %>
       <%= if @regenerating_opinion_id == @vote.opinion.id do %>
         <img src="/images/loading.gif" alt="Loading" />
@@ -89,15 +99,15 @@
         <span class="text-xs text-gray-500">({@vote.opinion.year})</span>
       <% end %>
       <%= if @vote.opinion_id && @vote.opinion.source_url do %>
-        <span class="text-xs">
-          <.link href={@vote.opinion.source_url} target="_blank" class="underline">source</.link>
-        </span>
         <.live_component
           module={YouCongressWeb.Components.VerificationBadge}
           id={"#{@vote.opinion.id}-#{@voting.id}"}
           opinion={@vote.opinion}
           current_user={@current_user}
         />
+        <span class="text-xs">
+          <.link href={@vote.opinion.source_url} target="_blank" class="underline">source</.link>
+        </span>
       <% end %>
     </div>
   <% end %>
