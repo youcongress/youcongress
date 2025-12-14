@@ -37,15 +37,15 @@
       <%= if @opinion.year do %>
         <span class="text-xs text-gray-500">({@opinion.year})</span>
       <% end %>
-      <span class="text-xs">
-        <.link href={@opinion.source_url} target="_blank" class="underline">source</.link>
-      </span>
       <.live_component
         module={YouCongressWeb.Components.VerificationBadge}
         id={"#{@opinion.id}-#{if @voting, do: @voting.id}"}
         opinion={@opinion}
         current_user={@current_user}
       />
+      <span class="text-xs">
+        <.link href={@opinion.source_url} target="_blank" class="underline">source</.link>
+      </span>
     <% end %>
   </div>
   <div class="flex justify-between pt-4 pb-4">

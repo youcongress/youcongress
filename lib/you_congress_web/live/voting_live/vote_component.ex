@@ -8,6 +8,18 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongressWeb.Tools.TimeAgo
 
+  @max_length 250
+
+  def update(assigns, socket) do
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign_new(:expanded, fn -> false end)
+      |> assign_content_variables()
+
+    {:ok, socket}
+  end
+
   def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
     send(self(), {:put_flash, :warning, "Log in to like."})
     {:noreply, socket}
@@ -112,10 +124,43 @@ defmodule YouCongressWeb.VotingLive.VoteComponent do
     end
   end
 
+  def handle_event("toggle-expand", _, socket) do
+    socket =
+      socket
+      |> assign(:expanded, !socket.assigns.expanded)
+      |> assign_content_variables()
+
+    {:noreply, socket}
+  end
+
+  defp assign_content_variables(socket) do
+    opinion = socket.assigns.vote.opinion
+
+    if opinion do
+      content = opinion.content || ""
+      expanded = socket.assigns.expanded
+
+      if String.length(content) > @max_length and not expanded do
+        socket
+        |> assign(:truncated_content, String.slice(content, 0, @max_length) <> "...")
+        |> assign(:show_more, true)
+      else
+        socket
+        |> assign(:truncated_content, content)
+        |> assign(:show_more, false)
+      end
+    else
+      socket
+      |> assign(:truncated_content, "")
+      |> assign(:show_more, false)
+    end
+  end
+
   defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
 
   defp response(assigns, response) do
     response_Text = response(response)
+
     assigns =
       assign(assigns, color: response_color(response), response: response_Text)
 
