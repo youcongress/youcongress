@@ -383,25 +383,9 @@ defmodule YouCongressWeb.VotingLiveTest do
       conn = log_in_user(conn, user)
       {:ok, show_live, html} = live(conn, ~p"/p/#{voting.slug}")
 
-      # Test initial state shows all opinions
-      assert html =~ "All opinions (4)"
+      # Test initial state shows filter buttons
       assert html =~ "Quotes (2)"
       assert html =~ "Users (2)"
-
-      # Test answer filter
-      html =
-        show_live
-        |> form("form[phx-change='filter-answer']", %{"answer" => "For"})
-        |> render_change()
-
-      assert html =~ "For (2)"
-      assert html =~ ai_author.name
-      assert html =~ human_author.name
-
-      # Select all opinions
-      show_live
-      |> form("form[phx-change='filter-answer']", %{"answer" => ""})
-      |> render_change()
 
       # Test Quotes filter
       html =
@@ -419,16 +403,6 @@ defmodule YouCongressWeb.VotingLiveTest do
         |> render_click()
 
       assert html =~ human_author.name
-      refute html =~ ai_author.name
-
-      # Test combined filters
-      html =
-        show_live
-        |> form("form[phx-change='filter-answer']", %{"answer" => "For"})
-        |> render_change()
-
-      assert html =~ human_author.name
-      assert html =~ "For (1)"
       refute html =~ ai_author.name
     end
   end

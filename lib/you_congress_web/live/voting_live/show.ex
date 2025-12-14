@@ -42,6 +42,7 @@ defmodule YouCongressWeb.VotingLive.Show do
         "Find agreement, understand disagreement."
       )
       |> assign(reload: false)
+      |> assign(full_width: true)
       |> assign(:regenerating_opinion_id, nil)
       |> assign(:source_filter, nil)
       |> assign(:answer_filter, nil)
