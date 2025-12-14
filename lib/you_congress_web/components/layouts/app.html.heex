@@ -19,7 +19,7 @@
   page={assigns[:page]}
 />
 <main class="px-4 py-6 sm:px-6 lg:px-8">
-  <div class="mx-auto max-w-4xl">
+  <div class={"mx-auto #{if assigns[:full_width], do: "max-w-7xl", else: "max-w-4xl"}"}>
     <.flash_group flash={@flash} />
     {@inner_content}
   </div>
