@@ -220,7 +220,12 @@ defmodule YouCongressWeb.HomeLive.Index do
       "Yoshua Bengio",
       "Eliezer Yudkowsky",
       "Yann LeCun",
-      "Geoffrey Hinton"
+      "Geoffrey Hinton",
+      "Gary Marcus",
+      "Dario Amodei",
+      "Sam Altman",
+      "Elon Musk",
+      "Max Tegmark"
     ]
 
     Authors.list_authors(names: names)
