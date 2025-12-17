@@ -250,6 +250,22 @@
                       </.link>
                     </div>
 
+                    <%= if majority_vote = calculate_majority_vote(voting, @selected_delegate_ids) do %>
+                      <div class="mb-4 text-gray-700">
+                        You vote
+                        <span class={"font-bold " <>
+                          case majority_vote do
+                            :for -> "text-emerald-600"
+                            :against -> "text-rose-600"
+                            :abstain -> "text-gray-600"
+                          end
+                        }>
+                          {majority_vote |> Atom.to_string() |> String.capitalize()}
+                        </span>
+                        as the majority of your delegates
+                      </div>
+                    <% end %>
+
                     <div class="pl-0 md:pl-8 space-y-4">
                       <%= for opinion <- voting.opinions do %>
                         <div class="bg-white/80 p-4 rounded-lg border border-gray-100 shadow-sm">

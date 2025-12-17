@@ -171,4 +171,20 @@ defmodule YouCongressWeb.HomeLive.Index do
       vote -> vote.answer
     end
   end
+
+  def calculate_majority_vote(voting, selected_delegate_ids) do
+    votes =
+      voting.votes
+      |> Enum.filter(&(&1.author_id in selected_delegate_ids))
+      |> Enum.map(& &1.answer)
+
+    if Enum.empty?(votes) do
+      nil
+    else
+      votes
+      |> Enum.frequencies()
+      |> Enum.max_by(fn {_answer, count} -> count end)
+      |> elem(0)
+    end
+  end
 end
