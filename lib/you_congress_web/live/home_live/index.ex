@@ -36,10 +36,12 @@ defmodule YouCongressWeb.HomeLive.Index do
       |> assign(:authors, [])
       |> assign(:votings, [])
       |> assign(:quotes, [])
+      |> assign(:delegates, load_highlighted_delegates())
+      |> assign(:selected_delegate_ids, [])
+      |> assign(:selection_votings, [])
 
     {:ok, socket}
   end
-
 
   @impl true
   def handle_params(params, _url, socket) do
@@ -62,6 +64,7 @@ defmodule YouCongressWeb.HomeLive.Index do
   rescue
     _ -> socket
   end
+
   @impl true
   def handle_event("search", %{"search" => ""}, socket) do
     socket =
@@ -91,11 +94,29 @@ defmodule YouCongressWeb.HomeLive.Index do
     {:noreply, assign(socket, search_tab: :quotes)}
   end
 
+  def handle_event("toggle-delegate", %{"id" => id}, socket) do
+    id = String.to_integer(id)
+    selected_ids = socket.assigns.selected_delegate_ids
+
+    new_selected_ids =
+      if id in selected_ids do
+        List.delete(selected_ids, id)
+      else
+        [id | selected_ids]
+      end
+
+    socket =
+      socket
+      |> assign(:selected_delegate_ids, new_selected_ids)
+      |> assign_votings_for_selection(new_selected_ids)
+
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_info({NewFormComponent, {:put_flash, level, message}}, socket) do
     {:noreply, put_flash(socket, level, message)}
   end
-
 
   defp perform_search(socket, search) do
     Track.event("Search via Home", socket.assigns.current_user)
@@ -121,5 +142,26 @@ defmodule YouCongressWeb.HomeLive.Index do
       halls: halls,
       quotes: quotes
     )
+  end
+
+  defp load_highlighted_delegates do
+    names = [
+      "Stuart J. Russell",
+      "Demis Hassabis",
+      "Scott Alexander",
+      "Yoshua Bengio",
+      "Eliezer Yudkowsky"
+    ]
+
+    Authors.list_authors(names: names)
+  end
+
+  defp assign_votings_for_selection(socket, []) do
+    assign(socket, :selection_votings, [])
+  end
+
+  defp assign_votings_for_selection(socket, selected_ids) do
+    votings = Votings.list_votings_with_opinions_by_authors(selected_ids)
+    assign(socket, :selection_votings, votings)
   end
 end

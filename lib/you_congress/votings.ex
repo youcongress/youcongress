@@ -101,6 +101,22 @@ defmodule YouCongress.Votings do
     )
   end
 
+  def list_votings_with_opinions_by_authors(author_ids) do
+    opinions_query =
+      from o in Opinion,
+        where: o.author_id in ^author_ids,
+        order_by: [desc: :likes_count],
+        preload: [:author]
+
+    from(v in Voting)
+    |> join(:inner, [v], ov in "opinions_votings", on: ov.voting_id == v.id)
+    |> join(:inner, [v, ov], o in Opinion, on: ov.opinion_id == o.id)
+    |> where([v, ov, o], o.author_id in ^author_ids)
+    |> distinct(true)
+    |> preload(opinions: ^opinions_query)
+    |> Repo.all()
+  end
+
   @doc """
   Gets a voting given some params.
 

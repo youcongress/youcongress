@@ -47,6 +47,9 @@ defmodule YouCongress.Authors do
         {:twin_enabled, twin_enabled}, query ->
           where(query, [author], author.twin_enabled == ^twin_enabled)
 
+        {:names, names}, query ->
+          where(query, [author], author.name in ^names)
+
         _, query ->
           query
       end
@@ -96,6 +99,9 @@ defmodule YouCongress.Authors do
       fn
         {:name, name}, query ->
           from a in query, where: a.name == ^name
+
+        {:names, names}, query ->
+          from a in query, where: a.name in ^names
 
         {:wikipedia_url, nil}, query ->
           query
