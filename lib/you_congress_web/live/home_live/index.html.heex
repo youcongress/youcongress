@@ -250,20 +250,103 @@
                       </.link>
                     </div>
 
-                    <%= if majority_vote = calculate_majority_vote(voting, @selected_delegate_ids) do %>
+                    <%= if user_vote = @user_votes[voting.id] do %>
                       <div class="mb-4 text-gray-700">
-                        You vote
+                        You're directly voting
                         <span class={"font-bold " <>
-                          case majority_vote do
+                          case user_vote.answer do
                             :for -> "text-emerald-600"
                             :against -> "text-rose-600"
                             :abstain -> "text-gray-600"
                           end
                         }>
-                          {majority_vote |> Atom.to_string() |> String.capitalize()}
+                          {user_vote.answer |> Atom.to_string() |> String.capitalize()}
                         </span>
-                        as the majority of your delegates
+                        <button
+                          phx-click="delete-vote"
+                          phx-value-id={voting.id}
+                          class="ml-2 text-xs text-gray-500 underline hover:text-gray-700"
+                        >
+                          (Remove vote)
+                        </button>
                       </div>
+                      <div class="flex gap-2 mb-4">
+                        <button
+                          phx-click="vote"
+                          phx-value-id={voting.id}
+                          phx-value-answer="for"
+                          class={"px-3 py-1 rounded-md text-sm font-medium transition-colors " <>
+                            if user_vote.answer == :for, do: "bg-emerald-600 text-white", else: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                          }
+                        >
+                          Vote For
+                        </button>
+                        <button
+                          phx-click="vote"
+                          phx-value-id={voting.id}
+                          phx-value-answer="abstain"
+                          class={"px-3 py-1 rounded-md text-sm font-medium transition-colors " <>
+                            if user_vote.answer == :abstain, do: "bg-gray-600 text-white", else: "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                          }
+                        >
+                          Abstain
+                        </button>
+                        <button
+                          phx-click="vote"
+                          phx-value-id={voting.id}
+                          phx-value-answer="against"
+                          class={"px-3 py-1 rounded-md text-sm font-medium transition-colors " <>
+                            if user_vote.answer == :against, do: "bg-rose-600 text-white", else: "bg-rose-100 text-rose-800 hover:bg-rose-200"
+                          }
+                        >
+                          Vote Against
+                        </button>
+                      </div>
+                    <% else %>
+                      <%= if majority_vote = calculate_majority_vote(voting, @selected_delegate_ids) do %>
+                        <div class="mb-4 text-gray-700">
+                          You vote
+                          <span class={"font-bold " <>
+                            case majority_vote do
+                              :for -> "text-emerald-600"
+                              :against -> "text-rose-600"
+                              :abstain -> "text-gray-600"
+                            end
+                          }>
+                            {majority_vote |> Atom.to_string() |> String.capitalize()}
+                          </span>
+                          as the majority of your delegates
+                        </div>
+                        <div class="mb-4 text-center text-gray-700">
+                          Vote directly:
+                        </div>
+                        <div class="flex justify-center gap-2 mb-4">
+                          <button
+                            phx-click="vote"
+                            phx-value-id={voting.id}
+                            phx-value-answer="for"
+                            class="px-3 py-1 rounded-md text-sm font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors"
+                          >
+                            Vote For
+                          </button>
+                          <button
+                            phx-click="vote"
+                            phx-value-id={voting.id}
+                            phx-value-answer="abstain"
+                            class="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors"
+                          >
+                            Abstain
+                          </button>
+                          <button
+                            phx-click="vote"
+                            phx-value-id={voting.id}
+                            phx-value-answer="against"
+                            class="px-3 py-1 rounded-md text-sm font-medium bg-rose-100 text-rose-800 hover:bg-rose-200 transition-colors"
+                          >
+                            Vote Against
+                          </button>
+                        </div>
+                      <% end %>
                     <% end %>
 
                     <div class="pl-0 md:pl-8 space-y-4">
