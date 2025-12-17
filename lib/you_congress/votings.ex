@@ -120,6 +120,21 @@ defmodule YouCongress.Votings do
     |> distinct(true)
     |> preload(opinions: ^opinions_query, votes: ^votes_query)
     |> Repo.all()
+    |> filter_latest_opinions_for_votings()
+  end
+
+  defp filter_latest_opinions_for_votings(votings) do
+    Enum.map(votings, fn voting ->
+      unique_opinions =
+        voting.opinions
+        |> Enum.group_by(& &1.author_id)
+        |> Enum.map(fn {_author_id, opinions} ->
+          Enum.max_by(opinions, & &1.id)
+        end)
+        |> Enum.sort_by(& &1.likes_count, :desc)
+
+      %{voting | opinions: unique_opinions}
+    end)
   end
 
   @doc """
