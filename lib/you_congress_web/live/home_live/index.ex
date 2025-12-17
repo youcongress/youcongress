@@ -164,4 +164,11 @@ defmodule YouCongressWeb.HomeLive.Index do
     votings = Votings.list_votings_with_opinions_by_authors(selected_ids)
     assign(socket, :selection_votings, votings)
   end
+
+  def get_vote_answer(voting, author_id) do
+    case Enum.find(voting.votes, &(&1.author_id == author_id)) do
+      nil -> nil
+      vote -> vote.answer
+    end
+  end
 end

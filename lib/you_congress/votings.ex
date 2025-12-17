@@ -10,6 +10,7 @@ defmodule YouCongress.Votings do
   alias YouCongress.HallsVotings
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Workers.VotingHallsGeneratorWorker
+  alias YouCongress.Votes.Vote
 
   @doc """
   Returns the list of votings.
@@ -108,12 +109,16 @@ defmodule YouCongress.Votings do
         order_by: [desc: :likes_count],
         preload: [:author]
 
+    votes_query =
+      from v in Vote,
+        where: v.author_id in ^author_ids
+
     from(v in Voting)
     |> join(:inner, [v], ov in "opinions_votings", on: ov.voting_id == v.id)
     |> join(:inner, [v, ov], o in Opinion, on: ov.opinion_id == o.id)
     |> where([v, ov, o], o.author_id in ^author_ids)
     |> distinct(true)
-    |> preload(opinions: ^opinions_query)
+    |> preload(opinions: ^opinions_query, votes: ^votes_query)
     |> Repo.all()
   end
 
