@@ -53,10 +53,10 @@
             </div>
           </div>
         <% else %>
-          <div class="mt-6 text-2xl leading-8 text-gray-600">
-            <div class="pt-4 text-sm">
-              <div class="pb-2 text-xl">Choose your <strong>delegates</strong></div>
-              <div class="space-y-4">
+          <div class="text-2xl leading-8 text-gray-600">
+            <div class="text-sm">
+              <div class="pb-4 text-xl">Choose your <strong>delegates</strong></div>
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <%= for delegate <- @delegates do %>
                   <div class="flex items-center space-x-3">
                     <input
