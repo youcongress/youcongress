@@ -40,6 +40,7 @@ defmodule YouCongressWeb.HomeLive.Index do
       |> assign(:selected_delegate_ids, [])
       |> assign(:selection_votings, [])
       |> assign(:user_votes, %{})
+      |> assign(:auth_tab, :register)
 
     {:ok, socket}
   end
@@ -93,6 +94,10 @@ defmodule YouCongressWeb.HomeLive.Index do
 
   def handle_event("search-tab", %{"tab" => "quotes"}, socket) do
     {:noreply, assign(socket, search_tab: :quotes)}
+  end
+
+  def handle_event("switch-auth-tab", %{"tab" => tab}, socket) do
+    {:noreply, assign(socket, auth_tab: String.to_existing_atom(tab))}
   end
 
   def handle_event("toggle-delegate", %{"id" => id}, socket) do
