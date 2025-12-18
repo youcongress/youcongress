@@ -12,19 +12,21 @@ defmodule YouCongressWeb.UserRegistrationLive do
     ~H"""
     <div class="mx-auto max-w-sm">
       <%= if @step == :enter_email_password do %>
-        <.header class="text-center">
-          <:subtitle>
-            Already registered?
-            <.link navigate={~p"/log_in"} class="font-semibold text-brand hover:underline">
-              Log in
-            </.link>
-            to your account now.
-          </:subtitle>
-        </.header>
+        <%= unless @embedded do %>
+          <.header class="text-center">
+            <:subtitle>
+              Already registered?
+              <.link navigate={~p"/log_in"} class="font-semibold text-brand hover:underline">
+                Log in
+              </.link>
+              to your account now.
+            </:subtitle>
+          </.header>
 
-        <.header class="text-center pt-6">
-          Register for an account
-        </.header>
+          <.header class="text-center pt-6">
+            Register for an account
+          </.header>
+        <% end %>
         <.simple_form
           for={@form}
           id="registration_form"
@@ -160,6 +162,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
       socket
       |> assign(:delegate_ids, delegate_ids)
       |> assign(:votes, votes)
+      |> assign(:embedded, session["embedded"] || false)
 
     current_user = socket.assigns.current_user
 

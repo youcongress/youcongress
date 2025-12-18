@@ -448,12 +448,20 @@
                 <%= if @auth_tab == :register do %>
                   {live_render(@socket, YouCongressWeb.UserRegistrationLive,
                     id: "register-form",
-                    session: %{"delegate_ids" => @selected_delegate_ids, "votes" => @user_votes}
+                    session: %{
+                      "delegate_ids" => @selected_delegate_ids,
+                      "votes" => @user_votes,
+                      "embedded" => true
+                    }
                   )}
                 <% else %>
                   {live_render(@socket, YouCongressWeb.UserLoginLive,
                     id: "login-form",
-                    session: %{"delegate_ids" => @selected_delegate_ids, "votes" => @user_votes}
+                    session: %{
+                      "delegate_ids" => @selected_delegate_ids,
+                      "votes" => @user_votes,
+                      "embedded" => true
+                    }
                   )}
                 <% end %>
               </div>

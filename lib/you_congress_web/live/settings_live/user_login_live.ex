@@ -4,12 +4,14 @@ defmodule YouCongressWeb.UserLoginLive do
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
-      <.header class="text-center">
-        Log in to account
-        <:subtitle>
-          Don't have an account? <.link href="/sign_up" class="underline">Sign up</.link>
-        </:subtitle>
-      </.header>
+      <%= unless @embedded do %>
+        <.header class="text-center">
+          Log in to account
+          <:subtitle>
+            Don't have an account? <.link href="/sign_up" class="underline">Sign up</.link>
+          </:subtitle>
+        </.header>
+      <% end %>
 
       <.simple_form for={@form} id="login_form" action={~p"/log_in"} phx-update="ignore">
         <.input field={@form[:email]} type="email" label="Email" required />
@@ -51,7 +53,11 @@ defmodule YouCongressWeb.UserLoginLive do
         nil
       end
 
-    {:ok, assign(socket, form: form, pending_actions: pending_actions),
-     temporary_assigns: [form: form]}
+    {:ok,
+     assign(socket,
+       form: form,
+       pending_actions: pending_actions,
+       embedded: session["embedded"] || false
+     ), temporary_assigns: [form: form]}
   end
 end
