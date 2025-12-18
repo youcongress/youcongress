@@ -272,10 +272,15 @@ defmodule YouCongressWeb.HomeLive.Index do
     if Enum.empty?(votes) do
       nil
     else
-      votes
-      |> Enum.frequencies()
-      |> Enum.max_by(fn {_answer, count} -> count end)
-      |> elem(0)
+      counts = Enum.frequencies(votes)
+
+      if Map.get(counts, :for, 0) == Map.get(counts, :against, 0) do
+        :abstain
+      else
+        counts
+        |> Enum.max_by(fn {_answer, count} -> count end)
+        |> elem(0)
+      end
     end
   end
 end
