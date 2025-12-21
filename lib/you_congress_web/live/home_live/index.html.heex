@@ -87,8 +87,8 @@
               </div>
             </div>
 
-            <div class="mt-8 pb-2 text-xl">Motions</div>
             <%= if @selected_delegate_ids == [] do %>
+              <div class="mt-8 pb-2 text-xl">Motions</div>
               <div class="space-y-6">
                 <div class="bg-gradient-to-r from-emerald-50 to-white p-6 rounded-2xl hover:shadow-lg transition duration-300">
                   <div class="flex text-left items-center mb-3">
@@ -223,7 +223,7 @@
                 </div>
               </div>
             <% else %>
-              <div class="space-y-6">
+              <div class="pt-2 space-y-6">
                 <%= for voting <- @selection_votings do %>
                   <div class="bg-gradient-to-r from-gray-50 to-white p-6 rounded-2xl hover:shadow-lg transition duration-300">
                     <div class="flex text-left items-center mb-4">
