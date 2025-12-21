@@ -12,19 +12,21 @@ defmodule YouCongressWeb.UserRegistrationLive do
     ~H"""
     <div class="mx-auto max-w-sm">
       <%= if @step == :enter_email_password do %>
-        <.header class="text-center">
-          <:subtitle>
-            Already registered?
-            <.link navigate={~p"/log_in"} class="font-semibold text-brand hover:underline">
-              Log in
-            </.link>
-            to your account now.
-          </:subtitle>
-        </.header>
+        <%= unless @embedded do %>
+          <.header class="text-center">
+            <:subtitle>
+              Already registered?
+              <.link navigate={~p"/log_in"} class="font-semibold text-brand hover:underline">
+                Log in
+              </.link>
+              to your account now.
+            </:subtitle>
+          </.header>
 
-        <.header class="text-center pt-6">
-          Register for an account
-        </.header>
+          <.header class="text-center pt-6">
+            Register for an account
+          </.header>
+        <% end %>
         <.simple_form
           for={@form}
           id="registration_form"
@@ -152,6 +154,16 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
   def mount(_params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
+
+    delegate_ids = session["delegate_ids"] || []
+    votes = session["votes"] || %{}
+
+    socket =
+      socket
+      |> assign(:delegate_ids, delegate_ids)
+      |> assign(:votes, votes)
+      |> assign(:embedded, session["embedded"] || false)
+
     current_user = socket.assigns.current_user
 
     step =
@@ -185,7 +197,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
     author_params = Map.take(params, ~w(name))
 
     case Accounts.register_user(user_params, author_params) do
-      {:ok, %{user: user, author: _}} ->
+      {:ok, %{user: user, author: author}} ->
         Track.event("Register via email/password", user)
 
         Accounts.deliver_user_confirmation_instructions(
@@ -197,6 +209,24 @@ defmodule YouCongressWeb.UserRegistrationLive do
           socket
           |> assign(:step, :check_email)
           |> assign(:user, user)
+
+        # Pending Actions
+        if socket.assigns.delegate_ids != [] do
+          for id <- socket.assigns.delegate_ids do
+            YouCongress.Delegations.create_delegation(user, id)
+          end
+        end
+
+        if map_size(socket.assigns.votes) > 0 do
+          for {_voting_id, vote_data} <- socket.assigns.votes do
+            YouCongress.Votes.create_or_update(%{
+              voting_id: vote_data.voting_id,
+              answer: vote_data.answer,
+              author_id: author.id,
+              direct: true
+            })
+          end
+        end
 
         {:noreply, socket}
 

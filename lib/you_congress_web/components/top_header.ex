@@ -19,7 +19,11 @@ defmodule YouCongressWeb.TopHeaderComponent do
         </div>
         <!-- Desktop Navigation -->
         <div class="hidden md:flex text-sm items-center gap-6 leading-6 text-zinc-900">
-          <.link href={~p"/home"} class="px-3 py-2 hover:text-zinc-700 transition-colors">
+          <.link
+            :if={@current_user}
+            href={~p"/home"}
+            class="px-3 py-2 hover:text-zinc-700 transition-colors"
+          >
             Home
           </.link>
           <.link href={~p"/about"} class="px-3 py-2 hover:text-zinc-700 transition-colors">

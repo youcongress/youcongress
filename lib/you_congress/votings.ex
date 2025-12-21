@@ -10,6 +10,7 @@ defmodule YouCongress.Votings do
   alias YouCongress.HallsVotings
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Workers.VotingHallsGeneratorWorker
+  alias YouCongress.Votes.Vote
 
   @doc """
   Returns the list of votings.
@@ -99,6 +100,41 @@ defmodule YouCongress.Votings do
         order_by: fragment("RANDOM()"),
         limit: ^limit
     )
+  end
+
+  def list_votings_with_opinions_by_authors(author_ids) do
+    opinions_query =
+      from o in Opinion,
+        where: o.author_id in ^author_ids,
+        order_by: [desc: :likes_count],
+        preload: [:author]
+
+    votes_query =
+      from v in Vote,
+        where: v.author_id in ^author_ids
+
+    from(v in Voting)
+    |> join(:inner, [v], ov in "opinions_votings", on: ov.voting_id == v.id)
+    |> join(:inner, [v, ov], o in Opinion, on: ov.opinion_id == o.id)
+    |> where([v, ov, o], o.author_id in ^author_ids)
+    |> distinct(true)
+    |> preload(opinions: ^opinions_query, votes: ^votes_query)
+    |> Repo.all()
+    |> filter_latest_opinions_for_votings()
+  end
+
+  defp filter_latest_opinions_for_votings(votings) do
+    Enum.map(votings, fn voting ->
+      unique_opinions =
+        voting.opinions
+        |> Enum.group_by(& &1.author_id)
+        |> Enum.map(fn {_author_id, opinions} ->
+          Enum.max_by(opinions, & &1.id)
+        end)
+        |> Enum.sort_by(& &1.likes_count, :desc)
+
+      %{voting | opinions: unique_opinions}
+    end)
   end
 
   @doc """

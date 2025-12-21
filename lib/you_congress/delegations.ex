@@ -168,4 +168,8 @@ defmodule YouCongress.Delegations do
   def delegating?(deleguee_id, delegate_id) do
     !!Repo.get_by(Delegation, deleguee_id: deleguee_id, delegate_id: delegate_id)
   end
+
+  def get_delegation(%User{} = user, delegate_id) do
+    Repo.get_by(Delegation, deleguee_id: user.author_id, delegate_id: delegate_id)
+  end
 end

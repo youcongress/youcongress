@@ -38,6 +38,30 @@ defmodule YouCongressWeb.UserSessionController do
         |> redirect(to: ~p"/log_in")
 
       user = Accounts.get_user_by_email_and_password(email, password) ->
+        # Handle Pending Actions
+        if pending_json = user_params["pending_actions"] do
+          case Jason.decode(pending_json) do
+            {:ok, %{"delegate_ids" => ids, "votes" => votes}} ->
+              # Delegates
+              for id <- ids do
+                YouCongress.Delegations.create_delegation(user, id)
+              end
+
+              # Votes
+              for {_voting_id, vote_data} <- votes do
+                YouCongress.Votes.create_or_update(%{
+                  voting_id: vote_data["voting_id"],
+                  answer: String.to_existing_atom(vote_data["answer"]),
+                  author_id: user.author_id,
+                  direct: true
+                })
+              end
+
+            _ ->
+              :ok
+          end
+        end
+
         conn
         |> put_flash(:info, info)
         |> UserAuth.log_in_user(user, user_params)
