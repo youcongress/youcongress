@@ -10,9 +10,16 @@ defmodule YouCongress.Opinions.Quotes.QuotatorFake do
   Generate 20 fake quotes for a given question title.
   Returns {:ok, %{quotes: list, cost: 0}} to match the real implementation.
   """
-  @spec find_quotes(integer, binary, list(binary), integer() | nil) ::
+  @spec find_quotes(integer, binary, list(binary), integer() | nil, integer(), integer()) ::
           {:ok, %{quotes: list, cost: number}}
-  def find_quotes(_voting_id, question_title, exclude_author_names, _user_id) do
+  def find_quotes(
+        _voting_id,
+        question_title,
+        exclude_author_names,
+        _user_id,
+        _max_remaining_llm_calls,
+        _max_remaining_quotes
+      ) do
     quotes =
       1..Quotator.number_of_quotes()
       |> Enum.map(fn _ -> build_quote(question_title) end)

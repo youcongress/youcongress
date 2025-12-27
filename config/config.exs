@@ -61,8 +61,10 @@ config :phoenix, :json_library, Jason
 
 config :you_congress, Oban,
   repo: YouCongress.Repo,
+  poll_interval: 500,
   plugins: [
     Oban.Plugins.Pruner,
+    Oban.Plugins.Lifeline,
     {Oban.Plugins.Cron,
      crontab: [
        # Touch a voting every day at 7am

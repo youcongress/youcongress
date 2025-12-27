@@ -22,12 +22,25 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   @doc """
   Find and save quotes for the given voting.
   """
-  @spec find_and_save_quotes(integer(), list(binary()), integer()) ::
+  @spec find_and_save_quotes(integer(), list(binary()), integer(), integer(), integer()) ::
           {:ok, integer()} | {:error, any()}
-  def find_and_save_quotes(voting_id, exclude_existent_names, user_id) do
+  def find_and_save_quotes(
+        voting_id,
+        exclude_existent_names,
+        user_id,
+        max_remaining_llm_calls,
+        max_remaining_quotes
+      ) do
     voting = Votings.get_voting!(voting_id)
 
-    case implementation().find_quotes(voting.id, voting.title, exclude_existent_names, user_id) do
+    case implementation().find_quotes(
+           voting.id,
+           voting.title,
+           exclude_existent_names,
+           user_id,
+           max_remaining_llm_calls,
+           max_remaining_quotes
+         ) do
       {:ok, :job_started} ->
         {:ok, :job_started}
 

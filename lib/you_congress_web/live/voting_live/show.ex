@@ -83,9 +83,6 @@ defmodule YouCongressWeb.VotingLive.Show do
     current_user = socket.assigns.current_user
 
     cond do
-      Application.get_env(:you_congress, :environment) == :prod ->
-        {:noreply, put_flash(socket, :error, "This feature is not available in production.")}
-
       is_nil(current_user) ->
         {:noreply, put_flash(socket, :error, "Please log in to find quotes.")}
 
@@ -99,9 +96,11 @@ defmodule YouCongressWeb.VotingLive.Show do
 
         Track.event("Find quotes", current_user)
 
-        Process.send_after(self(), :reload, 100)
+        socket
+        |> assign(:find_quotes_in_progress, true)
+        |> clear_flash()
 
-        {:noreply, clear_flash(socket)}
+        {:noreply, socket}
     end
   end
 
@@ -123,9 +122,12 @@ defmodule YouCongressWeb.VotingLive.Show do
   end
 
   def handle_event("reload", _, socket) do
+    voting = socket.assigns.voting
+
     socket =
       socket
-      |> VotesLoader.load_voting_and_votes(socket.assigns.voting.id)
+      |> VotesLoader.load_voting_and_votes(voting.id)
+      |> assign(:find_quotes_in_progress, QuotatorAI.check_polling_job_status(voting.id))
       |> assign(reload: false)
       |> clear_flash()
 

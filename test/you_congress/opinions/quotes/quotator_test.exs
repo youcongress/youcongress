@@ -1,5 +1,5 @@
 defmodule YouCongress.Opinions.Quotes.QuotatorInvalid do
-  def find_quotes(_, _, _, _) do
+  def find_quotes(_, _, _, _, _, _) do
     quotes = [
       %{
         # Missing content triggers validation error
@@ -31,7 +31,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
 
       exclude = ["Excluded Name"]
 
-      assert {:ok, saved_count} = Quotator.find_and_save_quotes(voting.id, exclude, user.id)
+      assert {:ok, saved_count} = Quotator.find_and_save_quotes(voting.id, exclude, user.id, 1, 5)
       # Association step requires user_id for join table; we expect 0 persisted in that step
       assert saved_count == Quotator.number_of_quotes()
 
@@ -70,7 +70,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
 
       System.put_env("OPENAI_API_KEY", "")
 
-      assert {:error, _} = Quotator.find_and_save_quotes(voting.id, [], user.id)
+      assert {:error, _} = Quotator.find_and_save_quotes(voting.id, [], user.id, 1, 5)
 
       # No votes or opinions should have been created
       assert Votes.count_by_voting(voting.id) == 0
@@ -92,7 +92,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
 
       # Start capturing logs to avoid noise if desired, but here we just check result
       # The detailed logger calls will happen, causing "Failed to persist..." logs
-      assert {:ok, 0} = Quotator.find_and_save_quotes(voting.id, [], user.id)
+      assert {:ok, 0} = Quotator.find_and_save_quotes(voting.id, [], user.id, 1, 5)
     end
   end
 end

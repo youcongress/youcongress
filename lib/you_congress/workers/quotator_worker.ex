@@ -18,8 +18,10 @@ defmodule YouCongress.Workers.QuotatorWorker do
 
   @impl Oban.Worker
   @spec perform(Oban.Job.t()) :: :ok | :error
-  def perform(%Oban.Job{args: %{"voting_id" => voting_id, "user_id" => user_id}}) do
+  def perform(%Oban.Job{args: %{"voting_id" => voting_id, "user_id" => user_id} = args}) do
     voting = Votings.get_voting!(voting_id, preload: [votes: [:author]])
+    max_remaining_llm_calls = args["max_remaining_llm_calls"] || 3
+    max_remaining_quotes = args["max_remaining_quotes"] || 10
 
     exclude_existent_names =
       voting.votes
@@ -27,7 +29,13 @@ defmodule YouCongress.Workers.QuotatorWorker do
       |> Enum.reject(&is_nil/1)
       |> Enum.map(& &1.name)
 
-    case Quotator.find_and_save_quotes(voting.id, exclude_existent_names, user_id) do
+    case Quotator.find_and_save_quotes(
+           voting.id,
+           exclude_existent_names,
+           user_id,
+           max_remaining_llm_calls,
+           max_remaining_quotes
+         ) do
       {:ok, :job_started} ->
         Logger.info("Finding quotes job started for voting #{voting.id}")
         :ok

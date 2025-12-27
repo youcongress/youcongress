@@ -7,10 +7,17 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
 
   require Logger
   alias YouCongress.Opinions.Quotes.{Quotator, QuotatorAI}
+  alias YouCongress.Workers.QuotatorWorker
 
   @impl Oban.Worker
   def perform(%Oban.Job{
-        args: %{"job_id" => job_id, "voting_id" => voting_id, "user_id" => user_id}
+        args: %{
+          "job_id" => job_id,
+          "voting_id" => voting_id,
+          "user_id" => user_id,
+          "max_remaining_llm_calls" => max_remaining_llm_calls,
+          "max_remaining_quotes" => max_remaining_quotes
+        }
       }) do
     Logger.info("Polling OpenAI job #{job_id} for voting #{voting_id}...")
 
@@ -18,17 +25,24 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
       {:ok, :completed, %{quotes: quotes}} ->
         Logger.info("Job #{job_id} completed. Saving quotes...")
 
-        Quotator.save_quotes_from_job(%{
-          voting_id: voting_id,
-          quotes: quotes,
-          user_id: user_id
-        })
+        result =
+          Quotator.save_quotes_from_job(%{
+            voting_id: voting_id,
+            quotes: quotes,
+            user_id: user_id
+          })
 
-        :ok
+        maybe_call_llm_again(
+          result,
+          voting_id,
+          user_id,
+          max_remaining_llm_calls,
+          max_remaining_quotes
+        )
 
       {:ok, :in_progress} ->
         Logger.info("Job #{job_id} still in progress. Retrying in 1 minute...")
-        {:error, :still_in_progress}
+        {:snooze, 60}
 
       {:error, reason} ->
         Logger.error("Job #{job_id} failed: #{inspect(reason)}")
@@ -36,6 +50,50 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
     end
   end
 
-  @impl Oban.Worker
-  def backoff(_job), do: 60
+  defp maybe_call_llm_again(
+         {:ok, num_saved_quotes},
+         voting_id,
+         user_id,
+         max_remaining_llm_calls,
+         max_remaining_quotes
+       ) do
+    max_remaining_quotes = max_remaining_quotes - num_saved_quotes
+
+    cond do
+      num_saved_quotes == 0 ->
+        Logger.debug(
+          "No quotes saved. No more llm calls despite #{max_remaining_quotes} quotes left."
+        )
+
+        :ok
+
+      max_remaining_quotes == 0 ->
+        Logger.debug("No more quotes left.")
+        :ok
+
+      max_remaining_llm_calls == 0 ->
+        Logger.debug("No more llm calls left.")
+        :ok
+
+      true ->
+        max_remaining_llm_calls = max_remaining_llm_calls - 1
+
+        Logger.debug(
+          "Calling llm again with #{max_remaining_llm_calls} calls left and #{max_remaining_quotes} quotes left."
+        )
+
+        %{
+          voting_id: voting_id,
+          user_id: user_id,
+          find_n_quotes: max_remaining_quotes,
+          max_remaining_llm_calls: max_remaining_llm_calls
+        }
+        |> QuotatorWorker.new()
+        |> Oban.insert()
+    end
+
+    :ok
+  end
+
+  defp maybe_call_llm_again(_, _, _, _, _), do: :ok
 end

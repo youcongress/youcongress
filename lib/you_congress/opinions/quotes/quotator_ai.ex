@@ -54,15 +54,28 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
 
   alias YouCongress.Workers.QuotatorPollingWorker
 
-  @spec find_quotes(integer, binary, list(binary), integer() | nil) ::
+  @spec find_quotes(integer, binary, list(binary), integer() | nil, integer(), integer()) ::
           {:ok, :job_started} | {:error, binary}
-  def find_quotes(voting_id, question_title, exclude_author_names \\ [], user_id) do
+  def find_quotes(
+        voting_id,
+        question_title,
+        exclude_author_names,
+        user_id,
+        max_remaining_llm_calls,
+        max_remaining_quotes
+      ) do
     prompt = get_prompt(question_title, exclude_author_names)
 
     with {:ok, data} <- ask_gpt(prompt, @model),
          {:ok, job_id} <- extract_job_id(data) do
       # Enqueue polling worker
-      %{job_id: job_id, voting_id: voting_id, user_id: user_id}
+      %{
+        job_id: job_id,
+        voting_id: voting_id,
+        user_id: user_id,
+        max_remaining_llm_calls: max_remaining_llm_calls,
+        max_remaining_quotes: max_remaining_quotes
+      }
       |> QuotatorPollingWorker.new()
       |> Oban.insert()
 
