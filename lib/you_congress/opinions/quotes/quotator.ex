@@ -33,7 +33,10 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
         generating_total: @number_of_quotes
       })
 
-    case implementation().find_quotes(voting.title, exclude_existent_names) do
+    case implementation().find_quotes(voting.id, voting.title, exclude_existent_names) do
+      {:ok, :job_started} ->
+        {:ok, :job_started}
+
       {:ok, %{quotes: quotes}} when is_list(quotes) ->
         {:ok, saved_count} =
           save_quotes(%{voting_id: voting_id, quotes: quotes, user_id: user_id})
@@ -51,6 +54,11 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
         {:error, reason}
     end
   end
+
+  @doc """
+  Save a list of quotes from a background job.
+  """
+  def save_quotes_from_job(args), do: save_quotes(args)
 
   # Save a list of quotes for the given voting.
   #

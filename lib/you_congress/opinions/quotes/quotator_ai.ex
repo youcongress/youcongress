@@ -8,7 +8,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
   alias YouCongress.DigitalTwins.OpenAIModel
   alias YouCongress.Opinions.Quotes.Quotator
 
-  @model :"gpt-5.1"
+  @model :"gpt-5.2"
   @timeout_in_min 120
 
   def number_of_quotes, do: Quotator.number_of_quotes()
@@ -53,20 +53,69 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
   """
   @spec find_quotes(binary, list(binary)) ::
           {:ok, %{quotes: list, cost: number}} | {:error, binary}
-  def find_quotes(question_title, exclude_author_names \\ []) do
+  alias YouCongress.Workers.QuotatorPollingWorker
+
+  @spec find_quotes(integer, binary, list(binary)) ::
+          {:ok, :job_started} | {:error, binary}
+  def find_quotes(voting_id, question_title, exclude_author_names \\ []) do
     prompt = get_prompt(question_title, exclude_author_names)
 
     with {:ok, data} <- ask_gpt(prompt, @model),
-         content <- OpenAIModel.get_content(data),
-         {:ok, decoded} <- Jason.decode(content),
-         quotes when is_list(quotes) <- Map.get(decoded, "quotes"),
-         cost <- OpenAIModel.get_cost(data, @model) do
-      {:ok, %{quotes: quotes, cost: cost}}
+         {:ok, job_id} <- extract_job_id(data) do
+      # Enqueue polling worker
+      # user_id could be passed if needed
+      %{job_id: job_id, voting_id: voting_id, user_id: nil}
+      |> QuotatorPollingWorker.new()
+      |> Oban.insert()
+
+      {:ok, :job_started}
     else
-      quotes when is_nil(quotes) -> {:error, "Missing quotes in response"}
       {:error, error} -> {:error, error}
     end
   end
+
+  def check_job_status(job_id) when is_binary(job_id) do
+    api_key = System.get_env("OPENAI_API_KEY")
+
+    if is_nil(api_key) or api_key == "" do
+      {:error, "Missing OPENAI_API_KEY"}
+    else
+      url = "https://api.openai.com/v1/responses/#{job_id}"
+
+      headers = [
+        {"content-type", "application/json"},
+        {"authorization", "Bearer " <> api_key}
+      ]
+
+      req = Finch.build(:get, url, headers)
+
+      case Finch.request(req, Swoosh.Finch, receive_timeout: 30_000) do
+        {:ok, %Finch.Response{status: 200, body: resp_body}} ->
+          case Jason.decode(resp_body) do
+            {:ok, %{"status" => "completed"} = resp} ->
+              {:ok, :completed, process_completed_job(resp)}
+
+            {:ok, %{"status" => "failed", "error" => error}} ->
+              {:error, "Job failed: #{inspect(error)}"}
+
+            {:ok, %{"status" => _status}} ->
+              {:ok, :in_progress}
+
+            _ ->
+              {:error, "Failed to parse polling response"}
+          end
+
+        {:ok, %Finch.Response{status: status, body: body}} ->
+          {:error, "Polling failed (#{status}): #{truncate_body(body)}"}
+
+        {:error, reason} ->
+          {:error, "Polling connection failed: #{inspect(reason)}"}
+      end
+    end
+  end
+
+  defp extract_job_id(%{"id" => id}), do: {:ok, id}
+  defp extract_job_id(_), do: {:error, "No Job ID found"}
 
   @spec get_prompt(binary, list(binary)) :: binary
   defp get_prompt(question_title, exclude_author_names) do
@@ -131,6 +180,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
             "schema" => json_schema()
           }
         },
+        "background" => true,
         "input" => [
           %{
             "role" => "system",
@@ -157,35 +207,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
       case Finch.request(req, Swoosh.Finch, receive_timeout: @timeout_in_min * 60 * 1000) do
         {:ok, %Finch.Response{status: status, body: resp_body}} when status in 200..299 ->
           case Jason.decode(resp_body) do
-            {:ok, resp} ->
-              Logger.warning("----------------- resp: #{inspect(resp)}")
-
-              content =
-                Map.get(resp, "output_text") ||
-                  extract_output_text(resp)
-
-              cached_input_tokens = resp["usage"]["input_tokens_details"]["cached_tokens"] || 0
-
-              prompt_tokens = resp["usage"]["input_tokens"] - cached_input_tokens
-
-              completion_tokens =
-                resp["usage"]["output_tokens"] || 0
-
-              compat = %{
-                "choices" => [
-                  %{"message" => %{"content" => content || ""}}
-                ],
-                "usage" => %{
-                  "prompt_tokens" => prompt_tokens,
-                  "completion_tokens" => completion_tokens,
-                  "cached_input_tokens" => cached_input_tokens
-                }
-              }
-
-              {:ok, compat}
-
-            _ ->
-              {:error, "Failed to parse OpenAI response"}
+            {:ok, resp} -> {:ok, resp}
+            _ -> {:error, "Failed to parse OpenAI response"}
           end
 
         {:ok, %Finch.Response{status: status, body: resp_body}} ->
@@ -197,6 +220,28 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
           {:error, "HTTP error: #{inspect(reason)}"}
       end
     end
+  end
+
+  defp process_completed_job(resp) do
+    content =
+      Map.get(resp, "output_text") ||
+        extract_output_text(resp)
+
+    cached_input_tokens = get_in(resp, ["usage", "input_tokens_details", "cached_tokens"]) || 0
+    _prompt_tokens = (get_in(resp, ["usage", "input_tokens"]) || 0) - cached_input_tokens
+    _completion_tokens = get_in(resp, ["usage", "output_tokens"]) || 0
+
+    decoded =
+      case Jason.decode(content) do
+        {:ok, decoded} -> decoded
+        _ -> %{"quotes" => []}
+      end
+
+    %{
+      quotes: Map.get(decoded, "quotes"),
+      # TODO: Calculate cost if needed
+      cost: 0.0
+    }
   end
 
   defp extract_output_text(%{"output" => output}) when is_list(output) do

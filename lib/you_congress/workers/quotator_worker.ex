@@ -31,6 +31,10 @@ defmodule YouCongress.Workers.QuotatorWorker do
       |> Enum.map(& &1.name)
 
     case Quotator.find_and_save_quotes(voting.id, exclude_existent_names, user_id) do
+      {:ok, :job_started} ->
+        Logger.info("Quote generation job started for voting #{voting.id}")
+        :ok
+
       {:ok, saved_count} ->
         maybe_continue_batch(args, saved_count)
         :ok
