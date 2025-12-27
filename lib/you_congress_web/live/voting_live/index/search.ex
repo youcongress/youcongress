@@ -17,6 +17,9 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
   attr :quotes, :map, required: true
 
   def render(assigns) do
+    parsed_terms = YouCongress.SearchParser.parse(assigns.search_term)
+    assigns = assign(assigns, :parsed_terms, parsed_terms)
+
     ~H"""
     <div class="border-b border-gray-200 pt-4">
       <div class="pb-2">
@@ -37,9 +40,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         <%= for voting <- @votings do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={~p"/p/#{voting.slug}"}>
-                <.highlight text={voting.title} terms={YouCongress.SearchParser.parse(@search_term)} />
-              </a>
+              <a href={~p"/p/#{voting.slug}"} phx-no-format><.highlight text={voting.title} terms={@parsed_terms} /></a>
             </td>
           </tr>
         <% end %>
@@ -55,12 +56,8 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
                 <a
                   href={author_path(author)}
                   class="font-medium text-gray-900 hover:underline"
-                >
-                  <.highlight
-                    text={author.name || "x/#{author.twitter_username}"}
-                    terms={YouCongress.SearchParser.parse(@search_term)}
-                  />
-                </a>
+                  phx-no-format
+                ><.highlight text={author.name || "x/#{author.twitter_username}"} terms={@parsed_terms}/></a>
                 <p :if={bio} class="text-xs text-gray-500 sm:text-right sm:text-sm sm:pl-6">
                   {bio}
                 </p>
@@ -75,9 +72,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         <%= for hall <- @halls do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={~p"/halls/#{hall.name}"}>
-                <.highlight text={hall.name} terms={YouCongress.SearchParser.parse(@search_term)} />
-              </a>
+              <a href={~p"/halls/#{hall.name}"} phx-no-format><.highlight text={hall.name} terms={@parsed_terms}/></a>
             </td>
           </tr>
         <% end %>
@@ -92,24 +87,22 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
                 <div class="text-sm text-gray-600">
                   <% bio = author_bio(quote.author) %>
                   <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                    <a href={author_path(quote.author)} class="font-medium hover:underline">
-                      <.highlight
-                        text={quote.author.name || "x/#{quote.author.twitter_username}"}
-                        terms={YouCongress.SearchParser.parse(@search_term)}
-                      />
-                    </a>
+                    <a
+                      href={author_path(quote.author)}
+                      class="font-medium hover:underline"
+                      phx-no-format
+                    ><.highlight text={quote.author.name || "x/#{quote.author.twitter_username}"} terms={@parsed_terms}/></a>
                     <p :if={bio} class="text-xs text-gray-500 sm:text-right sm:text-sm sm:pl-6">
                       {bio}
                     </p>
                   </div>
                 </div>
                 <div class="text-sm">
-                  <a href={~p"/c/#{quote.id}"} class="hover:bg-gray-50 block p-2 -m-2 rounded">
-                    <.highlight
-                      text={quote.content}
-                      terms={YouCongress.SearchParser.parse(@search_term)}
-                    />
-                  </a>
+                  <a
+                    href={~p"/c/#{quote.id}"}
+                    class="hover:bg-gray-50 block p-2 -m-2 rounded"
+                    phx-no-format
+                  ><.highlight text={quote.content} terms={@parsed_terms}/></a>
                 </div>
                 <%= if quote.source_url do %>
                   <div class="text-xs text-gray-500 flex items-center gap-2">
@@ -166,13 +159,7 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
       assigns = assign(assigns, parts: parts, regex: regex)
 
       ~H"""
-      <%= for part <- @parts do %>
-        <%= if String.match?(part, @regex) do %>
-          <b>{part}</b>
-        <% else %>
-          {part}
-        <% end %>
-      <% end %>
+      <span phx-no-format><%= for part <- @parts do %><%= if String.match?(part, @regex) do %><b>{part}</b><% else %>{part}<% end %><% end %></span>
       """
     end
   end

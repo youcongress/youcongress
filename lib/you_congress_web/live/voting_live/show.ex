@@ -15,6 +15,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Accounts.Permissions
   alias YouCongressWeb.VotingLive.CastVoteComponent
   alias YouCongress.HallsVotings
+  alias YouCongress.Opinions.Quotes.QuotatorAI
 
   @impl true
   def mount(_, session, socket) do
@@ -44,6 +45,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       |> assign(reload: false)
       |> assign(full_width: true)
       |> assign(:regenerating_opinion_id, nil)
+      |> assign(:find_quotes_in_progress, QuotatorAI.check_polling_job_status(voting.id))
       |> assign(:source_filter, nil)
       |> assign(:answer_filter, nil)
       |> VotesLoader.load_voting_and_votes(voting.id)
@@ -52,10 +54,6 @@ defmodule YouCongressWeb.VotingLive.Show do
 
     current_user_vote = socket.assigns.current_user_vote
     socket = assign(socket, editing: !current_user_vote || !current_user_vote.opinion_id)
-
-    if socket.assigns.voting.generating_left > 0 do
-      Process.send_after(self(), :reload, 1_000)
-    end
 
     {:noreply, socket}
   end
@@ -85,9 +83,6 @@ defmodule YouCongressWeb.VotingLive.Show do
     current_user = socket.assigns.current_user
 
     cond do
-      Application.get_env(:you_congress, :environment) == :prod ->
-        {:noreply, put_flash(socket, :error, "This feature is not available in production.")}
-
       is_nil(current_user) ->
         {:noreply, put_flash(socket, :error, "Please log in to find quotes.")}
 
@@ -95,15 +90,18 @@ defmodule YouCongressWeb.VotingLive.Show do
         {:noreply, put_flash(socket, :error, "You don't have permission to find quotes.")}
 
       true ->
-        %{voting_id: voting_id, user_id: current_user.id, num_times: 5}
+        %{voting_id: voting_id, user_id: current_user.id, find_n_quotes: 10}
         |> QuotatorWorker.new()
         |> Oban.insert()
 
         Track.event("Find quotes", current_user)
 
-        Process.send_after(self(), :reload, 100)
+        socket =
+          socket
+          |> assign(:find_quotes_in_progress, true)
+          |> clear_flash()
 
-        {:noreply, clear_flash(socket)}
+        {:noreply, socket}
     end
   end
 
@@ -125,9 +123,12 @@ defmodule YouCongressWeb.VotingLive.Show do
   end
 
   def handle_event("reload", _, socket) do
+    voting = socket.assigns.voting
+
     socket =
       socket
-      |> VotesLoader.load_voting_and_votes(socket.assigns.voting.id)
+      |> VotesLoader.load_voting_and_votes(voting.id)
+      |> assign(:find_quotes_in_progress, QuotatorAI.check_polling_job_status(voting.id))
       |> assign(reload: false)
       |> clear_flash()
 
@@ -189,10 +190,6 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   def handle_info(:reload, socket) do
     socket = VotesLoader.load_voting_and_votes(socket, socket.assigns.voting.id)
-
-    if socket.assigns.voting.generating_left > 0 do
-      Process.send_after(self(), :reload, 1_000)
-    end
 
     {:noreply, socket}
   end

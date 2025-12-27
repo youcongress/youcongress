@@ -1,0 +1,41 @@
+Excluding tags: [:test, :openai_api]
+Including tags: [line: 184]
+
+
+
+  1) test Show casts a vote from voting buttons (YouCongressWeb.VotingLiveTest)
+     test/you_congress_web/live/voting_live_test.exs:177
+     ** (Postgrex.Error) ERROR 22P02 (invalid_text_representation) invalid input value for enum oban_job_state: "retry". If you are trying to query a JSON field, the parameter may need to be interpolated. Instead of
+
+         p.json["field"] != "value"
+
+     do
+
+         p.json["field"] != ^"value"
+
+
+         query: SELECT TRUE FROM "oban_jobs" AS o0 WHERE (o0."worker" = 'YouCongress.Workers.QuotatorPollingWorker') AND (o0."args"->>'voting_id' = $1) AND (o0."state" IN ('scheduled','retry','executing')) LIMIT 1
+     code: {:ok, show_live, _html} = live(conn, ~p"/p/#{voting.slug}")
+     stacktrace:
+       (ecto_sql 3.13.4) lib/ecto/adapters/sql.ex:1113: Ecto.Adapters.SQL.raise_sql_call_error/1
+       (ecto_sql 3.13.4) lib/ecto/adapters/sql.ex:1011: Ecto.Adapters.SQL.execute/6
+       (ecto 3.13.5) lib/ecto/repo/queryable.ex:241: Ecto.Repo.Queryable.execute/4
+       (ecto 3.13.5) lib/ecto/repo/queryable.ex:19: Ecto.Repo.Queryable.all/3
+       (ecto 3.13.5) lib/ecto/repo/queryable.ex:145: Ecto.Repo.Queryable.exists?/3
+       (you_congress 0.1.0) lib/you_congress_web/live/voting_live/show.ex:48: YouCongressWeb.VotingLive.Show.handle_params/3
+       (phoenix_live_view 1.1.13) lib/phoenix_live_view/utils.ex:456: anonymous fn/5 in Phoenix.LiveView.Utils.call_handle_params!/5
+       (telemetry 1.3.0) /Users/hec/code/e/you_congress/deps/telemetry/src/telemetry.erl:324: :telemetry.span/3
+       (phoenix_live_view 1.1.13) lib/phoenix_live_view/static.ex:325: Phoenix.LiveView.Static.call_mount_and_handle_params!/5
+       (phoenix_live_view 1.1.13) lib/phoenix_live_view/static.ex:155: Phoenix.LiveView.Static.do_render/4
+       (phoenix_live_view 1.1.13) lib/phoenix_live_view/controller.ex:39: Phoenix.LiveView.Controller.live_render/3
+       (phoenix 1.7.21) lib/phoenix/router.ex:484: Phoenix.Router.__call__/5
+       (you_congress 0.1.0) lib/you_congress_web/endpoint.ex:1: YouCongressWeb.Endpoint.plug_builder_call/2
+       (you_congress 0.1.0) lib/you_congress_web/endpoint.ex:1: YouCongressWeb.Endpoint.call/2
+       (phoenix 1.7.21) lib/phoenix/test/conn_test.ex:225: Phoenix.ConnTest.dispatch/5
+       test/you_congress_web/live/voting_live_test.exs:184: (test)
+
+
+Finished in 0.3 seconds (0.00s async, 0.3s sync)
+11 tests, 1 failure, 10 excluded
+
+Randomized with seed 334119

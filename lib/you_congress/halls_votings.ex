@@ -41,7 +41,8 @@ defmodule YouCongress.HallsVotings do
   end
 
   def delete_halls_votings(%Voting{id: voting_id}) do
-    Repo.delete_all(from h in HallVoting, where: h.voting_id == ^voting_id)
+    from(hv in HallVoting, where: hv.voting_id == ^voting_id)
+    |> Repo.delete_all()
   end
 
   def get_random_voting(hall_name) do

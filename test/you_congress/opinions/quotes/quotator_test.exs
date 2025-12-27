@@ -14,7 +14,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
 
       exclude = ["Excluded Name"]
 
-      assert {:ok, saved_count} = Quotator.find_and_save_quotes(voting.id, exclude, user.id)
+      assert {:ok, saved_count} = Quotator.find_and_save_quotes(voting.id, exclude, user.id, 1, 1)
       # Association step requires user_id for join table; we expect 0 persisted in that step
       assert saved_count == Quotator.number_of_quotes()
 
@@ -36,28 +36,6 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
         opinion = Opinions.get_opinion!(v.opinion_id)
         assert is_integer(opinion.year)
       end)
-    end
-
-    test "handles generator error and only resets generating_left" do
-      voting = voting_fixture(%{title: "Error Voting"})
-      user = user_fixture(%{name: "Test User"})
-
-      prev_impl = Application.get_env(:you_congress, :quotator_implementation)
-      on_exit(fn -> Application.put_env(:you_congress, :quotator_implementation, prev_impl) end)
-
-      Application.put_env(
-        :you_congress,
-        :quotator_implementation,
-        YouCongress.Opinions.Quotes.QuotatorAI
-      )
-
-      System.put_env("OPENAI_API_KEY", "")
-
-      assert {:error, _} = Quotator.find_and_save_quotes(voting.id, [], user.id)
-
-      # No votes or opinions should have been created
-      assert Votes.count_by_voting(voting.id) == 0
-      assert Opinions.count() == 0
     end
   end
 end

@@ -38,3 +38,6 @@ config :phoenix, :plug_init_mode, :runtime
 config :you_congress, Oban, testing: :inline
 
 config :you_congress, amplitude_api_key: nil
+
+config :you_congress,
+  quotator_implementation: YouCongress.Opinions.Quotes.QuotatorFake
