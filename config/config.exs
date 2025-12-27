@@ -61,9 +61,9 @@ config :phoenix, :json_library, Jason
 
 config :you_congress, Oban,
   repo: YouCongress.Repo,
-  poll_interval: 500,
   plugins: [
-    Oban.Plugins.Pruner,
+    # 3 days = 259,200 seconds
+    {Oban.Plugins.Pruner, max_age: 259_200},
     Oban.Plugins.Lifeline,
     {Oban.Plugins.Cron,
      crontab: [

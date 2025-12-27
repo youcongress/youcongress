@@ -71,7 +71,7 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
         Logger.debug("No more quotes left.")
         :ok
 
-      max_remaining_llm_calls == 0 ->
+      max_remaining_llm_calls <= 0 ->
         Logger.debug("No more llm calls left.")
         :ok
 
@@ -85,7 +85,7 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
         %{
           voting_id: voting_id,
           user_id: user_id,
-          find_n_quotes: max_remaining_quotes,
+          max_remaining_quotes: max_remaining_quotes,
           max_remaining_llm_calls: max_remaining_llm_calls
         }
         |> QuotatorWorker.new()
