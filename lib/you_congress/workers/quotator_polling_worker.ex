@@ -3,7 +3,7 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
   Polls OpenAI for the status of a quote generation job.
   Retries every minute for up to 90 minutes.
   """
-  use Oban.Worker, max_attempts: 90
+  use Oban.Worker, queue: :default, max_attempts: 90
 
   require Logger
   alias YouCongress.Opinions.Quotes.{Quotator, QuotatorAI}
@@ -27,8 +27,8 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
         :ok
 
       {:ok, :in_progress} ->
-        Logger.info("Job #{job_id} still in progress. Snoozing...")
-        {:snooze, 60}
+        Logger.info("Job #{job_id} still in progress. Retrying in 1 minute...")
+        {:error, :still_in_progress}
 
       {:error, reason} ->
         Logger.error("Job #{job_id} failed: #{inspect(reason)}")

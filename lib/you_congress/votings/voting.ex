@@ -16,8 +16,7 @@ defmodule YouCongress.Votings.Voting do
 
   schema "votings" do
     field :title, :string
-    field :generating_total, :integer, default: 0
-    field :generating_left, :integer, default: 0
+
     field :slug, :string
     field :opinion_likes_count, :integer, default: 0
 
@@ -46,7 +45,6 @@ defmodule YouCongress.Votings.Voting do
 
   @type t :: %__MODULE__{
           title: String.t(),
-          generating_left: integer(),
           votes: [Vote.t()],
           user: User.t(),
           user_id: integer() | nil,
@@ -60,8 +58,6 @@ defmodule YouCongress.Votings.Voting do
     voting
     |> cast(attrs, [
       :title,
-      :generating_left,
-      :generating_total,
       :user_id,
       :slug,
       :opinion_likes_count,

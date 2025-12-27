@@ -51,20 +51,18 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
           ]
         }
   """
-  @spec find_quotes(binary, list(binary)) ::
-          {:ok, %{quotes: list, cost: number}} | {:error, binary}
+
   alias YouCongress.Workers.QuotatorPollingWorker
 
-  @spec find_quotes(integer, binary, list(binary)) ::
+  @spec find_quotes(integer, binary, list(binary), integer() | nil) ::
           {:ok, :job_started} | {:error, binary}
-  def find_quotes(voting_id, question_title, exclude_author_names \\ []) do
+  def find_quotes(voting_id, question_title, exclude_author_names \\ [], user_id) do
     prompt = get_prompt(question_title, exclude_author_names)
 
     with {:ok, data} <- ask_gpt(prompt, @model),
          {:ok, job_id} <- extract_job_id(data) do
       # Enqueue polling worker
-      # user_id could be passed if needed
-      %{job_id: job_id, voting_id: voting_id, user_id: nil}
+      %{job_id: job_id, voting_id: voting_id, user_id: user_id}
       |> QuotatorPollingWorker.new()
       |> Oban.insert()
 
@@ -93,15 +91,19 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
         {:ok, %Finch.Response{status: 200, body: resp_body}} ->
           case Jason.decode(resp_body) do
             {:ok, %{"status" => "completed"} = resp} ->
+              Logger.debug("Job #{job_id} completed")
               {:ok, :completed, process_completed_job(resp)}
 
             {:ok, %{"status" => "failed", "error" => error}} ->
+              Logger.debug("Job #{job_id} failed: #{inspect(error)}")
               {:error, "Job failed: #{inspect(error)}"}
 
-            {:ok, %{"status" => _status}} ->
+            {:ok, %{"status" => status}} ->
+              Logger.debug("Job #{job_id} is #{status}")
               {:ok, :in_progress}
 
-            _ ->
+            error ->
+              Logger.debug("Failed to parse polling response: #{inspect(error)}")
               {:error, "Failed to parse polling response"}
           end
 

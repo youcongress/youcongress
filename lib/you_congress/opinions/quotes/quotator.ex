@@ -27,30 +27,15 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   def find_and_save_quotes(voting_id, exclude_existent_names, user_id) do
     voting = Votings.get_voting!(voting_id)
 
-    {:ok, _} =
-      Votings.update_voting(voting, %{
-        generating_left: @number_of_quotes,
-        generating_total: @number_of_quotes
-      })
-
-    case implementation().find_quotes(voting.id, voting.title, exclude_existent_names) do
+    case implementation().find_quotes(voting.id, voting.title, exclude_existent_names, user_id) do
       {:ok, :job_started} ->
         {:ok, :job_started}
 
-      {:ok, %{quotes: quotes}} when is_list(quotes) ->
-        {:ok, saved_count} =
-          save_quotes(%{voting_id: voting_id, quotes: quotes, user_id: user_id})
-
-        {:ok, _} =
-          Votings.update_voting(voting, %{
-            generating_left: 0,
-            generating_total: 0
-          })
-
-        {:ok, saved_count}
+      {:ok, %{quotes: quotes}} ->
+        save_quotes(%{voting_id: voting_id, quotes: quotes, user_id: user_id})
 
       {:error, reason} ->
-        _ = Votings.update_voting(voting, %{generating_left: 0})
+        Logger.error("Failed to find quotes: #{inspect(reason)}")
         {:error, reason}
     end
   end
@@ -65,45 +50,41 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   # Expects a map with keys:
   #   - :voting_id (integer)
   #   - :quotes (list of quote maps)
-  defp save_quotes(%{voting_id: voting_id, quotes: quotes} = args)
+  defp save_quotes(%{voting_id: voting_id, quotes: quotes, user_id: user_id})
        when is_integer(voting_id) and is_list(quotes) do
-    user_id = Map.get(args, :user_id)
-
     saved_count =
-      Enum.map(quotes, fn quote ->
-        persist_quote(voting_id, quote, user_id)
+      Enum.map(quotes, fn quote_data ->
+        persist_quote(voting_id, quote_data, user_id)
       end)
       |> Enum.filter(&(&1 == :ok))
       |> length()
 
+    Logger.info("Saved #{saved_count} quotes for voting #{voting_id}")
+
     {:ok, saved_count}
   end
 
-  defp persist_quote(voting_id, quote, user_id) do
-    with {:ok, author} <- upsert_author(quote["author"] || %{}),
-         %{} = vote_attrs <- build_vote_attrs(voting_id, author, quote["agree_rate"]),
+  defp persist_quote(voting_id, quote_data, user_id) do
+    with {:ok, author} <- upsert_author(quote_data["author"] || %{}),
+         %{} = vote_attrs <- build_vote_attrs(voting_id, author, quote_data["agree_rate"]),
          {:ok, vote} <- create_or_update_vote(vote_attrs),
          {:ok, %{opinion: opinion}} <-
            Opinions.create_opinion(%{
-             content: quote["quote"],
-             source_url: quote["source_url"],
+             content: quote_data["quote"],
+             source_url: quote_data["source_url"],
              verified_at: nil,
-             year: parse_year(quote["year"]),
+             year: parse_year(quote_data["year"]),
              author_id: author.id,
              twin: false,
              voting_id: voting_id
            }),
          {:ok, _} <- Votes.update_vote(vote, %{opinion_id: opinion.id, twin: false}),
          :ok <- associate_opinion_with_voting(opinion, voting_id, user_id) do
-      decrease_generating_left(voting_id)
+      Logger.info("Persisted quote: #{quote_data["quote"]}")
       :ok
     else
-      {:error, :user_id_required} ->
-        Logger.debug("Skipping association due to missing user_id")
-        :error
-
-      {:error, reason} ->
-        Logger.error("Failed to persist sourced quote: #{inspect(reason)}")
+      error ->
+        Logger.error("Failed to persist sourced quote: #{inspect(error)}")
         :error
     end
   end
@@ -191,35 +172,6 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
       {:ok, _op} -> :ok
       {:error, :already_associated} -> :ok
       {:error, _} = error -> error
-    end
-  end
-
-  defp decrease_generating_left(voting_id) do
-    case Votings.get_voting(voting_id) do
-      nil ->
-        :ok
-
-      voting ->
-        new_left = max(voting.generating_left - 1, 0)
-
-        attrs =
-          if new_left == 0 do
-            %{generating_total: 0, generating_left: new_left}
-          else
-            %{generating_left: new_left}
-          end
-
-        case Votings.update_voting(voting, attrs) do
-          {:ok, _} ->
-            :ok
-
-          {:error, reason} ->
-            Logger.error(
-              "Failed to decrease generating_left for voting #{voting_id}: #{inspect(reason)}"
-            )
-
-            :error
-        end
     end
   end
 

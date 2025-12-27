@@ -1,3 +1,20 @@
+defmodule YouCongress.Opinions.Quotes.QuotatorInvalid do
+  def find_quotes(_, _, _, _) do
+    quotes = [
+      %{
+        # Missing content triggers validation error
+        "quote" => nil,
+        "source_url" => "http://example.com",
+        "year" => 2024,
+        "author" => %{"name" => "Test Author"},
+        "agree_rate" => "For"
+      }
+    ]
+
+    {:ok, %{quotes: quotes}}
+  end
+end
+
 defmodule YouCongress.Opinions.Quotes.QuotatorTest do
   use YouCongress.DataCase
 
@@ -7,9 +24,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
   alias YouCongress.Opinions.Quotes.Quotator
   alias YouCongress.{Votes, Opinions}
 
-
   describe "find_and_save_quotes/3 with QuotatorFake" do
-    test "forwards exclude list, sets generating counters, and creates votes/opinions" do
+    test "forwards exclude list and creates votes/opinions" do
       voting = voting_fixture(%{title: "Test Voting Title"})
       user = user_fixture(%{name: "Test User"})
 
@@ -39,7 +55,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
       end)
     end
 
-    test "handles generator error and only resets generating_left" do
+    test "handles generator error" do
       voting = voting_fixture(%{title: "Error Voting"})
       user = user_fixture(%{name: "Test User"})
 
@@ -59,6 +75,24 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
       # No votes or opinions should have been created
       assert Votes.count_by_voting(voting.id) == 0
       assert Opinions.count() == 0
+    end
+
+    test "handles transaction errors (e.g. invalid content) gracefully" do
+      voting = voting_fixture(%{title: "Invalid Content Voting"})
+      user = user_fixture(%{name: "Test User"})
+
+      prev_impl = Application.get_env(:you_congress, :quotator_implementation)
+      on_exit(fn -> Application.put_env(:you_congress, :quotator_implementation, prev_impl) end)
+
+      Application.put_env(
+        :you_congress,
+        :quotator_implementation,
+        YouCongress.Opinions.Quotes.QuotatorInvalid
+      )
+
+      # Start capturing logs to avoid noise if desired, but here we just check result
+      # The detailed logger calls will happen, causing "Failed to persist..." logs
+      assert {:ok, 0} = Quotator.find_and_save_quotes(voting.id, [], user.id)
     end
   end
 end

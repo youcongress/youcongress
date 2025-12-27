@@ -53,10 +53,6 @@ defmodule YouCongressWeb.VotingLive.Show do
     current_user_vote = socket.assigns.current_user_vote
     socket = assign(socket, editing: !current_user_vote || !current_user_vote.opinion_id)
 
-    if socket.assigns.voting.generating_left > 0 do
-      Process.send_after(self(), :reload, 1_000)
-    end
-
     {:noreply, socket}
   end
 
@@ -95,7 +91,7 @@ defmodule YouCongressWeb.VotingLive.Show do
         {:noreply, put_flash(socket, :error, "You don't have permission to find quotes.")}
 
       true ->
-        %{voting_id: voting_id, user_id: current_user.id, num_times: 5}
+        %{voting_id: voting_id, user_id: current_user.id, find_n_quotes: 10}
         |> QuotatorWorker.new()
         |> Oban.insert()
 
@@ -189,10 +185,6 @@ defmodule YouCongressWeb.VotingLive.Show do
 
   def handle_info(:reload, socket) do
     socket = VotesLoader.load_voting_and_votes(socket, socket.assigns.voting.id)
-
-    if socket.assigns.voting.generating_left > 0 do
-      Process.send_after(self(), :reload, 1_000)
-    end
 
     {:noreply, socket}
   end

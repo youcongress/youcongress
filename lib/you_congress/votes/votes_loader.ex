@@ -12,7 +12,6 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
   alias YouCongress.Delegations
   alias YouCongress.Accounts.User
 
-
   @spec load_voting_and_votes(Socket.t(), number) :: Socket.t()
   def load_voting_and_votes(socket, voting_id) do
     %{
@@ -28,7 +27,9 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     exclude_ids = (current_user_vote && [current_user_vote.id]) || []
 
     answer =
-      if answer_filter == "" || is_nil(answer_filter), do: nil, else: String.downcase(answer_filter) |> String.to_existing_atom()
+      if answer_filter == "" || is_nil(answer_filter),
+        do: nil,
+        else: String.downcase(answer_filter) |> String.to_existing_atom()
 
     quotes_votes_count =
       Votes.count_with_opinion_source(voting_id, source_filter: :quotes, answer: answer)
@@ -63,7 +64,6 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
       votes_from_non_delegates: votes_with_opinion -- votes_from_delegates,
       votes_without_opinion: votes_without_opinion,
       current_user_vote: current_user_vote,
-      percentage: get_percentage(voting),
       share_to_x_text: share_to_x_text,
       quotes_votes_count: quotes_votes_count,
       users_votes_count: users_votes_count,
@@ -107,13 +107,6 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     socket
     |> load_delegations(current_user)
     |> assign_current_user_vote(voting, current_user)
-  end
-
-  defp get_percentage(%Voting{generating_total: 0}), do: 100
-
-  defp get_percentage(voting) do
-    votes_generated = voting.generating_total - voting.generating_left
-    round(votes_generated * 100 / voting.generating_total)
   end
 
   defp load_delegations(socket, current_user) do
