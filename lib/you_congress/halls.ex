@@ -18,7 +18,7 @@ defmodule YouCongress.Halls do
 
   """
   def list_halls(opts \\ []) do
-    base_query = from h in Hall
+    base_query = from(h in Hall)
 
     Enum.reduce(opts, base_query, fn
       {:name_contains, txt}, query ->

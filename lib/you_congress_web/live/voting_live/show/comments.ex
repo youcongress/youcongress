@@ -9,7 +9,6 @@ defmodule YouCongressWeb.VotingLive.Show.Comments do
   import Phoenix.Component, only: [assign: 2]
   import YouCongressWeb.VotingLive.Show.VotesLoader, only: [load_voting_and_votes: 2]
 
-
   alias YouCongress.Votes
   alias YouCongress.Opinions
 

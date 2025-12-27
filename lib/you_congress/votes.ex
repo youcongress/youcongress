@@ -82,8 +82,7 @@ defmodule YouCongress.Votes do
                 ),
               desc: o.likes_count,
               desc: o.descendants_count,
-              desc:
-                  v.answer
+              desc: v.answer
             ]
 
         {:limit, limit}, query ->

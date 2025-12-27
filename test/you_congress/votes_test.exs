@@ -5,7 +5,6 @@ defmodule YouCongress.VotesTest do
   import YouCongress.VotingsFixtures
   import YouCongress.VotesFixtures
 
-
   import YouCongress.OpinionsFixtures
 
   alias YouCongress.Votes

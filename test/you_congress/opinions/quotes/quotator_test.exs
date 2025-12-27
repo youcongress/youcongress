@@ -7,7 +7,6 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
   alias YouCongress.Opinions.Quotes.Quotator
   alias YouCongress.{Votes, Opinions}
 
-
   describe "find_and_save_quotes/3 with QuotatorFake" do
     test "forwards exclude list, sets generating counters, and creates votes/opinions" do
       voting = voting_fixture(%{title: "Test Voting Title"})
