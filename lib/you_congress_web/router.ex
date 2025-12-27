@@ -1,6 +1,7 @@
 defmodule YouCongressWeb.Router do
   use YouCongressWeb, :router
 
+  import Oban.Web.Router
   import YouCongressWeb.UserAuth
 
   pipeline :browser do
@@ -92,6 +93,12 @@ defmodule YouCongressWeb.Router do
 
       live_dashboard("/dashboard", metrics: YouCongressWeb.Telemetry)
       forward("/mailbox", Plug.Swoosh.MailboxPreview)
+    end
+
+    scope "/" do
+      pipe_through :browser
+
+      oban_dashboard("/oban")
     end
   end
 
