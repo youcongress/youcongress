@@ -116,6 +116,20 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     end
   end
 
+  def check_polling_job_status(voting_id) do
+    import Ecto.Query
+    alias Oban.Job
+
+    query =
+      from(j in Job,
+        where: j.worker == "YouCongress.Workers.QuotatorPollingWorker",
+        where: fragment("?->>'voting_id' = ?", j.args, ^to_string(voting_id)),
+        where: j.state in ["scheduled", "available", "executing", "retryable"]
+      )
+
+    YouCongress.Repo.exists?(query)
+  end
+
   defp extract_job_id(%{"id" => id}), do: {:ok, id}
   defp extract_job_id(_), do: {:error, "No Job ID found"}
 

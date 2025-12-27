@@ -15,6 +15,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Accounts.Permissions
   alias YouCongressWeb.VotingLive.CastVoteComponent
   alias YouCongress.HallsVotings
+  alias YouCongress.Opinions.Quotes.QuotatorAI
 
   @impl true
   def mount(_, session, socket) do
@@ -44,6 +45,7 @@ defmodule YouCongressWeb.VotingLive.Show do
       |> assign(reload: false)
       |> assign(full_width: true)
       |> assign(:regenerating_opinion_id, nil)
+      |> assign(:find_quotes_in_progress, QuotatorAI.check_polling_job_status(voting.id))
       |> assign(:source_filter, nil)
       |> assign(:answer_filter, nil)
       |> VotesLoader.load_voting_and_votes(voting.id)

@@ -1,8 +1,7 @@
 <.header>
   <:actions>
     <%= if Permissions.can_generate_ai_votes?(@current_user) do %>
-      <%!-- This is not production ready yet --%>
-      <%= if Application.get_env(:you_congress, :environment) != :prod do %>
+      <%= unless @find_quotes_in_progress do %>
         <.link phx-click="find-sourced-quotes" phx-value-voting_id={@voting.id}>
           <.button>Find quotes</.button>
         </.link>
@@ -159,6 +158,12 @@
         </div>
       <% end %>
     </div>
+  </div>
+<% end %>
+
+<%= if @find_quotes_in_progress do %>
+  <div class="pt-2">
+    Finding sourced quotes... <img src="/images/loading.gif" alt="Loading" />
   </div>
 <% end %>
 
