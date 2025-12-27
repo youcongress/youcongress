@@ -12,7 +12,6 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
   alias YouCongress.Delegations
   alias YouCongress.Accounts.User
 
-
   @spec load_voting_and_votes(Socket.t(), number) :: Socket.t()
   def load_voting_and_votes(socket, voting_id) do
     %{
@@ -28,7 +27,9 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     exclude_ids = (current_user_vote && [current_user_vote.id]) || []
 
     answer =
-      if answer_filter == "" || is_nil(answer_filter), do: nil, else: String.downcase(answer_filter) |> String.to_existing_atom()
+      if answer_filter == "" || is_nil(answer_filter),
+        do: nil,
+        else: String.downcase(answer_filter) |> String.to_existing_atom()
 
     quotes_votes_count =
       Votes.count_with_opinion_source(voting_id, source_filter: :quotes, answer: answer)

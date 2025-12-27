@@ -11,7 +11,6 @@ defmodule YouCongressWeb.VotingLiveTest do
   import YouCongress.VotesFixtures
   import YouCongress.AuthorsFixtures
 
-
   alias YouCongress.Votings
   alias YouCongress.HallsVotings
 
@@ -355,7 +354,8 @@ defmodule YouCongressWeb.VotingLiveTest do
 
       user_opinion = opinion_fixture(%{author_id: human_author.id, source_url: nil, twin: false})
 
-      abstain_opinion = opinion_fixture(%{author_id: user.author_id, source_url: nil, twin: false})
+      abstain_opinion =
+        opinion_fixture(%{author_id: user.author_id, source_url: nil, twin: false})
 
       _abstain_user =
         vote_fixture(

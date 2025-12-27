@@ -37,7 +37,9 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         <%= for voting <- @votings do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={~p"/p/#{voting.slug}"}><.highlight text={voting.title} terms={YouCongress.SearchParser.parse(@search_term)} /></a>
+              <a href={~p"/p/#{voting.slug}"}>
+                <.highlight text={voting.title} terms={YouCongress.SearchParser.parse(@search_term)} />
+              </a>
             </td>
           </tr>
         <% end %>
@@ -54,7 +56,10 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
                   href={author_path(author)}
                   class="font-medium text-gray-900 hover:underline"
                 >
-                  <.highlight text={author.name || "x/#{author.twitter_username}"} terms={YouCongress.SearchParser.parse(@search_term)} />
+                  <.highlight
+                    text={author.name || "x/#{author.twitter_username}"}
+                    terms={YouCongress.SearchParser.parse(@search_term)}
+                  />
                 </a>
                 <p :if={bio} class="text-xs text-gray-500 sm:text-right sm:text-sm sm:pl-6">
                   {bio}
@@ -70,7 +75,9 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
         <%= for hall <- @halls do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={~p"/halls/#{hall.name}"}><.highlight text={hall.name} terms={YouCongress.SearchParser.parse(@search_term)} /></a>
+              <a href={~p"/halls/#{hall.name}"}>
+                <.highlight text={hall.name} terms={YouCongress.SearchParser.parse(@search_term)} />
+              </a>
             </td>
           </tr>
         <% end %>
@@ -98,7 +105,10 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
                 </div>
                 <div class="text-sm">
                   <a href={~p"/c/#{quote.id}"} class="hover:bg-gray-50 block p-2 -m-2 rounded">
-                    <.highlight text={quote.content} terms={YouCongress.SearchParser.parse(@search_term)} />
+                    <.highlight
+                      text={quote.content}
+                      terms={YouCongress.SearchParser.parse(@search_term)}
+                    />
                   </a>
                 </div>
                 <%= if quote.source_url do %>
@@ -138,15 +148,17 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
     </div>
     """
   end
+
   attr :text, :string, required: true
   attr :term, :string, default: nil
   attr :terms, :list, default: nil
 
   def highlight(assigns) do
-    terms = (assigns.terms || [assigns.term]) |> Enum.reject(&is_nil/1) |> Enum.reject(&(&1 == ""))
+    terms =
+      (assigns.terms || [assigns.term]) |> Enum.reject(&is_nil/1) |> Enum.reject(&(&1 == ""))
 
     if terms == [] do
-      ~H"<%= @text %>"
+      ~H"{@text}"
     else
       pattern = terms |> Enum.map(&Regex.escape/1) |> Enum.join("|")
       regex = Regex.compile!(pattern, "i")
@@ -154,7 +166,13 @@ defmodule YouCongressWeb.VotingLive.Index.Search do
       assigns = assign(assigns, parts: parts, regex: regex)
 
       ~H"""
-      <%= for part <- @parts do %><%= if String.match?(part, @regex) do %><b><%= part %></b><% else %><%= part %><% end %><% end %>
+      <%= for part <- @parts do %>
+        <%= if String.match?(part, @regex) do %>
+          <b>{part}</b>
+        <% else %>
+          {part}
+        <% end %>
+      <% end %>
       """
     end
   end

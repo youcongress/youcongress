@@ -8,7 +8,6 @@ defmodule YouCongressWeb.VotingLive.Index.OpinateComponent do
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Votes
 
-
   @impl true
   def update(assigns, socket) do
     form =
