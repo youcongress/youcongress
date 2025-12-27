@@ -110,8 +110,6 @@ defmodule YouCongressWeb.VotingLive.Index do
     {:noreply, perform_search(socket, search)}
   end
 
-
-
   def handle_event("search-tab", %{"tab" => "motions"}, socket) do
     {:noreply, assign(socket, search_tab: :motions)}
   end
@@ -181,7 +179,8 @@ defmodule YouCongressWeb.VotingLive.Index do
 
   defp maybe_apply_search_params(socket, _params), do: socket
 
-  defp assign_tab_from_params(socket, tab) when tab in ["quotes", "delegates", "motions", "halls"] do
+  defp assign_tab_from_params(socket, tab)
+       when tab in ["quotes", "delegates", "motions", "halls"] do
     assign(socket, :search_tab, String.to_existing_atom(tab))
   end
 
@@ -283,6 +282,7 @@ defmodule YouCongressWeb.VotingLive.Index do
   defp get_current_user_delegation_ids(current_user) do
     Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
   end
+
   defp perform_search(socket, search) do
     Track.event("Search", socket.assigns.current_user)
     votings = Votings.list_votings(search: search, preload: [:halls])

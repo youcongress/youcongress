@@ -128,16 +128,18 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
       >
         <%= if assigns[:label1] && assigns[:label2] do %>
           <div>
-            {if @current_user_vote && @current_user_vote.answer == String.downcase(@response) |> String.to_existing_atom(),
-              do: "✓ "}
+            {if @current_user_vote &&
+                  @current_user_vote.answer == String.downcase(@response) |> String.to_existing_atom(),
+                do: "✓ "}
             {@label1}
           </div>
           <div>
             {@label2}
           </div>
         <% else %>
-          {if @current_user_vote && @current_user_vote.answer == String.downcase(@response) |> String.to_existing_atom(),
-            do: "✓ "}
+          {if @current_user_vote &&
+                @current_user_vote.answer == String.downcase(@response) |> String.to_existing_atom(),
+              do: "✓ "}
           <div>{@response}</div>
         <% end %>
       </button>

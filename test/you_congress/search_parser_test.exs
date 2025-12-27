@@ -25,7 +25,7 @@ defmodule YouCongress.SearchParserTest do
     end
 
     test "handles mixed terms" do
-       assert SearchParser.parse("term1 \"term 2\" term3") == ["term1", "term 2", "term3"]
+      assert SearchParser.parse("term1 \"term 2\" term3") == ["term1", "term 2", "term3"]
     end
 
     test "closes unclosed quotes" do
