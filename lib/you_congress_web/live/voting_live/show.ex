@@ -96,9 +96,10 @@ defmodule YouCongressWeb.VotingLive.Show do
 
         Track.event("Find quotes", current_user)
 
-        socket
-        |> assign(:find_quotes_in_progress, true)
-        |> clear_flash()
+        socket =
+          socket
+          |> assign(:find_quotes_in_progress, true)
+          |> clear_flash()
 
         {:noreply, socket}
     end
