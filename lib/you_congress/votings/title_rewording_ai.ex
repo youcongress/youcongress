@@ -6,13 +6,12 @@ defmodule YouCongress.Votings.TitleRewordingAI do
   alias YouCongress.DigitalTwins.OpenAIModel
 
   @prompt """
-  Generate two questions from the prompt so:
-  - It is short (more like a title) and grammatically correct in English. Translate to English if it's in a different language.
-  - It should be a policy title such as "Build a CERN for AI" or "Carbon tax" instead of a yes/no question which starts with "Should we...", "Shall we...?" or similar
-  - It is neutral and not offensive as it's going to be voted and discussed among diverse people.
-  - Ideally, it should be about topics that are relevant both locally and globally.
-  - The first one should be faithful to the prompt but with correct grammar and a policy title or motion to be approved (not a question), in the form of a sensible yes/no question and translated to English if it was in a different language.
-  - The others should be more creative
+  Generate three questions from the prompt so:
+  - The first one should be exactly the prompt but with correct grammar and affirmative (not a question) and translated to English if it was in a different language.
+  - The others should be more creative, short (more like a title) and, also, grammatically correct in English. Translate to English if it's in a different language.
+  - These last two may be titles such as "Build a CERN for AI" or "Carbon tax" instead of yes/no questions which starts with "Should we...", "Shall we...?" or similar
+  - They are neutral and not offensive as it's going to be voted and discussed among diverse people.
+  - Ideally, they should be about topics that are relevant both locally and globally.
 
   Prompt: Nuclear energy
 
@@ -46,7 +45,14 @@ defmodule YouCongress.Votings.TitleRewordingAI do
   defp ask_gpt(prompt, model) do
     OpenAI.chat_completion(
       model: model,
-      response_format: %{type: "json_object"},
+      response_format: %{
+        type: "json_schema",
+        json_schema: %{
+          name: "TitleRewordingResult",
+          strict: true,
+          schema: json_schema()
+        }
+      },
       messages: [
         %{role: "system", content: "You are a helpful assistant."},
         %{role: "user", content: @prompt},
@@ -54,5 +60,26 @@ defmodule YouCongress.Votings.TitleRewordingAI do
         %{role: "user", content: prompt}
       ]
     )
+  end
+
+  defp json_schema do
+    %{
+      type: "object",
+      additionalProperties: false,
+      properties: %{
+        "questions" => %{
+          type: "array",
+          description: "Array of 3 policy title suggestions based on the user's prompt",
+          minItems: 3,
+          maxItems: 3,
+          items: %{
+            type: "string",
+            description:
+              "The first should be exactly the original but in correct English. The others should be creative, short (more like a title) and, also, grammatically correct in English."
+          }
+        }
+      },
+      required: ["questions"]
+    }
   end
 end
