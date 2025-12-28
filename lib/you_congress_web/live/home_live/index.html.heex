@@ -341,7 +341,16 @@
                       <%= for opinion <- voting.opinions do %>
                         <div class="bg-white/80 p-4 rounded-lg border border-gray-100 shadow-sm">
                           <div class="flex items-center gap-2 mb-2">
-                            <span class="font-bold text-indigo-900">{opinion.author.name}</span>
+                            <.link
+                              href={
+                                if opinion.author.twitter_username,
+                                  do: ~p"/x/#{opinion.author.twitter_username}",
+                                  else: ~p"/a/#{opinion.author.id}"
+                              }
+                              class="font-bold text-indigo-900 hover:text-indigo-700 hover:underline"
+                            >
+                              {opinion.author.name}
+                            </.link>
                             <%= if answer = get_vote_answer(voting, opinion.author_id) do %>
                               <span class={"text-xs px-2 py-0.5 rounded-full font-medium " <>
                                 case answer do
