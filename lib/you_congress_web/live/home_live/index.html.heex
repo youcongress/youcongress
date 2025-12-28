@@ -68,16 +68,7 @@
                       for={"delegate-#{delegate.id}"}
                       class="text-base text-gray-700 cursor-pointer select-none hover:text-indigo-600 transition-colors"
                     >
-                      <.link
-                        href={
-                          if delegate.twitter_username,
-                            do: ~p"/x/#{delegate.twitter_username}",
-                            else: ~p"/a/#{delegate.id}"
-                        }
-                        class="underline decoration-indigo-300 hover:decoration-indigo-600"
-                      >
-                        {delegate.name}
-                      </.link>
+                      {delegate.name}
                     </label>
                   </div>
                 <% end %>
