@@ -14,7 +14,7 @@ Install dependencies:
 mix deps.get
 ```
 
-`mix ecto.setup` create the database, the user `admin@youcongress.org` with password `admin:1234` and other sample data (authors, quotes)
+Create the database, the user `admin@youcongress.org` with password `admin:1234` and other sample data (authors, quotes):
 
 ```bash
 mix ecto.setup
