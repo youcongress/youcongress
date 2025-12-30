@@ -15,7 +15,18 @@ defmodule YouCongress.Application do
       # Start the Telemetry supervisor
       YouCongressWeb.Telemetry,
       # Start the Swoosh supervisor
-      {Finch, name: Swoosh.Finch},
+      # Start the Swoosh supervisor
+      {Finch,
+       name: Swoosh.Finch,
+       pools: %{
+         :default => [
+           conn_opts: [
+             transport_opts: [
+               cacertfile: CAStore.file_path()
+             ]
+           ]
+         ]
+       }},
       # Start the Ecto repository
       YouCongress.Repo,
       # Start the PubSub system
