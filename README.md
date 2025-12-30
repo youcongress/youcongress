@@ -1,6 +1,10 @@
 # YouCongress
 
-[YouCongress.org](https://youcongress.org) is and open-source platform that helps citizens, journalists, and policymakers see what people actually want on AI-governance questions. You can vote directly or choose trusted voices to vote on your behalf, and every poll is enriched with verifiable, sourced quotes so positions are clear and accountable.
+[YouCongress.org](https://youcongress.org) aims to make public preferences on policy questions transparent, structured, and backed by verifiable sources.
+
+The goal is to make it easier for policymakers and journalists to understand what experts and citizens actually want, in a rigorous and non-partisan way.
+
+You can vote directly or choose trusted voices to vote on your behalf, and every poll is enriched with verifiable, sourced quotes so positions are clear and accountable.
 
 # How to start
 
