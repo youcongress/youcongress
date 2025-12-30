@@ -8,14 +8,17 @@ You can vote directly or choose trusted voices to vote on your behalf, and every
 
 # How to start
 
-Install dependencies, create the database and populate it with sample data:
+Install dependencies:
 
 ```bash
 mix deps.get
-mix ecto.setup
 ```
 
-`mix ecto.setup` creates example data for development and the user `admin@youcongress.org` with password `admin:1234`.
+`mix ecto.setup` create the database, the user `admin@youcongress.org` with password `admin:1234` and other sample data (authors, quotes)
+
+```bash
+mix ecto.setup
+```
 
 Run the server:
 
