@@ -8,12 +8,12 @@ defmodule YouCongress.Votings.TitleRewordingAI do
   @prompt """
   Generate three questions from the prompt so:
   - The first one should be exactly the prompt but with correct grammar and affirmative (not a question) and translated to English if it was in a different language.
-  - The others should be more creative, short (more like a title) and, also, grammatically correct in English. Translate to English if it's in a different language.
-  - These last two may be titles such as "Build a CERN for AI" or "Carbon tax" instead of yes/no questions which starts with "Should we...", "Shall we...?" or similar
+  - The others should be related to the topic but more creative.
+  - These last two may be things such as "Build a CERN for AI" or "Establish a Carbon tax" instead of yes/no questions which starts with "Should we...", "Shall we...?" or similar
   - They are neutral and not offensive as it's going to be voted and discussed among diverse people.
   - Ideally, they should be about topics that are relevant both locally and globally.
 
-  Prompt: Nuclear energy
+  Prompt: Build CERN for AI
 
   The response should be in JSON format (an array of three strings)
   """
@@ -22,8 +22,8 @@ defmodule YouCongress.Votings.TitleRewordingAI do
   {
     "questions": [
       "Build a CERN for AI",
-      "Carbon tax",
-      "Space exploration"
+      "Build a global institute for AI like CERN",
+      "Build a global AI lab"
     ]
   }
   """
@@ -69,13 +69,13 @@ defmodule YouCongress.Votings.TitleRewordingAI do
       properties: %{
         "questions" => %{
           type: "array",
-          description: "Array of 3 policy title suggestions based on the user's prompt",
+          description: "Array of 3 title suggestions based on the user's prompt",
           minItems: 3,
           maxItems: 3,
           items: %{
             type: "string",
             description:
-              "The first should be exactly the original but in correct English. The others should be creative, short (more like a title) and, also, grammatically correct in English."
+              "The first should be exactly the original but in correct English. The others should be related to the topic but more creative."
           }
         }
       },
