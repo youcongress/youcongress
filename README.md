@@ -17,6 +17,19 @@ We're still shaping YouCongress, but you already can:
 You can read more about the project on the LessWrong post:
 - [Tackling Moloch: How YouCongress Offers a Novel Coordination Mechanism](https://www.lesswrong.com/posts/4KjiZeAWc7Yv9oyCb/tackling-moloch-how-youcongress-offers-a-novel-coordination)
 
+# Developers
+
+Install dependencies, create the database and populate it with example data and run the server:
+
+```bash
+mix deps.get
+mix ecto.setup
+mix phx.server
+```
+
+`mix ecto.setup` creates example data for development and the user `admin@youcongress.org` with password `admin:1234`.
+
+
 # How to contribute
 Welcome to YouCongress! Feel free to:
 - Use [Discussions](https://github.com/youcongress/youcongress/discussions) to introduce yourself, ask questions and propose ideas.
