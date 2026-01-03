@@ -36,33 +36,17 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
           myself={@myself}
         />
 
-        <%= if @current_user_vote && @current_user_vote.answer do %>
-          <%= if @current_user_vote.direct do %>
-            <div class="pt-3 pl-1 hidden md:block text-xs">
-              <button phx-click="delete-direct-vote" phx-target={@myself} class="text-sm">
-                Clear
-              </button>
-            </div>
-          <% else %>
-            <div class="pt-3 pl-1 hidden md:block text-xs">
-              via delegates
-            </div>
-          <% end %>
-        <% end %>
+        <.clear_vote_button
+          current_user_vote={@current_user_vote}
+          myself={@myself}
+          class="pt-3 pl-1 hidden md:block text-xs"
+        />
       </div>
-      <%= if @current_user_vote && @current_user_vote.answer do %>
-        <%= if @current_user_vote.direct do %>
-          <div class="text-xs md:hidden">
-            <button phx-click="delete-direct-vote" phx-target={@myself} class="text-sm">
-              Clear
-            </button>
-          </div>
-        <% else %>
-          <div class="text-xs md:hidden">
-            via delegates
-          </div>
-        <% end %>
-      <% end %>
+      <.clear_vote_button
+        current_user_vote={@current_user_vote}
+        myself={@myself}
+        class="text-xs md:hidden"
+      />
       <%= if @display_results do %>
         <ResultsComponent.horizontal_bar
           total_votes={@total_votes}
@@ -132,6 +116,32 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
           <div>{String.capitalize(to_string(@answer))}</div>
         <% end %>
       </button>
+    </div>
+    """
+  end
+
+  attr :current_user_vote, :any, required: true
+  attr :myself, :any, required: true
+  attr :class, :string, default: ""
+
+  def clear_vote_button(assigns) do
+    ~H"""
+    <div :if={@current_user_vote && @current_user_vote.answer} class={@class}>
+      <%= if @current_user_vote.direct do %>
+        <button
+          phx-click="delete-direct-vote"
+          phx-target={@myself}
+          data-confirm={
+            if @current_user_vote.opinion_id,
+              do: "Deleting your direct vote will also delete your comment. Continue?"
+          }
+          class="text-sm"
+        >
+          Clear
+        </button>
+      <% else %>
+        via delegates
+      <% end %>
     </div>
     """
   end

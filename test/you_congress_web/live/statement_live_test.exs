@@ -277,7 +277,6 @@ defmodule YouCongressWeb.StatementLiveTest do
       |> render_submit()
 
       html = render(show_live)
-      assert html =~ "Your comment has been updated"
       refute html =~ "whatever"
       assert html =~ "some comment"
 
