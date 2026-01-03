@@ -113,7 +113,6 @@ defmodule YouCongressWeb.StatementLive.Show.Comments do
         socket
         |> load_statement_and_votes(statement.id)
         |> assign(current_user_vote: current_user_vote, editing: false)
-        |> put_flash(:info, "Your comment has been updated.")
 
       {:noreply, socket}
     else
@@ -136,7 +135,6 @@ defmodule YouCongressWeb.StatementLive.Show.Comments do
           socket
           |> load_statement_and_votes(statement.id)
           |> assign(current_user_vote: current_user_vote, editing: !opinion)
-          |> put_flash(:info, "Your comment has been updated.")
 
         {:noreply, socket}
 
