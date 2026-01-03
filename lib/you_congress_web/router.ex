@@ -22,6 +22,8 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through(:browser)
 
+    forward "/mcp", Anubis.Server.Transport.StreamableHTTP.Plug, server: YouCongress.MCPServer
+
     get("/sim", SimController, :index)
     live("/home", VotingLive.Index, :index)
     live("/p/:slug", VotingLive.Show, :show)
