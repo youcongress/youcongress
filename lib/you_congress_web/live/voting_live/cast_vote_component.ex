@@ -207,12 +207,7 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
       assigns: %{current_user_vote: current_user_vote, current_user: current_user, voting: voting}
     } = socket
 
-    result =
-      if current_user_vote.opinion_id do
-        Votes.update_vote(current_user_vote, %{answer: nil})
-      else
-        Votes.delete_vote(current_user_vote)
-      end
+    result = Votes.delete_vote(current_user_vote)
 
     case result do
       {:ok, _} ->
