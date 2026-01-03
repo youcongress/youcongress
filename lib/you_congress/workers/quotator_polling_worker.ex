@@ -13,13 +13,13 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
   def perform(%Oban.Job{
         args: %{
           "job_id" => job_id,
-          "voting_id" => voting_id,
+          "statement_id" => statement_id,
           "user_id" => user_id,
           "max_remaining_llm_calls" => max_remaining_llm_calls,
           "max_remaining_quotes" => max_remaining_quotes
         }
       }) do
-    Logger.info("Polling OpenAI job #{job_id} for voting #{voting_id}...")
+    Logger.info("Polling OpenAI job #{job_id} for statement #{statement_id}...")
 
     case QuotatorAI.check_job_status(job_id) do
       {:ok, :completed, %{quotes: quotes}} ->
@@ -27,14 +27,14 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
 
         result =
           Quotator.save_quotes_from_job(%{
-            voting_id: voting_id,
+            statement_id: statement_id,
             quotes: quotes,
             user_id: user_id
           })
 
         maybe_call_llm_again(
           result,
-          voting_id,
+          statement_id,
           user_id,
           max_remaining_llm_calls,
           max_remaining_quotes
@@ -50,9 +50,17 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
     end
   end
 
+  # Backward compatibility with old job args
+  def perform(%Oban.Job{args: %{"voting_id" => voting_id} = args} = job) do
+    perform(%Oban.Job{
+      job
+      | args: Map.put(Map.delete(args, "voting_id"), "statement_id", voting_id)
+    })
+  end
+
   defp maybe_call_llm_again(
          {:ok, num_saved_quotes},
-         voting_id,
+         statement_id,
          user_id,
          max_remaining_llm_calls,
          max_remaining_quotes
@@ -83,7 +91,7 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
         )
 
         %{
-          voting_id: voting_id,
+          statement_id: statement_id,
           user_id: user_id,
           max_remaining_quotes: max_remaining_quotes,
           max_remaining_llm_calls: max_remaining_llm_calls

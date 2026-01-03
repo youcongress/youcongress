@@ -4,7 +4,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   use Phoenix.VerifiedRoutes, endpoint: YouCongressWeb.Endpoint, router: YouCongressWeb.Router
 
   alias YouCongressWeb.AuthorLive
-  alias YouCongressWeb.VotingLive.VoteComponent.QuoteMenu
+  alias YouCongressWeb.StatementLive.VoteComponent.QuoteMenu
   alias YouCongressWeb.Tools.Tooltip
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongress.Likes
@@ -17,7 +17,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   def update(assigns, socket) do
     %{
       current_user: current_user,
-      voting: voting,
+      statement: statement,
       opinion: opinion,
       page: page
     } = assigns
@@ -26,7 +26,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
       socket
       |> assign(:current_user, current_user)
       |> assign(:delegating, assigns[:delegating] || false)
-      |> assign(:voting, voting)
+      |> assign(:statement, statement)
       |> assign(:opinable, assigns[:opinable] || false)
       |> assign(:delegable, assigns[:delegable] || false)
       |> assign(:opinion, opinion)
@@ -162,7 +162,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   end
 
   attr :opinion, :map, required: true
-  attr :voting, :map, required: true
+  attr :statement, :map, required: true
   attr :author, :map, required: true
   attr :current_user, :map, default: nil
 
@@ -173,7 +173,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
         :href,
         x_url(
           assigns.opinion,
-          assigns.voting,
+          assigns.statement,
           assigns.author,
           assigns.current_user
         )
@@ -213,40 +213,40 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
     """
   end
 
-  defp x_url(opinion, voting, author, current_user) do
+  defp x_url(opinion, statement, author, current_user) do
     url =
-      if voting do
-        " https://youcongress.org#{x_path(voting)}"
+      if statement do
+        " https://youcongress.org#{x_path(statement)}"
       else
         " https://youcongress.org/c/#{opinion.id}"
       end
 
     opinion
-    |> x_post(voting, author, current_user)
+    |> x_post(statement, author, current_user)
     |> maybe_shorten()
     |> then(&"#{&1}#{url}")
     |> URI.encode_www_form()
     |> then(&"https://x.com/intent/tweet?text=#{&1}")
   end
 
-  def x_path(voting) do
-    ~p"/p/#{voting.slug}"
+  def x_path(statement) do
+    ~p"/p/#{statement.slug}"
   end
 
   defp x_post(opinion, nil, %{id: id} = _author, %{id: id} = _current_user) do
     opinion.content
   end
 
-  defp x_post(opinion, voting, %{id: id} = _author, %{id: id} = _current_user) do
-    "#{voting.title} My take: #{opinion.content}"
+  defp x_post(opinion, statement, %{id: id} = _author, %{id: id} = _current_user) do
+    "#{statement.title} My take: #{opinion.content}"
   end
 
   defp x_post(opinion, nil, author, _current_user) do
     "#{print_author(author, opinion.twin)}: #{opinion.content}"
   end
 
-  defp x_post(opinion, voting, author, _current_user) do
-    "#{voting.title} #{print_author(author, opinion.twin)}: #{opinion.content}'"
+  defp x_post(opinion, statement, author, _current_user) do
+    "#{statement.title} #{print_author(author, opinion.twin)}: #{opinion.content}'"
   end
 
   defp maybe_shorten(text) do

@@ -3,7 +3,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
   import Phoenix.LiveViewTest
   import YouCongress.AuthorsFixtures
-  import YouCongress.VotingsFixtures
+  import YouCongress.StatementsFixtures
   import YouCongress.AccountsFixtures
 
   alias YouCongress.Authors
@@ -11,13 +11,13 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
   alias YouCongress.Opinions
 
-  defp create_voting(_) do
-    voting = voting_fixture()
+  defp create_statement(_) do
+    voting = statement_fixture()
     %{voting: voting}
   end
 
   describe "Add quote" do
-    setup [:create_voting]
+    setup [:create_statement]
 
     test "adds a quote with twitter username in URL", %{conn: conn, voting: voting} do
       author = author_fixture(%{twitter_username: "someone"})
@@ -42,7 +42,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.voting_id == voting.id
+      assert vote.statement_id == voting.id
       assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
@@ -84,7 +84,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.voting_id == voting.id
+      assert vote.statement_id == voting.id
       assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
@@ -112,7 +112,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.voting_id == voting.id
+      assert vote.statement_id == voting.id
       assert vote.answer == :against
 
       opinion = Opinions.get_opinion!(vote.opinion_id)
@@ -173,7 +173,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.voting_id == voting.id
+      assert vote.statement_id == voting.id
       assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
@@ -219,7 +219,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.voting_id == voting.id
+      assert vote.statement_id == voting.id
       assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
@@ -274,7 +274,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.voting_id == voting.id
+      assert vote.statement_id == voting.id
       assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
@@ -334,7 +334,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.voting_id == voting.id
+      assert vote.statement_id == voting.id
       assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()

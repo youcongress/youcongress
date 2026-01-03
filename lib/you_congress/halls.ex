@@ -202,12 +202,12 @@ defmodule YouCongress.Halls do
     import Ecto.Query, warn: false
 
     from(h in Hall,
-      join: hv in "halls_votings",
+      join: hv in "halls_statements",
       on: hv.hall_id == h.id,
-      join: v in "votings",
-      on: hv.voting_id == v.id,
-      join: ov in "opinions_votings",
-      on: ov.voting_id == v.id,
+      join: v in "statements",
+      on: hv.statement_id == v.id,
+      join: ov in "opinions_statements",
+      on: ov.statement_id == v.id,
       join: o in "opinions",
       on: ov.opinion_id == o.id,
       where: not is_nil(o.source_url) and is_nil(o.verified_at),

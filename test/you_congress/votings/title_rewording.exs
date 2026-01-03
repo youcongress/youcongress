@@ -1,7 +1,7 @@
-defmodule YouCongress.Votings.TitleRewordingTest do
+defmodule YouCongress.Statements.TitleRewordingTest do
   use YouCongress.DataCase
 
-  alias YouCongress.Votings.TitleRewording
+  alias YouCongress.Statements.TitleRewording
 
   describe "title_rewording" do
     @tag :openai_api

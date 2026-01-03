@@ -1,0 +1,141 @@
+<h1 class="text-xl">Add a quote</h1>
+<div class="pt-4 block text-sm font-semibold leading-6 text-zinc-800">Question</div>
+<div class="pt-2">{@statement.title}</div>
+<%= if @author do %>
+  <div class="pt-4 block text-sm font-semibold leading-6 text-zinc-800">Author</div>
+  <div class="pt-2">
+    {@author.name}, {@author.bio}
+    <%= if @author.twitter_username do %>
+      , @{@author.twitter_username}
+    <% end %>
+    <%= if @author.wikipedia_url do %>
+      ,
+      <a href={@author.wikipedia_url} target="_blank" class="text-blue-600 underline">
+        Wikipedia
+      </a>
+    <% end %>
+    <span phx-click="remove-author" class="pl-4 text-gray-600 cursor-pointer">Clear</span>
+  </div>
+
+  <.simple_form for={@form} id="form" phx-submit="add-quote" phx-loading="phx-loading">
+    <.input
+      field={@form[:opinion]}
+      type="textarea"
+      label="Quote"
+      data-lpignore="true"
+      placeholder="Quote..."
+      required
+    />
+    <.input
+      field={@form[:source_url]}
+      type="text"
+      label="Source URL"
+      data-lpignore="true"
+      placeholder="https://..."
+      required
+    />
+    <%= if @errors[:source_url] do %>
+      <span class="text-red-600 text-sm">Please provide a valid URL</span>
+    <% end %>
+    <.input
+      field={@form[:agree_rate]}
+      type="select"
+      options={[nil | @agree_rate_options]}
+      label="How much does the quote agree with the question?"
+      data-lpignore="true"
+      required
+    />
+    <:actions>
+      <div>
+        <.button phx-disable-with="Changing...">Add quote</.button>
+        <span class="pl-2">or</span>
+        <.link href={~p"/p/#{@statement.slug}"} class="ml-2">Back</.link>
+      </div>
+    </:actions>
+  </.simple_form>
+<% else %>
+  <.simple_form for={@form} id="form" phx-submit="add-author" phx-loading="phx-loading">
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Find Author</label>
+        <p class="text-sm text-gray-600 mb-3">
+          Before adding the quote, find an author by Wikipedia URL or X/Twitter username
+        </p>
+      </div>
+
+      <.input
+        field={@form[:wikipedia_url]}
+        type="text"
+        label="Wikipedia URL"
+        data-lpignore="true"
+        placeholder="https://en.wikipedia.org/wiki/..."
+        value={@wikipedia_url}
+      />
+
+      <div class="text-center text-sm text-gray-500">OR</div>
+
+      <.input
+        field={@form[:twitter_username]}
+        type="text"
+        label="Twitter username"
+        data-lpignore="true"
+        placeholder="@..."
+        value={@twitter_username}
+      />
+    </div>
+
+    <%= if @twitter_username || @wikipedia_url do %>
+      <.input
+        field={@form[:name]}
+        type="text"
+        label="Name"
+        data-lpignore="true"
+        placeholder="Author name"
+        value={@name}
+        required
+      />
+      <.input
+        field={@form[:bio]}
+        type="textarea"
+        label="Bio"
+        data-lpignore="true"
+        placeholder="Author bio"
+        value={@bio}
+        required
+      />
+      <.input
+        field={@form[:wikipedia_url]}
+        type="text"
+        label="Author Wikipedia URL"
+        data-lpignore="true"
+        placeholder="https://..."
+        value={@wikipedia_url}
+        id="author_wikipedia_url"
+      />
+      <%= if @errors[:wikipedia_url] do %>
+        <span class="text-red-600 text-sm">Please provide a valid Wikipedia URL</span>
+      <% end %>
+    <% end %>
+
+    <:actions>
+      <div>
+        <%= if @twitter_username || @wikipedia_url do %>
+          <.button phx-disable-with="Changing...">
+            Create
+          </.button>
+        <% else %>
+          <.button phx-disable-with="Changing...">
+            Search
+          </.button>
+          <span class="pl-2">or</span>
+          <.button phx-disable-with="Changing..." class="bg-zinc-400">
+            Add author with no Wikipedia/X (may create duplicates)
+          </.button>
+        <% end %>
+
+        <span class="pl-2">or</span>
+        <.link href={~p"/p/#{@statement.slug}"} class="ml-2">Back</.link>
+      </div>
+    </:actions>
+  </.simple_form>
+<% end %>

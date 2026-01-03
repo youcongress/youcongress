@@ -12,18 +12,21 @@
 <ul class="pt-6" phx-viewport-bottom="load-more" id="activity">
   <%= for opinion <- @opinions do %>
     <li class="pb-4" id={"opinion-#{opinion.id}"}>
-      <% first_voting = Opinion.first_voting(opinion) %>
-      <%= if first_voting do %>
-        <div class="pb-2 text-xl">
-          <.link patch={~p"/p/#{first_voting.slug}"}>{first_voting.title}</.link>
+      <% first_statement = Opinion.first_statement(opinion) %>
+      <%= if first_statement do %>
+        <div class="mt-2 pl-4 border-l-2 border-gray-100 italic text-gray-500 text-sm">
+          in
+          <.link href={~p"/p/#{first_statement.slug}"} class="underline">
+            {first_statement.title}
+          </.link>
         </div>
         <.live_component
           module={CastVoteComponent}
           id={opinion.id}
-          voting={first_voting}
-          current_user_vote={@current_user_votes_by_voting_id[first_voting.id]}
+          statement={first_statement}
+          current_user_vote={@current_user_votes_by_statement_id[first_statement.id]}
           current_user={@current_user}
-          display_results={!!@current_user_votes_by_voting_id[first_voting.id]}
+          display_results={!!@current_user_votes_by_statement_id[first_statement.id]}
           page={:home_index}
         />
       <% end %>
@@ -34,7 +37,7 @@
           opinion={opinion}
           current_user={@current_user}
           delegating={opinion.author_id in @current_user_delegation_ids}
-          voting={Opinion.first_voting(opinion)}
+          statement={Opinion.first_statement(opinion)}
           opinable={true}
           delegable={true}
           liked={opinion.id in @liked_opinion_ids}

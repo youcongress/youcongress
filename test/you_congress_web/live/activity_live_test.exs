@@ -4,7 +4,7 @@
 #   import Phoenix.LiveViewTest
 #   import YouCongress.AuthorsFixtures
 #   import YouCongress.OpinionsFixtures
-#   import YouCongress.VotingsFixtures
+#   import YouCongress.StatementsFixtures
 #   import YouCongress.AccountsFixtures
 #
 #   alias YouCongress.Opinions
@@ -13,7 +13,7 @@
 #     test "lists recent opinions", %{conn: conn} do
 #       author1 = author_fixture(%{name: "Someone1"})
 #
-#       voting = voting_fixture(%{author_id: author1.id})
+#       voting = statement_fixture(%{author_id: author1.id})
 #
 #       opinion1 =
 #         opinion_fixture(%{
@@ -62,7 +62,7 @@
 #     test "like icon click changes from heart.svg to filled-heart.svg", %{conn: conn} do
 #       current_user = user_fixture()
 #       conn = log_in_user(conn, current_user)
-#       voting = voting_fixture()
+#       voting = statement_fixture()
 #       opinion = opinion_fixture(%{twin: false})
 #       Opinions.add_opinion_to_voting(opinion, voting)
 #

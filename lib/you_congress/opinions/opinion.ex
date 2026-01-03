@@ -22,13 +22,13 @@ defmodule YouCongress.Opinions.Opinion do
     belongs_to :user, YouCongress.Accounts.User
     belongs_to :verified_by_user, YouCongress.Accounts.User
 
-    has_many :opinion_votings, YouCongress.OpinionsVotings.OpinionVoting
+    has_many :opinion_statements, YouCongress.OpinionsStatements.OpinionStatement
 
     many_to_many(
-      :votings,
-      YouCongress.Votings.Voting,
-      join_through: "opinions_votings",
-      join_keys: [opinion_id: :id, voting_id: :id],
+      :statements,
+      YouCongress.Statements.Statement,
+      join_through: "opinions_statements",
+      join_keys: [opinion_id: :id, statement_id: :id],
       on_replace: :delete
     )
 
@@ -79,10 +79,10 @@ defmodule YouCongress.Opinions.Opinion do
   def path_str(%{ancestry: ancestry, id: id}), do: "#{ancestry}/#{id}"
 
   @doc """
-  Gets the first voting for an opinion (replacement for primary_voting).
+  Gets the first statement for an opinion (replacement for primary_statement).
   """
-  def first_voting(%{votings: [voting | _]}) when not is_nil(voting), do: voting
-  def first_voting(_), do: nil
+  def first_statement(%{statements: [statement | _]}) when not is_nil(statement), do: statement
+  def first_statement(_), do: nil
 
   @doc """
   Returns true if the opinion is verified (has a verified_at timestamp).

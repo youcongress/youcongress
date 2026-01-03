@@ -6,7 +6,7 @@
 defmodule YouCongress.Seeds do
   alias YouCongress.Accounts
   alias YouCongress.Authors
-  alias YouCongress.Votings
+  alias YouCongress.Statements
   alias YouCongress.Opinions
   alias YouCongress.Votes
 
@@ -15,8 +15,8 @@ defmodule YouCongress.Seeds do
 
     if user do
       authors = create_authors(%{name: "Admin", bio: "YCO admin"})
-      votings = create_votings(user)
-      create_opinions_and_votes(user, authors, votings)
+      statements = create_statements(user)
+      create_opinions_and_votes(user, authors, statements)
     end
   end
 
@@ -81,7 +81,7 @@ defmodule YouCongress.Seeds do
     |> Enum.reject(&is_nil/1)
   end
 
-  defp create_votings(user) do
+  defp create_statements(user) do
     polls = [
       "Create a global institute for AI safety, similar to CERN",
       "Mandatory third-party audits for major AI systems",
@@ -91,28 +91,28 @@ defmodule YouCongress.Seeds do
     ]
 
     Enum.map(polls, fn poll ->
-      case Votings.create_voting(%{
+      case Statements.create_statement(%{
              "title" => poll,
              "user_id" => user.id
            }) do
-        {:ok, voting} ->
-          IO.puts("Poll #{voting.title} created successfully.")
-          voting
+        {:ok, statement} ->
+          IO.puts("Statement #{statement.title} created successfully.")
+          statement
 
         {:error, %{errors: [title: {"has already been taken", _}]} = _changeset} ->
-          IO.puts("Poll #{poll} already exists, fetching...")
-          Votings.get_by(title: poll)
+          IO.puts("Statement #{poll} already exists, fetching...")
+          Statements.get_by(title: poll)
 
         {:error, changeset} ->
-          IO.inspect(changeset, label: "Failed to create poll #{poll}")
+          IO.inspect(changeset, label: "Failed to create statement #{poll}")
           nil
       end
     end)
     |> Enum.reject(&is_nil/1)
   end
 
-  defp create_opinions_and_votes(user, authors, votings) do
-    for author <- authors, voting <- votings do
+  defp create_opinions_and_votes(user, authors, statements) do
+    for author <- authors, statement <- statements do
       opinion_attrs = %{
         "content" => Faker.Lorem.sentence(5..15),
         "twin" => false,
@@ -122,17 +122,17 @@ defmodule YouCongress.Seeds do
 
       case Opinions.create_opinion(opinion_attrs) do
         {:ok, %{opinion: opinion}} ->
-          IO.puts("Opinion for #{author.name} on '#{voting.title}' created.")
+          IO.puts("Opinion for #{author.name} on '#{statement.title}' created.")
 
-          case Opinions.add_opinion_to_voting(opinion, voting, user.id) do
+          case Opinions.add_opinion_to_statement(opinion, statement, user.id) do
             {:ok, _} ->
-              IO.puts("Opinion linked to voting.")
+              IO.puts("Opinion linked to statement.")
 
               vote_attrs = %{
                 "direct" => true,
                 "twin" => false,
                 "author_id" => author.id,
-                "voting_id" => voting.id,
+                "statement_id" => statement.id,
                 "answer" => Enum.random([:for, :against, :abstain]),
                 "opinion_id" => opinion.id
               }
@@ -143,7 +143,7 @@ defmodule YouCongress.Seeds do
               end
 
             {:error, reason} ->
-              IO.inspect(reason, label: "Failed to link opinion to voting")
+              IO.inspect(reason, label: "Failed to link opinion to statement")
           end
 
         {:error, changeset} ->
