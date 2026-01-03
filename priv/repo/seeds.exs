@@ -14,7 +14,7 @@ defmodule YouCongress.Seeds do
     user = create_user()
 
     if user do
-      authors = create_authors()
+      authors = create_authors(%{name: "Admin", bio: "YCO admin"})
       votings = create_votings(user)
       create_opinions_and_votes(user, authors, votings)
     end

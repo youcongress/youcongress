@@ -45,6 +45,13 @@
       display_results={false}
       page={:voting_show}
     />
+
+    <%= if @current_user_vote && @current_user_vote.answer do %>
+      <ResultsComponent.horizontal_bar
+        total_votes={@total_votes}
+        vote_frequencies={@vote_frequencies}
+      />
+    <% end %>
   </div>
 
   <div class="mt-4 pb-2">
