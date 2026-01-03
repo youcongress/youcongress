@@ -206,7 +206,12 @@ defmodule YouCongressWeb.StatementLive.Show do
   end
 
   def handle_info({:voted, vote}, socket) do
-    {:noreply, assign(socket, :current_user_vote, vote)}
+    socket =
+      socket
+      |> assign(:current_user_vote, vote)
+      |> assign(editing: !vote || !vote.opinion_id)
+
+    {:noreply, socket}
   end
 
   def handle_info({YouCongressWeb.StatementLive.FormComponent, {:saved, statement}}, socket) do

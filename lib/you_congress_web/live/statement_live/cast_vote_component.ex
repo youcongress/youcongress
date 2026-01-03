@@ -172,7 +172,7 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
         socket =
           socket
           |> assign(:current_user_vote, vote)
-          |> assign_results_variables()
+          |> maybe_assign_results_variables()
 
         {:noreply, socket}
 
@@ -223,7 +223,7 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
         socket =
           socket
           |> assign(:current_user_vote, vote)
-          |> assign_results_variables()
+          |> maybe_assign_results_variables()
 
         {:noreply, socket}
 
@@ -231,6 +231,12 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
         {:noreply, put_flash(socket, :error, "Error deleting vote.")}
     end
   end
+
+  defp maybe_assign_results_variables(%{assigns: %{page: :statements_index}} = socket) do
+    assign_results_variables(socket)
+  end
+
+  defp maybe_assign_results_variables(socket), do: socket
 
   defp assign_results_variables(socket) do
     %{assigns: %{statement: statement}} = socket
