@@ -219,7 +219,7 @@ defmodule YouCongressWeb.StatementLive.Show do
   def handle_info(_, socket), do: {:noreply, socket}
 
   @spec page_title(atom, binary) :: binary
-  defp page_title(:show, voting_title), do: voting_title
+  defp page_title(:show, statement_title), do: statement_title
   defp page_title(:edit, _), do: "Edit Poll"
 
   defp load_random_statements(socket, statement_id) do

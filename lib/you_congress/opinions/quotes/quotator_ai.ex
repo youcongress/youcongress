@@ -136,9 +136,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     query =
       from(j in Job,
         where: j.worker == "YouCongress.Workers.QuotatorPollingWorker",
-        where:
-          fragment("?->>'statement_id' = ?", j.args, ^to_string(statement_id)) or
-            fragment("?->>'voting_id' = ?", j.args, ^to_string(statement_id)),
+        where: fragment("?->>'statement_id' = ?", j.args, ^to_string(statement_id)),
         where: j.state in ["scheduled", "available", "executing", "retryable"]
       )
 

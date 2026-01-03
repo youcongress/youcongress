@@ -177,7 +177,7 @@ defmodule YouCongressWeb.StatementLiveTest do
       conn = log_in_as_user(conn)
 
       opinion = opinion_fixture(%{statement_id: statement.id})
-      #  Create a vote so we display the voting options
+      # Create a vote so we display the voting options
       vote_fixture(%{statement_id: statement.id, opinion_id: opinion.id})
 
       {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}")

@@ -378,13 +378,4 @@ defmodule YouCongress.Opinions do
       ) do
     {:error, :user_id_required}
   end
-
-  # Legacy function names for backward compatibility during transition
-  def add_opinion_to_voting(opinion, voting_id) when is_integer(voting_id) do
-    add_opinion_to_statement(opinion, voting_id)
-  end
-
-  def add_opinion_to_voting(opinion, voting, user_id) do
-    add_opinion_to_statement(opinion, voting, user_id)
-  end
 end

@@ -50,14 +50,6 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
     end
   end
 
-  # Backward compatibility with old job args
-  def perform(%Oban.Job{args: %{"voting_id" => voting_id} = args} = job) do
-    perform(%Oban.Job{
-      job
-      | args: Map.put(Map.delete(args, "voting_id"), "statement_id", voting_id)
-    })
-  end
-
   defp maybe_call_llm_again(
          {:ok, num_saved_quotes},
          statement_id,

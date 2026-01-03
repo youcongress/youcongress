@@ -114,8 +114,8 @@ defmodule YouCongressWeb.AuthorLiveTest do
       current_user = user_fixture()
       conn = log_in_user(conn, current_user)
       author = author_fixture(%{twitter_username: "asimov"})
-      voting = statement_fixture()
-      vote_fixture(%{statement_id: voting.id, author_id: author.id}, true)
+      statement = statement_fixture()
+      vote_fixture(%{statement_id: statement.id, author_id: author.id}, true)
 
       {:ok, view, _html} = live(conn, "/x/asimov")
 
@@ -152,14 +152,14 @@ defmodule YouCongressWeb.AuthorLiveTest do
       current_user = user_fixture()
       conn = log_in_user(conn, current_user)
       author = author_fixture(%{twitter_username: "asimov"})
-      voting = statement_fixture()
-      vote_fixture(%{statement_id: voting.id, author_id: author.id}, true)
+      statement = statement_fixture()
+      vote_fixture(%{statement_id: statement.id, author_id: author.id}, true)
 
       {:ok, show_live, _html} = live(conn, ~p"/x/asimov")
 
       # Vote For
       show_live
-      |> element("button##{voting.id}-vote-for")
+      |> element("button##{statement.id}-vote-for")
       |> render_click()
 
       html = render(show_live)
@@ -167,7 +167,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       # Vote Against
       show_live
-      |> element("button##{voting.id}-vote-against")
+      |> element("button##{statement.id}-vote-against")
       |> render_click()
 
       html = render(show_live)
@@ -175,7 +175,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       # Vote Abstain
       show_live
-      |> element("button##{voting.id}-vote-abstain")
+      |> element("button##{statement.id}-vote-abstain")
       |> render_click()
 
       html = render(show_live)

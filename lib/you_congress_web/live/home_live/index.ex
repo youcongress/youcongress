@@ -114,7 +114,7 @@ defmodule YouCongressWeb.HomeLive.Index do
     socket =
       socket
       |> assign(:selected_delegate_ids, new_selected_ids)
-      |> assign_votings_for_selection(new_selected_ids)
+      |> assign_statements_for_selection(new_selected_ids)
 
     {:noreply, socket}
   end
@@ -152,7 +152,7 @@ defmodule YouCongressWeb.HomeLive.Index do
         selected_ids = socket.assigns.selected_delegate_ids
 
         {:noreply,
-         assign_votings_for_selection(socket, selected_ids)
+         assign_statements_for_selection(socket, selected_ids)
          |> put_flash(:info, "Voted #{String.capitalize(answer)}!")}
 
       {:error, _} ->
@@ -183,7 +183,8 @@ defmodule YouCongressWeb.HomeLive.Index do
         selected_ids = socket.assigns.selected_delegate_ids
 
         {:noreply,
-         assign_votings_for_selection(socket, selected_ids) |> put_flash(:info, "Vote removed.")}
+         assign_statements_for_selection(socket, selected_ids)
+         |> put_flash(:info, "Vote removed.")}
 
       _ ->
         {:noreply, put_flash(socket, :error, "Could not remove vote.")}
@@ -240,11 +241,11 @@ defmodule YouCongressWeb.HomeLive.Index do
     Authors.list_authors(names: names)
   end
 
-  defp assign_votings_for_selection(socket, []) do
+  defp assign_statements_for_selection(socket, []) do
     assign(socket, :selection_statements, [])
   end
 
-  defp assign_votings_for_selection(socket, selected_ids) do
+  defp assign_statements_for_selection(socket, selected_ids) do
     statements = Statements.list_statements_with_opinions_by_authors(selected_ids)
 
     user_votes =

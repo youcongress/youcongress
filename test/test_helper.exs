@@ -8,12 +8,6 @@ Application.put_env(
 
 Application.put_env(
   :you_congress,
-  :voting_generator,
-  YouCongress.Statements.GeneratorFake
-)
-
-Application.put_env(
-  :you_congress,
   :quotator_implementation,
   YouCongress.Opinions.Quotes.QuotatorFake
 )

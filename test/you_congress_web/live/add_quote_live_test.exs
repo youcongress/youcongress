@@ -12,20 +12,20 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
   alias YouCongress.Opinions
 
   defp create_statement(_) do
-    voting = statement_fixture()
-    %{voting: voting}
+    statement = statement_fixture()
+    %{statement: statement}
   end
 
   describe "Add quote" do
     setup [:create_statement]
 
-    test "adds a quote with twitter username in URL", %{conn: conn, voting: voting} do
+    test "adds a quote with twitter username in URL", %{conn: conn, statement: statement} do
       author = author_fixture(%{twitter_username: "someone"})
       current_user = user_fixture()
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
-        live(conn, ~p"/p/#{voting.slug}/add-quote?twitter_username=someone")
+        live(conn, ~p"/p/#{statement.slug}/add-quote?twitter_username=someone")
 
       assert html =~ "Add a quote"
 
@@ -38,11 +38,14 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
              |> render_submit()
 
       # Assert redirect
-      assert_redirected(add_quote_live, ~p"/p/#{voting.slug}/add-quote?twitter_username=someone")
+      assert_redirected(
+        add_quote_live,
+        ~p"/p/#{statement.slug}/add-quote?twitter_username=someone"
+      )
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.statement_id == voting.id
+      assert vote.statement_id == statement.id
       assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
@@ -53,13 +56,13 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert opinion.twin == false
     end
 
-    test "adds a quote without passing username as a param", %{conn: conn, voting: voting} do
+    test "adds a quote without passing username as a param", %{conn: conn, statement: statement} do
       author = author_fixture(%{twitter_username: "someone"})
       current_user = user_fixture()
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
-        live(conn, ~p"/p/#{voting.slug}/add-quote")
+        live(conn, ~p"/p/#{statement.slug}/add-quote")
 
       assert html =~ "Add a quote"
 
@@ -80,11 +83,14 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       |> render_submit()
 
       # Assert redirect
-      assert_redirected(add_quote_live, ~p"/p/#{voting.slug}/add-quote?twitter_username=someone")
+      assert_redirected(
+        add_quote_live,
+        ~p"/p/#{statement.slug}/add-quote?twitter_username=someone"
+      )
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.statement_id == voting.id
+      assert vote.statement_id == statement.id
       assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
@@ -96,9 +102,8 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
       assert vote.opinion_id == opinion.id
 
-      # Now we add another quote (the flow is different when an author already has a quote on a voting)
       {:ok, add_quote_live, _html} =
-        live(conn, ~p"/p/#{voting.slug}/add-quote?twitter_username=someone")
+        live(conn, ~p"/p/#{statement.slug}/add-quote?twitter_username=someone")
 
       add_quote_live
       |> form("form",
@@ -108,11 +113,14 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       )
       |> render_submit()
 
-      assert_redirected(add_quote_live, ~p"/p/#{voting.slug}/add-quote?twitter_username=someone")
+      assert_redirected(
+        add_quote_live,
+        ~p"/p/#{statement.slug}/add-quote?twitter_username=someone"
+      )
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.statement_id == voting.id
+      assert vote.statement_id == statement.id
       assert vote.answer == :against
 
       opinion = Opinions.get_opinion!(vote.opinion_id)
@@ -123,12 +131,12 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert opinion.twin == false
     end
 
-    test "creates an author and adds a quote", %{conn: conn, voting: voting} do
+    test "creates an author and adds a quote", %{conn: conn, statement: statement} do
       current_user = user_fixture()
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
-        live(conn, ~p"/p/#{voting.slug}/add-quote")
+        live(conn, ~p"/p/#{statement.slug}/add-quote")
 
       assert html =~ "Add a quote"
 
@@ -169,11 +177,14 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       )
       |> render_submit()
 
-      assert_redirected(add_quote_live, ~p"/p/#{voting.slug}/add-quote?twitter_username=someone")
+      assert_redirected(
+        add_quote_live,
+        ~p"/p/#{statement.slug}/add-quote?twitter_username=someone"
+      )
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.statement_id == voting.id
+      assert vote.statement_id == statement.id
       assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
@@ -184,7 +195,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert opinion.twin == false
     end
 
-    test "adds a quote with wikipedia URL in URL", %{conn: conn, voting: voting} do
+    test "adds a quote with wikipedia URL in URL", %{conn: conn, statement: statement} do
       author =
         author_fixture(%{
           name: "Albert Einstein",
@@ -197,7 +208,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
-        live(conn, ~p"/p/#{voting.slug}/add-quote?wikipedia_url=#{author.wikipedia_url}")
+        live(conn, ~p"/p/#{statement.slug}/add-quote?wikipedia_url=#{author.wikipedia_url}")
 
       assert html =~ "Add a quote"
       assert html =~ "Albert Einstein"
@@ -214,12 +225,12 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       # Assert redirect
       assert_redirected(
         add_quote_live,
-        ~p"/p/#{voting.slug}/add-quote?wikipedia_url=#{author.wikipedia_url}"
+        ~p"/p/#{statement.slug}/add-quote?wikipedia_url=#{author.wikipedia_url}"
       )
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.statement_id == voting.id
+      assert vote.statement_id == statement.id
       assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
@@ -230,7 +241,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert opinion.twin == false
     end
 
-    test "finds author by wikipedia URL without param", %{conn: conn, voting: voting} do
+    test "finds author by wikipedia URL without param", %{conn: conn, statement: statement} do
       author =
         author_fixture(%{
           name: "Albert Einstein",
@@ -243,7 +254,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
-        live(conn, ~p"/p/#{voting.slug}/add-quote")
+        live(conn, ~p"/p/#{statement.slug}/add-quote")
 
       assert html =~ "Add a quote"
 
@@ -269,12 +280,12 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       # Assert redirect
       assert_redirected(
         add_quote_live,
-        ~p"/p/#{voting.slug}/add-quote?wikipedia_url=#{author.wikipedia_url}"
+        ~p"/p/#{statement.slug}/add-quote?wikipedia_url=#{author.wikipedia_url}"
       )
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.statement_id == voting.id
+      assert vote.statement_id == statement.id
       assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()
@@ -285,12 +296,12 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert opinion.twin == false
     end
 
-    test "creates an author with wikipedia URL only", %{conn: conn, voting: voting} do
+    test "creates an author with wikipedia URL only", %{conn: conn, statement: statement} do
       current_user = user_fixture()
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
-        live(conn, ~p"/p/#{voting.slug}/add-quote")
+        live(conn, ~p"/p/#{statement.slug}/add-quote")
 
       assert html =~ "Add a quote"
 
@@ -329,12 +340,12 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
       assert_redirected(
         add_quote_live,
-        ~p"/p/#{voting.slug}/add-quote?wikipedia_url=#{author.wikipedia_url}"
+        ~p"/p/#{statement.slug}/add-quote?wikipedia_url=#{author.wikipedia_url}"
       )
 
       # Verify the data was saved
       [vote] = Votes.list_votes()
-      assert vote.statement_id == voting.id
+      assert vote.statement_id == statement.id
       assert vote.answer == :for
 
       [opinion] = Opinions.list_opinions()

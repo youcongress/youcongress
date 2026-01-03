@@ -134,7 +134,7 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
 
     quotes = Opinions.list_opinions(opts)
 
-    # Load author votes for each quote's votings
+    # Load author votes for each quote's statements
     quotes_with_votes = load_author_votes_for_quotes(quotes)
 
     has_more = length(quotes) == per_page

@@ -114,10 +114,10 @@ defmodule YouCongressWeb.StatementLive.NewFormComponent do
   end
 
   @impl true
-  def handle_event("validate", %{"statement" => voting_params}, socket) do
+  def handle_event("validate", %{"statement" => statement_params}, socket) do
     changeset =
       socket.assigns.statement
-      |> Statements.change_statement(voting_params)
+      |> Statements.change_statement(statement_params)
       |> Map.put(:action, :validate)
 
     socket =
@@ -130,7 +130,7 @@ defmodule YouCongressWeb.StatementLive.NewFormComponent do
 
   def handle_event("ai-validate", %{"statement" => statement}, socket) do
     %{assigns: %{current_user: current_user}} = socket
-    Track.event("Validate New Voting", current_user)
+    Track.event("Validate New Statement", current_user)
 
     # suggested_titles = [
     #   "Should we increase investment in nuclear energy research?",

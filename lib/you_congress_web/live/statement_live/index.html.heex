@@ -114,7 +114,12 @@
     <% end %>
   </div>
 
-  <.modal :if={@live_action in [:new, :edit]} id="voting-modal" show on_cancel={JS.patch(~p"/")}>
+  <.modal
+    :if={@live_action in [:new, :edit]}
+    id="statement-modal"
+    show
+    on_cancel={JS.patch(~p"/")}
+  >
     <.live_component
       module={FormComponent}
       id={@statement.id || :new}
