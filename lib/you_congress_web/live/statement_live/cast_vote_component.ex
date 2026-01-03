@@ -131,10 +131,6 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
         <button
           phx-click="delete-direct-vote"
           phx-target={@myself}
-          data-confirm={
-            if @current_user_vote.opinion_id,
-              do: "Deleting your direct vote will also delete your comment. Continue?"
-          }
           class="text-sm"
         >
           Clear
@@ -176,7 +172,6 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
       {:ok, vote} ->
         vote = Votes.get_vote(vote.id, preload: [:opinion])
         send(self(), {:voted, vote})
-        send(self(), {:put_flash, :info, "You voted #{String.capitalize(response)}."})
         Track.event("Vote", current_user)
 
         socket =
@@ -201,7 +196,11 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
     {:noreply, assign(socket, current_user_vote: nil)}
   end
 
-  def handle_event("delete-direct-vote", _, socket) do
+  def handle_event(
+        "delete-direct-vote",
+        _,
+        %{assigns: %{current_user_vote: %{opinion_id: nil}}} = socket
+      ) do
     %{
       assigns: %{
         current_user_vote: current_user_vote,
@@ -240,6 +239,23 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Error deleting vote.")}
     end
+  end
+
+  def handle_event("delete-direct-vote", _, socket) do
+    extra =
+      if socket.assigns.current_user_vote.answer == :abstain do
+        ""
+      else
+        " Or just vote Abstain and keep the comment."
+      end
+
+    send(
+      self(),
+      {:put_flash, :error,
+       "To delete your direct vote, you must first delete your comment.#{extra}"}
+    )
+
+    {:noreply, socket}
   end
 
   defp maybe_assign_results_variables(%{assigns: %{page: :statements_index}} = socket) do

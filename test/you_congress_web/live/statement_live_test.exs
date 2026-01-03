@@ -44,24 +44,24 @@ defmodule YouCongressWeb.StatementLiveTest do
       |> element("button##{statement.id}-vote-for")
       |> render_click()
 
-      html = render(index_live)
-      assert html =~ "You voted For"
+      assert index_live |> element("button##{statement.id}-vote-for") |> render() =~ "✓"
+      assert index_live |> element("button##{statement.id}-vote-for") |> render() =~ "For"
 
       # Vote Against
       index_live
       |> element("button##{statement.id}-vote-against")
       |> render_click()
 
-      html = render(index_live)
-      assert html =~ "You voted Against"
+      assert index_live |> element("button##{statement.id}-vote-against") |> render() =~ "✓"
+      assert index_live |> element("button##{statement.id}-vote-against") |> render() =~ "Against"
 
       # Vote Abstain
       index_live
       |> element("button##{statement.id}-vote-abstain")
       |> render_click()
 
-      html = render(index_live)
-      assert html =~ "You voted Abstain"
+      assert index_live |> element("button##{statement.id}-vote-abstain") |> render() =~ "✓"
+      assert index_live |> element("button##{statement.id}-vote-abstain") |> render() =~ "Abstain"
 
       # Create a comment
       index_live
@@ -187,24 +187,24 @@ defmodule YouCongressWeb.StatementLiveTest do
       |> element("button##{statement.id}-vote-for")
       |> render_click()
 
-      html = render(show_live)
-      assert html =~ "You voted For"
+      assert show_live |> element("button##{statement.id}-vote-for") |> render() =~ "✓"
+      assert show_live |> element("button##{statement.id}-vote-for") |> render() =~ "For"
 
       # Vote Against
       show_live
       |> element("button##{statement.id}-vote-against")
       |> render_click()
 
-      html = render(show_live)
-      assert html =~ "You voted Against"
+      assert show_live |> element("button##{statement.id}-vote-against") |> render() =~ "✓"
+      assert show_live |> element("button##{statement.id}-vote-against") |> render() =~ "Against"
 
       # Vote Abstain
       show_live
       |> element("button##{statement.id}-vote-abstain")
       |> render_click()
 
-      html = render(show_live)
-      assert html =~ "You voted Abstain"
+      assert show_live |> element("button##{statement.id}-vote-abstain") |> render() =~ "✓"
+      assert show_live |> element("button##{statement.id}-vote-abstain") |> render() =~ "Abstain"
     end
 
     test "creates a comment", %{conn: conn, statement: statement} do
