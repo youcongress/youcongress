@@ -3,7 +3,6 @@ import Config
 if !System.get_env("OPENAI_API_KEY") do
   # Use a fake to classify halls in development
   config :you_congress, :hall_classifier, YouCongress.Halls.ClassificationFake
-
   config :you_congress, :quotator_implementation, YouCongress.Opinions.Quotes.QuotatorFake
   config :you_congress, :title_rewording_implementation, YouCongress.Statements.TitleRewordingFake
 end
