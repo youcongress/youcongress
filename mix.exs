@@ -5,7 +5,7 @@ defmodule YouCongress.MixProject do
     [
       app: :you_congress,
       version: "0.1.0",
-      elixir: "~> 1.16.2",
+      elixir: "~> 1.19.4",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
