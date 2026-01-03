@@ -153,7 +153,7 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   defp apply_action(socket, :new, _params) do
     socket
-    |> assign(:page_title, "New Voting")
+    |> assign(:page_title, "New Statement")
     |> assign(:statement, %Statement{})
   end
 

@@ -65,20 +65,20 @@ defmodule YouCongress.LikesTest do
   end
 
   test "get_liked_opinion_ids/2 returns an empty list when user is nil" do
-    voting = statement_fixture()
+    statement = statement_fixture()
 
-    assert Likes.get_liked_opinion_ids(nil, voting) == []
+    assert Likes.get_liked_opinion_ids(nil, statement) == []
   end
 
-  test "get_liked_opinion_ids/2 returns the list of liked opinion ids for a user and voting" do
-    voting = statement_fixture()
+  test "get_liked_opinion_ids/2 returns the list of liked opinion ids for a user and statement" do
+    statement = statement_fixture()
     opinion = opinion_fixture()
     user = user_fixture()
 
-    {:ok, _} = Opinions.add_opinion_to_statement(opinion, voting)
+    {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement)
 
     {:ok, _} = Likes.like(opinion.id, user)
 
-    assert Likes.get_liked_opinion_ids(user, voting) == [opinion.id]
+    assert Likes.get_liked_opinion_ids(user, statement) == [opinion.id]
   end
 end

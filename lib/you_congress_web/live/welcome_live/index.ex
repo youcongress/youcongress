@@ -26,7 +26,7 @@ defmodule YouCongressWeb.WelcomeLive.Index do
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:page_title, "Welcome")
-    |> assign(:voting, nil)
+    |> assign(:statement, nil)
   end
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do

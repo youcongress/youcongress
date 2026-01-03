@@ -13,7 +13,7 @@
 #     test "lists recent opinions", %{conn: conn} do
 #       author1 = author_fixture(%{name: "Someone1"})
 #
-#       voting = statement_fixture(%{author_id: author1.id})
+#       statement = statement_fixture(%{author_id: author1.id})
 #
 #       opinion1 =
 #         opinion_fixture(%{
@@ -39,9 +39,9 @@
 #           twin: false
 #         })
 #
-#       Opinions.add_opinion_to_voting(opinion1, voting)
-#       Opinions.add_opinion_to_voting(opinion2, voting)
-#       Opinions.add_opinion_to_voting(opinion3, voting)
+#       Opinions.add_opinion_to_statement(opinion1, statement)
+#       Opinions.add_opinion_to_statement(opinion2, statement)
+#       Opinions.add_opinion_to_statement(opinion3, statement)
 #
 #       {:ok, index_live, _html} = live(conn, ~p"/home")
 #
@@ -62,9 +62,9 @@
 #     test "like icon click changes from heart.svg to filled-heart.svg", %{conn: conn} do
 #       current_user = user_fixture()
 #       conn = log_in_user(conn, current_user)
-#       voting = statement_fixture()
+#       statement = statement_fixture()
 #       opinion = opinion_fixture(%{twin: false})
-#       Opinions.add_opinion_to_voting(opinion, voting)
+#       Opinions.add_opinion_to_statement(opinion, statement)
 #
 #       {:ok, view, _html} = live(conn, "/home")
 #

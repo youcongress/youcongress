@@ -7,8 +7,8 @@ defmodule YouCongressWeb.StatementLiveSearchTest do
 
   describe "StatementLive search via URL params" do
     test "renders search results when search param is present", %{conn: conn} do
-      _voting = statement_fixture(title: "AI Safety Bill")
-      _other_voting = statement_fixture(title: "Tax Reform")
+      _statement = statement_fixture(title: "AI Safety Bill")
+      _other_statement = statement_fixture(title: "Tax Reform")
 
       {:ok, _view, html} = live(conn, ~p"/?search=AI", on_error: :warn)
 
@@ -30,8 +30,8 @@ defmodule YouCongressWeb.StatementLiveSearchTest do
 
   describe "StatementLive search via /home params" do
     test "renders search results on /home when search param is present", %{conn: conn} do
-      _voting = statement_fixture(title: "AI Safety Bill")
-      _other_voting = statement_fixture(title: "Tax Reform")
+      _statement = statement_fixture(title: "AI Safety Bill")
+      _other_statement = statement_fixture(title: "Tax Reform")
 
       {:ok, _view, html} = live(conn, ~p"/home?search=AI", on_error: :warn)
 

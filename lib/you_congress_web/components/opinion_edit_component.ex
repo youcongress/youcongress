@@ -1,6 +1,6 @@
 defmodule YouCongressWeb.OpinionEditComponent do
   @moduledoc """
-  A reusable component for editing opinions/quotes with their associated voting positions.
+  A reusable component for editing opinions/quotes with their associated votes.
   """
   use YouCongressWeb, :live_component
 
@@ -94,7 +94,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
     case Opinions.update_opinion(opinion, opinion_params) do
       {:ok, updated_opinion} ->
         # Update votes if they were changed (only for full form mode)
-        if socket.assigns[:show_voting_positions] do
+        if socket.assigns[:show_statement_positions] do
           update_author_votes(params, opinion)
         end
 
@@ -285,7 +285,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
         <% end %>
         
     <!-- Voting Positions -->
-        <%= if assigns[:show_voting_positions] && @opinion.statements && @opinion.statements != [] do %>
+        <%= if assigns[:show_statement_positions] && @opinion.statements && @opinion.statements != [] do %>
           <div class="space-y-3">
             <label class="block text-sm font-medium text-gray-700">Author's Position</label>
             <%= for statement <- @opinion.statements do %>

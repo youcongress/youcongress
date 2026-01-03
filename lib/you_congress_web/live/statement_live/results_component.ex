@@ -1,6 +1,6 @@
 defmodule YouCongressWeb.StatementLive.ResultsComponent do
   @moduledoc """
-  Component for voting buttons
+  Component for voting results
   """
   use Phoenix.Component
 

@@ -45,9 +45,4 @@ defmodule YouCongress.Workers.QuotatorWorker do
         :error
     end
   end
-
-  # Backward compatibility with old job args
-  def perform(%Oban.Job{args: %{"voting_id" => voting_id} = args}) do
-    perform(%Oban.Job{args: Map.put(Map.delete(args, "voting_id"), "statement_id", voting_id)})
-  end
 end

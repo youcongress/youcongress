@@ -10,7 +10,7 @@ defmodule YouCongressWeb.OpinionLive.AddOpinionToStatementTest do
   alias YouCongress.Votes
 
   describe "Show - Add to Statement" do
-    test "search for voting and add opinion with vote", %{conn: conn} do
+    test "search for statement and add opinion with vote", %{conn: conn} do
       user = user_fixture()
       author = author_fixture(%{user_id: user.id, name: "Opinion Author"})
       conn = log_in_as_admin(conn)
@@ -33,12 +33,12 @@ defmodule YouCongressWeb.OpinionLive.AddOpinionToStatementTest do
       |> element("button", "Add to Poll")
       |> render_click()
 
-      # Search for voting
+      # Search for statement
       show_live
       |> form("form[phx-submit='search-statements']", %{value: "Relevant"})
       |> render_submit()
 
-      # Select voting
+      # Select statement
       show_live
       |> element(
         "button[phx-click='show-vote-options'][phx-value-statement_id='#{statement.id}']"

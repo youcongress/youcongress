@@ -15,13 +15,13 @@ defmodule YouCongressWeb.OpinionLiveTest do
     test "comment under a comment", %{conn: conn} do
       conn = log_in_as_user(conn)
       author1 = author_fixture(%{name: "Someone1"})
-      voting = statement_fixture(%{author_id: author1.id})
+      statement = statement_fixture(%{author_id: author1.id})
 
       opinion =
         opinion_fixture(%{
           author_id: author1.id,
           content: "Opinion1",
-          statement_id: voting.id,
+          statement_id: statement.id,
           twin: false
         })
 
@@ -101,8 +101,8 @@ defmodule YouCongressWeb.OpinionLiveTest do
       new_author = author_fixture(%{user_id: user.id, name: "New Author"})
       conn = log_in_user(conn, user)
 
-      # Create a voting and opinion by the original author
-      voting = statement_fixture()
+      # Create a statement and opinion by the original author
+      statement = statement_fixture()
 
       opinion =
         opinion_fixture(%{
@@ -113,11 +113,11 @@ defmodule YouCongressWeb.OpinionLiveTest do
           source_url: "https://example.com/source"
         })
 
-      # Create a vote for the original author on this voting with this opinion
+      # Create a vote for the original author on this statement with this opinion
       vote =
         vote_fixture(%{
           author_id: original_author.id,
-          statement_id: voting.id,
+          statement_id: statement.id,
           opinion_id: opinion.id
         })
 

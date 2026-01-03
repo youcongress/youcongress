@@ -8,13 +8,13 @@ defmodule YouCongress.StatementsFixtures do
   Generate a voting.
   """
   def statement_fixture(attrs \\ %{}) do
-    {:ok, voting} =
+    {:ok, statement} =
       attrs
       |> Enum.into(%{
         title: Faker.Lorem.sentence()
       })
       |> YouCongress.Statements.create_statement()
 
-    voting
+    statement
   end
 end

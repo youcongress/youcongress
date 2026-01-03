@@ -1,6 +1,6 @@
 defmodule YouCongress.Halls.Classification do
   @moduledoc """
-  Generate the tags (halls) for a voting
+  Generate the tags (halls) for a statement
   """
 
   alias YouCongress.DigitalTwins.OpenAIModel

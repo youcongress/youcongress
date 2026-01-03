@@ -1,9 +1,9 @@
-<%= if assigns[:voting] do %>
+<%= if assigns[:statement] && assigns[:statement].id do %>
   <div>
     <div class="pl-4 py-2 bg-gray-200 text-gray-800 text-sm text-center">
       <div>
         Biased? Add more <.link
-          href={~p"/p/#{@voting.slug}/add-quote"}
+          href={~p"/p/#{@statement.slug}/add-quote"}
           class="underline"
           target="_blank"
           rel="nofollow"
