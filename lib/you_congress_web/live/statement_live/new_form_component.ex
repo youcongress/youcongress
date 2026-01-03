@@ -21,7 +21,7 @@ defmodule YouCongressWeb.StatementLive.NewFormComponent do
       >
         <div>
           <h3 class="text-lg font-semibold text-gray-900 mb-2">
-            What policy would you like to analyze and vote on?
+            What policy proposal or claim would you like to analyze?
           </h3>
           <p class="text-sm mb-4">
             <span>
