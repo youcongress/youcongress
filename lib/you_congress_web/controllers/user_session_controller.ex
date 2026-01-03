@@ -48,14 +48,19 @@ defmodule YouCongressWeb.UserSessionController do
               end
 
               # Votes
-              for {_voting_id, vote_data} <- votes do
-                YouCongress.Votes.create_or_update(%{
-                  voting_id: vote_data["voting_id"],
-                  answer: String.to_existing_atom(vote_data["answer"]),
-                  author_id: user.author_id,
-                  direct: true
-                })
-              end
+              Enum.each(votes, fn {_statement_id, vote_data} ->
+                if vote_data["answer"] && vote_data["answer"] != "" do
+                  # We don't care about result
+                  case YouCongress.Votes.create_or_update(%{
+                         statement_id: vote_data["statement_id"],
+                         answer: String.to_existing_atom(vote_data["answer"]),
+                         author_id: user.author_id,
+                         direct: true
+                       }) do
+                    _ -> :ok
+                  end
+                end
+              end)
 
             _ ->
               :ok

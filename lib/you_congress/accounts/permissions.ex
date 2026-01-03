@@ -3,14 +3,14 @@ defmodule YouCongress.Accounts.Permissions do
   The Accounts permissions.
   """
   alias YouCongress.Accounts.User
-  alias YouCongress.Votings.Voting
+  alias YouCongress.Statements.Statement
 
   @doc """
-  Checks if the user can edit the given voting.
+  Checks if the user can edit the given statement.
   """
-  @spec can_edit_voting?(Voting.t(), User.t()) :: boolean()
-  def can_edit_voting?(_voting, %User{role: "admin"}), do: true
-  def can_edit_voting?(_, _), do: false
+  @spec can_edit_statement?(Statement.t(), User.t()) :: boolean()
+  def can_edit_statement?(_statement, %User{role: "admin"}), do: true
+  def can_edit_statement?(_, _), do: false
 
   @doc """
   Checks if the user can generate AI votes
@@ -37,11 +37,11 @@ defmodule YouCongress.Accounts.Permissions do
   def can_regenerate_opinion?(_), do: false
 
   @doc """
-  Checks if the user can add an opinion to a voting.
+  Checks if the user can add an opinion to a statement.
   """
-  def can_add_opinion_to_voting?(%User{role: "admin"}), do: true
-  def can_add_opinion_to_voting?(%User{role: "moderator"}), do: true
-  def can_add_opinion_to_voting?(_), do: false
+  def can_add_opinion_to_statement?(%User{role: "admin"}), do: true
+  def can_add_opinion_to_statement?(%User{role: "moderator"}), do: true
+  def can_add_opinion_to_statement?(_), do: false
 
   @doc """
   Checks if the user can edit the given opinion.

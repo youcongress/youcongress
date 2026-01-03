@@ -3,7 +3,7 @@ defmodule YouCongressWeb.HomeLiveTest do
 
   import Phoenix.LiveViewTest
   import YouCongress.AuthorsFixtures
-  import YouCongress.VotingsFixtures
+  import YouCongress.StatementsFixtures
   import YouCongress.VotesFixtures
   import YouCongress.OpinionsFixtures
   import YouCongress.AccountsFixtures
@@ -32,17 +32,17 @@ defmodule YouCongressWeb.HomeLiveTest do
     setup do
       author1 = author_fixture(name: "Stuart J. Russell")
       author2 = author_fixture(name: "Demis Hassabis")
-      voting = voting_fixture(title: "AI Safety Voting")
+      voting = statement_fixture(title: "AI Safety Statement")
 
       # Create opinions/votes for these authors so they are relevant to the voting
-      opinion1 = opinion_fixture(author_id: author1.id, voting_id: voting.id)
-      # Manually link opinion to voting as required by list_votings_with_opinions_by_authors
+      opinion1 = opinion_fixture(author_id: author1.id, statement_id: voting.id)
+      # Manually link opinion to voting as required by list_statements_with_opinions_by_authors
       user = user_fixture()
       {:ok, _} = YouCongress.Opinions.add_opinion_to_voting(opinion1, voting, user.id)
 
       vote_fixture(
         author_id: author1.id,
-        voting_id: voting.id,
+        statement_id: voting.id,
         opinion_id: opinion1.id,
         answer: :for
       )
@@ -66,26 +66,26 @@ defmodule YouCongressWeb.HomeLiveTest do
       # We target the specific checkbox to be sure
       assert has_element?(view, "#delegate-#{author1.id}[checked]")
 
-      # When a delegate is selected, proper votings should appear
-      assert render(view) =~ "AI Safety Voting"
+      # When a delegate is selected, proper statements should appear
+      assert render(view) =~ "AI Safety Statement"
     end
   end
 
-  describe "Voting interaction" do
+  describe "Statement interaction" do
     setup do
       user = user_fixture()
       # Explicitly create author with highlighted delegate name
       author = author_fixture(name: "Yoshua Bengio")
 
-      voting = voting_fixture(title: "Important Motion")
-      opinion = opinion_fixture(author_id: author.id, voting_id: voting.id)
+      voting = statement_fixture(title: "Important Motion")
+      opinion = opinion_fixture(author_id: author.id, statement_id: voting.id)
 
       # Link opinion to voting
       {:ok, _} = YouCongress.Opinions.add_opinion_to_voting(opinion, voting, user.id)
 
       vote_fixture(
         author_id: author.id,
-        voting_id: voting.id,
+        statement_id: voting.id,
         opinion_id: opinion.id,
         answer: :for
       )
@@ -145,7 +145,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       conn = log_in_user(conn, user)
 
       # Pre-cast a vote
-      vote_fixture(author_id: user.author_id, voting_id: voting.id, answer: :for, direct: true)
+      vote_fixture(author_id: user.author_id, statement_id: voting.id, answer: :for, direct: true)
 
       {:ok, view, _html} = live(conn, ~p"/landing")
 

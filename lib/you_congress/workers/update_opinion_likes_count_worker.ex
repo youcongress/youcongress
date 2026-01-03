@@ -8,18 +8,18 @@ defmodule YouCongress.Workers.UpdateOpinionLikesCountWorker do
   use Oban.Worker, unique: [states: [:scheduled, :available]]
 
   alias YouCongress.Opinions
-  alias YouCongress.Workers.Votings.SyncVotingLikesCountWorker
+  alias YouCongress.Workers.Statements.SyncStatementLikesCountWorker
 
   @impl true
   def perform(%Oban.Job{args: %{"opinion_id" => opinion_id}}) do
-    opinion = Opinions.get_opinion!(opinion_id, preload: [:votings])
+    opinion = Opinions.get_opinion!(opinion_id, preload: [:statements])
 
     case Opinions.update_opinion_likes_count(opinion) do
       {:ok, opinion} ->
-        # Update all voting likes counts for all votings this opinion belongs to
-        Enum.each(opinion.votings, fn voting ->
-          %{voting_id: voting.id}
-          |> SyncVotingLikesCountWorker.new()
+        # Update all statement likes counts for all statements this opinion belongs to
+        Enum.each(opinion.statements, fn statement ->
+          %{statement_id: statement.id}
+          |> SyncStatementLikesCountWorker.new()
           |> Oban.insert()
         end)
 

@@ -10,7 +10,7 @@ defmodule YouCongress.Likes do
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Accounts.User
-  alias YouCongress.Votings.Voting
+  alias YouCongress.Statements.Statement
   alias YouCongress.Workers.UpdateOpinionLikesCountWorker
   alias YouCongress.Track
 
@@ -84,12 +84,12 @@ defmodule YouCongress.Likes do
 
   def get_liked_opinion_ids(nil, _), do: []
 
-  def get_liked_opinion_ids(%User{id: user_id}, %Voting{} = voting) do
+  def get_liked_opinion_ids(%User{id: user_id}, %Statement{} = statement) do
     from(o in Opinion,
       join: l in assoc(o, :likes),
-      join: ov in "opinions_votings",
+      join: ov in "opinions_statements",
       on: ov.opinion_id == o.id,
-      where: l.user_id == ^user_id and ov.voting_id == ^voting.id,
+      where: l.user_id == ^user_id and ov.statement_id == ^statement.id,
       select: o.id
     )
     |> Repo.all()

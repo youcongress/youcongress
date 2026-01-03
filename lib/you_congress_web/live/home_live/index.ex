@@ -7,9 +7,9 @@ defmodule YouCongressWeb.HomeLive.Index do
   alias YouCongress.Halls
   alias YouCongress.Opinions
   alias YouCongress.Track
-  alias YouCongress.Votings
-  alias YouCongressWeb.VotingLive.Index.Search
-  alias YouCongressWeb.VotingLive.NewFormComponent
+  alias YouCongress.Statements
+  alias YouCongressWeb.StatementLive.Index.Search
+  alias YouCongressWeb.StatementLive.NewFormComponent
 
   @impl true
   def mount(_params, session, socket) do
@@ -34,11 +34,11 @@ defmodule YouCongressWeb.HomeLive.Index do
       |> assign(:search_tab, :quotes)
       |> assign(:halls, [])
       |> assign(:authors, [])
-      |> assign(:votings, [])
+      |> assign(:statements, [])
       |> assign(:quotes, [])
       |> assign(:delegates, load_highlighted_delegates())
       |> assign(:selected_delegate_ids, [])
-      |> assign(:selection_votings, [])
+      |> assign(:selection_statements, [])
       |> assign(:user_votes, %{})
       |> assign(:auth_tab, :register)
 
@@ -121,14 +121,14 @@ defmodule YouCongressWeb.HomeLive.Index do
 
   def handle_event(
         "vote",
-        %{"id" => voting_id, "answer" => answer},
+        %{"id" => statement_id, "answer" => answer},
         %{assigns: %{current_user: nil}} = socket
       ) do
-    voting_id = String.to_integer(voting_id)
+    statement_id = String.to_integer(statement_id)
     answer = String.to_existing_atom(answer)
 
-    vote = %{answer: answer, voting_id: voting_id}
-    new_user_votes = Map.put(socket.assigns.user_votes, voting_id, vote)
+    vote = %{answer: answer, statement_id: statement_id}
+    new_user_votes = Map.put(socket.assigns.user_votes, statement_id, vote)
 
     socket =
       socket
@@ -138,11 +138,11 @@ defmodule YouCongressWeb.HomeLive.Index do
     {:noreply, socket}
   end
 
-  def handle_event("vote", %{"id" => voting_id, "answer" => answer}, socket) do
+  def handle_event("vote", %{"id" => statement_id, "answer" => answer}, socket) do
     current_user = socket.assigns.current_user
 
     case YouCongress.Votes.create_or_update(%{
-           voting_id: String.to_integer(voting_id),
+           statement_id: String.to_integer(statement_id),
            answer: answer,
            author_id: current_user.author_id,
            direct: true
@@ -160,18 +160,22 @@ defmodule YouCongressWeb.HomeLive.Index do
     end
   end
 
-  def handle_event("delete-vote", %{"id" => voting_id}, %{assigns: %{current_user: nil}} = socket) do
-    voting_id = String.to_integer(voting_id)
-    new_user_votes = Map.delete(socket.assigns.user_votes, voting_id)
+  def handle_event(
+        "delete-vote",
+        %{"id" => statement_id},
+        %{assigns: %{current_user: nil}} = socket
+      ) do
+    statement_id = String.to_integer(statement_id)
+    new_user_votes = Map.delete(socket.assigns.user_votes, statement_id)
     {:noreply, assign(socket, :user_votes, new_user_votes)}
   end
 
-  def handle_event("delete-vote", %{"id" => voting_id}, socket) do
+  def handle_event("delete-vote", %{"id" => statement_id}, socket) do
     current_user = socket.assigns.current_user
-    voting_id = String.to_integer(voting_id)
+    statement_id = String.to_integer(statement_id)
 
     case YouCongress.Votes.delete_vote(%{
-           voting_id: voting_id,
+           statement_id: statement_id,
            author_id: current_user.author_id
          }) do
       {_count, _} ->
@@ -193,7 +197,7 @@ defmodule YouCongressWeb.HomeLive.Index do
 
   defp perform_search(socket, search) do
     Track.event("Search via Home", socket.assigns.current_user)
-    votings = Votings.list_votings(title_contains: search, preload: [:halls])
+    statements = Statements.list_statements(title_contains: search, preload: [:halls])
     authors = Authors.list_authors(search: search)
     halls = Halls.list_halls(name_contains: search)
     quotes = Opinions.list_opinions(search: search, preload: [:author])
@@ -202,13 +206,13 @@ defmodule YouCongressWeb.HomeLive.Index do
       cond do
         Enum.any?(quotes) -> :quotes
         Enum.any?(authors) -> :delegates
-        Enum.any?(votings) -> :motions
+        Enum.any?(statements) -> :motions
         Enum.any?(halls) -> :halls
         true -> :quotes
       end
 
     assign(socket,
-      votings: votings,
+      statements: statements,
       search: search,
       search_tab: search_tab,
       authors: authors,
@@ -237,40 +241,40 @@ defmodule YouCongressWeb.HomeLive.Index do
   end
 
   defp assign_votings_for_selection(socket, []) do
-    assign(socket, :selection_votings, [])
+    assign(socket, :selection_statements, [])
   end
 
   defp assign_votings_for_selection(socket, selected_ids) do
-    votings = Votings.list_votings_with_opinions_by_authors(selected_ids)
+    statements = Statements.list_statements_with_opinions_by_authors(selected_ids)
 
     user_votes =
       if current_user = socket.assigns.current_user do
-        voting_ids = Enum.map(votings, & &1.id)
+        statement_ids = Enum.map(statements, & &1.id)
 
         YouCongress.Votes.list_votes(
           author_ids: [current_user.author_id],
-          voting_ids: voting_ids
+          statement_ids: statement_ids
         )
-        |> Map.new(&{&1.voting_id, &1})
+        |> Map.new(&{&1.statement_id, &1})
       else
         %{}
       end
 
     socket
-    |> assign(:selection_votings, votings)
+    |> assign(:selection_statements, statements)
     |> assign(:user_votes, user_votes)
   end
 
-  def get_vote_answer(voting, author_id) do
-    case Enum.find(voting.votes, &(&1.author_id == author_id)) do
+  def get_vote_answer(statement, author_id) do
+    case Enum.find(statement.votes, &(&1.author_id == author_id)) do
       nil -> nil
       vote -> vote.answer
     end
   end
 
-  def calculate_majority_vote(voting, selected_delegate_ids) do
+  def calculate_majority_vote(statement, selected_delegate_ids) do
     votes =
-      voting.votes
+      statement.votes
       |> Enum.filter(&(&1.author_id in selected_delegate_ids))
       |> Enum.map(& &1.answer)
 

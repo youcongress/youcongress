@@ -218,14 +218,14 @@ defmodule YouCongressWeb.UserRegistrationLive do
         end
 
         if map_size(socket.assigns.votes) > 0 do
-          for {_voting_id, vote_data} <- socket.assigns.votes do
+          Enum.each(socket.assigns.votes, fn {_statement_id, vote_data} ->
             YouCongress.Votes.create_or_update(%{
-              voting_id: vote_data.voting_id,
+              statement_id: vote_data.statement_id,
               answer: vote_data.answer,
               author_id: author.id,
               direct: true
             })
-          end
+          end)
         end
 
         {:noreply, socket}

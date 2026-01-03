@@ -15,14 +15,14 @@ defmodule YouCongress.DelegationVotes do
   """
   @spec update_author_delegated_votes(integer) :: :ok
   def update_author_delegated_votes(author_id) do
-    voting_ids_with_author_direct_votes = voting_ids_with_author_direct_votes(author_id)
+    statement_ids_with_author_direct_votes = statement_ids_with_author_direct_votes(author_id)
     delegate_ids = Delegations.delegate_ids_by_deleguee_id(author_id)
 
-    for voting_id <- voting_ids_voted_by([author_id | delegate_ids]) do
-      if voting_id in voting_ids_with_author_direct_votes do
+    for statement_id <- statement_ids_voted_by([author_id | delegate_ids]) do
+      if statement_id in statement_ids_with_author_direct_votes do
         {:ok, :direct_vote_exists}
       else
-        update_votes(voting_id, author_id, delegate_ids)
+        update_votes(statement_id, author_id, delegate_ids)
       end
     end
 
@@ -30,67 +30,67 @@ defmodule YouCongress.DelegationVotes do
   end
 
   def update_delegated_votes(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
-    voting_ids_with_deleguee_direct_votes = voting_ids_with_author_direct_votes(deleguee_id)
+    statement_ids_with_deleguee_direct_votes = statement_ids_with_author_direct_votes(deleguee_id)
     delegate_ids = Delegations.delegate_ids_by_deleguee_id(deleguee_id)
 
-    for voting_id <- voting_ids_voted_by([delegate_id]) do
-      if voting_id in voting_ids_with_deleguee_direct_votes do
+    for statement_id <- statement_ids_voted_by([delegate_id]) do
+      if statement_id in statement_ids_with_deleguee_direct_votes do
         {:ok, :direct_vote_exists}
       else
-        update_votes(voting_id, deleguee_id, delegate_ids)
+        update_votes(statement_id, deleguee_id, delegate_ids)
       end
     end
 
     :ok
   end
 
-  def update_author_voting_delegated_votes(author_id, voting_id) do
-    if Votes.get_by(author_id: author_id, voting_id: voting_id, direct: true) do
+  def update_author_statement_delegated_votes(author_id, statement_id) do
+    if Votes.get_by(author_id: author_id, statement_id: statement_id, direct: true) do
       :direct_vote_exists
     else
       delegate_ids = Delegations.delegate_ids_by_deleguee_id(author_id)
-      update_votes(voting_id, author_id, delegate_ids)
+      update_votes(statement_id, author_id, delegate_ids)
       :ok
     end
   end
 
-  defp update_votes(voting_id, author_id, delegate_ids) do
-    {in_favour, against, neutral} = get_counters(voting_id, delegate_ids)
+  defp update_votes(statement_id, author_id, delegate_ids) do
+    {in_favour, against, neutral} = get_counters(statement_id, delegate_ids)
 
     cond do
       in_favour == 0 and against == 0 and neutral == 0 ->
-        delete_vote_if_exists(voting_id, author_id)
+        delete_vote_if_exists(statement_id, author_id)
 
       in_favour > against && in_favour > neutral ->
-        vote(voting_id, author_id, :for)
+        vote(statement_id, author_id, :for)
 
       against > in_favour && against > neutral ->
-        vote(voting_id, author_id, :against)
+        vote(statement_id, author_id, :against)
 
       neutral > in_favour && neutral > against ->
-        vote(voting_id, author_id, :abstain)
+        vote(statement_id, author_id, :abstain)
 
       true ->
-        delete_vote_if_exists(voting_id, author_id)
+        delete_vote_if_exists(statement_id, author_id)
     end
   end
 
-  @spec update_author_voting_delegated_votes(map) :: :ok | :direct_vote_exists
-  def update_author_voting_delegated_votes(%{author_id: author_id, voting_id: voting_id}) do
-    if Votes.get_by(author_id: author_id, voting_id: voting_id, direct: true) do
+  @spec update_author_statement_delegated_votes(map) :: :ok | :direct_vote_exists
+  def update_author_statement_delegated_votes(%{author_id: author_id, statement_id: statement_id}) do
+    if Votes.get_by(author_id: author_id, statement_id: statement_id, direct: true) do
       :direct_vote_exists
     else
       delegate_ids = Delegations.delegate_ids_by_deleguee_id(author_id)
-      update_votes(voting_id, author_id, delegate_ids)
+      update_votes(statement_id, author_id, delegate_ids)
       :ok
     end
   end
 
-  defp vote(voting_id, author_id, answer) do
-    case Votes.get_by(voting_id: voting_id, author_id: author_id) do
+  defp vote(statement_id, author_id, answer) do
+    case Votes.get_by(statement_id: statement_id, author_id: author_id) do
       nil ->
         Votes.create_vote(%{
-          voting_id: voting_id,
+          statement_id: statement_id,
           author_id: author_id,
           answer: answer,
           direct: false
@@ -105,13 +105,13 @@ defmodule YouCongress.DelegationVotes do
     end
   end
 
-  defp delete_vote_if_exists(voting_id, author_id) do
-    Votes.delete_vote(%{voting_id: voting_id, author_id: author_id})
+  defp delete_vote_if_exists(statement_id, author_id) do
+    Votes.delete_vote(%{statement_id: statement_id, author_id: author_id})
   end
 
   @spec get_counters(integer, [integer]) :: {integer, integer, integer}
-  defp get_counters(voting_id, delegate_ids) do
-    votes = votes_from_delegates(voting_id, delegate_ids)
+  defp get_counters(statement_id, delegate_ids) do
+    votes = votes_from_delegates(statement_id, delegate_ids)
 
     in_favour = count(votes, [:for])
     against = count(votes, [:against])
@@ -125,28 +125,28 @@ defmodule YouCongress.DelegationVotes do
     end)
   end
 
-  defp voting_ids_with_author_direct_votes(author_id) do
+  defp statement_ids_with_author_direct_votes(author_id) do
     from(v in Vote,
       where: v.author_id == ^author_id,
       where: v.direct == true,
-      select: v.voting_id,
+      select: v.statement_id,
       distinct: true
     )
     |> Repo.all()
   end
 
-  defp voting_ids_voted_by(author_ids) do
+  defp statement_ids_voted_by(author_ids) do
     from(v in Vote,
       where: v.author_id in ^author_ids,
-      select: v.voting_id,
+      select: v.statement_id,
       distinct: true
     )
     |> Repo.all()
   end
 
-  defp votes_from_delegates(voting_id, delegate_ids) do
+  defp votes_from_delegates(statement_id, delegate_ids) do
     from(v in Vote,
-      where: v.voting_id == ^voting_id and v.author_id in ^delegate_ids,
+      where: v.statement_id == ^statement_id and v.author_id in ^delegate_ids,
       select: v
     )
     |> Repo.all()

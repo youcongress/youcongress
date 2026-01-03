@@ -6,7 +6,7 @@ defmodule YouCongress.Halls.Hall do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias YouCongress.Votings.Voting
+  alias YouCongress.Statements.Statement
 
   @names [
     "ai",
@@ -107,9 +107,9 @@ defmodule YouCongress.Halls.Hall do
     field :name, :string
 
     many_to_many(
-      :votings,
-      Voting,
-      join_through: "halls_votings",
+      :statements,
+      Statement,
+      join_through: "halls_statements",
       on_replace: :delete
     )
 

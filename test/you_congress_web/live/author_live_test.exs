@@ -5,7 +5,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
   import YouCongress.AuthorsFixtures
   import YouCongress.AccountsFixtures
   import YouCongress.VotesFixtures
-  import YouCongress.VotingsFixtures
+  import YouCongress.StatementsFixtures
 
   @create_attrs %{
     bio: "some bio",
@@ -114,8 +114,8 @@ defmodule YouCongressWeb.AuthorLiveTest do
       current_user = user_fixture()
       conn = log_in_user(conn, current_user)
       author = author_fixture(%{twitter_username: "asimov"})
-      voting = voting_fixture()
-      vote_fixture(%{voting_id: voting.id, author_id: author.id}, true)
+      voting = statement_fixture()
+      vote_fixture(%{statement_id: voting.id, author_id: author.id}, true)
 
       {:ok, view, _html} = live(conn, "/x/asimov")
 
@@ -152,8 +152,8 @@ defmodule YouCongressWeb.AuthorLiveTest do
       current_user = user_fixture()
       conn = log_in_user(conn, current_user)
       author = author_fixture(%{twitter_username: "asimov"})
-      voting = voting_fixture()
-      vote_fixture(%{voting_id: voting.id, author_id: author.id}, true)
+      voting = statement_fixture()
+      vote_fixture(%{statement_id: voting.id, author_id: author.id}, true)
 
       {:ok, show_live, _html} = live(conn, ~p"/x/asimov")
 

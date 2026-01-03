@@ -11,9 +11,9 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongress.Likes
   alias YouCongress.Track
   alias YouCongressWeb.AuthorLive.FormComponent
-  alias YouCongressWeb.VotingLive.VoteComponent
+  alias YouCongressWeb.StatementLive.VoteComponent
   alias YouCongressWeb.Tools.Tooltip
-  alias YouCongressWeb.VotingLive.CastVoteComponent
+  alias YouCongressWeb.StatementLive.CastVoteComponent
   alias YouCongressWeb.Components.SwitchComponent
   alias YouCongress.Halls
 
@@ -44,7 +44,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
       votes
       |> Enum.flat_map(fn vote ->
         if vote.direct do
-          Enum.map(vote.voting.halls, fn hall -> hall.name end)
+          Enum.map(vote.statement.halls, fn hall -> hall.name end)
         else
           []
         end
@@ -68,19 +68,19 @@ defmodule YouCongressWeb.AuthorLive.Show do
      |> assign(:hall_name, hall_name)
      |> assign(:regenerating_opinion_id, nil)
      |> assign(
-       :current_user_votes_by_voting_id,
-       get_current_user_votes_by_voting_id(current_user)
+       :current_user_votes_by_statement_id,
+       get_current_user_votes_by_statement_id(current_user)
      )
      |> assign_delegating?()
      |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))}
   end
 
-  def get_current_user_votes_by_voting_id(nil), do: %{}
+  def get_current_user_votes_by_statement_id(nil), do: %{}
 
-  def get_current_user_votes_by_voting_id(current_user) do
+  def get_current_user_votes_by_statement_id(current_user) do
     [author_ids: [current_user.author_id]]
     |> Votes.list_votes()
-    |> Enum.reduce(%{}, fn vote, acc -> Map.put(acc, vote.voting_id, vote) end)
+    |> Enum.reduce(%{}, fn vote, acc -> Map.put(acc, vote.statement_id, vote) end)
   end
 
   defp get_author!(%{"id" => user_id}) do
@@ -105,7 +105,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     case Delegations.delete_delegation(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
       {:ok, _} ->
         Track.event("Remove Delegate", current_user)
-        send(self(), :update_current_user_votes_by_voting_id)
+        send(self(), :update_current_user_votes_by_statement_id)
 
         {:noreply, assign(socket, :delegating?, false)}
 
@@ -124,7 +124,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     case Delegations.create_delegation(current_user, delegate_id) do
       {:ok, _} ->
         Track.event("Delegate", current_user)
-        send(self(), :update_current_user_votes_by_voting_id)
+        send(self(), :update_current_user_votes_by_statement_id)
 
         {:noreply, assign(socket, :delegating?, true)}
 
@@ -146,14 +146,14 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   @impl true
-  def handle_info(:update_current_user_votes_by_voting_id, socket) do
+  def handle_info(:update_current_user_votes_by_statement_id, socket) do
     current_user = socket.assigns.current_user
 
     socket =
       assign(
         socket,
-        :current_user_votes_by_voting_id,
-        get_current_user_votes_by_voting_id(current_user)
+        :current_user_votes_by_statement_id,
+        get_current_user_votes_by_statement_id(current_user)
       )
 
     {:noreply, socket}
@@ -197,7 +197,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     args = [
       author_ids: [author_id],
       order_by_strong_opinions_first: true,
-      preload: [:opinion, voting: [:halls]],
+      preload: [:opinion, statement: [:halls]],
       without_opinion: false
     ]
 
@@ -205,14 +205,14 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   defp load_votes(author_id, false, hall_name) do
-    hall = Halls.get_by_name(hall_name, preload: [:votings])
-    voting_ids = Enum.map(hall.votings, fn voting -> voting.id end)
+    hall = Halls.get_by_name(hall_name, preload: [:statements])
+    statement_ids = Enum.map(hall.statements, fn statement -> statement.id end)
 
     args = [
       author_ids: [author_id],
       order_by_strong_opinions_first: true,
-      preload: [:opinion, voting: [:halls]],
-      voting_ids: voting_ids,
+      preload: [:opinion, statement: [:halls]],
+      statement_ids: statement_ids,
       without_opinion: false
     ]
 
@@ -223,7 +223,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     args = [
       author_ids: [author_id],
       order_by: [desc: :id],
-      preload: [:opinion, voting: [:halls]],
+      preload: [:opinion, statement: [:halls]],
       without_opinion: false
     ]
 
@@ -231,14 +231,14 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   defp load_votes(author_id, true, hall_name) do
-    hall = Halls.get_by_name(hall_name, preload: [:votings])
-    voting_ids = Enum.map(hall.votings, fn voting -> voting.id end)
+    hall = Halls.get_by_name(hall_name, preload: [:statements])
+    statement_ids = Enum.map(hall.statements, fn statement -> statement.id end)
 
     args = [
       author_ids: [author_id],
       order_by: [desc: :id],
-      preload: [:opinion, voting: [:halls]],
-      voting_ids: voting_ids,
+      preload: [:opinion, statement: [:halls]],
+      statement_ids: statement_ids,
       without_opinion: false
     ]
 

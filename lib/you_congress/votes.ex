@@ -38,8 +38,8 @@ defmodule YouCongress.Votes do
         {:author_ids, author_ids}, query ->
           where(query, [v], v.author_id in ^author_ids)
 
-        {:voting_ids, voting_ids}, query ->
-          where(query, [v], v.voting_id in ^voting_ids)
+        {:statement_ids, statement_ids}, query ->
+          where(query, [v], v.statement_id in ^statement_ids)
 
         {:twin, twin}, query ->
           where(query, [v], v.twin == ^twin)
@@ -100,29 +100,29 @@ defmodule YouCongress.Votes do
   end
 
   @doc """
-  Returns the list of votes for a voting.
+  Returns the list of votes for a statement.
 
-  ## Examples
+  ## Examples
 
         iex> list_votes("Nuclear Energy")
         [%Vote{}, ...]
 
   """
   @spec list_votes(integer, Keyword.t() | nil) :: [Vote.t(), ...]
-  def list_votes(voting_id, opts \\ []) do
+  def list_votes(statement_id, opts \\ []) do
     include_tables = Keyword.get(opts, :include, [])
 
     Vote
-    |> where([v], v.voting_id == ^voting_id)
+    |> where([v], v.statement_id == ^statement_id)
     |> preload(^include_tables)
     |> Repo.all()
   end
 
   @doc """
-  Returns the list of votes for a voting with opinion.
+  Returns the list of votes for a statement with opinion.
   """
   @spec list_votes_with_opinion(integer, Keyword.t()) :: [Vote.t(), ...]
-  def list_votes_with_opinion(voting_id, opts \\ []) do
+  def list_votes_with_opinion(statement_id, opts \\ []) do
     include_tables = Keyword.get(opts, :include, [])
     exclude_ids = Keyword.get(opts, :exclude_ids, [])
     twin_options = Keyword.get(opts, :twin_options, [true, false])
@@ -135,7 +135,7 @@ defmodule YouCongress.Votes do
       |> join(:inner, [v, a], o in YouCongress.Opinions.Opinion, on: v.opinion_id == o.id)
       |> where(
         [v, a, o],
-        v.voting_id == ^voting_id and not is_nil(v.opinion_id) and
+        v.statement_id == ^statement_id and not is_nil(v.opinion_id) and
           v.id not in ^exclude_ids and
           v.twin in ^twin_options
       )
@@ -172,10 +172,10 @@ defmodule YouCongress.Votes do
   end
 
   @doc """
-  Returns the list of votes for a voting without opinion.
+  Returns the list of votes for a statement without opinion.
   """
   @spec list_votes_without_opinion(integer, Keyword.t()) :: [Vote.t(), ...]
-  def list_votes_without_opinion(voting_id, opts \\ []) do
+  def list_votes_without_opinion(statement_id, opts \\ []) do
     include_tables = Keyword.get(opts, :include, [])
     exclude_ids = Keyword.get(opts, :exclude_ids, [])
     twin_options = Keyword.get(opts, :twin_options, [true, false])
@@ -186,7 +186,7 @@ defmodule YouCongress.Votes do
       |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
       |> where(
         [v, a],
-        v.voting_id == ^voting_id and is_nil(v.opinion_id) and v.id not in ^exclude_ids and
+        v.statement_id == ^statement_id and is_nil(v.opinion_id) and v.id not in ^exclude_ids and
           v.twin in ^twin_options
       )
 
@@ -344,8 +344,8 @@ defmodule YouCongress.Votes do
   Creates, updates or deletes a vote.
   """
   @spec create_or_update(map) :: {:ok, Vote.t()} | {:ok, :deleted} | {:error, String.t()}
-  def create_or_update(%{voting_id: voting_id, author_id: author_id} = attrs) do
-    case Repo.get_by(Vote, %{voting_id: voting_id, author_id: author_id}) do
+  def create_or_update(%{statement_id: statement_id, author_id: author_id} = attrs) do
+    case Repo.get_by(Vote, %{statement_id: statement_id, author_id: author_id}) do
       nil -> create_vote(attrs)
       vote -> update_vote(vote, attrs)
     end
@@ -367,9 +367,9 @@ defmodule YouCongress.Votes do
     Repo.delete(vote)
   end
 
-  def delete_vote(%{voting_id: voting_id, author_id: author_id}) do
+  def delete_vote(%{statement_id: statement_id, author_id: author_id}) do
     from(v in Vote,
-      where: v.voting_id == ^voting_id and v.author_id == ^author_id
+      where: v.statement_id == ^statement_id and v.author_id == ^author_id
     )
     |> Repo.delete_all()
   end
@@ -395,9 +395,9 @@ defmodule YouCongress.Votes do
     Repo.aggregate(Vote, :count, :id)
   end
 
-  def count_by_voting(voting_id) do
+  def count_by_statement(statement_id) do
     from(v in Vote,
-      where: v.voting_id == ^voting_id,
+      where: v.statement_id == ^statement_id,
       select: count(v.id)
     )
     |> Repo.one()
@@ -418,19 +418,19 @@ defmodule YouCongress.Votes do
   end
 
   @doc """
-  Returns the number of votes of a voting.
+  Returns the number of votes of a statement.
 
   Example:
   > count_by_response(1)
   [{"for", 4}, {"against", 2}, {"abstain", 6}]
   """
-  def count_by_response(voting_id, opts \\ []) do
+  def count_by_response(statement_id, opts \\ []) do
     has_opinion_id = Keyword.get(opts, :has_opinion_id, nil)
     twin = Keyword.get(opts, :twin)
 
     query =
       from(v in Vote,
-        where: v.voting_id == ^voting_id,
+        where: v.statement_id == ^statement_id,
         group_by: v.answer,
         select: {v.answer, count(v.answer)}
       )
@@ -453,12 +453,12 @@ defmodule YouCongress.Votes do
     |> Repo.all()
   end
 
-  def count_by_response_map(voting_id, opts \\ []) do
-    count_by_response(voting_id, opts)
+  def count_by_response_map(statement_id, opts \\ []) do
+    count_by_response(statement_id, opts)
     |> Enum.into(%{})
   end
 
-  def count_with_opinion_source(voting_id, opts \\ []) do
+  def count_with_opinion_source(statement_id, opts \\ []) do
     source_filter = Keyword.get(opts, :source_filter)
     answer = Keyword.get(opts, :answer)
 
@@ -466,7 +466,7 @@ defmodule YouCongress.Votes do
       from v in Vote,
         join: o in YouCongress.Opinions.Opinion,
         on: v.opinion_id == o.id,
-        where: v.voting_id == ^voting_id and not is_nil(v.opinion_id),
+        where: v.statement_id == ^statement_id and not is_nil(v.opinion_id),
         select: count(v.id)
 
     query =
@@ -486,14 +486,14 @@ defmodule YouCongress.Votes do
     Repo.one(query)
   end
 
-  def count_by_response_map_by_source(voting_id, opts \\ []) do
+  def count_by_response_map_by_source(statement_id, opts \\ []) do
     source_filter = Keyword.get(opts, :source_filter)
 
     base_query =
       from v in Vote,
         join: o in YouCongress.Opinions.Opinion,
         on: v.opinion_id == o.id,
-        where: v.voting_id == ^voting_id and not is_nil(v.opinion_id),
+        where: v.statement_id == ^statement_id and not is_nil(v.opinion_id),
         group_by: v.answer,
         select: {v.answer, count(v.answer)}
 
@@ -516,8 +516,8 @@ defmodule YouCongress.Votes do
       opts,
       base_query,
       fn
-        {:voting_id, voting_id}, query ->
-          where(query, [v], v.voting_id == ^voting_id)
+        {:statement_id, statement_id}, query ->
+          where(query, [v], v.statement_id == ^statement_id)
 
         {:twin, twin}, query ->
           where(query, [v], v.twin == ^twin)
@@ -542,12 +542,12 @@ defmodule YouCongress.Votes do
     |> Repo.one()
   end
 
-  def get_current_user_vote(voting_id, author_id) do
+  def get_current_user_vote(statement_id, author_id) do
     Vote
     |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
     |> where(
       [v, a],
-      v.voting_id == ^voting_id and v.author_id == ^author_id
+      v.statement_id == ^statement_id and v.author_id == ^author_id
     )
     |> preload([:opinion])
     |> Repo.one()

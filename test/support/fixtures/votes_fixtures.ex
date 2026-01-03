@@ -5,7 +5,7 @@ defmodule YouCongress.VotesFixtures do
   """
 
   import YouCongress.AuthorsFixtures
-  import YouCongress.VotingsFixtures
+  import YouCongress.StatementsFixtures
 
   import YouCongress.OpinionsFixtures
   alias YouCongress.Votes
@@ -15,29 +15,29 @@ defmodule YouCongress.VotesFixtures do
   """
   def vote_fixture(attrs \\ %{}, generate_opinion \\ false) do
     generate_opinion = if generate_opinion, do: true, else: nil
-    voting_id = attrs[:voting_id] || voting_fixture().id
+    statement_id = attrs[:statement_id] || statement_fixture().id
 
     attrs =
       attrs
       |> Enum.into(%{
         author_id: author_fixture().id,
-        voting_id: voting_id,
+        statement_id: statement_id,
         answer: :for
       })
 
-    {attrs, _opinion} = add_opinion_if_not_present(attrs, voting_id, generate_opinion)
+    {attrs, _opinion} = add_opinion_if_not_present(attrs, statement_id, generate_opinion)
     {:ok, vote} = Votes.create_vote(attrs)
 
     vote
   end
 
-  defp add_opinion_if_not_present(attrs, voting_id, generate_opinion) do
+  defp add_opinion_if_not_present(attrs, statement_id, generate_opinion) do
     if !generate_opinion || attrs[:opinion_id] do
       {attrs, nil}
     else
       opinion =
         opinion_fixture(%{
-          voting_id: voting_id,
+          statement_id: statement_id,
           author_id: attrs[:author_id],
           twin: !!attrs[:twin]
         })

@@ -41,7 +41,7 @@
             <div class="mt-4">
               <Search.render
                 authors={@authors}
-                votings={@votings}
+                statements={@statements}
                 halls={@halls}
                 quotes={@quotes}
                 search_tab={@search_tab}
@@ -212,7 +212,7 @@
               </div>
             <% else %>
               <div class="pt-2 space-y-6">
-                <%= for voting <- @selection_votings do %>
+                <%= for statement <- @selection_statements do %>
                   <div class="bg-gradient-to-r from-gray-50 to-white p-6 rounded-2xl hover:shadow-lg transition duration-300">
                     <div class="flex text-left items-center mb-4">
                       <!-- Generic icon since we don't know the topic category -->
@@ -231,14 +231,14 @@
                         >
                         </path>
                       </svg>
-                      <.link href={~p"/p/#{voting.slug}"}>
+                      <.link href={~p"/p/#{statement.slug}"}>
                         <h3 class="text-xl font-semibold text-gray-900 hover:text-indigo-700 underline cursor-pointer">
-                          {voting.title}
+                          {statement.title}
                         </h3>
                       </.link>
                     </div>
 
-                    <%= if user_vote = @user_votes[voting.id] do %>
+                    <%= if user_vote = @user_votes[statement.id] do %>
                       <div class="mb-4 text-gray-700">
                         You're directly voting
                         <span class={"font-bold " <>
@@ -252,7 +252,7 @@
                         </span>
                         <button
                           phx-click="delete-vote"
-                          phx-value-id={voting.id}
+                          phx-value-id={statement.id}
                           class="ml-2 text-xs text-gray-500 underline hover:text-gray-700"
                         >
                           (Remove vote)
@@ -261,7 +261,7 @@
                       <div class="flex gap-2 mb-4 justify-center">
                         <button
                           phx-click="vote"
-                          phx-value-id={voting.id}
+                          phx-value-id={statement.id}
                           phx-value-answer="for"
                           class={"px-3 py-1 rounded-md text-sm font-medium transition-colors " <>
                             if user_vote.answer == :for, do: "bg-emerald-600 text-white", else: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
@@ -271,7 +271,7 @@
                         </button>
                         <button
                           phx-click="vote"
-                          phx-value-id={voting.id}
+                          phx-value-id={statement.id}
                           phx-value-answer="abstain"
                           class={"px-3 py-1 rounded-md text-sm font-medium transition-colors " <>
                             if user_vote.answer == :abstain, do: "bg-gray-600 text-white", else: "bg-gray-100 text-gray-800 hover:bg-gray-200"
@@ -281,7 +281,7 @@
                         </button>
                         <button
                           phx-click="vote"
-                          phx-value-id={voting.id}
+                          phx-value-id={statement.id}
                           phx-value-answer="against"
                           class={"px-3 py-1 rounded-md text-sm font-medium transition-colors " <>
                             if user_vote.answer == :against, do: "bg-rose-600 text-white", else: "bg-rose-100 text-rose-800 hover:bg-rose-200"
@@ -291,7 +291,7 @@
                         </button>
                       </div>
                     <% else %>
-                      <%= if majority_vote = calculate_majority_vote(voting, @selected_delegate_ids) do %>
+                      <%= if majority_vote = calculate_majority_vote(statement, @selected_delegate_ids) do %>
                         <div class="mb-4 text-gray-700">
                           You vote
                           <span class={"font-bold " <>
@@ -311,7 +311,7 @@
                         <div class="flex justify-center gap-2 mb-4">
                           <button
                             phx-click="vote"
-                            phx-value-id={voting.id}
+                            phx-value-id={statement.id}
                             phx-value-answer="for"
                             class="px-3 py-1 rounded-md text-sm font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors"
                           >
@@ -319,7 +319,7 @@
                           </button>
                           <button
                             phx-click="vote"
-                            phx-value-id={voting.id}
+                            phx-value-id={statement.id}
                             phx-value-answer="abstain"
                             class="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors"
                           >
@@ -327,7 +327,7 @@
                           </button>
                           <button
                             phx-click="vote"
-                            phx-value-id={voting.id}
+                            phx-value-id={statement.id}
                             phx-value-answer="against"
                             class="px-3 py-1 rounded-md text-sm font-medium bg-rose-100 text-rose-800 hover:bg-rose-200 transition-colors"
                           >
@@ -338,7 +338,7 @@
                     <% end %>
 
                     <div class="pl-0 md:pl-8 space-y-4">
-                      <%= for opinion <- voting.opinions do %>
+                      <%= for opinion <- statement.opinions do %>
                         <div class="bg-white/80 p-4 rounded-lg border border-gray-100 shadow-sm">
                           <div class="flex items-center gap-2 mb-2">
                             <.link
@@ -351,7 +351,7 @@
                             >
                               {opinion.author.name}
                             </.link>
-                            <%= if answer = get_vote_answer(voting, opinion.author_id) do %>
+                            <%= if answer = get_vote_answer(statement, opinion.author_id) do %>
                               <span class={"text-xs px-2 py-0.5 rounded-full font-medium " <>
                                 case answer do
                                   :for -> "bg-emerald-100 text-emerald-800"
@@ -389,7 +389,7 @@
                               </.link>
                             <% end %>
                             <.link
-                              href={~p"/p/#{voting.slug}"}
+                              href={~p"/p/#{statement.slug}"}
                               class="text-indigo-600 hover:text-indigo-800 text-sm font-medium ml-1 inline-flex items-center"
                             >
                               View arguments from others

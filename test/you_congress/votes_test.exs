@@ -2,7 +2,7 @@ defmodule YouCongress.VotesTest do
   use YouCongress.DataCase
 
   import YouCongress.AuthorsFixtures
-  import YouCongress.VotingsFixtures
+  import YouCongress.StatementsFixtures
   import YouCongress.VotesFixtures
 
   import YouCongress.OpinionsFixtures
@@ -27,7 +27,7 @@ defmodule YouCongress.VotesTest do
       valid_attrs = %{
         opinion_id: opinion_fixture().id,
         author_id: author_fixture().id,
-        voting_id: voting_fixture().id,
+        statement_id: statement_fixture().id,
         answer: :for
       }
 

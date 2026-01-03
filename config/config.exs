@@ -67,10 +67,10 @@ config :you_congress, Oban,
     Oban.Plugins.Lifeline,
     {Oban.Plugins.Cron,
      crontab: [
-       # Touch a voting every day at 7am
-       {"0 7 * * *", YouCongress.Workers.TouchVotingWorker, args: %{}, max_attempts: 2},
-       # Touch a voting every day at 7pm
-       {"0 19 * * *", YouCongress.Workers.TouchVotingWorker, args: %{}, max_attempts: 2}
+       # Touch a statement every day at 7am
+       {"0 7 * * *", YouCongress.Workers.TouchStatementWorker, args: %{}, max_attempts: 2},
+       # Touch a statement every day at 7pm
+       {"0 19 * * *", YouCongress.Workers.TouchStatementWorker, args: %{}, max_attempts: 2}
      ]}
   ],
   queues: [

@@ -26,9 +26,10 @@ defmodule YouCongress.AccountsFixtures do
       author_attrs ||
         %{
           name: Faker.Person.name(),
-          twitter_username: Faker.Internet.user_name(),
+          twitter_username: "#{Faker.Internet.user_name()}#{System.unique_integer()}",
           bio: Faker.Lorem.sentence(),
-          wikipedia_url: "https://en.wikipedia.org/wiki/#{Faker.Internet.user_name()}",
+          wikipedia_url:
+            "https://en.wikipedia.org/wiki/#{Faker.Internet.user_name()}#{System.unique_integer()}",
           twin_origin: false
         }
 

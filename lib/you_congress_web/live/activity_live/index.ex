@@ -8,7 +8,7 @@ defmodule YouCongressWeb.ActivityLive.Index do
   alias YouCongress.Delegations
   alias YouCongress.Votes
   alias YouCongressWeb.OpinionLive.OpinionComponent
-  alias YouCongressWeb.VotingLive.CastVoteComponent
+  alias YouCongressWeb.StatementLive.CastVoteComponent
   alias YouCongressWeb.Components.SwitchComponent
 
   @per_page 15
@@ -35,8 +35,8 @@ defmodule YouCongressWeb.ActivityLive.Index do
       |> assign(page_title: "Activity")
       |> assign(page: 1)
       |> assign(
-        :current_user_votes_by_voting_id,
-        get_current_user_votes_by_voting_id(current_user)
+        :current_user_votes_by_statement_id,
+        get_current_user_votes_by_statement_id(current_user)
       )
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
 
@@ -57,8 +57,8 @@ defmodule YouCongressWeb.ActivityLive.Index do
 
   defp list_opinions(socket) do
     base_opts = [
-      preload: [:votings, :author],
-      has_votings: true,
+      preload: [:statements, :author],
+      has_statements: true,
       order_by: [desc: :id],
       limit: @per_page
     ]
@@ -75,8 +75,8 @@ defmodule YouCongressWeb.ActivityLive.Index do
 
   defp list_opinions(socket, offset) do
     base_opts = [
-      preload: [:votings, :author],
-      has_votings: true,
+      preload: [:statements, :author],
+      has_statements: true,
       order_by: [desc: :id],
       limit: @per_page,
       offset: offset
@@ -143,11 +143,11 @@ defmodule YouCongressWeb.ActivityLive.Index do
 
   def handle_info(_, socket), do: {:noreply, socket}
 
-  def get_current_user_votes_by_voting_id(nil), do: %{}
+  def get_current_user_votes_by_statement_id(nil), do: %{}
 
-  def get_current_user_votes_by_voting_id(current_user) do
+  def get_current_user_votes_by_statement_id(current_user) do
     [author_ids: [current_user.author_id]]
     |> Votes.list_votes()
-    |> Enum.reduce(%{}, fn vote, acc -> Map.put(acc, vote.voting_id, vote) end)
+    |> Enum.reduce(%{}, fn vote, acc -> Map.put(acc, vote.statement_id, vote) end)
   end
 end

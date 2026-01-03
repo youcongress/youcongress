@@ -4,7 +4,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
   import Phoenix.LiveViewTest
   import YouCongress.AuthorsFixtures
   import YouCongress.OpinionsFixtures
-  import YouCongress.VotingsFixtures
+  import YouCongress.StatementsFixtures
   import YouCongress.VotesFixtures
   import YouCongress.AccountsFixtures
 
@@ -15,13 +15,13 @@ defmodule YouCongressWeb.OpinionLiveTest do
     test "comment under a comment", %{conn: conn} do
       conn = log_in_as_user(conn)
       author1 = author_fixture(%{name: "Someone1"})
-      voting = voting_fixture(%{author_id: author1.id})
+      voting = statement_fixture(%{author_id: author1.id})
 
       opinion =
         opinion_fixture(%{
           author_id: author1.id,
           content: "Opinion1",
-          voting_id: voting.id,
+          statement_id: voting.id,
           twin: false
         })
 
@@ -102,7 +102,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
       conn = log_in_user(conn, user)
 
       # Create a voting and opinion by the original author
-      voting = voting_fixture()
+      voting = statement_fixture()
 
       opinion =
         opinion_fixture(%{
@@ -117,7 +117,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
       vote =
         vote_fixture(%{
           author_id: original_author.id,
-          voting_id: voting.id,
+          statement_id: voting.id,
           opinion_id: opinion.id
         })
 

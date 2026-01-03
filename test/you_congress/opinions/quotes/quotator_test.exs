@@ -2,14 +2,14 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
   use YouCongress.DataCase
 
   import YouCongress.AccountsFixtures
-  import YouCongress.VotingsFixtures
+  import YouCongress.StatementsFixtures
 
   alias YouCongress.Opinions.Quotes.Quotator
   alias YouCongress.{Votes, Opinions}
 
   describe "find_and_save_quotes/3 with QuotatorFake" do
     test "forwards exclude list, sets generating counters, and creates votes/opinions" do
-      voting = voting_fixture(%{title: "Test Voting Title"})
+      voting = statement_fixture(%{title: "Test Statement Title"})
       user = user_fixture(%{name: "Test User"})
 
       exclude = ["Excluded Name"]
@@ -19,7 +19,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
       assert saved_count == Quotator.number_of_quotes()
 
       # 20 votes should be created for the generated quotes
-      assert Votes.count_by_voting(voting.id) == Quotator.number_of_quotes()
+      assert Votes.count_by_statement(voting.id) == Quotator.number_of_quotes()
 
       votes = Votes.list_votes(voting.id)
       # Votes should be direct and not twins
