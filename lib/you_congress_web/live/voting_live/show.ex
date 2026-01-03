@@ -14,6 +14,7 @@ defmodule YouCongressWeb.VotingLive.Show do
   alias YouCongress.Workers.QuotatorWorker
   alias YouCongress.Accounts.Permissions
   alias YouCongressWeb.VotingLive.CastVoteComponent
+  alias YouCongressWeb.VotingLive.ResultsComponent
   alias YouCongress.HallsVotings
   alias YouCongress.Opinions.Quotes.QuotatorAI
 

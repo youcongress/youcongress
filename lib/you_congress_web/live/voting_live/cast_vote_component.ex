@@ -225,6 +225,8 @@ defmodule YouCongressWeb.VotingLive.CastVoteComponent do
             preload: [:opinion]
           )
 
+        send(self(), {:voted, vote})
+
         socket =
           socket
           |> assign(:current_user_vote, vote)

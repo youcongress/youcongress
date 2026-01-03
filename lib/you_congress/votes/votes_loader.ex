@@ -9,6 +9,7 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
   alias YouCongress.Votings.Voting
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
+  alias YouCongress.Votes.VoteFrequencies
   alias YouCongress.Delegations
   alias YouCongress.Accounts.User
 
@@ -68,7 +69,9 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
       quotes_votes_count: quotes_votes_count,
       users_votes_count: users_votes_count,
       total_opinions: Votes.count_by(voting_id: voting_id),
-      opinions_by_response: get_opinions_by_response(voting.id, source_filter)
+      opinions_by_response: get_opinions_by_response(voting.id, source_filter),
+      vote_frequencies: VoteFrequencies.get(voting_id),
+      total_votes: Votes.count_by_voting(voting_id)
     )
     |> assign_main_variables(voting, current_user)
   end
