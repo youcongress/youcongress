@@ -1,6 +1,6 @@
 defmodule YouCongressWeb.StatementLive.Index.Search do
   @moduledoc """
-  Search motions, delegates, halls, and quotes
+  Search statements (policy proposals and claims), delegates, halls, and quotes
   """
   use Phoenix.Component
   use Phoenix.VerifiedRoutes, endpoint: YouCongressWeb.Endpoint, router: YouCongressWeb.Router
