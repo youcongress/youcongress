@@ -152,12 +152,13 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
 
   def highlight(assigns) do
     terms =
-      (assigns.terms || [assigns.term]) |> Enum.reject(&is_nil/1) |> Enum.reject(&(&1 == ""))
+      (assigns.terms || [assigns.term])
+      |> Enum.reject(&(&1 == nil or &1 == ""))
 
     if terms == [] do
       ~H"{@text}"
     else
-      pattern = terms |> Enum.map(&Regex.escape/1) |> Enum.join("|")
+      pattern = Enum.map_join(terms, "|", &Regex.escape/1)
       regex = Regex.compile!(pattern, "i")
       parts = Regex.split(regex, assigns.text, include_captures: true)
       assigns = assign(assigns, parts: parts, regex: regex)

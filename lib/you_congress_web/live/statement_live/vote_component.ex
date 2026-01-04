@@ -159,10 +159,10 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
   defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
 
   defp response(assigns, response) do
-    response_Text = response(response)
+    response_text = response(response)
 
     assigns =
-      assign(assigns, color: response_color(response), response: response_Text)
+      assign(assigns, color: response_color(response), response: response_text)
 
     ~H"""
     <span class={"#{@color} font-bold"}>
