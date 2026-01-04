@@ -5,5 +5,7 @@ defmodule YouCongressWeb.MCPServer do
     capabilities: [:tools]
 
   # Tools
-  component(YouCongressWeb.MCPServer.Search)
+  component(YouCongressWeb.MCPServer.OpinionsSearch)
+  component(YouCongressWeb.MCPServer.StatementsSearch)
+  component(YouCongressWeb.MCPServer.StatementsList)
 end

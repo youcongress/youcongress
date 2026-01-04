@@ -23,7 +23,7 @@ defmodule YouCongressWeb.Router do
     pipe_through(:api)
 
     forward "/mcp", Elixir.Anubis.Server.Transport.StreamableHTTP.Plug,
-      server: YouCongressWeb.MCPServerHTTP
+      server: YouCongressWeb.MCPServer
   end
 
   scope "/", YouCongressWeb do
