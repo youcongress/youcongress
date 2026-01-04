@@ -102,7 +102,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign_votes(1)
       |> assign(search: nil, search_tab: nil)
 
-    {:norereply, socket}
+    {:noreply, socket}
   end
 
   def handle_event("search", %{"search" => search}, socket) do
