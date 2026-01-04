@@ -19,10 +19,19 @@ defmodule YouCongressWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  scope "/" do
+    pipe_through(:api)
+
+    forward "/mcp", Elixir.Anubis.Server.Transport.StreamableHTTP.Plug,
+      server: YouCongressWeb.MCPServerHTTP
+  end
+
   scope "/", YouCongressWeb do
     pipe_through(:browser)
-
-    forward "/mcp", Anubis.Server.Transport.StreamableHTTP.Plug, server: YouCongress.MCPServer
+    # # Or if using only Plug router
+    # forward "/mcp",
+    #   to: Anubis.Server.Transport.StreamableHTTP.Plug,
+    #   init_opts: [server: YouCongressWeb.MCPServer]
 
     get("/sim", SimController, :index)
     live("/home", StatementLive.Index, :index)

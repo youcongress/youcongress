@@ -1,4 +1,4 @@
-defmodule YouCongressWeb.MCPServer do
+defmodule YouCongressWeb.MCPServerHTTP do
   use Anubis.Server,
     name: "YouCongress",
     version: "1.0.0",
