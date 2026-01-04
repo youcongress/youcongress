@@ -24,7 +24,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       |> form("form[phx-submit=search]", %{"search" => "AI"})
       |> render_submit()
 
-      assert render(view) =~ "Search quotes, people, statements..."
+      assert render(view) =~ "Search quotes, people, policies..."
     end
   end
 
