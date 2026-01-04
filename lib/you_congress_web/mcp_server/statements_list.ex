@@ -1,5 +1,8 @@
 defmodule YouCongressWeb.MCPServer.StatementsList do
-  @moduledoc "Search statements on YouCongress."
+  @moduledoc """
+  Search statements (policy proposals and claims).
+  You may use the statement_id to search quotes later.
+  """
 
   use Anubis.Server.Component, type: :tool
 

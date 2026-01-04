@@ -8,12 +8,13 @@ defmodule YouCongressWeb.MCPServer.OpinionsSearch do
 
   schema do
     field :query, :string, required: false
-    field :statement_ids, :array, required: false
+    field :statement_id, :string, required: false
   end
 
   def execute(params, frame) do
-    query = Map.get(params, :query)
     statement_id = Map.get(params, :statement_id)
+    statement_id = if statement_id, do: String.to_integer(statement_id), else: nil
+    query = if statement_id, do: nil, else: Map.get(params, :query)
 
     opinions_args = [preload: [:author], limit: 100]
 
@@ -38,7 +39,8 @@ defmodule YouCongressWeb.MCPServer.OpinionsSearch do
         %{
           quote: opinion.content,
           author: opinion.author.name,
-          source_url: opinion.source_url
+          source_url: opinion.source_url,
+          year: opinion.year
         }
       end)
 
