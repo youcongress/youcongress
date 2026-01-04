@@ -11,41 +11,53 @@ defmodule YouCongress.Seeds do
   alias YouCongress.Votes
 
   def run do
-    user = create_user()
+    user = find_or_create_user()
 
     if user do
-      authors = create_authors(%{name: "Admin", bio: "YCO admin"})
+      authors = create_authors()
       statements = create_statements(user)
       create_opinions_and_votes(user, authors, statements)
     end
   end
 
-  defp create_user do
-    email = "admin@youcongress.org"
-    password = "admin:1234"
+  defp find_or_create_user do
+    args = %{
+      "email" => "admin@youcongress.org",
+      "password" => "admin:1234",
+      "name" => "Admin",
+      "bio" => "YouCongress 1st admin"
+    }
 
-    if user = Accounts.get_user_by_email(email) do
-      IO.puts("User #{email} already exists.")
+    if user = Accounts.get_user_by_email(args["email"]) do
+      IO.puts("User #{args["email"]} already exists.")
       user
     else
-      case Accounts.register_user(%{"email" => email, "password" => password}) do
-        {:ok, %{user: user}} ->
-          IO.puts("User #{email} created successfully.")
+      create_user(args)
+    end
+  end
 
-          case Accounts.update_role(user, "admin") do
-            {:ok, updated_user} ->
-              IO.puts("User #{email} role updated to admin.")
-              updated_user
+  defp create_user(args) do
+    case Accounts.register_user(args) do
+      {:ok, %{user: user}} ->
+        IO.puts("User #{args["email"]} created successfully.")
 
-            {:error, changeset} ->
-              IO.inspect(changeset, label: "Failed to update role")
-              user
-          end
+        make_admin(user)
 
-        {:error, changeset} ->
-          IO.inspect(changeset, label: "Failed to create user")
-          nil
-      end
+      {:error, changeset} ->
+        IO.inspect(changeset, label: "Failed to create user")
+        nil
+    end
+  end
+
+  defp make_admin(user) do
+    case Accounts.update_role(user, "admin") do
+      {:ok, updated_user} ->
+        IO.puts("User #{user.email} role updated to admin.")
+        updated_user
+
+      {:error, changeset} ->
+        IO.inspect(changeset, label: "Failed to update role")
+        user
     end
   end
 
@@ -82,17 +94,33 @@ defmodule YouCongress.Seeds do
   end
 
   defp create_statements(user) do
-    polls = [
-      "Create a global institute for AI safety, similar to CERN",
-      "Mandatory third-party audits for major AI systems",
-      "Require AI systems above a capability threshold to be interpretable",
-      "Ban autonomous lethal weapons",
-      "Ban open-source AI models capable of creating WMDs"
+    statements = [
+      %{
+        title: "Create a global institute for AI safety, similar to CERN",
+        slug: "cern-for-ai"
+      },
+      %{
+        title: "Mandatory third-party audits for major AI systems",
+        slug: "mandatory-third-party-ai-audits"
+      },
+      %{
+        title: "Require AI systems above a capability threshold to be interpretable",
+        slug: "ai-interpretability-threshold"
+      },
+      %{
+        title: "Ban autonomous lethal weapons",
+        slug: "ban-autonomous-weapons"
+      },
+      %{
+        title: "Ban open-source AI models capable of creating WMDs",
+        slug: "open-source-ai-wmd-risk"
+      }
     ]
 
-    Enum.map(polls, fn poll ->
+    Enum.map(statements, fn statement ->
       case Statements.create_statement(%{
-             "title" => poll,
+             "title" => statement.title,
+             "slug" => statement.slug,
              "user_id" => user.id
            }) do
         {:ok, statement} ->
@@ -100,11 +128,11 @@ defmodule YouCongress.Seeds do
           statement
 
         {:error, %{errors: [title: {"has already been taken", _}]} = _changeset} ->
-          IO.puts("Statement #{poll} already exists, fetching...")
-          Statements.get_by(title: poll)
+          IO.puts("Statement #{statement} already exists, fetching...")
+          Statements.get_by(title: statement)
 
         {:error, changeset} ->
-          IO.inspect(changeset, label: "Failed to create statement #{poll}")
+          IO.inspect(changeset, label: "Failed to create statement #{statement}")
           nil
       end
     end)
@@ -115,9 +143,9 @@ defmodule YouCongress.Seeds do
     for author <- authors, statement <- statements do
       opinion_attrs = %{
         "content" => Faker.Lorem.sentence(5..15),
-        "twin" => false,
         "author_id" => author.id,
-        "user_id" => user.id
+        "user_id" => user.id,
+        "source_url" => Faker.Internet.url()
       }
 
       case Opinions.create_opinion(opinion_attrs) do
