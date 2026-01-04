@@ -17,7 +17,8 @@ defmodule YouCongressWeb.MCPServer.Search do
       |> Enum.map(fn opinion ->
         %{
           quote: opinion.content,
-          author: opinion.author.name
+          author: opinion.author.name,
+          source_url: opinion.source_url
         }
       end)
 
