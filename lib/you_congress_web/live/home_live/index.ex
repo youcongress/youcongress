@@ -81,7 +81,7 @@ defmodule YouCongressWeb.HomeLive.Index do
   end
 
   def handle_event("search-tab", %{"tab" => "motions"}, socket) do
-    {:noreply, assign(socket, search_tab: :motions)}
+    {:noreply, assign(socket, search_tab: :statements)}
   end
 
   def handle_event("search-tab", %{"tab" => "delegates"}, socket) do
@@ -198,7 +198,7 @@ defmodule YouCongressWeb.HomeLive.Index do
 
   defp perform_search(socket, search) do
     Track.event("Search via Home", socket.assigns.current_user)
-    statements = Statements.list_statements(title_contains: search, preload: [:halls])
+    statements = Statements.list_statements(search: search, preload: [:halls])
     authors = Authors.list_authors(search: search)
     halls = Halls.list_halls(name_contains: search)
     quotes = Opinions.list_opinions(search: search, preload: [:author])
@@ -207,7 +207,7 @@ defmodule YouCongressWeb.HomeLive.Index do
       cond do
         Enum.any?(quotes) -> :quotes
         Enum.any?(authors) -> :delegates
-        Enum.any?(statements) -> :motions
+        Enum.any?(statements) -> :statements
         Enum.any?(halls) -> :halls
         true -> :quotes
       end

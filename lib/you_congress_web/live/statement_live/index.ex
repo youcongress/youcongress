@@ -110,7 +110,7 @@ defmodule YouCongressWeb.StatementLive.Index do
   end
 
   def handle_event("search-tab", %{"tab" => "motions"}, socket) do
-    {:noreply, assign(socket, search_tab: :motions)}
+    {:noreply, assign(socket, search_tab: :statements)}
   end
 
   def handle_event("search-tab", %{"tab" => "delegates"}, socket) do
@@ -284,7 +284,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       cond do
         Enum.any?(quotes) -> :quotes
         Enum.any?(authors) -> :delegates
-        Enum.any?(statements) -> :motions
+        Enum.any?(statements) -> :statements
         Enum.any?(halls) -> :halls
         true -> :quotes
       end

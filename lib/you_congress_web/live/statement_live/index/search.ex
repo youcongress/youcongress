@@ -32,14 +32,14 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
           />
           <Search.tab
             search_tab={@search_tab}
-            tab={:motions}
-            label={"Motions (#{length(@statements)})"}
+            tab={:statements}
+            label={"Statements (#{length(@statements)})"}
           />
           <Search.tab search_tab={@search_tab} tab={:halls} label={"Halls (#{length(@halls)})"} />
         </nav>
       </div>
     </div>
-    <%= if @search_tab == :motions do %>
+    <%= if @search_tab == :statements do %>
       <table>
         <%= for statement <- @statements do %>
           <tr>
