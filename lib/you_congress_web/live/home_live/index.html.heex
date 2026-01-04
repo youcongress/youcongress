@@ -29,7 +29,7 @@
                 type="search"
                 name="search"
                 value={@search}
-                placeholder="Search quotes, people, motions..."
+                placeholder="Search quotes, people, statements..."
                 class="block w-full rounded-lg text-zinc-900 focus:ring-1 focus:ring-indigo-600 sm:text-sm sm:leading-6 border-zinc-300"
               />
             </form>
@@ -76,7 +76,9 @@
             </div>
 
             <%= if @selected_delegate_ids == [] do %>
-              <div class="mt-8 pb-2 text-xl">Trending motions</div>
+              <div class="mt-8 pb-2 text-xl">
+                Trending statements (policy proposals and claims)
+              </div>
               <div class="space-y-6">
                 <div class="bg-gradient-to-r from-emerald-50 to-white p-6 rounded-2xl hover:shadow-lg transition duration-300">
                   <div class="flex text-left items-center mb-3">

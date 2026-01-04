@@ -109,7 +109,7 @@ defmodule YouCongressWeb.StatementLive.Index do
     {:noreply, perform_search(socket, search)}
   end
 
-  def handle_event("search-tab", %{"tab" => "motions"}, socket) do
+  def handle_event("search-tab", %{"tab" => "statements"}, socket) do
     {:noreply, assign(socket, search_tab: :statements)}
   end
 
@@ -179,7 +179,7 @@ defmodule YouCongressWeb.StatementLive.Index do
   defp maybe_apply_search_params(socket, _params), do: socket
 
   defp assign_tab_from_params(socket, tab)
-       when tab in ["quotes", "delegates", "motions", "halls"] do
+       when tab in ["quotes", "delegates", "statements", "halls"] do
     assign(socket, :search_tab, String.to_existing_atom(tab))
   end
 

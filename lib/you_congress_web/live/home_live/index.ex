@@ -80,7 +80,7 @@ defmodule YouCongressWeb.HomeLive.Index do
     {:noreply, perform_search(socket, search)}
   end
 
-  def handle_event("search-tab", %{"tab" => "motions"}, socket) do
+  def handle_event("search-tab", %{"tab" => "statements"}, socket) do
     {:noreply, assign(socket, search_tab: :statements)}
   end
 
