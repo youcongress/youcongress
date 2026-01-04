@@ -9,7 +9,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.Track
   alias YouCongress.Delegations
   alias YouCongressWeb.OpinionLive.OpinionComponent
-  alias YouCongress.Votings
+  alias YouCongress.Statements
   alias YouCongress.Votes
   alias YouCongress.Accounts.Permissions
 
@@ -48,8 +48,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
        search_results: [],
        show_search: false,
        show_vote_modal: false,
-       selected_voting_id: nil,
-       selected_voting_title: nil,
+       selected_statement_id: nil,
+       selected_statement_title: nil,
        editing_opinion_id: nil
      )}
   end
@@ -135,7 +135,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   def handle_event("delete-comment", %{"opinion_id" => opinion_id}, socket) do
-    opinion = Opinions.get_opinion!(opinion_id, preload: [:votings])
+    opinion = Opinions.get_opinion!(opinion_id, preload: [:statements])
 
     {_count, nil} =
       Opinions.delete_opinion_and_descendants(opinion)
@@ -157,17 +157,17 @@ defmodule YouCongressWeb.OpinionLive.Show do
     {:noreply, assign(socket, :show_search, !socket.assigns.show_search)}
   end
 
-  def handle_event("search-votings", %{"value" => query}, socket) do
+  def handle_event("search-statements", %{"value" => query}, socket) do
     %{assigns: %{opinion: opinion}} = socket
 
     search_results =
       if String.length(query) >= 2 do
-        # Get existing voting IDs for this opinion
-        existing_voting_ids = Enum.map(opinion.votings, & &1.id)
+        # Get existing statement IDs for this opinion
+        existing_statement_ids = Enum.map(opinion.statements, & &1.id)
 
-        # Search for votings and exclude ones already associated
-        Votings.list_votings(title_contains: query, limit: 10)
-        |> Enum.reject(fn voting -> voting.id in existing_voting_ids end)
+        # Search for statements and exclude ones already associated
+        Statements.list_statements(title_contains: query, limit: 10)
+        |> Enum.reject(fn statement -> statement.id in existing_statement_ids end)
       else
         []
       end
@@ -178,18 +178,18 @@ defmodule YouCongressWeb.OpinionLive.Show do
      |> assign(:search_results, search_results)}
   end
 
-  def handle_event("show-vote-options", %{"voting_id" => voting_id}, socket) do
+  def handle_event("show-vote-options", %{"statement_id" => statement_id}, socket) do
     %{assigns: %{search_results: search_results}} = socket
 
-    voting_id_int = String.to_integer(voting_id)
-    voting = Enum.find(search_results, fn v -> v.id == voting_id_int end)
+    statement_id_int = String.to_integer(statement_id)
+    statement = Enum.find(search_results, fn s -> s.id == statement_id_int end)
 
     socket =
       socket
       |> assign(:show_search, false)
       |> assign(:show_vote_modal, true)
-      |> assign(:selected_voting_id, voting_id_int)
-      |> assign(:selected_voting_title, voting.title)
+      |> assign(:selected_statement_id, statement_id_int)
+      |> assign(:selected_statement_title, statement.title)
 
     {:noreply, socket}
   end
@@ -198,15 +198,15 @@ defmodule YouCongressWeb.OpinionLive.Show do
     socket =
       socket
       |> assign(:show_vote_modal, false)
-      |> assign(:selected_voting_id, nil)
-      |> assign(:selected_voting_title, nil)
+      |> assign(:selected_statement_id, nil)
+      |> assign(:selected_statement_title, nil)
 
     {:noreply, socket}
   end
 
   def handle_event(
-        "add-to-voting-with-vote",
-        %{"voting_id" => voting_id, "answer" => answer},
+        "add-to-statement-with-vote",
+        %{"statement_id" => statement_id, "answer" => answer},
         socket
       ) do
     %{assigns: %{opinion: opinion, current_user: current_user}} = socket
@@ -214,10 +214,10 @@ defmodule YouCongressWeb.OpinionLive.Show do
     opinion = Map.put(opinion, :user_id, current_user.id)
 
     with {:ok, _updated_opinion} <-
-           Opinions.add_opinion_to_voting(opinion, String.to_integer(voting_id)),
+           Opinions.add_opinion_to_statement(opinion, String.to_integer(statement_id)),
          {:ok, _vote} <-
-           create_or_update_vote(current_user, opinion, String.to_integer(voting_id), answer) do
-      Track.event("Add Opinion to Voting with Vote", current_user)
+           create_or_update_vote(current_user, opinion, String.to_integer(statement_id), answer) do
+      Track.event("Add Opinion to Statement with Vote", current_user)
 
       socket =
         socket
@@ -226,29 +226,30 @@ defmodule YouCongressWeb.OpinionLive.Show do
         |> assign(:search_query, "")
         |> assign(:search_results, [])
         |> assign(:show_vote_modal, false)
-        |> assign(:selected_voting_id, nil)
-        |> assign(:selected_voting_title, nil)
-        |> put_flash(:info, "Opinion added to voting with your vote (#{answer}) successfully.")
+        |> assign(:selected_statement_id, nil)
+        |> assign(:selected_statement_title, nil)
+        |> put_flash(:info, "Opinion added to statement with your vote (#{answer}) successfully.")
 
       {:noreply, socket}
     else
       {:error, :already_associated} ->
-        {:noreply, socket |> put_flash(:error, "Opinion is already associated with this voting.")}
+        {:noreply,
+         socket |> put_flash(:error, "Opinion is already associated with this statement.")}
 
       {:error, error} ->
-        Logger.error("Error adding opinion to voting: #{inspect(error)}")
-        {:noreply, socket |> put_flash(:error, "Failed to add opinion to voting.")}
+        Logger.error("Error adding opinion to statement: #{inspect(error)}")
+        {:noreply, socket |> put_flash(:error, "Failed to add opinion to statement.")}
     end
   end
 
-  def handle_event("add-to-voting", %{"voting_id" => voting_id}, socket) do
+  def handle_event("add-to-statement", %{"statement_id" => statement_id}, socket) do
     %{assigns: %{opinion: opinion, current_user: current_user}} = socket
 
     opinion = Map.put(opinion, :user_id, current_user.id)
 
-    case Opinions.add_opinion_to_voting(opinion, String.to_integer(voting_id)) do
+    case Opinions.add_opinion_to_statement(opinion, String.to_integer(statement_id)) do
       {:ok, _updated_opinion} ->
-        Track.event("Add Opinion to Voting", current_user)
+        Track.event("Add Opinion to Statement", current_user)
 
         socket =
           socket
@@ -256,16 +257,17 @@ defmodule YouCongressWeb.OpinionLive.Show do
           |> assign(:show_search, false)
           |> assign(:search_query, "")
           |> assign(:search_results, [])
-          |> put_flash(:info, "Opinion added to voting successfully.")
+          |> put_flash(:info, "Opinion added to statement successfully.")
 
         {:noreply, socket}
 
       {:error, :already_associated} ->
-        {:noreply, socket |> put_flash(:error, "Opinion is already associated with this voting.")}
+        {:noreply,
+         socket |> put_flash(:error, "Opinion is already associated with this statement.")}
 
       {:error, error} ->
-        Logger.error("Error adding opinion to voting: #{inspect(error)}")
-        {:noreply, socket |> put_flash(:error, "Failed to add opinion to voting.")}
+        Logger.error("Error adding opinion to statement: #{inspect(error)}")
+        {:noreply, socket |> put_flash(:error, "Failed to add opinion to statement.")}
     end
   end
 
@@ -289,14 +291,14 @@ defmodule YouCongressWeb.OpinionLive.Show do
     {:noreply, assign(socket, :editing_opinion_id, nil)}
   end
 
-  defp create_or_update_vote(_current_user, opinion, voting_id, answer) do
+  defp create_or_update_vote(_current_user, opinion, statement_id, answer) do
     alias YouCongress.Votes
 
     answer_atom = String.downcase(answer) |> String.to_existing_atom()
 
     vote_params = %{
       author_id: opinion.author_id,
-      voting_id: voting_id,
+      statement_id: statement_id,
       answer: answer_atom,
       opinion_id: opinion.id,
       direct: true,
@@ -307,33 +309,33 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   defp load_opinion!(socket, opinion_id) do
-    opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :votings])
+    opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :statements])
     opinion_with_votes = load_author_votes_for_opinion(opinion)
     assign(socket, opinion: opinion_with_votes)
   end
 
   defp load_author_votes_for_opinion(opinion) do
-    if opinion.author && opinion.votings && opinion.votings != [] do
-      voting_ids = Enum.map(opinion.votings, & &1.id)
+    if opinion.author && opinion.statements && opinion.statements != [] do
+      statement_ids = Enum.map(opinion.statements, & &1.id)
 
-      # Get author's votes for these votings
+      # Get author's votes for these statements
       votes =
         YouCongress.Votes.list_votes(
           author_ids: [opinion.author.id],
-          voting_ids: voting_ids,
+          statement_ids: statement_ids,
           preload: []
         )
 
-      # Create a map of voting_id -> vote for easy lookup
-      votes_by_voting = Map.new(votes, fn vote -> {vote.voting_id, vote} end)
+      # Create a map of statement_id -> vote for easy lookup
+      votes_by_statement = Map.new(votes, fn vote -> {vote.statement_id, vote} end)
 
-      # Add votes to each voting
-      votings_with_votes =
-        Enum.map(opinion.votings, fn voting ->
-          Map.put(voting, :author_vote, Map.get(votes_by_voting, voting.id))
+      # Add votes to each statement
+      statements_with_votes =
+        Enum.map(opinion.statements, fn statement ->
+          Map.put(statement, :author_vote, Map.get(votes_by_statement, statement.id))
         end)
 
-      Map.put(opinion, :votings, votings_with_votes)
+      Map.put(opinion, :statements, statements_with_votes)
     else
       opinion
     end

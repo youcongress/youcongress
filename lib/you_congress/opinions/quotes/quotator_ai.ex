@@ -57,7 +57,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
   @spec find_quotes(integer, binary, list(binary), integer() | nil, integer(), integer()) ::
           {:ok, :job_started} | {:error, binary}
   def find_quotes(
-        voting_id,
+        statement_id,
         question_title,
         exclude_author_names,
         user_id,
@@ -71,7 +71,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
       # Enqueue polling worker
       %{
         job_id: job_id,
-        voting_id: voting_id,
+        statement_id: statement_id,
         user_id: user_id,
         max_remaining_llm_calls: max_remaining_llm_calls,
         max_remaining_quotes: max_remaining_quotes
@@ -129,14 +129,14 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     end
   end
 
-  def check_polling_job_status(voting_id) do
+  def check_polling_job_status(statement_id) do
     import Ecto.Query
     alias Oban.Job
 
     query =
       from(j in Job,
         where: j.worker == "YouCongress.Workers.QuotatorPollingWorker",
-        where: fragment("?->>'voting_id' = ?", j.args, ^to_string(voting_id)),
+        where: fragment("?->>'statement_id' = ?", j.args, ^to_string(statement_id)),
         where: j.state in ["scheduled", "available", "executing", "retryable"]
       )
 

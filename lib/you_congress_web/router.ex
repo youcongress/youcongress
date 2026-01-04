@@ -25,11 +25,11 @@ defmodule YouCongressWeb.Router do
     forward "/mcp", Anubis.Server.Transport.StreamableHTTP.Plug, server: YouCongress.MCPServer
 
     get("/sim", SimController, :index)
-    live("/home", VotingLive.Index, :index)
-    live("/p/:slug", VotingLive.Show, :show)
+    live("/home", StatementLive.Index, :index)
+    live("/p/:slug", StatementLive.Show, :show)
     live("/a/:id", AuthorLive.Show, :show)
     live("/x/:twitter_username", AuthorLive.Show, :show)
-    live("/halls/:hall", VotingLive.Index, :index)
+    live("/halls/:hall", StatementLive.Index, :index)
     live("/c/:id", OpinionLive.Show, :show)
     live("/fact-checker", FactCheckerLive.Index, :index)
 
@@ -44,15 +44,15 @@ defmodule YouCongressWeb.Router do
     live("/sign_up", UserRegistrationLive, :new)
 
     # Legacy redirection from /v/:slug to /p/:slug
-    get("/v/:slug", VotingController, :redirect_to_p)
+    get("/v/:slug", StatementController, :redirect_to_p)
   end
 
   scope "/", YouCongressWeb do
     pipe_through([:browser, :require_admin_user])
 
-    live("/p/new", VotingLive.Index, :new)
-    live("/p/:slug/edit", VotingLive.Show, :edit)
-    live("/p/:slug/show/edit", VotingLive.Show, :edit)
+    live("/p/new", StatementLive.Index, :new)
+    live("/p/:slug/edit", StatementLive.Show, :edit)
+    live("/p/:slug/show/edit", StatementLive.Show, :edit)
 
     live("/authors", AuthorLive.Index, :index)
     live("/authors/new", AuthorLive.Index, :new)
@@ -70,7 +70,7 @@ defmodule YouCongressWeb.Router do
     pipe_through([:browser, :require_authenticated_user])
 
     live("/welcome", WelcomeLive.Index, :index)
-    live("/p/:slug/add-quote", VotingLive.AddQuote, :add_quote)
+    live("/p/:slug/add-quote", StatementLive.AddQuote, :add_quote)
 
     live("/settings", SettingsLive, :settings)
     live("/landing", HomeLive.Index, :index)

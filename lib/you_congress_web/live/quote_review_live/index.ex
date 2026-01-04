@@ -127,14 +127,14 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
       order_by: [{sort_by, :id}],
       limit: per_page,
       offset: offset,
-      preload: [:author, :votings]
+      preload: [:author, :statements]
     ]
 
     opts = if selected_hall, do: Keyword.put(opts, :hall_name, selected_hall), else: opts
 
     quotes = Opinions.list_opinions(opts)
 
-    # Load author votes for each quote's votings
+    # Load author votes for each quote's statements
     quotes_with_votes = load_author_votes_for_quotes(quotes)
 
     has_more = length(quotes) == per_page
@@ -153,27 +153,27 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
 
   defp load_author_votes_for_quotes(quotes) do
     Enum.map(quotes, fn quote ->
-      if quote.author && quote.votings && quote.votings != [] do
-        voting_ids = Enum.map(quote.votings, & &1.id)
+      if quote.author && quote.statements && quote.statements != [] do
+        statement_ids = Enum.map(quote.statements, & &1.id)
 
-        # Get author's votes for these votings
+        # Get author's votes for these statements
         votes =
           YouCongress.Votes.list_votes(
             author_ids: [quote.author.id],
-            voting_ids: voting_ids,
+            statement_ids: statement_ids,
             preload: []
           )
 
-        # Create a map of voting_id -> vote for easy lookup
-        votes_by_voting = Map.new(votes, fn vote -> {vote.voting_id, vote} end)
+        # Create a map of statement_id -> vote for easy lookup
+        votes_by_statement = Map.new(votes, fn vote -> {vote.statement_id, vote} end)
 
-        # Add votes to each voting
-        votings_with_votes =
-          Enum.map(quote.votings, fn voting ->
-            Map.put(voting, :author_vote, Map.get(votes_by_voting, voting.id))
+        # Add votes to each statement
+        statements_with_votes =
+          Enum.map(quote.statements, fn statement ->
+            Map.put(statement, :author_vote, Map.get(votes_by_statement, statement.id))
           end)
 
-        Map.put(quote, :votings, votings_with_votes)
+        Map.put(quote, :statements, statements_with_votes)
       else
         quote
       end
@@ -182,7 +182,7 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
 
   defp update_quote_in_list(quotes, updated_quote) do
     # Reload the quote with all necessary preloads to get updated votes
-    reloaded_quote = Opinions.get_opinion!(updated_quote.id, preload: [:author, :votings])
+    reloaded_quote = Opinions.get_opinion!(updated_quote.id, preload: [:author, :statements])
     quotes_with_votes = load_author_votes_for_quotes([reloaded_quote])
     updated_quote_with_votes = List.first(quotes_with_votes)
 

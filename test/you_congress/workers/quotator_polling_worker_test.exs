@@ -3,14 +3,14 @@ defmodule YouCongress.Workers.QuotatorPollingWorkerTest do
   use Oban.Testing, repo: YouCongress.Repo
 
   import Mock
-  import YouCongress.VotingsFixtures
+  import YouCongress.StatementsFixtures
 
   alias YouCongress.Workers.QuotatorPollingWorker
   alias YouCongress.Opinions.Quotes.{Quotator, QuotatorAI}
 
   describe "perform/1" do
     test "enqueues QuotatorWorker with correct max_remaining_quotes when job completes" do
-      voting = voting_fixture()
+      statement = statement_fixture()
       user_id = 456
       job_id = "job_123"
       initial_max_quotes = 10
@@ -24,7 +24,7 @@ defmodule YouCongress.Workers.QuotatorPollingWorkerTest do
           QuotatorPollingWorker.perform(%Oban.Job{
             args: %{
               "job_id" => job_id,
-              "voting_id" => voting.id,
+              "statement_id" => statement.id,
               "user_id" => user_id,
               "max_remaining_llm_calls" => 3,
               "max_remaining_quotes" => initial_max_quotes
@@ -33,7 +33,7 @@ defmodule YouCongress.Workers.QuotatorPollingWorkerTest do
 
           assert_called(
             Quotator.find_and_save_quotes(
-              voting.id,
+              statement.id,
               :_,
               user_id,
               2,

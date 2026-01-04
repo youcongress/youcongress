@@ -1,19 +1,20 @@
-defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
+defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
   @moduledoc """
-  Loads voting and votes
+  Loads statement and votes
   """
 
   import Phoenix.Component, only: [assign: 2]
 
-  alias YouCongress.Votings
-  alias YouCongress.Votings.Voting
+  alias YouCongress.Statements
+  alias YouCongress.Statements.Statement
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
+  alias YouCongress.Votes.VoteFrequencies
   alias YouCongress.Delegations
   alias YouCongress.Accounts.User
 
-  @spec load_voting_and_votes(Socket.t(), number) :: Socket.t()
-  def load_voting_and_votes(socket, voting_id) do
+  @spec load_statement_and_votes(Socket.t(), number) :: Socket.t()
+  def load_statement_and_votes(socket, statement_id) do
     %{
       assigns: %{
         current_user: current_user,
@@ -22,8 +23,8 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
       }
     } = socket
 
-    voting = Votings.get_voting!(voting_id, preload: [:halls])
-    current_user_vote = get_current_user_vote(voting, current_user)
+    statement = Statements.get_statement!(statement_id, preload: [:halls])
+    current_user_vote = get_current_user_vote(statement, current_user)
     exclude_ids = (current_user_vote && [current_user_vote.id]) || []
 
     answer =
@@ -32,10 +33,10 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
         else: String.downcase(answer_filter) |> String.to_existing_atom()
 
     quotes_votes_count =
-      Votes.count_with_opinion_source(voting_id, source_filter: :quotes, answer: answer)
+      Votes.count_with_opinion_source(statement_id, source_filter: :quotes, answer: answer)
 
     users_votes_count =
-      Votes.count_with_opinion_source(voting_id, source_filter: :users, answer: answer)
+      Votes.count_with_opinion_source(statement_id, source_filter: :users, answer: answer)
 
     opts = [
       include: [:author, opinion: :author],
@@ -44,22 +45,22 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     ]
 
     opts = if is_nil(answer), do: opts, else: [{:answer, answer} | opts]
-    votes_with_opinion = Votes.list_votes_with_opinion(voting_id, opts)
+    votes_with_opinion = Votes.list_votes_with_opinion(statement_id, opts)
 
     votes_without_opinion =
       case source_filter do
-        nil -> Votes.list_votes_without_opinion(voting_id, opts)
+        nil -> Votes.list_votes_without_opinion(statement_id, opts)
         _ -> []
       end
 
     votes_from_delegates = get_votes_from_delegates(votes_with_opinion, current_user)
 
     share_to_x_text =
-      x_post(current_user_vote, voting) <> " https://youcongress.org/p/#{voting.slug}"
+      x_post(current_user_vote, statement) <> " https://youcongress.org/p/#{statement.slug}"
 
     socket
     |> assign(
-      voting: voting,
+      statement: statement,
       votes_from_delegates: votes_from_delegates,
       votes_from_non_delegates: votes_with_opinion -- votes_from_delegates,
       votes_without_opinion: votes_without_opinion,
@@ -67,46 +68,48 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
       share_to_x_text: share_to_x_text,
       quotes_votes_count: quotes_votes_count,
       users_votes_count: users_votes_count,
-      total_opinions: Votes.count_by(voting_id: voting_id),
-      opinions_by_response: get_opinions_by_response(voting.id, source_filter)
+      total_opinions: Votes.count_by(statement_id: statement_id),
+      opinions_by_response: get_opinions_by_response(statement.id, source_filter),
+      vote_frequencies: VoteFrequencies.get(statement_id),
+      total_votes: Votes.count_by_statement(statement_id)
     )
-    |> assign_main_variables(voting, current_user)
+    |> assign_main_variables(statement, current_user)
   end
 
-  defp get_opinions_by_response(voting_id, source_filter) do
+  defp get_opinions_by_response(statement_id, source_filter) do
     case source_filter do
-      :quotes -> Votes.count_by_response_map_by_source(voting_id, source_filter: :quotes)
-      :users -> Votes.count_by_response_map_by_source(voting_id, source_filter: :users)
-      _ -> Votes.count_by_response_map(voting_id, has_opinion_id: true)
+      :quotes -> Votes.count_by_response_map_by_source(statement_id, source_filter: :quotes)
+      :users -> Votes.count_by_response_map_by_source(statement_id, source_filter: :users)
+      _ -> Votes.count_by_response_map(statement_id, has_opinion_id: true)
     end
   end
 
-  defp x_post(nil, voting), do: voting.title
+  defp x_post(nil, statement), do: statement.title
 
-  defp x_post(%{opinion_id: nil, direct: false} = current_user_vote, voting) do
-    voting.title <> " " <> to_string(current_user_vote.answer) <> " via delegates"
+  defp x_post(%{opinion_id: nil, direct: false} = current_user_vote, statement) do
+    statement.title <> " " <> to_string(current_user_vote.answer) <> " via delegates"
   end
 
-  defp x_post(%{opinion_id: nil} = current_user_vote, voting) do
-    voting.title <> " " <> to_string(current_user_vote.answer)
+  defp x_post(%{opinion_id: nil} = current_user_vote, statement) do
+    statement.title <> " " <> to_string(current_user_vote.answer)
   end
 
-  defp x_post(current_user_vote, voting) do
-    voting.title <> " " <> current_user_vote.opinion.content
+  defp x_post(current_user_vote, statement) do
+    statement.title <> " " <> current_user_vote.opinion.content
   end
 
-  @spec get_current_user_vote(Voting.t(), User.t() | nil) :: Vote.t() | nil
+  @spec get_current_user_vote(Statement.t(), User.t() | nil) :: Vote.t() | nil
   def get_current_user_vote(_, nil), do: nil
 
-  def get_current_user_vote(voting, current_user) do
-    Votes.get_current_user_vote(voting.id, current_user.author_id)
+  def get_current_user_vote(statement, current_user) do
+    Votes.get_current_user_vote(statement.id, current_user.author_id)
   end
 
-  @spec assign_main_variables(Socket.t(), Voting.t(), User.t() | nil) :: Socket.t()
-  def assign_main_variables(socket, voting, current_user) do
+  @spec assign_main_variables(Socket.t(), Statement.t(), User.t() | nil) :: Socket.t()
+  def assign_main_variables(socket, statement, current_user) do
     socket
     |> load_delegations(current_user)
-    |> assign_current_user_vote(voting, current_user)
+    |> assign_current_user_vote(statement, current_user)
   end
 
   defp load_delegations(socket, current_user) do
@@ -144,7 +147,7 @@ defmodule YouCongressWeb.VotingLive.Show.VotesLoader do
     Enum.filter(votes, fn vote -> vote.author_id in delegate_ids end)
   end
 
-  defp assign_current_user_vote(socket, voting, current_user) do
-    assign(socket, current_user_vote: get_current_user_vote(voting, current_user))
+  defp assign_current_user_vote(socket, statement, current_user) do
+    assign(socket, current_user_vote: get_current_user_vote(statement, current_user))
   end
 end

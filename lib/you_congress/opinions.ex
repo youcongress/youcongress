@@ -8,7 +8,7 @@ defmodule YouCongress.Opinions do
 
   alias YouCongress.Likes
   alias YouCongress.Opinions.Opinion
-  alias YouCongress.OpinionsVotings.OpinionVoting
+  alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
 
   @doc """
@@ -178,22 +178,22 @@ defmodule YouCongress.Opinions do
       {:author_ids, author_ids}, query ->
         from q in query, where: q.author_id in ^author_ids
 
-      {:voting_ids, voting_ids}, query ->
+      {:statement_ids, statement_ids}, query ->
         from q in query,
-          join: ov in "opinions_votings",
+          join: ov in "opinions_statements",
           on: ov.opinion_id == q.id,
-          where: ov.voting_id in ^voting_ids
+          where: ov.statement_id in ^statement_ids
 
       {:hall_name, hall_name}, query when not is_nil(hall_name) ->
         # Use a subquery to avoid DISTINCT ON ordering issues
         hall_opinion_ids =
           from q in Opinion,
-            join: ov in "opinions_votings",
+            join: ov in "opinions_statements",
             on: ov.opinion_id == q.id,
-            join: v in "votings",
-            on: ov.voting_id == v.id,
-            join: hv in "halls_votings",
-            on: hv.voting_id == v.id,
+            join: v in "statements",
+            on: ov.statement_id == v.id,
+            join: hv in "halls_statements",
+            on: hv.statement_id == v.id,
             join: h in "halls",
             on: hv.hall_id == h.id,
             where: h.name == ^hall_name,
@@ -201,9 +201,9 @@ defmodule YouCongress.Opinions do
 
         from q in query, where: q.id in subquery(hall_opinion_ids)
 
-      {:has_votings, true}, query ->
+      {:has_statements, true}, query ->
         from q in query,
-          join: ov in "opinions_votings",
+          join: ov in "opinions_statements",
           on: ov.opinion_id == q.id,
           distinct: q.id
 
@@ -313,49 +313,57 @@ defmodule YouCongress.Opinions do
   end
 
   @doc """
-  Adds an opinion to a voting by creating an association in the opinions_votings table.
+  Adds an opinion to a statement by creating an association in the opinions_statements table.
 
   ## Examples
 
-      iex> add_opinion_to_voting(opinion, voting)
+      iex> add_opinion_to_statement(opinion, statement)
       {:ok, %Opinion{}}
 
-      iex> add_opinion_to_voting(opinion, voting)
+      iex> add_opinion_to_statement(opinion, statement)
       {:error, %Ecto.Changeset{}}
   """
-  def add_opinion_to_voting(%Opinion{} = opinion, voting_id) when is_integer(voting_id) do
-    voting = YouCongress.Votings.get_voting!(voting_id)
-    add_opinion_to_voting(opinion, voting)
+  def add_opinion_to_statement(%Opinion{} = opinion, statement_id)
+      when is_integer(statement_id) do
+    statement = YouCongress.Statements.get_statement!(statement_id)
+    add_opinion_to_statement(opinion, statement)
   end
 
-  def add_opinion_to_voting(%Opinion{} = opinion, %YouCongress.Votings.Voting{} = voting) do
-    add_opinion_to_voting(opinion, voting, opinion.user_id)
+  def add_opinion_to_statement(
+        %Opinion{} = opinion,
+        %YouCongress.Statements.Statement{} = statement
+      ) do
+    add_opinion_to_statement(opinion, statement, opinion.user_id)
   end
 
-  def add_opinion_to_voting(%Opinion{} = opinion, %YouCongress.Votings.Voting{} = voting, user_id)
+  def add_opinion_to_statement(
+        %Opinion{} = opinion,
+        %YouCongress.Statements.Statement{} = statement,
+        user_id
+      )
       when not is_nil(user_id) do
-    # Check if the opinion is already associated with this voting
+    # Check if the opinion is already associated with this statement
     existing_association =
-      Repo.get_by(OpinionVoting,
+      Repo.get_by(OpinionStatement,
         opinion_id: opinion.id,
-        voting_id: voting.id
+        statement_id: statement.id
       )
 
     if existing_association do
       {:error, :already_associated}
     else
       # Create the association with the user_id
-      %OpinionVoting{}
-      |> OpinionVoting.changeset(%{
+      %OpinionStatement{}
+      |> OpinionStatement.changeset(%{
         opinion_id: opinion.id,
-        voting_id: voting.id,
+        statement_id: statement.id,
         user_id: user_id
       })
       |> Repo.insert()
       |> case do
-        {:ok, _opinion_voting} ->
+        {:ok, _opinion_statement} ->
           # Return the updated opinion for consistency
-          {:ok, Repo.preload(opinion, :votings)}
+          {:ok, Repo.preload(opinion, :statements)}
 
         {:error, changeset} ->
           {:error, changeset}
@@ -363,9 +371,9 @@ defmodule YouCongress.Opinions do
     end
   end
 
-  def add_opinion_to_voting(
+  def add_opinion_to_statement(
         %Opinion{} = _opinion,
-        %YouCongress.Votings.Voting{} = _voting,
+        %YouCongress.Statements.Statement{} = _statement,
         _user_id
       ) do
     {:error, :user_id_required}

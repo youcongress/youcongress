@@ -3,13 +3,7 @@ Application.put_env(:you_congress, :hall_classifier, YouCongress.Halls.Classific
 Application.put_env(
   :you_congress,
   :title_rewording_implementation,
-  YouCongress.Votings.TitleRewordingFake
-)
-
-Application.put_env(
-  :you_congress,
-  :voting_generator,
-  YouCongress.Votings.GeneratorFake
+  YouCongress.Statements.TitleRewordingFake
 )
 
 Application.put_env(

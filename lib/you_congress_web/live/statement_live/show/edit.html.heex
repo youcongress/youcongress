@@ -1,0 +1,15 @@
+<.header>
+  <:actions>
+    <.link patch={~p"/p/#{@statement.slug}"}>
+      <.button>Cancel</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.live_component
+  module={YouCongressWeb.StatementLive.FormComponent}
+  id={@statement.id}
+  title="Edit Poll"
+  action={:edit}
+  statement={@statement}
+/>

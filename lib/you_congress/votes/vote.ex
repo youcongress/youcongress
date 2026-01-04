@@ -6,7 +6,7 @@ defmodule YouCongress.Votes.Vote do
   import Ecto.Changeset
 
   alias YouCongress.Authors.Author
-  alias YouCongress.Votings.Voting
+  alias YouCongress.Statements.Statement
   alias YouCongress.Opinions.Opinion
 
   schema "votes" do
@@ -15,9 +15,9 @@ defmodule YouCongress.Votes.Vote do
     field :answer, Ecto.Enum, values: [:for, :against, :abstain]
 
     belongs_to :author, Author
-    belongs_to :voting, Voting
+    belongs_to :statement, Statement
     # opinion_id links to the main opinion
-    # authors can have more than one opinion per voting, but at the moment we only display one
+    # authors can have more than one opinion per statement, but at the moment we only display one
     belongs_to :opinion, Opinion
 
     timestamps()
@@ -27,7 +27,7 @@ defmodule YouCongress.Votes.Vote do
           direct: boolean(),
           twin: boolean(),
           author_id: integer(),
-          voting_id: integer(),
+          statement_id: integer(),
           answer: :for | :against | :abstain,
           opinion_id: integer(),
           inserted_at: NaiveDateTime.t(),
@@ -40,11 +40,11 @@ defmodule YouCongress.Votes.Vote do
       :direct,
       :twin,
       :author_id,
-      :voting_id,
+      :statement_id,
       :answer,
       :opinion_id
     ])
-    |> validate_required([:author_id, :voting_id])
-    |> unique_constraint([:author_id, :voting_id])
+    |> validate_required([:author_id, :statement_id])
+    |> unique_constraint([:author_id, :statement_id])
   end
 end

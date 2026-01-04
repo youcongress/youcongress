@@ -1,0 +1,74 @@
+<div>
+  <%= if @current_user_vote do %>
+    <div class="pt-4">
+      <.live_component
+        module={YouCongressWeb.StatementLive.VoteComponent}
+        id={@current_user_vote.id}
+        vote={@current_user_vote}
+        statement={@statement}
+        author={@current_user.author}
+        delegating?={false}
+        current_user={@current_user}
+        show_vote={true}
+        show_opinion={!@editing}
+        delegable={false}
+        liked={@liked}
+        regenerating_opinion_id={@regenerating_opinion_id}
+        page={@page}
+      />
+    </div>
+  <% end %>
+  <%= if @current_user do %>
+    <%= if @editing do %>
+      <form phx-submit="post" id="comment-form" class="max-w-3xl">
+        <div>
+          <div
+            id="tabs-1-panel-1"
+            class="-m-0.5 rounded-lg p-0.5"
+            aria-labelledby="tabs-1-tab-1"
+            role="tabpanel"
+            tabindex="0"
+          >
+            <textarea
+              rows="3"
+              name="comment"
+              id="comment"
+              disabled={!@current_user}
+              class="block w-full rounded-md border-0 pb-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+              placeholder={
+                if @current_user, do: "Add your comment...", else: "Log in to comment..."
+              }
+            ><%= @current_user_vote && @current_user_vote.opinion_id && @current_user_vote.opinion.content %></textarea>
+          </div>
+        </div>
+        <div class="mt-2 flex justify-end">
+          <%= if @current_user_vote && @current_user_vote.opinion do %>
+            <.link
+              phx-click="cancel-edit"
+              class="inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold shadow-sm hover:bg-gray-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              Cancel
+            </.link>
+            <.link
+              phx-click="delete-comment"
+              class="inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold shadow-sm hover:bg-gray-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              Delete
+            </.link>
+          <% end %>
+          <button
+            type="submit"
+            class={[
+              "inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600",
+              @current_user && "bg-indigo-600 hover:bg-indigo-500",
+              !@current_user && "bg-gray-300"
+            ]}
+            disabled={!@current_user}
+          >
+            {if @current_user_vote && @current_user_vote.opinion, do: "Update", else: "Post"}
+          </button>
+        </div>
+      </form>
+    <% end %>
+  <% end %>
+</div>

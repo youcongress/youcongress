@@ -1,6 +1,6 @@
 defmodule YouCongressWeb.OpinionEditComponent do
   @moduledoc """
-  A reusable component for editing opinions/quotes with their associated voting positions.
+  A reusable component for editing opinions/quotes with their associated votes.
   """
   use YouCongressWeb, :live_component
 
@@ -89,12 +89,12 @@ defmodule YouCongressWeb.OpinionEditComponent do
           |> Map.new()
       end
 
-    opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :votings])
+    opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :statements])
 
     case Opinions.update_opinion(opinion, opinion_params) do
       {:ok, updated_opinion} ->
         # Update votes if they were changed (only for full form mode)
-        if socket.assigns[:show_voting_positions] do
+        if socket.assigns[:show_statement_positions] do
           update_author_votes(params, opinion)
         end
 
@@ -285,26 +285,26 @@ defmodule YouCongressWeb.OpinionEditComponent do
         <% end %>
         
     <!-- Voting Positions -->
-        <%= if assigns[:show_voting_positions] && @opinion.votings && @opinion.votings != [] do %>
+        <%= if assigns[:show_statement_positions] && @opinion.statements && @opinion.statements != [] do %>
           <div class="space-y-3">
             <label class="block text-sm font-medium text-gray-700">Author's Position</label>
-            <%= for voting <- @opinion.votings do %>
+            <%= for statement <- @opinion.statements do %>
               <div class="border rounded p-3 bg-gray-50">
                 <div class="text-sm font-medium mb-2">
-                  <a href={~p"/p/#{voting.slug}"} class="text-indigo-600 hover:underline">
-                    {voting.title}
+                  <a href={~p"/p/#{statement.slug}"} class="text-indigo-600 hover:underline">
+                    {statement.title}
                   </a>
                 </div>
                 <select
-                  name={"vote_#{voting.id}"}
+                  name={"vote_#{statement.id}"}
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 >
                   <%= for {label, value} <- [{"For", "for"}, {"Against", "against"}, {"Abstain", "abstain"}] do %>
                     <option
                       value={value}
                       selected={
-                        Map.get(voting, :author_vote) && voting.author_vote.answer &&
-                          to_string(voting.author_vote.answer) == value
+                        Map.get(statement, :author_vote) && statement.author_vote.answer &&
+                          to_string(statement.author_vote.answer) == value
                       }
                     >
                       {label}
@@ -347,9 +347,9 @@ defmodule YouCongressWeb.OpinionEditComponent do
   # Private helper functions
   defp update_author_votes(params, opinion) do
     if opinion.author do
-      # Process vote updates for each voting
-      Enum.each(opinion.votings, fn voting ->
-        vote_param_key = "vote_#{voting.id}"
+      # Process vote updates for each statement
+      Enum.each(opinion.statements, fn statement ->
+        vote_param_key = "vote_#{statement.id}"
 
         if Map.has_key?(params, vote_param_key) do
           response = params[vote_param_key]
@@ -357,14 +357,14 @@ defmodule YouCongressWeb.OpinionEditComponent do
           if response != "" do
             # Create or update the vote
             Votes.create_or_update(%{
-              voting_id: voting.id,
+              statement_id: statement.id,
               author_id: opinion.author.id,
               answer: response,
               direct: true
             })
           else
             # Delete the vote if "No position" is selected
-            case Votes.get_by(%{voting_id: voting.id, author_id: opinion.author.id}) do
+            case Votes.get_by(%{statement_id: statement.id, author_id: opinion.author.id}) do
               nil -> :ok
               vote -> Votes.delete_vote(vote)
             end

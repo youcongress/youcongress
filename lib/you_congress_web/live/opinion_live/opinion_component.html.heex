@@ -25,7 +25,7 @@
         id={@opinion.id}
         opinion={@opinion}
         current_user={@current_user}
-        voting={@voting}
+        statement={@statement}
         page={@page}
       />
     </div>
@@ -36,7 +36,7 @@
     <%= if @opinion.source_url do %>
       <.live_component
         module={YouCongressWeb.Components.VerificationBadge}
-        id={"#{@opinion.id}-#{if @voting, do: @voting.id}"}
+        id={"#{@opinion.id}-#{if @statement, do: @statement.id}"}
         opinion={@opinion}
         current_user={@current_user}
       />
@@ -58,7 +58,7 @@
       </span>
       <OpinionComponent.x_icon
         author={@opinion.author}
-        voting={@voting}
+        statement={@statement}
         opinion={@opinion}
         current_user={@current_user}
       />

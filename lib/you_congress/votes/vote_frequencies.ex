@@ -6,9 +6,9 @@ defmodule YouCongress.Votes.VoteFrequencies do
   alias YouCongress.Votes
 
   @spec get(number) :: %{binary => number}
-  def get(voting_id) do
+  def get(statement_id) do
     vote_frequencies =
-      Votes.count_by_response(voting_id)
+      Votes.count_by_response(statement_id)
       |> Enum.into(%{})
 
     total = Enum.sum(Map.values(vote_frequencies))

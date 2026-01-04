@@ -13,7 +13,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorFake do
   @spec find_quotes(integer, binary, list(binary), integer() | nil, integer(), integer()) ::
           {:ok, %{quotes: list, cost: number}}
   def find_quotes(
-        _voting_id,
+        _statement_id,
         question_title,
         exclude_author_names,
         _user_id,
