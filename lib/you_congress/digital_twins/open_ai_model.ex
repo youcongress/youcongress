@@ -22,11 +22,11 @@ defmodule YouCongress.DigitalTwins.OpenAIModel do
   # }
 
   @spec get_content(map) :: binary | {:error, binary}
-  def get_content(%{choices: choices}) when is_list(choices) and length(choices) > 0 do
+  def get_content(%{choices: choices}) when is_list(choices) and choices != [] do
     hd(choices)["message"]["content"]
   end
 
-  def get_content(%{"choices" => choices}) when is_list(choices) and length(choices) > 0 do
+  def get_content(%{"choices" => choices}) when is_list(choices) and choices != [] do
     hd(choices)["message"]["content"]
   end
 

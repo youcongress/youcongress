@@ -16,7 +16,7 @@ defmodule YouCongress.SearchParserTest do
     end
 
     test "handles multiple quoted terms" do
-      assert SearchParser.parse("\"foo bar\" \"baz qux\"") == ["foo bar", "baz qux"]
+      assert SearchParser.parse(~s("foo bar" "baz qux")) == ["foo bar", "baz qux"]
     end
 
     test "ignores empty strings and nil" do

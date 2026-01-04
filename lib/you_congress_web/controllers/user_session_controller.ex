@@ -38,34 +38,7 @@ defmodule YouCongressWeb.UserSessionController do
         |> redirect(to: ~p"/log_in")
 
       user = Accounts.get_user_by_email_and_password(email, password) ->
-        # Handle Pending Actions
-        if pending_json = user_params["pending_actions"] do
-          case Jason.decode(pending_json) do
-            {:ok, %{"delegate_ids" => ids, "votes" => votes}} ->
-              # Delegates
-              for id <- ids do
-                YouCongress.Delegations.create_delegation(user, id)
-              end
-
-              # Votes
-              Enum.each(votes, fn {_statement_id, vote_data} ->
-                if vote_data["answer"] && vote_data["answer"] != "" do
-                  # We don't care about result
-                  case YouCongress.Votes.create_or_update(%{
-                         statement_id: vote_data["statement_id"],
-                         answer: String.to_existing_atom(vote_data["answer"]),
-                         author_id: user.author_id,
-                         direct: true
-                       }) do
-                    _ -> :ok
-                  end
-                end
-              end)
-
-            _ ->
-              :ok
-          end
-        end
+        handle_pending_actions(user, user_params["pending_actions"])
 
         conn
         |> put_flash(:info, info)
@@ -78,6 +51,40 @@ defmodule YouCongressWeb.UserSessionController do
         |> put_flash(:email, String.slice(email, 0, 160))
         |> redirect(to: ~p"/log_in")
     end
+  end
+
+  defp handle_pending_actions(_user, nil), do: :ok
+
+  defp handle_pending_actions(user, pending_json) do
+    case Jason.decode(pending_json) do
+      {:ok, %{"delegate_ids" => ids, "votes" => votes}} ->
+        # Delegates
+        for id <- ids do
+          YouCongress.Delegations.create_delegation(user, id)
+        end
+
+        # Votes
+        Enum.each(votes, fn {_statement_id, vote_data} ->
+          if vote_data["answer"] && vote_data["answer"] != "" do
+            # We don't care about result
+            create_pending_vote(user, vote_data)
+          end
+        end)
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp create_pending_vote(user, vote_data) do
+    YouCongress.Votes.create_or_update(%{
+      statement_id: vote_data["statement_id"],
+      answer: String.to_existing_atom(vote_data["answer"]),
+      author_id: user.author_id,
+      direct: true
+    })
+  rescue
+    _ -> :ok
   end
 
   def delete(conn, _params) do
