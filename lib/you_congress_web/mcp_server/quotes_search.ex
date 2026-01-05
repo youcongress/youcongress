@@ -9,8 +9,12 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
   @limit 100
 
   schema do
-    field :query, :string, required: true
+    # We force LLMs to provide statement_id because:
+    # - Listing statements first and then getting many quotes within a statement works best for now
+    # - If we make it optional, LLMs rarely use it
+    # - We don't have tons of quotes yet
     field :statement_id, :integer, required: true
+    field :query, :string, required: true
   end
 
   def execute(params, frame) do
