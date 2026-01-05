@@ -1,6 +1,6 @@
 defmodule YouCongressWeb.StatementLive.Index.Search do
   @moduledoc """
-  Search motions, delegates, halls, and quotes
+  Search statements (policy proposals and claims), delegates, halls, and quotes
   """
   use Phoenix.Component
   use Phoenix.VerifiedRoutes, endpoint: YouCongressWeb.Endpoint, router: YouCongressWeb.Router
@@ -32,14 +32,14 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
           />
           <Search.tab
             search_tab={@search_tab}
-            tab={:motions}
-            label={"Motions (#{length(@statements)})"}
+            tab={:statements}
+            label={"Policies & claims (#{length(@statements)})"}
           />
           <Search.tab search_tab={@search_tab} tab={:halls} label={"Halls (#{length(@halls)})"} />
         </nav>
       </div>
     </div>
-    <%= if @search_tab == :motions do %>
+    <%= if @search_tab == :statements do %>
       <table>
         <%= for statement <- @statements do %>
           <tr>
@@ -152,12 +152,13 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
 
   def highlight(assigns) do
     terms =
-      (assigns.terms || [assigns.term]) |> Enum.reject(&is_nil/1) |> Enum.reject(&(&1 == ""))
+      (assigns.terms || [assigns.term])
+      |> Enum.reject(&(&1 == nil or &1 == ""))
 
     if terms == [] do
       ~H"{@text}"
     else
-      pattern = terms |> Enum.map(&Regex.escape/1) |> Enum.join("|")
+      pattern = Enum.map_join(terms, "|", &Regex.escape/1)
       regex = Regex.compile!(pattern, "i")
       parts = Regex.split(regex, assigns.text, include_captures: true)
       assigns = assign(assigns, parts: parts, regex: regex)

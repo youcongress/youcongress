@@ -299,7 +299,8 @@ defmodule YouCongressWeb.OpinionLiveTest do
       html_content = render(show_live)
       assert html_content =~ "Owner&#39;s opinion"
 
-      # Check that there's no edit button for non-owner (since menu is JS-controlled, we just verify no edit form appears)
+      # Check that there's no edit button for non-owner
+      # (since menu is JS-controlled, we just verify no edit form appears)
       refute has_element?(show_live, "form[phx-target]")
     end
   end

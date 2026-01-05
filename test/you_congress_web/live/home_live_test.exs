@@ -24,7 +24,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       |> form("form[phx-submit=search]", %{"search" => "AI"})
       |> render_submit()
 
-      assert render(view) =~ "Search quotes, people, motions..."
+      assert render(view) =~ "Search quotes, people, policies..."
     end
   end
 
@@ -77,7 +77,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       # Explicitly create author with highlighted delegate name
       author = author_fixture(name: "Yoshua Bengio")
 
-      statement = statement_fixture(title: "Important Motion")
+      statement = statement_fixture(title: "Important Statement")
       opinion = opinion_fixture(author_id: author.id, statement_id: statement.id)
 
       # Link opinion to statement

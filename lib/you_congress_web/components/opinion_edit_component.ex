@@ -345,32 +345,34 @@ defmodule YouCongressWeb.OpinionEditComponent do
   end
 
   # Private helper functions
-  defp update_author_votes(params, opinion) do
-    if opinion.author do
-      # Process vote updates for each statement
-      Enum.each(opinion.statements, fn statement ->
-        vote_param_key = "vote_#{statement.id}"
+  defp update_author_votes(params, %{author: author, statements: statements})
+       when not is_nil(author) do
+    Enum.each(statements, &process_statement_vote(&1, author, params))
+  end
 
-        if Map.has_key?(params, vote_param_key) do
-          response = params[vote_param_key]
+  defp update_author_votes(_params, _opinion), do: :ok
 
-          if response != "" do
-            # Create or update the vote
-            Votes.create_or_update(%{
-              statement_id: statement.id,
-              author_id: opinion.author.id,
-              answer: response,
-              direct: true
-            })
-          else
-            # Delete the vote if "No position" is selected
-            case Votes.get_by(%{statement_id: statement.id, author_id: opinion.author.id}) do
-              nil -> :ok
-              vote -> Votes.delete_vote(vote)
-            end
-          end
-        end
-      end)
+  defp process_statement_vote(statement, author, params) do
+    vote_param_key = "vote_#{statement.id}"
+
+    if Map.has_key?(params, vote_param_key) do
+      handle_vote_response(params[vote_param_key], statement, author)
     end
+  end
+
+  defp handle_vote_response("", statement, author) do
+    case Votes.get_by(%{statement_id: statement.id, author_id: author.id}) do
+      nil -> :ok
+      vote -> Votes.delete_vote(vote)
+    end
+  end
+
+  defp handle_vote_response(response, statement, author) do
+    Votes.create_or_update(%{
+      statement_id: statement.id,
+      author_id: author.id,
+      answer: response,
+      direct: true
+    })
   end
 end
