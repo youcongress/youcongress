@@ -1,7 +1,6 @@
 defmodule YouCongressWeb.MCPServer.StatementsList do
   @moduledoc """
-  Search statements (policy proposals and claims).
-  You may use the statement_id to search quotes later.
+  List statements (policy proposals and claims) so, later, with the 'quotes_search' tool you can search quotes.
   """
 
   use Anubis.Server.Component, type: :tool
@@ -12,9 +11,11 @@ defmodule YouCongressWeb.MCPServer.StatementsList do
   schema do
   end
 
+  @limit 100
+
   def execute(_, frame) do
     statements =
-      [limit: 100]
+      [limit: @limit]
       |> Statements.list_statements()
       |> Enum.map(fn statement ->
         %{
