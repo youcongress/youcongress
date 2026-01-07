@@ -101,15 +101,21 @@ if config_env() == :prod do
 
   config :anubis_mcp, :session_store,
     adapter: Anubis.Server.Session.Store.Redis,
-    redis_url:
-      System.get_env("UPSTASH_REDIS_REST_URL") || raise("UPSTASH_REDIS_REST_URL is missing"),
+    redis_url: System.get_env("REDIS_URL") || raise("REDIS_URL is missing"),
     pool_size: 10,
     # 30 minutes in milliseconds
     ttl: 1_800_000,
     namespace: "anubis:sessions",
     connection_name: :anubis_redis,
     # Optional Redix connection options
-    redix_opts: []
+    redix_opts: [
+      ssl: true,
+      socket_opts: [
+        customize_hostname_check: [
+          match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+        ]
+      ]
+    ]
 end
 
 if config_env() in [:dev, :prod] do
