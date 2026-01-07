@@ -98,6 +98,18 @@ if config_env() == :prod do
     api_key: System.get_env("SENDGRID_API_KEY")
 
   config :swoosh, :api_client, Swoosh.ApiClient.Finch
+
+  config :anubis_mcp, :session_store,
+    adapter: Anubis.Server.Session.Store.Redis,
+    redis_url:
+      System.get_env("UPSTASH_REDIS_REST_URL") || raise("UPSTASH_REDIS_REST_URL is missing"),
+    pool_size: 10,
+    # 30 minutes in milliseconds
+    ttl: 1_800_000,
+    namespace: "anubis:sessions",
+    connection_name: :anubis_redis,
+    # Optional Redix connection options
+    redix_opts: []
 end
 
 if config_env() in [:dev, :prod] do
