@@ -108,14 +108,7 @@ if config_env() == :prod do
     namespace: "anubis:sessions",
     connection_name: :anubis_redis,
     # Optional Redix connection options
-    redix_opts: [
-      ssl: true,
-      socket_opts: [
-        customize_hostname_check: [
-          match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
-        ]
-      ]
-    ]
+    redix_opts: []
 end
 
 if config_env() in [:dev, :prod] do
