@@ -16,6 +16,18 @@ config :you_congress, YouCongressWeb.Endpoint,
     "https://staging.youcongress.org"
   ]
 
+config :anubis_mcp, :session_store,
+  adapter: Anubis.Server.Session.Store.Redis,
+  redis_url:
+    System.get_env("UPSTASH_REDIS_REST_URL") || raise("UPSTASH_REDIS_REST_URL is missing"),
+  pool_size: 10,
+  # 30 minutes in milliseconds
+  ttl: 1_800_000,
+  namespace: "anubis:sessions",
+  connection_name: :anubis_redis,
+  # Optional Redix connection options
+  redix_opts: []
+
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: Swoosh.Finch
 
