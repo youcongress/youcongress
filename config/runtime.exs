@@ -101,6 +101,7 @@ if config_env() == :prod do
 
   config :anubis_mcp, :session_store,
     adapter: Anubis.Server.Session.Store.Redis,
+    enabled: true,
     redis_url: System.get_env("REDIS_URL") || raise("REDIS_URL is missing"),
     pool_size: 10,
     # 30 minutes in milliseconds

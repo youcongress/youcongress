@@ -11,19 +11,28 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuard do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    # Ensure query params are fetched
-    conn = fetch_query_params(conn)
+    conn = fetch_cookies(conn)
 
-    case conn.query_params["sessionId"] do
-      nil ->
-        conn
-
+    case get_session_id(conn) do
+      nil -> conn
       session_id ->
         if session_exists_locally?(session_id) do
           conn
         else
           attempt_replay(conn, session_id)
         end
+    end
+  end
+
+  defp get_session_id(conn) do
+    header_session =
+      conn
+      |> get_req_header("mcp-session-id")
+      |> List.first()
+
+    cond do
+      is_binary(header_session) and header_session != "" -> header_session
+      true -> conn.cookies["_you_congress_mcp_session"]
     end
   end
 
@@ -49,8 +58,7 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuard do
         |> halt()
 
       nil ->
-        # If no one has it, pass through and let it fail normally (or start new if that's the logic)
-        Logger.warning("MCP session #{session_id} not found on any node. Passing through.")
+        log_missing_session(session_id)
         conn
     end
   end
@@ -62,5 +70,10 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuard do
     else
       :error
     end
+  end
+
+  defp log_missing_session(session_id) do
+    level = if Application.get_env(:you_congress, :env) == :prod, do: :warning, else: :debug
+    Logger.log(level, "MCP session #{session_id} not found on any node. Passing through.")
   end
 end
