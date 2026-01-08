@@ -17,13 +17,17 @@ defmodule YouCongressWeb.Router do
 
   pipeline :api do
     plug(:accepts, ["json"])
+    plug(:fetch_query_params)
+  end
+
+  pipeline :mcp_checks do
+    plug(YouCongressWeb.Plugs.MCPClusterGuard)
   end
 
   scope "/" do
-    pipe_through(:api)
+    pipe_through([:api, :mcp_checks])
 
-    forward "/mcp", Elixir.Anubis.Server.Transport.StreamableHTTP.Plug,
-      server: YouCongressWeb.MCPServer
+    forward "/mcp", Anubis.Server.Transport.StreamableHTTP.Plug, server: YouCongressWeb.MCPServer
   end
 
   scope "/", YouCongressWeb do
