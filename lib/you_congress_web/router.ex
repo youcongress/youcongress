@@ -15,17 +15,15 @@ defmodule YouCongressWeb.Router do
     plug(:reject_blocked_user)
   end
 
-  pipeline :api do
+  pipeline :mcp do
     plug(:accepts, ["json"])
     plug(:fetch_query_params)
-  end
-
-  pipeline :mcp_checks do
+    plug(YouCongressWeb.Plugs.MCPSessionPlug)
     plug(YouCongressWeb.Plugs.MCPClusterGuard)
   end
 
   scope "/" do
-    pipe_through([:api, :mcp_checks])
+    pipe_through(:mcp)
 
     forward "/mcp", Anubis.Server.Transport.StreamableHTTP.Plug, server: YouCongressWeb.MCPServer
   end
