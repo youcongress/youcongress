@@ -4,7 +4,7 @@
 
 The goal is to make it easier for policymakers and journalists to understand what experts and citizens actually want, in a rigorous and non-partisan way.
 
-You can vote directly or choose trusted voices to vote on your behalf, and every poll is enriched with verifiable, sourced quotes so positions are clear and accountable.
+You can vote directly or choose trusted voices to vote on your behalf, and every policy is enriched with verifiable, sourced quotes so positions are clear and accountable.
 
 # How to start
 
