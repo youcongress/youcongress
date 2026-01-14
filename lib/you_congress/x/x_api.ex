@@ -17,7 +17,7 @@ defmodule YouCongress.X.XAPI do
     query_params = %{
       client_id: client_id,
       response_type: "code",
-      scope: "users.read tweet.read",
+      scope: "users.read users.email.read tweet.read",
       code_challenge: code_challenge,
       code_challenge_method: "S256",
       state: state,
@@ -69,7 +69,7 @@ defmodule YouCongress.X.XAPI do
   Returns user data including id, username, name, and profile_image_url.
   """
   def fetch_user_info(access_token) do
-    url = "https://api.twitter.com/2/users/me?user.fields=id,username,name,profile_image_url,description,public_metrics,verified"
+    url = "https://api.twitter.com/2/users/me?user.fields=id,username,name,profile_image_url,description,public_metrics,verified,email"
 
     case Req.get(
            url,
@@ -95,6 +95,7 @@ defmodule YouCongress.X.XAPI do
       twitter_id_str: data["id"],
       twitter_username: data["username"],
       name: data["name"],
+      email: data["email"],
       profile_image_url: normalize_profile_image_url(data["profile_image_url"]),
       description: data["description"],
       followers_count: get_in(data, ["public_metrics", "followers_count"]),

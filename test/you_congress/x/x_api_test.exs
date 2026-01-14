@@ -13,7 +13,7 @@ defmodule YouCongress.X.XAPITest do
       assert String.starts_with?(url, "https://twitter.com/i/oauth2/authorize?")
       assert String.contains?(url, "client_id=#{client_id}")
       assert String.contains?(url, "response_type=code")
-      assert String.contains?(url, "scope=users.read+tweet.read")
+      assert String.contains?(url, "scope=users.read+users.email.read+tweet.read")
       assert String.contains?(url, "code_challenge_method=S256")
       assert String.contains?(url, URI.encode_www_form(callback_url))
       assert String.contains?(url, "state=#{state}")

@@ -12,6 +12,7 @@ defmodule YouCongressWeb.XAuthControllerTest do
     twitter_id_str: "123456789",
     twitter_username: "testuser",
     name: "Test User",
+    email: "testuser@example.com",
     profile_image_url: "https://pbs.twimg.com/profile_images/123_400x400.jpg",
     description: "Test bio",
     followers_count: 100,

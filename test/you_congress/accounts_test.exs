@@ -332,7 +332,7 @@ defmodule YouCongress.AccountsTest do
         twin_origin: false
       }
 
-      assert {:ok, %{user: user, author: author}} = Accounts.x_register_user(%{}, author_attrs)
+      assert {:ok, %{user: user, author: author}} = Accounts.x_register_user(%{"email" => "xuser@example.com"}, author_attrs)
       assert user.author_id == author.id
       assert author.twitter_username == "xuser"
       assert author.twitter_id_str == "12345"
@@ -346,7 +346,7 @@ defmodule YouCongress.AccountsTest do
         twin_origin: true
       }
 
-      {:ok, %{author: author}} = Accounts.x_register_user(%{}, author_attrs)
+      {:ok, %{author: author}} = Accounts.x_register_user(%{"email" => "xuser2@example.com"}, author_attrs)
       # twin_origin should be set to false regardless of input
       assert author.twin_origin == false
     end
@@ -366,7 +366,7 @@ defmodule YouCongress.AccountsTest do
       }
 
       assert {:ok, %{user: user, author: updated_author}} =
-               Accounts.x_register_user_with_existing_author(%{}, author, update_attrs)
+               Accounts.x_register_user_with_existing_author(%{"email" => "existing_user@example.com"}, author, update_attrs)
 
       assert user.author_id == author.id
       assert updated_author.twitter_id_str == "99999"

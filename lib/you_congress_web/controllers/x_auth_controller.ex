@@ -133,7 +133,7 @@ defmodule YouCongressWeb.XAuthController do
 
   defp create_new_author_and_user(conn, x_user_data) do
     author_attrs = build_author_attrs(x_user_data)
-    user_attrs = %{}
+    user_attrs = %{"email" => x_user_data.email}
 
     case Accounts.x_register_user(user_attrs, author_attrs) do
       {:ok, %{user: user}} ->
@@ -161,7 +161,7 @@ defmodule YouCongressWeb.XAuthController do
 
   defp create_user_for_existing_author(conn, author, x_user_data) do
     author_update_attrs = build_author_attrs(x_user_data)
-    user_attrs = %{}
+    user_attrs = %{"email" => x_user_data.email}
 
     case Accounts.x_register_user_with_existing_author(user_attrs, author, author_update_attrs) do
       {:ok, %{user: user}} ->
