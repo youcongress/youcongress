@@ -154,6 +154,28 @@ defmodule YouCongress.Accounts do
   end
 
   @doc """
+  Creates a new user linked to an existing author for X signup.
+  Also updates the author with the latest X profile data and sets twin_origin to false.
+  """
+  def x_register_user_with_existing_author(user_attrs, %Author{} = author, author_update_attrs) do
+    author_update_attrs = Map.put(author_update_attrs, :twin_origin, false)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:author, Author.changeset(author, author_update_attrs))
+    |> Ecto.Multi.insert(:user, fn %{author: updated_author} ->
+      User.twitter_registration_changeset(%User{}, Map.put(user_attrs, "author_id", updated_author.id))
+    end)
+    |> Repo.transaction()
+  end
+
+  @doc """
+  Gets a user by author_id.
+  """
+  def get_user_by_author_id(author_id) do
+    Repo.get_by(User, author_id: author_id)
+  end
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for tracking user changes.
 
   ## Examples
