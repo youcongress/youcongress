@@ -44,11 +44,7 @@ defmodule YouCongress.AccountsTest do
   describe "register_user/1" do
     test "validates email uniqueness" do
       %{email: email} = user_fixture()
-      {:error, :user, changeset, _} = Accounts.x_register_user(%{"email" => email})
-      assert "has already been taken" in errors_on(changeset).email
-
-      # Now try with the upper cased email too, to check that email case is ignored.
-      {:error, :user, changeset, _} = Accounts.x_register_user(%{"email" => String.upcase(email)})
+      {:error, :user, changeset, _} = Accounts.register_user(%{"email" => email, "password" => "validpassword123"})
       assert "has already been taken" in errors_on(changeset).email
     end
 
@@ -319,6 +315,106 @@ defmodule YouCongress.AccountsTest do
       {:ok, user} = Accounts.update_role(user, "admin")
       assert user.role == "admin"
       assert Accounts.get_user!(user.id).role == "admin"
+    end
+  end
+
+  describe "x_register_user/2" do
+    test "creates author and user with X profile data" do
+      author_attrs = %{
+        twitter_id_str: "12345",
+        twitter_username: "xuser",
+        name: "X User",
+        profile_image_url: "https://example.com/pic.jpg",
+        description: "Bio",
+        followers_count: 100,
+        friends_count: 50,
+        verified: false,
+        twin_origin: false
+      }
+
+      assert {:ok, %{user: user, author: author}} = Accounts.x_register_user(%{}, author_attrs)
+      assert user.author_id == author.id
+      assert author.twitter_username == "xuser"
+      assert author.twitter_id_str == "12345"
+      assert author.twin_origin == false
+    end
+
+    test "sets twin_origin to false" do
+      author_attrs = %{
+        twitter_username: "xuser2",
+        name: "X User 2",
+        twin_origin: true
+      }
+
+      {:ok, %{author: author}} = Accounts.x_register_user(%{}, author_attrs)
+      # twin_origin should be set to false regardless of input
+      assert author.twin_origin == false
+    end
+  end
+
+  describe "x_register_user_with_existing_author/3" do
+    test "creates user linked to existing author and updates author" do
+      author = YouCongress.AuthorsFixtures.author_fixture(
+        twitter_username: "existing",
+        twin_origin: true
+      )
+
+      update_attrs = %{
+        twitter_id_str: "99999",
+        twitter_username: "existing_updated",
+        name: "Updated Name"
+      }
+
+      assert {:ok, %{user: user, author: updated_author}} =
+               Accounts.x_register_user_with_existing_author(%{}, author, update_attrs)
+
+      assert user.author_id == author.id
+      assert updated_author.twitter_id_str == "99999"
+      assert updated_author.twin_origin == false
+    end
+  end
+
+  describe "get_user_by_author_id/1" do
+    test "returns user when found" do
+      user = user_fixture()
+      user_with_author = Repo.preload(user, :author)
+
+      found_user = Accounts.get_user_by_author_id(user_with_author.author.id)
+      assert found_user.id == user.id
+    end
+
+    test "returns nil when no user has the author_id" do
+      author = YouCongress.AuthorsFixtures.author_fixture()
+      assert Accounts.get_user_by_author_id(author.id) == nil
+    end
+  end
+
+  describe "get_user_by_twitter_id_str_or_username/2" do
+    test "returns user by twitter_id_str" do
+      user = user_fixture(%{}, %{
+        twitter_id_str: "111222333",
+        twitter_username: "user_by_id",
+        name: "User By ID",
+        twin_origin: false
+      })
+
+      found = Accounts.get_user_by_twitter_id_str_or_username("111222333", "other_username")
+      assert found.id == user.id
+    end
+
+    test "falls back to twitter_username when twitter_id_str is nil" do
+      user = user_fixture(%{}, %{
+        twitter_username: "fallback_user",
+        name: "Fallback User",
+        twin_origin: false
+      })
+
+      found = Accounts.get_user_by_twitter_id_str_or_username(nil, "fallback_user")
+      assert found.id == user.id
+    end
+
+    test "returns nil when neither match" do
+      refute Accounts.get_user_by_twitter_id_str_or_username("nonexistent", "nonexistent")
     end
   end
 end

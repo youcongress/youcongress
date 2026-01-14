@@ -47,7 +47,7 @@ defmodule YouCongress.Accounts.User do
   def twitter_registration_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email, :author_id, :role])
-    |> validate_email(opts)
+    |> maybe_validate_email(opts)
   end
 
   def welcome_changeset(user, attrs) do
@@ -67,6 +67,18 @@ defmodule YouCongress.Accounts.User do
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
     |> validate_length(:email, max: 160)
     |> maybe_validate_unique_email(opts)
+  end
+
+  # Validates email only if provided (for X/Twitter registration where email is optional)
+  defp maybe_validate_email(changeset, opts) do
+    if get_change(changeset, :email) do
+      changeset
+      |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
+      |> validate_length(:email, max: 160)
+      |> maybe_validate_unique_email(opts)
+    else
+      changeset
+    end
   end
 
   defp validate_password(changeset, opts) do
