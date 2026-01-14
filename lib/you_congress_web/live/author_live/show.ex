@@ -3,6 +3,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
   require Logger
 
+  alias YouCongress.Accounts
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors
   alias YouCongress.Delegations
@@ -72,7 +73,8 @@ defmodule YouCongressWeb.AuthorLive.Show do
        get_current_user_votes_by_statement_id(current_user)
      )
      |> assign_delegating?()
-     |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))}
+     |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
+     |> assign(:author_has_user?, Accounts.get_user_by_author_id(author.id) != nil)}
   end
 
   def get_current_user_votes_by_statement_id(nil), do: %{}

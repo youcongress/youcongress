@@ -104,4 +104,9 @@ if config_env() in [:dev, :prod] do
   config :you_congress, :twilio_account_sid, System.get_env("TWILIO_ACCOUNT_SID")
   config :you_congress, :twilio_auth_token, System.get_env("TWILIO_AUTH_TOKEN")
   config :you_congress, :twilio_verify_service_sid, System.get_env("TWILIO_VERIFY_SERVICE_SID")
+
+  # X (Twitter) OAuth
+  config :you_congress, :x_client_id, System.get_env("X_CLIENT_ID")
+  config :you_congress, :x_client_secret, System.get_env("X_CLIENT_SECRET")
+  config :you_congress, :x_callback_url, System.get_env("X_CALLBACK_URL")
 end

@@ -32,7 +32,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent.QuoteMenu do
       <div class="hidden absolute right-0 z-10 mt-2 w-56 origin-top-right">
         <div class="w-56 shrink rounded-xl bg-white p-4 text-sm font-semibold leading-6 text-gray-900 shadow-lg ring-1 ring-gray-900/5">
           <%= if @opinion && (@opinion.twin || @opinion.source_url) && is_nil(@opinion.ancestry) do %>
-            <.link href="/faq#change-ai-profile" class="block p-2 hover:text-indigo-600">
+            <.link href="/faq#my-profile" class="block p-2 hover:text-indigo-600">
               I am {@author.name}
             </.link>
             <%= if @statement do %>

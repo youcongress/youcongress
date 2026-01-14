@@ -104,6 +104,14 @@ defmodule YouCongressWeb.Router do
 
   ## Authentication routes
 
+  # X OAuth routes
+  scope "/auth", YouCongressWeb do
+    pipe_through([:browser])
+
+    get("/x", XAuthController, :request)
+    get("/x/callback", XAuthController, :callback)
+  end
+
   scope "/", YouCongressWeb do
     pipe_through([:browser, :redirect_home_if_user_is_authenticated])
 
