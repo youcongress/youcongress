@@ -6,7 +6,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
   alias Anubis.Server.Response
   alias YouCongress.Opinions
 
-  @limit 100
+  @limit 250
 
   schema do
     # We force LLMs to provide statement_id because:
