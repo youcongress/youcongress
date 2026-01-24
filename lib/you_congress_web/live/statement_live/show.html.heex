@@ -31,9 +31,9 @@
   {@statement.title}
 </h1>
 
-<%= if @current_user && @total_opinions > 0 do %>
+<%= if @total_opinions > 0 do %>
   <div class="mt-4">
-    <div class="pb-1">
+    <div class="pb-1 text-xs">
       Cast your vote:
     </div>
     <.live_component
