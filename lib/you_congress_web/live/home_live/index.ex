@@ -261,8 +261,17 @@ defmodule YouCongressWeb.HomeLive.Index do
         %{}
       end
 
+    sorted_statements =
+      Enum.sort_by(statements, fn statement ->
+        if Map.has_key?(user_votes, statement.id) do
+          length(user_votes[statement.id])
+        else
+          0
+        end
+      end)
+
     socket
-    |> assign(:selection_statements, statements)
+    |> assign(:selection_statements, sorted_statements)
     |> assign(:user_votes, user_votes)
   end
 

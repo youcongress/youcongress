@@ -142,7 +142,7 @@ defmodule YouCongress.Seeds do
   defp create_opinions_and_votes(user, authors, statements) do
     for author <- authors, statement <- statements do
       opinion_attrs = %{
-        "content" => Faker.Lorem.sentence(5..15),
+        "content" => Faker.Lorem.sentence(5..15) <> " (lorem ipsum)",
         "author_id" => author.id,
         "user_id" => user.id,
         "source_url" => Faker.Internet.url()
