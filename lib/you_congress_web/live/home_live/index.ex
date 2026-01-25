@@ -246,7 +246,10 @@ defmodule YouCongressWeb.HomeLive.Index do
   end
 
   defp assign_statements_for_selection(socket, selected_ids) do
-    statements = Statements.list_statements_with_opinions_by_authors(selected_ids)
+    statements =
+      selected_ids
+      |> Statements.list_statements_with_opinions_by_authors()
+      |> Enum.sort_by(&(-length(&1.opinions)))
 
     user_votes =
       if current_user = socket.assigns.current_user do
@@ -261,17 +264,8 @@ defmodule YouCongressWeb.HomeLive.Index do
         %{}
       end
 
-    sorted_statements =
-      Enum.sort_by(statements, fn statement ->
-        if Map.has_key?(user_votes, statement.id) do
-          length(user_votes[statement.id])
-        else
-          0
-        end
-      end)
-
     socket
-    |> assign(:selection_statements, sorted_statements)
+    |> assign(:selection_statements, statements)
     |> assign(:user_votes, user_votes)
   end
 
