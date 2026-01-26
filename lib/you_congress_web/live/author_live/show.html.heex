@@ -1,6 +1,14 @@
 <.header>
   {@author.name || "Anonymous"}
   <:actions>
+    <%= unless @author_has_user? do %>
+      <.link
+        navigate={~p"/faq#my-profile"}
+        class="hidden md:inline-block text-xs hover:underline text-sm pr-2"
+      >
+        I am this person!
+      </.link>
+    <% end %>
     <%= if @current_user && @current_user.author_id == @author.id do %>
       <.link patch={~p"/settings"} phx-click={JS.push_focus()}>
         <.button>Settings</.button>
@@ -30,6 +38,13 @@
 
 <div>
   <div>{@author.bio || @author.description}</div>
+
+  <.link
+    navigate={~p"/faq#my-profile"}
+    class="md:hidden text-xs hover:underline text-sm pr-2"
+  >
+    I am this person!
+  </.link>
 
   <div class="pt-6 space-y-2">
     <%= if @author.twitter_username do %>

@@ -5,7 +5,7 @@ defmodule YouCongress.MixProject do
     [
       app: :you_congress,
       version: "0.1.0",
-      elixir: "~> 1.19.4",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -66,7 +66,8 @@ defmodule YouCongress.MixProject do
       {:ancestry, "~> 0.1.3"},
       {:lazy_html, ">= 0.1.8", only: :test},
       {:tidewave, "~> 0.5.2", only: :dev},
-      {:castore, "~> 1.0"}
+      {:castore, "~> 1.0"},
+      {:req, "~> 0.5"}
     ]
   end
 
