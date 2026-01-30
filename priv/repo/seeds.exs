@@ -21,25 +21,28 @@ defmodule YouCongress.Seeds do
   end
 
   defp find_or_create_user do
-    args = %{
+    user_attrs = %{
       "email" => "admin@youcongress.org",
-      "password" => "admin:1234",
-      "name" => "Admin",
-      "bio" => "YouCongress 1st admin"
+      "password" => "admin:1234"
     }
 
-    if user = Accounts.get_user_by_email(args["email"]) do
-      IO.puts("User #{args["email"]} already exists.")
+    author_attrs = %{
+      "name" => "Admin",
+      "bio" => "YouCongress admin"
+    }
+
+    if user = Accounts.get_user_by_email(user_attrs["email"]) do
+      IO.puts("User #{user_attrs["email"]} already exists.")
       user
     else
-      create_user(args)
+      create_user(user_attrs, author_attrs)
     end
   end
 
-  defp create_user(args) do
-    case Accounts.register_user(args) do
+  defp create_user(user_attrs, author_attrs) do
+    case Accounts.register_user(user_attrs, author_attrs) do
       {:ok, %{user: user}} ->
-        IO.puts("User #{args["email"]} created successfully.")
+        IO.puts("User #{user_attrs["email"]} created successfully.")
 
         make_admin(user)
 
