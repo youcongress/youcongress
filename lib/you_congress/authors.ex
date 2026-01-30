@@ -90,6 +90,36 @@ defmodule YouCongress.Authors do
     Repo.one!(query)
   end
 
+  @doc """
+  Gets an author by twitter_id_str first, then falls back to twitter_username.
+  Returns nil if no author is found.
+
+  ## Examples
+
+      iex> get_author_by_twitter_id_str_or_username("123456", "johndoe")
+      %Author{}
+
+      iex> get_author_by_twitter_id_str_or_username(nil, "johndoe")
+      %Author{}
+
+      iex> get_author_by_twitter_id_str_or_username(nil, nil)
+      nil
+
+  """
+  def get_author_by_twitter_id_str_or_username(nil, nil), do: nil
+
+  def get_author_by_twitter_id_str_or_username(nil, twitter_username) do
+    get_author_by(twitter_username: twitter_username)
+  end
+
+  def get_author_by_twitter_id_str_or_username(twitter_id_str, twitter_username) do
+    # Try to find by twitter_id_str first (more reliable)
+    case Repo.get_by(Author, twitter_id_str: twitter_id_str) do
+      nil -> get_author_by(twitter_username: twitter_username)
+      author -> author
+    end
+  end
+
   defp build_query(opts) do
     base_query = from(a in Author)
 
