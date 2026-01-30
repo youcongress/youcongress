@@ -42,3 +42,6 @@ config :you_congress, amplitude_api_key: nil
 config :you_congress, :hall_classifier, YouCongress.Halls.ClassificationFake
 config :you_congress, :quotator_implementation, YouCongress.Opinions.Quotes.QuotatorFake
 config :you_congress, :title_rewording_implementation, YouCongress.Statements.TitleRewordingFake
+
+# Disable the MCP session store during tests to avoid runtime warnings.
+config :anubis_mcp, :session_store, enabled: false

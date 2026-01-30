@@ -175,6 +175,9 @@ defmodule YouCongress.Opinions do
       {:ids, ids}, query ->
         from q in query, where: q.id in ^ids
 
+      {:exclude_ids, exclude_ids}, query ->
+        from q in query, where: q.id not in ^exclude_ids
+
       {:author_ids, author_ids}, query ->
         from q in query, where: q.author_id in ^author_ids
 
