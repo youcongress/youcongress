@@ -2,27 +2,26 @@
   {@author.name || "Anonymous"}
   <:actions>
     <%= if @current_user && @current_user.author_id == @author.id do %>
-      <.link patch={~p"/settings"} phx-click={JS.push_focus()}>
-        <.button>Settings</.button>
+      <.link patch={~p"/settings"} phx-click={JS.push_focus()} class="phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3 text-sm font-semibold leading-6 text-white active:text-white/80">
+        Settings
       </.link>
     <% else %>
       <Tooltip.delegation assigns={assigns} />
       <.link phx-click="toggle-delegate" phx-value-author_id={@author.id}>
         <%= if @delegating? do %>
-          <button
-            type="button"
-            class="rounded-lg border-2 border-zinc-900 bg-transparent px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-900 hover:text-white transition-colors duration-200"
-          >
+          <span class="rounded-lg border-2 border-zinc-900 bg-transparent px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-900 hover:text-white transition-colors duration-200">
             Remove delegate
-          </button>
+          </span>
         <% else %>
-          <.button>Delegate</.button>
+          <span class="phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3 text-sm font-semibold leading-6 text-white active:text-white/80">
+            Delegate
+          </span>
         <% end %>
       </.link>
     <% end %>
     <%= if @current_user && Permissions.can_edit_author?(@current_user) do %>
-      <.link patch={~p"/authors/#{@author}/show/edit"} phx-click={JS.push_focus()}>
-        <.button>Edit author</.button>
+      <.link patch={~p"/authors/#{@author}/show/edit"} phx-click={JS.push_focus()} class="phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3 text-sm font-semibold leading-6 text-white active:text-white/80">
+        Edit author
       </.link>
     <% end %>
   </:actions>

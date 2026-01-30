@@ -131,7 +131,6 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
         src="/images/comment.svg"
         alt="Comment"
         class="h-5 w-5 inline"
-        cache-control="public, max-age=2592000"
       />
       <span class="text-gray-600 pl-1 text-xs">
         {if @opinion.descendants_count > 0, do: @opinion.descendants_count}
@@ -151,9 +150,8 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
       phx-value-opinion_id={@opinion.id}
       phx-target={@target}
       src={"/images/#{if @liked, do: "filled-heart", else: "heart"}.svg"}
-      alt="Comment"
+      alt="Like"
       class="h-5 w-5 inline cursor-pointer"
-      cache-control="public, max-age=2592000"
     />
     <span class="text-gray-600 pl-1 text-xs">
       {if @opinion.likes_count > 0, do: @opinion.likes_count}
@@ -183,9 +181,8 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
     <a href={@href} target="_blank">
       <img
         src="/images/x.svg"
-        alt="X"
+        alt="Share on X"
         class="h-5 w-5 inline cursor-pointer"
-        cache-control="public, max-age=2592000"
       />
     </a>
     """
@@ -198,16 +195,14 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
     <%= if @is_human do %>
       <img
         src="/images/human-avatar.svg"
-        alt="human-avatar"
+        alt="Human avatar"
         class="h-8 w-8 inline"
-        cache-control="public, max-age=2592000"
       />
     <% else %>
       <img
         src="/images/robot-avatar.svg"
-        alt="robot-avatar"
+        alt="AI avatar"
         class="h-8 w-8 inline"
-        cache-control="public, max-age=2592000"
       />
     <% end %>
     """

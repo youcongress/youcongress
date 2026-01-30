@@ -25,7 +25,6 @@ defmodule YouCongressWeb.Tools.Tooltip do
         src="/images/info.svg"
         alt="Info"
         class="h-5 w-5 inline"
-        cache-control="public, max-age=2592000"
       />
     </Tooltip.render>
     """

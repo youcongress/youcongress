@@ -20,9 +20,9 @@ defmodule YouCongressWeb.StatementLive.NewFormComponent do
         class="space-y-6"
       >
         <div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">
+          <h2 class="text-lg font-semibold text-gray-900 mb-2">
             What policy proposal or claim would you like to analyze?
-          </h3>
+          </h2>
           <p class="text-sm mb-4">
             <span>
               You'll be able to add <strong>sourced quotes</strong> from experts and public figures.
