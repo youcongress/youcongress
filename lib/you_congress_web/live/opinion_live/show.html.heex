@@ -1,3 +1,4 @@
+<h1 class="sr-only">Comment by {@opinion.author.name}</h1>
 <%= if @parent_opinion do %>
   <div class="pb-6">
     <.link href={~p"/c/#{@parent_opinion.id}"}>
@@ -5,7 +6,6 @@
         src="/images/arrow-left.svg"
         alt="Arrow left"
         class="h-5 w-5 inline"
-        cache-control="public, max-age=2592000"
       />
     </.link>
     Comment
@@ -109,9 +109,9 @@
 
     <%= if @show_vote_modal do %>
       <div class="mt-4 bg-blue-50 rounded-md p-4">
-        <h4 class="text-sm font-medium text-gray-900 mb-3">
+        <p class="text-sm font-medium text-gray-900 mb-3">
           How much does the author agree with this poll?
-        </h4>
+        </p>
         <p class="text-xs text-gray-600 mb-3">
           {@selected_statement_title}
         </p>
@@ -165,7 +165,6 @@
         else: "Log in to comment."
     }
     disabled={!@current_user}
-    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
   />
 
   <button
@@ -184,7 +183,7 @@
 
 <div class="mt-6">
   <%= if @child_opinions != [] do %>
-    <h3 class="text-lg font-semibold mb-4">Comments</h3>
+    <h2 class="text-lg font-semibold mb-4">Comments</h2>
   <% end %>
   <%= for child_opinion <- @child_opinions do %>
     <div class="pt-6 mb-4 pl-4 border-l-2 border-gray-200">

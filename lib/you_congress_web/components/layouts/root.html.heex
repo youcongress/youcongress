@@ -23,7 +23,7 @@
     <% end %>
 
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
-    <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
+    <script defer phx-track-static src={~p"/assets/app.js"}>
     </script>
     <%= if Application.get_env(:you_congress, :env) == :prod do %>
       <script defer data-domain="youcongress.org" src="https://plausible.io/js/script.js">

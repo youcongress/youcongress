@@ -8,11 +8,11 @@ defmodule YouCongressWeb.Components.FooterComponent do
 
   def footer(assigns) do
     ~H"""
-    <div class="text-center pb-10 text-sm">
+    <footer class="text-center pb-10 text-sm" role="contentinfo">
       <.link href={~p"/terms"}>Terms</.link>
       · <.link href={~p"/privacy-policy"}>Privacy</.link>
       · <.link href="mailto:hello@youcongress.org" target="_blank">Contact</.link>
-    </div>
+    </footer>
     """
   end
 end

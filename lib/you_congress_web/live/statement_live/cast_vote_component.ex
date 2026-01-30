@@ -101,19 +101,19 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
         phx-click="vote"
         phx-value-response={@answer}
         phx-target={@myself}
-        class={"rounded-lg bg-#{ResultsComponent.response_color(@answer)}-500 h-10 w-16 flex md:p-4 flex-col justify-center items-center p-1 text-xs font-semibold text-white shadow-sm ring-1 ring-inset ring-#{ResultsComponent.response_color(@answer)}-300 hover:bg-#{ResultsComponent.response_color(@answer)}-600 #{if @user_vote_answer && @user_vote_answer != @answer, do: "opacity-40", else: ""}"}
+        class={"rounded-lg bg-#{ResultsComponent.response_color(@answer)}-700 h-10 w-16 flex md:p-4 flex-col justify-center items-center p-1 text-xs font-semibold text-white shadow-sm ring-1 ring-inset ring-#{ResultsComponent.response_color(@answer)}-500 hover:bg-#{ResultsComponent.response_color(@answer)}-800 #{if @user_vote_answer && @user_vote_answer != @answer, do: "opacity-40", else: ""}"}
       >
         <%= if assigns[:label1] && assigns[:label2] do %>
-          <div>
+          <span class="block">
             {if @user_vote_answer == @answer, do: "✓ "}
             {@label1}
-          </div>
-          <div>
+          </span>
+          <span class="block">
             {@label2}
-          </div>
+          </span>
         <% else %>
           {if @user_vote_answer == @answer, do: "✓ "}
-          <div>{String.capitalize(to_string(@answer))}</div>
+          <span>{String.capitalize(to_string(@answer))}</span>
         <% end %>
       </button>
     </div>
