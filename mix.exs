@@ -66,7 +66,8 @@ defmodule YouCongress.MixProject do
       {:ancestry, "~> 0.1.3"},
       {:lazy_html, ">= 0.1.8", only: :test},
       {:tidewave, "~> 0.5.2", only: :dev},
-      {:castore, "~> 1.0"}
+      {:castore, "~> 1.0"},
+      {:anubis_mcp, "~> 0.17.0"}
     ]
   end
 
