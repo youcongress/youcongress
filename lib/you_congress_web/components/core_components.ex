@@ -417,7 +417,7 @@ defmodule YouCongressWeb.CoreComponents do
   """
   attr :class, :string, default: nil
 
-  slot :inner_block, required: true
+  slot :inner_block
   slot :subtitle
   slot :actions
 
@@ -425,7 +425,7 @@ defmodule YouCongressWeb.CoreComponents do
     ~H"""
     <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
       <div>
-        <h1 class="text-lg font-semibold leading-8 text-zinc-800">
+        <h1 :if={@inner_block != []} class="text-lg font-semibold leading-8 text-zinc-800">
           {render_slot(@inner_block)}
         </h1>
         <p :if={@subtitle != []} class="mt-2 text-sm leading-6 text-zinc-600">

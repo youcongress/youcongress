@@ -1,9 +1,9 @@
 <div class="max-w-4xl mx-auto space-y-8">
   <!-- Header Section -->
-  <section>
-    <div class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
+  <section aria-labelledby="about-heading">
+    <h1 id="about-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
       About YouCongress
-    </div>
+    </h1>
     <p class="mt-6 text-lg leading-relaxed">
       YouCongress is a non-profit and <.link
         class="underline text-blue-600 hover:text-blue-800"
@@ -14,17 +14,17 @@
   </section>
   
 <!-- Why This Matters Section -->
-  <section>
-    <div class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
+  <section aria-labelledby="why-heading">
+    <h2 id="why-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
       Why This Matters
-    </div>
+    </h2>
     <p class="mt-6 text-lg leading-relaxed">
       Forecasters ask "What will happen?" We ask "What should we do?" or "What would we love to happen even when unlikely?" Inspired by Scott Alexander's "Moloch" — the idea that misaligned incentives can push everyone toward outcomes nobody wants — YouCongress makes shared preferences visible and legible. By pairing direct voting, optional delegation, and sourced expertise, we offer a practical coordination tool: not binding referendums, but decision support that helps leaders choose policies aligned with public and expert values. Starting with AI safety.
     </p>
   </section>
   
 <!-- Learn More Section -->
-  <section>
+  <div>
     <p class="text-lg leading-relaxed">
       For further details, see our <.link
         href="https://www.lesswrong.com/posts/4KjiZeAWc7Yv9oyCb/tackling-moloch-how-youcongress-offers-a-novel-coordination"
@@ -32,20 +32,20 @@
         class="underline text-blue-600 hover:text-blue-800"
       >LessWrong post</.link>.
     </p>
-  </section>
+  </div>
   
 <!-- How It Works Section -->
-  <section>
-    <div class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
+  <section aria-labelledby="how-heading">
+    <h2 id="how-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
       How It Works
-    </div>
+    </h2>
     <div class="mt-6 space-y-4">
       <div class="flex items-start space-x-3">
         <div class="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
           <span class="text-white text-sm font-bold">1</span>
         </div>
         <div>
-          <h4 class="font-semibold text-lg">Verifiable Quotes</h4>
+          <h3 class="font-semibold text-lg">Verifiable Quotes</h3>
           <p class="text-gray-700 leading-relaxed">
             Each statement (policy proposals and claims) includes citations from researchers, officials, and public figures so debate stays tied to evidence.
           </p>
@@ -57,7 +57,7 @@
           <span class="text-white text-sm font-bold">2</span>
         </div>
         <div>
-          <h4 class="font-semibold text-lg">Vote, delegate or add your own opinion</h4>
+          <h3 class="font-semibold text-lg">Vote, delegate or add your own opinion</h3>
           <p class="text-gray-700 leading-relaxed">
             Vote directly or delegate to trusted experts and other users. When you don't directly vote, you'll vote with the majority of your trusted delegates. Change your votes and delegates anytime.
           </p>
@@ -69,7 +69,7 @@
           <span class="text-white text-sm font-bold">3</span>
         </div>
         <div>
-          <h4 class="font-semibold text-lg">For Better Decisions</h4>
+          <h3 class="font-semibold text-lg">For Better Decisions</h3>
           <p class="text-gray-700 leading-relaxed">
             Our goal is to inform choices—whether by parliaments, companies, or citizens—so policies track what experts and citizens prefer on concrete proposals.
           </p>
@@ -79,17 +79,17 @@
   </section>
   
 <!-- Learn More Section -->
-  <section>
+  <div>
     <p class="text-lg leading-relaxed">
       You can read more in the <.link
         href="/faq"
         class="underline text-blue-600 hover:text-blue-800"
       >Frequently Asked Questions</.link>.
     </p>
-  </section>
+  </div>
   
 <!-- Call to Action Section -->
-  <section class="text-center">
+  <div class="text-center">
     <%= if @current_user do %>
       <a
         href={~p"/"}
@@ -106,7 +106,7 @@
         Get Started - Log In
       </.link>
     <% end %>
-  </section>
+  </div>
   
 <!-- Footer Section -->
   <footer class="text-center pt-8 border-t border-gray-200">

@@ -67,7 +67,8 @@ defmodule YouCongress.MixProject do
       {:lazy_html, ">= 0.1.8", only: :test},
       {:tidewave, "~> 0.5.2", only: :dev},
       {:castore, "~> 1.0"},
-      {:req, "~> 0.5"}
+      {:req, "~> 0.5"},
+      {:anubis_mcp, "~> 0.17.0"}
     ]
   end
 

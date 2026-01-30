@@ -25,7 +25,6 @@ defmodule YouCongressWeb.Tools.Tooltip do
         src="/images/info.svg"
         alt="Info"
         class="h-5 w-5 inline"
-        cache-control="public, max-age=2592000"
       />
     </Tooltip.render>
     """
@@ -84,7 +83,7 @@ defmodule YouCongressWeb.Tools.Tooltip do
 
     attrs =
       assigns
-      |> assigns_to_attributes([:content, :id, :position, :variant])
+      |> assigns_to_attributes([:color, :content, :id, :position, :variant])
       |> Keyword.put_new(:class, class)
 
     assign(assigns, :tooltip_attrs, attrs)

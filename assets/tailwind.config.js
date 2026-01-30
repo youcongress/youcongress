@@ -21,11 +21,24 @@ module.exports = {
     "bg-green-500",
     "bg-gray-500",
     "bg-blue-500",
+    // Voting buttons with accessible contrast
+    "bg-red-700",
+    "bg-green-700",
+    "bg-gray-700",
+    "bg-blue-700",
+    "bg-red-800",
+    "bg-green-800",
+    "bg-gray-800",
+    "bg-blue-800",
+    "ring-red-500",
+    "ring-green-500",
+    "ring-gray-500",
+    "ring-blue-500",
   ],
   theme: {
     extend: {
       colors: {
-        brand: "#FD4F00",
+        brand: "#C73E00",
       }
     },
   },

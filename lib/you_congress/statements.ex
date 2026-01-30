@@ -56,6 +56,9 @@ defmodule YouCongress.Statements do
           {:title_contains, title}, query ->
             where(query, [v], ilike(v.title, ^"%#{title}%"))
 
+          {:exclude_ids, ids}, query ->
+            where(query, [v], v.id not in ^ids)
+
           {:search, search}, query ->
             terms = YouCongress.SearchParser.parse(search)
 
