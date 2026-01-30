@@ -108,5 +108,43 @@ defmodule YouCongress.AuthorsTest do
       author = author_fixture()
       assert %Ecto.Changeset{} = Authors.change_author(author)
     end
+
+    test "get_author_by_twitter_id_str_or_username/2 returns author by twitter_id_str" do
+      author = author_fixture(twitter_id_str: "123456789", twitter_username: "user1")
+
+      found = Authors.get_author_by_twitter_id_str_or_username("123456789", "other_username")
+      assert found.id == author.id
+    end
+
+    test "get_author_by_twitter_id_str_or_username/2 falls back to twitter_username" do
+      author = author_fixture(twitter_username: "fallback_author")
+
+      found = Authors.get_author_by_twitter_id_str_or_username(nil, "fallback_author")
+      assert found.id == author.id
+    end
+
+    test "get_author_by_twitter_id_str_or_username/2 prefers twitter_id_str over username" do
+      author1 = author_fixture(twitter_id_str: "111", twitter_username: "author_one")
+      _author2 = author_fixture(twitter_id_str: "222", twitter_username: "author_two")
+
+      # Should find author1 by twitter_id_str even though author_two username is passed
+      found = Authors.get_author_by_twitter_id_str_or_username("111", "author_two")
+      assert found.id == author1.id
+    end
+
+    test "get_author_by_twitter_id_str_or_username/2 returns nil for both nil" do
+      assert Authors.get_author_by_twitter_id_str_or_username(nil, nil) == nil
+    end
+
+    test "get_author_by_twitter_id_str_or_username/2 returns nil when not found" do
+      assert Authors.get_author_by_twitter_id_str_or_username("nonexistent", "nonexistent") == nil
+    end
+
+    test "get_author_by_twitter_id_str_or_username/2 is case insensitive for username" do
+      author = author_fixture(twitter_username: "CaseSensitive")
+
+      found = Authors.get_author_by_twitter_id_str_or_username(nil, "casesensitive")
+      assert found.id == author.id
+    end
   end
 end

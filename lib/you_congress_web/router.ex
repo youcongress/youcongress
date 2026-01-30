@@ -13,6 +13,7 @@ defmodule YouCongressWeb.Router do
     plug(:put_secure_browser_headers)
     plug(:fetch_current_user)
     plug(:reject_blocked_user)
+    plug(:redirect_to_user_registration_if_email_or_phone_unconfirmed)
   end
 
   pipeline :mcp do
@@ -112,6 +113,14 @@ defmodule YouCongressWeb.Router do
   end
 
   ## Authentication routes
+
+  # X OAuth routes
+  scope "/auth", YouCongressWeb do
+    pipe_through([:browser])
+
+    get("/x", XAuthController, :request)
+    get("/x/callback", XAuthController, :callback)
+  end
 
   scope "/", YouCongressWeb do
     pipe_through([:browser, :redirect_home_if_user_is_authenticated])

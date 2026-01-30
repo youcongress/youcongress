@@ -135,8 +135,22 @@ defmodule YouCongressWeb.UserAuth do
   def redirect_to_user_registration_if_email_or_phone_unconfirmed(conn, _opts) do
     user = conn.assigns[:current_user]
 
-    if user && !Accounts.sign_up_complete?(user) &&
-         !(current_path(conn) in ["/sign_up", "/log_out"]) do
+    allowed_paths = [
+      ~p"/sign_up",
+      ~p"/log_out",
+      ~p"/terms",
+      ~p"/privacy-policy"
+    ]
+
+    allow_prefix = ["/dev/mailbox", "/users/confirm/"]
+
+    current = current_path(conn)
+
+    path_allowed? =
+      current in allowed_paths or
+        Enum.any?(allow_prefix, fn prefix -> String.starts_with?(current, prefix) end)
+
+    if user && !Accounts.sign_up_complete?(user) && !path_allowed? do
       conn
       |> redirect(to: ~p"/sign_up")
       |> halt()
