@@ -14,7 +14,9 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuard do
     conn = fetch_cookies(conn)
 
     case get_session_id(conn) do
-      nil -> conn
+      nil ->
+        conn
+
       session_id ->
         if session_exists_locally?(session_id) do
           conn

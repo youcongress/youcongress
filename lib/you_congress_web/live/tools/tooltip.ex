@@ -83,7 +83,7 @@ defmodule YouCongressWeb.Tools.Tooltip do
 
     attrs =
       assigns
-      |> assigns_to_attributes([:content, :id, :position, :variant])
+      |> assigns_to_attributes([:color, :content, :id, :position, :variant])
       |> Keyword.put_new(:class, class)
 
     assign(assigns, :tooltip_attrs, attrs)
