@@ -20,18 +20,23 @@ defmodule YouCongressWeb.TopHeaderComponent do
         <!-- Desktop Navigation -->
         <div class="hidden md:flex text-sm items-center gap-6 leading-6 text-zinc-900">
           <.link
-            :if={@current_user}
+            :if={@current_user && YouCongress.Accounts.sign_up_complete?(@current_user)}
             href={~p"/home"}
             class="px-3 py-2 hover:text-zinc-700 transition-colors"
           >
             Home
           </.link>
-          <.link href={~p"/about"} class="px-3 py-2 hover:text-zinc-700 transition-colors">
+          <.link
+            :if={!@current_user || YouCongress.Accounts.sign_up_complete?(@current_user)}
+            href={~p"/about"}
+            class="px-3 py-2 hover:text-zinc-700 transition-colors"
+          >
             About
           </.link>
 
           <%= if @current_user do %>
             <.link
+              :if={YouCongress.Accounts.sign_up_complete?(@current_user)}
               href={author_path(@current_user.author)}
               class="px-3 py-2 hover:text-zinc-700 transition-colors"
             >
@@ -53,6 +58,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
         <div class="md:hidden flex flex-col items-end gap-3 text-sm">
           <div class="flex items-center gap-4">
             <.link
+              :if={!@current_user || YouCongress.Accounts.sign_up_complete?(@current_user)}
               href={~p"/about"}
               class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
             >
@@ -60,6 +66,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
             </.link>
             <%= if @current_user do %>
               <.link
+                :if={YouCongress.Accounts.sign_up_complete?(@current_user)}
                 href={author_path(@current_user.author)}
                 class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
               >

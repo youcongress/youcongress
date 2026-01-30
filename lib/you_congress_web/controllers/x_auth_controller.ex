@@ -133,14 +133,16 @@ defmodule YouCongressWeb.XAuthController do
 
   defp create_new_author_and_user(conn, x_user_data) do
     author_attrs = build_author_attrs(x_user_data)
-    user_attrs = %{"email" => x_user_data.email}
+    # Don't set email here - user will provide it in the profile completion step
+    user_attrs = %{}
 
     case Accounts.x_register_user(user_attrs, author_attrs) do
       {:ok, %{user: user}} ->
         Track.event("Register via X", user)
 
+        # Log in the user and redirect to sign_up to complete profile (add email)
         conn
-        |> put_flash(:info, "Welcome to YouCongress!")
+        |> put_session(:user_return_to, ~p"/sign_up")
         |> UserAuth.log_in_user(user)
 
       {:error, :author, changeset, _} ->
@@ -161,14 +163,16 @@ defmodule YouCongressWeb.XAuthController do
 
   defp create_user_for_existing_author(conn, author, x_user_data) do
     author_update_attrs = build_author_attrs(x_user_data)
-    user_attrs = %{"email" => x_user_data.email}
+    # Don't set email here - user will provide it in the profile completion step
+    user_attrs = %{}
 
     case Accounts.x_register_user_with_existing_author(user_attrs, author, author_update_attrs) do
       {:ok, %{user: user}} ->
         Track.event("Register via X (existing author)", user)
 
+        # Log in the user and redirect to sign_up to complete profile (add email)
         conn
-        |> put_flash(:info, "Welcome to YouCongress!")
+        |> put_session(:user_return_to, ~p"/sign_up")
         |> UserAuth.log_in_user(user)
 
       {:error, :author, changeset, _} ->
@@ -194,9 +198,17 @@ defmodule YouCongressWeb.XAuthController do
 
     Track.event("Login via X", user)
 
-    conn
-    |> put_flash(:info, "Welcome back!")
-    |> UserAuth.log_in_user(user)
+    # Check if user needs to complete profile (no confirmed email)
+    if user.email_confirmed_at do
+      conn
+      |> put_flash(:info, "Welcome back!")
+      |> UserAuth.log_in_user(user)
+    else
+      conn
+      |> put_flash(:info, "Welcome back! Please complete your profile.")
+      |> put_session(:user_return_to, ~p"/sign_up")
+      |> UserAuth.log_in_user(user)
+    end
   end
 
   defp build_author_attrs(x_user_data) do

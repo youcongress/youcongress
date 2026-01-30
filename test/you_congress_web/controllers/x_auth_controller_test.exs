@@ -39,7 +39,9 @@ defmodule YouCongressWeb.XAuthControllerTest do
       conn = conn |> get(~p"/auth/x") |> fetch_flash()
 
       assert redirected_to(conn) == ~p"/log_in"
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "X authentication is not configured."
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "X authentication is not configured."
     end
   end
 
@@ -61,7 +63,9 @@ defmodule YouCongressWeb.XAuthControllerTest do
         |> fetch_flash()
 
       assert redirected_to(conn) == ~p"/log_in"
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Authentication failed. Please try again."
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Authentication failed. Please try again."
     end
 
     test "redirects to login when code_verifier is missing", %{conn: conn} do
@@ -72,7 +76,9 @@ defmodule YouCongressWeb.XAuthControllerTest do
         |> fetch_flash()
 
       assert redirected_to(conn) == ~p"/log_in"
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Authentication failed. Please try again."
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Authentication failed. Please try again."
     end
 
     test "redirects to login when OAuth error is returned", %{conn: conn} do
@@ -86,7 +92,9 @@ defmodule YouCongressWeb.XAuthControllerTest do
         |> fetch_flash()
 
       assert redirected_to(conn) == ~p"/log_in"
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Authentication was cancelled or denied."
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Authentication was cancelled or denied."
     end
 
     test "redirects to login when callback has no recognized params", %{conn: conn} do
@@ -97,7 +105,9 @@ defmodule YouCongressWeb.XAuthControllerTest do
         |> fetch_flash()
 
       assert redirected_to(conn) == ~p"/log_in"
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Authentication failed. Please try again."
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Authentication failed. Please try again."
     end
 
     test "redirects to login when token exchange fails", %{conn: conn} do
@@ -112,7 +122,9 @@ defmodule YouCongressWeb.XAuthControllerTest do
           |> fetch_flash()
 
         assert redirected_to(conn) == ~p"/log_in"
-        assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Authentication failed. Please try again."
+
+        assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+                 "Authentication failed. Please try again."
       end
     end
 
@@ -149,9 +161,9 @@ defmodule YouCongressWeb.XAuthControllerTest do
           |> get(~p"/auth/x/callback", %{"code" => "auth_code", "state" => "valid_state"})
           |> fetch_flash()
 
-        # Should redirect to home after successful registration
-        assert redirected_to(conn) == ~p"/home"
-        assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Welcome to YouCongress!"
+        # Should redirect to sign_up to complete profile after successful registration
+        assert redirected_to(conn) == ~p"/sign_up"
+
         assert get_session(conn, :user_token)
 
         # Verify author was created
@@ -190,7 +202,9 @@ defmodule YouCongressWeb.XAuthControllerTest do
         assert get_session(conn, :user_token)
 
         # Verify the same user was logged in
-        logged_in_user = YouCongress.Accounts.get_user_by_session_token(get_session(conn, :user_token))
+        logged_in_user =
+          YouCongress.Accounts.get_user_by_session_token(get_session(conn, :user_token))
+
         assert logged_in_user.id == user.id
       end
     end
@@ -218,8 +232,8 @@ defmodule YouCongressWeb.XAuthControllerTest do
           |> get(~p"/auth/x/callback", %{"code" => "auth_code", "state" => "valid_state"})
           |> fetch_flash()
 
-        assert redirected_to(conn) == ~p"/home"
-        assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Welcome to YouCongress!"
+        assert redirected_to(conn) == ~p"/sign_up"
+
         assert get_session(conn, :user_token)
 
         # Verify user was created and linked to existing author

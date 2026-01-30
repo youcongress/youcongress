@@ -67,6 +67,34 @@ defmodule YouCongressWeb.UserRegistrationLive do
         </.simple_form>
       <% end %>
 
+      <%= if @step == :confirm_x_profile do %>
+        <.header class="text-center">
+          Complete Your Profile
+          <:subtitle>
+            Please confirm your name and add your email address
+          </:subtitle>
+        </.header>
+
+        <.simple_form
+          for={@form}
+          id="x_profile_form"
+          phx-submit="save_x_profile"
+          phx-change="validate_x_profile"
+          method="post"
+        >
+          <.error :if={@check_errors}>
+            Oops, something went wrong! Please check the errors below.
+          </.error>
+
+          <.input field={@form[:name]} type="text" label="Name" required />
+          <.input field={@form[:email]} type="email" label="Email" required />
+
+          <:actions>
+            <.button phx-disable-with="Saving..." class="w-full">Continue</.button>
+          </:actions>
+        </.simple_form>
+      <% end %>
+
       <%= if @step == :check_email do %>
         <.header class="text-center">
           Please check your email & spam folder
@@ -188,7 +216,9 @@ defmodule YouCongressWeb.UserRegistrationLive do
     step =
       cond do
         current_user == nil -> :enter_email_password
-        current_user.email_confirmed_at == nil -> :validate_email
+        # X user without email needs to complete profile first
+        current_user.email == nil -> :confirm_x_profile
+        current_user.email_confirmed_at == nil -> :check_email
         current_user.phone_number == nil -> :enter_mobile_phone
         current_user.phone_number_confirmed_at == nil -> :enter_mobile_phone
         true -> :done
@@ -197,7 +227,15 @@ defmodule YouCongressWeb.UserRegistrationLive do
     if step == :done do
       {:ok, redirect(socket, to: ~p"/welcome")}
     else
-      changeset = Accounts.change_user_registration(current_user || %User{})
+      # For X users, preload their name from the author
+      initial_values =
+        if step == :confirm_x_profile && current_user.author do
+          %{name: current_user.author.name}
+        else
+          %{}
+        end
+
+      changeset = Accounts.change_user_registration(current_user || %User{}, initial_values)
 
       socket =
         socket
@@ -346,6 +384,34 @@ defmodule YouCongressWeb.UserRegistrationLive do
   def handle_event("validate", %{"user" => user_params}, socket) do
     changeset = Accounts.change_user_registration(%User{}, user_params)
     {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
+  end
+
+  def handle_event("validate_x_profile", %{"user" => user_params}, socket) do
+    changeset = Accounts.change_user_email(socket.assigns.user, user_params)
+    {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
+  end
+
+  def handle_event("save_x_profile", %{"user" => params}, socket) do
+    user = socket.assigns.user
+    email = params["email"]
+    name = params["name"]
+
+    with {:ok, user} <- Accounts.update_x_user_email(user, email),
+         {:ok, _author} <- YouCongress.Authors.update_author(user.author, %{name: name}) do
+      Track.event("X profile completed", user)
+
+      Accounts.deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
+
+      socket =
+        socket
+        |> assign(:step, :check_email)
+        |> assign(:user, user)
+
+      {:noreply, socket}
+    else
+      {:error, changeset} ->
+        {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
+    end
   end
 
   def handle_event("resend_email", _params, socket) do

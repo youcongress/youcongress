@@ -73,7 +73,9 @@ defmodule YouCongress.Accounts.User do
   defp validate_optional_email(changeset, opts) do
     if get_change(changeset, :email) do
       changeset
-      |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
+      |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/,
+        message: "must have the @ sign and no spaces"
+      )
       |> validate_length(:email, max: 160)
       |> maybe_validate_unique_email(opts)
     else
@@ -132,6 +134,16 @@ defmodule YouCongress.Accounts.User do
       %{changes: %{email: _}} = changeset -> changeset
       %{} = changeset -> add_error(changeset, :email, "did not change")
     end
+  end
+
+  @doc """
+  A user changeset for setting email for X users who don't have one.
+  Unlike email_changeset, this doesn't require the email to have changed.
+  """
+  def x_profile_email_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:email])
+    |> validate_email(opts)
   end
 
   def phone_number_changeset(user, attrs) do

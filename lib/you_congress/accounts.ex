@@ -163,7 +163,10 @@ defmodule YouCongress.Accounts do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:author, Author.changeset(author, author_update_attrs))
     |> Ecto.Multi.insert(:user, fn %{author: updated_author} ->
-      User.twitter_registration_changeset(%User{}, Map.put(user_attrs, "author_id", updated_author.id))
+      User.twitter_registration_changeset(
+        %User{},
+        Map.put(user_attrs, "author_id", updated_author.id)
+      )
     end)
     |> Repo.transaction()
   end
@@ -237,6 +240,20 @@ defmodule YouCongress.Accounts do
     user
     |> User.login_with_x_changeset(attrs)
     |> Repo.update()
+  end
+
+  @doc """
+  Updates the email for an X user completing their profile.
+  """
+  def update_x_user_email(%User{} = user, email) do
+    changeset =
+      user
+      |> User.x_profile_email_changeset(%{email: email})
+
+    case Repo.update(changeset) do
+      {:ok, user} -> {:ok, Repo.preload(user, :author)}
+      error -> error
+    end
   end
 
   @doc """
@@ -513,19 +530,25 @@ defmodule YouCongress.Accounts do
   end
 
   def sign_up_complete?(user) do
-    twitter_login?(user) || first_users?(user) || confirmed?(user)
+    # All users need to have email, X users and newer users must confirm it
+    has_email?(user) && (first_users?(user) || confirmed?(user))
   end
 
-  # If a user has twitter username, they are registered
-  defp twitter_login?(%User{author: %{twitter_username: nil}}), do: false
-  defp twitter_login?(%User{author: %{twitter_username: ""}}), do: false
-  defp twitter_login?(_), do: true
+  # User must have an email set
+  defp has_email?(%User{email: nil}), do: false
+  defp has_email?(%User{email: ""}), do: false
+  defp has_email?(_), do: true
 
-  # The first users are not required to confirm email or phone for now
-  defp first_users?(%User{id: id}), do: id <= 45
+  # The first users with passwords are not required to confirm email or phone for now
+  # X users (no password) must still confirm their email
+  defp first_users?(%User{id: id, hashed_password: hashed_password})
+       when id <= 45 and not is_nil(hashed_password),
+       do: true
+
   defp first_users?(_), do: false
 
-  # All others need to confirm email and phone number
+  # All others need to have email, confirm email and phone number
+  defp confirmed?(%User{email: nil}), do: false
   defp confirmed?(%User{email_confirmed_at: nil}), do: false
   defp confirmed?(%User{phone_number_confirmed_at: nil}), do: false
   defp confirmed?(_), do: true
