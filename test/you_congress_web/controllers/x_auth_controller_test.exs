@@ -4,6 +4,7 @@ defmodule YouCongressWeb.XAuthControllerTest do
   import Mock
   import YouCongress.AccountsFixtures
   import YouCongress.AuthorsFixtures
+  import ExUnit.CaptureLog
 
   alias YouCongress.X.XAPI
   alias YouCongress.Authors
@@ -112,19 +113,21 @@ defmodule YouCongressWeb.XAuthControllerTest do
 
     test "redirects to login when token exchange fails", %{conn: conn} do
       with_mock XAPI, fetch_token: fn _code, _verifier, _url -> {:error, "Token error"} end do
-        conn =
-          conn
-          |> init_test_session(%{
-            x_oauth_state: "valid_state",
-            x_oauth_code_verifier: "valid_verifier"
-          })
-          |> get(~p"/auth/x/callback", %{"code" => "auth_code", "state" => "valid_state"})
-          |> fetch_flash()
+        capture_log(fn ->
+          conn =
+            conn
+            |> init_test_session(%{
+              x_oauth_state: "valid_state",
+              x_oauth_code_verifier: "valid_verifier"
+            })
+            |> get(~p"/auth/x/callback", %{"code" => "auth_code", "state" => "valid_state"})
+            |> fetch_flash()
 
-        assert redirected_to(conn) == ~p"/log_in"
+          assert redirected_to(conn) == ~p"/log_in"
 
-        assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
-                 "Authentication failed. Please try again."
+          assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+                   "Authentication failed. Please try again."
+        end)
       end
     end
 
@@ -132,19 +135,21 @@ defmodule YouCongressWeb.XAuthControllerTest do
       with_mock XAPI,
         fetch_token: fn _code, _verifier, _url -> {:ok, "access_token", "refresh_token"} end,
         fetch_user_info: fn _token -> {:error, "User info error"} end do
-        conn =
-          conn
-          |> init_test_session(%{
-            x_oauth_state: "valid_state",
-            x_oauth_code_verifier: "valid_verifier"
-          })
-          |> get(~p"/auth/x/callback", %{"code" => "auth_code", "state" => "valid_state"})
-          |> fetch_flash()
+        capture_log(fn ->
+          conn =
+            conn
+            |> init_test_session(%{
+              x_oauth_state: "valid_state",
+              x_oauth_code_verifier: "valid_verifier"
+            })
+            |> get(~p"/auth/x/callback", %{"code" => "auth_code", "state" => "valid_state"})
+            |> fetch_flash()
 
-        assert redirected_to(conn) == ~p"/log_in"
+          assert redirected_to(conn) == ~p"/log_in"
 
-        assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
-                 "Failed to retrieve your X profile. Please try again."
+          assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+                   "Failed to retrieve your X profile. Please try again."
+        end)
       end
     end
 
