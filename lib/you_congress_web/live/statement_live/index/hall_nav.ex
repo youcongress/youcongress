@@ -23,7 +23,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     ~H"""
     <div class="pb-2">
       <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        <span class="text-sm text-gray-500 shrink-0">y/</span>
+        <span class="text-sm text-gray-500 shrink-0">h/</span>
         <div class="flex gap-2">
           <%= for {hall_slug, hall_title} <- @featured_halls do %>
             <HallNav.pill
@@ -37,7 +37,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
             <HallNav.pill
               url_hall_name={@hall_name}
               hall_name={@hall_name}
-              hall_link={~p"/y/#{@hall_name}"}
+              hall_link={~p"/h/#{@hall_name}"}
               hall_title={StringUtils.titleize_hall(@hall_name)}
             />
           <% end %>
@@ -48,7 +48,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
   end
 
   defp hall_link("all"), do: ~p"/"
-  defp hall_link(hall_name), do: ~p"/y/#{hall_name}"
+  defp hall_link(hall_name), do: ~p"/h/#{hall_name}"
 
   attr :url_hall_name, :string, required: true
   attr :hall_link, :string, required: true
