@@ -40,6 +40,8 @@ defmodule YouCongress.Statements.Statement do
       on_replace: :delete
     )
 
+    has_many :halls_statements, YouCongress.HallsStatements.HallStatement
+
     belongs_to :user, User
 
     timestamps()

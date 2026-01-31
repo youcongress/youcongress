@@ -57,7 +57,7 @@ defmodule YouCongress.HallsTest do
     end
 
     test "classify/1 returns fake tags" do
-      assert {:ok, %{tags: ["fake", _], cost: 0}} = Halls.classify("some text")
+      assert {:ok, %{main_tag: "fake", other_tags: [_], cost: 0}} = Halls.classify("some text")
     end
   end
 end

@@ -22,22 +22,34 @@ defmodule YouCongress.HallsStatements do
   ## Raises
     - Raises an error if the statement does not exist or if there's an issue updating the statement's halls.
   """
-  def sync!(statement_id, tags \\ nil) do
+  def sync!(statement_id, classification \\ nil) do
     statement = Statements.get_statement!(statement_id, preload: [:halls])
-    tags = tags || Halls.classify!(statement.title)
-    {:ok, halls} = Halls.list_or_create_by_names(tags)
+    classification = classification || Halls.classify!(statement.title)
+    %{main_tag: main_tag, other_tags: other_tags} = classification
+    all_tags = [main_tag | other_tags]
+    {:ok, halls} = Halls.list_or_create_by_names(all_tags)
 
-    link(statement, halls)
+    link(statement, halls, main_tag)
   end
 
-  @spec link(Statement.t(), [Hall.t()]) :: {:ok, Statement.t()} | {:error, Ecto.Changeset.t()}
-  defp link(statement, halls) do
-    statement_changeset =
-      statement
-      |> Statement.changeset(%{})
-      |> Ecto.Changeset.put_assoc(:halls, halls)
+  @spec link(Statement.t(), [Hall.t()], binary) ::
+          {:ok, Statement.t()} | {:error, Ecto.Changeset.t()}
+  defp link(statement, halls, main_tag) do
+    # Delete existing associations first
+    delete_halls_statements(statement)
 
-    Repo.update(statement_changeset)
+    # Insert new associations with is_main flag
+    Enum.each(halls, fn hall ->
+      %HallStatement{}
+      |> HallStatement.changeset(%{
+        statement_id: statement.id,
+        hall_id: hall.id,
+        is_main: hall.name == main_tag
+      })
+      |> Repo.insert!()
+    end)
+
+    {:ok, Statements.get_statement!(statement.id, preload: [:halls])}
   end
 
   def delete_halls_statements(%Statement{id: statement_id}) do
@@ -63,5 +75,29 @@ defmodule YouCongress.HallsStatements do
       limit: ^limit
     )
     |> Repo.all()
+  end
+
+  def get_random_statements_from_hall(hall_name, limit, exclude_ids \\ []) do
+    from(v in Statement,
+      join: hs in HallStatement,
+      on: hs.statement_id == v.id,
+      join: h in Hall,
+      on: hs.hall_id == h.id,
+      where: h.name == ^hall_name and hs.is_main == true and v.id not in ^exclude_ids,
+      order_by: fragment("RANDOM()"),
+      limit: ^limit
+    )
+    |> Repo.all()
+  end
+
+  def get_main_hall(statement_id) do
+    hall_id =
+      from(hs in HallStatement, where: hs.statement_id == ^statement_id and hs.is_main == true)
+      |> select([hs], hs.hall_id)
+      |> Repo.one()
+
+    if(hall_id) do
+      Halls.get_hall!(hall_id)
+    end
   end
 end

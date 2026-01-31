@@ -178,7 +178,7 @@
 <% end %>
 
 <%= if(@votes_from_delegates != [] || @votes_from_non_delegates != []) do %>
-  <%= for {hall, statements} <- @random_statements_by_hall do %>
+  <%= for {hall, statements} <- @random_statements_from_main_hall do %>
     <div class="mt-6">
       <div class="text-sm text-gray-600 pt-8 pb-4 border-b border-gray-200">
         More

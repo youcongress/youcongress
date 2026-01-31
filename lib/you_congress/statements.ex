@@ -227,11 +227,23 @@ defmodule YouCongress.Statements do
       |> Repo.update()
 
     with {:ok, new_statement} <- result do
-      if attrs[:title] && attrs[:title] != statement.title do
-        # Only admins can update statement so it's ok to:
-        # 1. do it synchronously
-        # 2. raise an error if it fails
-        HallsStatements.sync!(new_statement.id)
+      cond do
+        # If title changed, re-classify using AI
+        attrs["title"] && attrs["title"] != statement.title ->
+          HallsStatements.sync!(new_statement.id)
+
+        # If halls or main_hall changed, sync with the provided halls
+        attrs["halls"] || attrs["main_hall"] ->
+          halls = attrs["halls"] || []
+          main_hall = attrs["main_hall"] || List.first(halls)
+
+          if halls != [] do
+            classification = %{main_tag: main_hall, other_tags: halls -- [main_hall]}
+            HallsStatements.sync!(new_statement.id, classification)
+          end
+
+        true ->
+          :ok
       end
 
       {:ok, new_statement}

@@ -41,7 +41,7 @@ defmodule YouCongressWeb.StatementLive.FormComponent do
 
   @impl true
   def update(%{statement: statement} = assigns, socket) do
-    statement = Repo.preload(statement, :halls)
+    statement = Repo.preload(statement, [:halls, :halls_statements])
     changeset = Statements.change_statement(statement)
 
     {:ok,

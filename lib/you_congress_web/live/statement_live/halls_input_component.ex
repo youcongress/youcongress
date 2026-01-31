@@ -12,9 +12,18 @@ defmodule YouCongressWeb.StatementLive.HallsInputComponent do
       <label class="block text-sm font-medium text-gray-700">
         Halls
       </label>
+      <p class="text-xs text-gray-500 mb-2">Click on a hall to set it as the main tag</p>
       <div class="flex flex-wrap gap-2 mb-2">
         <%= for hall_name <- @selected_halls do %>
-          <span class="inline-flex items-center gap-1 rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+          <span
+            phx-click="set_main_hall"
+            phx-value-hall={hall_name}
+            phx-target={@myself}
+            class={"inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium cursor-pointer ring-1 ring-inset #{if hall_name == @main_hall, do: "bg-indigo-100 text-indigo-700 ring-indigo-500/20", else: "bg-gray-50 text-gray-600 ring-gray-500/10 hover:bg-gray-100"}"}
+          >
+            <%= if hall_name == @main_hall do %>
+              <.icon name="hero-star-solid" class="h-3 w-3 text-indigo-500" />
+            <% end %>
             {String.replace(hall_name, "-", " ")}
             <button
               type="button"
@@ -91,6 +100,7 @@ defmodule YouCongressWeb.StatementLive.HallsInputComponent do
       <%= for hall_name <- @selected_halls do %>
         <input type="hidden" name={@form[:halls].name <> "[]"} value={hall_name} />
       <% end %>
+      <input type="hidden" name="statement[main_hall]" value={@main_hall || ""} />
     </div>
     """
   end
@@ -98,12 +108,14 @@ defmodule YouCongressWeb.StatementLive.HallsInputComponent do
   @impl true
   def update(%{form: form} = assigns, socket) do
     selected_halls = get_selected_halls(form)
+    main_hall = get_main_hall(form, selected_halls)
 
     socket =
       socket
       |> assign(assigns)
       |> assign(
         selected_halls: selected_halls,
+        main_hall: main_hall,
         typed_value: "",
         matches: [],
         selected_index: 0
@@ -181,7 +193,20 @@ defmodule YouCongressWeb.StatementLive.HallsInputComponent do
 
   def handle_event("remove_hall", %{"hall" => hall}, socket) do
     selected_halls = List.delete(socket.assigns.selected_halls, hall)
-    {:noreply, assign(socket, selected_halls: selected_halls, matches: [])}
+
+    # If we removed the main hall, set the first remaining hall as main
+    main_hall =
+      if socket.assigns.main_hall == hall do
+        List.first(selected_halls)
+      else
+        socket.assigns.main_hall
+      end
+
+    {:noreply, assign(socket, selected_halls: selected_halls, main_hall: main_hall, matches: [])}
+  end
+
+  def handle_event("set_main_hall", %{"hall" => hall}, socket) do
+    {:noreply, assign(socket, main_hall: hall)}
   end
 
   defp get_selected_halls(form) do
@@ -202,12 +227,53 @@ defmodule YouCongressWeb.StatementLive.HallsInputComponent do
     end
   end
 
+  defp get_main_hall(form, selected_halls) do
+    # Try to get main_hall from form data (if user already set it)
+    main_hall = Phoenix.HTML.Form.input_value(form, :main_hall)
+
+    cond do
+      is_binary(main_hall) and main_hall != "" ->
+        main_hall
+
+      # Try to get from halls_statements association
+      true ->
+        statement = form.data
+
+        case statement do
+          %{halls_statements: halls_statements} when is_list(halls_statements) ->
+            main_hs = Enum.find(halls_statements, & &1.is_main)
+
+            if main_hs do
+              # Find the hall name by id
+              case Enum.find(statement.halls || [], &(&1.id == main_hs.hall_id)) do
+                nil -> List.first(selected_halls)
+                hall -> hall.name
+              end
+            else
+              List.first(selected_halls)
+            end
+
+          _ ->
+            List.first(selected_halls)
+        end
+    end
+  end
+
   defp add_hall(socket, hall) do
     if hall in socket.assigns.selected_halls do
       assign(socket, typed_value: "", matches: [], selected_index: 0)
     else
+      # If this is the first hall, set it as main
+      main_hall =
+        if socket.assigns.selected_halls == [] do
+          hall
+        else
+          socket.assigns.main_hall
+        end
+
       assign(socket,
         selected_halls: [hall | socket.assigns.selected_halls],
+        main_hall: main_hall,
         typed_value: "",
         matches: [],
         selected_index: 0

@@ -191,8 +191,8 @@ defmodule YouCongress.Halls do
   end
 
   def classify!(text, model \\ :"gpt-5-nano") do
-    {:ok, %{tags: tags}} = classifier_impl().classify(text, model)
-    tags
+    {:ok, %{main_tag: main_tag, other_tags: other_tags}} = classifier_impl().classify(text, model)
+    %{main_tag: main_tag, other_tags: other_tags}
   end
 
   @doc """

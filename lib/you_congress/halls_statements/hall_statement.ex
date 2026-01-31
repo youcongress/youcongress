@@ -12,12 +12,13 @@ defmodule YouCongress.HallsStatements.HallStatement do
   schema "halls_statements" do
     belongs_to(:statement, Statement)
     belongs_to(:hall, Hall)
+    field(:is_main, :boolean, default: false)
   end
 
   @doc false
   def changeset(hall_statement, attrs) do
     hall_statement
-    |> cast(attrs, [:statement_id, :hall_id])
+    |> cast(attrs, [:statement_id, :hall_id, :is_main])
     |> validate_required([:statement_id, :hall_id])
   end
 end
