@@ -27,7 +27,7 @@ defmodule YouCongressWeb.HomeLiveTest do
     test "renders home page successfully", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/")
       assert html =~ "YouCongress Polls"
-      assert html =~ "Search quotes, people, policies..."
+      assert html =~ "Search AI quotes, people, policies..."
     end
 
     test "shows statements feed in Trending mode", %{conn: conn} do
