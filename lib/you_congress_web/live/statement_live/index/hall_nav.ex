@@ -11,7 +11,8 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
 
   @featured_halls [
     {"all", "All"},
-    {"ai", "AI"}
+    {"ai", "AI"},
+    {"cern-for-ai", "CERN for AI"}
   ]
 
   attr :hall_name, :string, required: true
