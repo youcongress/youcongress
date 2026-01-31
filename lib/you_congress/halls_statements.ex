@@ -12,8 +12,14 @@ defmodule YouCongress.HallsStatements do
   alias YouCongress.Halls.Hall
   alias YouCongress.HallsStatements.HallStatement
 
+  alias YouCongress.Workers.StatementHallsGeneratorWorker
+
   def sync! do
-    Enum.each(Statements.list_statements(), fn statement -> sync!(statement.id) end)
+    Enum.each(Statements.list_statements(), fn statement ->
+      %{statement_id: statement.id}
+      |> StatementHallsGeneratorWorker.new()
+      |> Oban.insert!()
+    end)
   end
 
   @doc """
