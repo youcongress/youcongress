@@ -23,7 +23,7 @@ defmodule YouCongressWeb.StatementLive.Index do
   alias YouCongress.Halls
   alias YouCongressWeb.StatementLive.VoteComponent
 
-  @default_hall "ai"
+  @default_hall "all"
 
   @top_author_names [
     "Stuart J. Russell",
@@ -371,17 +371,14 @@ defmodule YouCongressWeb.StatementLive.Index do
   end
 
   defp assign_votes(socket, page) do
-    %{assigns: %{current_user: current_user, order_by_date: order_by_date}} = socket
+    %{assigns: %{current_user: current_user}} = socket
     {socket, statements} = assign_statements(socket, page)
     statement_ids = Enum.map(statements, & &1.id)
 
-    # When in "Top" mode (not order_by_date), prioritize votes from top authors
-    opts =
-      if order_by_date do
-        []
-      else
-        [prioritized_author_ids: get_top_author_ids()]
-      end
+    # Always prioritize votes: top authors first, then wikipedia authors, then others
+    top_author_ids = get_top_author_ids()
+    wikipedia_author_ids = Authors.get_wikipedia_author_ids(top_author_ids)
+    opts = [top_author_ids: top_author_ids, wikipedia_author_ids: wikipedia_author_ids]
 
     new_votes_by_statement_id =
       StatementQueries.get_one_vote_per_statement(
