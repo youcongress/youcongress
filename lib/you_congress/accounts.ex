@@ -172,6 +172,49 @@ defmodule YouCongress.Accounts do
   end
 
   @doc """
+  Registers a new user via Google OAuth.
+  Creates a new author and user in a single transaction.
+  """
+  def google_register_user(user_attrs, author_attrs \\ %{}) do
+    author_attrs = Map.put(author_attrs, :twin_origin, false)
+    user_attrs = stringify_keys(user_attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:author, Author.changeset(%Author{}, author_attrs))
+    |> Ecto.Multi.insert(:user, fn %{author: author} ->
+      User.google_registration_changeset(%User{}, Map.put(user_attrs, "author_id", author.id))
+    end)
+    |> Repo.transaction()
+  end
+
+  @doc """
+  Creates a new user linked to an existing author for Google signup.
+  Also updates the author with the latest Google profile data and sets twin_origin to false.
+  """
+  def google_register_user_with_existing_author(
+        user_attrs,
+        %Author{} = author,
+        author_update_attrs
+      ) do
+    author_update_attrs = Map.put(author_update_attrs, :twin_origin, false)
+    user_attrs = stringify_keys(user_attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:author, Author.changeset(author, author_update_attrs))
+    |> Ecto.Multi.insert(:user, fn %{author: updated_author} ->
+      User.google_registration_changeset(
+        %User{},
+        Map.put(user_attrs, "author_id", updated_author.id)
+      )
+    end)
+    |> Repo.transaction()
+  end
+
+  defp stringify_keys(map) when is_map(map) do
+    Map.new(map, fn {k, v} -> {to_string(k), v} end)
+  end
+
+  @doc """
   Gets a user by author_id.
   """
   def get_user_by_author_id(author_id) do
@@ -547,9 +590,8 @@ defmodule YouCongress.Accounts do
 
   defp first_users?(_), do: false
 
-  # All others need to have email, confirm email and phone number
+  # All others need to have email and confirm it (phone verification is optional)
   defp confirmed?(%User{email: nil}), do: false
   defp confirmed?(%User{email_confirmed_at: nil}), do: false
-  defp confirmed?(%User{phone_number_confirmed_at: nil}), do: false
   defp confirmed?(_), do: true
 end

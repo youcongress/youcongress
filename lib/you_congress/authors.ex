@@ -120,6 +120,25 @@ defmodule YouCongress.Authors do
     end
   end
 
+  @doc """
+  Gets an author by google_id.
+  Returns nil if no author is found.
+
+  ## Examples
+
+      iex> get_author_by_google_id("123456")
+      %Author{}
+
+      iex> get_author_by_google_id("unknown")
+      nil
+
+  """
+  def get_author_by_google_id(nil), do: nil
+
+  def get_author_by_google_id(google_id) do
+    Repo.get_by(Author, google_id: google_id)
+  end
+
   defp build_query(opts) do
     base_query = from(a in Author)
 

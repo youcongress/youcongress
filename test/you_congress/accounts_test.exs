@@ -44,7 +44,10 @@ defmodule YouCongress.AccountsTest do
   describe "register_user/1" do
     test "validates email uniqueness" do
       %{email: email} = user_fixture()
-      {:error, :user, changeset, _} = Accounts.register_user(%{"email" => email, "password" => "validpassword123"})
+
+      {:error, :user, changeset, _} =
+        Accounts.register_user(%{"email" => email, "password" => "validpassword123"})
+
       assert "has already been taken" in errors_on(changeset).email
     end
 
@@ -332,7 +335,9 @@ defmodule YouCongress.AccountsTest do
         twin_origin: false
       }
 
-      assert {:ok, %{user: user, author: author}} = Accounts.x_register_user(%{"email" => "xuser@example.com"}, author_attrs)
+      assert {:ok, %{user: user, author: author}} =
+               Accounts.x_register_user(%{"email" => "xuser@example.com"}, author_attrs)
+
       assert user.author_id == author.id
       assert author.twitter_username == "xuser"
       assert author.twitter_id_str == "12345"
@@ -346,7 +351,9 @@ defmodule YouCongress.AccountsTest do
         twin_origin: true
       }
 
-      {:ok, %{author: author}} = Accounts.x_register_user(%{"email" => "xuser2@example.com"}, author_attrs)
+      {:ok, %{author: author}} =
+        Accounts.x_register_user(%{"email" => "xuser2@example.com"}, author_attrs)
+
       # twin_origin should be set to false regardless of input
       assert author.twin_origin == false
     end
@@ -354,10 +361,11 @@ defmodule YouCongress.AccountsTest do
 
   describe "x_register_user_with_existing_author/3" do
     test "creates user linked to existing author and updates author" do
-      author = YouCongress.AuthorsFixtures.author_fixture(
-        twitter_username: "existing",
-        twin_origin: true
-      )
+      author =
+        YouCongress.AuthorsFixtures.author_fixture(
+          twitter_username: "existing",
+          twin_origin: true
+        )
 
       update_attrs = %{
         twitter_id_str: "99999",
@@ -366,7 +374,11 @@ defmodule YouCongress.AccountsTest do
       }
 
       assert {:ok, %{user: user, author: updated_author}} =
-               Accounts.x_register_user_with_existing_author(%{"email" => "existing_user@example.com"}, author, update_attrs)
+               Accounts.x_register_user_with_existing_author(
+                 %{"email" => "existing_user@example.com"},
+                 author,
+                 update_attrs
+               )
 
       assert user.author_id == author.id
       assert updated_author.twitter_id_str == "99999"
@@ -391,23 +403,25 @@ defmodule YouCongress.AccountsTest do
 
   describe "get_user_by_twitter_id_str_or_username/2" do
     test "returns user by twitter_id_str" do
-      user = user_fixture(%{}, %{
-        twitter_id_str: "111222333",
-        twitter_username: "user_by_id",
-        name: "User By ID",
-        twin_origin: false
-      })
+      user =
+        user_fixture(%{}, %{
+          twitter_id_str: "111222333",
+          twitter_username: "user_by_id",
+          name: "User By ID",
+          twin_origin: false
+        })
 
       found = Accounts.get_user_by_twitter_id_str_or_username("111222333", "other_username")
       assert found.id == user.id
     end
 
     test "falls back to twitter_username when twitter_id_str is nil" do
-      user = user_fixture(%{}, %{
-        twitter_username: "fallback_user",
-        name: "Fallback User",
-        twin_origin: false
-      })
+      user =
+        user_fixture(%{}, %{
+          twitter_username: "fallback_user",
+          name: "Fallback User",
+          twin_origin: false
+        })
 
       found = Accounts.get_user_by_twitter_id_str_or_username(nil, "fallback_user")
       assert found.id == user.id

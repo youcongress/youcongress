@@ -108,4 +108,9 @@ if config_env() in [:dev, :prod] do
   config :you_congress, :x_client_id, System.get_env("X_CLIENT_ID")
   config :you_congress, :x_client_secret, System.get_env("X_CLIENT_SECRET")
   config :you_congress, :x_callback_url, System.get_env("X_CALLBACK_URL")
+
+  # Google OAuth
+  config :you_congress, :google_client_id, System.get_env("GOOGLE_CLIENT_ID")
+  config :you_congress, :google_client_secret, System.get_env("GOOGLE_CLIENT_SECRET")
+  config :you_congress, :google_callback_url, System.get_env("GOOGLE_CALLBACK_URL")
 end
