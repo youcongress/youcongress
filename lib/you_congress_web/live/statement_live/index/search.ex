@@ -76,7 +76,7 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
         <%= for hall <- @halls do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={~p"/y/#{hall.name}"} phx-no-format>y/<.highlight text={hall.name} terms={@parsed_terms}/></a>
+              <a href={~p"/h/#{hall.name}"} phx-no-format>h/<.highlight text={hall.name} terms={@parsed_terms}/></a>
             </td>
           </tr>
         <% end %>
