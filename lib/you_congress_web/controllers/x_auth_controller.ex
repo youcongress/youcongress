@@ -12,8 +12,9 @@ defmodule YouCongressWeb.XAuthController do
   @doc """
   Initiates the X OAuth flow by redirecting to X's authorization URL.
   Stores the code_verifier and state in the session for verification in the callback.
+  Optionally stores pending_actions (delegate_ids and votes) in session for processing after login.
   """
-  def request(conn, _params) do
+  def request(conn, params) do
     client_id = Application.get_env(:you_congress, :x_client_id)
     callback_url = Application.get_env(:you_congress, :x_callback_url)
 
@@ -27,8 +28,15 @@ defmodule YouCongressWeb.XAuthController do
       conn
       |> put_session(:x_oauth_code_verifier, code_verifier)
       |> put_session(:x_oauth_state, state)
+      |> maybe_store_pending_actions(params["pending_actions"])
       |> redirect(external: authorize_url)
     end
+  end
+
+  defp maybe_store_pending_actions(conn, nil), do: conn
+
+  defp maybe_store_pending_actions(conn, pending_actions) do
+    put_session(conn, :oauth_pending_actions, pending_actions)
   end
 
   @doc """
@@ -140,6 +148,8 @@ defmodule YouCongressWeb.XAuthController do
       {:ok, %{user: user}} ->
         Track.event("Register via X", user)
 
+        conn = process_pending_actions(conn, user)
+
         # Log in the user and redirect to sign_up to complete profile (add email)
         conn
         |> put_session(:user_return_to, ~p"/sign_up")
@@ -170,6 +180,8 @@ defmodule YouCongressWeb.XAuthController do
       {:ok, %{user: user}} ->
         Track.event("Register via X (existing author)", user)
 
+        conn = process_pending_actions(conn, user)
+
         # Log in the user and redirect to sign_up to complete profile (add email)
         conn
         |> put_session(:user_return_to, ~p"/sign_up")
@@ -198,6 +210,8 @@ defmodule YouCongressWeb.XAuthController do
 
     Track.event("Login via X", user)
 
+    conn = process_pending_actions(conn, user)
+
     # Check if user needs to complete profile (no confirmed email)
     if user.email_confirmed_at do
       conn
@@ -220,5 +234,43 @@ defmodule YouCongressWeb.XAuthController do
       friends_count: x_user_data.friends_count,
       verified: x_user_data.verified
     }
+  end
+
+  defp process_pending_actions(conn, user) do
+    pending_json = get_session(conn, :oauth_pending_actions)
+    conn = delete_session(conn, :oauth_pending_actions)
+
+    if pending_json do
+      case Jason.decode(pending_json) do
+        {:ok, %{"delegate_ids" => delegate_ids, "votes" => votes}} ->
+          # Create delegations
+          for id <- delegate_ids do
+            YouCongress.Delegations.create_delegation(user, id)
+          end
+
+          # Create votes
+          Enum.each(votes, fn {_statement_id, vote_data} ->
+            if vote_data["answer"] && vote_data["answer"] != "" do
+              create_pending_vote(user, vote_data)
+            end
+          end)
+
+        _ ->
+          :ok
+      end
+    end
+
+    conn
+  end
+
+  defp create_pending_vote(user, vote_data) do
+    YouCongress.Votes.create_or_update(%{
+      statement_id: vote_data["statement_id"],
+      answer: String.to_existing_atom(vote_data["answer"]),
+      author_id: user.author_id,
+      direct: true
+    })
+  rescue
+    _ -> :ok
   end
 end
