@@ -57,6 +57,38 @@ defmodule YouCongress.AccountsFixtures do
     user
   end
 
+  def google_user_fixture(
+        attrs \\ %{},
+        author_attrs \\ nil,
+        confirm_email_and_phone_number? \\ true
+      ) do
+    author_attrs =
+      author_attrs ||
+        %{
+          name: Faker.Person.name(),
+          google_id: "google_#{System.unique_integer()}",
+          bio: Faker.Lorem.sentence(),
+          twin_origin: false
+        }
+
+    user_attrs =
+      attrs
+      |> ensure_keys_are_strings()
+      |> Enum.into(%{"email" => unique_user_email()})
+
+    {:ok, %{user: user}} =
+      YouCongress.Accounts.google_register_user(user_attrs, author_attrs)
+
+    if confirm_email_and_phone_number? do
+      {:ok, user} = YouCongress.Accounts.confirm_user_email(user)
+      {:ok, user} = YouCongress.Accounts.confirm_user_phone(user)
+
+      user
+    else
+      user
+    end
+  end
+
   def extract_user_token(fun) do
     {:ok, captured_email} = fun.(&"[TOKEN]#{&1}[TOKEN]")
     [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")

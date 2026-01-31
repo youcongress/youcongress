@@ -16,6 +16,7 @@ defmodule YouCongress.Authors.Author do
     field :verified, :boolean
     field :location, :string
     field :twitter_username, :string
+    field :google_id, :string
     # bio is AI-generated for twins and is displayed instead of description if present
     field :bio, :string
     # country is AI-generated for twins and is displayed location if present
@@ -39,6 +40,7 @@ defmodule YouCongress.Authors.Author do
       :bio,
       :wikipedia_url,
       :twitter_username,
+      :google_id,
       :country,
       :twin_origin,
       :twitter_id_str,
@@ -54,6 +56,7 @@ defmodule YouCongress.Authors.Author do
     |> validate_required_if_twin_origin()
     |> unique_constraint(:twitter_username)
     |> unique_constraint(:twitter_id_str)
+    |> unique_constraint(:google_id)
     |> unique_constraint(:wikipedia_url)
     |> validate_wikipedia_url_if_present()
   end

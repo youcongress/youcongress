@@ -56,7 +56,9 @@ defmodule YouCongress.X.XAPI do
 
       {:ok, %Req.Response{status: status, body: body}} ->
         Logger.error("X token exchange failed: status=#{status}, body=#{inspect(body)}")
-        {:error, "Token exchange failed: #{body["error_description"] || body["error"] || "Unknown error"}"}
+
+        {:error,
+         "Token exchange failed: #{body["error_description"] || body["error"] || "Unknown error"}"}
 
       {:error, reason} ->
         Logger.error("X token exchange request failed: #{inspect(reason)}")
@@ -69,7 +71,8 @@ defmodule YouCongress.X.XAPI do
   Returns user data including id, username, name, and profile_image_url.
   """
   def fetch_user_info(access_token) do
-    url = "https://api.twitter.com/2/users/me?user.fields=id,username,name,profile_image_url,description,public_metrics,verified"
+    url =
+      "https://api.twitter.com/2/users/me?user.fields=id,username,name,profile_image_url,description,public_metrics,verified"
 
     case Req.get(
            url,

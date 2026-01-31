@@ -114,12 +114,14 @@ defmodule YouCongressWeb.Router do
 
   ## Authentication routes
 
-  # X OAuth routes
+  # OAuth routes
   scope "/auth", YouCongressWeb do
     pipe_through([:browser])
 
     get("/x", XAuthController, :request)
     get("/x/callback", XAuthController, :callback)
+    get("/google", GoogleAuthController, :request)
+    get("/google/callback", GoogleAuthController, :callback)
   end
 
   scope "/", YouCongressWeb do

@@ -50,6 +50,12 @@ defmodule YouCongress.Accounts.User do
     |> validate_optional_email(opts)
   end
 
+  def google_registration_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:email, :author_id, :role])
+    |> validate_optional_email(opts)
+  end
+
   def welcome_changeset(user, attrs) do
     user
     |> cast(attrs, [:newsletter])

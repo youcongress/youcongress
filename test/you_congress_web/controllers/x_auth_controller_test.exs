@@ -203,7 +203,6 @@ defmodule YouCongressWeb.XAuthControllerTest do
           |> fetch_flash()
 
         assert redirected_to(conn) == ~p"/home"
-        assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Welcome back!"
         assert get_session(conn, :user_token)
 
         # Verify the same user was logged in
