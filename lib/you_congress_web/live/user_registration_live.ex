@@ -26,7 +26,11 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
           <div class="mt-6 space-y-3">
             <.link
-              href={~p"/auth/google"}
+              href={
+                if @pending_actions,
+                  do: ~p"/auth/google?#{%{pending_actions: @pending_actions}}",
+                  else: ~p"/auth/google"
+              }
               class="w-full inline-flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-gray-700 text-sm font-medium hover:bg-gray-50"
             >
               <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -50,7 +54,11 @@ defmodule YouCongressWeb.UserRegistrationLive do
               Sign up with Google
             </.link>
             <.link
-              href={~p"/auth/x"}
+              href={
+                if @pending_actions,
+                  do: ~p"/auth/x?#{%{pending_actions: @pending_actions}}",
+                  else: ~p"/auth/x"
+              }
               class="w-full inline-flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-black text-white text-sm font-medium hover:bg-gray-800"
             >
               <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -230,10 +238,18 @@ defmodule YouCongressWeb.UserRegistrationLive do
     delegate_ids = session["delegate_ids"] || []
     votes = session["votes"] || %{}
 
+    pending_actions =
+      if delegate_ids != [] or map_size(votes) > 0 do
+        Jason.encode!(%{delegate_ids: delegate_ids, votes: votes})
+      else
+        nil
+      end
+
     socket =
       socket
       |> assign(:delegate_ids, delegate_ids)
       |> assign(:votes, votes)
+      |> assign(:pending_actions, pending_actions)
       |> assign(:embedded, session["embedded"] || false)
 
     current_user = socket.assigns.current_user
