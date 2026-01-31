@@ -294,9 +294,7 @@ defmodule YouCongressWeb.GoogleAuthController do
 
     # Check if user needs to complete profile (no confirmed email or phone)
     if user.email_confirmed_at do
-      conn
-      |> put_flash(:info, "Welcome back!")
-      |> UserAuth.log_in_user(user)
+      UserAuth.log_in_user(conn, user)
     else
       conn
       |> put_flash(:info, "Welcome back! Please complete your profile.")
