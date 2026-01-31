@@ -147,6 +147,11 @@ defmodule YouCongressWeb.StatementLive.Index do
     {:noreply, socket}
   end
 
+  def handle_info({:voted, _vote}, socket) do
+    # Component manages its own state, no need to update parent assigns
+    {:noreply, socket}
+  end
+
   def handle_info(_, socket), do: {:noreply, socket}
 
   defp maybe_assign_votes(%{assigns: %{new_poll_visible?: true}} = socket), do: socket
