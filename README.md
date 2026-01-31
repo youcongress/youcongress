@@ -35,4 +35,8 @@ Welcome to YouCongress! Feel free to:
 - Propose new features or documentation, refactor existent code, etc.
 
 # Acknowledgments
-This project uses [AppSignal](https://www.appsignal.com), which generously provides their services for free. We appreciate their support and trust in our project, helping us monitor YouCongress, maintain quality, and improve continuously.
+
+We appreciate the following companies who provide their services kindly for free:
+
+- [AppSignal](https://www.appsignal.com) for application monitoring
+- [RocketValidator](https://rocketvalidator.com) for HTML and accessibility checks.
