@@ -162,8 +162,10 @@ defmodule YouCongressWeb.StatementLive.Show.Comments do
   def delete_event(socket) do
     %{assigns: %{current_user_vote: current_user_vote, statement: statement}} = socket
 
-    {_count, nil} =
-      Opinions.delete_opinion_and_descendants(current_user_vote.opinion)
+    if current_user_vote.opinion do
+      {_count, nil} =
+        Opinions.delete_opinion_and_descendants(current_user_vote.opinion)
+    end
 
     current_user_vote =
       Votes.get_current_user_vote(statement.id, socket.assigns.current_user.author_id)

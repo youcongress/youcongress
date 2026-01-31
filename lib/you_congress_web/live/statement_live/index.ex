@@ -44,6 +44,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:page, 1)
       |> assign(:per_page, 15)
       |> assign(:has_more_statements, true)
+      |> assign(:editing_opinion_id, nil)
       |> stream(:statements, [], reset: true)
       |> assign_votes(1)
 
@@ -137,6 +138,86 @@ defmodule YouCongressWeb.StatementLive.Index do
     {:noreply, socket}
   end
 
+  def handle_event("edit", %{"opinion_id" => opinion_id}, socket) do
+    opinion_id = String.to_integer(opinion_id)
+    votes_by_statement_id = socket.assigns.votes_by_statement_id
+
+    # Find the statement that contains the vote with this opinion
+    # and re-insert it to force the stream to re-render
+    socket =
+      case find_statement_by_opinion_id(votes_by_statement_id, opinion_id) do
+        nil ->
+          socket
+
+        statement_id ->
+          # Get the statement from the stream by fetching it fresh
+          statement = Statements.get_statement!(statement_id)
+          stream_insert(socket, :statements, statement)
+      end
+
+    {:noreply, assign(socket, :editing_opinion_id, opinion_id)}
+  end
+
+  def handle_event("cancel-edit", _, socket) do
+    votes_by_statement_id = socket.assigns.votes_by_statement_id
+    editing_opinion_id = socket.assigns.editing_opinion_id
+
+    # Re-insert the statement to force stream re-render
+    socket =
+      case find_statement_by_opinion_id(votes_by_statement_id, editing_opinion_id) do
+        nil ->
+          socket
+
+        statement_id ->
+          statement = Statements.get_statement!(statement_id)
+          stream_insert(socket, :statements, statement)
+      end
+
+    {:noreply, assign(socket, :editing_opinion_id, nil)}
+  end
+
+  def handle_event("update-opinion", %{"opinion_id" => opinion_id, "content" => content}, socket) do
+    opinion_id = String.to_integer(opinion_id)
+    opinion = Opinions.get_opinion!(opinion_id)
+
+    if socket.assigns.current_user &&
+         socket.assigns.current_user.author_id == opinion.author_id do
+      case Opinions.update_opinion(opinion, %{content: content, twin: false}) do
+        {:ok, _opinion} ->
+          socket =
+            socket
+            |> assign(:editing_opinion_id, nil)
+            |> assign_votes(1)
+            |> put_flash(:info, "Comment updated")
+
+          {:noreply, socket}
+
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Error updating comment")}
+      end
+    else
+      {:noreply, put_flash(socket, :error, "You can only edit your own comments")}
+    end
+  end
+
+  def handle_event("delete-comment", %{"opinion_id" => opinion_id}, socket) do
+    opinion = Opinions.get_opinion!(opinion_id, preload: [:statements])
+
+    if socket.assigns.current_user &&
+         socket.assigns.current_user.author_id == opinion.author_id do
+      {_count, nil} = Opinions.delete_opinion_and_descendants(opinion)
+
+      socket =
+        socket
+        |> assign_votes(1)
+        |> put_flash(:info, "Comment deleted")
+
+      {:noreply, socket}
+    else
+      {:noreply, put_flash(socket, :error, "You can only delete your own comments")}
+    end
+  end
+
   @impl true
   def handle_info({:put_flash, kind, msg}, socket) do
     socket =
@@ -157,6 +238,14 @@ defmodule YouCongressWeb.StatementLive.Index do
   defp maybe_assign_votes(%{assigns: %{new_poll_visible?: true}} = socket), do: socket
   defp maybe_assign_votes(socket), do: assign_votes(socket, 1)
 
+  defp find_statement_by_opinion_id(votes_by_statement_id, opinion_id) do
+    Enum.find_value(votes_by_statement_id, fn {statement_id, vote} ->
+      if vote.opinion && vote.opinion.id == opinion_id do
+        statement_id
+      end
+    end)
+  end
+
   defp apply_action(socket, :new, _params) do
     socket
     |> assign(:page_title, "New Statement")
@@ -166,8 +255,7 @@ defmodule YouCongressWeb.StatementLive.Index do
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(
-      page_title:
-        "AI liquid democracy polls with verifiable quotes | YouCongress",
+      page_title: "AI liquid democracy polls with verifiable quotes | YouCongress",
       skip_page_suffix: true,
       page_description:
         "We gather verifiable expert quotes and use liquid democracy to surface alignment on AI governance.",

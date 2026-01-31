@@ -553,6 +553,12 @@ defmodule YouCongress.Votes do
     |> Repo.one()
   end
 
+  def get_vote_by_opinion_id(opinion_id) do
+    Vote
+    |> where([v], v.opinion_id == ^opinion_id)
+    |> Repo.one()
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking vote changes.
 
