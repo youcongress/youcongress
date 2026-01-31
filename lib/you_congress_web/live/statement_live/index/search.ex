@@ -35,7 +35,7 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
             tab={:statements}
             label={"Policies & claims (#{length(@statements)})"}
           />
-          <Search.tab search_tab={@search_tab} tab={:halls} label={"Halls (#{length(@halls)})"} />
+          <Search.tab search_tab={@search_tab} tab={:halls} label={"y/ (#{length(@halls)})"} />
         </nav>
       </div>
     </div>
@@ -76,7 +76,7 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
         <%= for hall <- @halls do %>
           <tr>
             <td class="py-4 border-b border-gray-200">
-              <a href={~p"/halls/#{hall.name}"} phx-no-format><.highlight text={hall.name} terms={@parsed_terms}/></a>
+              <a href={~p"/y/#{hall.name}"} phx-no-format>y/<.highlight text={hall.name} terms={@parsed_terms}/></a>
             </td>
           </tr>
         <% end %>
