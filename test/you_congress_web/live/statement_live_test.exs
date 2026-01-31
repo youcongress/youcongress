@@ -25,7 +25,7 @@ defmodule YouCongressWeb.StatementLiveTest do
 
   defp create_statement(_) do
     statement = statement_fixture()
-    {:ok, _} = HallsStatements.sync!(statement.id, ["ai"])
+    {:ok, _} = HallsStatements.sync!(statement.id, %{main_tag: "ai", other_tags: []})
 
     %{statement: statement}
   end
