@@ -319,9 +319,8 @@ defmodule YouCongressWeb.StatementLive.Index do
 
         Statements.list_statements(args)
       else
-        # Top mode - show statements with opinions from top authors
         author_ids = get_top_author_ids()
-        Statements.list_statements_by_top_authors(author_ids, hall_name, offset, per_page)
+        Statements.list_statements_by_top_authors_first(author_ids, hall_name, offset, per_page)
       end
 
     if statements == [] do
