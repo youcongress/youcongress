@@ -242,5 +242,48 @@ defmodule YouCongressWeb.GoogleAuthControllerTest do
         refute get_session(conn, :google_oauth_state)
       end
     end
+
+    test "links Google account to existing X user with same email", %{conn: conn} do
+      # Create a user via X (twitter) with the same email as the Google user
+      x_author_attrs = %{
+        name: "X User",
+        twitter_username: "xuser",
+        twitter_id_str: "twitter_123",
+        twin_origin: false
+      }
+
+      x_user = user_fixture(%{email: @google_user_data.email}, x_author_attrs)
+
+      # Verify the author doesn't have google_id yet
+      x_user_author = YouCongress.Repo.preload(x_user, :author).author
+      assert is_nil(x_user_author.google_id)
+
+      with_mock GoogleAPI,
+        fetch_token: fn _code, _url -> {:ok, "access_token"} end,
+        fetch_user_info: fn _token -> {:ok, @google_user_data} end do
+        conn =
+          conn
+          |> init_test_session(%{google_oauth_state: "valid_state"})
+          |> get(~p"/auth/google/callback", %{"code" => "auth_code", "state" => "valid_state"})
+          |> fetch_flash()
+
+        assert redirected_to(conn) == ~p"/home"
+
+        assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+                 "Welcome back! Your Google account has been linked."
+
+        assert get_session(conn, :user_token)
+
+        # Verify the same user was logged in
+        logged_in_user =
+          YouCongress.Accounts.get_user_by_session_token(get_session(conn, :user_token))
+
+        assert logged_in_user.id == x_user.id
+
+        # Verify Google ID was linked to the existing author
+        updated_author = YouCongress.Authors.get_author!(x_user_author.id)
+        assert updated_author.google_id == @google_user_data.google_id
+      end
+    end
   end
 end
