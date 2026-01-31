@@ -7,9 +7,31 @@ defmodule YouCongress.Halls.Classification do
 
   @answer0 """
   {
-    "tags": ["ai", "spain"]
+    "main_tag": "ai",
+    "other_tags": ["spain"]
   }
   """
+
+  @json_schema %{
+    name: "classification",
+    strict: true,
+    schema: %{
+      type: "object",
+      properties: %{
+        main_tag: %{
+          type: "string",
+          description: "The most relevant tag"
+        },
+        other_tags: %{
+          type: "array",
+          items: %{type: "string"},
+          description: "Other relevant tags"
+        }
+      },
+      required: ["main_tag", "other_tags"],
+      additionalProperties: false
+    }
+  }
 
   @behaviour YouCongress.Halls.ClassificationBehaviour
 
@@ -20,14 +42,17 @@ defmodule YouCongress.Halls.Classification do
     Possible tags:
     #{YouCongress.Halls.Hall.names_str()}
 
-    Classify the following question and return 1-3 tags in json format:
+    Classify the following question and return the most relevant tag as "main_tag" and other relevant tags as "other_tags" array in json format:
 
     Question:#{text}
     """
 
     case classify_gpt(text, model) do
-      {:ok, %{tags: tags, cost: cost}} -> {:ok, %{tags: tags, cost: cost}}
-      {:error, error} -> {:error, error}
+      {:ok, %{main_tag: main_tag, other_tags: other_tags, cost: cost}} ->
+        {:ok, %{main_tag: main_tag, other_tags: other_tags, cost: cost}}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -37,7 +62,7 @@ defmodule YouCongress.Halls.Classification do
          content <- OpenAIModel.get_content(data),
          {:ok, response} <- Jason.decode(content),
          cost <- OpenAIModel.get_cost(data, model) do
-      {:ok, %{tags: response["tags"], cost: cost}}
+      {:ok, %{main_tag: response["main_tag"], other_tags: response["other_tags"], cost: cost}}
     else
       {:error, error} -> {:error, error}
     end
@@ -48,7 +73,7 @@ defmodule YouCongress.Halls.Classification do
   defp ask_gpt(prompt, model) do
     OpenAI.chat_completion(
       model: model,
-      response_format: %{type: "json_object"},
+      response_format: %{type: "json_schema", json_schema: @json_schema},
       messages: [
         %{role: "system", content: "You are a helpful assistant."},
         %{role: "user", content: prompt0()},

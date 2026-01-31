@@ -9,6 +9,6 @@ defmodule YouCongress.Halls.ClassificationFake do
 
   @impl ClassificationBehaviour
   def classify(_text, _model) do
-    {:ok, %{tags: ["fake", Faker.Lorem.word()], cost: 0}}
+    {:ok, %{main_tag: "fake", other_tags: [Faker.Lorem.word()], cost: 0}}
   end
 end

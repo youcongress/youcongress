@@ -27,7 +27,7 @@ defmodule YouCongressWeb.StatementLive.Show do
       Track.event("View Statement", current_user)
     end
 
-    {:ok, socket}
+    {:ok, assign(socket, :random_statements_from_main_hall, [])}
   end
 
   @impl true
@@ -228,19 +228,18 @@ defmodule YouCongressWeb.StatementLive.Show do
   defp page_title(:edit, _), do: "Edit Poll"
 
   defp load_random_statements(socket, statement_id) do
-    statement = Statements.get_statement!(statement_id, preload: [:halls])
+    random_statements_from_main_hall =
+      case HallsStatements.get_main_hall(statement_id) do
+        nil ->
+          []
 
-    {random_statements_by_hall, _} =
-      statement.halls
-      |> Enum.reduce({[], [statement_id]}, fn hall, {acc_halls, exclude_ids} ->
-        statements = HallsStatements.get_random_statements(hall.name, 5, exclude_ids)
-        new_exclude_ids = exclude_ids ++ Enum.map(statements, & &1.id)
-        {acc_halls ++ [{hall, statements}], new_exclude_ids}
-      end)
+        main_hall ->
+          statements =
+            HallsStatements.get_random_statements_from_hall(main_hall.name, 5, [statement_id])
 
-    random_statements_by_hall =
-      Enum.reject(random_statements_by_hall, fn {_hall, statements} -> Enum.empty?(statements) end)
+          if Enum.empty?(statements), do: [], else: [{main_hall, statements}]
+      end
 
-    assign(socket, :random_statements_by_hall, random_statements_by_hall)
+    assign(socket, :random_statements_from_main_hall, random_statements_from_main_hall)
   end
 end
