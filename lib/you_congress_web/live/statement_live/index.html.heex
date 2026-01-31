@@ -95,21 +95,48 @@
           <%= if @votes_by_statement_id[statement.id] do %>
             <% featured_vote = @votes_by_statement_id[statement.id] %>
             <div class="border-t border-gray-100 pt-4 mt-2">
-              <.live_component
-                module={VoteComponent}
-                id={"featured-vote-#{statement.id}-#{featured_vote.id}"}
-                vote={featured_vote}
-                author={featured_vote.author}
-                statement={statement}
-                current_user={@current_user}
-                show_vote={true}
-                show_opinion={true}
-                liked={featured_vote.opinion && featured_vote.opinion.id in @liked_opinion_ids}
-                delegating?={featured_vote.author_id in @delegate_ids}
-                delegable={true}
-                regenerating_opinion_id={nil}
-                page={:statements_index}
-              />
+              <%= if featured_vote.opinion && featured_vote.opinion.id == @editing_opinion_id do %>
+                <form phx-submit="update-opinion" class="space-y-3">
+                  <input type="hidden" name="opinion_id" value={featured_vote.opinion.id} />
+                  <textarea
+                    name="content"
+                    rows="4"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    placeholder="Edit your comment..."
+                  ><%= featured_vote.opinion.content %></textarea>
+                  <div class="flex items-center space-x-2">
+                    <button
+                      type="submit"
+                      class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
+                    >
+                      Update
+                    </button>
+                    <button
+                      type="button"
+                      phx-click="cancel-edit"
+                      class="text-sm text-gray-600 hover:text-gray-800"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              <% else %>
+                <.live_component
+                  module={VoteComponent}
+                  id={"featured-vote-#{statement.id}-#{featured_vote.id}"}
+                  vote={featured_vote}
+                  author={featured_vote.author}
+                  statement={statement}
+                  current_user={@current_user}
+                  show_vote={true}
+                  show_opinion={true}
+                  liked={featured_vote.opinion && featured_vote.opinion.id in @liked_opinion_ids}
+                  delegating?={featured_vote.author_id in @delegate_ids}
+                  delegable={true}
+                  regenerating_opinion_id={nil}
+                  page={:statements_index}
+                />
+              <% end %>
             </div>
           <% else %>
             <div class="border-t border-gray-100 pt-4 mt-2 text-sm text-gray-500">
