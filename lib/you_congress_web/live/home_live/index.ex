@@ -296,4 +296,8 @@ defmodule YouCongressWeb.HomeLive.Index do
       end
     end
   end
+
+  def pending_actions_json(delegate_ids, votes) do
+    Jason.encode!(%{delegate_ids: delegate_ids, votes: votes})
+  end
 end

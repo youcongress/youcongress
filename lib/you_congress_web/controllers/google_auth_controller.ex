@@ -12,8 +12,9 @@ defmodule YouCongressWeb.GoogleAuthController do
   @doc """
   Initiates the Google OAuth flow by redirecting to Google's authorization URL.
   Stores the state in the session for verification in the callback.
+  Optionally stores pending_actions (delegate_ids and votes) in session for processing after login.
   """
-  def request(conn, _params) do
+  def request(conn, params) do
     client_id = Application.get_env(:you_congress, :google_client_id)
     callback_url = Application.get_env(:you_congress, :google_callback_url)
 
@@ -26,8 +27,15 @@ defmodule YouCongressWeb.GoogleAuthController do
 
       conn
       |> put_session(:google_oauth_state, state)
+      |> maybe_store_pending_actions(params["pending_actions"])
       |> redirect(external: authorize_url)
     end
+  end
+
+  defp maybe_store_pending_actions(conn, nil), do: conn
+
+  defp maybe_store_pending_actions(conn, pending_actions) do
+    put_session(conn, :oauth_pending_actions, pending_actions)
   end
 
   @doc """
@@ -159,6 +167,8 @@ defmodule YouCongressWeb.GoogleAuthController do
             user
           end
 
+        conn = process_pending_actions(conn, user)
+
         if user.email_confirmed_at do
           conn
           |> put_flash(:info, "Welcome back! Your Google account has been linked.")
@@ -197,6 +207,8 @@ defmodule YouCongressWeb.GoogleAuthController do
           else
             user
           end
+
+        conn = process_pending_actions(conn, user)
 
         # Google provides email, so we may skip the profile completion step
         # but still need phone verification
@@ -249,6 +261,8 @@ defmodule YouCongressWeb.GoogleAuthController do
             user
           end
 
+        conn = process_pending_actions(conn, user)
+
         conn
         |> put_session(:user_return_to, ~p"/sign_up")
         |> UserAuth.log_in_user(user)
@@ -275,6 +289,8 @@ defmodule YouCongressWeb.GoogleAuthController do
     Authors.update_author(author, author_update_attrs)
 
     Track.event("Login via Google", user)
+
+    conn = process_pending_actions(conn, user)
 
     # Check if user needs to complete profile (no confirmed email or phone)
     if user.email_confirmed_at do
@@ -303,5 +319,43 @@ defmodule YouCongressWeb.GoogleAuthController do
     else
       %{}
     end
+  end
+
+  defp process_pending_actions(conn, user) do
+    pending_json = get_session(conn, :oauth_pending_actions)
+    conn = delete_session(conn, :oauth_pending_actions)
+
+    if pending_json do
+      case Jason.decode(pending_json) do
+        {:ok, %{"delegate_ids" => delegate_ids, "votes" => votes}} ->
+          # Create delegations
+          for id <- delegate_ids do
+            YouCongress.Delegations.create_delegation(user, id)
+          end
+
+          # Create votes
+          Enum.each(votes, fn {_statement_id, vote_data} ->
+            if vote_data["answer"] && vote_data["answer"] != "" do
+              create_pending_vote(user, vote_data)
+            end
+          end)
+
+        _ ->
+          :ok
+      end
+    end
+
+    conn
+  end
+
+  defp create_pending_vote(user, vote_data) do
+    YouCongress.Votes.create_or_update(%{
+      statement_id: vote_data["statement_id"],
+      answer: String.to_existing_atom(vote_data["answer"]),
+      author_id: user.author_id,
+      direct: true
+    })
+  rescue
+    _ -> :ok
   end
 end
