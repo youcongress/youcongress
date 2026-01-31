@@ -11,12 +11,14 @@ defmodule YouCongress.Statements.StatementQueries do
   @doc """
   Returns one vote per statement, prioritizing:
   1. Current user's vote (if logged in)
-  2. Votes from prioritized authors (if provided)
-  3. Votes with highest opinion likes_count
-  4. Most recent votes
+  2. Votes from top authors (if provided)
+  3. Votes from wikipedia authors (if provided)
+  4. Votes with highest opinion likes_count
+  5. Most recent votes
   """
   def get_one_vote_per_statement(statement_ids, current_user \\ nil, opts \\ []) do
-    prioritized_author_ids = Keyword.get(opts, :prioritized_author_ids, [])
+    top_author_ids = Keyword.get(opts, :top_author_ids, [])
+    wikipedia_author_ids = Keyword.get(opts, :wikipedia_author_ids, [])
 
     base_query =
       from(v in Vote,
@@ -27,16 +29,18 @@ defmodule YouCongress.Statements.StatementQueries do
 
     query =
       cond do
-        current_user && prioritized_author_ids != [] ->
+        current_user && (top_author_ids != [] || wikipedia_author_ids != []) ->
           from([v, o] in base_query,
             order_by: [
               desc:
                 fragment(
-                  "CASE WHEN ? = ? THEN 2 WHEN ? = ANY(?) THEN 1 ELSE 0 END",
+                  "CASE WHEN ? = ? THEN 3 WHEN ? = ANY(?) THEN 2 WHEN ? = ANY(?) THEN 1 ELSE 0 END",
                   v.author_id,
                   ^current_user.author_id,
                   v.author_id,
-                  ^prioritized_author_ids
+                  ^top_author_ids,
+                  v.author_id,
+                  ^wikipedia_author_ids
                 ),
               desc: o.likes_count,
               desc: v.inserted_at
@@ -61,14 +65,16 @@ defmodule YouCongress.Statements.StatementQueries do
             select: {v.statement_id, v}
           )
 
-        prioritized_author_ids != [] ->
+        top_author_ids != [] || wikipedia_author_ids != [] ->
           from([v, o] in base_query,
             order_by: [
               desc:
                 fragment(
-                  "CASE WHEN ? = ANY(?) THEN 1 ELSE 0 END",
+                  "CASE WHEN ? = ANY(?) THEN 2 WHEN ? = ANY(?) THEN 1 ELSE 0 END",
                   v.author_id,
-                  ^prioritized_author_ids
+                  ^top_author_ids,
+                  v.author_id,
+                  ^wikipedia_author_ids
                 ),
               desc: o.likes_count,
               desc: v.inserted_at

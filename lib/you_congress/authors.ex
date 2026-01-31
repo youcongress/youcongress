@@ -317,4 +317,23 @@ defmodule YouCongress.Authors do
   def change_author(%Author{} = author, attrs \\ %{}) do
     Author.changeset(author, attrs)
   end
+
+  @doc """
+  Returns a list of author IDs that have a wikipedia_url, excluding the given author IDs.
+  """
+  def get_wikipedia_author_ids(exclude_ids \\ []) do
+    query =
+      from a in Author,
+        where: not is_nil(a.wikipedia_url),
+        select: a.id
+
+    query =
+      if exclude_ids == [] do
+        query
+      else
+        from a in query, where: a.id not in ^exclude_ids
+      end
+
+    Repo.all(query)
+  end
 end
