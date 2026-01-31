@@ -5,6 +5,10 @@ defmodule YouCongress.Accounts.Permissions do
   alias YouCongress.Accounts.User
   alias YouCongress.Statements.Statement
 
+  def can_create_statement?(%User{role: "admin"}), do: true
+  def can_create_statement?(%User{role: "creator"}), do: true
+  def can_create_statement?(_), do: false
+
   @doc """
   Checks if the user can edit the given statement.
   """

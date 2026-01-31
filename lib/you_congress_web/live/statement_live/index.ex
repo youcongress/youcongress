@@ -3,6 +3,7 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   require Logger
 
+  alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors
   alias YouCongress.Delegations
   alias YouCongress.Likes
@@ -60,6 +61,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:per_page, 15)
       |> assign(:has_more_statements, true)
       |> assign(:editing_opinion_id, nil)
+      |> assign(:can_create_statement?, Permissions.can_create_statement?(current_user))
       |> stream(:statements, [], reset: true)
       |> assign_votes(1)
 
@@ -88,28 +90,17 @@ defmodule YouCongressWeb.StatementLive.Index do
   end
 
   def handle_event("toggle-new-poll", _, socket) do
-    %{assigns: %{new_poll_visible?: new_poll_visible?}} = socket
+    %{assigns: %{new_poll_visible?: new_poll_visible?, current_user: current_user}} = socket
 
-    if Statements.statements_count_created_in_the_last_hour() > 20 do
-      # Only logged users can create polls
-      if socket.assigns.current_user do
-        socket =
-          socket
-          |> assign(new_poll_visible?: !new_poll_visible?)
-          |> maybe_assign_votes()
-
-        {:noreply, socket}
-      else
-        {:noreply, put_flash(socket, :warning, "You need to log in to create a poll")}
-      end
-    else
-      # Non-logged visitors can create polls
+    if Permissions.can_create_statement?(current_user) do
       socket =
         socket
         |> assign(new_poll_visible?: !new_poll_visible?)
         |> maybe_assign_votes()
 
       {:noreply, socket}
+    else
+      {:noreply, put_flash(socket, :warning, "You don't have permission to create statements")}
     end
   end
 
