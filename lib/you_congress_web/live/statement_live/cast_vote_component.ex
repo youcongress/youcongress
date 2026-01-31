@@ -12,6 +12,7 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
   alias YouCongress.DelegationVotes
   alias YouCongress.Votes.VoteFrequencies
   alias YouCongressWeb.StatementLive.Index.OpinateComponent
+  alias YouCongressWeb.Components.LoginButtons
   @impl true
   def render(assigns) do
     ~H"""
@@ -64,12 +65,7 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
           />
         </div>
 
-        <div :if={@page == :statements_index && !@current_user} class="pt-2">
-          Read
-          <.link href={~p"/p/#{@statement.slug}"} class="cursor-pointer underline">arguments</.link>
-          or <.link href={~p"/sign_up"} class="cursor-pointer underline">sign up</.link>
-          to add your own and/or save your vote.
-        </div>
+        <LoginButtons.render :if={!@current_user} class="pt-4" />
       <% end %>
     </div>
     """
@@ -276,7 +272,8 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
     {:noreply, socket}
   end
 
-  defp maybe_assign_results_variables(%{assigns: %{page: :statements_index}} = socket) do
+  defp maybe_assign_results_variables(%{assigns: %{page: page}} = socket)
+       when page in [:statements_index, :author_show] do
     assign_results_variables(socket)
   end
 

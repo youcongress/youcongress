@@ -129,11 +129,7 @@ defmodule YouCongressWeb.HomeLive.Index do
 
     vote = %{answer: answer, statement_id: statement_id}
     new_user_votes = Map.put(socket.assigns.user_votes, statement_id, vote)
-
-    socket =
-      socket
-      |> put_flash(:info, "Please sign up to save your vote.")
-      |> assign(:user_votes, new_user_votes)
+    socket = assign(socket, :user_votes, new_user_votes)
 
     {:noreply, socket}
   end
