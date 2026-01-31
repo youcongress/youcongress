@@ -14,7 +14,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
 
     test "Non-logged visitors can't load the page", %{conn: conn} do
       {:error,
-       {:redirect, %{flash: %{"error" => "You must log in to access this page."}, to: "/"}}} =
+       {:redirect, %{flash: %{"error" => "You must log in to access this page."}, to: "/log_in"}}} =
         live(conn, ~p"/settings")
     end
 

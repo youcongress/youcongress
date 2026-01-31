@@ -17,7 +17,7 @@ defmodule YouCongressWeb.UserSessionController do
   end
 
   def create(conn, params) do
-    create(conn, params, "Welcome back!")
+    create(conn, params, nil)
   end
 
   defp create(conn, %{"user" => user_params}, info) do
@@ -39,10 +39,8 @@ defmodule YouCongressWeb.UserSessionController do
 
       user = Accounts.get_user_by_email_and_password(email, password) ->
         handle_pending_actions(user, user_params["pending_actions"])
-
-        conn
-        |> put_flash(:info, info)
-        |> UserAuth.log_in_user(user, user_params)
+        conn = if info, do: put_flash(conn, :info, info), else: conn
+        UserAuth.log_in_user(conn, user, user_params)
 
       true ->
         # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
