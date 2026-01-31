@@ -201,10 +201,18 @@ defmodule YouCongressWeb.StatementLive.Index do
   end
 
   def handle_event("delete-comment", %{"opinion_id" => opinion_id}, socket) do
+    opinion_id = String.to_integer(opinion_id)
     opinion = Opinions.get_opinion!(opinion_id, preload: [:statements])
 
     if socket.assigns.current_user &&
          socket.assigns.current_user.author_id == opinion.author_id do
+      # First, clear the opinion_id from the vote so it's preserved
+      case Votes.get_vote_by_opinion_id(opinion_id) do
+        nil -> :ok
+        vote -> Votes.update_vote(vote, %{opinion_id: nil})
+      end
+
+      # Then delete the opinion
       {_count, nil} = Opinions.delete_opinion_and_descendants(opinion)
 
       socket =
