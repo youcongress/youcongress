@@ -24,6 +24,21 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   @default_hall "ai"
 
+  @top_author_names [
+    "Stuart J. Russell",
+    "Demis Hassabis",
+    "Scott Alexander",
+    "Yoshua Bengio",
+    "Eliezer Yudkowsky",
+    "Yann LeCun",
+    "Geoffrey Hinton",
+    "Gary Marcus",
+    "Dario Amodei",
+    "Sam Altman",
+    "Elon Musk",
+    "Max Tegmark"
+  ]
+
   @impl true
   def mount(params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
@@ -36,7 +51,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:halls, [])
       |> assign(:authors, [])
       |> assign(:quotes, [])
-      |> assign(:order_by_date, true)
+      |> assign(:order_by_date, false)
       |> assign(:hall_name, params["hall"] || @default_hall)
       |> assign(:new_poll_visible?, false)
       |> assign(:current_user_delegation_ids, get_current_user_delegation_ids(current_user))
@@ -297,16 +312,24 @@ defmodule YouCongressWeb.StatementLive.Index do
     } = socket
 
     offset = (page - 1) * per_page
-    order = if order_by_date, do: :updated_at_desc, else: :opinion_likes_count_desc
-    args = [order: order, offset: offset, limit: per_page]
 
-    args =
-      case hall_name do
-        "all" -> args
-        _ -> Keyword.put(args, :hall_name, hall_name)
+    statements =
+      if order_by_date do
+        # Trending mode - show recent activity
+        args = [order: :updated_at_desc, offset: offset, limit: per_page]
+
+        args =
+          case hall_name do
+            "all" -> args
+            _ -> Keyword.put(args, :hall_name, hall_name)
+          end
+
+        Statements.list_statements(args)
+      else
+        # Top mode - show statements with opinions from top authors
+        author_ids = get_top_author_ids()
+        Statements.list_statements_by_top_authors(author_ids, hall_name, offset, per_page)
       end
-
-    statements = Statements.list_statements(args)
 
     if statements == [] do
       socket = assign(socket, :has_more_statements, false)
@@ -316,9 +339,15 @@ defmodule YouCongressWeb.StatementLive.Index do
         socket
         |> stream(:statements, statements, reset: page == 1)
         |> assign(:has_more_statements, true)
+        |> assign(:page, page)
 
       {socket, statements}
     end
+  end
+
+  defp get_top_author_ids do
+    Authors.list_authors(names: @top_author_names)
+    |> Enum.map(& &1.id)
   end
 
   defp load_votes(_, nil), do: %{}
@@ -349,14 +378,23 @@ defmodule YouCongressWeb.StatementLive.Index do
   end
 
   defp assign_votes(socket, page) do
-    %{assigns: %{current_user: current_user}} = socket
+    %{assigns: %{current_user: current_user, order_by_date: order_by_date}} = socket
     {socket, statements} = assign_statements(socket, page)
     statement_ids = Enum.map(statements, & &1.id)
+
+    # When in "Top" mode (not order_by_date), prioritize votes from top authors
+    opts =
+      if order_by_date do
+        []
+      else
+        [prioritized_author_ids: get_top_author_ids()]
+      end
 
     votes_by_statement_id =
       StatementQueries.get_one_vote_per_statement(
         statement_ids,
-        current_user
+        current_user,
+        opts
       )
 
     liked_opinion_ids = Likes.get_liked_opinion_ids(current_user)
