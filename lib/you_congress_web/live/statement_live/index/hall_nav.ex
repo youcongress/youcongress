@@ -11,10 +11,9 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
 
   @featured_halls [
     {"ai", "AI"},
-    {"ai-safety", "AI Safety"},
-    {"ai-governance", "AI Governance"},
-    {"existential-risk", "X-Risk"},
     {"cern-for-ai", "CERN for AI"},
+    {"eu", "EU"},
+    {"us", "US"},
     {"all", "All"}
   ]
 

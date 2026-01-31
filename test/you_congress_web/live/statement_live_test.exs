@@ -35,9 +35,12 @@ defmodule YouCongressWeb.StatementLiveTest do
 
     test "vote and create opinion", %{conn: conn, statement: statement} do
       conn = log_in_as_user(conn)
-      {:ok, index_live, html} = live(conn, ~p"/")
+      {:ok, index_live, _html} = live(conn, ~p"/")
 
-      assert html =~ statement.title
+      # Switch to Trending mode to see the statement (default is Top mode which filters by top authors)
+      index_live |> element("button[phx-click='toggle-switch']") |> render_click()
+
+      assert render(index_live) =~ statement.title
 
       # Vote For
       index_live

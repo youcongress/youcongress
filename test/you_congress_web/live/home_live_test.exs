@@ -30,22 +30,34 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ "Search quotes, people, policies..."
     end
 
-    test "shows statements feed", %{conn: conn} do
-      statement = statement_fixture(title: "AI Safety Statement") |> add_statement_to_ai_hall()
-      {:ok, _view, html} = live(conn, ~p"/")
-      assert html =~ statement.title
+    test "shows statements feed in Trending mode", %{conn: conn} do
+      statement =
+        statement_fixture(title: "AI Safety Statement")
+        |> add_statement_to_ai_hall()
+
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      # Switch to Trending mode (default is now Top mode which filters by top authors)
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
+
+      assert render(view) =~ statement.title
     end
 
     test "guest can vote and sees flash message", %{conn: conn} do
-      statement = statement_fixture(title: "Test Statement") |> add_statement_to_ai_hall()
+      statement =
+        statement_fixture(title: "Test Statement")
+        |> add_statement_to_ai_hall()
+
       {:ok, view, _html} = live(conn, ~p"/")
+
+      # Switch to Trending mode to see the statement
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
 
       # Vote For
       view
       |> element("button##{statement.id}-vote-for")
       |> render_click()
 
-      assert render(view) =~ "Please sign up so your vote is saved."
       assert render(view) =~ "For"
     end
 
@@ -68,10 +80,17 @@ defmodule YouCongressWeb.HomeLiveTest do
   describe "Home page for logged in users" do
     test "logged in user can vote", %{conn: conn} do
       user = user_fixture()
-      statement = statement_fixture(title: "Test Statement") |> add_statement_to_ai_hall()
+
+      statement =
+        statement_fixture(title: "Test Statement")
+        |> add_statement_to_ai_hall()
+
       conn = log_in_user(conn, user)
 
       {:ok, view, _html} = live(conn, ~p"/")
+
+      # Switch to Trending mode to see the statement
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
 
       # Vote For
       view

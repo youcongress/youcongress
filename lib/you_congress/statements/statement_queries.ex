@@ -8,7 +8,16 @@ defmodule YouCongress.Statements.StatementQueries do
 
   alias YouCongress.Votes.Vote
 
-  def get_one_vote_per_statement(statement_ids, current_user \\ nil) do
+  @doc """
+  Returns one vote per statement, prioritizing:
+  1. Current user's vote (if logged in)
+  2. Votes from prioritized authors (if provided)
+  3. Votes with highest opinion likes_count
+  4. Most recent votes
+  """
+  def get_one_vote_per_statement(statement_ids, current_user \\ nil, opts \\ []) do
+    prioritized_author_ids = Keyword.get(opts, :prioritized_author_ids, [])
+
     base_query =
       from(v in Vote,
         join: o in assoc(v, :opinion),
@@ -17,23 +26,63 @@ defmodule YouCongress.Statements.StatementQueries do
       )
 
     query =
-      if current_user do
-        from([v, o] in base_query,
-          order_by: [
-            desc:
-              fragment("CASE WHEN ? = ? THEN 1 ELSE 0 END", v.author_id, ^current_user.author_id),
-            desc: o.likes_count,
-            desc: v.inserted_at
-          ],
-          distinct: [v.statement_id],
-          select: {v.statement_id, v}
-        )
-      else
-        from([v, o] in base_query,
-          order_by: [desc: o.likes_count, desc: v.inserted_at],
-          distinct: [v.statement_id],
-          select: {v.statement_id, v}
-        )
+      cond do
+        current_user && prioritized_author_ids != [] ->
+          from([v, o] in base_query,
+            order_by: [
+              desc:
+                fragment(
+                  "CASE WHEN ? = ? THEN 2 WHEN ? = ANY(?) THEN 1 ELSE 0 END",
+                  v.author_id,
+                  ^current_user.author_id,
+                  v.author_id,
+                  ^prioritized_author_ids
+                ),
+              desc: o.likes_count,
+              desc: v.inserted_at
+            ],
+            distinct: [v.statement_id],
+            select: {v.statement_id, v}
+          )
+
+        current_user ->
+          from([v, o] in base_query,
+            order_by: [
+              desc:
+                fragment(
+                  "CASE WHEN ? = ? THEN 1 ELSE 0 END",
+                  v.author_id,
+                  ^current_user.author_id
+                ),
+              desc: o.likes_count,
+              desc: v.inserted_at
+            ],
+            distinct: [v.statement_id],
+            select: {v.statement_id, v}
+          )
+
+        prioritized_author_ids != [] ->
+          from([v, o] in base_query,
+            order_by: [
+              desc:
+                fragment(
+                  "CASE WHEN ? = ANY(?) THEN 1 ELSE 0 END",
+                  v.author_id,
+                  ^prioritized_author_ids
+                ),
+              desc: o.likes_count,
+              desc: v.inserted_at
+            ],
+            distinct: [v.statement_id],
+            select: {v.statement_id, v}
+          )
+
+        true ->
+          from([v, o] in base_query,
+            order_by: [desc: o.likes_count, desc: v.inserted_at],
+            distinct: [v.statement_id],
+            select: {v.statement_id, v}
+          )
       end
 
     query

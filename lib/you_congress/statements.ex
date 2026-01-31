@@ -128,6 +128,40 @@ defmodule YouCongress.Statements do
     |> filter_latest_opinions_for_statements()
   end
 
+  @doc """
+  Returns statements that have opinions from the given author_ids,
+  with support for pagination and hall filtering.
+  Ordered by opinion_likes_count descending.
+  """
+  def list_statements_by_top_authors(author_ids, hall_name, offset, limit) do
+    base_query =
+      from(s in Statement,
+        join: ov in "opinions_statements",
+        on: ov.statement_id == s.id,
+        join: o in Opinion,
+        on: ov.opinion_id == o.id,
+        where: o.author_id in ^author_ids,
+        distinct: s.id,
+        order_by: [desc: s.opinion_likes_count, desc: s.inserted_at],
+        offset: ^offset,
+        limit: ^limit
+      )
+
+    query =
+      case hall_name do
+        "all" ->
+          base_query
+
+        _ ->
+          from([s, ov, o] in base_query,
+            join: h in assoc(s, :halls),
+            where: h.name == ^hall_name
+          )
+      end
+
+    Repo.all(query)
+  end
+
   defp filter_latest_opinions_for_statements(statements) do
     Enum.map(statements, fn statement ->
       unique_opinions =
