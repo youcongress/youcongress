@@ -202,7 +202,7 @@ defmodule YouCongressWeb.XAuthControllerTest do
           |> get(~p"/auth/x/callback", %{"code" => "auth_code", "state" => "valid_state"})
           |> fetch_flash()
 
-        assert redirected_to(conn) == ~p"/home"
+        assert redirected_to(conn) == ~p"/"
         assert get_session(conn, :user_token)
 
         # Verify the same user was logged in

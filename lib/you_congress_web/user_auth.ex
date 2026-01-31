@@ -308,7 +308,7 @@ defmodule YouCongressWeb.UserAuth do
   def redirect_home_if_user_is_authenticated(conn, _opts) do
     if conn.assigns[:current_user] do
       conn
-      |> redirect(to: ~p"/home")
+      |> redirect(to: ~p"/")
       |> halt()
     else
       conn
@@ -327,5 +327,5 @@ defmodule YouCongressWeb.UserAuth do
 
   defp maybe_store_return_to(conn), do: conn
 
-  defp signed_in_path(_conn), do: ~p"/home"
+  defp signed_in_path(_conn), do: ~p"/"
 end

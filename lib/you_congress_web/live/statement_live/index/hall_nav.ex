@@ -50,7 +50,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     """
   end
 
-  defp hall_link("ai"), do: ~p"/home"
+  defp hall_link("ai"), do: ~p"/"
   defp hall_link(hall_name), do: ~p"/y/#{hall_name}"
 
   attr :url_hall_name, :string, required: true
