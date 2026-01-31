@@ -77,9 +77,26 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
 
   @impl true
   def update(assigns, socket) do
+    # Track if user voted in this session (set by handle_event)
+    voted_this_session = socket.assigns[:voted_this_session] || false
+
+    # Preserve the component's internal vote state if user voted this session
+    current_vote_internal = socket.assigns[:current_user_vote]
+
     socket = assign(socket, assigns)
 
-    if assigns.display_results do
+    # Preserve the voted_this_session flag and internal vote state
+    socket =
+      if voted_this_session do
+        socket
+        |> assign(:voted_this_session, true)
+        |> assign(:current_user_vote, current_vote_internal)
+      else
+        socket
+      end
+
+    # Show results if user voted in this session
+    if voted_this_session do
       {:ok, assign_results_variables(socket)}
     else
       {:ok, socket}
@@ -177,6 +194,7 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
         socket =
           socket
           |> assign(:current_user_vote, vote)
+          |> assign(:voted_this_session, true)
           |> maybe_assign_results_variables()
 
         {:noreply, socket}
