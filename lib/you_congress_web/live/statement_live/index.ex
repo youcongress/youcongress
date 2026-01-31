@@ -37,7 +37,9 @@ defmodule YouCongressWeb.StatementLive.Index do
     "Dario Amodei",
     "Sam Altman",
     "Elon Musk",
-    "Max Tegmark"
+    "Max Tegmark",
+    "Nick Bostrom",
+    "Tim Berners-Lee"
   ]
 
   @impl true
@@ -85,7 +87,7 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   @impl true
   def handle_event("load-more", _, socket) do
-    {socket, _} = assign_statements(socket, socket.assigns.page + 1)
+    socket = assign_votes(socket, socket.assigns.page + 1)
     {:noreply, socket}
   end
 
@@ -381,21 +383,36 @@ defmodule YouCongressWeb.StatementLive.Index do
         [prioritized_author_ids: get_top_author_ids()]
       end
 
-    votes_by_statement_id =
+    new_votes_by_statement_id =
       StatementQueries.get_one_vote_per_statement(
         statement_ids,
         current_user,
         opts
       )
 
-    liked_opinion_ids = Likes.get_liked_opinion_ids(current_user)
+    new_liked_opinion_ids = Likes.get_liked_opinion_ids(current_user)
+    new_votes = load_votes(statement_ids, current_user)
+    new_opinions = load_opinions(statement_ids, current_user)
+
+    # Merge with existing data when loading additional pages
+    {votes_by_statement_id, liked_opinion_ids, votes, opinions} =
+      if page == 1 do
+        {new_votes_by_statement_id, new_liked_opinion_ids, new_votes, new_opinions}
+      else
+        {
+          Map.merge(socket.assigns.votes_by_statement_id, new_votes_by_statement_id),
+          Enum.uniq(socket.assigns.liked_opinion_ids ++ new_liked_opinion_ids),
+          Map.merge(socket.assigns.votes, new_votes),
+          Map.merge(socket.assigns.opinions, new_opinions)
+        }
+      end
 
     socket
     |> assign(:delegate_ids, load_delegate_ids(current_user))
     |> assign(:votes_by_statement_id, votes_by_statement_id)
     |> assign(:liked_opinion_ids, liked_opinion_ids)
-    |> assign(:votes, load_votes(statement_ids, current_user))
-    |> assign(:opinions, load_opinions(statement_ids, current_user))
+    |> assign(:votes, votes)
+    |> assign(:opinions, opinions)
   end
 
   defp get_current_user_delegation_ids(nil), do: []
