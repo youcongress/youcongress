@@ -18,7 +18,7 @@
   <%= if is_nil(@search) do %>
     <div class="flex">
       <SwitchComponent.render is_active={@order_by_date} label1="Top" label2="Trending" />
-      <div>
+      <div :if={@can_create_statement?}>
         <button
           id="create-poll-button"
           phx-click="toggle-new-poll"
@@ -148,7 +148,7 @@
         </div>
       </li>
     </ul>
-    <%= if !@has_more_statements do %>
+    <%= if !@has_more_statements && @can_create_statement? do %>
       <div class="text-center pt-6">
         <button
           id="create-poll-button-bottom"
