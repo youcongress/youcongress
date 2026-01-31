@@ -32,11 +32,11 @@ defmodule YouCongressWeb.StatementLive.VoteComponent.QuoteMenu do
       <div class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right">
         <div class="w-48 shrink rounded-xl bg-white p-4 text-sm font-semibold leading-6 text-gray-900 shadow-lg ring-1 ring-gray-900/5">
           <%= if @opinion && (@opinion.twin || @opinion.source_url) && is_nil(@opinion.ancestry) do %>
-            <.link href="/faq#my-profile" class="block p-2 hover:text-indigo-600">
+            <.link href="/faq#my-profile" class="block py-1 px-2 hover:text-indigo-600">
               I am this person!
             </.link>
             <%= if @statement do %>
-              <span class="block p-2">
+              <span class="block py-1 px-2">
                 <.link
                   href={"/p/#{@statement.slug}/add-quote?twitter_username=#{@author.twitter_username}"}
                   class="hover:text-indigo-600"
@@ -51,7 +51,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent.QuoteMenu do
           <.link
             href="mailto:hi@youcongress.org"
             target="_blank"
-            class="block p-2 hover:text-indigo-600"
+            class="block py-1 px-2 hover:text-indigo-600"
           >
             Report comment
           </.link>
@@ -59,14 +59,14 @@ defmodule YouCongressWeb.StatementLive.VoteComponent.QuoteMenu do
             <.link
               phx-click="edit"
               phx-value-opinion_id={@opinion.id}
-              class="block p-2 hover:text-indigo-600"
+              class="block py-1 px-2 hover:text-indigo-600"
             >
               Edit comment
             </.link>
             <.link
               phx-click="delete-comment"
               phx-value-opinion_id={@opinion.id}
-              class="block p-2 hover:text-indigo-600"
+              class="block py-1 px-2 hover:text-indigo-600"
             >
               Delete comment
             </.link>
