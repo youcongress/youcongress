@@ -161,7 +161,7 @@
       <% end %>
     </div>
   </div>
-  <%= if @current_user && @current_user.author_id != @vote.author_id do %>
+  <%= if @page != :statements_index && @current_user && @current_user.author_id != @vote.author_id do %>
     <hr />
   <% end %>
 </div>
