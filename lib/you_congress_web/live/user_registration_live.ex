@@ -14,6 +14,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
       <%= if @step == :enter_email_password do %>
         <%= unless @embedded do %>
           <.header class="text-center">
+            Sign up
             <:subtitle>
               Already registered?
               <.link navigate={~p"/log_in"} class="font-semibold text-brand hover:underline">

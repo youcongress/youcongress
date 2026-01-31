@@ -1,24 +1,23 @@
-<%= if assigns[:statement] && assigns[:statement].id do %>
-  <div>
-    <div class="pl-4 py-2 bg-gray-200 text-gray-800 text-sm text-center">
-      <div>
-        Biased? Add more <.link
-          href={~p"/p/#{@statement.slug}/add-quote"}
-          class="underline"
-          target="_blank"
-          rel="nofollow"
-        >sourced quotes</.link>.
-      </div>
-    </div>
-  </div>
-<% end %>
 <.top_header
   current_user={assigns[:current_user]}
   votes_count={if assigns[:votes_count], do: @votes_count}
   user_votes_count={if assigns[:user_votes_count], do: @user_votes_count}
   page={assigns[:page]}
 />
-<main class="px-4 py-6 sm:px-6 lg:px-8">
+<main class="px-4 pb-6 sm:px-6 lg:px-8">
+  <%= if assigns[:statement] && assigns[:statement].id do %>
+    <div class="mb-4 -mx-4 sm:-mx-6 lg:-mx-8">
+      <div class="pl-4 py-2 bg-gray-200 text-gray-800 text-sm text-center">
+        <div>
+          Biased? Add more <.link
+            href={~p"/p/#{@statement.slug}/add-quote"}
+            class="underline"
+            rel="nofollow"
+          >sourced quotes</.link>.
+        </div>
+      </div>
+    </div>
+  <% end %>
   <div class={"mx-auto #{if assigns[:full_width], do: "max-w-7xl", else: "max-w-4xl"}"}>
     <.flash_group flash={@flash} />
     {@inner_content}
