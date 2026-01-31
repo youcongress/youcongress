@@ -27,6 +27,12 @@ defmodule YouCongressWeb.PageController do
     |> halt()
   end
 
+  def redirect_to_home(conn, _params) do
+    conn
+    |> redirect(to: ~p"/")
+    |> halt()
+  end
+
   def email_login_waiting_list(conn, _params) do
     render(conn, :email_login_waiting_list, layout: false)
   end

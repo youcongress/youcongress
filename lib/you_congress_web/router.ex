@@ -33,7 +33,7 @@ defmodule YouCongressWeb.Router do
     pipe_through(:browser)
 
     get("/sim", SimController, :index)
-    live("/home", StatementLive.Index, :index)
+    get("/home", PageController, :redirect_to_home)
     live("/p/:slug", StatementLive.Show, :show)
     live("/a/:id", AuthorLive.Show, :show)
     live("/x/:twitter_username", AuthorLive.Show, :show)
@@ -125,9 +125,9 @@ defmodule YouCongressWeb.Router do
   end
 
   scope "/", YouCongressWeb do
-    pipe_through([:browser, :redirect_home_if_user_is_authenticated])
+    pipe_through([:browser])
 
-    live("/", HomeLive.Index, :index)
+    live("/", StatementLive.Index, :index)
   end
 
   scope "/", YouCongressWeb do

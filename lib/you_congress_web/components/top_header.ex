@@ -21,7 +21,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
         <div class="hidden md:flex text-sm items-center gap-6 leading-6 text-zinc-900">
           <.link
             :if={@current_user && YouCongress.Accounts.sign_up_complete?(@current_user)}
-            href={~p"/home"}
+            href={~p"/"}
             class="px-3 py-2 hover:text-zinc-700 transition-colors"
           >
             Home

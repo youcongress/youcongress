@@ -143,7 +143,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
     Track.event("Delete Opinion", socket.assigns.current_user)
 
     parent_opinion_id = Opinion.parent_id(opinion)
-    url = if parent_opinion_id, do: "/c/#{parent_opinion_id}", else: "/home"
+    url = if parent_opinion_id, do: "/c/#{parent_opinion_id}", else: "/"
 
     socket =
       socket

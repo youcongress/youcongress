@@ -35,7 +35,7 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
             tab={:statements}
             label={"Policies & claims (#{length(@statements)})"}
           />
-          <Search.tab search_tab={@search_tab} tab={:halls} label={"y/ (#{length(@halls)})"} />
+          <Search.tab search_tab={@search_tab} tab={:halls} label={"Halls (#{length(@halls)})"} />
         </nav>
       </div>
     </div>
