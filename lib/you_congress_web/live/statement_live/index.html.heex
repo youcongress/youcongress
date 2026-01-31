@@ -31,20 +31,6 @@
   <% end %>
 </div>
 
-<div :if={is_nil(@search) && !@new_poll_visible?} class="pt-4 text-sm">
-  <div class="pb-1 text-xs">Some delegates:</div>
-  <div class="">
-    <.link href={~p"/a/282"} class="underline">Stuart Russell</.link>, <.link
-      href={~p"/x/demishassabis"}
-      class="underline"
-    >Demis Hassabis</.link>, <.link href={~p"/x/slatestarcodex"} class="underline">Scott Alexander</.link>, <.link
-      href={~p"/x/Yoshua_Bengio"}
-      class="underline"
-    >Yoshua Bengio</.link>,
-    <.link href={~p"/x/ESYudkowsky"} class="underline">Eliezer Yudkowsky</.link>
-  </div>
-</div>
-
 <%= if @search do %>
   <Search.render
     authors={@authors}
@@ -77,33 +63,66 @@
       id="statements-list"
       phx-update="stream"
       phx-viewport-bottom={@has_more_statements && "load-more"}
+      class="space-y-4 pt-4"
     >
       <li
         :for={{dom_id, statement} <- @streams.statements}
         id={dom_id}
-        class="py-4 border-b border-gray-200"
+        class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
       >
-        <div>
-          <span class="text-xl">
-            <.link href={~p"/p/#{statement.slug}"}>{statement.title}</.link>
-          </span>
-        </div>
-        <div class="pt-2 pb-2">
-          <.live_component
-            module={CastVoteComponent}
-            id={statement.id}
-            statement={statement}
-            current_user_vote={@votes[statement.id]}
-            current_user_opinion={@opinions[statement.id]}
-            current_user={@current_user}
-            display_results={false}
-            page={:statements_index}
-          />
+        <div class="p-4 md:p-5">
+          <div class="mb-3">
+            <h2 class="text-lg md:text-xl font-medium text-gray-900">
+              <.link href={~p"/p/#{statement.slug}"} class="hover:text-indigo-600">
+                {statement.title}
+              </.link>
+            </h2>
+          </div>
+
+          <div class="mb-4">
+            <.live_component
+              module={CastVoteComponent}
+              id={statement.id}
+              statement={statement}
+              current_user_vote={@votes[statement.id]}
+              current_user_opinion={@opinions[statement.id]}
+              current_user={@current_user}
+              display_results={!!@votes[statement.id]}
+              page={:statements_index}
+            />
+          </div>
+
+          <%= if @votes_by_statement_id[statement.id] do %>
+            <% featured_vote = @votes_by_statement_id[statement.id] %>
+            <div class="border-t border-gray-100 pt-4 mt-2">
+              <.live_component
+                module={VoteComponent}
+                id={"featured-vote-#{statement.id}-#{featured_vote.id}"}
+                vote={featured_vote}
+                author={featured_vote.author}
+                statement={statement}
+                current_user={@current_user}
+                show_vote={true}
+                show_opinion={true}
+                liked={featured_vote.opinion && featured_vote.opinion.id in @liked_opinion_ids}
+                delegating?={featured_vote.author_id in @delegate_ids}
+                delegable={true}
+                regenerating_opinion_id={nil}
+                page={:statements_index}
+              />
+            </div>
+          <% else %>
+            <div class="border-t border-gray-100 pt-4 mt-2 text-sm text-gray-500">
+              <.link href={~p"/p/#{statement.slug}"} class="hover:text-indigo-600">
+                Be the first to share your opinion
+              </.link>
+            </div>
+          <% end %>
         </div>
       </li>
     </ul>
     <%= if !@has_more_statements do %>
-      <div class="text-center pt-4">
+      <div class="text-center pt-6">
         <button
           id="create-poll-button-bottom"
           phx-click="toggle-new-poll"

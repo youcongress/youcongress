@@ -44,6 +44,18 @@ module.exports = {
   },
   plugins: [
     require("@tailwindcss/forms"),
+    // Utility to hide scrollbars while preserving scroll functionality
+    plugin(function ({ addUtilities }) {
+      addUtilities({
+        '.scrollbar-hide': {
+          '-ms-overflow-style': 'none',
+          'scrollbar-width': 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          }
+        }
+      })
+    }),
     // Allows prefixing tailwind classes with LiveView classes to add rules
     // only when LiveView classes are applied, for example:
     //

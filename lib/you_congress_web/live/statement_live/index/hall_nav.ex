@@ -1,6 +1,6 @@
 defmodule YouCongressWeb.StatementLive.Index.HallNav do
   @moduledoc """
-  Hall navigation.
+  Hall navigation - Reddit-like hall/subreddit selector.
   """
 
   use Phoenix.Component
@@ -9,99 +9,74 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
   alias YouCongressWeb.StatementLive.Index.HallNav
   alias YouCongress.Tools.StringUtils
 
+  @featured_halls [
+    {"ai", "AI"},
+    {"ai-safety", "AI Safety"},
+    {"ai-governance", "AI Governance"},
+    {"existential-risk", "X-Risk"},
+    {"cern-for-ai", "CERN for AI"},
+    {"all", "All"}
+  ]
+
   attr :hall_name, :string, required: true
 
   def render(assigns) do
+    assigns = assign(assigns, :featured_halls, @featured_halls)
+
     ~H"""
-    <div class="border-b border-gray-200">
-      <div class="pb-2">
-        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-          <div class="pt-1 space-x-8">
-            <HallNav.tab
+    <div class="pb-2">
+      <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <span class="text-sm text-gray-500 shrink-0">r/</span>
+        <div class="flex gap-2">
+          <%= for {hall_slug, hall_title} <- @featured_halls do %>
+            <HallNav.pill
               url_hall_name={@hall_name}
-              hall_name="ai-safety"
-              hall_link={~p"/home"}
-              hall_title="AI safety"
+              hall_name={hall_slug}
+              hall_link={hall_link(hall_slug)}
+              hall_title={hall_title}
             />
-          </div>
-          <div class="hidden md:block pt-1 space-x-8">
-            <%= if @hall_name not in ["ai-safety", "ai-governance", "ai", "cern-for-ai", "existential-risk", "all"] do %>
-              <HallNav.tab
-                url_hall_name={@hall_name}
-                hall_name={@hall_name}
-                hall_link={~p"/halls/#{@hall_name}"}
-                hall_title={StringUtils.titleize_hall(@hall_name)}
-              />
-            <% else %>
-              <HallNav.tab
-                url_hall_name={@hall_name}
-                hall_name="ai-governance"
-                hall_link={~p"/halls/ai-governance"}
-                hall_title="AI governance"
-              />
-            <% end %>
-            <HallNav.tab
+          <% end %>
+          <%= if @hall_name not in Enum.map(@featured_halls, &elem(&1, 0)) do %>
+            <HallNav.pill
               url_hall_name={@hall_name}
-              hall_name="cern-for-ai"
-              hall_link={~p"/halls/cern-for-ai"}
-              hall_title="CERN for AI"
+              hall_name={@hall_name}
+              hall_link={~p"/halls/#{@hall_name}"}
+              hall_title={StringUtils.titleize_hall(@hall_name)}
             />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="existential-risk"
-              hall_link={~p"/halls/existential-risk"}
-              hall_title="Existential risk"
-            />
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="all"
-              hall_link={~p"/halls/all"}
-              hall_title="All"
-            />
-          </div>
-          <div class="space-x-8 md:hidden pt-1">
-            <%= if @hall_name not in ["ai-safety", "ai-governance", "cern-for-ai", "existential-risk", "ai", "all"] do %>
-              <HallNav.tab
-                url_hall_name={@hall_name}
-                hall_name={@hall_name}
-                hall_link={~p"/halls/#{@hall_name}"}
-                hall_title={StringUtils.titleize_hall(@hall_name)}
-              />
-            <% else %>
-              <HallNav.tab
-                url_hall_name={@hall_name}
-                hall_name="ai-governance"
-                hall_link={~p"/halls/ai-governance"}
-                hall_title="AI governance"
-              />
-            <% end %>
-            <HallNav.tab
-              url_hall_name={@hall_name}
-              hall_name="ai"
-              hall_link={~p"/halls/ai"}
-              hall_title="AI"
-            />
-          </div>
-        </nav>
-        <nav class="flex space-x-4 md:hidden pt-4">
-          <HallNav.tab
-            url_hall_name={@hall_name}
-            hall_name="cern-for-ai"
-            hall_link={~p"/halls/cern-for-ai"}
-            hall_title="CERN for AI"
-          />
-          <HallNav.tab
-            url_hall_name={@hall_name}
-            hall_name="all"
-            hall_link={~p"/halls/all"}
-            hall_title="All"
-          />
-        </nav>
+          <% end %>
+        </div>
       </div>
     </div>
     """
   end
 
+  defp hall_link("ai"), do: ~p"/home"
+  defp hall_link(hall_name), do: ~p"/halls/#{hall_name}"
+
+  attr :url_hall_name, :string, required: true
+  attr :hall_link, :string, required: true
+  attr :hall_name, :string, required: true
+  attr :hall_title, :string, required: true
+
+  @spec pill(map()) :: Phoenix.LiveView.Rendered.t()
+  def pill(assigns) do
+    ~H"""
+    <a
+      href={@hall_link}
+      class={[
+        "px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
+        if(@url_hall_name == @hall_name,
+          do: "bg-indigo-600 text-white",
+          else: "bg-gray-100 text-gray-700 hover:bg-gray-200"
+        )
+      ]}
+    >
+      {@hall_title}
+    </a>
+    """
+  end
+
+  # Keep the old tab function for backward compatibility if needed
   attr :url_hall_name, :string, required: true
   attr :hall_link, :string, required: true
   attr :hall_name, :string, required: true

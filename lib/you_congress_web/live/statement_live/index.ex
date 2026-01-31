@@ -20,8 +20,9 @@ defmodule YouCongressWeb.StatementLive.Index do
   alias YouCongressWeb.Components.SwitchComponent
   alias YouCongress.Statements.StatementQueries
   alias YouCongress.Halls
+  alias YouCongressWeb.StatementLive.VoteComponent
 
-  @default_hall "ai-safety"
+  @default_hall "ai"
 
   @impl true
   def mount(params, session, socket) do
@@ -161,7 +162,7 @@ defmodule YouCongressWeb.StatementLive.Index do
     socket
     |> assign(
       page_title:
-        "AI Safety & Governance liquid democracy polls with verifiable quotes | YouCongress",
+        "AI liquid democracy polls with verifiable quotes | YouCongress",
       skip_page_suffix: true,
       page_description:
         "We gather verifiable expert quotes and use liquid democracy to surface alignment on AI governance.",
