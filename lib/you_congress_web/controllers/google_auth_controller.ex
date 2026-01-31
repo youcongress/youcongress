@@ -105,16 +105,25 @@ defmodule YouCongressWeb.GoogleAuthController do
   end
 
   defp handle_user_lookup_or_create(conn, google_user_data) do
-    %{google_id: google_id} = google_user_data
+    %{google_id: google_id, email: email} = google_user_data
 
     # Look for existing author by google_id
     case Authors.get_author_by_google_id(google_id) do
       nil ->
-        # No existing author - create new author and user
-        create_new_author_and_user(conn, google_user_data)
+        # No author with google_id - check if user exists with this email
+        # (e.g., user signed up with X using the same email)
+        case email && Accounts.get_user_by_email(email) do
+          nil ->
+            # No existing user - create new author and user
+            create_new_author_and_user(conn, google_user_data)
+
+          user ->
+            # User exists with this email - link Google account to their author
+            link_google_to_existing_user(conn, user, google_user_data)
+        end
 
       author ->
-        # Author exists - check if user is linked
+        # Author exists with google_id - check if user is linked
         case Accounts.get_user_by_author_id(author.id) do
           nil ->
             # Author exists but no user linked - create user and link to author
@@ -124,6 +133,49 @@ defmodule YouCongressWeb.GoogleAuthController do
             # Both author and user exist - log them in
             log_in_existing_user(conn, user, author, google_user_data)
         end
+    end
+  end
+
+  defp link_google_to_existing_user(conn, user, google_user_data) do
+    # Load the author if not already loaded
+    user = YouCongress.Repo.preload(user, :author)
+    author = user.author
+
+    # Update the author with Google ID
+    author_update_attrs = build_author_attrs(google_user_data)
+
+    case Authors.update_author(author, author_update_attrs) do
+      {:ok, _updated_author} ->
+        Track.event("Login via Google (linked account)", user)
+
+        # If user's email isn't confirmed but Google's is verified, confirm it
+        user =
+          if is_nil(user.email_confirmed_at) && google_user_data.email_verified do
+            case Accounts.confirm_user_email(user) do
+              {:ok, confirmed_user} -> confirmed_user
+              _ -> user
+            end
+          else
+            user
+          end
+
+        if user.email_confirmed_at do
+          conn
+          |> put_flash(:info, "Welcome back! Your Google account has been linked.")
+          |> UserAuth.log_in_user(user)
+        else
+          conn
+          |> put_flash(:info, "Welcome back! Your Google account has been linked.")
+          |> put_session(:user_return_to, ~p"/sign_up")
+          |> UserAuth.log_in_user(user)
+        end
+
+      {:error, changeset} ->
+        Logger.error("Failed to link Google account: #{inspect(changeset.errors)}")
+
+        conn
+        |> put_flash(:error, "Failed to link Google account. Please try again.")
+        |> redirect(to: ~p"/log_in")
     end
   end
 
@@ -227,9 +279,11 @@ defmodule YouCongressWeb.GoogleAuthController do
     # Check if user needs to complete profile (no confirmed email or phone)
     if user.email_confirmed_at do
       conn
+      |> put_flash(:info, "Welcome back!")
       |> UserAuth.log_in_user(user)
     else
       conn
+      |> put_flash(:info, "Welcome back! Please complete your profile.")
       |> put_session(:user_return_to, ~p"/sign_up")
       |> UserAuth.log_in_user(user)
     end
