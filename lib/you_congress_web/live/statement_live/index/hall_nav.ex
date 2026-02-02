@@ -10,9 +10,9 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
   alias YouCongress.Tools.StringUtils
 
   @featured_halls [
-    {"all", "All"},
     {"ai", "AI"},
-    {"cern-for-ai", "CERN for AI"}
+    {"cern-for-ai", "CERN for AI"},
+    {"all", "All"}
   ]
 
   attr :hall_name, :string, required: true
@@ -47,7 +47,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     """
   end
 
-  defp hall_link("all"), do: ~p"/"
+  defp hall_link("ai"), do: ~p"/"
   defp hall_link(hall_name), do: ~p"/h/#{hall_name}"
 
   attr :url_hall_name, :string, required: true

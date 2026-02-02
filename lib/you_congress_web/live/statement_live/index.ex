@@ -23,7 +23,7 @@ defmodule YouCongressWeb.StatementLive.Index do
   alias YouCongress.Halls
   alias YouCongressWeb.StatementLive.VoteComponent
 
-  @default_hall "all"
+  @default_hall "ai"
 
   @top_author_names [
     "Stuart J. Russell",
