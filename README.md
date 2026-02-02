@@ -39,4 +39,4 @@ Welcome to YouCongress! Feel free to:
 We appreciate the following companies who provide their services kindly for free:
 
 - [AppSignal](https://www.appsignal.com) for application monitoring
-- [RocketValidator](https://rocketvalidator.com) for HTML and accessibility checks.
+- [Rocket Validator](https://rocketvalidator.com) for HTML and accessibility checks.
