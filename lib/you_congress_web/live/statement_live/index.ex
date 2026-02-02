@@ -64,8 +64,8 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:has_more_statements, true)
       |> assign(:editing_opinion_id, nil)
       |> assign(:can_create_statement?, Permissions.can_create_statement?(current_user))
-      |> stream(:statements, [], reset: true)
-      |> assign_votes(1)
+      |> stream(:opinion_cards, [], reset: true)
+      |> assign_cards(1)
 
     if connected?(socket) do
       %{assigns: %{current_user: current_user}} = socket
@@ -87,7 +87,7 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   @impl true
   def handle_event("load-more", _, socket) do
-    socket = assign_votes(socket, socket.assigns.page + 1)
+    socket = assign_cards(socket, socket.assigns.page + 1)
     {:noreply, socket}
   end
 
@@ -98,7 +98,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       socket =
         socket
         |> assign(new_poll_visible?: !new_poll_visible?)
-        |> maybe_assign_votes()
+        |> maybe_assign_cards()
 
       {:noreply, socket}
     else
@@ -109,7 +109,7 @@ defmodule YouCongressWeb.StatementLive.Index do
   def handle_event("search", %{"search" => ""}, socket) do
     socket =
       socket
-      |> assign_votes(1)
+      |> assign_cards(1)
       |> assign(search: nil, search_tab: nil)
 
     {:noreply, socket}
@@ -141,44 +141,38 @@ defmodule YouCongressWeb.StatementLive.Index do
     socket =
       socket
       |> assign(:order_by_date, order_by_date)
-      |> assign_votes(1)
+      |> assign_cards(1)
 
     {:noreply, socket}
   end
 
   def handle_event("edit", %{"opinion_id" => opinion_id}, socket) do
     opinion_id = String.to_integer(opinion_id)
-    votes_by_statement_id = socket.assigns.votes_by_statement_id
 
-    # Find the statement that contains the vote with this opinion
-    # and re-insert it to force the stream to re-render
+    # Find the card that contains this opinion and re-insert to force re-render
     socket =
-      case find_statement_by_opinion_id(votes_by_statement_id, opinion_id) do
+      case find_card_by_opinion_id(socket.assigns.cards_by_id, opinion_id) do
         nil ->
           socket
 
-        statement_id ->
-          # Get the statement from the stream by fetching it fresh
-          statement = Statements.get_statement!(statement_id)
-          stream_insert(socket, :statements, statement)
+        card ->
+          stream_insert(socket, :opinion_cards, card)
       end
 
     {:noreply, assign(socket, :editing_opinion_id, opinion_id)}
   end
 
   def handle_event("cancel-edit", _, socket) do
-    votes_by_statement_id = socket.assigns.votes_by_statement_id
     editing_opinion_id = socket.assigns.editing_opinion_id
 
-    # Re-insert the statement to force stream re-render
+    # Re-insert the card to force stream re-render
     socket =
-      case find_statement_by_opinion_id(votes_by_statement_id, editing_opinion_id) do
+      case find_card_by_opinion_id(socket.assigns.cards_by_id, editing_opinion_id) do
         nil ->
           socket
 
-        statement_id ->
-          statement = Statements.get_statement!(statement_id)
-          stream_insert(socket, :statements, statement)
+        card ->
+          stream_insert(socket, :opinion_cards, card)
       end
 
     {:noreply, assign(socket, :editing_opinion_id, nil)}
@@ -195,7 +189,7 @@ defmodule YouCongressWeb.StatementLive.Index do
           socket =
             socket
             |> assign(:editing_opinion_id, nil)
-            |> assign_votes(1)
+            |> assign_cards(1)
             |> put_flash(:info, "Comment updated")
 
           {:noreply, socket}
@@ -225,7 +219,7 @@ defmodule YouCongressWeb.StatementLive.Index do
 
       socket =
         socket
-        |> assign_votes(1)
+        |> assign_cards(1)
         |> put_flash(:info, "Comment deleted")
 
       {:noreply, socket}
@@ -251,13 +245,13 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   def handle_info(_, socket), do: {:noreply, socket}
 
-  defp maybe_assign_votes(%{assigns: %{new_poll_visible?: true}} = socket), do: socket
-  defp maybe_assign_votes(socket), do: assign_votes(socket, 1)
+  defp maybe_assign_cards(%{assigns: %{new_poll_visible?: true}} = socket), do: socket
+  defp maybe_assign_cards(socket), do: assign_cards(socket, 1)
 
-  defp find_statement_by_opinion_id(votes_by_statement_id, opinion_id) do
-    Enum.find_value(votes_by_statement_id, fn {statement_id, vote} ->
-      if vote.opinion && vote.opinion.id == opinion_id do
-        statement_id
+  defp find_card_by_opinion_id(cards_by_id, opinion_id) do
+    Enum.find_value(cards_by_id, fn {_card_id, card} ->
+      if card.vote && card.vote.opinion && card.vote.opinion.id == opinion_id do
+        card
       end
     end)
   end
@@ -295,48 +289,6 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   defp assign_tab_from_params(socket, _tab), do: socket
 
-  defp assign_statements(socket, page) do
-    %{
-      assigns: %{
-        hall_name: hall_name,
-        order_by_date: order_by_date,
-        per_page: per_page
-      }
-    } = socket
-
-    offset = (page - 1) * per_page
-
-    statements =
-      if order_by_date do
-        # Trending mode - show recent activity
-        args = [order: :updated_at_desc, offset: offset, limit: per_page]
-
-        args =
-          case hall_name do
-            "all" -> args
-            _ -> Keyword.put(args, :hall_name, hall_name)
-          end
-
-        Statements.list_statements(args)
-      else
-        author_ids = get_top_author_ids()
-        Statements.list_statements_by_top_authors_first(author_ids, hall_name, offset, per_page)
-      end
-
-    if statements == [] do
-      socket = assign(socket, :has_more_statements, false)
-      {socket, statements}
-    else
-      socket =
-        socket
-        |> stream(:statements, statements, reset: page == 1)
-        |> assign(:has_more_statements, true)
-        |> assign(:page, page)
-
-      {socket, statements}
-    end
-  end
-
   defp get_top_author_ids do
     Authors.list_authors(names: @top_author_names)
     |> Enum.map(& &1.id)
@@ -369,46 +321,79 @@ defmodule YouCongressWeb.StatementLive.Index do
     Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
   end
 
-  defp assign_votes(socket, page) do
-    %{assigns: %{current_user: current_user}} = socket
-    {socket, statements} = assign_statements(socket, page)
-    statement_ids = Enum.map(statements, & &1.id)
+  # For "Top" mode: use round-robin opinion cards
+  # For "New" mode: opinions ordered by most recently updated, statements can repeat
+  defp assign_cards(socket, page) do
+    %{
+      assigns: %{
+        current_user: current_user,
+        hall_name: hall_name,
+        order_by_date: order_by_date,
+        per_page: per_page
+      }
+    } = socket
 
-    # Always prioritize votes: top authors first, then wikipedia authors, then others
-    top_author_ids = get_top_author_ids()
-    wikipedia_author_ids = Authors.get_wikipedia_author_ids(top_author_ids)
-    opts = [top_author_ids: top_author_ids, wikipedia_author_ids: wikipedia_author_ids]
+    offset = (page - 1) * per_page
 
-    new_votes_by_statement_id =
-      StatementQueries.get_one_vote_per_statement(
-        statement_ids,
-        current_user,
-        opts
-      )
-
-    new_liked_opinion_ids = Likes.get_liked_opinion_ids(current_user)
-    new_votes = load_votes(statement_ids, current_user)
-    new_opinions = load_opinions(statement_ids, current_user)
-
-    # Merge with existing data when loading additional pages
-    {votes_by_statement_id, liked_opinion_ids, votes, opinions} =
-      if page == 1 do
-        {new_votes_by_statement_id, new_liked_opinion_ids, new_votes, new_opinions}
+    cards =
+      if order_by_date do
+        # New mode: opinions ordered by most recently updated
+        StatementQueries.get_opinion_cards_by_recency(
+          hall_name: hall_name,
+          offset: offset,
+          limit: per_page
+        )
       else
-        {
-          Map.merge(socket.assigns.votes_by_statement_id, new_votes_by_statement_id),
-          Enum.uniq(socket.assigns.liked_opinion_ids ++ new_liked_opinion_ids),
-          Map.merge(socket.assigns.votes, new_votes),
-          Map.merge(socket.assigns.opinions, new_opinions)
-        }
+        # Top mode: round-robin all opinions
+        top_author_ids = get_top_author_ids()
+        wikipedia_author_ids = Authors.get_wikipedia_author_ids(top_author_ids)
+
+        StatementQueries.get_opinion_cards_round_robin(
+          hall_name: hall_name,
+          order_by_date: false,
+          top_author_ids: top_author_ids,
+          wikipedia_author_ids: wikipedia_author_ids,
+          offset: offset,
+          limit: per_page
+        )
       end
 
-    socket
-    |> assign(:delegate_ids, load_delegate_ids(current_user))
-    |> assign(:votes_by_statement_id, votes_by_statement_id)
-    |> assign(:liked_opinion_ids, liked_opinion_ids)
-    |> assign(:votes, votes)
-    |> assign(:opinions, opinions)
+    if cards == [] do
+      assign(socket, :has_more_statements, false)
+    else
+      # Extract statement IDs for loading current user's data
+      statement_ids = cards |> Enum.map(& &1.statement.id) |> Enum.uniq()
+
+      new_liked_opinion_ids = Likes.get_liked_opinion_ids(current_user)
+      new_votes = load_votes(statement_ids, current_user)
+      new_opinions = load_opinions(statement_ids, current_user)
+
+      # Build cards_by_id for edit functionality
+      new_cards_by_id = Map.new(cards, fn card -> {card.id, card} end)
+
+      # Merge with existing data when loading additional pages
+      {liked_opinion_ids, votes, opinions, cards_by_id} =
+        if page == 1 do
+          {new_liked_opinion_ids, new_votes, new_opinions, new_cards_by_id}
+        else
+          {
+            Enum.uniq(socket.assigns.liked_opinion_ids ++ new_liked_opinion_ids),
+            Map.merge(socket.assigns.votes, new_votes),
+            Map.merge(socket.assigns.opinions, new_opinions),
+            Map.merge(socket.assigns.cards_by_id, new_cards_by_id)
+          }
+        end
+
+      socket
+      |> stream(:opinion_cards, cards, reset: page == 1)
+      |> assign(:has_more_statements, true)
+      |> assign(:page, page)
+      |> assign(:delegate_ids, load_delegate_ids(current_user))
+      |> assign(:liked_opinion_ids, liked_opinion_ids)
+      |> assign(:votes, votes)
+      |> assign(:opinions, opinions)
+      |> assign(:cards_by_id, cards_by_id)
+    end
   end
 
   defp get_current_user_delegation_ids(nil), do: []

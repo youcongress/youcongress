@@ -34,10 +34,15 @@ defmodule YouCongressWeb.StatementLiveTest do
     setup [:create_statement]
 
     test "vote and create opinion", %{conn: conn, statement: statement} do
+      # Create an opinion so the statement appears in "New" mode
+      author = author_fixture()
+      opinion = opinion_fixture(%{author_id: author.id, content: "Test opinion"})
+      _vote = vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
+
       conn = log_in_as_user(conn)
       {:ok, index_live, _html} = live(conn, ~p"/")
 
-      # Switch to Trending mode to see the statement (default is Top mode which filters by top authors)
+      # Switch to New mode to see the statement (default is Top mode which filters by top authors)
       index_live |> element("button[phx-click='toggle-switch']") |> render_click()
 
       assert render(index_live) =~ statement.title
