@@ -17,7 +17,7 @@
 
   <%= if is_nil(@search) do %>
     <div class="flex">
-      <SwitchComponent.render is_active={@order_by_date} label1="Top" label2="Trending" />
+      <SwitchComponent.render is_active={@order_by_date} label1="Top" label2="New" />
       <div :if={@can_create_statement?}>
         <button
           id="create-poll-button"
@@ -60,21 +60,21 @@
     </div>
 
     <ul
-      id="statements-list"
+      id="opinion-cards-list"
       phx-update="stream"
       phx-viewport-bottom={@has_more_statements && "load-more"}
       class="space-y-4 pt-4"
     >
       <li
-        :for={{dom_id, statement} <- @streams.statements}
+        :for={{dom_id, card} <- @streams.opinion_cards}
         id={dom_id}
         class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
       >
         <div class="p-4 md:p-5">
           <div class="mb-3">
             <h2 class="text-lg md:text-xl font-medium text-gray-900">
-              <.link href={~p"/p/#{statement.slug}"} class="hover:text-indigo-600">
-                {statement.title}
+              <.link href={~p"/p/#{card.statement.slug}"} class="hover:text-indigo-600">
+                {card.statement.title}
               </.link>
             </h2>
           </div>
@@ -82,28 +82,27 @@
           <div class="mb-4">
             <.live_component
               module={CastVoteComponent}
-              id={statement.id}
-              statement={statement}
-              current_user_vote={@votes[statement.id]}
-              current_user_opinion={@opinions[statement.id]}
+              id={"cast-vote-#{card.id}"}
+              statement={card.statement}
+              current_user_vote={@votes[card.statement.id]}
+              current_user_opinion={@opinions[card.statement.id]}
               current_user={@current_user}
               display_results={false}
               page={:statements_index}
             />
           </div>
 
-          <%= if @votes_by_statement_id[statement.id] do %>
-            <% featured_vote = @votes_by_statement_id[statement.id] %>
+          <%= if card.vote do %>
             <div class="border-t border-gray-100 pt-4 mt-2">
-              <%= if featured_vote.opinion && featured_vote.opinion.id == @editing_opinion_id do %>
+              <%= if card.vote.opinion && card.vote.opinion.id == @editing_opinion_id do %>
                 <form phx-submit="update-opinion" class="space-y-3">
-                  <input type="hidden" name="opinion_id" value={featured_vote.opinion.id} />
+                  <input type="hidden" name="opinion_id" value={card.vote.opinion.id} />
                   <textarea
                     name="content"
                     rows="4"
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     placeholder="Edit your comment..."
-                  ><%= featured_vote.opinion.content %></textarea>
+                  ><%= card.vote.opinion.content %></textarea>
                   <div class="flex items-center space-x-2">
                     <button
                       type="submit"
@@ -123,15 +122,15 @@
               <% else %>
                 <.live_component
                   module={VoteComponent}
-                  id={"featured-vote-#{statement.id}-#{featured_vote.id}"}
-                  vote={featured_vote}
-                  author={featured_vote.author}
-                  statement={statement}
+                  id={"featured-vote-#{card.id}"}
+                  vote={card.vote}
+                  author={card.vote.author}
+                  statement={card.statement}
                   current_user={@current_user}
                   show_vote={true}
                   show_opinion={true}
-                  liked={featured_vote.opinion && featured_vote.opinion.id in @liked_opinion_ids}
-                  delegating?={featured_vote.author_id in @delegate_ids}
+                  liked={card.vote.opinion && card.vote.opinion.id in @liked_opinion_ids}
+                  delegating?={card.vote.author_id in @delegate_ids}
                   delegable={true}
                   regenerating_opinion_id={nil}
                   page={:statements_index}
@@ -140,7 +139,7 @@
             </div>
           <% else %>
             <div class="border-t border-gray-100 pt-4 mt-2 text-sm text-gray-500">
-              <.link href={~p"/p/#{statement.slug}"} class="hover:text-indigo-600">
+              <.link href={~p"/p/#{card.statement.slug}"} class="hover:text-indigo-600">
                 Be the first to share your opinion
               </.link>
             </div>

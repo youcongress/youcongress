@@ -4,6 +4,9 @@ defmodule YouCongressWeb.HomeLiveTest do
   import Phoenix.LiveViewTest
   import YouCongress.StatementsFixtures
   import YouCongress.AccountsFixtures
+  import YouCongress.AuthorsFixtures
+  import YouCongress.OpinionsFixtures
+  import YouCongress.VotesFixtures
 
   alias YouCongress.Halls
   alias YouCongress.HallsStatements.HallStatement
@@ -23,6 +26,13 @@ defmodule YouCongressWeb.HomeLiveTest do
     statement
   end
 
+  defp add_opinion_to_statement(statement) do
+    author = author_fixture()
+    opinion = opinion_fixture(%{author_id: author.id, content: "Test opinion"})
+    _vote = vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
+    statement
+  end
+
   describe "Home page for non-logged visitors" do
     test "renders home page successfully", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/")
@@ -30,14 +40,15 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ "Search AI quotes, people, policies..."
     end
 
-    test "shows statements feed in Trending mode", %{conn: conn} do
+    test "shows statements feed in New mode", %{conn: conn} do
       statement =
         statement_fixture(title: "AI Safety Statement")
         |> add_statement_to_ai_hall()
+        |> add_opinion_to_statement()
 
       {:ok, view, _html} = live(conn, ~p"/")
 
-      # Switch to Trending mode (default is now Top mode which filters by top authors)
+      # Switch to New mode (default is Top mode which filters by top authors)
       view |> element("button[phx-click='toggle-switch']") |> render_click()
 
       assert render(view) =~ statement.title
@@ -47,10 +58,11 @@ defmodule YouCongressWeb.HomeLiveTest do
       statement =
         statement_fixture(title: "Test Statement")
         |> add_statement_to_ai_hall()
+        |> add_opinion_to_statement()
 
       {:ok, view, _html} = live(conn, ~p"/")
 
-      # Switch to Trending mode to see the statement
+      # Switch to New mode to see the statement
       view |> element("button[phx-click='toggle-switch']") |> render_click()
 
       # Vote For
@@ -84,12 +96,13 @@ defmodule YouCongressWeb.HomeLiveTest do
       statement =
         statement_fixture(title: "Test Statement")
         |> add_statement_to_ai_hall()
+        |> add_opinion_to_statement()
 
       conn = log_in_user(conn, user)
 
       {:ok, view, _html} = live(conn, ~p"/")
 
-      # Switch to Trending mode to see the statement
+      # Switch to New mode to see the statement
       view |> element("button[phx-click='toggle-switch']") |> render_click()
 
       # Vote For
