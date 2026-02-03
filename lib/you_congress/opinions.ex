@@ -10,6 +10,7 @@ defmodule YouCongress.Opinions do
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
+  alias YouCongress.Workers.SyncStatementOpinionsCountWorker
 
   @doc """
   Returns the list of opinions.
@@ -106,6 +107,18 @@ defmodule YouCongress.Opinions do
     end)
   end
 
+  defp enqueue_sync_opinions_count(multi, []), do: multi
+
+  defp enqueue_sync_opinions_count(multi, statement_ids) do
+    Enum.reduce(statement_ids, multi, fn statement_id, multi ->
+      Ecto.Multi.insert(
+        multi,
+        "sync_opinions_count_#{statement_id}",
+        SyncStatementOpinionsCountWorker.new(%{"statement_id" => statement_id})
+      )
+    end)
+  end
+
   defp handle_transaction_result({:ok, %{opinion: opinion}}), do: {:ok, opinion}
 
   defp handle_transaction_result({:error, _, failed_operation, _changes}) do
@@ -143,9 +156,18 @@ defmodule YouCongress.Opinions do
 
   """
   def delete_opinion(%Opinion{} = opinion) do
+    # Get affected statement IDs before deletion
+    statement_ids =
+      from(os in "opinions_statements",
+        where: os.opinion_id == ^opinion.id,
+        select: os.statement_id
+      )
+      |> Repo.all()
+
     Ecto.Multi.new()
     |> Ecto.Multi.delete(:opinion, opinion)
     |> enqueue_update_ancestor_counts(opinion.ancestry)
+    |> enqueue_sync_opinions_count(statement_ids)
     |> Repo.transaction()
     |> handle_transaction_result()
   end
@@ -273,10 +295,21 @@ defmodule YouCongress.Opinions do
 
   def delete_opinion_and_descendants(%Opinion{} = opinion) do
     subtree_ids = Opinion.subtree_ids(opinion)
+
+    # Get affected statement IDs before deletion
+    statement_ids =
+      from(os in "opinions_statements",
+        where: os.opinion_id in ^subtree_ids,
+        select: os.statement_id,
+        distinct: true
+      )
+      |> Repo.all()
+
     result = Repo.delete_all(from o in Opinion, where: o.id in ^subtree_ids)
 
     Ecto.Multi.new()
     |> enqueue_update_ancestor_counts(opinion.ancestry)
+    |> enqueue_sync_opinions_count(statement_ids)
     |> Repo.transaction()
 
     result
@@ -355,21 +388,31 @@ defmodule YouCongress.Opinions do
     if existing_association do
       {:error, :already_associated}
     else
-      # Create the association with the user_id
-      %OpinionStatement{}
-      |> OpinionStatement.changeset(%{
-        opinion_id: opinion.id,
-        statement_id: statement.id,
-        user_id: user_id
-      })
-      |> Repo.insert()
-      |> case do
-        {:ok, _opinion_statement} ->
-          # Return the updated opinion for consistency
+      opinion_statement_changeset =
+        OpinionStatement.changeset(%OpinionStatement{}, %{
+          opinion_id: opinion.id,
+          statement_id: statement.id,
+          user_id: user_id
+        })
+
+      result =
+        Ecto.Multi.new()
+        |> Ecto.Multi.insert(:opinion_statement, opinion_statement_changeset)
+        |> Ecto.Multi.insert(
+          :sync_opinions_count,
+          SyncStatementOpinionsCountWorker.new(%{"statement_id" => statement.id})
+        )
+        |> Repo.transaction()
+
+      case result do
+        {:ok, _} ->
           {:ok, Repo.preload(opinion, :statements)}
 
-        {:error, changeset} ->
+        {:error, :opinion_statement, changeset, _} ->
           {:error, changeset}
+
+        {:error, _, _, _} ->
+          {:error, :transaction_failed}
       end
     end
   end

@@ -376,6 +376,17 @@ defmodule YouCongress.Statements do
     update_statement(statement, %{opinion_likes_count: count})
   end
 
+  def sync_opinions_count(statement) do
+    count =
+      from(ov in "opinions_statements",
+        where: ov.statement_id == ^statement.id,
+        select: count(ov.id)
+      )
+      |> Repo.one() || 0
+
+    update_statement(statement, %{opinions_count: count})
+  end
+
   def statements_count_created_in_the_last_hour do
     from(v in Statement, where: v.inserted_at > ago(1, "hour"), select: count(v.id))
     |> Repo.one()

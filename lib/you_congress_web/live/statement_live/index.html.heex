@@ -77,6 +77,9 @@
                 {card.statement.title}
               </.link>
             </h2>
+            <p :if={card.statement.opinions_count > 0} class="text-sm text-gray-500 mt-1">
+              {card.statement.opinions_count} {if card.statement.opinions_count == 1, do: "opinion", else: "opinions"}
+            </p>
           </div>
 
           <div class="mb-4">
