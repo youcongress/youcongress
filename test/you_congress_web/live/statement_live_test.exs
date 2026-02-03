@@ -49,27 +49,27 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       # Vote For
       index_live
-      |> element("button##{statement.id}-vote-for")
+      |> element("button[id$='-vote-for']")
       |> render_click()
 
-      assert index_live |> element("button##{statement.id}-vote-for") |> render() =~ "✓"
-      assert index_live |> element("button##{statement.id}-vote-for") |> render() =~ "For"
+      assert index_live |> element("button[id$='-vote-for']") |> render() =~ "✓"
+      assert index_live |> element("button[id$='-vote-for']") |> render() =~ "For"
 
       # Vote Against
       index_live
-      |> element("button##{statement.id}-vote-against")
+      |> element("button[id$='-vote-against']")
       |> render_click()
 
-      assert index_live |> element("button##{statement.id}-vote-against") |> render() =~ "✓"
-      assert index_live |> element("button##{statement.id}-vote-against") |> render() =~ "Against"
+      assert index_live |> element("button[id$='-vote-against']") |> render() =~ "✓"
+      assert index_live |> element("button[id$='-vote-against']") |> render() =~ "Against"
 
       # Vote Abstain
       index_live
-      |> element("button##{statement.id}-vote-abstain")
+      |> element("button[id$='-vote-abstain']")
       |> render_click()
 
-      assert index_live |> element("button##{statement.id}-vote-abstain") |> render() =~ "✓"
-      assert index_live |> element("button##{statement.id}-vote-abstain") |> render() =~ "Abstain"
+      assert index_live |> element("button[id$='-vote-abstain']") |> render() =~ "✓"
+      assert index_live |> element("button[id$='-vote-abstain']") |> render() =~ "Abstain"
 
       # Create a comment
       index_live
@@ -192,27 +192,27 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       # Vote For
       show_live
-      |> element("button##{statement.id}-vote-for")
+      |> element("button#cast-vote-for")
       |> render_click()
 
-      assert show_live |> element("button##{statement.id}-vote-for") |> render() =~ "✓"
-      assert show_live |> element("button##{statement.id}-vote-for") |> render() =~ "For"
+      assert show_live |> element("button#cast-vote-for") |> render() =~ "✓"
+      assert show_live |> element("button#cast-vote-for") |> render() =~ "For"
 
       # Vote Against
       show_live
-      |> element("button##{statement.id}-vote-against")
+      |> element("button#cast-vote-against")
       |> render_click()
 
-      assert show_live |> element("button##{statement.id}-vote-against") |> render() =~ "✓"
-      assert show_live |> element("button##{statement.id}-vote-against") |> render() =~ "Against"
+      assert show_live |> element("button#cast-vote-against") |> render() =~ "✓"
+      assert show_live |> element("button#cast-vote-against") |> render() =~ "Against"
 
       # Vote Abstain
       show_live
-      |> element("button##{statement.id}-vote-abstain")
+      |> element("button#cast-vote-abstain")
       |> render_click()
 
-      assert show_live |> element("button##{statement.id}-vote-abstain") |> render() =~ "✓"
-      assert show_live |> element("button##{statement.id}-vote-abstain") |> render() =~ "Abstain"
+      assert show_live |> element("button#cast-vote-abstain") |> render() =~ "✓"
+      assert show_live |> element("button#cast-vote-abstain") |> render() =~ "Abstain"
     end
 
     test "creates a comment", %{conn: conn, statement: statement} do
