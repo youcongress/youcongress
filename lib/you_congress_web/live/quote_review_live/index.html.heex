@@ -14,7 +14,7 @@
           <option value="">All halls</option>
           <%= for hall <- @halls do %>
             <option value={hall.name} selected={@selected_hall == hall.name}>
-              {hall.name}
+              {hall.name} ({hall.quote_count})
             </option>
           <% end %>
         </select>

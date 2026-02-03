@@ -197,6 +197,7 @@ defmodule YouCongress.Halls do
 
   @doc """
   Returns halls that have pending quotes (unverified quotes with source URLs).
+  Returns a list of maps with :name and :quote_count keys.
   """
   def list_halls_with_pending_quotes do
     import Ecto.Query, warn: false
@@ -211,7 +212,8 @@ defmodule YouCongress.Halls do
       join: o in "opinions",
       on: ov.opinion_id == o.id,
       where: not is_nil(o.source_url) and is_nil(o.verified_at),
-      distinct: h.id,
+      group_by: [h.id, h.name],
+      select: %{name: h.name, quote_count: count(o.id, :distinct)},
       order_by: h.name
     )
     |> Repo.all()
