@@ -78,7 +78,7 @@
 >
   <div class="md:hidden">
     <form phx-change="filter-answer" class="pl-2 inline">
-      <select name="answer" class="text-xs w-64 rounded-md border-2 border-gray-300 p-1 bg-white">
+      <select name="answer" aria-label="Filter opinions by response" class="text-xs w-64 rounded-md border-2 border-gray-300 p-1 bg-white">
         <option value="">
           For ({Map.get(@opinions_by_response, :for, 0)}) + Abstain ({Map.get(
             @opinions_by_response,

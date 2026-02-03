@@ -67,7 +67,7 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       # Vote For
       view
-      |> element("button##{statement.id}-vote-for")
+      |> element("button[id$='-vote-for']")
       |> render_click()
 
       assert render(view) =~ "For"
@@ -107,10 +107,10 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       # Vote For
       view
-      |> element("button##{statement.id}-vote-for")
+      |> element("button[id$='-vote-for']")
       |> render_click()
 
-      assert view |> element("button##{statement.id}-vote-for") |> render() =~ "For"
+      assert view |> element("button[id$='-vote-for']") |> render() =~ "For"
 
       # Verify vote is persisted
       assert YouCongress.Votes.get_current_user_vote(statement.id, user.author_id).answer == :for

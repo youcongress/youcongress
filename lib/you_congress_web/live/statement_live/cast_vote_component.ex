@@ -23,18 +23,21 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
           statement={@statement}
           user_vote_answer={if @current_user_vote, do: @current_user_vote.answer}
           myself={@myself}
+          button_id_prefix={@id}
         />
         <CastVoteComponent.button
           answer={:abstain}
           statement={@statement}
           user_vote_answer={if @current_user_vote, do: @current_user_vote.answer}
           myself={@myself}
+          button_id_prefix={@id}
         />
         <CastVoteComponent.button
           answer={:against}
           statement={@statement}
           user_vote_answer={if @current_user_vote, do: @current_user_vote.answer}
           myself={@myself}
+          button_id_prefix={@id}
         />
 
         <.clear_vote_button
@@ -106,11 +109,13 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
   attr :user_vote_answer, :atom
   attr :myself, :string, required: true
 
+  attr :button_id_prefix, :string, required: true
+
   def button(assigns) do
     ~H"""
     <div>
       <button
-        id={"#{@statement.id}-vote-#{@answer}"}
+        id={"#{@button_id_prefix}-vote-#{@answer}"}
         phx-click="vote"
         phx-value-response={@answer}
         phx-target={@myself}
