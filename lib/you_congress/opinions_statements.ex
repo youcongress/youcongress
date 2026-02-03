@@ -44,8 +44,19 @@ defmodule YouCongress.OpinionsStatements do
       {:error, %Ecto.Changeset{}}
   """
   def create_opinion_statement(params) do
-    %OpinionStatement{}
-    |> OpinionStatement.changeset(params)
-    |> Repo.insert()
+    result =
+      %OpinionStatement{}
+      |> OpinionStatement.changeset(params)
+      |> Repo.insert()
+
+    with {:ok, opinion_statement} <- result do
+      increment_opinions_count(opinion_statement.statement_id)
+      {:ok, opinion_statement}
+    end
+  end
+
+  defp increment_opinions_count(statement_id) do
+    from(s in YouCongress.Statements.Statement, where: s.id == ^statement_id)
+    |> Repo.update_all(inc: [opinions_count: 1])
   end
 end

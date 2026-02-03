@@ -21,6 +21,7 @@ defmodule YouCongress.Statements.Statement do
 
     field :slug, :string
     field :opinion_likes_count, :integer, default: 0
+    field :opinions_count, :integer, default: 0
 
     has_many :votes, Vote
 
@@ -65,6 +66,7 @@ defmodule YouCongress.Statements.Statement do
       :user_id,
       :slug,
       :opinion_likes_count,
+      :opinions_count,
       :updated_at
     ])
     |> validate_required([:title])
