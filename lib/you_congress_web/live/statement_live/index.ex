@@ -23,8 +23,6 @@ defmodule YouCongressWeb.StatementLive.Index do
   alias YouCongress.Halls
   alias YouCongressWeb.StatementLive.VoteComponent
 
-  @default_hall "ai"
-
   @top_author_names [
     "Stuart J. Russell",
     "Demis Hassabis",
@@ -55,7 +53,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:authors, [])
       |> assign(:quotes, [])
       |> assign(:order_by_date, false)
-      |> assign(:hall_name, params["hall"] || @default_hall)
+      |> assign(:hall_name, params["hall"] || HallNav.default_hall())
       |> assign(:new_poll_visible?, false)
       |> assign(:current_user_delegation_ids, get_current_user_delegation_ids(current_user))
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
