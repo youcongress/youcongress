@@ -43,6 +43,7 @@ defmodule YouCongress.Halls.Classification do
     #{YouCongress.Halls.Hall.names_str()}
 
     Classify the following question and return the most relevant tag as "main_tag" and other relevant tags as "other_tags" array in json format:
+    If a tag is ai-safety, impact-on-labor, cern-for-ai or open-source, make it the main tag.
 
     Question:#{text}
     """

@@ -9,11 +9,17 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
   alias YouCongressWeb.StatementLive.Index.HallNav
   alias YouCongress.Tools.StringUtils
 
+  @default_hall "all"
+
   @featured_halls [
-    {"ai", "AI"},
+    {"all", "All"},
+    {"ai-safety", "Safety"},
     {"cern-for-ai", "CERN for AI"},
-    {"all", "All"}
+    {"impact-on-labor", "Impact on labor"},
+    {"open-source", "Open Source"}
   ]
+
+  def default_hall, do: "all"
 
   attr :hall_name, :string, required: true
 
@@ -23,17 +29,26 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     ~H"""
     <div class="pb-2">
       <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        <span class="text-sm text-gray-500 shrink-0">h/</span>
-        <div class="flex gap-2">
-          <%= for {hall_slug, hall_title} <- @featured_halls do %>
+        <div class="flex flex-wrap gap-2">
+          <%= if @hall_name in Enum.map(@featured_halls, &elem(&1, 0)) do %>
+            <%= for {{hall_slug, hall_title}, idx} <- Enum.with_index(@featured_halls) do %>
+              <HallNav.pill
+                url_hall_name={@hall_name}
+                hall_name={hall_slug}
+                hall_link={hall_link(hall_slug)}
+                hall_title={hall_title}
+              />
+              <%= if rem(idx + 1, 3) == 0 and idx + 1 < length(@featured_halls) do %>
+                <div class="basis-full md:hidden"></div>
+              <% end %>
+            <% end %>
+          <% else %>
             <HallNav.pill
-              url_hall_name={@hall_name}
-              hall_name={hall_slug}
-              hall_link={hall_link(hall_slug)}
-              hall_title={hall_title}
+              url_hall_name="all"
+              hall_name={@hall_name}
+              hall_link={~p"/h/all"}
+              hall_title="All"
             />
-          <% end %>
-          <%= if @hall_name not in Enum.map(@featured_halls, &elem(&1, 0)) do %>
             <HallNav.pill
               url_hall_name={@hall_name}
               hall_name={@hall_name}
@@ -47,7 +62,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     """
   end
 
-  defp hall_link("ai"), do: ~p"/"
+  defp hall_link(@default_hall), do: ~p"/"
   defp hall_link(hall_name), do: ~p"/h/#{hall_name}"
 
   attr :url_hall_name, :string, required: true
