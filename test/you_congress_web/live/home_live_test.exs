@@ -29,7 +29,10 @@ defmodule YouCongressWeb.HomeLiveTest do
   defp add_opinion_to_statement(statement) do
     author = author_fixture()
     opinion = opinion_fixture(%{author_id: author.id, content: "Test opinion"})
-    _vote = vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
+
+    _vote =
+      vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
+
     statement
   end
 
@@ -55,10 +58,9 @@ defmodule YouCongressWeb.HomeLiveTest do
     end
 
     test "guest can vote and sees flash message", %{conn: conn} do
-      statement =
-        statement_fixture(title: "Test Statement")
-        |> add_statement_to_ai_hall()
-        |> add_opinion_to_statement()
+      statement_fixture(title: "Test Statement")
+      |> add_statement_to_ai_hall()
+      |> add_opinion_to_statement()
 
       {:ok, view, _html} = live(conn, ~p"/")
 
