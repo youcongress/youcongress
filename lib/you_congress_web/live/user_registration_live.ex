@@ -13,17 +13,6 @@ defmodule YouCongressWeb.UserRegistrationLive do
     <div class="mx-auto max-w-sm">
       <%= if @step == :enter_email_password do %>
         <%= unless @embedded do %>
-          <.header class="text-center">
-            Sign up
-            <:subtitle>
-              Already registered?
-              <.link navigate={~p"/log_in"} class="font-semibold text-brand hover:underline">
-                Log in
-              </.link>
-              to your account now.
-            </:subtitle>
-          </.header>
-
           <div class="mt-6 space-y-3">
             <.link
               href={
@@ -68,16 +57,27 @@ defmodule YouCongressWeb.UserRegistrationLive do
             </.link>
           </div>
 
-          <div class="my-6">
+          <div class="my-4">
             <div class="relative">
               <div class="absolute inset-0 flex items-center">
                 <div class="w-full border-t border-gray-300"></div>
               </div>
               <div class="relative flex justify-center text-sm">
-                <span class="px-2 bg-white text-gray-500">Or register with email</span>
+                <span class="px-2 bg-white text-gray-500">or</span>
               </div>
             </div>
           </div>
+
+          <.header class="text-center">
+            Sign up
+            <:subtitle>
+              Already registered?
+              <.link navigate={~p"/log_in"} class="font-semibold text-brand hover:underline">
+                Log in
+              </.link>
+              to your account now.
+            </:subtitle>
+          </.header>
         <% end %>
         <.simple_form
           for={@form}
