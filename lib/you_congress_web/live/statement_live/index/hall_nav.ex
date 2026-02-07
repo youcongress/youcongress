@@ -13,7 +13,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
 
   @featured_halls [
     {"all", "All"},
-    {"ai-safety", "Safety"},
+    {"ai-safety", "AI safety"},
     {"cern-for-ai", "CERN for AI"},
     {"impact-on-labor", "Impact on labor"},
     {"open-source", "Open Source"}
