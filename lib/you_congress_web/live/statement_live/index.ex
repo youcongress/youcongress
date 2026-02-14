@@ -44,7 +44,9 @@ defmodule YouCongressWeb.StatementLive.Index do
     "Andrew Ng",
     "Kai-Fu Lee",
     "Yuval Noah Harari",
-    "Ilya Sutskever"
+    "Ilya Sutskever",
+    "Max Tegmark",
+    "Pope Francis"
   ]
 
   @impl true
