@@ -76,6 +76,9 @@ defmodule YouCongress.Verifications do
     base_query = from(v in Verification)
 
     Enum.reduce(opts, base_query, fn
+      {:opinion_id, opinion_id}, query when is_list(opinion_id) ->
+        from q in query, where: q.opinion_id in ^opinion_id
+
       {:opinion_id, opinion_id}, query ->
         from q in query, where: q.opinion_id == ^opinion_id
 
