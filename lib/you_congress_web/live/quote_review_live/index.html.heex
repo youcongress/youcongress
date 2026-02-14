@@ -99,11 +99,28 @@
                 Edit
               </button>
               <button
-                phx-click="verify"
+                phx-click="pick-status"
                 phx-value-id={quote.id}
+                phx-value-status="verified"
                 class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
               >
-                Verify
+                Verified
+              </button>
+              <button
+                phx-click="pick-status"
+                phx-value-id={quote.id}
+                phx-value-status="disputed"
+                class="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600"
+              >
+                Disputed
+              </button>
+              <button
+                phx-click="pick-status"
+                phx-value-id={quote.id}
+                phx-value-status="unverifiable"
+                class="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+              >
+                Unverifiable
               </button>
               <button
                 phx-click="delete"
@@ -113,6 +130,31 @@
                 Delete
               </button>
             </div>
+            <%= if @verifying && @verifying.opinion_id == quote.id do %>
+              <div class="mt-2 flex gap-2 items-center">
+                <input
+                  id={"verify-comment-#{quote.id}"}
+                  type="text"
+                  placeholder="Comment (optional)"
+                  value={@verifying.comment}
+                  phx-keyup="update-verify-comment"
+                  phx-mounted={JS.focus()}
+                  class="flex-1 text-sm border rounded px-2 py-1"
+                />
+                <button
+                  phx-click="confirm-status"
+                  class="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
+                >
+                  Confirm
+                </button>
+                <button
+                  phx-click="cancel-verify"
+                  class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            <% end %>
           <% end %>
         </div>
       <% end %>

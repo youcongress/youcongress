@@ -49,7 +49,7 @@ defmodule YouCongressWeb.StatementLive.Show.Comments do
       author_id: current_user.author_id,
       user_id: current_user.id,
       statement_id: statement.id,
-      verified_at: DateTime.utc_now(),
+      verification_status: :verified,
       twin: false
     }
 
@@ -99,7 +99,7 @@ defmodule YouCongressWeb.StatementLive.Show.Comments do
       content: opinion_content,
       author_id: current_user_vote.author_id,
       user_id: socket.assigns.current_user.id,
-      verified_at: DateTime.utc_now(),
+      verification_status: :verified,
       twin: false,
       statement_id: statement.id
     }

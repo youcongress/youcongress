@@ -12,7 +12,9 @@ defmodule YouCongress.Opinions.Opinion do
     field :source_url, :string
     field :content, :string
     field :twin, :boolean, default: false
-    field :verified_at, :utc_datetime
+    field :verification_status, Ecto.Enum,
+      values: [:verified, :endorsed, :disputed, :unverifiable]
+
     field :ancestry, :string
     field :descendants_count, :integer, default: 0
     field :likes_count, :integer, default: 0
@@ -20,8 +22,7 @@ defmodule YouCongress.Opinions.Opinion do
 
     belongs_to :author, YouCongress.Authors.Author
     belongs_to :user, YouCongress.Accounts.User
-    belongs_to :verified_by_user, YouCongress.Accounts.User
-
+    has_many :verifications, YouCongress.Verifications.Verification
     has_many :opinion_statements, YouCongress.OpinionsStatements.OpinionStatement
 
     many_to_many(
@@ -44,8 +45,7 @@ defmodule YouCongress.Opinions.Opinion do
       :content,
       :source_url,
       :twin,
-      :verified_at,
-      :verified_by_user_id,
+      :verification_status,
       :author_id,
       :user_id,
       :ancestry,
@@ -85,9 +85,9 @@ defmodule YouCongress.Opinions.Opinion do
   def first_statement(_), do: nil
 
   @doc """
-  Returns true if the opinion is verified (has a verified_at timestamp).
+  Returns true if the opinion has a verification status set.
   """
-  def verified?(%{verified_at: nil}), do: false
-  def verified?(%{verified_at: verified_at}) when not is_nil(verified_at), do: true
+  def verified?(%{verification_status: nil}), do: false
+  def verified?(%{verification_status: status}) when not is_nil(status), do: true
   def verified?(_), do: false
 end

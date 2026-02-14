@@ -55,8 +55,10 @@ defmodule YouCongress.Accounts.Permissions do
   def can_edit_opinion?(_opinion, %User{role: "moderator"}), do: true
   def can_edit_opinion?(_opinion, _user), do: false
 
-  def can_verify_opinion?(%User{role: "admin"}), do: true
-  def can_verify_opinion?(%User{role: "moderator"}), do: true
+  @doc """
+  Any logged-in user can verify opinions.
+  """
+  def can_verify_opinion?(%User{}), do: true
   def can_verify_opinion?(_), do: false
 
   @doc """

@@ -146,7 +146,7 @@ defmodule YouCongressWeb.StatementLive.Index.OpinateComponent do
       "statement_id" => statement.id,
       "author_id" => current_user.author_id,
       "user_id" => current_user.id,
-      "verified_at" => DateTime.utc_now(),
+      "verification_status" => :verified,
       "twin" => false
     }
 

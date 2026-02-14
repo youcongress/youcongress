@@ -211,7 +211,7 @@ defmodule YouCongress.Halls do
       on: ov.statement_id == v.id,
       join: o in "opinions",
       on: ov.opinion_id == o.id,
-      where: not is_nil(o.source_url) and is_nil(o.verified_at),
+      where: not is_nil(o.source_url) and is_nil(o.verification_status),
       group_by: [h.id, h.name],
       select: %{name: h.name, quote_count: count(o.id, :distinct)},
       order_by: h.name

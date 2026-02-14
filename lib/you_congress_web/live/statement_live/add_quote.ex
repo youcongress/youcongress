@@ -232,7 +232,6 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
              author_id: author.id,
              source_url: source_url,
              user_id: current_user.id,
-             verified_at: nil,
              direct: true,
              twin: false
            }),
@@ -282,7 +281,6 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
              author_id: author.id,
              source_url: source_url,
              user_id: current_user.id,
-             verified_at: nil,
              direct: true,
              twin: false
            }),
