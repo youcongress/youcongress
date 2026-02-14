@@ -34,6 +34,23 @@ defmodule YouCongress.Accounts.UserNotifier do
   end
 
   @doc """
+  Deliver notification when quote finding process completes.
+  """
+  def deliver_quotes_found_notification(nil, _statement_title, _num_quotes), do: {:ok, :no_email}
+
+  def deliver_quotes_found_notification(email, statement_title, num_quotes) do
+    deliver(email, "Quotes found for \"#{statement_title}\"", """
+    Hi,
+
+    The quote search for "#{statement_title}" has completed.
+
+    #{num_quotes} #{if num_quotes == 1, do: "quote was", else: "quotes were"} added.
+
+    Visit YouCongress to see them.
+    """)
+  end
+
+  @doc """
   Deliver instructions to confirm account.
   """
   def deliver_confirmation_instructions(%User{} = user, url) do
