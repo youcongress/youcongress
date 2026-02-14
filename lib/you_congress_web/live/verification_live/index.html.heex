@@ -1,5 +1,15 @@
 <div class="max-w-5xl mx-auto py-6">
-  <h1 class="text-2xl font-semibold mb-4">Quotes verified recently</h1>
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-semibold">Quotes verified recently</h1>
+    <%= if @current_user && @current_user.role in ["admin", "moderator"] do %>
+      <.link
+        href={~p"/verifications/pending"}
+        class="text-sm text-indigo-600 hover:text-indigo-800 hover:underline"
+      >
+        Review pending quotes
+      </.link>
+    <% end %>
+  </div>
 
   <%= if @cards == [] do %>
     <div class="text-gray-600">No verifications yet.</div>

@@ -10,6 +10,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
   alias YouCongress.Opinions
   alias YouCongress.Votes
+  alias YouCongress.Verifications
 
   describe "Index" do
     test "comment under a comment", %{conn: conn} do
@@ -273,6 +274,92 @@ defmodule YouCongressWeb.OpinionLiveTest do
       # Verify the parent opinion was not changed
       unchanged_parent = Opinions.get_opinion!(parent_opinion.id)
       assert unchanged_parent.content == "Parent opinion"
+    end
+
+    test "shows verification history on opinion show page", %{conn: conn} do
+      user = user_fixture()
+      opinion = opinion_fixture(%{content: "Verified opinion"})
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "This checks out"
+        })
+
+      {:ok, _view, html} = live(conn, ~p"/c/#{opinion.id}")
+
+      assert html =~ "Verification History"
+      assert html =~ "Verified"
+      assert html =~ "This checks out"
+    end
+
+    test "verification history updates after badge verification", %{conn: conn} do
+      user = user_fixture()
+      conn = log_in_user(conn, user)
+
+      opinion =
+        opinion_fixture(%{
+          content: "Quote to verify",
+          source_url: "https://example.com/source",
+          twin: true
+        })
+
+      # Add a statement so the badge shows (badge requires source_url)
+      statement = statement_fixture()
+      vote_fixture(%{statement_id: statement.id, author_id: opinion.author_id, opinion_id: opinion.id})
+
+      {:ok, view, _html} = live(conn, ~p"/c/#{opinion.id}")
+
+      # Initially no verification history
+      refute render(view) =~ "Verification History"
+
+      # Create a verification directly
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user.id,
+          status: :disputed,
+          comment: "Source seems wrong"
+        })
+
+      # Send the message that the badge would send
+      send(view.pid, {:verification_saved, opinion.id})
+
+      html = render(view)
+      assert html =~ "Verification History"
+      assert html =~ "Disputed"
+      assert html =~ "Source seems wrong"
+    end
+
+    test "verification history shows multiple entries", %{conn: conn} do
+      user1 = user_fixture()
+      user2 = user_fixture()
+      opinion = opinion_fixture(%{content: "Multi-verified opinion"})
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user1.id,
+          status: :verified,
+          comment: "Looks good"
+        })
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user2.id,
+          status: :disputed,
+          comment: "I disagree"
+        })
+
+      {:ok, _view, html} = live(conn, ~p"/c/#{opinion.id}")
+
+      assert html =~ "Looks good"
+      assert html =~ "I disagree"
+      assert html =~ "Verified"
+      assert html =~ "Disputed"
     end
 
     test "non-owner cannot edit opinion", %{conn: conn} do
