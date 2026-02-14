@@ -8,17 +8,22 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
   require Logger
   alias YouCongress.Opinions.Quotes.{Quotator, QuotatorAI}
   alias YouCongress.Workers.QuotatorWorker
+  alias YouCongress.Accounts
+  alias YouCongress.Accounts.UserNotifier
+  alias YouCongress.Statements
 
   @impl Oban.Worker
   def perform(%Oban.Job{
-        args: %{
-          "job_id" => job_id,
-          "statement_id" => statement_id,
-          "user_id" => user_id,
-          "max_remaining_llm_calls" => max_remaining_llm_calls,
-          "max_remaining_quotes" => max_remaining_quotes
-        }
+        args:
+          %{
+            "job_id" => job_id,
+            "statement_id" => statement_id,
+            "user_id" => user_id,
+            "max_remaining_llm_calls" => max_remaining_llm_calls,
+            "max_remaining_quotes" => max_remaining_quotes
+          } = args
       }) do
+    total_quotes_added = args["total_quotes_added"] || 0
     Logger.info("Polling OpenAI job #{job_id} for statement #{statement_id}...")
 
     case QuotatorAI.check_job_status(job_id) do
@@ -37,7 +42,8 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
           statement_id,
           user_id,
           max_remaining_llm_calls,
-          max_remaining_quotes
+          max_remaining_quotes,
+          total_quotes_added
         )
 
       {:ok, :in_progress} ->
@@ -46,6 +52,7 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
 
       {:error, reason} ->
         Logger.error("Job #{job_id} failed: #{inspect(reason)}")
+        send_completion_email(user_id, statement_id, total_quotes_added)
         {:cancel, reason}
     end
   end
@@ -55,9 +62,11 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
          statement_id,
          user_id,
          max_remaining_llm_calls,
-         max_remaining_quotes
+         max_remaining_quotes,
+         total_quotes_added
        ) do
     max_remaining_quotes = max_remaining_quotes - num_saved_quotes
+    total_quotes_added = total_quotes_added + num_saved_quotes
 
     cond do
       num_saved_quotes == 0 ->
@@ -65,14 +74,17 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
           "No quotes saved. No more llm calls despite #{max_remaining_quotes} quotes left."
         )
 
+        send_completion_email(user_id, statement_id, total_quotes_added)
         :ok
 
       max_remaining_quotes == 0 ->
         Logger.debug("No more quotes left.")
+        send_completion_email(user_id, statement_id, total_quotes_added)
         :ok
 
       max_remaining_llm_calls <= 0 ->
         Logger.debug("No more llm calls left.")
+        send_completion_email(user_id, statement_id, total_quotes_added)
         :ok
 
       true ->
@@ -86,7 +98,8 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
           statement_id: statement_id,
           user_id: user_id,
           max_remaining_quotes: max_remaining_quotes,
-          max_remaining_llm_calls: max_remaining_llm_calls
+          max_remaining_llm_calls: max_remaining_llm_calls,
+          total_quotes_added: total_quotes_added
         }
         |> QuotatorWorker.new()
         |> Oban.insert()
@@ -95,5 +108,16 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
     :ok
   end
 
-  defp maybe_call_llm_again(_, _, _, _, _), do: :ok
+  defp maybe_call_llm_again(_, _, _, _, _, _), do: :ok
+
+  defp send_completion_email(user_id, statement_id, total_quotes_added) do
+    user = Accounts.get_user!(user_id)
+    statement = Statements.get_statement!(statement_id)
+
+    UserNotifier.deliver_quotes_found_notification(
+      user.email,
+      statement.title,
+      total_quotes_added
+    )
+  end
 end

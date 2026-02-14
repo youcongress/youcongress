@@ -10,7 +10,15 @@ defmodule YouCongress.Opinions.Quotes.QuotatorFake do
   Generate 20 fake quotes for a given question title.
   Returns {:ok, %{quotes: list, cost: 0}} to match the real implementation.
   """
-  @spec find_quotes(integer, binary, list(binary), integer() | nil, integer(), integer()) ::
+  @spec find_quotes(
+          integer,
+          binary,
+          list(binary),
+          integer() | nil,
+          integer(),
+          integer(),
+          integer()
+        ) ::
           {:ok, %{quotes: list, cost: number}}
   def find_quotes(
         _statement_id,
@@ -18,7 +26,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorFake do
         exclude_author_names,
         _user_id,
         _max_remaining_llm_calls,
-        _max_remaining_quotes
+        _max_remaining_quotes,
+        _total_quotes_added \\ 0
       ) do
     quotes =
       1..Quotator.number_of_quotes()

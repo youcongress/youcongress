@@ -22,6 +22,7 @@ defmodule YouCongress.Workers.QuotatorWorker do
     statement = Statements.get_statement!(statement_id, preload: [votes: [:author]])
     max_remaining_llm_calls = args["max_remaining_llm_calls"] || 6
     max_remaining_quotes = args["max_remaining_quotes"] || 50
+    total_quotes_added = args["total_quotes_added"] || 0
 
     exclude_existent_names =
       statement.votes
@@ -34,7 +35,8 @@ defmodule YouCongress.Workers.QuotatorWorker do
            exclude_existent_names,
            user_id,
            max_remaining_llm_calls,
-           max_remaining_quotes
+           max_remaining_quotes,
+           total_quotes_added
          ) do
       {:ok, :job_started} ->
         Logger.info("Finding quotes job started for statement #{statement.id}")

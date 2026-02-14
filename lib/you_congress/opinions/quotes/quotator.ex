@@ -22,14 +22,22 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   @doc """
   Find and save quotes for the given statement.
   """
-  @spec find_and_save_quotes(integer(), list(binary()), integer(), integer(), integer()) ::
+  @spec find_and_save_quotes(
+          integer(),
+          list(binary()),
+          integer(),
+          integer(),
+          integer(),
+          integer()
+        ) ::
           {:ok, integer()} | {:error, any()}
   def find_and_save_quotes(
         statement_id,
         exclude_existent_names,
         user_id,
         max_remaining_llm_calls,
-        max_remaining_quotes
+        max_remaining_quotes,
+        total_quotes_added \\ 0
       ) do
     statement = Statements.get_statement!(statement_id)
 
@@ -39,7 +47,8 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
            exclude_existent_names,
            user_id,
            max_remaining_llm_calls,
-           max_remaining_quotes
+           max_remaining_quotes,
+           total_quotes_added
          ) do
       {:ok, :job_started} ->
         {:ok, :job_started}
