@@ -37,7 +37,13 @@ defmodule YouCongressWeb.StatementLive.Index do
     "Elon Musk",
     "Max Tegmark",
     "Nick Bostrom",
-    "Tim Berners-Lee"
+    "Tim Berners-Lee",
+    "Mustafa Suleyman",
+    "Fei-Fei Li",
+    "Marc Andreessen",
+    "Andrew Ng",
+    "Kai-Fu Lee",
+    "Yuval Noah Harari"
   ]
 
   @impl true
