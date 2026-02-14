@@ -38,7 +38,7 @@ defmodule YouCongress.Verifications do
     latest_status =
       from(v in Verification,
         where: v.opinion_id == ^opinion_id,
-        order_by: [desc: v.updated_at],
+        order_by: [desc: v.updated_at, desc: v.id],
         limit: 1,
         select: v.status
       )

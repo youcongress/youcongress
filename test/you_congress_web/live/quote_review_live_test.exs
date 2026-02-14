@@ -9,14 +9,14 @@ defmodule YouCongressWeb.QuoteReviewLiveTest do
   describe "Access control" do
     test "requires admin or moderator", %{conn: conn} do
       conn = log_in_as_user(conn)
-      assert {:error, {:redirect, %{to: "/log_in"}}} = live(conn, ~p"/quotes/review")
+      assert {:error, {:redirect, %{to: "/log_in"}}} = live(conn, ~p"/verifications/pending")
     end
   end
 
   describe "Index" do
     test "shows empty state", %{conn: conn} do
       conn = log_in_as_admin(conn)
-      {:ok, _view, html} = live(conn, ~p"/quotes/review")
+      {:ok, _view, html} = live(conn, ~p"/verifications/pending")
       assert html =~ "Pending Quotes for Review"
       assert html =~ "No quotes pending review."
     end
@@ -25,7 +25,7 @@ defmodule YouCongressWeb.QuoteReviewLiveTest do
       conn = log_in_as_admin(conn)
       opinion = opinion_fixture(%{content: "Review me", twin: true, verification_status: nil})
 
-      {:ok, view, html} = live(conn, ~p"/quotes/review")
+      {:ok, view, html} = live(conn, ~p"/verifications/pending")
       assert html =~ "Review me"
 
       view
@@ -47,7 +47,7 @@ defmodule YouCongressWeb.QuoteReviewLiveTest do
       conn = log_in_as_admin(conn)
       opinion = opinion_fixture(%{content: "Delete me", twin: true, verification_status: nil})
 
-      {:ok, view, html} = live(conn, ~p"/quotes/review")
+      {:ok, view, html} = live(conn, ~p"/verifications/pending")
       assert html =~ "Delete me"
 
       view
@@ -63,7 +63,7 @@ defmodule YouCongressWeb.QuoteReviewLiveTest do
       conn = log_in_as_admin(conn)
       _opinion = opinion_fixture(%{content: "Test quote", verification_status: nil})
 
-      {:ok, view, html} = live(conn, ~p"/quotes/review")
+      {:ok, view, html} = live(conn, ~p"/verifications/pending")
       assert html =~ "Test quote"
       assert has_element?(view, "button", "Edit")
 
@@ -97,7 +97,7 @@ defmodule YouCongressWeb.QuoteReviewLiveTest do
           verification_status: nil
         })
 
-      {:ok, view, _html} = live(conn, ~p"/quotes/review")
+      {:ok, view, _html} = live(conn, ~p"/verifications/pending")
       assert has_element?(view, "div", "Original quote")
 
       view
@@ -138,7 +138,7 @@ defmodule YouCongressWeb.QuoteReviewLiveTest do
         opinion_fixture(%{content: content, twin: true, verification_status: nil})
       end)
 
-      {:ok, view, html} = live(conn, ~p"/quotes/review")
+      {:ok, view, html} = live(conn, ~p"/verifications/pending")
 
       # Should have Load more button
       assert html =~ "Load more"

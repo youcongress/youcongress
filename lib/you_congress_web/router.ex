@@ -72,7 +72,7 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through([:browser, :require_admin_or_moderator_user])
 
-    live("/quotes/review", QuoteReviewLive.Index, :index)
+    live("/verifications/pending", QuoteReviewLive.Index, :index)
   end
 
   scope "/", YouCongressWeb do
