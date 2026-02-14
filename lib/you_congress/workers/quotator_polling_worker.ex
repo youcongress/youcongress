@@ -117,6 +117,7 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
     UserNotifier.deliver_quotes_found_notification(
       user.email,
       statement.title,
+      statement.slug,
       total_quotes_added
     )
   end
