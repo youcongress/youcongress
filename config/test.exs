@@ -45,3 +45,6 @@ config :you_congress, :title_rewording_implementation, YouCongress.Statements.Ti
 
 # Disable the MCP session store during tests to avoid runtime warnings.
 config :anubis_mcp, :session_store, enabled: false
+
+# Disable Cloudflare Turnstile verification in tests
+config :you_congress, :turnstile_enabled, false

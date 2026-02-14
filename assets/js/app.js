@@ -23,12 +23,14 @@ import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import QuoteMenu from "./hooks/quote_menu"
 import FactChecker from "./hooks/fact-checker"
+import Turnstile from "./hooks/turnstile"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 
 let Hooks = {
   QuoteMenu: QuoteMenu,
-  FactChecker: FactChecker
+  FactChecker: FactChecker,
+  Turnstile: Turnstile
 };
 
 let liveSocket = new LiveSocket("/live", Socket, {

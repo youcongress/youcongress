@@ -7,6 +7,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
   alias YouCongress.Accounts.User
   alias YouCongress.Accounts.SmsVerification
   alias YouCongress.Track
+  alias YouCongress.Turnstile
 
   def render(assigns) do
     ~H"""
@@ -93,6 +94,16 @@ defmodule YouCongressWeb.UserRegistrationLive do
           <.input field={@form[:name]} type="text" label="Name" required />
           <.input field={@form[:email]} type="email" label="Email" required />
           <.input field={@form[:password]} type="password" label="Password" required />
+
+          <div
+            :if={@turnstile_site_key}
+            id="turnstile-widget"
+            phx-hook="Turnstile"
+            data-sitekey={@turnstile_site_key}
+            phx-update="ignore"
+            class="mt-4"
+          >
+          </div>
 
           <:actions>
             <.button phx-disable-with="Creating account..." class="w-full">Create Account</.button>
@@ -277,61 +288,77 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
       changeset = Accounts.change_user_registration(current_user || %User{}, initial_values)
 
+      turnstile_site_key = Application.get_env(:you_congress, :turnstile_site_key)
+
       socket =
         socket
         |> assign(:step, step)
         |> assign(:user, current_user)
         |> assign(:check_errors, false)
         |> assign(:page_title, "Register for an account")
+        |> assign(:turnstile_site_key, turnstile_site_key)
         |> assign_form(changeset)
 
       {:ok, socket, temporary_assigns: [form: nil]}
     end
   end
 
-  def handle_event("save_email_password", %{"user" => params}, socket) do
-    user_params = Map.take(params, ~w(email password))
-    author_params = Map.take(params, ~w(name))
+  def handle_event("save_email_password", params, socket) do
+    turnstile_token = params["cf-turnstile-response"]
+    user_params = params["user"] |> Map.take(~w(email password))
+    author_params = params["user"] |> Map.take(~w(name))
 
-    case Accounts.register_user(user_params, author_params) do
-      {:ok, %{user: user, author: author}} ->
-        Track.event("Register via email/password", user)
+    with {:turnstile, {:ok, _}} <- {:turnstile, Turnstile.verify(turnstile_token)},
+         {:register, {:ok, %{user: user, author: author}}} <-
+           {:register, Accounts.register_user(user_params, author_params)} do
+      Track.event("Register via email/password", user)
 
-        Accounts.deliver_user_confirmation_instructions(
-          user,
-          &url(~p"/users/confirm/#{&1}")
-        )
+      Accounts.deliver_user_confirmation_instructions(
+        user,
+        &url(~p"/users/confirm/#{&1}")
+      )
 
-        socket =
-          socket
-          |> assign(:step, :check_email)
-          |> assign(:user, user)
+      socket =
+        socket
+        |> assign(:step, :check_email)
+        |> assign(:user, user)
 
-        # Pending Actions
-        if socket.assigns.delegate_ids != [] do
-          for id <- socket.assigns.delegate_ids do
-            YouCongress.Delegations.create_delegation(user, id)
-          end
+      # Pending Actions
+      if socket.assigns.delegate_ids != [] do
+        for id <- socket.assigns.delegate_ids do
+          YouCongress.Delegations.create_delegation(user, id)
         end
+      end
 
-        if map_size(socket.assigns.votes) > 0 do
-          Enum.each(socket.assigns.votes, fn {_statement_id, vote_data} ->
-            YouCongress.Votes.create_or_update(%{
-              statement_id: vote_data.statement_id,
-              answer: vote_data.answer,
-              author_id: author.id,
-              direct: true
-            })
-          end)
-        end
+      if map_size(socket.assigns.votes) > 0 do
+        Enum.each(socket.assigns.votes, fn {_statement_id, vote_data} ->
+          YouCongress.Votes.create_or_update(%{
+            statement_id: vote_data.statement_id,
+            answer: vote_data.answer,
+            author_id: author.id,
+            direct: true
+          })
+        end)
+      end
 
-        {:noreply, socket}
+      {:noreply, socket}
+    else
+      {:turnstile, {:error, _reason}} ->
+        changeset =
+          %User{}
+          |> Accounts.change_user_registration(params["user"] || %{})
+          |> Map.put(:action, :validate)
 
-      {:error, :user, %Ecto.Changeset{} = changeset, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "CAPTCHA verification failed. Please try again.")
+         |> assign_form(changeset)}
+
+      {:register, {:error, :user, %Ecto.Changeset{} = changeset, _}} ->
         changeset = Ecto.Changeset.put_change(changeset, :name, author_params["name"])
         {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
 
-      _ ->
+      {:register, _} ->
         {:error, put_flash(socket, :error, "Failed to create author")}
     end
   end

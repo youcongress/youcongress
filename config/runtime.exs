@@ -113,4 +113,8 @@ if config_env() in [:dev, :prod] do
   config :you_congress, :google_client_id, System.get_env("GOOGLE_CLIENT_ID")
   config :you_congress, :google_client_secret, System.get_env("GOOGLE_CLIENT_SECRET")
   config :you_congress, :google_callback_url, System.get_env("GOOGLE_CALLBACK_URL")
+
+  # Cloudflare Turnstile
+  config :you_congress, :turnstile_site_key, System.get_env("TURNSTILE_SITE_KEY")
+  config :you_congress, :turnstile_secret_key, System.get_env("TURNSTILE_SECRET_KEY")
 end
