@@ -43,7 +43,8 @@ defmodule YouCongressWeb.StatementLive.Index do
     "Marc Andreessen",
     "Andrew Ng",
     "Kai-Fu Lee",
-    "Yuval Noah Harari"
+    "Yuval Noah Harari",
+    "Ilya Sutskever"
   ]
 
   @impl true
