@@ -8,7 +8,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
   alias YouCongress.DigitalTwins.OpenAIModel
   alias YouCongress.Opinions.Quotes.Quotator
 
-  @model :"gpt-5.2"
+  @model :"gpt-5.3"
   @timeout_in_min 120
 
   def number_of_quotes, do: Quotator.number_of_quotes()
