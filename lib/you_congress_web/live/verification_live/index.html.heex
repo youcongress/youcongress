@@ -1,63 +1,86 @@
 <div class="max-w-5xl mx-auto py-6">
   <h1 class="text-2xl font-semibold mb-4">Quotes verified recently</h1>
 
-  <%= if @verifications == [] do %>
+  <%= if @cards == [] do %>
     <div class="text-gray-600">No verifications yet.</div>
   <% else %>
-    <div class="space-y-3">
-      <%= for verification <- @verifications do %>
-        <div class="border rounded p-4 bg-white shadow-sm">
-          <div class="flex items-start justify-between">
-            <div class="flex-1 min-w-0">
-              <div class="text-gray-900 text-sm truncate">
-                <.link
-                  href={~p"/c/#{verification.opinion.id}"}
-                  class="text-indigo-600 hover:underline"
-                >
-                  {String.slice(verification.opinion.content, 0, 200)}
+    <ul class="space-y-4">
+      <%= for card <- @cards do %>
+        <li class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          <div class="p-4 md:p-5">
+            <div class="mb-3">
+              <h2 class="text-lg md:text-xl font-medium text-gray-900">
+                <.link href={~p"/p/#{card.statement.slug}"} class="hover:text-indigo-600">
+                  {card.statement.title}
                 </.link>
-              </div>
-              <div class="text-xs text-gray-500 mt-1">
-                <span>
-                  by {if verification.opinion.author,
-                    do: verification.opinion.author.name,
-                    else: "Unknown"}
-                </span>
-                <%= if verification.opinion.statements != [] do %>
-                  · in
-                  <%= for statement <- verification.opinion.statements do %>
-                    <.link href={~p"/p/#{statement.slug}"} class="text-indigo-600 hover:underline">
-                      {statement.title}
-                    </.link>
-                    {if statement != List.last(verification.opinion.statements), do: ", "}
-                  <% end %>
-                <% end %>
-              </div>
+              </h2>
             </div>
-            <span class={[
-              "ml-3 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium shrink-0",
-              status_badge_classes(verification.status)
-            ]}>
-              {status_label(verification.status)}
-            </span>
-          </div>
-          <div class="text-xs text-gray-500 mt-2">
-            {verification.comment} · checked by
-            <%= if verification.user do %>
-              <a
-                href={~p"/a/#{verification.user.author.id}"}
-                class="text-indigo-600 hover:underline"
-              >
-                {verification.user.author.name}
-              </a>
-            <% else %>
-              Unknown
+
+            <div class="mb-4">
+              <.live_component
+                module={CastVoteComponent}
+                id={"cast-vote-#{card.id}"}
+                statement={card.statement}
+                current_user_vote={@user_votes[card.statement.id]}
+                current_user_opinion={@user_opinions[card.statement.id]}
+                current_user={@current_user}
+                display_results={false}
+                page={:statements_index}
+              />
+            </div>
+
+            <div class="border-t border-gray-100 pt-4 mt-2">
+              <.live_component
+                module={VoteComponent}
+                id={"featured-vote-#{card.id}"}
+                vote={card.vote}
+                author={card.vote.author}
+                statement={card.statement}
+                current_user={@current_user}
+                show_vote={true}
+                show_opinion={true}
+                liked={card.vote.opinion && card.vote.opinion.id in @liked_opinion_ids}
+                delegating?={card.vote.author_id in @delegate_ids}
+                delegable={true}
+                regenerating_opinion_id={nil}
+                page={:statements_index}
+              />
+            </div>
+
+            <%= if card.verifications != [] do %>
+              <div class="border-t border-gray-100 pt-3 mt-2">
+                <h3 class="text-xs font-semibold mb-2 text-gray-500">Verification History</h3>
+                <div class="space-y-1">
+                  <%= for verification <- card.verifications do %>
+                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                      <span class={[
+                        "inline-flex items-center rounded px-2 py-0.5 font-medium",
+                        status_badge_classes(verification.status)
+                      ]}>
+                        {status_label(verification.status)}
+                      </span>
+                      <span>{verification.comment}</span>
+                      <span>&middot;</span>
+                      <%= if verification.user && verification.user.author do %>
+                        <a
+                          href={~p"/a/#{verification.user.author.id}"}
+                          class="text-indigo-600 hover:underline"
+                        >
+                          {verification.user.author.name}
+                        </a>
+                      <% else %>
+                        <span>Unknown</span>
+                      <% end %>
+                      <span>&middot; {short_time(verification.updated_at)}</span>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
             <% end %>
-            · {short_time(verification.updated_at)}
           </div>
-        </div>
+        </li>
       <% end %>
-    </div>
+    </ul>
 
     <%= if @has_more do %>
       <div class="mt-6">
