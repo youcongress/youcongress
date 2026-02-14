@@ -1,0 +1,70 @@
+<div class="max-w-5xl mx-auto py-6">
+  <h1 class="text-2xl font-semibold mb-4">Quotes verified recently</h1>
+
+  <%= if @verifications == [] do %>
+    <div class="text-gray-600">No verifications yet.</div>
+  <% else %>
+    <div class="space-y-3">
+      <%= for verification <- @verifications do %>
+        <div class="border rounded p-4 bg-white shadow-sm">
+          <div class="flex items-start justify-between">
+            <div class="flex-1 min-w-0">
+              <div class="text-gray-900 text-sm truncate">
+                <.link
+                  href={~p"/c/#{verification.opinion.id}"}
+                  class="text-indigo-600 hover:underline"
+                >
+                  {String.slice(verification.opinion.content, 0, 200)}
+                </.link>
+              </div>
+              <div class="text-xs text-gray-500 mt-1">
+                <span>
+                  by {if verification.opinion.author,
+                    do: verification.opinion.author.name,
+                    else: "Unknown"}
+                </span>
+                <%= if verification.opinion.statements != [] do %>
+                  · in
+                  <%= for statement <- verification.opinion.statements do %>
+                    <.link href={~p"/p/#{statement.slug}"} class="text-indigo-600 hover:underline">
+                      {statement.title}
+                    </.link>
+                    {if statement != List.last(verification.opinion.statements), do: ", "}
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+            <span class={[
+              "ml-3 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium shrink-0",
+              status_badge_classes(verification.status)
+            ]}>
+              {status_label(verification.status)}
+            </span>
+          </div>
+          <div class="text-xs text-gray-500 mt-2">
+            {verification.comment} · checked by
+            <%= if verification.user do %>
+              <a
+                href={~p"/a/#{verification.user.author.id}"}
+                class="text-indigo-600 hover:underline"
+              >
+                {verification.user.author.name}
+              </a>
+            <% else %>
+              Unknown
+            <% end %>
+            · {short_time(verification.updated_at)}
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%= if @has_more do %>
+      <div class="mt-6">
+        <button phx-click="load-more" class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">
+          Load more
+        </button>
+      </div>
+    <% end %>
+  <% end %>
+</div>

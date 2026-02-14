@@ -40,6 +40,7 @@ defmodule YouCongressWeb.Router do
     live("/h/:hall", StatementLive.Index, :index)
     live("/c/:id", OpinionLive.Show, :show)
     live("/fact-checker", FactCheckerLive.Index, :index)
+    live("/verifications", VerificationLive.Index, :index)
 
     get("/terms", PageController, :terms)
     get("/privacy-policy", PageController, :privacy_policy)

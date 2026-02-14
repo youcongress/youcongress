@@ -57,7 +57,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
         author_biography: opinion.author.bio,
         source_url: opinion.source_url,
         year: opinion.year,
-        verified_by_humans: !!opinion.verified_at
+        verified_by_humans: opinion.verification_status != nil
       }
     end)
   end

@@ -6,12 +6,15 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.Likes
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.Verifications
   alias YouCongress.Track
   alias YouCongress.Delegations
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongress.Statements
   alias YouCongress.Votes
   alias YouCongress.Accounts.Permissions
+
+  import YouCongressWeb.Tools.TimeAgo
 
   @impl true
   def mount(_params, session, socket) do
@@ -75,7 +78,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
       "content" => content,
       "author_id" => current_user.author_id,
       "user_id" => current_user.id,
-      "verified_at" => DateTime.utc_now(),
+      "verification_status" => :verified,
       "ancestry" => ancestry
     }
 
@@ -162,10 +165,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
     search_results =
       if String.length(query) >= 2 do
-        # Get existing statement IDs for this opinion
         existing_statement_ids = Enum.map(opinion.statements, & &1.id)
 
-        # Search for statements and exclude ones already associated
         Statements.list_statements(title_contains: query, limit: 10)
         |> Enum.reject(fn statement -> statement.id in existing_statement_ids end)
       else
@@ -291,6 +292,17 @@ defmodule YouCongressWeb.OpinionLive.Show do
     {:noreply, assign(socket, :editing_opinion_id, nil)}
   end
 
+  def handle_info({:verification_saved, opinion_id}, socket) do
+    verifications =
+      Verifications.list_verifications(
+        opinion_id: opinion_id,
+        order_by: [desc: :updated_at],
+        preload: [user: [:author]]
+      )
+
+    {:noreply, assign(socket, :verifications, verifications)}
+  end
+
   defp create_or_update_vote(_current_user, opinion, statement_id, answer) do
     alias YouCongress.Votes
 
@@ -311,14 +323,21 @@ defmodule YouCongressWeb.OpinionLive.Show do
   defp load_opinion!(socket, opinion_id) do
     opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :statements])
     opinion_with_votes = load_author_votes_for_opinion(opinion)
-    assign(socket, opinion: opinion_with_votes)
+
+    verifications =
+      Verifications.list_verifications(
+        opinion_id: opinion_id,
+        order_by: [desc: :updated_at],
+        preload: [user: [:author]]
+      )
+
+    assign(socket, opinion: opinion_with_votes, verifications: verifications)
   end
 
   defp load_author_votes_for_opinion(opinion) do
     if opinion.author && opinion.statements && opinion.statements != [] do
       statement_ids = Enum.map(opinion.statements, & &1.id)
 
-      # Get author's votes for these statements
       votes =
         YouCongress.Votes.list_votes(
           author_ids: [opinion.author.id],
@@ -326,10 +345,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
           preload: []
         )
 
-      # Create a map of statement_id -> vote for easy lookup
       votes_by_statement = Map.new(votes, fn vote -> {vote.statement_id, vote} end)
 
-      # Add votes to each statement
       statements_with_votes =
         Enum.map(opinion.statements, fn statement ->
           Map.put(statement, :author_vote, Map.get(votes_by_statement, statement.id))
@@ -386,4 +403,16 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   defp quote?(_), do: false
+
+  defp status_badge_classes(:verified), do: "bg-green-100 text-green-800"
+  defp status_badge_classes(:endorsed), do: "bg-blue-100 text-blue-800"
+  defp status_badge_classes(:disputed), do: "bg-orange-100 text-orange-800"
+  defp status_badge_classes(:unverifiable), do: "bg-gray-200 text-gray-600"
+  defp status_badge_classes(:unverified), do: "bg-gray-100 text-gray-800"
+
+  defp status_label(:verified), do: "Verified"
+  defp status_label(:endorsed), do: "Endorsed"
+  defp status_label(:disputed), do: "Disputed"
+  defp status_label(:unverifiable), do: "Unverifiable"
+  defp status_label(:unverified), do: "Unverified"
 end

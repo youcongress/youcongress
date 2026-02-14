@@ -23,13 +23,18 @@ defmodule YouCongressWeb.QuoteReviewLiveTest do
 
     test "verifies a quote", %{conn: conn} do
       conn = log_in_as_admin(conn)
-      opinion = opinion_fixture(%{content: "Review me", twin: true, verified_at: nil})
+      opinion = opinion_fixture(%{content: "Review me", twin: true, verification_status: nil})
 
       {:ok, view, html} = live(conn, ~p"/quotes/review")
       assert html =~ "Review me"
 
       view
-      |> element("button", "Verify")
+      |> element("button", "Verified")
+      |> render_click()
+
+      # Comment input is now shown, confirm the verification
+      view
+      |> element("button", "Confirm")
       |> render_click()
 
       html = render(view)
@@ -40,7 +45,7 @@ defmodule YouCongressWeb.QuoteReviewLiveTest do
 
     test "deletes a quote", %{conn: conn} do
       conn = log_in_as_admin(conn)
-      opinion = opinion_fixture(%{content: "Delete me", twin: true, verified_at: nil})
+      opinion = opinion_fixture(%{content: "Delete me", twin: true, verification_status: nil})
 
       {:ok, view, html} = live(conn, ~p"/quotes/review")
       assert html =~ "Delete me"
@@ -56,7 +61,7 @@ defmodule YouCongressWeb.QuoteReviewLiveTest do
 
     test "enters and cancels edit mode", %{conn: conn} do
       conn = log_in_as_admin(conn)
-      _opinion = opinion_fixture(%{content: "Test quote", verified_at: nil})
+      _opinion = opinion_fixture(%{content: "Test quote", verification_status: nil})
 
       {:ok, view, html} = live(conn, ~p"/quotes/review")
       assert html =~ "Test quote"
@@ -89,7 +94,7 @@ defmodule YouCongressWeb.QuoteReviewLiveTest do
         opinion_fixture(%{
           content: "Original quote",
           source_url: "http://example.com/original",
-          verified_at: nil
+          verification_status: nil
         })
 
       {:ok, view, _html} = live(conn, ~p"/quotes/review")
@@ -130,7 +135,7 @@ defmodule YouCongressWeb.QuoteReviewLiveTest do
       # Create 25 pending quotes to ensure pagination
       Enum.each(1..25, fn i ->
         content = "Pagination Quote #{i}"
-        opinion_fixture(%{content: content, twin: true, verified_at: nil})
+        opinion_fixture(%{content: content, twin: true, verification_status: nil})
       end)
 
       {:ok, view, html} = live(conn, ~p"/quotes/review")

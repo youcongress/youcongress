@@ -2,6 +2,7 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Opinions
+  alias YouCongress.Verifications
   alias YouCongress.Halls
   import YouCongressWeb.Tools.TimeAgo
 
@@ -19,6 +20,7 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
      |> assign(:per_page, 20)
      |> assign(:has_more, true)
      |> assign(:editing_quote_id, nil)
+     |> assign(:verifying, nil)
      |> assign(:sort_by, :desc)
      |> assign(:selected_hall, nil)
      |> assign(:halls, halls_with_pending_quotes)}
@@ -34,20 +36,51 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
     {:noreply, load_pending_quotes(socket, socket.assigns.page + 1)}
   end
 
-  def handle_event("verify", %{"id" => id}, socket) do
-    opinion = Opinions.get_opinion!(String.to_integer(id))
+  def handle_event("pick-status", %{"id" => id, "status" => status}, socket) do
+    {:noreply,
+     assign(socket, :verifying, %{
+       opinion_id: String.to_integer(id),
+       status: status,
+       comment: ""
+     })}
+  end
 
-    verifier_id = socket.assigns.current_user && socket.assigns.current_user.id
+  def handle_event("cancel-verify", _, socket) do
+    {:noreply, assign(socket, :verifying, nil)}
+  end
 
-    case Opinions.update_opinion(opinion, %{
-           verified_at: DateTime.utc_now(),
-           verified_by_user_id: verifier_id
-         }) do
+  def handle_event("update-verify-comment", %{"key" => "Enter", "value" => value}, socket) do
+    socket = assign(socket, :verifying, %{socket.assigns.verifying | comment: value})
+    handle_event("confirm-status", %{}, socket)
+  end
+
+  def handle_event("update-verify-comment", %{"value" => value}, socket) do
+    {:noreply, assign(socket, :verifying, %{socket.assigns.verifying | comment: value})}
+  end
+
+  def handle_event("confirm-status", _, socket) do
+    %{opinion_id: opinion_id, status: status, comment: comment} = socket.assigns.verifying
+    user_id = socket.assigns.current_user.id
+
+    status_atom = String.to_existing_atom(status)
+    comment = if comment == "", do: String.capitalize(status), else: comment
+
+    attrs = %{
+      opinion_id: opinion_id,
+      user_id: user_id,
+      status: status_atom,
+      comment: comment
+    }
+
+    case Verifications.create_verification(attrs) do
       {:ok, _} ->
-        {:noreply, remove_from_list(socket, opinion.id)}
+        {:noreply,
+         socket
+         |> assign(:verifying, nil)
+         |> remove_from_list(opinion_id)}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to verify quote")}
+        {:noreply, put_flash(socket, :error, "Failed to set verification status")}
     end
   end
 

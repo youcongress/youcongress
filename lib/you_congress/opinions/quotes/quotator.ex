@@ -94,7 +94,6 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
            Opinions.create_opinion(%{
              content: quote_data["quote"],
              source_url: quote_data["source_url"],
-             verified_at: nil,
              year: parse_year(quote_data["year"]),
              author_id: author.id,
              twin: false,
