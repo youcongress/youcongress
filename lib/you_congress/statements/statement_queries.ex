@@ -104,7 +104,6 @@ defmodule YouCongress.Statements.StatementQueries do
 
   Options:
   - :hall_name - filter by hall (default "all")
-  - :order_by_date - if true, order statements by updated_at (trending); else by top authors/likes (top)
   - :top_author_ids - IDs of top authors for prioritization
   - :wikipedia_author_ids - IDs of wikipedia authors for secondary prioritization
   - :offset - number of cards to skip
@@ -112,7 +111,6 @@ defmodule YouCongress.Statements.StatementQueries do
   """
   def get_opinion_cards_round_robin(opts \\ []) do
     hall_name = Keyword.get(opts, :hall_name, "all")
-    order_by_date = Keyword.get(opts, :order_by_date, false)
     top_author_ids = Keyword.get(opts, :top_author_ids, [])
     wikipedia_author_ids = Keyword.get(opts, :wikipedia_author_ids, [])
     offset = Keyword.get(opts, :offset, 0)
@@ -160,14 +158,6 @@ defmodule YouCongress.Statements.StatementQueries do
           {"EXTRACT(EPOCH FROM v.inserted_at)", params, param_idx}
       end
 
-    # Build statement ordering for round-robin (by round first, then by statement priority)
-    statement_order =
-      if order_by_date do
-        "rv.round_number ASC, rv.statement_updated_at DESC"
-      else
-        "rv.round_number ASC, tl.top_opinion_likes DESC"
-      end
-
     # Add offset and limit params
     offset_param = "$#{param_idx}"
     limit_param = "$#{param_idx + 1}"
@@ -178,9 +168,8 @@ defmodule YouCongress.Statements.StatementQueries do
       SELECT
         v.id as vote_id,
         v.statement_id,
-        s.opinion_likes_count as statement_opinion_likes_count,
         s.updated_at as statement_updated_at,
-        COALESCE(o.likes_count, 0) as opinion_likes,
+        #{priority_expr} as priority,
         ROW_NUMBER() OVER (
           PARTITION BY v.statement_id
           ORDER BY #{priority_expr} DESC
@@ -190,16 +179,10 @@ defmodule YouCongress.Statements.StatementQueries do
       JOIN statements s ON s.id = v.statement_id
       #{hall_filter}
       WHERE v.opinion_id IS NOT NULL
-    ),
-    top_likes AS (
-      SELECT statement_id, opinion_likes as top_opinion_likes
-      FROM ranked_votes
-      WHERE round_number = 1
     )
     SELECT rv.vote_id, rv.statement_id, rv.round_number
     FROM ranked_votes rv
-    JOIN top_likes tl ON tl.statement_id = rv.statement_id
-    ORDER BY #{statement_order}
+    ORDER BY rv.round_number ASC, rv.priority DESC, rv.statement_updated_at DESC
     OFFSET #{offset_param}
     LIMIT #{limit_param}
     """

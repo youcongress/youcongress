@@ -357,7 +357,6 @@ defmodule YouCongressWeb.StatementLive.Index do
 
         StatementQueries.get_opinion_cards_round_robin(
           hall_name: hall_name,
-          order_by_date: false,
           top_author_ids: top_author_ids,
           wikipedia_author_ids: wikipedia_author_ids,
           offset: offset,
