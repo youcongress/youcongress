@@ -139,8 +139,8 @@ defmodule YouCongress.Statements.StatementQueries do
     {hall_filter, params, param_idx} =
       if has_hall do
         {"JOIN halls_statements hs ON hs.statement_id = v.statement_id
-         JOIN halls h ON h.id = hs.hall_id AND h.name = $#{param_idx}",
-         [hall_name], param_idx + 1}
+         JOIN halls h ON h.id = hs.hall_id AND h.name = $#{param_idx}", [hall_name],
+         param_idx + 1}
       else
         {"", [], param_idx}
       end
@@ -149,23 +149,28 @@ defmodule YouCongress.Statements.StatementQueries do
     {priority_expr, params, param_idx} =
       cond do
         has_top && has_wiki ->
-          expr = "(CASE WHEN v.author_id = ANY($#{param_idx}) THEN 1000000 WHEN v.author_id = ANY($#{param_idx + 1}) THEN 100000 ELSE 0 END) + COALESCE(o.likes_count, 0) * 100 + EXTRACT(EPOCH FROM v.inserted_at)"
+          expr =
+            "(CASE WHEN v.author_id = ANY($#{param_idx}) THEN 1000000 WHEN v.author_id = ANY($#{param_idx + 1}) THEN 100000 ELSE 0 END) + COALESCE(o.likes_count, 0) * 100 + EXTRACT(EPOCH FROM v.inserted_at)"
+
           {expr, params ++ [top_author_ids, wikipedia_author_ids], param_idx + 2}
 
         has_top ->
-          expr = "(CASE WHEN v.author_id = ANY($#{param_idx}) THEN 1000000 ELSE 0 END) + COALESCE(o.likes_count, 0) * 100 + EXTRACT(EPOCH FROM v.inserted_at)"
+          expr =
+            "(CASE WHEN v.author_id = ANY($#{param_idx}) THEN 1000000 ELSE 0 END) + COALESCE(o.likes_count, 0) * 100 + EXTRACT(EPOCH FROM v.inserted_at)"
+
           {expr, params ++ [top_author_ids], param_idx + 1}
 
         true ->
-          {"COALESCE(o.likes_count, 0) * 100 + EXTRACT(EPOCH FROM v.inserted_at)", params, param_idx}
+          {"COALESCE(o.likes_count, 0) * 100 + EXTRACT(EPOCH FROM v.inserted_at)", params,
+           param_idx}
       end
 
     # Build statement ordering for round-robin (by round first, then by statement priority)
     statement_order =
       if order_by_date do
-        "round_number ASC, statement_updated_at DESC"
+        "rv.round_number ASC, rv.statement_updated_at DESC"
       else
-        "round_number ASC, statement_opinion_likes_count DESC"
+        "rv.round_number ASC, tl.top_opinion_likes DESC"
       end
 
     # Add offset and limit params
@@ -180,6 +185,7 @@ defmodule YouCongress.Statements.StatementQueries do
         v.statement_id,
         s.opinion_likes_count as statement_opinion_likes_count,
         s.updated_at as statement_updated_at,
+        COALESCE(o.likes_count, 0) as opinion_likes,
         ROW_NUMBER() OVER (
           PARTITION BY v.statement_id
           ORDER BY #{priority_expr} DESC
@@ -189,9 +195,15 @@ defmodule YouCongress.Statements.StatementQueries do
       JOIN statements s ON s.id = v.statement_id
       #{hall_filter}
       WHERE v.opinion_id IS NOT NULL
+    ),
+    top_likes AS (
+      SELECT statement_id, opinion_likes as top_opinion_likes
+      FROM ranked_votes
+      WHERE round_number = 1
     )
-    SELECT vote_id, statement_id, round_number
-    FROM ranked_votes
+    SELECT rv.vote_id, rv.statement_id, rv.round_number
+    FROM ranked_votes rv
+    JOIN top_likes tl ON tl.statement_id = rv.statement_id
     ORDER BY #{statement_order}
     OFFSET #{offset_param}
     LIMIT #{limit_param}
@@ -265,8 +277,7 @@ defmodule YouCongress.Statements.StatementQueries do
     {hall_filter, params, param_idx} =
       if has_hall do
         {"JOIN halls_statements hs ON hs.statement_id = v.statement_id
-         JOIN halls h ON h.id = hs.hall_id AND h.name = $1",
-         [hall_name], 2}
+         JOIN halls h ON h.id = hs.hall_id AND h.name = $1", [hall_name], 2}
       else
         {"", [], 1}
       end
