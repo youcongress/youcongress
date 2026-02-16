@@ -102,6 +102,8 @@ defmodule YouCongress.Statements.StatementQueries do
   - Round 2: statement1+opinion2, statement2+opinion2... (only statements with 2+ opinions)
   - Continue until all opinions exhausted
 
+  It should display first opinions from top authors, then from wikipedia authors, then from other authors.
+
   Options:
   - :hall_name - filter by hall (default "all")
   - :top_author_ids - IDs of top authors for prioritization
@@ -115,9 +117,6 @@ defmodule YouCongress.Statements.StatementQueries do
     wikipedia_author_ids = Keyword.get(opts, :wikipedia_author_ids, [])
     offset = Keyword.get(opts, :offset, 0)
     limit = Keyword.get(opts, :limit, 15)
-
-    # Build the raw SQL query with window function for round-robin ordering
-    # We use ROW_NUMBER() OVER (PARTITION BY statement_id ORDER BY priority DESC) for round numbers
 
     # Track which features we actually use
     has_hall = hall_name != "all"
@@ -144,13 +143,13 @@ defmodule YouCongress.Statements.StatementQueries do
       cond do
         has_top && has_wiki ->
           expr =
-            "(CASE WHEN v.author_id = ANY($#{param_idx}) THEN 1000000 WHEN v.author_id = ANY($#{param_idx + 1}) THEN 100000 ELSE 0 END) + EXTRACT(EPOCH FROM v.inserted_at)"
+            "(CASE WHEN v.author_id = ANY($#{param_idx}) THEN 20000000000 WHEN v.author_id = ANY($#{param_idx + 1}) THEN 10000000000 ELSE 0 END) + EXTRACT(EPOCH FROM v.inserted_at)"
 
           {expr, params ++ [top_author_ids, wikipedia_author_ids], param_idx + 2}
 
         has_top ->
           expr =
-            "(CASE WHEN v.author_id = ANY($#{param_idx}) THEN 1000000 ELSE 0 END) + EXTRACT(EPOCH FROM v.inserted_at)"
+            "(CASE WHEN v.author_id = ANY($#{param_idx}) THEN 20000000000 ELSE 0 END) + EXTRACT(EPOCH FROM v.inserted_at)"
 
           {expr, params ++ [top_author_ids], param_idx + 1}
 
