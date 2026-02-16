@@ -15,8 +15,7 @@ defmodule YouCongress.Statements.StatementQueries do
   1. Current user's vote (if logged in)
   2. Votes from top authors (if provided)
   3. Votes from wikipedia authors (if provided)
-  4. Votes with highest opinion likes_count
-  5. Most recent votes
+  4. Most recent votes
   """
   def get_one_vote_per_statement(statement_ids, current_user \\ nil, opts \\ []) do
     top_author_ids = Keyword.get(opts, :top_author_ids, [])
@@ -44,7 +43,6 @@ defmodule YouCongress.Statements.StatementQueries do
                   v.author_id,
                   ^wikipedia_author_ids
                 ),
-              desc: o.likes_count,
               desc: v.inserted_at
             ],
             distinct: [v.statement_id],
@@ -60,7 +58,6 @@ defmodule YouCongress.Statements.StatementQueries do
                   v.author_id,
                   ^current_user.author_id
                 ),
-              desc: o.likes_count,
               desc: v.inserted_at
             ],
             distinct: [v.statement_id],
@@ -78,7 +75,6 @@ defmodule YouCongress.Statements.StatementQueries do
                   v.author_id,
                   ^wikipedia_author_ids
                 ),
-              desc: o.likes_count,
               desc: v.inserted_at
             ],
             distinct: [v.statement_id],
@@ -87,7 +83,7 @@ defmodule YouCongress.Statements.StatementQueries do
 
         true ->
           from([v, o] in base_query,
-            order_by: [desc: o.likes_count, desc: v.inserted_at],
+            order_by: [desc: v.inserted_at],
             distinct: [v.statement_id],
             select: {v.statement_id, v}
           )
