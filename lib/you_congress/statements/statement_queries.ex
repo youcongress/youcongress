@@ -146,19 +146,18 @@ defmodule YouCongress.Statements.StatementQueries do
       cond do
         has_top && has_wiki ->
           expr =
-            "(CASE WHEN v.author_id = ANY($#{param_idx}) THEN 1000000 WHEN v.author_id = ANY($#{param_idx + 1}) THEN 100000 ELSE 0 END) + COALESCE(o.likes_count, 0) * 100 + EXTRACT(EPOCH FROM v.inserted_at)"
+            "(CASE WHEN v.author_id = ANY($#{param_idx}) THEN 1000000 WHEN v.author_id = ANY($#{param_idx + 1}) THEN 100000 ELSE 0 END) + EXTRACT(EPOCH FROM v.inserted_at)"
 
           {expr, params ++ [top_author_ids, wikipedia_author_ids], param_idx + 2}
 
         has_top ->
           expr =
-            "(CASE WHEN v.author_id = ANY($#{param_idx}) THEN 1000000 ELSE 0 END) + COALESCE(o.likes_count, 0) * 100 + EXTRACT(EPOCH FROM v.inserted_at)"
+            "(CASE WHEN v.author_id = ANY($#{param_idx}) THEN 1000000 ELSE 0 END) + EXTRACT(EPOCH FROM v.inserted_at)"
 
           {expr, params ++ [top_author_ids], param_idx + 1}
 
         true ->
-          {"COALESCE(o.likes_count, 0) * 100 + EXTRACT(EPOCH FROM v.inserted_at)", params,
-           param_idx}
+          {"EXTRACT(EPOCH FROM v.inserted_at)", params, param_idx}
       end
 
     # Build statement ordering for round-robin (by round first, then by statement priority)
