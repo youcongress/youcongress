@@ -59,6 +59,15 @@
       <HallNav.render hall_name={@hall_name} />
     </div>
 
+    <div class="text-xs flex flex-wrap gap-x-3 gap-y-1 text-gray-600">
+      <span class="text-gray-500">Authors:</span>
+      <%= for author <- @featured_authors do %>
+        <.link href={AuthorShow.author_path(author)} class="hover:text-indigo-600 hover:underline">
+          {author.name}
+        </.link>
+      <% end %>
+    </div>
+
     <ul
       id="opinion-cards-list"
       phx-update="stream"

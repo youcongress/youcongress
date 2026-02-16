@@ -21,6 +21,7 @@ defmodule YouCongressWeb.StatementLive.Index do
   alias YouCongressWeb.Components.SwitchComponent
   alias YouCongress.Statements.StatementQueries
   alias YouCongress.Halls
+  alias YouCongressWeb.AuthorLive.Show, as: AuthorShow
   alias YouCongressWeb.StatementLive.VoteComponent
 
   @top_author_names [
@@ -49,10 +50,20 @@ defmodule YouCongressWeb.StatementLive.Index do
     "Pope Francis"
   ]
 
+  @featured_author_names [
+    "Geoffrey Hinton",
+    "Demis Hassabis",
+    "Dario Amodei",
+    "Elon Musk",
+    "Yoshua Bengio"
+  ]
+
   @impl true
   def mount(params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
     current_user = socket.assigns.current_user
+
+    featured_authors = Authors.list_authors(names: @featured_author_names)
 
     socket =
       socket
@@ -71,6 +82,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:has_more_statements, true)
       |> assign(:editing_opinion_id, nil)
       |> assign(:can_create_statement?, Permissions.can_create_statement?(current_user))
+      |> assign(:featured_authors, featured_authors)
       |> stream(:opinion_cards, [], reset: true)
       |> assign_cards(1)
 
