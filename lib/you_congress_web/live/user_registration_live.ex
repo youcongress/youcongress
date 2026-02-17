@@ -352,14 +352,23 @@ defmodule YouCongressWeb.UserRegistrationLive do
         {:noreply,
          socket
          |> put_flash(:error, "CAPTCHA verification failed. Please try again.")
+         |> push_event("reset_turnstile", %{})
          |> assign_form(changeset)}
 
       {:register, {:error, :user, %Ecto.Changeset{} = changeset, _}} ->
         changeset = Ecto.Changeset.put_change(changeset, :name, author_params["name"])
-        {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
+
+        {:noreply,
+         socket
+         |> assign(check_errors: true)
+         |> push_event("reset_turnstile", %{})
+         |> assign_form(changeset)}
 
       {:register, _} ->
-        {:error, put_flash(socket, :error, "Failed to create author")}
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to create author")
+         |> push_event("reset_turnstile", %{})}
     end
   end
 
