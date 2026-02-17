@@ -6,6 +6,9 @@ const Turnstile = {
     this.handleEvent("reset_turnstile", () => {
       if (this.widgetId) {
         window.turnstile.reset(this.widgetId);
+        // Clear the input value so we don't submit an old token
+        const input = this.el.querySelector('input[name="cf-turnstile-response"]');
+        if (input) input.value = "";
       }
     });
 
@@ -26,13 +29,13 @@ const Turnstile = {
       sitekey: siteKey,
       callback: (token) => {
         // Set the token in a hidden input so it's submitted with the form
-        const form = this.el.closest("form");
-        let input = form.querySelector('input[name="cf-turnstile-response"]');
+        // We put it inside this.el (which has phx-update="ignore") so it isn't wiped by LiveView patches
+        let input = this.el.querySelector('input[name="cf-turnstile-response"]');
         if (!input) {
           input = document.createElement("input");
           input.type = "hidden";
           input.name = "cf-turnstile-response";
-          form.appendChild(input);
+          this.el.appendChild(input);
         }
         input.value = token;
       },
