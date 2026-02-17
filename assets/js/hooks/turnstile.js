@@ -3,6 +3,12 @@ const Turnstile = {
     const siteKey = this.el.dataset.sitekey;
     if (!siteKey) return;
 
+    this.handleEvent("reset_turnstile", () => {
+      if (this.widgetId) {
+        window.turnstile.reset(this.widgetId);
+      }
+    });
+
     if (!window.turnstile) {
       const script = document.createElement("script");
       script.src =
@@ -16,7 +22,7 @@ const Turnstile = {
   },
 
   renderWidget(siteKey) {
-    window.turnstile.render(this.el, {
+    this.widgetId = window.turnstile.render(this.el, {
       sitekey: siteKey,
       callback: (token) => {
         // Set the token in a hidden input so it's submitted with the form
