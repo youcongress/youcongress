@@ -13,6 +13,7 @@ defmodule YouCongress.Accounts.User do
     field :phone_number, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
+    field :name, :string, virtual: true
     field :email_confirmed_at, :naive_datetime
     field :phone_number_confirmed_at, :naive_datetime
     field :role, :string, default: "user"
