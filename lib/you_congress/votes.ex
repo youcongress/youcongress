@@ -165,7 +165,7 @@ defmodule YouCongress.Votes do
             WHEN ? = FALSE THEN 3
             ELSE 4
           END", o.source_url, a.wikipedia_url, o.twin),
-      {:desc, o.updated_at}
+      {:desc, o.id}
     ])
     |> preload(^include_tables)
     |> Repo.all()
