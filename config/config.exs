@@ -64,14 +64,7 @@ config :you_congress, Oban,
   plugins: [
     # 3 days = 259,200 seconds
     {Oban.Plugins.Pruner, max_age: 259_200},
-    Oban.Plugins.Lifeline,
-    {Oban.Plugins.Cron,
-     crontab: [
-       # Touch a statement every day at 7am
-       {"0 7 * * *", YouCongress.Workers.TouchStatementWorker, args: %{}, max_attempts: 2},
-       # Touch a statement every day at 7pm
-       {"0 19 * * *", YouCongress.Workers.TouchStatementWorker, args: %{}, max_attempts: 2}
-     ]}
+    Oban.Plugins.Lifeline
   ],
   queues: [
     default: 10
