@@ -6,6 +6,7 @@ defmodule YouCongressWeb.MCPServer do
 
   # Tools
   # component(YouCongressWeb.MCPServer.StatementsSearch)
+  component(YouCongressWeb.MCPServer.StatementsCreate)
   component(YouCongressWeb.MCPServer.StatementsList)
   component(YouCongressWeb.MCPServer.QuotesSearch)
 end

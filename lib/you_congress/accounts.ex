@@ -597,6 +597,34 @@ defmodule YouCongress.Accounts do
     |> Repo.insert()
   end
 
+  @doc """
+  Fetches the user that owns the provided API key token.
+
+  Returns `{:ok, user}` when the token exists or an error tuple otherwise.
+  """
+  @spec get_user_by_api_key(String.t() | nil) ::
+          {:ok, User.t()} | {:error, :missing_api_key | :invalid_api_key}
+  def get_user_by_api_key(nil), do: {:error, :missing_api_key}
+  def get_user_by_api_key(""), do: {:error, :missing_api_key}
+
+  def get_user_by_api_key(token) when is_binary(token) do
+    cleaned_token = String.trim(token)
+
+    if cleaned_token == "" do
+      {:error, :missing_api_key}
+    else
+      query =
+        from api_key in ApiKey,
+          where: api_key.token == ^cleaned_token,
+          preload: [:user]
+
+      case Repo.one(query) do
+        %ApiKey{user: %User{} = user} -> {:ok, user}
+        _ -> {:error, :invalid_api_key}
+      end
+    end
+  end
+
   defp generate_api_key do
     32
     |> :crypto.strong_rand_bytes()

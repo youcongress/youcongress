@@ -253,6 +253,30 @@ defmodule YouCongress.AccountsTest do
     end
   end
 
+  describe "get_user_by_api_key/1" do
+    test "returns the API key owner" do
+      user = user_fixture()
+
+      {:ok, api_key} =
+        Accounts.create_api_key_for_user(user, %{
+          "name" => "CLI",
+          "scope" => :write
+        })
+
+      assert {:ok, fetched_user} = Accounts.get_user_by_api_key(api_key.token)
+      assert fetched_user.id == user.id
+    end
+
+    test "returns an error for missing tokens" do
+      assert {:error, :missing_api_key} = Accounts.get_user_by_api_key(nil)
+      assert {:error, :missing_api_key} = Accounts.get_user_by_api_key("   ")
+    end
+
+    test "returns an error for unknown tokens" do
+      assert {:error, :invalid_api_key} = Accounts.get_user_by_api_key("invalid")
+    end
+  end
+
   describe "deliver_user_confirmation_instructions/2" do
     setup do
       %{user: user_fixture(%{}, %{}, false)}
