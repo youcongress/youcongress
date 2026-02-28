@@ -1,7 +1,9 @@
 defmodule YouCongress.StatementsTest do
   use YouCongress.DataCase
+  use Oban.Testing, repo: YouCongress.Repo
 
   alias YouCongress.Statements
+  import YouCongress.AccountsFixtures
 
   describe "statements" do
     alias YouCongress.Statements.Statement
@@ -29,6 +31,23 @@ defmodule YouCongress.StatementsTest do
 
     test "create_statement/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Statements.create_statement(@invalid_attrs)
+    end
+
+    test "create_statement/1 enqueues a find quotes job when the statement has a creator" do
+      user = admin_fixture()
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        assert {:ok, %Statement{} = statement} =
+                 Statements.create_statement(%{title: "Auto quote me", user_id: user.id})
+
+        assert_enqueued(
+          worker: YouCongress.Workers.QuotatorWorker,
+          args: %{
+            "statement_id" => statement.id,
+            "user_id" => user.id
+          }
+        )
+      end)
     end
 
     test "update_statement/2 with valid data updates the statement" do
