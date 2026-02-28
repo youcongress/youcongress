@@ -8,12 +8,13 @@ defmodule YouCongress.Repo.Migrations.AddOpinionsCountToStatements do
 
     # Populate existing counts
     execute """
-    UPDATE statements s
-    SET opinions_count = (
-      SELECT COUNT(*)
-      FROM opinions_statements os
-      WHERE os.statement_id = s.id
-    )
-    """, ""
+            UPDATE statements s
+            SET opinions_count = (
+              SELECT COUNT(*)
+              FROM opinions_statements os
+              WHERE os.statement_id = s.id
+            )
+            """,
+            ""
   end
 end

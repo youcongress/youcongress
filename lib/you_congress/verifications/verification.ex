@@ -7,7 +7,9 @@ defmodule YouCongress.Verifications.Verification do
   import Ecto.Changeset
 
   schema "verifications" do
-    field :status, Ecto.Enum, values: [:verified, :endorsed, :disputed, :unverifiable, :unverified]
+    field :status, Ecto.Enum,
+      values: [:verified, :endorsed, :disputed, :unverifiable, :unverified]
+
     field :comment, :string
 
     belongs_to :opinion, YouCongress.Opinions.Opinion

@@ -6,9 +6,8 @@ defmodule YouCongress.Accounts do
   import Ecto.Query, warn: false
   alias YouCongress.Repo
 
-  alias YouCongress.Accounts.{User, UserToken, UserNotifier}
+  alias YouCongress.Accounts.{ApiKey, User, UserToken, UserNotifier}
   alias YouCongress.Authors.Author
-  alias YouCongress.Accounts.UserNotifier
 
   ## Database getters
 
@@ -570,6 +569,38 @@ defmodule YouCongress.Accounts do
   def confirm_user_phone(%User{} = user) do
     changeset = User.phone_number_confirm_changeset(user)
     Repo.update(changeset)
+  end
+
+  ## API keys
+
+  def list_api_keys_for_user(nil), do: []
+
+  def list_api_keys_for_user(%User{id: user_id}) do
+    ApiKey
+    |> where(user_id: ^user_id)
+    |> order_by(desc: :inserted_at)
+    |> Repo.all()
+  end
+
+  def change_api_key(attrs \\ %{}) do
+    ApiKey.creation_changeset(%ApiKey{}, attrs)
+  end
+
+  def create_api_key_for_user(nil, _attrs), do: {:error, :unauthorized}
+
+  def create_api_key_for_user(%User{} = user, attrs) do
+    attrs = Map.put(attrs, "token", generate_api_key())
+
+    user
+    |> Ecto.build_assoc(:api_keys)
+    |> ApiKey.creation_changeset(attrs)
+    |> Repo.insert()
+  end
+
+  defp generate_api_key do
+    32
+    |> :crypto.strong_rand_bytes()
+    |> Base.url_encode64(padding: false)
   end
 
   def sign_up_complete?(user) do

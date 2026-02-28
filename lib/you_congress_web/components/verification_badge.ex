@@ -143,7 +143,14 @@ defmodule YouCongressWeb.Components.VerificationBadge do
   end
 
   defp confirm_status(socket) do
-    %{assigns: %{current_user: current_user, opinion: opinion, selected_status: status, comment: comment}} =
+    %{
+      assigns: %{
+        current_user: current_user,
+        opinion: opinion,
+        selected_status: status,
+        comment: comment
+      }
+    } =
       socket
 
     comment = if comment == "", do: badge_label(status), else: comment
