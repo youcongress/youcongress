@@ -37,7 +37,9 @@ defmodule YouCongressWeb.StatementLiveTest do
       # Create an opinion so the statement appears in "New" mode
       author = author_fixture()
       opinion = opinion_fixture(%{author_id: author.id, content: "Test opinion"})
-      _vote = vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
+
+      _vote =
+        vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
 
       conn = log_in_as_user(conn)
       {:ok, index_live, _html} = live(conn, ~p"/")

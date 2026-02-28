@@ -12,6 +12,7 @@ defmodule YouCongress.Opinions.Opinion do
     field :source_url, :string
     field :content, :string
     field :twin, :boolean, default: false
+
     field :verification_status, Ecto.Enum,
       values: [:verified, :endorsed, :disputed, :unverifiable]
 

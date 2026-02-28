@@ -308,7 +308,12 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
       # Add a statement so the badge shows (badge requires source_url)
       statement = statement_fixture()
-      vote_fixture(%{statement_id: statement.id, author_id: opinion.author_id, opinion_id: opinion.id})
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: opinion.author_id,
+        opinion_id: opinion.id
+      })
 
       {:ok, view, _html} = live(conn, ~p"/c/#{opinion.id}")
 

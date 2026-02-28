@@ -20,6 +20,7 @@ defmodule YouCongress.Accounts.User do
     field :newsletter, :boolean, default: false
 
     belongs_to :author, YouCongress.Authors.Author
+    has_many :api_keys, YouCongress.Accounts.ApiKey
 
     timestamps()
   end

@@ -33,3 +33,62 @@
     <.button phx-disable-with="Saving...">Save</.button>
   </:actions>
 </.simple_form>
+
+<section class="mt-10">
+  <h2 class="text-xl font-semibold">API keys</h2>
+  <p class="mt-1 text-sm text-zinc-600">
+    Create API keys to access the YouCongress API. Choose a descriptive name and whether the
+    key should be read-only or allow write operations.
+  </p>
+
+  <%= if @last_api_key_token do %>
+    <div class="mt-4 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+      <p class="font-semibold">Copy your new API key now:</p>
+      <p class="mt-2 font-mono text-base">{@last_api_key_token}</p>
+      <p class="mt-1">This is the only time the full key will be shown.</p>
+    </div>
+  <% end %>
+
+  <.simple_form for={@api_key_form} id="api-key-form" phx-submit="create_api_key" class="mt-4">
+    <.input field={@api_key_form[:name]} label="Name" />
+    <.input
+      type="select"
+      field={@api_key_form[:scope]}
+      label="Access level"
+      options={[{"Read-only", :read}, {"Read & write", :write}]}
+    />
+
+    <:actions>
+      <.button phx-disable-with="Creating...">Create API key</.button>
+    </:actions>
+  </.simple_form>
+
+  <div class="mt-6 overflow-x-auto rounded-md border border-zinc-200">
+    <%= if Enum.empty?(@api_keys) do %>
+      <div class="p-4 text-sm text-zinc-600">No API keys yet.</div>
+    <% else %>
+      <table class="min-w-full divide-y divide-zinc-200 text-sm">
+        <thead class="bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          <tr>
+            <th class="px-4 py-2">Name</th>
+            <th class="px-4 py-2">Access</th>
+            <th class="px-4 py-2">API key</th>
+            <th class="px-4 py-2">Created</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-zinc-100 bg-white text-zinc-800">
+          <%= for api_key <- @api_keys do %>
+            <tr>
+              <td class="px-4 py-3 font-medium">{api_key.name}</td>
+              <td class="px-4 py-3">{human_scope(api_key.scope)}</td>
+              <td class="px-4 py-3 font-mono text-xs">{masked_token(api_key.token)}</td>
+              <td class="px-4 py-3 text-zinc-500">
+                {Calendar.strftime(api_key.inserted_at, "%Y-%m-%d %H:%M")}
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+</section>

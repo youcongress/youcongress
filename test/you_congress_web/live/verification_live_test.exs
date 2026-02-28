@@ -12,7 +12,13 @@ defmodule YouCongressWeb.VerificationLiveTest do
   defp create_verified_opinion(_context) do
     user = user_fixture()
     statement = statement_fixture()
-    opinion = opinion_fixture(%{content: "Test quote content", twin: true, source_url: "https://example.com"})
+
+    opinion =
+      opinion_fixture(%{
+        content: "Test quote content",
+        twin: true,
+        source_url: "https://example.com"
+      })
 
     # Link opinion to statement via a vote
     vote =
@@ -113,9 +119,18 @@ defmodule YouCongressWeb.VerificationLiveTest do
       # Create 25 opinions with verifications
       Enum.each(1..25, fn i ->
         opinion =
-          opinion_fixture(%{content: "Paginated opinion #{i}", twin: true, source_url: "https://example.com/#{i}"})
+          opinion_fixture(%{
+            content: "Paginated opinion #{i}",
+            twin: true,
+            source_url: "https://example.com/#{i}"
+          })
 
-        vote_fixture(%{statement_id: statement.id, author_id: opinion.author_id, opinion_id: opinion.id})
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: opinion.author_id,
+          opinion_id: opinion.id
+        })
+
         YouCongress.Opinions.add_opinion_to_statement(opinion, statement.id)
 
         Verifications.create_verification(%{
