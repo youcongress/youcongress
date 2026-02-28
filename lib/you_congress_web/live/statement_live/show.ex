@@ -92,7 +92,7 @@ defmodule YouCongressWeb.StatementLive.Show do
         {:noreply, put_flash(socket, :error, "You don't have permission to find quotes.")}
 
       true ->
-        %{statement_id: statement_id, user_id: current_user.id, find_n_quotes: 10}
+        %{statement_id: statement_id, user_id: current_user.id}
         |> QuotatorWorker.new()
         |> Oban.insert()
 
