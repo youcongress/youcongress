@@ -147,7 +147,7 @@ defmodule YouCongress.Accounts.UserNotifier do
         "Confirm your email",
         [
           "Thanks for signing up for YouCongress.",
-          "Tap the button below to confirm your email address and start exploring new statements."
+          "Tap the button below to confirm your email address and start exploring new policies and quotes."
         ],
         "Confirm email",
         url
