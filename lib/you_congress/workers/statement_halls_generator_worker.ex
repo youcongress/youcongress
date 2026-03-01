@@ -9,6 +9,7 @@ defmodule YouCongress.Workers.StatementHallsGeneratorWorker do
 
   alias YouCongress.HallsStatements
 
+  @spec perform(Oban.Job.t()) :: {:ok, YouCongress.Statements.Statement.t()}
   def perform(%Oban.Job{args: %{"statement_id" => statement_id}}) do
     HallsStatements.sync!(statement_id)
   end
