@@ -8,11 +8,13 @@ defmodule YouCongress.Accounts.UserToken do
 
   @hash_algorithm :sha256
   @rand_size 32
+  @confirmation_code_length 6
+  @live_login_validity_in_minutes 10
 
   # It is very important to keep the reset password token expiry short,
   # since someone with access to the email may take over the account.
   @reset_password_validity_in_days 1
-  @confirm_validity_in_days 7
+  @confirm_validity_in_days 1
   @change_email_validity_in_days 7
   @session_validity_in_days 60
 
@@ -86,7 +88,7 @@ defmodule YouCongress.Accounts.UserToken do
 
   defp build_hashed_token(user, context, sent_to) do
     token = :crypto.strong_rand_bytes(@rand_size)
-    hashed_token = :crypto.hash(@hash_algorithm, token)
+    hashed_token = hash_token(token)
 
     {Base.url_encode64(token, padding: false),
      %UserToken{
@@ -113,7 +115,7 @@ defmodule YouCongress.Accounts.UserToken do
   def verify_email_token_query(token, context) do
     case Base.url_decode64(token, padding: false) do
       {:ok, decoded_token} ->
-        hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
+        hashed_token = hash_token(decoded_token)
         days = days_for_context(context)
 
         query =
@@ -132,6 +134,36 @@ defmodule YouCongress.Accounts.UserToken do
   defp days_for_context("confirm"), do: @confirm_validity_in_days
   defp days_for_context("reset_password"), do: @reset_password_validity_in_days
 
+  def confirm_validity_in_days, do: @confirm_validity_in_days
+
+  def hash_token(binary) when is_binary(binary), do: :crypto.hash(@hash_algorithm, binary)
+
+  def build_confirmation_code(user) do
+    code = generate_code()
+    hashed_code = hash_token(code)
+
+    {code,
+     %UserToken{
+       token: hashed_code,
+       context: "confirm",
+       sent_to: user.email,
+       user_id: user.id
+     }}
+  end
+
+  def build_live_login_token(user) do
+    build_hashed_token(user, "live_login", user.email)
+  end
+
+  defp generate_code do
+    1..@confirmation_code_length
+    |> Enum.map(fn _ ->
+      <<byte>> = :crypto.strong_rand_bytes(1)
+      Integer.to_string(rem(byte, 10))
+    end)
+    |> Enum.join()
+  end
+
   @doc """
   Checks if the token is valid and returns its underlying lookup query.
 
@@ -149,11 +181,29 @@ defmodule YouCongress.Accounts.UserToken do
   def verify_change_email_token_query(token, "change:" <> _ = context) do
     case Base.url_decode64(token, padding: false) do
       {:ok, decoded_token} ->
-        hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
+        hashed_token = hash_token(decoded_token)
 
         query =
           from token in token_and_context_query(hashed_token, context),
             where: token.inserted_at > ago(@change_email_validity_in_days, "day")
+
+        {:ok, query}
+
+      :error ->
+        :error
+    end
+  end
+
+  def verify_live_login_token_query(token) do
+    case Base.url_decode64(token, padding: false) do
+      {:ok, decoded_token} ->
+        hashed_token = hash_token(decoded_token)
+
+        query =
+          from token in token_and_context_query(hashed_token, "live_login"),
+            join: user in assoc(token, :user),
+            where: token.inserted_at > ago(@live_login_validity_in_minutes, "minute"),
+            select: {token, user}
 
         {:ok, query}
 

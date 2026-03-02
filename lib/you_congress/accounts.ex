@@ -402,6 +402,28 @@ defmodule YouCongress.Accounts do
   end
 
   @doc """
+  Generates a login token that can be exchanged for a session later.
+  """
+  def generate_live_login_token(%User{} = user) do
+    {token, user_token} = UserToken.build_live_login_token(user)
+    Repo.insert!(user_token)
+    token
+  end
+
+  @doc """
+  Consumes a live login token and returns the associated user.
+  """
+  def consume_live_login_token(token) do
+    with {:ok, query} <- UserToken.verify_live_login_token_query(token),
+         {token_record, %User{} = user} <- Repo.one(query) do
+      Repo.delete!(token_record)
+      {:ok, user}
+    else
+      _ -> :error
+    end
+  end
+
+  @doc """
   Gets the user with the given signed token.
   """
   def get_user_by_session_token(token) do
@@ -422,36 +444,48 @@ defmodule YouCongress.Accounts do
   ## Confirmation
 
   @doc ~S"""
-  Delivers the confirmation email instructions to the given user.
+  Delivers a six-digit confirmation code to the given user.
+
   ## Examples
+
       iex> deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
       {:ok, %{to: ..., body: ...}}
+
       iex> deliver_user_confirmation_instructions(confirmed_user, &url(~p"/users/confirm/#{&1}"))
       {:error, :already_confirmed}
+
   """
   def deliver_user_confirmation_instructions(%User{} = user, confirmation_url_fun)
       when is_function(confirmation_url_fun, 1) do
+    _ = confirmation_url_fun
+
     if user.email_confirmed_at do
       {:error, :already_confirmed}
     else
-      {encoded_token, user_token} = UserToken.build_email_token(user, "confirm")
+      Repo.delete_all(UserToken.user_and_contexts_query(user, ["confirm"]))
+      {code, user_token} = UserToken.build_confirmation_code(user)
       Repo.insert!(user_token)
-      UserNotifier.deliver_confirmation_instructions(user, confirmation_url_fun.(encoded_token))
+      UserNotifier.deliver_confirmation_instructions(user, code)
     end
   end
 
   @doc """
-  Confirms a user by the given token.
-  If the token matches, the user account is marked as confirmed
-  and the token is deleted.
+  Confirms a user using a six-digit verification code.
   """
-  def confirm_user(token) do
-    with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm"),
-         %User{} = user <- Repo.one(query),
-         {:ok, %{user: user}} <- Repo.transaction(confirm_user_multi(user)) do
-      {:ok, user}
+  def confirm_user_with_code(%User{} = user, code) when is_binary(code) do
+    cond do
+      user.email_confirmed_at -> {:error, :already_confirmed}
+      true -> do_confirm_user_with_code(user, code)
+    end
+  end
+
+  defp do_confirm_user_with_code(user, code) do
+    with {:ok, _token} <- fetch_active_confirmation_token(user, code),
+         {:ok, %{user: confirmed_user}} <- Repo.transaction(confirm_user_multi(user)) do
+      {:ok, confirmed_user}
     else
-      _ -> :error
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, :invalid_code}
     end
   end
 
@@ -459,6 +493,29 @@ defmodule YouCongress.Accounts do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, User.email_confirm_changeset(user))
     |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm"]))
+  end
+
+  defp fetch_active_confirmation_token(user, code) do
+    hashed_code = UserToken.hash_token(code)
+
+    token_query =
+      from token in UserToken.token_and_context_query(hashed_code, "confirm"),
+        where: token.user_id == ^user.id
+
+    case Repo.one(token_query) do
+      nil ->
+        {:error, :invalid_code}
+
+      token ->
+        max_age_seconds = UserToken.confirm_validity_in_days() * 86_400
+        age_seconds = NaiveDateTime.diff(NaiveDateTime.utc_now(), token.inserted_at, :second)
+
+        if age_seconds < max_age_seconds do
+          {:ok, token}
+        else
+          {:error, :expired}
+        end
+    end
   end
 
   ## Reset password

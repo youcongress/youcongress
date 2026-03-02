@@ -154,6 +154,7 @@ defmodule YouCongressWeb.Router do
 
     get("/log_out", UserSessionController, :delete)
     delete("/log_out", UserSessionController, :delete)
+    post("/users/live_login", UserSessionController, :live_login)
     get("/users/confirm/:token", UserConfirmationController, :confirm)
 
     live_session :current_user,

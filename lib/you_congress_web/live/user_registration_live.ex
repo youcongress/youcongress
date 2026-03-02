@@ -9,9 +9,12 @@ defmodule YouCongressWeb.UserRegistrationLive do
   alias YouCongress.Track
   alias YouCongress.Turnstile
 
+  @max_email_code_attempts 3
+  @email_code_lock_seconds 60
+
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-sm">
+    <div id="registration-flow" class="mx-auto max-w-sm" phx-hook="SessionLogin">
       <%= if @step == :enter_email_password do %>
         <%= unless @embedded do %>
           <div class="mt-6 space-y-3">
@@ -141,15 +144,53 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
       <%= if @step == :check_email do %>
         <.header class="text-center">
-          Please check your email & spam folder
+          Enter your confirmation code
           <:subtitle>
-            We've sent you instructions to validate your email
+            We sent a six-digit code to {@user.email}. Codes expire 24 hours after we send them.
           </:subtitle>
         </.header>
 
-        <div class="mt-4 text-center">
-          <.link href="#" phx-click="resend_email" class="text-sm text-blue-600 hover:underline">
-            Resend email
+        <.simple_form
+          for={@form}
+          id="email_verification_form"
+          phx-submit="verify_email"
+          method="post"
+        >
+          <.error :if={@check_errors}>
+            Oops, something went wrong! Please check the errors below.
+          </.error>
+
+          <div
+            :if={email_code_locked?(@email_code_locked_until)}
+            class="rounded-md bg-yellow-50 text-yellow-800 text-sm p-3"
+          >
+            Too many attempts. Please wait {email_code_lock_remaining(@email_code_locked_until)} seconds before trying again.
+          </div>
+
+          <.input
+            field={@form[:email_verification_code]}
+            type="text"
+            label="6-digit code"
+            placeholder="123456"
+            maxlength="6"
+            required
+          />
+
+          <:actions>
+            <.button
+              phx-disable-with="Verifying..."
+              class="w-full"
+              disabled={email_code_locked?(@email_code_locked_until)}
+            >
+              Verify email
+            </.button>
+          </:actions>
+        </.simple_form>
+
+        <div class="mt-4 text-center text-sm text-gray-600">
+          <p>Didn't get a code? Check your spam folder or request a new one.</p>
+          <.link href="#" phx-click="resend_email" class="text-blue-600 hover:underline">
+            Resend code
           </.link>
         </div>
       <% end %>
@@ -286,7 +327,11 @@ defmodule YouCongressWeb.UserRegistrationLive do
           %{}
         end
 
-      changeset = Accounts.change_user_registration(current_user || %User{}, initial_values)
+      changeset =
+        case step do
+          :check_email -> email_code_changeset()
+          _ -> Accounts.change_user_registration(current_user || %User{}, initial_values)
+        end
 
       turnstile_site_key = Application.get_env(:you_congress, :turnstile_site_key)
 
@@ -294,6 +339,9 @@ defmodule YouCongressWeb.UserRegistrationLive do
         socket
         |> assign(:step, step)
         |> assign(:user, current_user)
+        |> assign(:email_code_attempts, 0)
+        |> assign(:email_code_locked_until, nil)
+        |> assign(:session_login_sent, current_user != nil)
         |> assign(:check_errors, false)
         |> assign(:page_title, "Register for an account")
         |> assign(:turnstile_site_key, turnstile_site_key)
@@ -322,6 +370,8 @@ defmodule YouCongressWeb.UserRegistrationLive do
         socket
         |> assign(:step, :check_email)
         |> assign(:user, user)
+        |> reset_email_code_state()
+        |> assign_form(email_code_changeset())
 
       # Pending Actions
       if socket.assigns.delegate_ids != [] do
@@ -375,24 +425,80 @@ defmodule YouCongressWeb.UserRegistrationLive do
   def handle_event("verify_email", %{"user" => %{"email_verification_code" => code}}, socket) do
     user = socket.assigns.user
 
-    if code == socket.assigns.email_code do
-      case Accounts.confirm_user_email(user) do
-        {:ok, _user} ->
-          Track.event("Email verified", user)
-
-          changeset = Accounts.change_user_phone_number(user)
-          {:noreply, socket |> assign(step: :enter_mobile_phone) |> assign_form(changeset)}
-
-        {:error, changeset} ->
-          {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
-      end
+    if is_nil(user) do
+      {:noreply, socket}
     else
-      changeset =
-        user
-        |> Accounts.change_user_registration()
-        |> Ecto.Changeset.add_error(:email_verification_code, "Invalid verification code")
+      socket = maybe_unlock_email_code(socket)
+      normalized_code = normalize_code(code)
+      changeset = email_code_changeset(%{"email_verification_code" => normalized_code})
 
-      {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
+      cond do
+        not changeset.valid? ->
+          {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
+
+        email_code_locked?(socket.assigns.email_code_locked_until) ->
+          locked_changeset =
+            Ecto.Changeset.add_error(
+              changeset,
+              :email_verification_code,
+              "Please wait before trying again."
+            )
+
+          {:noreply, socket |> assign(check_errors: true) |> assign_form(locked_changeset)}
+
+        true ->
+          case Accounts.confirm_user_with_code(user, normalized_code) do
+            {:ok, updated_user} ->
+              Track.event("Email verified", updated_user)
+
+              {:noreply,
+               socket
+               |> assign(:user, updated_user)
+               |> session_login_and_redirect(updated_user)
+               |> reset_email_code_state()}
+
+            {:error, :already_confirmed} ->
+              {:noreply,
+               socket
+               |> session_login_and_redirect(user)
+               |> reset_email_code_state()}
+
+            {:error, :expired} ->
+              expired_changeset =
+                Ecto.Changeset.add_error(
+                  changeset,
+                  :email_verification_code,
+                  "This code has expired. Request a new one and try again."
+                )
+
+              {:noreply, socket |> assign(check_errors: true) |> assign_form(expired_changeset)}
+
+            {:error, :invalid_code} ->
+              socket = increment_email_code_attempts(socket)
+
+              message =
+                if email_code_locked?(socket.assigns.email_code_locked_until) do
+                  "Too many attempts. Please wait before trying again."
+                else
+                  "Invalid verification code"
+                end
+
+              invalid_changeset =
+                Ecto.Changeset.add_error(changeset, :email_verification_code, message)
+
+              {:noreply, socket |> assign(check_errors: true) |> assign_form(invalid_changeset)}
+
+            {:error, _reason} ->
+              generic_changeset =
+                Ecto.Changeset.add_error(
+                  changeset,
+                  :email_verification_code,
+                  "We couldn't verify that code. Please try again."
+                )
+
+              {:noreply, socket |> assign(check_errors: true) |> assign_form(generic_changeset)}
+          end
+      end
     end
   end
 
@@ -482,6 +588,8 @@ defmodule YouCongressWeb.UserRegistrationLive do
         socket
         |> assign(:step, :check_email)
         |> assign(:user, user)
+        |> reset_email_code_state()
+        |> assign_form(email_code_changeset())
 
       {:noreply, socket}
     else
@@ -497,12 +605,90 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
     {:noreply,
      socket
-     |> put_flash(:info, "A new verification URL has been sent to your email.")}
+     |> reset_email_code_state()
+     |> assign_form(email_code_changeset())
+     |> put_flash(:info, "A new verification code has been sent to your email.")}
   end
 
   def handle_event("resend_phone_code", _params, socket) do
     changeset = Accounts.change_user_phone_number(socket.assigns.user)
     {:noreply, assign(socket, :step, :enter_mobile_phone) |> assign_form(changeset)}
+  end
+
+  defp session_login_and_redirect(socket, %User{} = user) do
+    token = Accounts.generate_live_login_token(user)
+
+    socket
+    |> push_event("session-login", %{token: token, redirect_to: ~p"/welcome"})
+    |> assign(:session_login_sent, true)
+  end
+
+  defp email_code_changeset(attrs \\ %{}) do
+    {%{}, %{email_verification_code: :string}}
+    |> Ecto.Changeset.cast(attrs, [:email_verification_code])
+    |> Ecto.Changeset.update_change(:email_verification_code, &normalize_code/1)
+    |> Ecto.Changeset.validate_required([:email_verification_code])
+    |> Ecto.Changeset.validate_format(:email_verification_code, ~r/^\d{6}$/,
+      message: "must be a 6-digit code"
+    )
+  end
+
+  defp normalize_code(value) when is_binary(value) do
+    cleaned =
+      value
+      |> String.replace(~r/[^0-9]/, "")
+      |> String.slice(0, 6)
+
+    cleaned || ""
+  end
+
+  defp normalize_code(_), do: ""
+
+  defp reset_email_code_state(socket) do
+    socket
+    |> assign(:email_code_attempts, 0)
+    |> assign(:email_code_locked_until, nil)
+  end
+
+  defp maybe_unlock_email_code(socket) do
+    case socket.assigns.email_code_locked_until do
+      nil ->
+        socket
+
+      locked_until ->
+        if email_code_lock_remaining(locked_until) == 0 do
+          assign(socket, :email_code_locked_until, nil)
+        else
+          socket
+        end
+    end
+  end
+
+  defp increment_email_code_attempts(socket) do
+    attempts = socket.assigns.email_code_attempts + 1
+
+    if attempts >= @max_email_code_attempts do
+      socket
+      |> assign(:email_code_attempts, 0)
+      |> assign(
+        :email_code_locked_until,
+        DateTime.add(DateTime.utc_now(), @email_code_lock_seconds)
+      )
+    else
+      assign(socket, :email_code_attempts, attempts)
+    end
+  end
+
+  defp email_code_locked?(locked_until) do
+    email_code_lock_remaining(locked_until) > 0
+  end
+
+  defp email_code_lock_remaining(nil), do: 0
+
+  defp email_code_lock_remaining(locked_until) do
+    locked_until
+    |> DateTime.diff(DateTime.utc_now(), :second)
+    |> max(0)
   end
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do

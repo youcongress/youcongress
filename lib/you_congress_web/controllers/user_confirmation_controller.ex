@@ -1,30 +1,12 @@
 defmodule YouCongressWeb.UserConfirmationController do
   use YouCongressWeb, :controller
 
-  alias YouCongress.Accounts
-  alias YouCongress.Accounts.Permissions
-  alias YouCongressWeb.UserAuth
-
-  def confirm(conn, %{"token" => token}) do
-    case Accounts.confirm_user(token) do
-      {:ok, user} ->
-        if Permissions.blocked?(user) do
-          conn
-          |> put_flash(
-            :error,
-            "Your account has been blocked as it seemed spam. If you're a real person or a useful bot, please contact support@youcongress.org if this is an error."
-          )
-          |> redirect(to: ~p"/log_in")
-        else
-          conn
-          |> UserAuth.log_in_user_without_redirect(user)
-          |> redirect(to: ~p"/sign_up")
-        end
-
-      :error ->
-        conn
-        |> put_flash(:error, "User confirmation link is invalid or it has expired.")
-        |> redirect(to: ~p"/log_in")
-    end
+  def confirm(conn, _params) do
+    conn
+    |> put_flash(
+      :info,
+      "We now confirm accounts with six-digit codes. Please enter the code from your email on the sign up screen."
+    )
+    |> redirect(to: ~p"/sign_up")
   end
 end

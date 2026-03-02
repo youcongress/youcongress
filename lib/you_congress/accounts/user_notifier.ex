@@ -131,15 +131,13 @@ defmodule YouCongress.Accounts.UserNotifier do
   @doc """
   Deliver instructions to confirm account.
   """
-  def deliver_confirmation_instructions(%User{} = user, url) do
+  def deliver_confirmation_instructions(%User{} = user, code) do
     text_body = """
     Hi #{user.email},
 
-    Please confirm your YouCongress account by visiting the link below:
+    Your six-digit YouCongress confirmation code is: #{code}
 
-    #{url}
-
-    If you didn't create an account with us, you can safely ignore this email.
+    Enter this code on the sign-up page within 24 hours to verify your email. If you didn't create an account with us, you can safely ignore this email.
     """
 
     html_body =
@@ -147,10 +145,11 @@ defmodule YouCongress.Accounts.UserNotifier do
         "Confirm your email",
         [
           "Thanks for signing up for YouCongress.",
-          "Tap the button below to confirm your email address and start exploring new policies and quotes."
+          "Enter the six-digit code below on the sign-up screen within 24 hours to confirm your email address.",
+          "Confirmation code: #{code}"
         ],
-        "Confirm email",
-        url
+        nil,
+        nil
       )
 
     deliver(user.email, "Confirmation instructions", text_body, html_body)

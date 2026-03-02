@@ -24,13 +24,15 @@ import topbar from "../vendor/topbar"
 import QuoteMenu from "./hooks/quote_menu"
 import FactChecker from "./hooks/fact-checker"
 import Turnstile from "./hooks/turnstile"
+import SessionLogin from "./hooks/session_login"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 
 let Hooks = {
   QuoteMenu: QuoteMenu,
   FactChecker: FactChecker,
-  Turnstile: Turnstile
+  Turnstile: Turnstile,
+  SessionLogin: SessionLogin
 };
 
 let liveSocket = new LiveSocket("/live", Socket, {

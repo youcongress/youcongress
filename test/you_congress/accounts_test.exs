@@ -253,6 +253,41 @@ defmodule YouCongress.AccountsTest do
     end
   end
 
+  describe "generate_live_login_token/1" do
+    test "stores the token with live_login context" do
+      user = user_fixture()
+      _token = Accounts.generate_live_login_token(user)
+
+      assert %UserToken{context: "live_login", user_id: user_id} =
+               Repo.get_by(UserToken, context: "live_login", user_id: user.id)
+
+      assert user_id == user.id
+    end
+  end
+
+  describe "consume_live_login_token/1" do
+    setup do
+      user = user_fixture(%{}, %{}, false)
+      token = Accounts.generate_live_login_token(user)
+      %{user: user, token: token}
+    end
+
+    test "returns the user and deletes the token", %{user: user, token: token} do
+      assert {:ok, returned_user} = Accounts.consume_live_login_token(token)
+      assert returned_user.id == user.id
+      assert Repo.all(UserToken) == []
+    end
+
+    test "returns error for invalid token" do
+      assert Accounts.consume_live_login_token("invalid") == :error
+    end
+
+    test "returns error for expired token", %{token: token} do
+      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      assert Accounts.consume_live_login_token(token) == :error
+    end
+  end
+
   describe "get_user_by_api_key/1" do
     test "returns the API key owner" do
       user = user_fixture()
@@ -283,48 +318,48 @@ defmodule YouCongress.AccountsTest do
     end
 
     test "sends token through notification", %{user: user} do
-      token =
-        extract_user_token(fn url ->
+      code =
+        extract_confirmation_code(fn url ->
           Accounts.deliver_user_confirmation_instructions(user, url)
         end)
 
-      {:ok, token} = Base.url_decode64(token, padding: false)
-      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
+      assert String.length(code) == 6
+      assert user_token = Repo.get_by(UserToken, token: UserToken.hash_token(code))
       assert user_token.user_id == user.id
       assert user_token.sent_to == user.email
       assert user_token.context == "confirm"
     end
   end
 
-  describe "confirm_user/1" do
+  describe "confirm_user_with_code/2" do
     setup do
       user = user_fixture(%{}, %{}, false)
 
-      token =
-        extract_user_token(fn url ->
+      code =
+        extract_confirmation_code(fn url ->
           Accounts.deliver_user_confirmation_instructions(user, url)
         end)
 
-      %{user: user, token: token}
+      %{user: user, code: code}
     end
 
-    test "confirms the email with a valid token", %{user: user, token: token} do
-      assert {:ok, confirmed_user} = Accounts.confirm_user(token)
+    test "confirms the email with a valid code", %{user: user, code: code} do
+      assert {:ok, confirmed_user} = Accounts.confirm_user_with_code(user, code)
       assert confirmed_user.email_confirmed_at
       assert confirmed_user.email_confirmed_at != user.email_confirmed_at
       assert Repo.get!(User, user.id).email_confirmed_at
       refute Repo.get_by(UserToken, user_id: user.id)
     end
 
-    test "does not confirm with invalid token", %{user: user} do
-      assert Accounts.confirm_user("oops") == :error
+    test "does not confirm with invalid code", %{user: user} do
+      assert {:error, :invalid_code} = Accounts.confirm_user_with_code(user, "000000")
       refute Repo.get!(User, user.id).email_confirmed_at
       assert Repo.get_by(UserToken, user_id: user.id)
     end
 
-    test "does not confirm email if token expired", %{user: user, token: token} do
+    test "does not confirm email if code expired", %{user: user, code: code} do
       {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
-      assert Accounts.confirm_user(token) == :error
+      assert {:error, :expired} = Accounts.confirm_user_with_code(user, code)
       refute Repo.get!(User, user.id).email_confirmed_at
       assert Repo.get_by(UserToken, user_id: user.id)
     end
