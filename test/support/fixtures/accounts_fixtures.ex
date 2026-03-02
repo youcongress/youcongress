@@ -94,4 +94,13 @@ defmodule YouCongress.AccountsFixtures do
     [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")
     token
   end
+
+  def extract_confirmation_code(fun) do
+    {:ok, captured_email} = fun.(fn _ -> "" end)
+
+    case Regex.run(~r/code is:\s*(\d{6})/i, captured_email.text_body) do
+      [_, code] -> code
+      _ -> raise "Confirmation code not found in email"
+    end
+  end
 end

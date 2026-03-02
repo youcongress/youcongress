@@ -88,4 +88,24 @@ defmodule YouCongressWeb.UserSessionController do
   def delete(conn, _params) do
     UserAuth.log_out_user(conn)
   end
+
+  def live_login(conn, %{"token" => token}) do
+    case Accounts.consume_live_login_token(token) do
+      {:ok, user} ->
+        conn
+        |> UserAuth.log_in_user_without_redirect(user)
+        |> json(%{success: true})
+
+      :error ->
+        conn
+        |> put_status(:unauthorized)
+        |> json(%{success: false})
+    end
+  end
+
+  def live_login(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{success: false})
+  end
 end

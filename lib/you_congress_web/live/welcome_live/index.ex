@@ -8,14 +8,23 @@ defmodule YouCongressWeb.WelcomeLive.Index do
   @impl true
   def mount(_params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
-    changeset = User.welcome_changeset(socket.assigns.current_user, %{})
 
-    if connected?(socket) do
-      %{assigns: %{current_user: current_user}} = socket
-      Track.event("View Welcome", current_user)
+    case socket.assigns.current_user do
+      %User{} = current_user ->
+        changeset = User.welcome_changeset(current_user, %{})
+
+        if connected?(socket) do
+          Track.event("View Welcome", current_user)
+        end
+
+        {:ok, assign_form(socket, changeset)}
+
+      _ ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Please sign in to continue.")
+         |> redirect(to: ~p"/log_in")}
     end
-
-    {:ok, assign_form(socket, changeset)}
   end
 
   @impl true
