@@ -179,7 +179,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     - Quotes must refer to the whole question and not just a part of it. For example, if the question is "Should we implement universal basic income?", quotes should address universal basic income as a complete policy – not just quotes about poverty reduction, economic stimulus, or welfare reform in general.
     - The quote from the source_url must indicate that the author agrees or disagrees with the whole question (not just a part of it).
     - Quotes should be of two or three paragraphs long and at least three sentences long, if possible.
-    - If the quote is in a different language, translate it to English.
+    - If the quote is in a different language, translate it to English. Make sure the quote returned is in English.
     - Ideally, quotes should be informative about the reasons why they agree or provide other useful information related to the question.
     - The source_url must include the exact quote text. Prefer the original or primary source or, in its absence, a reliable secondary source.
     - If you provide wikipedia_url and https://x.com/[twitter_username], the pages must exist and belong to the author.
@@ -331,7 +331,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
               "quote" => %{
                 type: "string",
                 description:
-                  "The exact quote string (one-three paragraphs maximum, verbatim, ideally of at least three sentences long). Don't use quotation marks."
+                  "The exact quote string in English (one-three paragraphs maximum, verbatim, ideally of at least three sentences long). Don't use quotation marks."
               },
               "source_url" => %{
                 type: "string",
