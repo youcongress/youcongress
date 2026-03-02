@@ -14,6 +14,7 @@ defmodule YouCongress.Accounts.Permissions do
   """
   @spec can_edit_statement?(Statement.t(), User.t()) :: boolean()
   def can_edit_statement?(_statement, %User{role: "admin"}), do: true
+  def can_edit_statement?(%{user_id: id}, %User{id: id}) when id != nil, do: true
   def can_edit_statement?(_, _), do: false
 
   @doc """
