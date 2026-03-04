@@ -380,9 +380,9 @@ defmodule YouCongress.Statements do
 
   def sync_opinions_count(statement) do
     count =
-      from(ov in "opinions_statements",
-        where: ov.statement_id == ^statement.id,
-        select: count(ov.id)
+      from(v in "votes",
+        where: v.statement_id == ^statement.id and not is_nil(v.opinion_id),
+        select: count(v.id)
       )
       |> Repo.one() || 0
 
