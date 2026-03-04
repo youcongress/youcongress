@@ -3,7 +3,7 @@ defmodule YouCongress.Workers.RefreshAuthorStatementDelegatedVotesWorker do
   Updates the delegated votes of an author for a statement.
   """
 
-  use Oban.Worker
+  use Oban.Worker, unique: [states: [:scheduled, :available]]
 
   @impl Oban.Worker
   @spec perform(Oban.Job.t()) :: :ok
