@@ -96,7 +96,7 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
 
     # Show results if user voted in this session
     if voted_this_session do
-      {:ok, assign_results_variables(socket)}
+      {:ok, maybe_assign_results_variables(socket)}
     else
       {:ok, socket}
     end
