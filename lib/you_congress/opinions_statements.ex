@@ -50,13 +50,14 @@ defmodule YouCongress.OpinionsStatements do
       |> Repo.insert()
 
     with {:ok, opinion_statement} <- result do
-      increment_opinions_count(opinion_statement.statement_id)
+      sync_opinions_count(opinion_statement.statement_id)
       {:ok, opinion_statement}
     end
   end
 
-  defp increment_opinions_count(statement_id) do
-    from(s in YouCongress.Statements.Statement, where: s.id == ^statement_id)
-    |> Repo.update_all(inc: [opinions_count: 1])
+  defp sync_opinions_count(statement_id) do
+    %{"statement_id" => statement_id}
+    |> YouCongress.Workers.SyncStatementOpinionsCountWorker.new()
+    |> Oban.insert()
   end
 end
