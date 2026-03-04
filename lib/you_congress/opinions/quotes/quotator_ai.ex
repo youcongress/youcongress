@@ -187,6 +187,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     - The author is the person who wrote the quote. Do not use the media outlet as the author unless the quote is from an editorial by that outlet.
     - Do not include quotes from a document/open letter/paper with multiple signers.
     - The quote must have one single author, a person or an organisation.
+    - If the question starts with `🇪🇸 Congreso, [date]`, it is something voted in the Spanish Congreso de los Diputados. In this case, try to find quotes about that vote from Spanish politicians and experts (but don't be limited to Spanish politicians and experts).
     - Fill all fields in the JSON. Use empty string when unavailable.
     - Carefully analyze each quote to determine the author's agreement level and set agree_rate appropriately to one of "For", "Against" or "Abstain".
     - Do not repeat any author across the #{number_of_quotes()} quotes. No name that appears in any item's authors.name may appear in any other item.#{exclusion_text}
