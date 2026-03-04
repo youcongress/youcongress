@@ -11,7 +11,9 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Votes
 
+  alias YouCongress.Delegations
   alias YouCongress.Statements
+  alias YouCongress.Workers.RefreshAuthorStatementDelegatedVotesWorker
 
   @number_of_quotes 5
   @type quote_item :: map()
@@ -101,6 +103,7 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
            }),
          {:ok, _} <- Votes.update_vote(vote, %{opinion_id: opinion.id, twin: false}),
          :ok <- associate_opinion_with_statement(opinion, statement_id, user_id) do
+      update_delegated_votes_for_author(author.id, statement_id)
       Logger.info("Persisted quote: #{quote_data["quote"]}")
       :ok
     else
@@ -193,6 +196,14 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
       {:ok, _op} -> :ok
       {:error, :already_associated} -> :ok
       {:error, _} = error -> error
+    end
+  end
+
+  defp update_delegated_votes_for_author(author_id, statement_id) do
+    for deleguee_id <- Delegations.deleguee_ids_by_delegate_id(author_id) do
+      %{"author_id" => deleguee_id, "statement_id" => statement_id}
+      |> RefreshAuthorStatementDelegatedVotesWorker.new()
+      |> Oban.insert()
     end
   end
 

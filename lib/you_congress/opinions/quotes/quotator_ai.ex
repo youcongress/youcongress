@@ -175,7 +175,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     - The source_url must exist, be a primary source or a reliable secondary source and contain the exact quote text.
     - Each quote must address the COMPLETE question, not just a subset or aspect of it. The author's position must be clear regarding the entire question as stated.
     - Each of the #{number_of_quotes()} quotes must be verbatim and attributable.
-    - If all the text of the quote is not consecutive, use [...] to indicate the missing text/s.
+    - If all the text of the quote is not consecutive, use [...] to indicate the missing text/s. Don't add more than two [...] in a quote.
     - Quotes must refer to the whole question and not just a part of it. For example, if the question is "Should we implement universal basic income?", quotes should address universal basic income as a complete policy – not just quotes about poverty reduction, economic stimulus, or welfare reform in general.
     - The quote from the source_url must indicate that the author agrees or disagrees with the whole question (not just a part of it).
     - Quotes should be of two or three paragraphs long and at least three sentences long, if possible.
