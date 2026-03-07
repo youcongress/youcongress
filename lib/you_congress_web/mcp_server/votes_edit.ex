@@ -1,6 +1,7 @@
 defmodule YouCongressWeb.MCPServer.VotesEdit do
   @moduledoc """
   Edit an existing vote through the MCP server.
+  answer must be one of: for, against, or abstain
 
   The caller must provide a valid API key via the `?key=` query param and have
   permission to edit the target vote.
