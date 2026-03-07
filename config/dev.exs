@@ -26,8 +26,6 @@ config :you_congress, YouCongress.Repo,
 
 dev_port = System.get_env("PORT") || 4000
 
-dev_port = System.get_env("PORT") || 4000
-
 config :you_congress, YouCongressWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
