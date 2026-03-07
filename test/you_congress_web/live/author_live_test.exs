@@ -80,10 +80,23 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
     test "displays author", %{conn: conn, author: author} do
       conn = log_in_as_user(conn)
-      {:ok, _show_live, html} = live(conn, ~p"/x/#{author.twitter_username}")
+      {:ok, show_live, html} = live(conn, ~p"/x/#{author.twitter_username}")
 
       assert html =~ author.name
       assert html =~ author.bio
+
+      assert has_element?(
+               show_live,
+               "a[aria-label='Open X profile for #{author.twitter_username}']"
+             )
+
+      assert has_element?(show_live, "a[href='https://x.com/#{author.twitter_username}']")
+      assert has_element?(show_live, "img[src='/images/x.svg'][alt='X']")
+      assert has_element?(show_live, "a[aria-label='Open Wikipedia page']")
+      assert has_element?(show_live, "a[href='#{author.wikipedia_url}']")
+      assert has_element?(show_live, "img[src='/images/wikipedia.svg'][alt='Wikipedia']")
+      refute html =~ "X: @#{author.twitter_username}"
+      refute has_element?(show_live, "a", "Wikipedia")
     end
 
     test "updates author within modal", %{conn: conn, author: author} do
