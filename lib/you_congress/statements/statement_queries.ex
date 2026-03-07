@@ -109,18 +109,12 @@ defmodule YouCongress.Statements.StatementQueries do
   - :hall_name - filter by hall (default "all")
   - :top_author_ids - IDs of top authors for prioritization
     (defaults to all wikipedia-author IDs when omitted)
-  - :wikipedia_author_ids - IDs of wikipedia authors for secondary prioritization
-    (defaults to all wikipedia-author IDs not in :top_author_ids when omitted)
   - :offset - number of cards to skip
   - :limit - max cards to return
   """
   def get_opinion_cards_round_robin(opts \\ []) do
     hall_name = Keyword.get(opts, :hall_name, "all")
-    top_author_ids = Keyword.get(opts, :top_author_ids, [])
-    wikipedia_author_ids = Keyword.get(opts, :wikipedia_author_ids, [])
-
-    {top_author_ids, wikipedia_author_ids} =
-      resolve_priority_author_ids(top_author_ids, wikipedia_author_ids)
+    {top_author_ids, wikipedia_author_ids} = resolve_priority_author_ids(opts)
 
     offset = Keyword.get(opts, :offset, 0)
     limit = Keyword.get(opts, :limit, 15)
@@ -239,22 +233,13 @@ defmodule YouCongress.Statements.StatementQueries do
     end
   end
 
-  defp resolve_priority_author_ids(top_author_ids, wikipedia_author_ids) do
-    top_author_ids = top_author_ids || []
-    wikipedia_author_ids = wikipedia_author_ids || []
+  defp resolve_priority_author_ids(opts) do
+    top_author_ids = Keyword.get(opts, :top_author_ids, [])
 
-    cond do
-      top_author_ids == [] && wikipedia_author_ids == [] ->
-        {Authors.get_wikipedia_author_ids(), []}
-
-      top_author_ids == [] ->
-        {wikipedia_author_ids, []}
-
-      wikipedia_author_ids == [] ->
-        {top_author_ids, Authors.get_wikipedia_author_ids(top_author_ids)}
-
-      true ->
-        {top_author_ids, wikipedia_author_ids}
+    if top_author_ids == [] do
+      {Authors.get_wikipedia_author_ids(), []}
+    else
+      {top_author_ids, Authors.get_wikipedia_author_ids(top_author_ids)}
     end
   end
 
