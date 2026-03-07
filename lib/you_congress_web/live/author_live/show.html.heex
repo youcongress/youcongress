@@ -1,5 +1,34 @@
 <.header>
-  {@author.name || "Anonymous"}
+  <span class="inline-flex items-center gap-2 flex-wrap">
+    <span>{@author.name || "Anonymous"}</span>
+    <span
+      :if={@author.twitter_username || @author.wikipedia_url}
+      class="inline-flex items-center gap-1"
+    >
+      <%= if @author.twitter_username do %>
+        <.link
+          navigate={"https://x.com/" <> @author.twitter_username}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={"Open X profile for " <> @author.twitter_username}
+          class="inline-flex items-center rounded-sm p-1 hover:bg-gray-100"
+        >
+          <img src="/images/x.svg" alt="X" class="h-4 w-4" />
+        </.link>
+      <% end %>
+      <%= if @author.wikipedia_url do %>
+        <.link
+          navigate={@author.wikipedia_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open Wikipedia page"
+          class="inline-flex items-center rounded-sm p-1 hover:bg-gray-100"
+        >
+          <img src="/images/wikipedia.svg" alt="Wikipedia" class="h-4 w-4" />
+        </.link>
+      <% end %>
+    </span>
+  </span>
   <:actions>
     <%= unless @author_has_user? do %>
       <.link
@@ -54,34 +83,8 @@
   </.link>
 
   <div class="pt-6 space-y-2">
-    <%= if @author.twitter_username || @author.wikipedia_url do %>
-      <div class="flex items-center gap-2">
-        <%= if @author.twitter_username do %>
-          <.link
-            navigate={"https://x.com/" <> @author.twitter_username}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={"Open X profile for " <> @author.twitter_username}
-            class="inline-flex items-center rounded-sm p-1 hover:bg-gray-100"
-          >
-            <img src="/images/x.svg" alt="X" class="h-4 w-4" />
-          </.link>
-        <% end %>
-        <%= if @author.wikipedia_url do %>
-          <.link
-            navigate={@author.wikipedia_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Open Wikipedia page"
-            class="inline-flex items-center rounded-sm p-1 hover:bg-gray-100"
-          >
-            <img src="/images/wikipedia.svg" alt="Wikipedia" class="h-4 w-4" />
-          </.link>
-        <% end %>
-      </div>
-    <% end %>
     <%= if @author.country || @author.location do %>
-      <div>
+      <div class="text-sm text-gray-600">
         Location: {@author.country || @author.location}
       </div>
     <% end %>
