@@ -57,6 +57,14 @@ defmodule YouCongress.Accounts.Permissions do
   def can_edit_opinion?(_opinion, _user), do: false
 
   @doc """
+  Checks if the user can edit the given vote.
+  """
+  def can_edit_vote?(%{author_id: id}, %User{author_id: id}) when id != nil, do: true
+  def can_edit_vote?(_vote, %User{role: "admin"}), do: true
+  def can_edit_vote?(_vote, %User{role: "moderator"}), do: true
+  def can_edit_vote?(_vote, _user), do: false
+
+  @doc """
   Any logged-in user can verify opinions.
   """
   def can_verify_opinion?(%User{}), do: true
