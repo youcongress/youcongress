@@ -41,7 +41,9 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
     test "updates an opinion when authenticated and authorized" do
       owner = user_fixture()
       api_key = api_key_fixture(owner)
-      opinion = opinion_fixture(%{user_id: owner.id, author_id: owner.author_id, content: "Before"})
+
+      opinion =
+        opinion_fixture(%{user_id: owner.id, author_id: owner.author_id, content: "Before"})
 
       with_mocked_response_and_key(api_key.token, fn ->
         assert {:reply, {:json, %{opinion: payload}}, :frame} =
@@ -89,7 +91,9 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       owner = user_fixture()
       other_user = user_fixture()
       api_key = api_key_fixture(other_user)
-      opinion = opinion_fixture(%{user_id: owner.id, author_id: owner.author_id, content: "Before"})
+
+      opinion =
+        opinion_fixture(%{user_id: owner.id, author_id: owner.author_id, content: "Before"})
 
       with_mocked_response_and_key(api_key.token, fn ->
         assert {:reply, {:error, "Your account is not allowed to edit this opinion."}, :frame} =
