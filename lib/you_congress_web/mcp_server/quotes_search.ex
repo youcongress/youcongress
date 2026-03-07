@@ -52,6 +52,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
   defp take_fields(opinions) do
     Enum.map(opinions, fn opinion ->
       %{
+        opinion_id: opinion.id,
         quote: opinion.content,
         author: opinion.author.name,
         author_biography: opinion.author.bio,
