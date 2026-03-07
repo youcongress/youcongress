@@ -84,7 +84,12 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       assert html =~ author.name
       assert html =~ author.bio
-      assert has_element?(show_live, "a[aria-label='Open X profile for #{author.twitter_username}']")
+
+      assert has_element?(
+               show_live,
+               "a[aria-label='Open X profile for #{author.twitter_username}']"
+             )
+
       assert has_element?(show_live, "a[href='https://x.com/#{author.twitter_username}']")
       assert has_element?(show_live, "img[src='/images/x.svg'][alt='X']")
       assert has_element?(show_live, "a[aria-label='Open Wikipedia page']")
