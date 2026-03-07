@@ -7,8 +7,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorFake do
   alias YouCongress.Opinions.Quotes.Quotator
 
   @doc """
-  Generate 20 fake quotes for a given question title.
-  Returns {:ok, %{quotes: list, cost: 0}} to match the real implementation.
+  Generate and persist fake quotes for a given question title.
+  Returns `{:ok, :job_started}` to match the real implementation contract.
   """
   @spec find_quotes(
           integer,
@@ -19,12 +19,12 @@ defmodule YouCongress.Opinions.Quotes.QuotatorFake do
           integer(),
           integer()
         ) ::
-          {:ok, %{quotes: list, cost: number}}
+          {:ok, :job_started}
   def find_quotes(
-        _statement_id,
+        statement_id,
         question_title,
         exclude_author_names,
-        _user_id,
+        user_id,
         _max_remaining_llm_calls,
         _max_remaining_quotes,
         _total_quotes_added \\ 0
@@ -34,7 +34,14 @@ defmodule YouCongress.Opinions.Quotes.QuotatorFake do
       |> Enum.map(fn _ -> build_quote(question_title) end)
       |> ensure_unique_names(exclude_author_names)
 
-    {:ok, %{quotes: quotes, cost: 0}}
+    {:ok, _saved_count} =
+      Quotator.save_quotes_from_job(%{
+        statement_id: statement_id,
+        quotes: quotes,
+        user_id: user_id
+      })
+
+    {:ok, :job_started}
   end
 
   defp build_quote(question_title) do

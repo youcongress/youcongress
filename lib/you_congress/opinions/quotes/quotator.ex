@@ -32,7 +32,7 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
           integer(),
           integer()
         ) ::
-          {:ok, integer()} | {:error, any()}
+          {:ok, :job_started} | {:error, any()}
   def find_and_save_quotes(
         statement_id,
         exclude_existent_names,
@@ -54,9 +54,6 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
          ) do
       {:ok, :job_started} ->
         {:ok, :job_started}
-
-      {:ok, %{quotes: quotes}} ->
-        save_quotes(%{statement_id: statement_id, quotes: quotes, user_id: user_id})
 
       {:error, reason} ->
         Logger.error("Failed to find quotes: #{inspect(reason)}")

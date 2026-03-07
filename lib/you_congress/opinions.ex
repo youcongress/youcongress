@@ -9,6 +9,7 @@ defmodule YouCongress.Opinions do
   alias YouCongress.Likes
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
+  alias YouCongress.Votes.Vote
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
   alias YouCongress.Workers.SyncStatementOpinionsCountWorker
 
@@ -160,16 +161,35 @@ defmodule YouCongress.Opinions do
     statement_ids =
       from(os in "opinions_statements",
         where: os.opinion_id == ^opinion.id,
-        select: os.statement_id
+        select: os.statement_id,
+        distinct: true
       )
       |> Repo.all()
 
     Ecto.Multi.new()
+    |> maybe_delete_inferred_quote_votes(opinion, statement_ids)
     |> Ecto.Multi.delete(:opinion, opinion)
     |> enqueue_update_ancestor_counts(opinion.ancestry)
     |> enqueue_sync_opinions_count(statement_ids)
     |> Repo.transaction()
     |> handle_transaction_result()
+  end
+
+  defp maybe_delete_inferred_quote_votes(multi, %Opinion{source_url: nil}, _statement_ids),
+    do: multi
+
+  defp maybe_delete_inferred_quote_votes(multi, %Opinion{author_id: nil}, _statement_ids),
+    do: multi
+
+  defp maybe_delete_inferred_quote_votes(multi, _opinion, []), do: multi
+
+  defp maybe_delete_inferred_quote_votes(multi, %Opinion{author_id: author_id}, statement_ids) do
+    inferred_votes_query =
+      from(v in Vote,
+        where: v.author_id == ^author_id and v.statement_id in ^statement_ids
+      )
+
+    Ecto.Multi.delete_all(multi, :inferred_quote_votes, inferred_votes_query)
   end
 
   @doc """
