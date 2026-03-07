@@ -44,7 +44,7 @@ defmodule YouCongressWeb.StatementLiveTest do
       conn = log_in_as_user(conn)
       {:ok, index_live, _html} = live(conn, ~p"/")
 
-      # Switch to New mode to see the statement (default is Top mode which filters by top authors)
+      # Switch to New mode to see the statement (default is Top mode which filters by Wikipedia authors)
       index_live |> element("button[phx-click='toggle-switch']") |> render_click()
 
       assert render(index_live) =~ statement.title

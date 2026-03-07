@@ -24,32 +24,6 @@ defmodule YouCongressWeb.StatementLive.Index do
   alias YouCongressWeb.AuthorLive.Show, as: AuthorShow
   alias YouCongressWeb.StatementLive.VoteComponent
 
-  @top_author_names [
-    "Stuart J. Russell",
-    "Demis Hassabis",
-    "Scott Alexander",
-    "Yoshua Bengio",
-    "Eliezer Yudkowsky",
-    "Yann LeCun",
-    "Geoffrey Hinton",
-    "Gary Marcus",
-    "Dario Amodei",
-    "Sam Altman",
-    "Elon Musk",
-    "Max Tegmark",
-    "Nick Bostrom",
-    "Tim Berners-Lee",
-    "Mustafa Suleyman",
-    "Fei-Fei Li",
-    "Marc Andreessen",
-    "Andrew Ng",
-    "Kai-Fu Lee",
-    "Yuval Noah Harari",
-    "Ilya Sutskever",
-    "Max Tegmark",
-    "Pope Francis"
-  ]
-
   @featured_author_names [
     "Geoffrey Hinton",
     "Demis Hassabis",
@@ -308,11 +282,6 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   defp assign_tab_from_params(socket, _tab), do: socket
 
-  defp get_top_author_ids do
-    Authors.list_authors(names: @top_author_names)
-    |> Enum.map(& &1.id)
-  end
-
   defp load_votes(_, nil), do: %{}
 
   defp load_votes(statement_ids, current_user) do
@@ -340,7 +309,7 @@ defmodule YouCongressWeb.StatementLive.Index do
     Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
   end
 
-  # For "Top" mode: use round-robin opinion cards
+  # For "Top" mode: use round-robin opinion cards from authors with Wikipedia pages
   # For "New" mode: opinions ordered by most recently updated, statements can repeat
   defp assign_cards(socket, page) do
     %{
@@ -363,14 +332,10 @@ defmodule YouCongressWeb.StatementLive.Index do
           limit: per_page
         )
       else
-        # Top mode: round-robin all opinions
-        top_author_ids = get_top_author_ids()
-        wikipedia_author_ids = Authors.get_wikipedia_author_ids(top_author_ids)
-
+        # Top mode: round-robin opinions from authors with Wikipedia pages
         StatementQueries.get_opinion_cards_round_robin(
           hall_name: hall_name,
-          top_author_ids: top_author_ids,
-          wikipedia_author_ids: wikipedia_author_ids,
+          wikipedia_only: true,
           offset: offset,
           limit: per_page
         )

@@ -26,8 +26,8 @@ defmodule YouCongressWeb.HomeLiveTest do
     statement
   end
 
-  defp add_opinion_to_statement(statement) do
-    author = author_fixture()
+  defp add_opinion_to_statement(statement, author_attrs \\ %{}) do
+    author = author_fixture(author_attrs)
     opinion = opinion_fixture(%{author_id: author.id, content: "Test opinion"})
 
     _vote =
@@ -43,6 +43,25 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ "Search AI quotes, people, policies..."
     end
 
+    test "shows only statements with wikipedia-backed opinions in Top mode by default", %{
+      conn: conn
+    } do
+      wikipedia_statement =
+        statement_fixture(title: "Wikipedia-backed AI Statement")
+        |> add_statement_to_ai_hall()
+        |> add_opinion_to_statement()
+
+      non_wikipedia_statement =
+        statement_fixture(title: "Non-Wikipedia AI Statement")
+        |> add_statement_to_ai_hall()
+        |> add_opinion_to_statement(%{wikipedia_url: nil})
+
+      {:ok, _view, html} = live(conn, ~p"/")
+
+      assert html =~ wikipedia_statement.title
+      refute html =~ non_wikipedia_statement.title
+    end
+
     test "shows statements feed in New mode", %{conn: conn} do
       statement =
         statement_fixture(title: "AI Safety Statement")
@@ -51,7 +70,7 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/")
 
-      # Switch to New mode (default is Top mode which filters by top authors)
+      # Switch to New mode (default is Top mode which filters by Wikipedia authors)
       view |> element("button[phx-click='toggle-switch']") |> render_click()
 
       assert render(view) =~ statement.title
@@ -64,7 +83,7 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/")
 
-      # Switch to New mode to see the statement
+      # Switch to New mode to see the statement regardless of Wikipedia metadata
       view |> element("button[phx-click='toggle-switch']") |> render_click()
 
       # Vote For
@@ -104,7 +123,7 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/")
 
-      # Switch to New mode to see the statement
+      # Switch to New mode to see the statement regardless of Wikipedia metadata
       view |> element("button[phx-click='toggle-switch']") |> render_click()
 
       # Vote For
