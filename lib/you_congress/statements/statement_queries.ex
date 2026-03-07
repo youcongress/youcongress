@@ -6,6 +6,7 @@ defmodule YouCongress.Statements.StatementQueries do
   import Ecto.Query, warn: false
   alias YouCongress.Repo
 
+  alias YouCongress.Authors
   alias YouCongress.Votes.Vote
   alias YouCongress.Statements.Statement
   alias YouCongress.Statements.OpinionCard
@@ -107,7 +108,9 @@ defmodule YouCongress.Statements.StatementQueries do
   Options:
   - :hall_name - filter by hall (default "all")
   - :top_author_ids - IDs of top authors for prioritization
+    (defaults to all wikipedia-author IDs when omitted)
   - :wikipedia_author_ids - IDs of wikipedia authors for secondary prioritization
+    (defaults to all wikipedia-author IDs not in :top_author_ids when omitted)
   - :offset - number of cards to skip
   - :limit - max cards to return
   """
@@ -115,6 +118,10 @@ defmodule YouCongress.Statements.StatementQueries do
     hall_name = Keyword.get(opts, :hall_name, "all")
     top_author_ids = Keyword.get(opts, :top_author_ids, [])
     wikipedia_author_ids = Keyword.get(opts, :wikipedia_author_ids, [])
+
+    {top_author_ids, wikipedia_author_ids} =
+      resolve_priority_author_ids(top_author_ids, wikipedia_author_ids)
+
     offset = Keyword.get(opts, :offset, 0)
     limit = Keyword.get(opts, :limit, 15)
 
@@ -229,6 +236,25 @@ defmodule YouCongress.Statements.StatementQueries do
           round: round
         }
       end)
+    end
+  end
+
+  defp resolve_priority_author_ids(top_author_ids, wikipedia_author_ids) do
+    top_author_ids = top_author_ids || []
+    wikipedia_author_ids = wikipedia_author_ids || []
+
+    cond do
+      top_author_ids == [] && wikipedia_author_ids == [] ->
+        {Authors.get_wikipedia_author_ids(), []}
+
+      top_author_ids == [] ->
+        {wikipedia_author_ids, []}
+
+      wikipedia_author_ids == [] ->
+        {top_author_ids, Authors.get_wikipedia_author_ids(top_author_ids)}
+
+      true ->
+        {top_author_ids, wikipedia_author_ids}
     end
   end
 

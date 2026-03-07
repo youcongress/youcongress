@@ -333,13 +333,8 @@ defmodule YouCongressWeb.StatementLive.Index do
         )
       else
         # Top mode: round-robin all opinions
-        # Prioritize all authors with a wikipedia_url instead of a fixed hardcoded author list.
-        top_author_ids = Authors.get_wikipedia_author_ids()
-
         StatementQueries.get_opinion_cards_round_robin(
           hall_name: hall_name,
-          top_author_ids: top_author_ids,
-          wikipedia_author_ids: [],
           offset: offset,
           limit: per_page
         )
