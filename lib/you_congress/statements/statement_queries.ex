@@ -108,6 +108,7 @@ defmodule YouCongress.Statements.StatementQueries do
   - :hall_name - filter by hall (default "all")
   - :top_author_ids - IDs of top authors for prioritization
   - :wikipedia_author_ids - IDs of wikipedia authors for secondary prioritization
+  - :wikipedia_only - restrict results to authors with a wikipedia_url (default false)
   - :offset - number of cards to skip
   - :limit - max cards to return
   """
@@ -115,6 +116,7 @@ defmodule YouCongress.Statements.StatementQueries do
     hall_name = Keyword.get(opts, :hall_name, "all")
     top_author_ids = Keyword.get(opts, :top_author_ids, [])
     wikipedia_author_ids = Keyword.get(opts, :wikipedia_author_ids, [])
+    wikipedia_only = Keyword.get(opts, :wikipedia_only, false)
     offset = Keyword.get(opts, :offset, 0)
     limit = Keyword.get(opts, :limit, 15)
 
@@ -136,6 +138,13 @@ defmodule YouCongress.Statements.StatementQueries do
          param_idx + 1}
       else
         {"", [], param_idx}
+      end
+
+    {author_join, author_filter} =
+      if wikipedia_only do
+        {"JOIN authors a ON a.id = v.author_id", "AND a.wikipedia_url IS NOT NULL"}
+      else
+        {"", ""}
       end
 
     # Priority expression with author params
@@ -177,7 +186,9 @@ defmodule YouCongress.Statements.StatementQueries do
       JOIN opinions o ON o.id = v.opinion_id
       JOIN statements s ON s.id = v.statement_id
       #{hall_filter}
+      #{author_join}
       WHERE v.opinion_id IS NOT NULL
+      #{author_filter}
     )
     SELECT rv.vote_id, rv.statement_id, rv.round_number
     FROM ranked_votes rv
