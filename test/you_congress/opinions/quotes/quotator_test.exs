@@ -7,20 +7,17 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
   alias YouCongress.Opinions.Quotes.Quotator
   alias YouCongress.{Votes, Opinions}
 
-  describe "find_and_save_quotes/3 with QuotatorFake" do
-    test "forwards exclude list, sets generating counters, and creates votes/opinions" do
+  describe "find_and_save_quotes/6 with QuotatorFake" do
+    test "returns the same contract as the AI quotator and creates votes/opinions" do
       statement = statement_fixture(%{title: "Test Statement Title"})
       user = user_fixture(%{name: "Test User"})
 
       exclude = ["Excluded Name"]
 
-      assert {:ok, saved_count} =
+      assert {:ok, :job_started} =
                Quotator.find_and_save_quotes(statement.id, exclude, user.id, 1, 1)
 
-      # Association step requires user_id for join table; we expect 0 persisted in that step
-      assert saved_count == Quotator.number_of_quotes()
-
-      # 20 votes should be created for the generated quotes
+      # The fake persists quotes synchronously, but exposes the same return value as production.
       assert Votes.count_by_statement(statement.id) == Quotator.number_of_quotes()
 
       votes = Votes.list_votes(statement.id)
