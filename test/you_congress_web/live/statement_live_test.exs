@@ -91,6 +91,58 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ "some updated comment"
     end
 
+    test "top mode includes wikipedia authors outside the old hardcoded list", %{conn: conn} do
+      top_author =
+        author_fixture(%{
+          name: "Geoffrey Hinton",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Geoffrey_Hinton"
+        })
+
+      for i <- 1..20 do
+        top_statement = statement_fixture(%{title: "Top author statement #{i}"})
+        {:ok, _} = HallsStatements.sync!(top_statement.id, %{main_tag: "ai", other_tags: []})
+
+        top_opinion =
+          opinion_fixture(%{
+            statement_id: top_statement.id,
+            author_id: top_author.id,
+            content: "Top opinion #{i}"
+          })
+
+        vote_fixture(%{
+          statement_id: top_statement.id,
+          author_id: top_author.id,
+          opinion_id: top_opinion.id
+        })
+      end
+
+      wikipedia_author =
+        author_fixture(%{
+          name: "Ada Lovelace",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Ada_Lovelace"
+        })
+
+      wikipedia_statement = statement_fixture(%{title: "Wikipedia author statement"})
+      {:ok, _} = HallsStatements.sync!(wikipedia_statement.id, %{main_tag: "ai", other_tags: []})
+
+      wikipedia_opinion =
+        opinion_fixture(%{
+          statement_id: wikipedia_statement.id,
+          author_id: wikipedia_author.id,
+          content: "Wikipedia opinion"
+        })
+
+      vote_fixture(%{
+        statement_id: wikipedia_statement.id,
+        author_id: wikipedia_author.id,
+        opinion_id: wikipedia_opinion.id
+      })
+
+      {:ok, _index_live, html} = live(conn, ~p"/")
+
+      assert html =~ wikipedia_statement.title
+    end
+
     test "saves new statement and redirect to show", %{conn: conn} do
       with_mocks([
         {YouCongress.Statements.TitleRewording, [],
