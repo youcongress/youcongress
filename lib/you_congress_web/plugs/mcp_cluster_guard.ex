@@ -61,7 +61,7 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuard do
 
       nil ->
         log_missing_session(session_id)
-        conn
+        reject_stale_session(conn)
     end
   end
 
@@ -74,8 +74,16 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuard do
     end
   end
 
+  defp reject_stale_session(conn) do
+    conn
+    |> delete_resp_cookie("_you_congress_mcp_session", path: "/mcp")
+    |> put_resp_content_type("application/json")
+    |> send_resp(404, Jason.encode!(%{error: "Session not found. Please re-initialize."}))
+    |> halt()
+  end
+
   defp log_missing_session(session_id) do
     level = if Application.get_env(:you_congress, :env) == :prod, do: :warning, else: :debug
-    Logger.log(level, "MCP session #{session_id} not found on any node. Passing through.")
+    Logger.log(level, "MCP session #{session_id} not found on any node.")
   end
 end

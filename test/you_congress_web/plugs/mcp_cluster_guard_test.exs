@@ -39,7 +39,7 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuardTest do
     end
   end
 
-  test "passes through when session not found anywhere" do
+  test "returns 404 when session not found anywhere" do
     with_mocks([
       {Registry, [], [lookup: fn _registry, _key -> [] end]},
       {YouCongressWeb.ClusterUtils, [], [find_session_owner: fn _mod, _func, _args -> nil end]}
@@ -49,7 +49,8 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuardTest do
         |> put_req_header("mcp-session-id", "unknown-session")
         |> MCPClusterGuard.call([])
 
-      refute conn.halted
+      assert conn.halted
+      assert conn.status == 404
     end
   end
 
