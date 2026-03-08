@@ -3,15 +3,116 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
 
   import Mock
   import YouCongress.AccountsFixtures
+  import YouCongress.StatementsFixtures
   import YouCongress.VotesFixtures
 
   alias YouCongress.Accounts
   alias YouCongress.Votes
+  alias YouCongressWeb.MCPServer.VotesCreate
   alias YouCongressWeb.MCPServer.VotesEdit
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @not_found_message "Vote not found."
+
+  describe "VotesCreate.execute/2" do
+    test "creates a vote when authenticated and authorized" do
+      owner = user_fixture()
+      api_key = api_key_fixture(owner)
+      statement = statement_fixture()
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply, {:json, %{vote: payload}}, :frame} =
+                 VotesCreate.execute(
+                   %{
+                     statement_id: statement.id,
+                     author_id: owner.author_id,
+                     answer: "against",
+                     direct: false,
+                     twin: true
+                   },
+                   :frame
+                 )
+
+        assert payload.statement_id == statement.id
+        assert payload.author_id == owner.author_id
+        assert payload.answer == "against"
+        refute payload.direct
+        assert payload.twin
+      end)
+
+      vote = Votes.get_by(%{statement_id: statement.id, author_id: owner.author_id})
+      refute vote.direct
+      assert vote.twin
+      assert vote.answer == :against
+    end
+
+    test "returns missing-key error when no API key is provided" do
+      owner = user_fixture()
+      statement = statement_fixture()
+
+      with_mocked_response_and_key(nil, fn ->
+        assert {:reply, {:error, @missing_key_message}, :frame} =
+                 VotesCreate.execute(
+                   %{statement_id: statement.id, author_id: owner.author_id, answer: "for"},
+                   :frame
+                 )
+      end)
+    end
+
+    test "returns invalid-key error when API key token is unknown" do
+      owner = user_fixture()
+      statement = statement_fixture()
+
+      with_mocked_response_and_key("invalid-token", fn ->
+        assert {:reply, {:error, @invalid_key_message}, :frame} =
+                 VotesCreate.execute(
+                   %{statement_id: statement.id, author_id: owner.author_id, answer: "for"},
+                   :frame
+                 )
+      end)
+    end
+
+    test "returns forbidden when caller cannot create the vote" do
+      owner = user_fixture()
+      other_user = user_fixture()
+      api_key = api_key_fixture(other_user)
+      statement = statement_fixture()
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply, {:error, "Your account is not allowed to create this vote."}, :frame} =
+                 VotesCreate.execute(
+                   %{statement_id: statement.id, author_id: owner.author_id, answer: "for"},
+                   :frame
+                 )
+      end)
+
+      assert Votes.get_by(%{statement_id: statement.id, author_id: owner.author_id}) == nil
+    end
+
+    test "returns duplicate error if the author already voted for the statement" do
+      owner = user_fixture()
+      api_key = api_key_fixture(owner)
+      vote = vote_fixture(%{author_id: owner.author_id, answer: :for})
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply,
+                {:error, "This author already has a vote for the selected statement."},
+                :frame} =
+                 VotesCreate.execute(
+                   %{
+                     statement_id: vote.statement_id,
+                     author_id: vote.author_id,
+                     answer: "against"
+                   },
+                   :frame
+                 )
+      end)
+
+      assert Votes.get_by(%{statement_id: vote.statement_id, author_id: vote.author_id}).id ==
+               vote.id
+    end
+  end
 
   describe "VotesEdit.execute/2" do
     test "updates a vote when authenticated and authorized" do
