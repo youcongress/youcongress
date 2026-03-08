@@ -41,6 +41,9 @@ defmodule YouCongress.Votes do
         {:statement_ids, statement_ids}, query ->
           where(query, [v], v.statement_id in ^statement_ids)
 
+        {:opinion_ids, opinion_ids}, query ->
+          where(query, [v], v.opinion_id in ^opinion_ids)
+
         {:twin, twin}, query ->
           where(query, [v], v.twin == ^twin)
 
