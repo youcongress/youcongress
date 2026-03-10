@@ -100,7 +100,9 @@ defmodule YouCongress.Halls.Hall do
     "ai-risk",
     "existential-risk",
     "cern-for-ai",
-    "impact-on-labor"
+    "impact-on-labor",
+    "us-congress",
+    "congreso-es"
   ]
   @names_str Enum.join(@names, ",")
 
