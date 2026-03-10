@@ -33,16 +33,13 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
       <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
         <div class="flex flex-wrap gap-2">
           <%= if @hall_name in Enum.map(@featured_halls, &elem(&1, 0)) do %>
-            <%= for {{hall_slug, hall_title}, idx} <- Enum.with_index(@featured_halls) do %>
+            <%= for {hall_slug, hall_title} <- @featured_halls do %>
               <HallNav.pill
                 url_hall_name={@hall_name}
                 hall_name={hall_slug}
                 hall_link={hall_link(hall_slug)}
                 hall_title={hall_title}
               />
-              <%= if rem(idx + 1, 3) == 0 and idx + 1 < length(@featured_halls) do %>
-                <div class="basis-full md:hidden"></div>
-              <% end %>
             <% end %>
           <% else %>
             <HallNav.pill
