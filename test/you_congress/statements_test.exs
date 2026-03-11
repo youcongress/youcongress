@@ -76,5 +76,41 @@ defmodule YouCongress.StatementsTest do
       statement = statement_fixture()
       assert %Ecto.Changeset{} = Statements.change_statement(statement)
     end
+
+    test "create_statement/1 uses provided slug when it doesn't exist" do
+      assert {:ok, %Statement{} = statement} =
+               Statements.create_statement(%{title: "Build a CERN for AI", slug: "build-cern-ai"})
+
+      assert statement.slug == "build-cern-ai"
+    end
+
+    test "create_statement/1 appends number to slug when it already exists" do
+      statement_fixture(%{title: "First statement", slug: "build-cern-ai"})
+
+      assert {:ok, %Statement{} = statement} =
+               Statements.create_statement(%{title: "Build a CERN for AI", slug: "build-cern-ai"})
+
+      assert statement.slug == "build-cern-ai2"
+    end
+
+    test "create_statement/1 increments slug number until unique" do
+      statement_fixture(%{title: "First", slug: "my-slug"})
+      statement_fixture(%{title: "Second", slug: "my-slug2"})
+      statement_fixture(%{title: "Third", slug: "my-slug3"})
+
+      assert {:ok, %Statement{} = statement} =
+               Statements.create_statement(%{title: "Fourth", slug: "my-slug"})
+
+      assert statement.slug == "my-slug4"
+    end
+
+    test "update_statement/2 preserves existing slug when slug is not changed" do
+      statement = statement_fixture(%{slug: "original-slug"})
+
+      assert {:ok, %Statement{} = updated} =
+               Statements.update_statement(statement, %{title: "Updated title"})
+
+      assert updated.slug == "original-slug"
+    end
   end
 end
