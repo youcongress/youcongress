@@ -55,15 +55,16 @@ defmodule YouCongressWeb.StatementLive.NewFormComponent do
                   </button>
                 </p>
                 <div class="space-y-3">
-                  <%= for suggested_title <- @suggested_titles do %>
+                  <%= for suggestion <- @suggested_titles do %>
                     <div class="transform transition-all hover:scale-[1.01]">
                       <button
                         phx-click="save"
-                        phx-value-suggested_title={suggested_title}
+                        phx-value-suggested_title={suggestion.title}
+                        phx-value-suggested_slug={suggestion.slug}
                         phx-target={@myself}
                         class="w-full text-left px-4 py-3 rounded-lg bg-white border border-indigo-200 text-gray-900 shadow-sm hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-200"
                       >
-                        {suggested_title}
+                        {suggestion.title}
                       </button>
                     </div>
                   <% end %>
@@ -160,7 +161,7 @@ defmodule YouCongressWeb.StatementLive.NewFormComponent do
     end
   end
 
-  def handle_event("save", %{"suggested_title" => suggested_title}, socket) do
+  def handle_event("save", %{"suggested_title" => suggested_title, "suggested_slug" => suggested_slug}, socket) do
     %{assigns: %{current_user: current_user}} = socket
 
     user_id =
@@ -169,7 +170,7 @@ defmodule YouCongressWeb.StatementLive.NewFormComponent do
         _ -> current_user.id
       end
 
-    case Statements.create_statement(%{title: suggested_title, user_id: user_id}) do
+    case Statements.create_statement(%{title: suggested_title, slug: suggested_slug, user_id: user_id}) do
       {:ok, statement} ->
         Track.event("Create Statement", current_user)
         notify_parent({:put_flash, :info, "Statement created successfully"})

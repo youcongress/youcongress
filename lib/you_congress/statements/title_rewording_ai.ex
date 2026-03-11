@@ -12,18 +12,19 @@ defmodule YouCongress.Statements.TitleRewordingAI do
   - These last two may be things such as "Build a CERN for AI" or "Establish a Carbon tax" instead of yes/no questions which starts with "Should we...", "Shall we...?" or similar
   - They are neutral and not offensive as it's going to be voted and discussed among diverse people.
   - Ideally, they should be about topics that are relevant both locally and globally.
+  - For each question, also generate a URL-friendly slug (lowercase, hyphens, no stop words, max 30 chars).
 
   Prompt: Build CERN for AI
 
-  The response should be in JSON format (an array of three strings)
+  The response should be in JSON format (an array of three objects with "title" and "slug" keys)
   """
 
   @answer """
   {
     "questions": [
-      "Build a CERN for AI",
-      "Build a global institute for AI like CERN",
-      "Build a global AI lab"
+      {"title": "Build a CERN for AI", "slug": "build-cern-ai"},
+      {"title": "Build a global institute for AI like CERN", "slug": "build-global-institute-ai-cern"},
+      {"title": "Build a global AI lab", "slug": "build-global-ai-lab"}
     ]
   }
   """
@@ -32,9 +33,10 @@ defmodule YouCongress.Statements.TitleRewordingAI do
   def generate_rewordings(prompt, model) do
     with {:ok, data} <- ask_gpt("Prompt: #{prompt}", model),
          content when is_binary(content) <- OpenAIModel.get_content(data),
-         {:ok, %{"questions" => statements}} <- Jason.decode(content),
+         {:ok, %{"questions" => questions}} <- Jason.decode(content),
          cost <- OpenAIModel.get_cost(data, model) do
-      {:ok, statements, cost}
+      suggestions = Enum.map(questions, fn %{"title" => title, "slug" => slug} -> %{title: title, slug: slug} end)
+      {:ok, suggestions, cost}
     else
       {:error, error} -> {:error, error}
       error -> {:error, "Failed to process OpenAI response: #{inspect(error)}"}
@@ -73,9 +75,21 @@ defmodule YouCongress.Statements.TitleRewordingAI do
           minItems: 3,
           maxItems: 3,
           items: %{
-            type: "string",
-            description:
-              "The first should be exactly the original but in correct English. The others should be related to the topic but more creative."
+            type: "object",
+            additionalProperties: false,
+            properties: %{
+              "title" => %{
+                type: "string",
+                description:
+                  "The first should be exactly the original but in correct English. The others should be related to the topic but more creative."
+              },
+              "slug" => %{
+                type: "string",
+                description:
+                  "URL-friendly slug: lowercase, hyphens, no stop words, max 30 characters."
+              }
+            },
+            required: ["title", "slug"]
           }
         }
       },

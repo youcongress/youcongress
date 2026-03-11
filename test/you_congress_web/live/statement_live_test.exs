@@ -16,9 +16,9 @@ defmodule YouCongressWeb.StatementLiveTest do
 
   @create_attrs %{title: "nuclear energy"}
   @suggested_titles [
-    "Should we increase investment in nuclear energy research?",
-    "Shall we consider nuclear energy as a viable alternative to fossil fuels?",
-    "Could nuclear energy be a key solution for reducing global carbon emissions?"
+    %{title: "Should we increase investment in nuclear energy research?", slug: "increase-investment-nuclear-energy"},
+    %{title: "Shall we consider nuclear energy as a viable alternative to fossil fuels?", slug: "nuclear-energy-alternative-fossil"},
+    %{title: "Could nuclear energy be a key solution for reducing global carbon emissions?", slug: "nuclear-energy-key-solution"}
   ]
   @update_attrs %{title: "some updated title"}
   @invalid_attrs %{title: nil}
@@ -107,18 +107,18 @@ defmodule YouCongressWeb.StatementLiveTest do
                |> form("#statement-form", statement: @invalid_attrs)
                |> render_change() =~ "can&#39;t be blank"
 
-        [title1, title2, _title3] = @suggested_titles
+        [suggestion1, suggestion2, _suggestion3] = @suggested_titles
 
         assert index_live
                |> form("#statement-form", statement: @create_attrs)
-               |> render_submit() =~ title1
+               |> render_submit() =~ suggestion1.title
 
         response =
           index_live
-          |> element("button", title2)
+          |> element("button", suggestion2.title)
           |> render_click()
 
-        statement = Statements.get_statement!(title: title2)
+        statement = Statements.get_statement!(title: suggestion2.title)
         statement_path = ~p"/p/#{statement.slug}"
 
         {_, {:redirect, %{to: ^statement_path}}} = response
