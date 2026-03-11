@@ -86,27 +86,46 @@ defmodule YouCongress.Statements.Statement do
   defp put_halls(changeset, _), do: changeset
 
   defp generate_slug_if_empty(changeset) do
-    if get_field(changeset, :slug) do
-      changeset
-    else
-      title = get_field(changeset, :title)
-      put_change(changeset, :slug, new_unique_slug(title))
+    case get_field(changeset, :slug) do
+      nil ->
+        title = get_field(changeset, :title)
+        put_change(changeset, :slug, unique_slug_from_title(title))
+
+      slug ->
+        # Only ensure uniqueness if the slug actually changed
+        if get_change(changeset, :slug) do
+          put_change(changeset, :slug, ensure_unique_slug(slug))
+        else
+          changeset
+        end
     end
   end
 
-  defp new_unique_slug(nil), do: nil
-  defp new_unique_slug(""), do: ""
+  defp unique_slug_from_title(nil), do: nil
+  defp unique_slug_from_title(""), do: ""
 
-  defp new_unique_slug(title) do
-    slug = new_slug(title)
+  defp unique_slug_from_title(title) do
+    title |> new_slug() |> ensure_unique_slug()
+  end
 
+  defp ensure_unique_slug(nil), do: nil
+  defp ensure_unique_slug(""), do: ""
+
+  defp ensure_unique_slug(slug) do
     case Statements.get_by(slug: slug) do
       nil -> slug
-      _ -> "#{slug}-#{random_string()}"
+      _ -> find_unique_slug(slug, 2)
     end
   end
 
-  defp random_string, do: :crypto.strong_rand_bytes(1) |> Base.encode16()
+  defp find_unique_slug(base_slug, n) do
+    candidate = "#{base_slug}#{n}"
+
+    case Statements.get_by(slug: candidate) do
+      nil -> candidate
+      _ -> find_unique_slug(base_slug, n + 1)
+    end
+  end
 
   defp new_slug(title) when is_binary(title) do
     title
