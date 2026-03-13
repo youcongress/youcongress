@@ -6,6 +6,7 @@ defmodule YouCongressWeb.Components.LoginButtons do
 
   use Phoenix.Component
   use YouCongressWeb, :verified_routes
+  alias YouCongress.FeatureFlags
 
   attr :message, :string, default: "Log in to save your vote:"
   attr :class, :string, default: ""
@@ -39,15 +40,17 @@ defmodule YouCongressWeb.Components.LoginButtons do
           </svg>
           Log in with Google
         </.link>
-        <.link
-          href={~p"/auth/x"}
-          class="inline-flex items-center py-1.5 px-3 border border-gray-300 rounded-md shadow-sm bg-black text-white text-sm font-medium hover:bg-gray-800"
-        >
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-          </svg>
-          <span class="ml-1">Log in with X</span>
-        </.link>
+        <%= if FeatureFlags.enabled?(:log_in_with_x) do %>
+          <.link
+            href={~p"/auth/x"}
+            class="inline-flex items-center py-1.5 px-3 border border-gray-300 rounded-md shadow-sm bg-black text-white text-sm font-medium hover:bg-gray-800"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            <span class="ml-1">Log in with X</span>
+          </.link>
+        <% end %>
         <.link
           href={~p"/log_in"}
           class="inline-flex items-center py-1.5 px-3 text-sm text-gray-600 hover:text-indigo-600 hover:underline"

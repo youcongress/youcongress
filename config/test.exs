@@ -48,3 +48,6 @@ config :anubis_mcp, :session_store, enabled: false
 
 # Disable Cloudflare Turnstile verification in tests
 config :you_congress, :turnstile_enabled, false
+
+# Keep X login enabled in tests to cover the OAuth code paths
+config :you_congress, :feature_flags, %{log_in_with_x: true}

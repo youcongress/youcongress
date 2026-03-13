@@ -167,5 +167,4 @@ defmodule YouCongressWeb.VerificationLive.Index do
   defp load_delegate_ids(%{author_id: author_id}) do
     Delegations.list_delegation_ids(deleguee_id: author_id)
   end
-
 end

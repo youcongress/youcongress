@@ -161,7 +161,11 @@ defmodule YouCongressWeb.StatementLive.NewFormComponent do
     end
   end
 
-  def handle_event("save", %{"suggested_title" => suggested_title, "suggested_slug" => suggested_slug}, socket) do
+  def handle_event(
+        "save",
+        %{"suggested_title" => suggested_title, "suggested_slug" => suggested_slug},
+        socket
+      ) do
     %{assigns: %{current_user: current_user}} = socket
 
     user_id =
@@ -170,7 +174,11 @@ defmodule YouCongressWeb.StatementLive.NewFormComponent do
         _ -> current_user.id
       end
 
-    case Statements.create_statement(%{title: suggested_title, slug: suggested_slug, user_id: user_id}) do
+    case Statements.create_statement(%{
+           title: suggested_title,
+           slug: suggested_slug,
+           user_id: user_id
+         }) do
       {:ok, statement} ->
         Track.event("Create Statement", current_user)
         notify_parent({:put_flash, :info, "Statement created successfully"})

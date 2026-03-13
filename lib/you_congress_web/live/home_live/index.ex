@@ -6,6 +6,7 @@ defmodule YouCongressWeb.HomeLive.Index do
   alias YouCongress.Authors
   alias YouCongress.Halls
   alias YouCongress.Opinions
+  alias YouCongress.FeatureFlags
   alias YouCongress.Track
   alias YouCongress.Statements
   alias YouCongressWeb.StatementLive.Index.Search
@@ -41,6 +42,7 @@ defmodule YouCongressWeb.HomeLive.Index do
       |> assign(:selection_statements, [])
       |> assign(:user_votes, %{})
       |> assign(:auth_tab, :register)
+      |> assign(:log_in_with_x_enabled, FeatureFlags.enabled?(:log_in_with_x))
 
     {:ok, socket}
   end

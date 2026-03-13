@@ -5,9 +5,12 @@ defmodule YouCongressWeb.XAuthController do
 
   alias YouCongress.Accounts
   alias YouCongress.Authors
+  alias YouCongress.FeatureFlags
   alias YouCongress.X.XAPI
   alias YouCongress.Track
   alias YouCongressWeb.UserAuth
+
+  plug :ensure_x_login_enabled
 
   @doc """
   Initiates the X OAuth flow by redirecting to X's authorization URL.
@@ -272,5 +275,16 @@ defmodule YouCongressWeb.XAuthController do
     })
   rescue
     _ -> :ok
+  end
+
+  defp ensure_x_login_enabled(conn, _opts) do
+    if FeatureFlags.enabled?(:log_in_with_x) do
+      conn
+    else
+      conn
+      |> put_flash(:error, "Log in with X is currently unavailable.")
+      |> redirect(to: ~p"/log_in")
+      |> halt()
+    end
   end
 end
