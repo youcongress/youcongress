@@ -35,17 +35,22 @@ defmodule YouCongress.Verifications do
   end
 
   def update_opinion_verification_status(opinion_id) do
-    latest_status =
+    latest_human_status =
       from(v in Verification,
-        where: v.opinion_id == ^opinion_id,
+        where: v.opinion_id == ^opinion_id and v.model == "human",
         order_by: [desc: v.updated_at, desc: v.id],
         limit: 1,
         select: v.status
       )
       |> Repo.one()
 
-    # :unverified means "clear the cached status" on the opinion
-    cached_status = if latest_status == :unverified, do: nil, else: latest_status
+    # nil means no human verifications; :unverified means "clear the cached status"
+    cached_status =
+      case latest_human_status do
+        nil -> nil
+        :unverified -> nil
+        status -> status
+      end
 
     from(o in Opinion, where: o.id == ^opinion_id)
     |> Repo.update_all(set: [verification_status: cached_status])

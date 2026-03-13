@@ -12,6 +12,7 @@ defmodule YouCongressWeb.MCPServer do
   component(YouCongressWeb.MCPServer.OpinionsShow)
   component(YouCongressWeb.MCPServer.OpinionsEdit)
   component(YouCongressWeb.MCPServer.OpinionsDelete)
+  component(YouCongressWeb.MCPServer.QuotesVerify)
   component(YouCongressWeb.MCPServer.VotesCreate)
   component(YouCongressWeb.MCPServer.VotesEdit)
 end
