@@ -44,12 +44,31 @@ defmodule YouCongress.Verifications do
       )
       |> Repo.one()
 
-    # nil means no human verifications; :unverified means "clear the cached status"
     cached_status =
       case latest_human_status do
-        nil -> nil
-        :unverified -> nil
-        status -> status
+        nil ->
+          # No human verification — fall back to latest AI verification
+          latest_ai_status =
+            from(v in Verification,
+              where: v.opinion_id == ^opinion_id and v.model != "human",
+              order_by: [desc: v.updated_at, desc: v.id],
+              limit: 1,
+              select: v.status
+            )
+            |> Repo.one()
+
+          case latest_ai_status do
+            :ai_verified -> :ai_verified
+            :unverified -> nil
+            nil -> nil
+            status -> status
+          end
+
+        :unverified ->
+          nil
+
+        status ->
+          status
       end
 
     from(o in Opinion, where: o.id == ^opinion_id)

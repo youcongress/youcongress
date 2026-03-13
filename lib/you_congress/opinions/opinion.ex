@@ -14,7 +14,7 @@ defmodule YouCongress.Opinions.Opinion do
     field :twin, :boolean, default: false
 
     field :verification_status, Ecto.Enum,
-      values: [:verified, :endorsed, :disputed, :unverifiable]
+      values: [:verified, :ai_verified, :endorsed, :disputed, :unverifiable]
 
     field :ancestry, :string
     field :descendants_count, :integer, default: 0

@@ -118,7 +118,7 @@ defmodule YouCongress.VerificationsTest do
                Verifications.create_verification(%{})
     end
 
-    test "AI verification does not update opinion cached status" do
+    test "AI verification updates opinion cached status to ai_verified" do
       opinion = opinion_fixture()
       user = user_fixture()
 
@@ -126,15 +126,15 @@ defmodule YouCongress.VerificationsTest do
         Verifications.create_verification(%{
           opinion_id: opinion.id,
           user_id: user.id,
-          status: :verified,
+          status: :ai_verified,
           comment: "AI verified",
           model: "opus-4.6"
         })
 
       assert verification.model == "opus-4.6"
 
-      # Opinion cached status should remain nil (no human verification)
-      assert Opinions.get_opinion!(opinion.id).verification_status == nil
+      # Opinion cached status should be ai_verified
+      assert Opinions.get_opinion!(opinion.id).verification_status == :ai_verified
     end
 
     test "human verification updates cached status even when AI verification exists" do
@@ -146,12 +146,12 @@ defmodule YouCongress.VerificationsTest do
         Verifications.create_verification(%{
           opinion_id: opinion.id,
           user_id: user.id,
-          status: :verified,
+          status: :ai_verified,
           comment: "AI verified",
           model: "opus-4.6"
         })
 
-      assert Opinions.get_opinion!(opinion.id).verification_status == nil
+      assert Opinions.get_opinion!(opinion.id).verification_status == :ai_verified
 
       # Then: human verification
       {:ok, _} =
