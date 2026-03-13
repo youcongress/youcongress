@@ -9,6 +9,7 @@ defmodule YouCongressWeb.MCPServer do
   component(YouCongressWeb.MCPServer.StatementsCreate)
   component(YouCongressWeb.MCPServer.StatementsList)
   component(YouCongressWeb.MCPServer.QuotesSearch)
+  component(YouCongressWeb.MCPServer.QuotesRandomUnverified)
   component(YouCongressWeb.MCPServer.OpinionsShow)
   component(YouCongressWeb.MCPServer.OpinionsEdit)
   component(YouCongressWeb.MCPServer.OpinionsDelete)
