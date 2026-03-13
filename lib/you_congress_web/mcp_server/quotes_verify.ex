@@ -18,7 +18,9 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @forbidden_message "Your account is not allowed to verify opinions."
   @allowed_statuses ~w(ai_verified disputed unverifiable unverified)
-  @invalid_status_message "Invalid status. Allowed values: #{Enum.join(@allowed_statuses, ", ")}"
+  @status_aliases %{"verified" => "ai_verified"}
+  @invalid_status_message "Invalid status. Allowed values: " <>
+                            Enum.join(@allowed_statuses ++ Map.keys(@status_aliases), ", ")
 
   schema do
     field :opinion_id, :integer, required: true
@@ -29,18 +31,17 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
 
   @impl true
   def execute(%{opinion_id: opinion_id, status: status, comment: comment, model: model}, frame) do
-    attrs = %{
-      opinion_id: opinion_id,
-      status: status,
-      comment: comment,
-      model: sanitize_model(model),
-      source: "mcp"
-    }
-
-    with {:ok, _} <- validate_status(status),
+    with {:ok, normalized_status} <- normalize_status(status),
          {:ok, user} <- authenticate_user(frame),
          :ok <- ensure_permission(user),
-         attrs <- Map.put(attrs, :user_id, user.id),
+         attrs = %{
+           opinion_id: opinion_id,
+           status: normalized_status,
+           comment: comment,
+           model: sanitize_model(model),
+           source: "mcp",
+           user_id: user.id
+         },
          {:ok, verification} <- Verifications.create_verification(attrs) do
       data = %{
         verification: %{
@@ -107,8 +108,14 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
     end)
   end
 
-  defp validate_status(status) when status in @allowed_statuses, do: {:ok, status}
-  defp validate_status(_), do: {:error, :invalid_status}
+  defp normalize_status(status) when status in @allowed_statuses, do: {:ok, status}
+
+  defp normalize_status(status) do
+    case Map.fetch(@status_aliases, status) do
+      {:ok, normalized} -> {:ok, normalized}
+      :error -> {:error, :invalid_status}
+    end
+  end
 
   defp sanitize_model("human"), do: "Unknown"
   defp sanitize_model("Human"), do: "Unknown"
