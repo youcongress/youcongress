@@ -159,7 +159,8 @@ defmodule YouCongressWeb.Components.VerificationBadge do
       opinion_id: opinion.id,
       user_id: current_user.id,
       status: status,
-      comment: comment
+      comment: comment,
+      model: "human"
     }
 
     case Verifications.create_verification(attrs) do

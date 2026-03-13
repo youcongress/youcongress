@@ -117,6 +117,68 @@ defmodule YouCongress.VerificationsTest do
       assert {:error, %Ecto.Changeset{}} =
                Verifications.create_verification(%{})
     end
+
+    test "AI verification does not update opinion cached status" do
+      opinion = opinion_fixture()
+      user = user_fixture()
+
+      {:ok, verification} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "AI verified",
+          model: "opus-4.6"
+        })
+
+      assert verification.model == "opus-4.6"
+
+      # Opinion cached status should remain nil (no human verification)
+      assert Opinions.get_opinion!(opinion.id).verification_status == nil
+    end
+
+    test "human verification updates cached status even when AI verification exists" do
+      opinion = opinion_fixture()
+      user = user_fixture()
+
+      # First: AI verification
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "AI verified",
+          model: "opus-4.6"
+        })
+
+      assert Opinions.get_opinion!(opinion.id).verification_status == nil
+
+      # Then: human verification
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Human verified"
+        })
+
+      assert Opinions.get_opinion!(opinion.id).verification_status == :verified
+    end
+
+    test "defaults model to human" do
+      opinion = opinion_fixture()
+      user = user_fixture()
+
+      {:ok, verification} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Test"
+        })
+
+      assert verification.model == "human"
+    end
   end
 
   describe "list_verifications/1" do
