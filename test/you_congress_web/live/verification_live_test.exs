@@ -109,6 +109,24 @@ defmodule YouCongressWeb.VerificationLiveTest do
       assert html =~ "Against"
       assert html =~ "Abstain"
     end
+
+    test "shows AI model for automated verifications", %{conn: conn, opinion: opinion} do
+      ai_user = user_fixture()
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: ai_user.id,
+          status: :ai_verified,
+          comment: "AI says it's accurate",
+          model: "opus-4.6"
+        })
+
+      {:ok, _view, html} = live(conn, ~p"/verifications")
+
+      assert html =~ "opus-4.6"
+      assert html =~ "AI model: opus-4.6"
+    end
   end
 
   describe "/verifications pagination" do
