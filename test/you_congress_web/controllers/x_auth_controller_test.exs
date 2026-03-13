@@ -9,6 +9,13 @@ defmodule YouCongressWeb.XAuthControllerTest do
   alias YouCongress.X.XAPI
   alias YouCongress.Authors
 
+  setup do
+    original_flags = Application.get_env(:you_congress, :feature_flags)
+    on_exit(fn -> Application.put_env(:you_congress, :feature_flags, original_flags) end)
+    Application.put_env(:you_congress, :feature_flags, %{log_in_with_x: true})
+    :ok
+  end
+
   @x_user_data %{
     twitter_id_str: "123456789",
     twitter_username: "testuser",
@@ -44,6 +51,17 @@ defmodule YouCongressWeb.XAuthControllerTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
                "X authentication is not configured."
     end
+
+    test "redirects to login when the feature is disabled", %{conn: conn} do
+      Application.put_env(:you_congress, :feature_flags, %{log_in_with_x: false})
+
+      conn = conn |> get(~p"/auth/x") |> fetch_flash()
+
+      assert redirected_to(conn) == ~p"/log_in"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Log in with X is currently unavailable."
+    end
   end
 
   describe "GET /auth/x/callback" do
@@ -51,6 +69,21 @@ defmodule YouCongressWeb.XAuthControllerTest do
       Application.put_env(:you_congress, :x_client_id, "test_client_id")
       Application.put_env(:you_congress, :x_callback_url, "https://test.com/auth/x/callback")
       :ok
+    end
+
+    test "redirects to login when the feature is disabled", %{conn: conn} do
+      Application.put_env(:you_congress, :feature_flags, %{log_in_with_x: false})
+
+      conn =
+        conn
+        |> init_test_session(%{})
+        |> get(~p"/auth/x/callback", %{})
+        |> fetch_flash()
+
+      assert redirected_to(conn) == ~p"/log_in"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Log in with X is currently unavailable."
     end
 
     test "redirects to login when state doesn't match", %{conn: conn} do

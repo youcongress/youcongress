@@ -96,8 +96,7 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
       vote = vote_fixture(%{author_id: owner.author_id, answer: :for})
 
       with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply,
-                {:error, "This author already has a vote for the selected statement."},
+        assert {:reply, {:error, "This author already has a vote for the selected statement."},
                 :frame} =
                  VotesCreate.execute(
                    %{

@@ -401,5 +401,4 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   defp quote?(_), do: false
-
 end

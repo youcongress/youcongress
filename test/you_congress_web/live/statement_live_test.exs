@@ -16,9 +16,18 @@ defmodule YouCongressWeb.StatementLiveTest do
 
   @create_attrs %{title: "nuclear energy"}
   @suggested_titles [
-    %{title: "Should we increase investment in nuclear energy research?", slug: "increase-investment-nuclear-energy"},
-    %{title: "Shall we consider nuclear energy as a viable alternative to fossil fuels?", slug: "nuclear-energy-alternative-fossil"},
-    %{title: "Could nuclear energy be a key solution for reducing global carbon emissions?", slug: "nuclear-energy-key-solution"}
+    %{
+      title: "Should we increase investment in nuclear energy research?",
+      slug: "increase-investment-nuclear-energy"
+    },
+    %{
+      title: "Shall we consider nuclear energy as a viable alternative to fossil fuels?",
+      slug: "nuclear-energy-alternative-fossil"
+    },
+    %{
+      title: "Could nuclear energy be a key solution for reducing global carbon emissions?",
+      slug: "nuclear-energy-key-solution"
+    }
   ]
   @update_attrs %{title: "some updated title"}
   @invalid_attrs %{title: nil}

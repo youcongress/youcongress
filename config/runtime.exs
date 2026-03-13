@@ -22,6 +22,12 @@ end
 
 config :you_congress, :env, config_env()
 
+if feature_flags_env = System.get_env("FEATURE_FLAGS") do
+  config :you_congress,
+         :feature_flags,
+         YouCongress.FeatureFlags.overrides_from_env(feature_flags_env)
+end
+
 config :openai,
   api_key: System.get_env("OPENAI_API_KEY"),
   organization_key: System.get_env("OPENAI_ORGANIZATION_KEY"),

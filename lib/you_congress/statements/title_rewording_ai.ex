@@ -35,7 +35,11 @@ defmodule YouCongress.Statements.TitleRewordingAI do
          content when is_binary(content) <- OpenAIModel.get_content(data),
          {:ok, %{"questions" => questions}} <- Jason.decode(content),
          cost <- OpenAIModel.get_cost(data, model) do
-      suggestions = Enum.map(questions, fn %{"title" => title, "slug" => slug} -> %{title: title, slug: slug} end)
+      suggestions =
+        Enum.map(questions, fn %{"title" => title, "slug" => slug} ->
+          %{title: title, slug: slug}
+        end)
+
       {:ok, suggestions, cost}
     else
       {:error, error} -> {:error, error}

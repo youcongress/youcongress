@@ -117,8 +117,10 @@
         <dd class="mt-4 lg:col-span-7 lg:mt-0">
           <p class="text-base leading-7 text-gray-600">
             If you find any quotes or content incorrectly attributed to you, or you want to change/delete content, please
-            <.link href="/auth/x" class="underline">sign in with X</.link>
-            so you can do it directly or
+            <%= if YouCongress.FeatureFlags.enabled?(:log_in_with_x) do %>
+              <.link href="/auth/x" class="underline">sign in with X</.link>
+              so you can do it directly or
+            <% end %>
             contact us at
             <.link href="mailto:support@youcongress.org" class="underline">
               support@youcongress.org

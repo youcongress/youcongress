@@ -40,8 +40,16 @@ defmodule YouCongressWeb.Components.VerificationHistory do
               <span>Unknown</span>
             <% end %>
             <%= if verification.model && verification.model != "human" do %>
-              <span class="inline-flex items-center gap-1 text-purple-600" title={"AI model: #{verification.model}"}>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+              <span
+                class="inline-flex items-center gap-1 text-purple-600"
+                title={"AI model: #{verification.model}"}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
                   <path d="M13 7H7v6h6V7z" />
                   <path
                     fill-rule="evenodd"
