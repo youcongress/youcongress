@@ -203,18 +203,21 @@ defmodule YouCongressWeb.Components.VerificationBadge do
 
   defp badge_classes(nil), do: "bg-gray-100 text-gray-800"
   defp badge_classes(:verified), do: "bg-green-100 text-green-800"
+  defp badge_classes(:ai_verified), do: "bg-purple-100 text-purple-800"
   defp badge_classes(:endorsed), do: "bg-blue-100 text-blue-800"
   defp badge_classes(:disputed), do: "bg-orange-100 text-orange-800"
   defp badge_classes(:unverifiable), do: "bg-gray-200 text-gray-600"
 
   defp badge_label(nil), do: "Unverified"
   defp badge_label(:verified), do: "Verified"
+  defp badge_label(:ai_verified), do: "AI Verified"
   defp badge_label(:endorsed), do: "Endorsed"
   defp badge_label(:disputed), do: "Disputed"
   defp badge_label(:unverifiable), do: "Unverifiable"
   defp badge_label(:unverified), do: "Unverified"
 
   defp badge_text_class(:verified), do: "text-green-700"
+  defp badge_text_class(:ai_verified), do: "text-purple-700"
   defp badge_text_class(:endorsed), do: "text-blue-700"
   defp badge_text_class(:disputed), do: "text-orange-700"
   defp badge_text_class(:unverifiable), do: "text-gray-600"

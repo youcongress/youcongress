@@ -17,6 +17,8 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @forbidden_message "Your account is not allowed to verify opinions."
+  @allowed_statuses ~w(ai_verified disputed unverifiable unverified)
+  @invalid_status_message "Invalid status. Allowed values: #{Enum.join(@allowed_statuses, ", ")}"
 
   schema do
     field :opinion_id, :integer, required: true
@@ -35,7 +37,8 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
       source: "mcp"
     }
 
-    with {:ok, user} <- authenticate_user(frame),
+    with {:ok, _} <- validate_status(status),
+         {:ok, user} <- authenticate_user(frame),
          :ok <- ensure_permission(user),
          attrs <- Map.put(attrs, :user_id, user.id),
          {:ok, verification} <- Verifications.create_verification(attrs) do
@@ -59,6 +62,9 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
 
       {:error, :forbidden} ->
         {:reply, Response.error(Response.tool(), @forbidden_message), frame}
+
+      {:error, :invalid_status} ->
+        {:reply, Response.error(Response.tool(), @invalid_status_message), frame}
 
       {:error, :only_author_can_endorse} ->
         {:reply, Response.error(Response.tool(), "Only the opinion author can endorse."), frame}
@@ -100,6 +106,9 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
       String.replace(acc, "%{#{key}}", to_string(value))
     end)
   end
+
+  defp validate_status(status) when status in @allowed_statuses, do: {:ok, status}
+  defp validate_status(_), do: {:error, :invalid_status}
 
   defp sanitize_model("human"), do: "Unknown"
   defp sanitize_model("Human"), do: "Unknown"
