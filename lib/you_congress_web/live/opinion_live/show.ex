@@ -14,8 +14,6 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.Votes
   alias YouCongress.Accounts.Permissions
 
-  import YouCongressWeb.Tools.TimeAgo
-
   @impl true
   def mount(_params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
@@ -404,17 +402,4 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
   defp quote?(_), do: false
 
-  defp status_badge_classes(:verified), do: "bg-green-100 text-green-800"
-  defp status_badge_classes(:ai_verified), do: "bg-gray-100 text-gray-600"
-  defp status_badge_classes(:endorsed), do: "bg-blue-100 text-blue-800"
-  defp status_badge_classes(:disputed), do: "bg-orange-100 text-orange-800"
-  defp status_badge_classes(:unverifiable), do: "bg-gray-200 text-gray-600"
-  defp status_badge_classes(:unverified), do: "bg-gray-100 text-gray-800"
-
-  defp status_label(:verified), do: "Verified"
-  defp status_label(:ai_verified), do: "AI Verified"
-  defp status_label(:endorsed), do: "Endorsed"
-  defp status_label(:disputed), do: "Disputed"
-  defp status_label(:unverifiable), do: "Unverifiable"
-  defp status_label(:unverified), do: "Unverified"
 end

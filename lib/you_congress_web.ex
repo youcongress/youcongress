@@ -87,6 +87,7 @@ defmodule YouCongressWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import YouCongressWeb.CoreComponents
+      import YouCongressWeb.Components.VerificationHistory
       import YouCongressWeb.Gettext
 
       # Shortcut for generating JS commands

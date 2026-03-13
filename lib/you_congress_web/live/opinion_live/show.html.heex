@@ -153,36 +153,12 @@
 <% end %>
 
 <%= if @verifications != [] do %>
-  <div class="mb-6">
-    <h2 class="text-sm font-semibold mb-2 text-gray-700">Verification History</h2>
-    <div class="space-y-2">
-      <%= for verification <- @verifications do %>
-        <div class="flex items-center gap-2 text-xs text-gray-500">
-          <span class={[
-            "inline-flex items-center rounded px-2 py-0.5 font-medium whitespace-nowrap",
-            status_badge_classes(verification.status)
-          ]}>
-            {status_label(verification.status)}
-          </span>
-          <span>{verification.comment}</span>
-          <span>·</span>
-          <%= if verification.user && verification.user.author do %>
-            <a
-              href={~p"/a/#{verification.user.author.id}"}
-              class="text-indigo-600 hover:underline"
-            >
-              {verification.user.author.name}
-            </a>
-          <% else %>
-            <span>Unknown</span>
-          <% end %>
-          <span class="inline-flex items-center gap-1 whitespace-nowrap">
-            · {short_time(verification.updated_at)}
-          </span>
-        </div>
-      <% end %>
-    </div>
-  </div>
+  <.verification_history
+    verifications={@verifications}
+    wrapper_class="mb-6"
+    title_class="text-sm font-semibold mb-2 text-gray-700"
+    entries_class="space-y-2"
+  />
 <% end %>
 
 <div class="pb-2" id="reply">replying to {@opinion.author.name}</div>

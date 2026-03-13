@@ -295,6 +295,25 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert html =~ "This checks out"
     end
 
+    test "displays AI verification model in history", %{conn: conn} do
+      user = user_fixture()
+      opinion = opinion_fixture(%{content: "AI verified opinion"})
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user.id,
+          status: :ai_verified,
+          comment: "Checked by AI",
+          model: "opus-4.6"
+        })
+
+      {:ok, _view, html} = live(conn, ~p"/c/#{opinion.id}")
+
+      assert html =~ "opus-4.6"
+      assert html =~ "AI model: opus-4.6"
+    end
+
     test "verification history updates after badge verification", %{conn: conn} do
       user = user_fixture()
       conn = log_in_user(conn, user)
