@@ -159,7 +159,7 @@
       <%= for verification <- @verifications do %>
         <div class="flex items-center gap-2 text-xs text-gray-500">
           <span class={[
-            "inline-flex items-center rounded px-2 py-0.5 font-medium",
+            "inline-flex items-center rounded px-2 py-0.5 font-medium whitespace-nowrap",
             status_badge_classes(verification.status)
           ]}>
             {status_label(verification.status)}
@@ -176,7 +176,9 @@
           <% else %>
             <span>Unknown</span>
           <% end %>
-          <span>· {short_time(verification.updated_at)}</span>
+          <span class="inline-flex items-center gap-1 whitespace-nowrap">
+            · {short_time(verification.updated_at)}
+          </span>
         </div>
       <% end %>
     </div>
