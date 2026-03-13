@@ -171,7 +171,7 @@ defmodule YouCongressWeb.VerificationLive.Index do
   end
 
   defp status_badge_classes(:verified), do: "bg-green-100 text-green-800"
-  defp status_badge_classes(:ai_verified), do: "bg-purple-100 text-purple-800"
+  defp status_badge_classes(:ai_verified), do: "bg-gray-100 text-gray-600"
   defp status_badge_classes(:endorsed), do: "bg-blue-100 text-blue-800"
   defp status_badge_classes(:disputed), do: "bg-orange-100 text-orange-800"
   defp status_badge_classes(:unverifiable), do: "bg-gray-200 text-gray-600"
