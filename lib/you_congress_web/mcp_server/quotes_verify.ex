@@ -17,7 +17,7 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @forbidden_message "Your account is not allowed to verify opinions."
-  @allowed_statuses ~w(ai_verified disputed unverifiable unverified)
+  @allowed_statuses ~w(ai_verified ai_unverifiable disputed unverifiable unverified)
   @status_aliases %{"verified" => "ai_verified"}
   @invalid_status_message "Invalid status. Allowed values: " <>
                             Enum.join(@allowed_statuses ++ Map.keys(@status_aliases), ", ")

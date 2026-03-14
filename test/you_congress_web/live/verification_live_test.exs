@@ -127,6 +127,23 @@ defmodule YouCongressWeb.VerificationLiveTest do
       assert html =~ "opus-4.6"
       assert html =~ "AI model: opus-4.6"
     end
+
+    test "shows AI unverifiable badge", %{conn: conn, opinion: opinion} do
+      ai_user = user_fixture()
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: ai_user.id,
+          status: :ai_unverifiable,
+          comment: "Source blocked",
+          model: "opus-4.6"
+        })
+
+      {:ok, _view, html} = live(conn, ~p"/verifications")
+
+      assert html =~ "AI Unverifiable"
+    end
   end
 
   describe "/verifications pagination" do

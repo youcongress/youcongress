@@ -8,7 +8,15 @@ defmodule YouCongress.Verifications.Verification do
 
   schema "verifications" do
     field :status, Ecto.Enum,
-      values: [:verified, :ai_verified, :endorsed, :disputed, :unverifiable, :unverified]
+      values: [
+        :verified,
+        :ai_verified,
+        :ai_unverifiable,
+        :endorsed,
+        :disputed,
+        :unverifiable,
+        :unverified
+      ]
 
     field :comment, :string
     field :model, :string, default: "human"

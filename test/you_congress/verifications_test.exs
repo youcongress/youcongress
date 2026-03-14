@@ -137,6 +137,23 @@ defmodule YouCongress.VerificationsTest do
       assert Opinions.get_opinion!(opinion.id).verification_status == :ai_verified
     end
 
+    test "AI unverifiable status updates cached status to ai_unverifiable" do
+      opinion = opinion_fixture()
+      user = user_fixture()
+
+      {:ok, verification} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user.id,
+          status: :ai_unverifiable,
+          comment: "AI cannot access source",
+          model: "opus-4.6"
+        })
+
+      assert verification.status == :ai_unverifiable
+      assert Opinions.get_opinion!(opinion.id).verification_status == :ai_unverifiable
+    end
+
     test "human verification updates cached status even when AI verification exists" do
       opinion = opinion_fixture()
       user = user_fixture()

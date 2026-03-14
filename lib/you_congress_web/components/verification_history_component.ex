@@ -72,6 +72,7 @@ defmodule YouCongressWeb.Components.VerificationHistory do
 
   defp status_badge_classes(:verified), do: "bg-green-100 text-green-800"
   defp status_badge_classes(:ai_verified), do: "bg-gray-100 text-gray-600"
+  defp status_badge_classes(:ai_unverifiable), do: "bg-gray-100 text-gray-600"
   defp status_badge_classes(:endorsed), do: "bg-blue-100 text-blue-800"
   defp status_badge_classes(:disputed), do: "bg-orange-100 text-orange-800"
   defp status_badge_classes(:unverifiable), do: "bg-gray-200 text-gray-600"
@@ -79,6 +80,7 @@ defmodule YouCongressWeb.Components.VerificationHistory do
 
   defp status_label(:verified), do: "Verified"
   defp status_label(:ai_verified), do: "AI Verified"
+  defp status_label(:ai_unverifiable), do: "AI Unverifiable"
   defp status_label(:endorsed), do: "Endorsed"
   defp status_label(:disputed), do: "Disputed"
   defp status_label(:unverifiable), do: "Unverifiable"
