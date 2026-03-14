@@ -13,6 +13,7 @@ defmodule YouCongressWeb.MCPServer.VotesEdit do
   alias Ecto.Changeset
   alias YouCongress.Accounts
   alias YouCongress.Accounts.Permissions
+  alias YouCongress.Authors
   alias YouCongress.Votes
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
@@ -81,18 +82,21 @@ defmodule YouCongressWeb.MCPServer.VotesEdit do
 
   defp ensure_vote_editable_by_user(%{opinion: nil}, _user), do: :ok
 
-  defp ensure_vote_editable_by_user(%{opinion: opinion}, user) do
-    case user_vote_owner_id(opinion) do
-      nil -> :ok
-      owner_id when owner_id == user.id -> :ok
-      _ -> {:error, :forbidden}
+  # It's a quote, so it's editable
+  defp ensure_vote_editable_by_user(%{opinion: %{source_id: nil}}, _user), do: :ok
+
+  defp ensure_vote_editable_by_user(%{opinion: opinion}, api_key_user) do
+    case Authors.get_author!(opinion.author_id) do
+      nil ->
+        {:error, :forbidden}
+
+      author ->
+        if author.user_id == api_key_user.id do
+          :ok
+        else
+          {:error, :forbidden}
+        end
     end
-  end
-
-  defp user_vote_owner_id(nil), do: nil
-
-  defp user_vote_owner_id(opinion) do
-    Map.get(opinion, :user_id) || Map.get(opinion, :source_id)
   end
 
   defp attrs_from_params(params) do
@@ -112,7 +116,6 @@ defmodule YouCongressWeb.MCPServer.VotesEdit do
       author_id: vote.author_id,
       answer: vote.answer && Atom.to_string(vote.answer),
       direct: vote.direct,
-      twin: vote.twin,
       opinion_id: vote.opinion_id
     }
   end
