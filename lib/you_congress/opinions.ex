@@ -398,16 +398,7 @@ defmodule YouCongress.Opinions do
         user_id
       )
       when not is_nil(user_id) do
-    # Check if the opinion is already associated with this statement
-    existing_association =
-      Repo.get_by(OpinionStatement,
-        opinion_id: opinion.id,
-        statement_id: statement.id
-      )
-
-    if existing_association do
-      {:error, :already_associated}
-    else
+    with :ok <- ensure_not_already_associated(opinion.id, statement.id) do
       opinion_statement_changeset =
         OpinionStatement.changeset(%OpinionStatement{}, %{
           opinion_id: opinion.id,
@@ -443,6 +434,13 @@ defmodule YouCongress.Opinions do
         _user_id
       ) do
     {:error, :user_id_required}
+  end
+
+  defp ensure_not_already_associated(opinion_id, statement_id) do
+    case Repo.get_by(OpinionStatement, opinion_id: opinion_id, statement_id: statement_id) do
+      nil -> :ok
+      _ -> {:error, :already_associated}
+    end
   end
 
   def remove_opinion_from_statement(%Opinion{} = opinion, statement_id)
