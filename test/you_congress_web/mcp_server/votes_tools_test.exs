@@ -5,6 +5,7 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
   import YouCongress.AccountsFixtures
   import YouCongress.StatementsFixtures
   import YouCongress.VotesFixtures
+  import YouCongress.OpinionsFixtures
 
   alias YouCongress.Accounts
   alias YouCongress.Votes
@@ -206,6 +207,84 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
 
       assert Votes.get_by(%{statement_id: vote.statement_id, author_id: vote.author_id}).answer ==
                :for
+    end
+
+    test "returns forbidden when editing another user's vote opinion" do
+      owner = user_fixture()
+      other_user = user_fixture()
+      api_key = api_key_fixture(other_user)
+      statement = statement_fixture()
+      opinion =
+        opinion_fixture(%{
+          author_id: owner.author_id,
+          user_id: owner.id,
+          source_url: nil,
+          twin: false
+        })
+
+      vote =
+        vote_fixture(%{
+          author_id: owner.author_id,
+          statement_id: statement.id,
+          opinion_id: opinion.id,
+          answer: :for
+        })
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply, {:error, "Your account is not allowed to edit this vote."}, :frame} =
+                 VotesEdit.execute(
+                   %{
+                     statement_id: vote.statement_id,
+                     author_id: vote.author_id,
+                     answer: "against"
+                   },
+                   :frame
+                 )
+      end)
+
+      assert Votes.get_by(%{statement_id: vote.statement_id, author_id: vote.author_id}).answer ==
+               :for
+    end
+
+    test "allows editing when the vote opinion belongs to the caller" do
+      owner = user_fixture()
+      api_key = api_key_fixture(owner)
+      statement = statement_fixture()
+      opinion =
+        opinion_fixture(%{
+          author_id: owner.author_id,
+          user_id: owner.id,
+          source_url: nil,
+          twin: false
+        })
+
+      vote =
+        vote_fixture(%{
+          author_id: owner.author_id,
+          statement_id: statement.id,
+          opinion_id: opinion.id,
+          answer: :for
+        })
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply, {:json, %{vote: payload}}, :frame} =
+                 VotesEdit.execute(
+                   %{
+                     statement_id: vote.statement_id,
+                     author_id: vote.author_id,
+                     answer: "against"
+                   },
+                   :frame
+                 )
+
+        assert payload.vote_id == vote.id
+        assert payload.statement_id == vote.statement_id
+        assert payload.author_id == vote.author_id
+        assert payload.answer == "against"
+      end)
+
+      assert Votes.get_by(%{statement_id: vote.statement_id, author_id: vote.author_id}).answer ==
+               :against
     end
 
     test "returns deterministic not-found error for a missing vote" do

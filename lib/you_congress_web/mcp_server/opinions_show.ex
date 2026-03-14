@@ -6,7 +6,9 @@ defmodule YouCongressWeb.MCPServer.OpinionsShow do
   use Anubis.Server.Component, type: :tool
 
   alias Anubis.Server.Response
+  alias Ecto.Association.NotLoaded
   alias YouCongress.Opinions
+  alias YouCongress.Votes
   alias YouCongress.Votes
 
   @not_found_message "Opinion not found."
@@ -15,58 +17,72 @@ defmodule YouCongressWeb.MCPServer.OpinionsShow do
     field :opinion_id, :integer, required: true
   end
 
+  @impl true
   def execute(%{opinion_id: opinion_id}, frame) do
-    case Opinions.get_opinion(opinion_id, preload: [:statements]) do
+    case fetch_opinion(opinion_id) do
       nil ->
         {:reply, Response.error(Response.tool(), @not_found_message), frame}
 
       opinion ->
-        data = %{opinion: take_fields(opinion)}
-        {:reply, Response.json(Response.tool(), data), frame}
+        {:reply, Response.json(Response.tool(), %{opinion: serialize_opinion(opinion)}), frame}
     end
   end
 
-  defp take_fields(opinion) do
-    votes_by_statement_id = votes_by_statement_id(opinion)
+  defp fetch_opinion(opinion_id) do
+    Opinions.get_opinion(opinion_id, preload: [:statements])
+  end
 
+  defp serialize_opinion(opinion) do
     %{
       opinion_id: opinion.id,
       content: opinion.content,
       source_url: opinion.source_url,
       year: opinion.year,
-      twin: opinion.twin,
-      verification_status: opinion.verification_status,
-      ancestry: opinion.ancestry,
-      descendants_count: opinion.descendants_count,
-      likes_count: opinion.likes_count,
       author_id: opinion.author_id,
       user_id: opinion.user_id,
-      statements: take_statement_fields(opinion.statements, votes_by_statement_id)
+      verification_status: opinion.verification_status,
+      statements: serialize_statements(opinion)
     }
   end
 
-  defp votes_by_statement_id(%{author_id: nil}), do: %{}
-  defp votes_by_statement_id(%{statements: []}), do: %{}
+  defp serialize_statements(%{statements: %NotLoaded{}}), do: []
 
-  defp votes_by_statement_id(%{author_id: author_id, statements: statements}) do
-    statement_ids = Enum.map(statements, & &1.id)
+  defp serialize_statements(%{statements: statements, author_id: author_id}) do
+    statements = statements || []
+    votes_map = votes_by_statement(statements, author_id)
 
-    Votes.list_votes(author_ids: [author_id], statement_ids: statement_ids)
-    |> Map.new(fn vote -> {vote.statement_id, vote} end)
-  end
-
-  defp take_statement_fields(statements, votes_by_statement_id) do
     statements
     |> Enum.sort_by(& &1.id)
     |> Enum.map(fn statement ->
-      vote = Map.get(votes_by_statement_id, statement.id)
+      vote = Map.get(votes_map, statement.id)
 
       %{
         statement_id: statement.id,
         statement_title: statement.title,
         vote_id: vote && vote.id,
-        vote_answer: vote && to_string(vote.answer)
+        vote_answer: vote && vote.answer
       }
     end)
+  end
+
+  defp votes_by_statement(_statements, nil), do: %{}
+  defp votes_by_statement([], _author_id), do: %{}
+
+  defp votes_by_statement(statements, author_id) do
+    statement_ids =
+      statements
+      |> Enum.map(& &1.id)
+      |> Enum.uniq()
+
+    case statement_ids do
+      [] ->
+        %{}
+
+      ids ->
+        Votes.list_votes(author_ids: [author_id], statement_ids: ids)
+        |> Enum.reduce(%{}, fn vote, acc ->
+          Map.put(acc, vote.statement_id, vote)
+        end)
+    end
   end
 end

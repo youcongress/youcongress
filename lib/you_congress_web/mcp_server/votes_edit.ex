@@ -34,8 +34,9 @@ defmodule YouCongressWeb.MCPServer.VotesEdit do
     with :ok <- ensure_attrs_present(attrs),
          {:ok, user} <- authenticate_user(frame),
          vote when not is_nil(vote) <-
-           Votes.get_by(%{statement_id: statement_id, author_id: author_id}),
+           Votes.get_by(%{statement_id: statement_id, author_id: author_id}, preload: [:opinion]),
          :ok <- ensure_permission(vote, user),
+         :ok <- ensure_vote_editable_by_user(vote, user),
          {:ok, updated_vote} <- Votes.update_vote(vote, attrs) do
       data = %{vote: take_fields(updated_vote)}
       {:reply, Response.json(Response.tool(), data), frame}
@@ -76,6 +77,22 @@ defmodule YouCongressWeb.MCPServer.VotesEdit do
     else
       {:error, :forbidden}
     end
+  end
+
+  defp ensure_vote_editable_by_user(%{opinion: nil}, _user), do: :ok
+
+  defp ensure_vote_editable_by_user(%{opinion: opinion}, user) do
+    case user_vote_owner_id(opinion) do
+      nil -> :ok
+      owner_id when owner_id == user.id -> :ok
+      _ -> {:error, :forbidden}
+    end
+  end
+
+  defp user_vote_owner_id(nil), do: nil
+
+  defp user_vote_owner_id(opinion) do
+    Map.get(opinion, :user_id) || Map.get(opinion, :source_id)
   end
 
   defp attrs_from_params(params) do
