@@ -50,12 +50,12 @@ defmodule YouCongressWeb.VerificationLive.Index do
     offset = (page - 1) * @per_page
     current_user = socket.assigns.current_user
 
-    # Get distinct opinion_ids ordered by latest verification
+    # Get distinct opinion_ids ordered by latest verification id
     opinion_entries =
       from(v in Verification,
         group_by: v.opinion_id,
-        select: %{opinion_id: v.opinion_id, latest: max(v.inserted_at)},
-        order_by: [desc: max(v.inserted_at)],
+        select: %{opinion_id: v.opinion_id, latest: max(v.id)},
+        order_by: [desc: max(v.id)],
         limit: ^@per_page,
         offset: ^offset
       )
@@ -86,7 +86,7 @@ defmodule YouCongressWeb.VerificationLive.Index do
     all_verifications =
       Verifications.list_verifications(
         opinion_id: opinion_ids,
-        order_by: [desc: :updated_at],
+        order_by: [desc: :id],
         preload: [user: [:author]]
       )
 
