@@ -36,6 +36,33 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverifiedTest do
       end)
     end
 
+    test "skips quotes from unsupported sources" do
+      statement = statement_fixture(%{title: "End partisan gerrymandering"})
+
+      excluded_tweet =
+        opinion_fixture(%{
+          content: "This thread is wild",
+          source_url: "https://twitter.com/someone/status/1"
+        })
+
+      allowed_article =
+        opinion_fixture(%{
+          content: "We must end partisan gerrymandering immediately.",
+          source_url: "https://example.com/opinion"
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(excluded_tweet, statement)
+      {:ok, _} = Opinions.add_opinion_to_statement(allowed_article, statement)
+
+      with_mocked_response(fn ->
+        assert {:reply, {:json, %{quote: quote_payload}}, :frame} =
+                 QuotesRandomUnverified.execute(%{}, :frame)
+
+        assert quote_payload.opinion_id == allowed_article.id
+        assert quote_payload.source_url == "https://example.com/opinion"
+      end)
+    end
+
     test "returns deterministic error when no unverified quotes exist" do
       with_mocked_response(fn ->
         assert {:reply, {:error, "No unverified quotes available."}, :frame} =

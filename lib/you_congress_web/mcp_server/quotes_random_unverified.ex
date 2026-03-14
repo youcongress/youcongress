@@ -1,6 +1,7 @@
 defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
   @moduledoc """
   Return a random unverified quote plus the statements and votes that already use it.
+  We skip quotes with source_url starting with twitter, x, youtube as AI is not able to access them.
   """
 
   use Anubis.Server.Component, type: :tool
@@ -13,6 +14,11 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
   alias YouCongress.Votes
 
   @no_quote_message "No unverified quotes available."
+  @unsupported_source_prefixes [
+    "https://twitter.com",
+    "https://x.com",
+    "https://www.youtube.com"
+  ]
 
   schema do
   end
@@ -44,7 +50,8 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
       is_verified: false,
       limit: 1,
       order_by: random_order,
-      preload: [:author, :statements]
+      preload: [:author, :statements],
+      exclude_source_prefixes: @unsupported_source_prefixes
     ]
 
     case Opinions.list_opinions(opts) do
