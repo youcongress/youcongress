@@ -1,12 +1,28 @@
 defmodule YouCongress.OpinionsTest do
   use YouCongress.DataCase
 
+  import YouCongress.AccountsFixtures
   import YouCongress.OpinionsFixtures
   import YouCongress.StatementsFixtures
   import YouCongress.VotesFixtures
 
   alias YouCongress.Opinions
   alias YouCongress.Votes
+
+  describe "add_opinion_to_statement/3" do
+    test "returns already_associated when the link exists" do
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement, opinion.user_id)
+
+      assert {:error, :already_associated} =
+               Opinions.add_opinion_to_statement(opinion, statement, user_fixture().id)
+
+      %{statements: statements} = Opinions.get_opinion!(opinion.id, preload: [:statements])
+      assert length(statements) == 1
+    end
+  end
 
   describe "delete_opinion/1" do
     test "deletes inferred author votes for quote opinions" do
