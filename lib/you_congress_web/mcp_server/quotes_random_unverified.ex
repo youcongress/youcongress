@@ -41,7 +41,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
     opts = [
       has_statements: true,
       only_quotes: true,
-      verification_status: "unverified",
+      is_verified: false,
       limit: 1,
       order_by: random_order,
       preload: [:author, :statements]

@@ -13,7 +13,6 @@ defmodule YouCongressWeb.MCPServer.VotesEdit do
   alias Ecto.Changeset
   alias YouCongress.Accounts
   alias YouCongress.Accounts.Permissions
-  alias YouCongress.Authors
   alias YouCongress.Votes
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
@@ -82,22 +81,14 @@ defmodule YouCongressWeb.MCPServer.VotesEdit do
 
   defp ensure_vote_editable_by_user(%{opinion: nil}, _user), do: :ok
 
-  # It's a quote, so it's editable
-  defp ensure_vote_editable_by_user(%{opinion: %{source_id: nil}}, _user), do: :ok
+  defp ensure_vote_editable_by_user(%{opinion: %{user_id: nil}}, _user), do: :ok
 
-  defp ensure_vote_editable_by_user(%{opinion: opinion}, api_key_user) do
-    case Authors.get_author!(opinion.author_id) do
-      nil ->
-        {:error, :forbidden}
+  defp ensure_vote_editable_by_user(%{opinion: %{user_id: user_id}}, %{id: user_id}), do: :ok
 
-      author ->
-        if author.user_id == api_key_user.id do
-          :ok
-        else
-          {:error, :forbidden}
-        end
-    end
-  end
+  defp ensure_vote_editable_by_user(_vote, %{role: role}) when role in ["admin", "moderator"],
+    do: :ok
+
+  defp ensure_vote_editable_by_user(_, _), do: {:error, :forbidden}
 
   defp attrs_from_params(params) do
     params
