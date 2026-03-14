@@ -14,6 +14,8 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
   alias YouCongressWeb.MCPServer.OpinionsDelete
   alias YouCongressWeb.MCPServer.OpinionsEdit
   alias YouCongressWeb.MCPServer.OpinionsShow
+  alias YouCongressWeb.MCPServer.OpinionsStatementsAdd
+  alias YouCongressWeb.MCPServer.OpinionsStatementsRemove
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
@@ -179,6 +181,150 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       with_mocked_response_and_key(api_key.token, fn ->
         assert {:reply, {:error, @not_found_message}, :frame} =
                  OpinionsDelete.execute(%{opinion_id: -1}, :frame)
+      end)
+    end
+  end
+
+  describe "OpinionsStatementsAdd.execute/2" do
+    test "attaches an opinion to a statement when authenticated and authorized" do
+      admin = admin_fixture()
+      api_key = api_key_fixture(admin)
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply, {:json, payload}, :frame} =
+                 OpinionsStatementsAdd.execute(
+                   %{opinion_id: opinion.id, statement_id: statement.id},
+                   :frame
+                 )
+
+        assert payload.attached
+        assert payload.opinion_id == opinion.id
+        assert payload.statement_id == statement.id
+        assert payload.statement_title == statement.title
+      end)
+
+      opinion = Opinions.get_opinion!(opinion.id, preload: [:statements])
+      assert Enum.any?(opinion.statements, &(&1.id == statement.id))
+    end
+
+    test "returns missing-key error when no API key is provided" do
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+
+      with_mocked_response_and_key(nil, fn ->
+        assert {:reply, {:error, @missing_key_message}, :frame} =
+                 OpinionsStatementsAdd.execute(
+                   %{opinion_id: opinion.id, statement_id: statement.id},
+                   :frame
+                 )
+      end)
+    end
+
+    test "returns forbidden when caller lacks permission" do
+      user = user_fixture()
+      api_key = api_key_fixture(user)
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply,
+                {:error, "Your account is not allowed to attach opinions to statements."},
+                :frame} =
+                 OpinionsStatementsAdd.execute(
+                   %{opinion_id: opinion.id, statement_id: statement.id},
+                   :frame
+                 )
+      end)
+    end
+
+    test "returns an error when the opinion is already attached" do
+      admin = admin_fixture()
+      api_key = api_key_fixture(admin)
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply, {:error, "Opinion is already associated with this statement."}, :frame} =
+                 OpinionsStatementsAdd.execute(
+                   %{opinion_id: opinion.id, statement_id: statement.id},
+                   :frame
+                 )
+      end)
+    end
+  end
+
+  describe "OpinionsStatementsRemove.execute/2" do
+    test "removes an opinion from a statement when authenticated and authorized" do
+      admin = admin_fixture()
+      api_key = api_key_fixture(admin)
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply, {:json, payload}, :frame} =
+                 OpinionsStatementsRemove.execute(
+                   %{opinion_id: opinion.id, statement_id: statement.id},
+                   :frame
+                 )
+
+        assert payload.removed
+        assert payload.opinion_id == opinion.id
+        assert payload.statement_id == statement.id
+      end)
+
+      opinion = Opinions.get_opinion!(opinion.id, preload: [:statements])
+      refute Enum.any?(opinion.statements, &(&1.id == statement.id))
+    end
+
+    test "returns missing-key error when no API key is provided" do
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+
+      with_mocked_response_and_key(nil, fn ->
+        assert {:reply, {:error, @missing_key_message}, :frame} =
+                 OpinionsStatementsRemove.execute(
+                   %{opinion_id: opinion.id, statement_id: statement.id},
+                   :frame
+                 )
+      end)
+    end
+
+    test "returns forbidden when caller lacks permission" do
+      user = user_fixture()
+      api_key = api_key_fixture(user)
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply,
+                {:error, "Your account is not allowed to remove opinions from statements."},
+                :frame} =
+                 OpinionsStatementsRemove.execute(
+                   %{opinion_id: opinion.id, statement_id: statement.id},
+                   :frame
+                 )
+      end)
+    end
+
+    test "returns an error when the opinion is not attached" do
+      admin = admin_fixture()
+      api_key = api_key_fixture(admin)
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply,
+                {:error, "Opinion is not associated with this statement."},
+                :frame} =
+                 OpinionsStatementsRemove.execute(
+                   %{opinion_id: opinion.id, statement_id: statement.id},
+                   :frame
+                 )
       end)
     end
   end

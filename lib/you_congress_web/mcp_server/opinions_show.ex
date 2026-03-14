@@ -1,6 +1,6 @@
 defmodule YouCongressWeb.MCPServer.OpinionsShow do
   @moduledoc """
-  Show a single opinion by identifier.
+  Show a single opinion by identifier, including its statements and votes.
   """
 
   use Anubis.Server.Component, type: :tool

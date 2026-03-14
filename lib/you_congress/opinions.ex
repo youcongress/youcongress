@@ -444,4 +444,44 @@ defmodule YouCongress.Opinions do
       ) do
     {:error, :user_id_required}
   end
+
+  def remove_opinion_from_statement(%Opinion{} = opinion, statement_id)
+      when is_integer(statement_id) do
+    statement = YouCongress.Statements.get_statement!(statement_id)
+    remove_opinion_from_statement(opinion, statement)
+  end
+
+  def remove_opinion_from_statement(
+        %Opinion{} = opinion,
+        %YouCongress.Statements.Statement{} = statement
+      ) do
+    case Repo.get_by(OpinionStatement,
+           opinion_id: opinion.id,
+           statement_id: statement.id
+         ) do
+      nil ->
+        {:error, :not_associated}
+
+      %OpinionStatement{} = opinion_statement ->
+        result =
+          Ecto.Multi.new()
+          |> Ecto.Multi.delete(:opinion_statement, opinion_statement)
+          |> Ecto.Multi.insert(
+            :sync_opinions_count,
+            SyncStatementOpinionsCountWorker.new(%{"statement_id" => statement.id})
+          )
+          |> Repo.transaction()
+
+        case result do
+          {:ok, _} ->
+            {:ok, Repo.preload(opinion, :statements)}
+
+          {:error, :opinion_statement, changeset, _} ->
+            {:error, changeset}
+
+          {:error, _, _, _} ->
+            {:error, :transaction_failed}
+        end
+    end
+  end
 end
