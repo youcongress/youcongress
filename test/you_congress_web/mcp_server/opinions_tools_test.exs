@@ -41,8 +41,12 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       other_statement =
         statement_fixture(%{title: "Require public incident reporting for large AI systems"})
 
+      abstain_statement =
+        statement_fixture(%{title: "Require a temporary compute licensing pause"})
+
       {:ok, _} = Opinions.add_opinion_to_statement(opinion, other_statement)
       {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement)
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, abstain_statement)
 
       vote =
         vote_fixture(%{
@@ -58,6 +62,14 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
           author_id: opinion.author_id,
           opinion_id: opinion.id,
           answer: :against
+        })
+
+      abstain_vote =
+        vote_fixture(%{
+          statement_id: abstain_statement.id,
+          author_id: opinion.author_id,
+          opinion_id: opinion.id,
+          answer: :abstain
         })
 
       with_mocked_response(fn ->
@@ -76,6 +88,12 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
                    title: other_statement.title,
                    vote_id: other_vote.id,
                    answer: "against"
+                 },
+                 %{
+                   statement_id: abstain_statement.id,
+                   title: abstain_statement.title,
+                   vote_id: abstain_vote.id,
+                   answer: "abstain"
                  }
                ]
       end)
