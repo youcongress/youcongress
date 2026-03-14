@@ -63,9 +63,9 @@ defmodule YouCongressWeb.MCPServer.OpinionsShow do
 
       %{
         statement_id: statement.id,
-        title: statement.title,
+        statement_title: statement.title,
         vote_id: vote && vote.id,
-        answer: vote && to_string(vote.answer)
+        vote_answer: vote && to_string(vote.answer)
       }
     end)
   end

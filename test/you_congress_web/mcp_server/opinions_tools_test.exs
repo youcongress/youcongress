@@ -79,21 +79,21 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
         assert payload.statements == [
                  %{
                    statement_id: statement.id,
-                   title: statement.title,
+                   statement_title: statement.title,
                    vote_id: vote.id,
-                   answer: "for"
+                   vote_answer: "for"
                  },
                  %{
                    statement_id: other_statement.id,
-                   title: other_statement.title,
+                   statement_title: other_statement.title,
                    vote_id: other_vote.id,
-                   answer: "against"
+                   vote_answer: "against"
                  },
                  %{
                    statement_id: abstain_statement.id,
-                   title: abstain_statement.title,
+                   statement_title: abstain_statement.title,
                    vote_id: abstain_vote.id,
-                   answer: "abstain"
+                   vote_answer: "abstain"
                  }
                ]
       end)
