@@ -4,6 +4,8 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
   import Mock
   import YouCongress.AccountsFixtures
   import YouCongress.OpinionsFixtures
+  import YouCongress.StatementsFixtures
+  import YouCongress.VotesFixtures
 
   alias YouCongress.Accounts
   alias YouCongress.Opinions
@@ -26,6 +28,56 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
         assert payload.opinion_id == opinion.id
         assert payload.content == "Universal healthcare is essential."
         assert payload.author_id == opinion.author_id
+        assert payload.statements == []
+      end)
+    end
+
+    test "includes associated statements with vote details" do
+      opinion = opinion_fixture(%{content: "AI labs should be liable for model misuse."})
+
+      statement =
+        statement_fixture(%{title: "Impose liability for frontier model deployments"})
+
+      other_statement =
+        statement_fixture(%{title: "Require public incident reporting for large AI systems"})
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, other_statement)
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: opinion.author_id,
+          opinion_id: opinion.id,
+          answer: :for
+        })
+
+      other_vote =
+        vote_fixture(%{
+          statement_id: other_statement.id,
+          author_id: opinion.author_id,
+          opinion_id: opinion.id,
+          answer: :against
+        })
+
+      with_mocked_response(fn ->
+        assert {:reply, {:json, %{opinion: payload}}, :frame} =
+                 OpinionsShow.execute(%{opinion_id: opinion.id}, :frame)
+
+        assert payload.statements == [
+                 %{
+                   statement_id: statement.id,
+                   title: statement.title,
+                   vote_id: vote.id,
+                   answer: "for"
+                 },
+                 %{
+                   statement_id: other_statement.id,
+                   title: other_statement.title,
+                   vote_id: other_vote.id,
+                   answer: "against"
+                 }
+               ]
       end)
     end
 
