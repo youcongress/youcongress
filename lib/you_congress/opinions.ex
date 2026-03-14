@@ -281,6 +281,17 @@ defmodule YouCongress.Opinions do
       {:only_quotes, true}, query ->
         from q in query, where: not is_nil(q.source_url)
 
+      {:exclude_source_prefixes, prefixes}, query ->
+        prefixes
+        |> List.wrap()
+        |> Enum.reject(&is_nil/1)
+        |> Enum.reduce(query, fn prefix, query_acc ->
+          pattern = "#{prefix}%"
+
+          from q in query_acc,
+            where: is_nil(q.source_url) or not ilike(q.source_url, ^pattern)
+        end)
+
       {:twin, twin_value}, query ->
         from q in query, where: q.twin == ^twin_value
 
