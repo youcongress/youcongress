@@ -24,8 +24,6 @@ defmodule YouCongressWeb.MCPServer.VotesCreate do
     field :author_id, :integer, required: true
     field :answer, :string, required: true
     field :opinion_id, :integer
-    field :direct, :boolean
-    field :twin, :boolean
   end
 
   @impl true
@@ -76,7 +74,7 @@ defmodule YouCongressWeb.MCPServer.VotesCreate do
 
   defp attrs_from_params(params) do
     params
-    |> Map.take([:statement_id, :author_id, :answer, :opinion_id, :direct, :twin])
+    |> Map.take([:statement_id, :author_id, :answer, :opinion_id])
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
     |> Map.new()
   end
