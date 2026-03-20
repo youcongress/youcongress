@@ -38,6 +38,7 @@ defmodule YouCongress.Accounts.Permissions do
   """
   def can_edit_author?(%User{role: "admin"}), do: true
   def can_edit_author?(%User{role: "moderator"}), do: true
+  def can_edit_author?(%User{role: "creator"}), do: true
   def can_edit_author?(_), do: false
 
   def can_regenerate_opinion?(%User{role: "admin"}), do: true
