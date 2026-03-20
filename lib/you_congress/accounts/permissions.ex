@@ -29,12 +29,14 @@ defmodule YouCongress.Accounts.Permissions do
   Checks if the user can create authors
   """
   def can_create_authors?(%User{role: "admin"}), do: true
+  def can_create_authors?(%User{role: "creator"}), do: true
   def can_create_authors?(_), do: false
 
   @doc """
   Checks if the user can edit the given author.
   """
   def can_edit_author?(%User{role: "admin"}), do: true
+  def can_edit_author?(%User{role: "moderator"}), do: true
   def can_edit_author?(_), do: false
 
   def can_regenerate_opinion?(%User{role: "admin"}), do: true
@@ -45,6 +47,7 @@ defmodule YouCongress.Accounts.Permissions do
   Checks if the user can add an opinion to a statement.
   """
   def can_add_opinion_to_statement?(%User{role: "admin"}), do: true
+  def can_add_opinion_to_statement?(%User{role: "creator"}), do: true
   def can_add_opinion_to_statement?(%User{role: "moderator"}), do: true
   def can_add_opinion_to_statement?(_), do: false
 
@@ -61,6 +64,7 @@ defmodule YouCongress.Accounts.Permissions do
   """
   def can_edit_vote?(%{author_id: id}, %User{author_id: id}) when id != nil, do: true
   def can_edit_vote?(_vote, %User{role: "admin"}), do: true
+  def can_edit_vote?(_vote, %User{role: "creator"}), do: true
   def can_edit_vote?(_vote, %User{role: "moderator"}), do: true
   def can_edit_vote?(_vote, _user), do: false
 
