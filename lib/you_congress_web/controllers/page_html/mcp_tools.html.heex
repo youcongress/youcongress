@@ -1,0 +1,480 @@
+<div class="max-w-4xl mx-auto space-y-8">
+  <!-- Header Section -->
+  <section aria-labelledby="mcp-heading">
+    <h1 id="mcp-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
+      YouCongress MCP Tools
+    </h1>
+    <p class="mt-6 text-lg leading-relaxed">
+      YouCongress exposes its data and functionality through the <strong>Model Context Protocol (MCP)</strong>, an open standard that lets AI assistants
+      like Claude, ChatGPT, Cursor, and others interact directly with external services.
+    </p>
+  </section>
+  
+<!-- What is MCP Section -->
+  <section aria-labelledby="what-is-mcp-heading">
+    <h2 id="what-is-mcp-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
+      What is MCP?
+    </h2>
+    <p class="mt-6 text-lg leading-relaxed">
+      The
+      <.link
+        href="https://modelcontextprotocol.io/"
+        target="_blank"
+        class="underline text-blue-600 hover:text-blue-800"
+      >
+        Model Context Protocol (MCP)
+      </.link>
+      is an open standard created by Anthropic that allows
+      AI models to connect to external data sources and tools. Think of it as a universal plug
+      that lets any compatible AI assistant read, search, and write data in YouCongress without
+      needing a custom integration for each AI product.
+    </p>
+  </section>
+  
+<!-- How to Connect Section -->
+  <section aria-labelledby="connect-heading">
+    <h2 id="connect-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
+      How to Connect
+    </h2>
+    <div class="mt-6 space-y-4">
+      <div class="flex items-start space-x-3">
+        <div class="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+          <span class="text-white text-sm font-bold">1</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-lg">Get an API Key</h3>
+          <p class="text-gray-700 leading-relaxed">
+            Log in to YouCongress and go to
+            <.link href="/settings" class="underline text-blue-600 hover:text-blue-800">
+              Settings
+            </.link>
+            to create an API key. Choose <strong>read-write</strong>
+            scope if you want to create
+            or edit data, or <strong>read-only</strong>
+            for browsing.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-start space-x-3">
+        <div class="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+          <span class="text-white text-sm font-bold">2</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-lg">Add the MCP Server</h3>
+          <p class="text-gray-700 leading-relaxed">
+            In your AI tool, add the YouCongress MCP server with this URL:
+          </p>
+          <pre class="mt-2 p-3 bg-gray-100 rounded-lg text-sm overflow-x-auto"><code>https://youcongress.com/mcp?key=YOUR_API_KEY</code></pre>
+        </div>
+      </div>
+
+      <div class="flex items-start space-x-3">
+        <div class="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+          <span class="text-white text-sm font-bold">3</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-lg">Start Using the Tools</h3>
+          <p class="text-gray-700 leading-relaxed">
+            Once connected, your AI assistant will automatically discover all available tools
+            and can use them on your behalf.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+<!-- Setup Examples Section -->
+  <section aria-labelledby="setup-heading">
+    <h2 id="setup-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
+      Setup Examples
+    </h2>
+    <div class="mt-6 space-y-6">
+      <div>
+        <h3 class="font-semibold text-lg">Claude Desktop / Claude Code</h3>
+        <p class="text-gray-700 leading-relaxed mt-1">
+          Add this to your Claude MCP settings (<code class="bg-gray-100 px-1 rounded">claude_desktop_config.json</code> or <code class="bg-gray-100 px-1 rounded">.mcp.json</code>):
+        </p>
+        <pre class="mt-2 p-3 bg-gray-100 rounded-lg text-sm overflow-x-auto"><code><%= raw("""
+{
+  "mcpServers": {
+    "youcongress": {
+      "type": "url",
+      "url": "https://youcongress.com/mcp?key=YOUR_API_KEY"
+    }
+  }
+}
+""" |> String.trim() |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()) %></code></pre>
+      </div>
+
+      <div>
+        <h3 class="font-semibold text-lg">Cursor</h3>
+        <p class="text-gray-700 leading-relaxed mt-1">
+          Go to <strong>Settings &gt; MCP</strong>
+          and add a new server with the URL <code class="bg-gray-100 px-1 rounded">https://youcongress.com/mcp?key=YOUR_API_KEY</code>.
+        </p>
+      </div>
+
+      <div>
+        <h3 class="font-semibold text-lg">Other MCP-compatible tools</h3>
+        <p class="text-gray-700 leading-relaxed mt-1">
+          Any tool that supports the MCP standard can connect using the same URL.
+          Check your tool's documentation for how to add an MCP server.
+        </p>
+      </div>
+    </div>
+  </section>
+  
+<!-- Available Tools Section -->
+  <section aria-labelledby="tools-heading">
+    <h2 id="tools-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
+      Available Tools
+    </h2>
+    
+<!-- Role Legend -->
+    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+      <h3 class="font-semibold text-sm text-gray-600 mb-2">Role Legend</h3>
+      <div class="flex flex-col gap-2 text-sm">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800">
+            public
+          </span>
+          <span class="text-gray-600">No login required</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+            any user
+          </span>
+          <span class="text-gray-600">Any logged-in user</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center px-2 py-0.5 rounded bg-yellow-100 text-yellow-800">
+            own author
+          </span>
+          <span class="text-gray-600">Your own linked author or opinion</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center px-2 py-0.5 rounded bg-purple-100 text-purple-800">
+            moderator
+          </span>
+          <span class="text-gray-600">Users with the moderator role</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center px-2 py-0.5 rounded bg-orange-100 text-orange-800">
+            creator
+          </span>
+          <span class="text-gray-600">Users with the creator role</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800">
+            admin
+          </span>
+          <span class="text-gray-600">Administrators</span>
+        </div>
+      </div>
+    </div>
+    
+<!-- Statements -->
+    <div class="mt-6">
+      <h3 class="text-lg font-semibold border-b border-gray-200 pb-2">Statements</h3>
+      <p class="text-gray-600 mt-1">Policy proposals and claims that people vote on.</p>
+      <dl class="mt-3 space-y-3">
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            statements_list
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 font-sans text-xs font-medium">
+              public
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            List all statements. Use this to find statement IDs for other tools.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            statements_create
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
+              admin
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-orange-100 text-orange-800 font-sans text-xs font-medium">
+              creator
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Create a new statement. Requires: <code class="bg-gray-100 px-1 rounded">title</code>.
+          </dd>
+        </div>
+      </dl>
+    </div>
+    
+<!-- Authors -->
+    <div class="mt-6">
+      <h3 class="text-lg font-semibold border-b border-gray-200 pb-2">Authors</h3>
+      <p class="text-gray-600 mt-1">People whose opinions and votes are tracked.</p>
+      <dl class="mt-3 space-y-3">
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            authors_search
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 font-sans text-xs font-medium">
+              public
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Search authors by name. Requires: <code class="bg-gray-100 px-1 rounded">query</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            authors_create
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
+              admin
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Create a new author profile. Fields: <code class="bg-gray-100 px-1 rounded">name</code>, <code class="bg-gray-100 px-1 rounded">one_line_bio</code>, <code class="bg-gray-100 px-1 rounded">twitter_username</code>, <code class="bg-gray-100 px-1 rounded">wikipedia_url</code>, <code class="bg-gray-100 px-1 rounded">country</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            authors_update
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
+              admin
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Update an existing author. Requires: <code class="bg-gray-100 px-1 rounded">author_id</code>.
+            Optional: same fields as create.
+          </dd>
+        </div>
+      </dl>
+    </div>
+    
+<!-- Opinions -->
+    <div class="mt-6">
+      <h3 class="text-lg font-semibold border-b border-gray-200 pb-2">Opinions</h3>
+      <p class="text-gray-600 mt-1">
+        Quotes and opinions attributed to authors, linked to statements.
+      </p>
+      <dl class="mt-3 space-y-3">
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            opinions_create
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-sans text-xs font-medium">
+              own author
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-sans text-xs font-medium">
+              moderator
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
+              admin
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Create a new opinion. Requires: <code class="bg-gray-100 px-1 rounded">content</code>, <code class="bg-gray-100 px-1 rounded">author_id</code>.
+            Optional: <code class="bg-gray-100 px-1 rounded">source_url</code>, <code class="bg-gray-100 px-1 rounded">year</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            opinions_show
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 font-sans text-xs font-medium">
+              public
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            View an opinion with its statements and votes. Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            opinions_edit
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-sans text-xs font-medium">
+              own opinion
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-sans text-xs font-medium">
+              moderator
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
+              admin
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Edit an existing opinion. Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>.
+            Optional: <code class="bg-gray-100 px-1 rounded">content</code>, <code class="bg-gray-100 px-1 rounded">author_id</code>, <code class="bg-gray-100 px-1 rounded">source_url</code>, <code class="bg-gray-100 px-1 rounded">year</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            opinions_delete
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-sans text-xs font-medium">
+              own opinion
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-sans text-xs font-medium">
+              moderator
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
+              admin
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Delete an opinion. Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            opinions_statements_add
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-sans text-xs font-medium">
+              moderator
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
+              admin
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Link an opinion to a statement. Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            opinions_statements_remove
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-sans text-xs font-medium">
+              moderator
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
+              admin
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Unlink an opinion from a statement. Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>.
+          </dd>
+        </div>
+      </dl>
+    </div>
+    
+<!-- Quotes / Verification -->
+    <div class="mt-6">
+      <h3 class="text-lg font-semibold border-b border-gray-200 pb-2">Quote Verification</h3>
+      <p class="text-gray-600 mt-1">Search and verify quotes attributed to authors.</p>
+      <dl class="mt-3 space-y-3">
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            quotes_search
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 font-sans text-xs font-medium">
+              public
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Search quotes for a statement. Requires: <code class="bg-gray-100 px-1 rounded">query</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            quotes_random_unverified
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 font-sans text-xs font-medium">
+              public
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Get a random unverified quote to review. No parameters needed.
+            Skips quotes from Twitter/X and YouTube since AI cannot access those sources.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            quotes_verify
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-sans text-xs font-medium">
+              any user
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Verify a quote. Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>, <code class="bg-gray-100 px-1 rounded">status</code>, <code class="bg-gray-100 px-1 rounded">comment</code>, <code class="bg-gray-100 px-1 rounded">model</code>.
+          </dd>
+        </div>
+      </dl>
+    </div>
+    
+<!-- Votes -->
+    <div class="mt-6">
+      <h3 class="text-lg font-semibold border-b border-gray-200 pb-2">Votes</h3>
+      <p class="text-gray-600 mt-1">
+        Record how authors vote on statements (for, against, or abstain).
+      </p>
+      <dl class="mt-3 space-y-3">
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            votes_create
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-sans text-xs font-medium">
+              own author
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-sans text-xs font-medium">
+              moderator
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
+              admin
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Create a vote. Requires: <code class="bg-gray-100 px-1 rounded">author_id</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>,
+            <code class="bg-gray-100 px-1 rounded">answer</code>
+            (for / against / abstain).
+            Optional: <code class="bg-gray-100 px-1 rounded">opinion_id</code>, <code class="bg-gray-100 px-1 rounded">direct</code>, <code class="bg-gray-100 px-1 rounded">twin</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            votes_edit
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-sans text-xs font-medium">
+              own author
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-sans text-xs font-medium">
+              moderator
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
+              admin
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Edit an existing vote. Requires: <code class="bg-gray-100 px-1 rounded">author_id</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>.
+            Optional: <code class="bg-gray-100 px-1 rounded">answer</code>
+            (for / against / abstain).
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+  
+<!-- Use Cases Section -->
+  <section aria-labelledby="use-cases-heading">
+    <h2 id="use-cases-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
+      What Can You Do?
+    </h2>
+    <ul class="mt-6 space-y-3 text-lg leading-relaxed list-disc pl-6">
+      <li>Ask your AI to find quotes about a topic and summarize the different viewpoints.</li>
+      <li>Search for what a specific author has said about a topic</li>
+      <li>Add quotes with source URLs so others can verify them</li>
+      <li>Verify unverified quotes by checking their sources</li>
+      <li>Record how public figures vote on policy proposals based on their public statements</li>
+      <li>Create new policy proposals for discussion</li>
+    </ul>
+  </section>
+  
+<!-- CTA Section -->
+  <div class="text-center">
+    <%= if @current_user do %>
+      <a
+        href={~p"/settings"}
+        class="inline-block bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-md"
+      >
+        Get Your API Key in Settings
+      </a>
+    <% else %>
+      <.link
+        href={~p"/log_in"}
+        method="get"
+        class="inline-block bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-md"
+      >
+        Log In to Get Started
+      </.link>
+    <% end %>
+  </div>
+</div>

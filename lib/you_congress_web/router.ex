@@ -48,6 +48,7 @@ defmodule YouCongressWeb.Router do
     get("/waiting_list", PageController, :waiting_list)
     get("/about", PageController, :about)
     get("/faq", PageController, :faq)
+    get("/mcp-tools", PageController, :mcp_tools)
     get("/email-login-waiting-list", PageController, :email_login_waiting_list)
     get("/email-login-waiting-list/thanks", PageController, :email_login_waiting_list_thanks)
     live("/sign_up", UserRegistrationLive, :new)
