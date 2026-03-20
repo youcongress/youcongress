@@ -17,27 +17,72 @@
       <div class="text-center">
         <div class="leading-8 text-gray-600">
           <h2 class="text-2xl md:mx-24 font-bold">
-            Verifiable quotes on <span class="text-indigo-600">AI governance</span>
+            Two layers of <span class="text-indigo-600">YouCongress</span> for AI governance
           </h2>
           <p class="text-lg mb-6 md:mx-24">
-            Find what experts actually said (with sources) and select delegates to represent you when you don't directly vote.
+            We run on a verifiable data layer plus a participation layer so debates about AI policy stay grounded in sourced quotes and can turn into collective action.
           </p>
+        </div>
 
-          <div class="max-w-xl mx-auto mb-8">
-            <form phx-submit="search">
-              <input
-                id="home-search"
-                phx-debounce="300"
-                phx-change="search"
-                phx-mounted={JS.focus(to: "#home-search")}
-                type="search"
-                name="search"
-                value={@search}
-                placeholder="Search AI quotes, people, policies..."
-                class="block w-full rounded-lg text-zinc-900 focus:ring-1 focus:ring-indigo-600 sm:text-sm sm:leading-6 border-zinc-300"
-              />
-            </form>
+        <div class="grid gap-4 md:grid-cols-2 text-left text-gray-700 mb-8">
+          <div class="bg-white/80 border border-indigo-100 rounded-2xl p-6 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">
+              Data layer
+            </p>
+            <p class="text-xl font-semibold text-gray-900 mt-1">Verifiable quotes database</p>
+            <p class="mt-3 text-sm text-gray-600">
+              We track and source what leaders say about AI governance, then invite the community to help keep the record clean.
+            </p>
+            <ul class="mt-4 space-y-4 text-sm">
+              <li>
+                <p class="font-semibold text-gray-900">Journalists &amp; policy makers</p>
+                <p>Find who said what on AI gov.</p>
+              </li>
+              <li>
+                <p class="font-semibold text-gray-900">Citizens</p>
+                <p>
+                  Want to help in AI gov but no PhD? Help validate the quotes that our AI finds.
+                </p>
+              </li>
+            </ul>
           </div>
+          <div class="bg-white/80 border border-emerald-100 rounded-2xl p-6 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wide text-emerald-600">
+              Participation layer
+            </p>
+            <p class="text-xl font-semibold text-gray-900 mt-1">Liquid democracy for policy</p>
+            <p class="mt-3 text-sm text-gray-600">
+              The vetted quotes power policies, votes and delegations so collective preferences stay transparent.
+            </p>
+            <ul class="mt-4 space-y-4 text-sm">
+              <li>
+                <p class="font-semibold text-gray-900">Politicians & activists</p>
+                <p>Add a policy proposal or a claim to be analysed and voted.</p>
+              </li>
+              <li>
+                <p class="font-semibold text-gray-900">Citizens</p>
+                <p>
+                  Add your opinions, vote and delegate to people you trust: users and public figures (we infer their vote from their sourced quotes).
+                </p>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="max-w-xl mx-auto mb-8">
+          <form phx-submit="search">
+            <input
+              id="home-search"
+              phx-debounce="300"
+              phx-change="search"
+              phx-mounted={JS.focus(to: "#home-search")}
+              type="search"
+              name="search"
+              value={@search}
+              placeholder="Search AI quotes, people, policies..."
+              class="block w-full rounded-lg text-zinc-900 focus:ring-1 focus:ring-indigo-600 sm:text-sm sm:leading-6 border-zinc-300"
+            />
+          </form>
         </div>
 
         <%= if @search do %>

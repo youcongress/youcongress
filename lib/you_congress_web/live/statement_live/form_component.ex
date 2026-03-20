@@ -71,7 +71,7 @@ defmodule YouCongressWeb.StatementLive.FormComponent do
         {:noreply,
          socket
          |> put_flash(:info, "Statement deleted successfully")
-         |> redirect(to: ~p"/")}
+         |> redirect(to: ~p"/polls")}
 
       {:error, _} ->
         {:noreply, socket}

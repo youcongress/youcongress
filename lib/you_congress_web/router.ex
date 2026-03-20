@@ -37,6 +37,7 @@ defmodule YouCongressWeb.Router do
     live("/p/:slug", StatementLive.Show, :show)
     live("/a/:id", AuthorLive.Show, :show)
     live("/x/:twitter_username", AuthorLive.Show, :show)
+    live("/polls", StatementLive.Index, :index)
     live("/h/:hall", StatementLive.Index, :index)
     live("/c/:id", OpinionLive.Show, :show)
     live("/fact-checker", FactCheckerLive.Index, :index)
@@ -83,7 +84,6 @@ defmodule YouCongressWeb.Router do
     live("/p/:slug/add-quote", StatementLive.AddQuote, :add_quote)
 
     live("/settings", SettingsLive, :settings)
-    live("/landing", HomeLive.Index, :index)
   end
 
   # Other scopes may use custom stacks.
@@ -129,7 +129,7 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through([:browser])
 
-    live("/", StatementLive.Index, :index)
+    live("/", HomeLive.Index, :index)
   end
 
   scope "/", YouCongressWeb do

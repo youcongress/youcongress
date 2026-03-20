@@ -62,7 +62,7 @@ defmodule YouCongressWeb.StatementLive.Index do
 
     if connected?(socket) do
       %{assigns: %{current_user: current_user}} = socket
-      Track.event("View Home", current_user)
+      Track.event("View Polls", current_user)
     end
 
     {:ok, socket}

@@ -19,12 +19,11 @@ defmodule YouCongressWeb.TopHeaderComponent do
         </div>
         <!-- Desktop Navigation -->
         <div class="hidden md:flex text-sm items-center gap-6 leading-6 text-zinc-900">
-          <.link
-            :if={@current_user && YouCongress.Accounts.sign_up_complete?(@current_user)}
-            href={~p"/"}
-            class="px-3 py-2 hover:text-zinc-700 transition-colors"
-          >
+          <.link href={~p"/"} class="px-3 py-2 hover:text-zinc-700 transition-colors">
             Home
+          </.link>
+          <.link href={~p"/polls"} class="px-3 py-2 hover:text-zinc-700 transition-colors">
+            Polls
           </.link>
           <.link
             :if={!@current_user || YouCongress.Accounts.sign_up_complete?(@current_user)}
@@ -57,6 +56,18 @@ defmodule YouCongressWeb.TopHeaderComponent do
         <!-- Mobile Navigation (Optimized Touch Targets) -->
         <div class="md:hidden flex flex-col items-end gap-3 text-sm">
           <div class="flex items-center gap-4">
+            <.link
+              href={~p"/"}
+              class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
+            >
+              Home
+            </.link>
+            <.link
+              href={~p"/polls"}
+              class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
+            >
+              Polls
+            </.link>
             <.link
               :if={!@current_user || YouCongress.Accounts.sign_up_complete?(@current_user)}
               href={~p"/about"}

@@ -303,12 +303,12 @@ defmodule YouCongressWeb.UserAuth do
   end
 
   @doc """
-  Redirects to / if user is authenticated.
+  Redirects authenticated users to the polls feed.
   """
   def redirect_home_if_user_is_authenticated(conn, _opts) do
     if conn.assigns[:current_user] do
       conn
-      |> redirect(to: ~p"/")
+      |> redirect(to: ~p"/polls")
       |> halt()
     else
       conn
@@ -327,5 +327,5 @@ defmodule YouCongressWeb.UserAuth do
 
   defp maybe_store_return_to(conn), do: conn
 
-  defp signed_in_path(_conn), do: ~p"/"
+  defp signed_in_path(_conn), do: ~p"/polls"
 end

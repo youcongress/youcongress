@@ -49,7 +49,7 @@
       action={@live_action}
       statement={@statement}
       current_user={@current_user}
-      patch={~p"/"}
+      patch={~p"/polls"}
       cancel_link?={true}
     />
   </div>
@@ -178,7 +178,7 @@
     :if={@live_action in [:new, :edit]}
     id="statement-modal"
     show
-    on_cancel={JS.patch(~p"/")}
+    on_cancel={JS.patch(~p"/polls")}
   >
     <.live_component
       module={FormComponent}
@@ -186,7 +186,7 @@
       title={@page_title}
       action={@live_action}
       statement={@statement}
-      patch={~p"/"}
+      patch={~p"/polls"}
     />
   </.modal>
 <% end %>

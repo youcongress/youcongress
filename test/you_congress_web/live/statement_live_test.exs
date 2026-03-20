@@ -51,7 +51,7 @@ defmodule YouCongressWeb.StatementLiveTest do
         vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
 
       conn = log_in_as_user(conn)
-      {:ok, index_live, _html} = live(conn, ~p"/")
+      {:ok, index_live, _html} = live(conn, ~p"/polls")
 
       # Switch to New mode to see the statement (default is Top mode which filters by Wikipedia authors)
       index_live |> element("button[phx-click='toggle-switch']") |> render_click()
@@ -106,7 +106,7 @@ defmodule YouCongressWeb.StatementLiveTest do
          [generate_rewordings: fn _, _ -> {:ok, @suggested_titles, 0} end]}
       ]) do
         conn = log_in_as_admin(conn)
-        {:ok, index_live, _html} = live(conn, ~p"/")
+        {:ok, index_live, _html} = live(conn, ~p"/polls")
 
         index_live
         |> element("button#create-poll-button", "New")
