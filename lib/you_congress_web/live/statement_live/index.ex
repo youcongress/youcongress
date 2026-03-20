@@ -46,7 +46,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:halls, [])
       |> assign(:authors, [])
       |> assign(:quotes, [])
-      |> assign(:order_by_date, false)
+      |> assign(:order_by_date, true)
       |> assign(:hall_name, params["hall"] || HallNav.default_hall())
       |> assign(:new_poll_visible?, false)
       |> assign(:current_user_delegation_ids, get_current_user_delegation_ids(current_user))
