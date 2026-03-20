@@ -309,7 +309,7 @@ defmodule YouCongressWeb.StatementLive.Index do
     Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
   end
 
-  # For "Top" mode: use round-robin opinion cards from authors with Wikipedia pages
+  # For "Top" mode: show the most liked opinion for each statement (one card per statement)
   # For "New" mode: opinions ordered by most recently updated, statements can repeat
   defp assign_cards(socket, page) do
     %{
@@ -332,10 +332,9 @@ defmodule YouCongressWeb.StatementLive.Index do
           limit: per_page
         )
       else
-        # Top mode: round-robin opinions from authors with Wikipedia pages
-        StatementQueries.get_opinion_cards_round_robin(
+        # Top mode: use the most liked opinion for each statement
+        StatementQueries.get_opinion_cards_by_top_likes(
           hall_name: hall_name,
-          wikipedia_only: true,
           offset: offset,
           limit: per_page
         )

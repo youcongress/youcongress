@@ -244,6 +244,103 @@ defmodule YouCongress.Statements.StatementQueries do
   end
 
   @doc """
+  Returns one opinion card per statement showing the opinion with the most likes.
+
+  Statements are ordered by total opinion_likes_count (descending) so the most
+  popular statements appear first. Within each statement the opinion is chosen
+  by likes_count (ties fall back to the most recently updated opinion/vote).
+
+  Options:
+  - :hall_name - filter by hall (default "all")
+  - :offset - number of cards to skip
+  - :limit - max cards to return
+  """
+  def get_opinion_cards_by_top_likes(opts \\ []) do
+    hall_name = Keyword.get(opts, :hall_name, "all")
+    offset = Keyword.get(opts, :offset, 0)
+    limit = Keyword.get(opts, :limit, 15)
+
+    has_hall = hall_name != "all"
+
+    {hall_filter, params, param_idx} =
+      if has_hall do
+        {"JOIN halls_statements hs ON hs.statement_id = s.id\n         JOIN halls h ON h.id = hs.hall_id AND h.name = $1", [hall_name], 2}
+      else
+        {"", [], 1}
+      end
+
+    offset_param = "$#{param_idx}"
+    limit_param = "$#{param_idx + 1}"
+    params = params ++ [offset, limit]
+
+    sql = """
+    WITH ranked_votes AS (
+      SELECT
+        v.id as vote_id,
+        s.id as statement_id,
+        s.opinion_likes_count,
+        s.inserted_at as statement_inserted_at,
+        ROW_NUMBER() OVER (
+          PARTITION BY s.id
+          ORDER BY o.likes_count DESC, o.updated_at DESC, v.inserted_at DESC
+        ) as vote_rank
+      FROM statements s
+      JOIN votes v ON v.statement_id = s.id
+      JOIN opinions o ON o.id = v.opinion_id
+      #{hall_filter}
+      WHERE v.opinion_id IS NOT NULL
+    )
+    SELECT rv.vote_id, rv.statement_id
+    FROM ranked_votes rv
+    WHERE rv.vote_rank = 1
+    ORDER BY rv.opinion_likes_count DESC, rv.statement_inserted_at DESC
+    OFFSET #{offset_param}
+    LIMIT #{limit_param}
+    """
+
+    result = Repo.query!(sql, params)
+
+    if result.rows == [] do
+      []
+    else
+      results =
+        Enum.map(result.rows, fn [vote_id, statement_id] ->
+          %{vote_id: vote_id, statement_id: statement_id}
+        end)
+
+      vote_ids = Enum.map(results, & &1.vote_id)
+      statement_ids = results |> Enum.map(& &1.statement_id) |> Enum.uniq()
+
+      votes =
+        from(v in Vote,
+          where: v.id in ^vote_ids,
+          preload: [:author, :opinion]
+        )
+        |> Repo.all()
+        |> Map.new(&{&1.id, &1})
+
+      statements =
+        from(s in Statement,
+          where: s.id in ^statement_ids
+        )
+        |> Repo.all()
+        |> Map.new(&{&1.id, &1})
+
+      Enum.map(results, fn %{vote_id: vote_id, statement_id: statement_id} ->
+        vote = Map.get(votes, vote_id)
+        statement = Map.get(statements, statement_id)
+
+        %OpinionCard{
+          id: "card-#{statement_id}-#{vote_id}",
+          statement: statement,
+          vote: vote,
+          round: 1
+        }
+      end)
+    end
+  end
+
+  @doc """
   Returns opinion cards ordered by most recently updated opinions first.
 
   Unlike round-robin, statements can appear consecutively if they have
