@@ -1,8 +1,6 @@
 defmodule YouCongressWeb.HomeLive.Index do
   use YouCongressWeb, :live_view
 
-  require Logger
-
   alias YouCongress.Authors
   alias YouCongress.Halls
   alias YouCongress.Opinions
@@ -10,7 +8,6 @@ defmodule YouCongressWeb.HomeLive.Index do
   alias YouCongress.Track
   alias YouCongress.Statements
   alias YouCongressWeb.StatementLive.Index.Search
-  alias YouCongressWeb.StatementLive.NewFormComponent
 
   @impl true
   def mount(_params, session, socket) do
@@ -37,11 +34,6 @@ defmodule YouCongressWeb.HomeLive.Index do
       |> assign(:authors, [])
       |> assign(:statements, [])
       |> assign(:quotes, [])
-      |> assign(:delegates, load_highlighted_delegates())
-      |> assign(:selected_delegate_ids, [])
-      |> assign(:selection_statements, [])
-      |> assign(:user_votes, %{})
-      |> assign(:auth_tab, :register)
       |> assign(:log_in_with_x_enabled, FeatureFlags.enabled?(:log_in_with_x))
 
     {:ok, socket}
@@ -98,102 +90,6 @@ defmodule YouCongressWeb.HomeLive.Index do
     {:noreply, assign(socket, search_tab: :quotes)}
   end
 
-  def handle_event("switch-auth-tab", %{"tab" => tab}, socket) do
-    {:noreply, assign(socket, auth_tab: String.to_existing_atom(tab))}
-  end
-
-  def handle_event("toggle-delegate", %{"id" => id}, socket) do
-    id = String.to_integer(id)
-    selected_ids = socket.assigns.selected_delegate_ids
-
-    new_selected_ids =
-      if id in selected_ids do
-        List.delete(selected_ids, id)
-      else
-        [id | selected_ids]
-      end
-
-    socket =
-      socket
-      |> assign(:selected_delegate_ids, new_selected_ids)
-      |> assign_statements_for_selection(new_selected_ids)
-
-    {:noreply, socket}
-  end
-
-  def handle_event(
-        "vote",
-        %{"id" => statement_id, "answer" => answer},
-        %{assigns: %{current_user: nil}} = socket
-      ) do
-    statement_id = String.to_integer(statement_id)
-    answer = String.to_existing_atom(answer)
-
-    vote = %{answer: answer, statement_id: statement_id}
-    new_user_votes = Map.put(socket.assigns.user_votes, statement_id, vote)
-    socket = assign(socket, :user_votes, new_user_votes)
-
-    {:noreply, socket}
-  end
-
-  def handle_event("vote", %{"id" => statement_id, "answer" => answer}, socket) do
-    current_user = socket.assigns.current_user
-
-    case YouCongress.Votes.create_or_update(%{
-           statement_id: String.to_integer(statement_id),
-           answer: answer,
-           author_id: current_user.author_id,
-           direct: true
-         }) do
-      {:ok, _vote} ->
-        # Reload the voting to update the UI (could be optimized)
-        selected_ids = socket.assigns.selected_delegate_ids
-
-        {:noreply,
-         assign_statements_for_selection(socket, selected_ids)
-         |> put_flash(:info, "Voted #{String.capitalize(answer)}!")}
-
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not cast vote.")}
-    end
-  end
-
-  def handle_event(
-        "delete-vote",
-        %{"id" => statement_id},
-        %{assigns: %{current_user: nil}} = socket
-      ) do
-    statement_id = String.to_integer(statement_id)
-    new_user_votes = Map.delete(socket.assigns.user_votes, statement_id)
-    {:noreply, assign(socket, :user_votes, new_user_votes)}
-  end
-
-  def handle_event("delete-vote", %{"id" => statement_id}, socket) do
-    current_user = socket.assigns.current_user
-    statement_id = String.to_integer(statement_id)
-
-    case YouCongress.Votes.delete_vote(%{
-           statement_id: statement_id,
-           author_id: current_user.author_id
-         }) do
-      {_count, _} ->
-        # Reload to update UI
-        selected_ids = socket.assigns.selected_delegate_ids
-
-        {:noreply,
-         assign_statements_for_selection(socket, selected_ids)
-         |> put_flash(:info, "Vote removed.")}
-
-      _ ->
-        {:noreply, put_flash(socket, :error, "Could not remove vote.")}
-    end
-  end
-
-  @impl true
-  def handle_info({NewFormComponent, {:put_flash, level, message}}, socket) do
-    {:noreply, put_flash(socket, level, message)}
-  end
-
   defp perform_search(socket, search) do
     Track.event("Search via Home", socket.assigns.current_user)
     statements = Statements.list_statements(search: search, preload: [:halls])
@@ -218,84 +114,5 @@ defmodule YouCongressWeb.HomeLive.Index do
       halls: halls,
       quotes: quotes
     )
-  end
-
-  defp load_highlighted_delegates do
-    names = [
-      "Stuart J. Russell",
-      "Demis Hassabis",
-      "Scott Alexander",
-      "Yoshua Bengio",
-      "Eliezer Yudkowsky",
-      "Yann LeCun",
-      "Geoffrey Hinton",
-      "Gary Marcus",
-      "Dario Amodei",
-      "Sam Altman",
-      "Elon Musk",
-      "Max Tegmark"
-    ]
-
-    Authors.list_authors(names: names)
-  end
-
-  defp assign_statements_for_selection(socket, []) do
-    assign(socket, :selection_statements, [])
-  end
-
-  defp assign_statements_for_selection(socket, selected_ids) do
-    statements =
-      selected_ids
-      |> Statements.list_statements_with_opinions_by_authors()
-      |> Enum.sort_by(&(-length(&1.opinions)))
-
-    user_votes =
-      if current_user = socket.assigns.current_user do
-        statement_ids = Enum.map(statements, & &1.id)
-
-        YouCongress.Votes.list_votes(
-          author_ids: [current_user.author_id],
-          statement_ids: statement_ids
-        )
-        |> Map.new(&{&1.statement_id, &1})
-      else
-        %{}
-      end
-
-    socket
-    |> assign(:selection_statements, statements)
-    |> assign(:user_votes, user_votes)
-  end
-
-  def get_vote_answer(statement, author_id) do
-    case Enum.find(statement.votes, &(&1.author_id == author_id)) do
-      nil -> nil
-      vote -> vote.answer
-    end
-  end
-
-  def calculate_majority_vote(statement, selected_delegate_ids) do
-    votes =
-      statement.votes
-      |> Enum.filter(&(&1.author_id in selected_delegate_ids))
-      |> Enum.map(& &1.answer)
-
-    if Enum.empty?(votes) do
-      nil
-    else
-      counts = Enum.frequencies(votes)
-
-      if Map.get(counts, :for, 0) == Map.get(counts, :against, 0) do
-        :abstain
-      else
-        counts
-        |> Enum.max_by(fn {_answer, count} -> count end)
-        |> elem(0)
-      end
-    end
-  end
-
-  def pending_actions_json(delegate_ids, votes) do
-    Jason.encode!(%{delegate_ids: delegate_ids, votes: votes})
   end
 end

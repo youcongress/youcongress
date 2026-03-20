@@ -127,7 +127,7 @@ defmodule YouCongressWeb.Router do
   end
 
   scope "/", YouCongressWeb do
-    pipe_through([:browser])
+    pipe_through([:browser, :redirect_home_if_user_is_authenticated])
 
     live("/", HomeLive.Index, :index)
   end
