@@ -29,6 +29,7 @@ defmodule YouCongress.Accounts.Permissions do
   Checks if the user can create authors
   """
   def can_create_authors?(%User{role: "admin"}), do: true
+  def can_create_authors?(%User{role: "moderator"}), do: true
   def can_create_authors?(%User{role: "creator"}), do: true
   def can_create_authors?(_), do: false
 

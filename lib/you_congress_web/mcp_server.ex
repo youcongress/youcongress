@@ -4,7 +4,8 @@ defmodule YouCongressWeb.MCPServer do
     version: "1.0.0",
     capabilities: [:tools]
 
-  # Tools
+  # Tools — when adding or changing tools, also update /mcp-tools
+  # (lib/you_congress_web/controllers/page_html/mcp_tools.html.heex)
   # component(YouCongressWeb.MCPServer.StatementsSearch)
   component(YouCongressWeb.MCPServer.StatementsCreate)
   component(YouCongressWeb.MCPServer.StatementsList)
