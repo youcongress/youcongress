@@ -20,13 +20,14 @@ defmodule YouCongressWeb.MCPServer.StatementsCreate do
 
   schema do
     field :title, :string, required: true
+    field :slug, :string
   end
 
   @impl true
-  def execute(%{title: title}, frame) do
+  def execute(%{title: title} = params, frame) do
     with {:ok, user} <- authenticate_user(frame),
          :ok <- ensure_permission(user),
-         {:ok, statement} <- insert_statement(title, user) do
+         {:ok, statement} <- insert_statement(title, user, params) do
       {:reply, build_success(statement), frame}
     else
       {:error, :missing_api_key} ->
@@ -59,10 +60,14 @@ defmodule YouCongressWeb.MCPServer.StatementsCreate do
     end
   end
 
-  defp insert_statement(title, user) do
+  defp insert_statement(title, user, params) do
     %{"title" => title, "user_id" => user.id}
+    |> maybe_put_slug(params)
     |> Statements.create_statement()
   end
+
+  defp maybe_put_slug(attrs, %{slug: slug}) when is_binary(slug), do: Map.put(attrs, "slug", slug)
+  defp maybe_put_slug(attrs, _params), do: attrs
 
   defp build_success(statement) do
     data = %{
