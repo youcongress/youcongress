@@ -2,6 +2,9 @@ defmodule YouCongressWeb.MCPServer.StatementsCreate do
   @moduledoc """
   Create new statements (policy proposals and claims) through the MCP server.
 
+  Provide both a `title` and a `nice_slug`. The `nice_slug` becomes the public URL segment,
+  so the AI reads it as `youcongress.org/p/[nice_slug]`.
+
   The caller must provide a valid API key via the `?key=` query param and own a role
   that passes `YouCongress.Accounts.Permissions.can_create_statement?/1`.
   """
@@ -20,14 +23,14 @@ defmodule YouCongressWeb.MCPServer.StatementsCreate do
 
   schema do
     field :title, :string, required: true
-    field :slug, :string
+    field :nice_slug, :string, required: true
   end
 
   @impl true
-  def execute(%{title: title} = params, frame) do
+  def execute(%{title: title, nice_slug: nice_slug}, frame) do
     with {:ok, user} <- authenticate_user(frame),
          :ok <- ensure_permission(user),
-         {:ok, statement} <- insert_statement(title, user, params) do
+         {:ok, statement} <- insert_statement(title, nice_slug, user) do
       {:reply, build_success(statement), frame}
     else
       {:error, :missing_api_key} ->
@@ -60,21 +63,17 @@ defmodule YouCongressWeb.MCPServer.StatementsCreate do
     end
   end
 
-  defp insert_statement(title, user, params) do
-    %{"title" => title, "user_id" => user.id}
-    |> maybe_put_slug(params)
+  defp insert_statement(title, nice_slug, user) do
+    %{"title" => title, "user_id" => user.id, "slug" => nice_slug}
     |> Statements.create_statement()
   end
-
-  defp maybe_put_slug(attrs, %{slug: slug}) when is_binary(slug), do: Map.put(attrs, "slug", slug)
-  defp maybe_put_slug(attrs, _params), do: attrs
 
   defp build_success(statement) do
     data = %{
       statement_id: statement.id,
       title: statement.title,
       slug: statement.slug,
-      url: "/p/#{statement.slug}"
+      url: "https://youcongress.org/p/#{statement.slug}"
     }
 
     Response.json(Response.tool(), data)
