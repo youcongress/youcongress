@@ -43,9 +43,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ "Search AI quotes, people, policies..."
     end
 
-    test "shows only statements with wikipedia-backed opinions in Top mode by default", %{
-      conn: conn
-    } do
+    test "shows statements regardless of wikipedia metadata in default mode", %{conn: conn} do
       wikipedia_statement =
         statement_fixture(title: "Wikipedia-backed AI Statement")
         |> add_statement_to_ai_hall()
@@ -59,7 +57,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       {:ok, _view, html} = live(conn, ~p"/")
 
       assert html =~ wikipedia_statement.title
-      refute html =~ non_wikipedia_statement.title
+      assert html =~ non_wikipedia_statement.title
     end
 
     test "shows statements feed in New mode", %{conn: conn} do
