@@ -56,7 +56,7 @@ defmodule YouCongressWeb do
 
       unquote(html_helpers())
 
-      import YouCongressWeb.LiveHelpers, only: [assign_current_user: 2]
+      import YouCongressWeb.LiveHelpers, only: [assign_current_user: 2, record_guest_vote: 2]
     end
   end
 
@@ -88,6 +88,7 @@ defmodule YouCongressWeb do
       # Core UI components and translation
       import YouCongressWeb.CoreComponents
       import YouCongressWeb.Components.VerificationHistory
+      import YouCongressWeb.Components.VoteAuthModal
       import YouCongressWeb.Gettext
 
       # Shortcut for generating JS commands

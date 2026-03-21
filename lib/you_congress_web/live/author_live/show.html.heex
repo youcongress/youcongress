@@ -165,6 +165,13 @@
 
 <.link href={~p"/"}>Back to home</.link>
 
+<.vote_auth_modal
+  :if={@show_vote_auth_modal}
+  socket={@socket}
+  votes={@pending_guest_votes}
+  pending_vote={@pending_vote_prompt}
+/>
+
 <.modal
   :if={@live_action == :edit}
   id="author-modal"

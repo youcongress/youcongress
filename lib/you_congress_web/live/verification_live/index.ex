@@ -25,12 +25,24 @@ defmodule YouCongressWeb.VerificationLive.Index do
      |> assign(:has_more, true)
      |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
      |> assign(:delegate_ids, load_delegate_ids(current_user))
-     |> load_cards(1)}
+     |> load_cards(1)
+     |> assign(:pending_guest_votes, %{})
+     |> assign(:pending_vote_prompt, nil)
+     |> assign(:show_vote_auth_modal, false)}
   end
 
   @impl true
   def handle_event("load-more", _params, socket) do
     {:noreply, load_cards(socket, socket.assigns.page + 1)}
+  end
+
+  def handle_event("close-vote-auth-modal", _, socket) do
+    socket =
+      socket
+      |> assign(:show_vote_auth_modal, false)
+      |> assign(:pending_vote_prompt, nil)
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -44,6 +56,10 @@ defmodule YouCongressWeb.VerificationLive.Index do
 
   def handle_info({:verification_saved, _opinion_id}, socket) do
     {:noreply, load_cards(socket, 1)}
+  end
+
+  def handle_info({:require_auth_to_vote, payload}, socket) do
+    {:noreply, record_guest_vote(socket, payload)}
   end
 
   defp load_cards(socket, page) do
