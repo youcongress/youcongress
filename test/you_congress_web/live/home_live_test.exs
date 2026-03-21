@@ -54,7 +54,7 @@ defmodule YouCongressWeb.HomeLiveTest do
         |> add_statement_to_ai_hall()
         |> add_opinion_to_statement(%{wikipedia_url: nil})
 
-      {:ok, view, html} = live(conn, ~p"/")
+      {:ok, _view, html} = live(conn, ~p"/")
 
       # Default "New" mode shows both statements
       assert html =~ wikipedia_statement.title
