@@ -203,6 +203,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
           Enter your mobile phone number
           <:subtitle>
             This verification helps us mitigate spam and abuse.
+            <span class="block">You can always skip this step and add your number later.</span>
           </:subtitle>
         </.header>
 
@@ -234,7 +235,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
         <div class="mt-4 text-center">
           <.link navigate={~p"/welcome"} class="text-sm text-gray-600 hover:text-gray-800 underline">
-            Skip for now
+            Maybe later
           </.link>
         </div>
       <% end %>
@@ -244,6 +245,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
           Verify your phone number
           <:subtitle>
             We've sent a code to {@user.phone_number}
+            <span class="block text-xs text-gray-500">You can skip this step and verify later.</span>
           </:subtitle>
         </.header>
 
@@ -279,7 +281,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
           </.link>
           <span class="mx-2 text-gray-400">|</span>
           <.link navigate={~p"/welcome"} class="text-sm text-gray-600 hover:text-gray-800 underline">
-            Skip for now
+            Maybe later
           </.link>
         </div>
       <% end %>
@@ -309,15 +311,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
     current_user = socket.assigns.current_user
 
-    step =
-      cond do
-        current_user == nil -> :enter_email_password
-        # X user without email needs to complete profile first
-        current_user.email == nil -> :confirm_x_profile
-        current_user.email_confirmed_at == nil -> :check_email
-        # Phone verification is optional - user is done once email is confirmed
-        true -> :done
-      end
+    step = determine_registration_step(current_user)
 
     if step == :done do
       {:ok, redirect(socket, to: ~p"/welcome")}
@@ -330,11 +324,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
           %{}
         end
 
-      changeset =
-        case step do
-          :check_email -> email_code_changeset()
-          _ -> Accounts.change_user_registration(current_user || %User{}, initial_values)
-        end
+      changeset = changeset_for_step(step, current_user, initial_values)
 
       turnstile_site_key = Application.get_env(:you_congress, :turnstile_site_key)
 
@@ -454,17 +444,10 @@ defmodule YouCongressWeb.UserRegistrationLive do
             {:ok, updated_user} ->
               Track.event("Email verified", updated_user)
 
-              {:noreply,
-               socket
-               |> assign(:user, updated_user)
-               |> session_login_and_redirect(updated_user)
-               |> reset_email_code_state()}
+              {:noreply, proceed_after_email_confirmation(socket, updated_user)}
 
             {:error, :already_confirmed} ->
-              {:noreply,
-               socket
-               |> session_login_and_redirect(user)
-               |> reset_email_code_state()}
+              {:noreply, proceed_after_email_confirmation(socket, user)}
 
             {:error, :expired} ->
               expired_changeset =
@@ -618,11 +601,75 @@ defmodule YouCongressWeb.UserRegistrationLive do
     {:noreply, assign(socket, :step, :enter_mobile_phone) |> assign_form(changeset)}
   end
 
-  defp session_login_and_redirect(socket, %User{} = user) do
+  defp proceed_after_email_confirmation(socket, %User{} = user) do
+    step = determine_registration_step(user)
+
+    socket =
+      socket
+      |> assign(:user, user)
+      |> reset_email_code_state()
+
+    case step do
+      :enter_mobile_phone ->
+        socket
+        |> assign(:step, step)
+        |> session_login(user)
+        |> assign_form(changeset_for_step(step, user, %{}))
+
+      :validate_phone ->
+        socket
+        |> assign(:step, step)
+        |> session_login(user)
+        |> assign_form(changeset_for_step(step, user, %{}))
+
+      :done ->
+        socket
+        |> session_login(user, ~p"/welcome")
+
+      _ ->
+        socket
+    end
+  end
+
+  defp determine_registration_step(nil), do: :enter_email_password
+
+  defp determine_registration_step(%User{email: nil}), do: :confirm_x_profile
+
+  defp determine_registration_step(%User{email_confirmed_at: nil}), do: :check_email
+
+  defp determine_registration_step(%User{} = user) do
+    cond do
+      not is_nil(user.phone_number_confirmed_at) -> :done
+      phone_number_present?(user) -> :validate_phone
+      true -> :enter_mobile_phone
+    end
+  end
+
+  defp changeset_for_step(:check_email, _user, _initial_values), do: email_code_changeset()
+
+  defp changeset_for_step(:enter_mobile_phone, user, _initial_values) do
+    Accounts.change_user_phone_number(user || %User{})
+  end
+
+  defp changeset_for_step(:validate_phone, user, _initial_values) do
+    Accounts.change_user_phone_number(user || %User{}, %{"phone_number" => user && user.phone_number})
+  end
+
+  defp changeset_for_step(_step, user, initial_values) do
+    Accounts.change_user_registration(user || %User{}, initial_values)
+  end
+
+  defp phone_number_present?(%User{phone_number: number}) when is_binary(number) do
+    String.trim(number) != ""
+  end
+
+  defp phone_number_present?(_), do: false
+
+  defp session_login(socket, %User{} = user, redirect_to \\ nil) do
     token = Accounts.generate_live_login_token(user)
 
     socket
-    |> push_event("session-login", %{token: token, redirect_to: ~p"/welcome"})
+    |> push_event("session-login", %{token: token, redirect_to: redirect_to})
     |> assign(:session_login_sent, true)
   end
 
