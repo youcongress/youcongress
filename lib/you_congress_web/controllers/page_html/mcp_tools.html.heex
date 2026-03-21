@@ -100,7 +100,7 @@
   "mcpServers": {
     "youcongress": {
       "type": "url",
-      "url": "https://youcongress.com/mcp?key=YOUR_API_KEY"
+      "url": "https://youcongress.org/mcp?key=YOUR_API_KEY"
     }
   }
 }
@@ -201,11 +201,10 @@
           </dt>
           <dd class="text-gray-700">
             Fetch a single statement with its ID. Returns a
-            <code class="bg-gray-100 px-1 rounded">statement</code> map containing the
-            <code class="bg-gray-100 px-1 rounded">statement_id</code>, title, halls
+            <code class="bg-gray-100 px-1 rounded">statement</code>
+            map containing the <code class="bg-gray-100 px-1 rounded">statement_id</code>, title, halls
             (id + name), and authors (id, name, bio, country, twitter_username) who have
-            opinions linked to it. Requires:
-            <code class="bg-gray-100 px-1 rounded">statement_id</code>.
+            opinions linked to it. Requires: <code class="bg-gray-100 px-1 rounded">statement_id</code>.
           </dd>
         </div>
         <div class="pl-4">
@@ -236,13 +235,13 @@
           </dt>
           <dd class="text-gray-700">
             Update the halls attached to a statement. Requires:
-            <code class="bg-gray-100 px-1 rounded">statement_id</code> and a
-            <code class="bg-gray-100 px-1 rounded">main_hall</code> name.
-            Optional:<br />
-            • <code class="bg-gray-100 px-1 rounded">other_halls</code> — comma / newline / semicolon separated string.<br />
-            • <code class="bg-gray-100 px-1 rounded">halls</code> — accepts the same string format for compatibility.<br />
-            Returns the updated <code class="bg-gray-100 px-1 rounded">statement</code>
-            (id, title, main_hall, halls). Admins and the statement owner can call this.
+            <code class="bg-gray-100 px-1 rounded">statement_id</code>
+            and a <code class="bg-gray-100 px-1 rounded">main_hall</code>
+            name.
+            Optional:<br /> • <code class="bg-gray-100 px-1 rounded">other_halls</code>
+            — string of comma-separated values.<br /> Returns the updated
+            <code class="bg-gray-100 px-1 rounded">statement</code>
+            (id, title, main_hall, halls).
           </dd>
         </div>
       </dl>
