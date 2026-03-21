@@ -2,7 +2,7 @@ defmodule YouCongressWeb.MCPServer.StatementsHallsUpdate do
   @moduledoc """
   Update the hall classification for a statement.
 
-  Provide a `main_hall` plus any additional tags in `other_halls`.
+  Provide a `main_hall` plus any additional comma-separated tags in `other_halls`.
   This tools requires a valid API key and permission to edit the statement
   (admin or the original statement creator).
   """
@@ -25,7 +25,8 @@ defmodule YouCongressWeb.MCPServer.StatementsHallsUpdate do
   schema do
     field :statement_id, :integer, required: true
     field :main_hall, :string, required: true
-    field :other_halls, {:array, :string}
+    field :other_halls, :string
+    field :halls, :string
   end
 
   @impl true

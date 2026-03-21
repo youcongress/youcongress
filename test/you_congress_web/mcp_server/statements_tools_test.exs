@@ -87,7 +87,7 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
       params = %{
         statement_id: statement.id,
         main_hall: "ai",
-        other_halls: ["climate", "future"]
+        other_halls: "climate, future"
       }
 
       with_mocked_response_and_key(api_key.token, fn ->
@@ -97,6 +97,25 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
         assert payload.statement_id == statement.id
         assert payload.main_hall == "ai"
         assert Enum.map(payload.halls, & &1.name) == ["ai", "climate", "future"]
+      end)
+    end
+
+    test "parses delimited strings for other hall tags" do
+      admin = admin_fixture()
+      api_key = api_key_fixture(admin)
+      statement = statement_fixture(title: "Workforce")
+
+      params = %{
+        statement_id: statement.id,
+        main_hall: "ai",
+        halls: "climate; future-of-work\nfuture-of-work"
+      }
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply, {:json, %{statement: payload}}, :frame} =
+                 StatementsHallsUpdate.execute(params, :frame)
+
+        assert Enum.map(payload.halls, & &1.name) == ["ai", "climate", "future-of-work"]
       end)
     end
 
