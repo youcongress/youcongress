@@ -282,6 +282,8 @@ defmodule YouCongressWeb.StatementLive.Index do
         "We gather verifiable expert quotes and use liquid democracy to surface alignment on AI governance.",
       statement: %Statement{}
     )
+    |> assign(:full_width, true)
+    |> assign(:main_padding_classes, "px-2 pb-6 sm:px-4 lg:px-6")
   end
 
   defp maybe_apply_search_params(socket, %{"search" => search} = params)
