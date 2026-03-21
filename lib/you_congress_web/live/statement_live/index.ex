@@ -61,6 +61,9 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:featured_authors, featured_authors)
       |> stream(:opinion_cards, [], reset: true)
       |> assign_cards(1)
+      |> assign(:pending_guest_votes, %{})
+      |> assign(:pending_vote_prompt, nil)
+      |> assign(:show_vote_auth_modal, false)
 
     if connected?(socket) do
       %{assigns: %{current_user: current_user}} = socket
@@ -128,6 +131,15 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   def handle_event("search-tab", %{"tab" => "quotes"}, socket) do
     {:noreply, assign(socket, search_tab: :quotes)}
+  end
+
+  def handle_event("close-vote-auth-modal", _, socket) do
+    socket =
+      socket
+      |> assign(:show_vote_auth_modal, false)
+      |> assign(:pending_vote_prompt, nil)
+
+    {:noreply, socket}
   end
 
   def handle_event("toggle-switch", _, socket) do
@@ -238,7 +250,17 @@ defmodule YouCongressWeb.StatementLive.Index do
     {:noreply, socket}
   end
 
+  def handle_info({:require_auth_to_vote, payload}, socket) do
+    {:noreply, record_guest_vote(socket, payload)}
+  end
+
   def handle_info(_, socket), do: {:noreply, socket}
+
+  defp order_featured_authors(authors) do
+    Enum.sort_by(authors, fn author ->
+      Enum.find_index(@featured_author_names, &(&1 == author.name)) || length(@featured_author_names)
+    end)
+  end
 
   defp maybe_assign_cards(%{assigns: %{new_poll_visible?: true}} = socket), do: socket
   defp maybe_assign_cards(socket), do: assign_cards(socket, 1)

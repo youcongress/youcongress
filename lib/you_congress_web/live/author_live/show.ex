@@ -24,6 +24,9 @@ defmodule YouCongressWeb.AuthorLive.Show do
       socket
       |> assign_current_user(session["user_token"])
       |> assign(:order_by_date, false)
+      |> assign(:pending_guest_votes, %{})
+      |> assign(:pending_vote_prompt, nil)
+      |> assign(:show_vote_auth_modal, false)
 
     if connected?(socket) do
       Track.event("View Author", socket.assigns.current_user)
@@ -147,6 +150,15 @@ defmodule YouCongressWeb.AuthorLive.Show do
     {:noreply, socket}
   end
 
+  def handle_event("close-vote-auth-modal", _, socket) do
+    socket =
+      socket
+      |> assign(:show_vote_auth_modal, false)
+      |> assign(:pending_vote_prompt, nil)
+
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_info(:update_current_user_votes_by_statement_id, socket) do
     current_user = socket.assigns.current_user
@@ -169,6 +181,10 @@ defmodule YouCongressWeb.AuthorLive.Show do
       |> put_flash(kind, msg)
 
     {:noreply, socket}
+  end
+
+  def handle_info({:require_auth_to_vote, payload}, socket) do
+    {:noreply, record_guest_vote(socket, payload)}
   end
 
   @impl true

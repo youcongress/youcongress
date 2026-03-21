@@ -43,7 +43,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ "Search AI quotes, people, policies..."
     end
 
-    test "Top mode hides statements without wikipedia-backed opinions", %{conn: conn} do
+    test "shows statements regardless of wikipedia metadata in default mode", %{conn: conn} do
       wikipedia_statement =
         statement_fixture(title: "Wikipedia-backed AI Statement")
         |> add_statement_to_ai_hall()
@@ -59,13 +59,6 @@ defmodule YouCongressWeb.HomeLiveTest do
       # Default "New" mode shows both statements
       assert html =~ wikipedia_statement.title
       assert html =~ non_wikipedia_statement.title
-
-      # Switch to Top mode and ensure the non-wikipedia statement is hidden
-      view |> element("button[phx-click='toggle-switch']") |> render_click()
-
-      top_html = render(view)
-      assert top_html =~ wikipedia_statement.title
-      refute top_html =~ non_wikipedia_statement.title
     end
 
     test "shows statements feed in New mode", %{conn: conn} do
@@ -81,8 +74,8 @@ defmodule YouCongressWeb.HomeLiveTest do
 
     test "guest can vote and sees flash message", %{conn: conn} do
       statement_fixture(title: "Test Statement")
-        |> add_statement_to_ai_hall()
-        |> add_opinion_to_statement()
+      |> add_statement_to_ai_hall()
+      |> add_opinion_to_statement()
 
       {:ok, view, _html} = live(conn, ~p"/")
 

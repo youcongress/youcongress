@@ -15,7 +15,12 @@ defmodule YouCongressWeb.ActivityLive.Index do
 
   @impl true
   def mount(_params, session, socket) do
-    socket = assign_current_user(socket, session["user_token"])
+    socket =
+      socket
+      |> assign_current_user(session["user_token"])
+      |> assign(:pending_guest_votes, %{})
+      |> assign(:pending_vote_prompt, nil)
+      |> assign(:show_vote_auth_modal, false)
 
     if connected?(socket) do
       Track.event("View Activity", socket.assigns.current_user)
@@ -131,6 +136,15 @@ defmodule YouCongressWeb.ActivityLive.Index do
     {:noreply, socket}
   end
 
+  def handle_event("close-vote-auth-modal", _, socket) do
+    socket =
+      socket
+      |> assign(:show_vote_auth_modal, false)
+      |> assign(:pending_vote_prompt, nil)
+
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_info({:put_flash, kind, msg}, socket) do
     socket =
@@ -139,6 +153,10 @@ defmodule YouCongressWeb.ActivityLive.Index do
       |> put_flash(kind, msg)
 
     {:noreply, socket}
+  end
+
+  def handle_info({:require_auth_to_vote, payload}, socket) do
+    {:noreply, record_guest_vote(socket, payload)}
   end
 
   def handle_info(_, socket), do: {:noreply, socket}

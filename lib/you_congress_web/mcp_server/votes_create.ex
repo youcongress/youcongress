@@ -94,8 +94,6 @@ defmodule YouCongressWeb.MCPServer.VotesCreate do
       statement_id: vote.statement_id,
       author_id: vote.author_id,
       answer: vote.answer && Atom.to_string(vote.answer),
-      direct: vote.direct,
-      twin: vote.twin,
       opinion_id: vote.opinion_id
     }
   end

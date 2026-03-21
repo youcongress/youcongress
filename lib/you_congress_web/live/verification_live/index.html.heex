@@ -77,3 +77,10 @@
     <% end %>
   <% end %>
 </div>
+
+<.vote_auth_modal
+  :if={@show_vote_auth_modal}
+  socket={@socket}
+  votes={@pending_guest_votes}
+  pending_vote={@pending_vote_prompt}
+/>

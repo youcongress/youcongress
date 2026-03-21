@@ -8,16 +8,22 @@ defmodule YouCongressWeb.Components.LoginButtons do
   use YouCongressWeb, :verified_routes
   alias YouCongress.FeatureFlags
 
-  attr :message, :string, default: "Log in to save your vote:"
   attr :class, :string, default: ""
+  attr :pending_actions, :string, default: nil
 
   def render(assigns) do
+    pending_actions = assigns.pending_actions
+
+    assigns =
+      assigns
+      |> assign(:google_href, auth_url(:google, pending_actions))
+      |> assign(:x_href, auth_url(:x, pending_actions))
+
     ~H"""
     <div class={@class}>
-      <p class="text-sm text-gray-600 mb-3">{@message}</p>
       <div class="flex flex-wrap gap-2">
         <.link
-          href={~p"/auth/google"}
+          href={@google_href}
           class="inline-flex items-center py-1.5 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-gray-700 text-sm font-medium hover:bg-gray-50"
         >
           <svg class="w-4 h-4 mr-1.5" viewBox="0 0 24 24">
@@ -42,7 +48,7 @@ defmodule YouCongressWeb.Components.LoginButtons do
         </.link>
         <%= if FeatureFlags.enabled?(:log_in_with_x) do %>
           <.link
-            href={~p"/auth/x"}
+            href={@x_href}
             class="inline-flex items-center py-1.5 px-3 border border-gray-300 rounded-md shadow-sm bg-black text-white text-sm font-medium hover:bg-gray-800"
           >
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -61,4 +67,13 @@ defmodule YouCongressWeb.Components.LoginButtons do
     </div>
     """
   end
+
+  defp auth_url(:google, nil), do: ~p"/auth/google"
+
+  defp auth_url(:google, pending_actions),
+    do: ~p"/auth/google?#{%{pending_actions: pending_actions}}"
+
+  defp auth_url(:x, nil), do: ~p"/auth/x"
+
+  defp auth_url(:x, pending_actions), do: ~p"/auth/x?#{%{pending_actions: pending_actions}}"
 end
