@@ -13,6 +13,7 @@ defmodule YouCongressWeb.StatementLiveTest do
 
   alias YouCongress.Statements
   alias YouCongress.HallsStatements
+  alias YouCongress.Opinions
 
   @create_attrs %{title: "nuclear energy"}
   @suggested_titles [
@@ -37,6 +38,19 @@ defmodule YouCongressWeb.StatementLiveTest do
     {:ok, _} = HallsStatements.sync!(statement.id, %{main_tag: "ai", other_tags: []})
 
     %{statement: statement}
+  end
+
+  defp create_statement_with_top_opinion(title, likes_count) do
+    statement = statement_fixture(%{title: title})
+    {:ok, _} = HallsStatements.sync!(statement.id, %{main_tag: "ai", other_tags: []})
+
+    author = author_fixture()
+    opinion = opinion_fixture(%{author_id: author.id})
+    {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+    vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
+    {:ok, _} = Opinions.update_opinion(opinion, %{likes_count: likes_count})
+
+    %{statement: statement, likes: likes_count}
   end
 
   describe "Index" do
@@ -95,6 +109,33 @@ defmodule YouCongressWeb.StatementLiveTest do
       html = render(index_live)
       assert html =~ "Opinion updated successfully"
       assert html =~ "some updated comment"
+    end
+
+    test "Top mode orders cards by most liked opinions", %{conn: conn} do
+      data =
+        [
+          {"Most liked opinion", 30},
+          {"Second place opinion", 20},
+          {"Third place opinion", 10}
+        ]
+        |> Enum.map(fn {title, likes} -> create_statement_with_top_opinion(title, likes) end)
+
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
+      top_html = render(view)
+
+      expected_order = Enum.sort_by(data, & &1.likes, :desc)
+
+      indexes =
+        Enum.map(expected_order, fn %{statement: statement} ->
+          case :binary.match(top_html, statement.title) do
+            {pos, _length} -> pos
+            :nomatch -> flunk("Expected to find #{statement.title} on Top mode feed")
+          end
+        end)
+
+      assert indexes == Enum.sort(indexes)
     end
 
     test "saves new statement and redirect to show", %{conn: conn} do

@@ -246,9 +246,10 @@ defmodule YouCongress.Statements.StatementQueries do
   @doc """
   Returns one opinion card per statement showing the opinion with the most likes.
 
-  Statements are ordered by total opinion_likes_count (descending) so the most
-  popular statements appear first. Within each statement the opinion is chosen
-  by likes_count (ties fall back to the most recently updated opinion/vote).
+  Statements are ordered by the likes_count of that top opinion (descending) so the
+  statement that contains the single most-liked opinion appears first. Within each
+  statement the opinion is chosen by likes_count (ties fall back to the most recently
+  updated opinion/vote).
 
   Options:
   - :hall_name - filter by hall (default "all")
@@ -278,7 +279,7 @@ defmodule YouCongress.Statements.StatementQueries do
       SELECT
         v.id as vote_id,
         s.id as statement_id,
-        s.opinion_likes_count,
+        o.likes_count as top_opinion_likes_count,
         s.inserted_at as statement_inserted_at,
         ROW_NUMBER() OVER (
           PARTITION BY s.id
@@ -295,7 +296,7 @@ defmodule YouCongress.Statements.StatementQueries do
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
     WHERE rv.vote_rank = 1
-    ORDER BY rv.opinion_likes_count DESC, rv.statement_inserted_at DESC
+    ORDER BY rv.top_opinion_likes_count DESC, rv.statement_inserted_at DESC
     OFFSET #{offset_param}
     LIMIT #{limit_param}
     """
