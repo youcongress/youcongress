@@ -28,8 +28,8 @@ defmodule YouCongressWeb.StatementLive.Index do
     "Geoffrey Hinton",
     "Demis Hassabis",
     "Dario Amodei",
-    "Elon Musk",
-    "Yoshua Bengio"
+    "Yoshua Bengio",
+    "Yann LeCun"
   ]
 
   @impl true
@@ -37,7 +37,9 @@ defmodule YouCongressWeb.StatementLive.Index do
     socket = assign_current_user(socket, session["user_token"])
     current_user = socket.assigns.current_user
 
-    featured_authors = Authors.list_authors(names: @featured_author_names)
+    featured_authors =
+      Authors.list_authors(names: @featured_author_names)
+      |> order_featured_authors()
 
     socket =
       socket
@@ -118,6 +120,12 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   def handle_event("search-tab", %{"tab" => "delegates"}, socket) do
     {:noreply, assign(socket, search_tab: :delegates)}
+  end
+
+  defp order_featured_authors(authors) do
+    Enum.sort_by(authors, fn author ->
+      Enum.find_index(@featured_author_names, &(&1 == author.name)) || length(@featured_author_names)
+    end)
   end
 
   def handle_event("search-tab", %{"tab" => "halls"}, socket) do
