@@ -10,6 +10,7 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
   alias YouCongress.Accounts
   alias YouCongress.HallsStatements
   alias YouCongress.OpinionsStatements
+  alias YouCongressWeb.MCPServer.StatementPopulate
   alias YouCongressWeb.MCPServer.StatementsHallsUpdate
   alias YouCongressWeb.MCPServer.StatementsList
   alias YouCongressWeb.MCPServer.StatementsShow
@@ -30,6 +31,7 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
 
     test "includes hall data when requested" do
       statement = statement_fixture(title: "Climate plan")
+
       {:ok, _statement} =
         HallsStatements.sync!(statement.id, %{main_tag: "ai", other_tags: ["climate"]})
 
@@ -124,9 +126,63 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
 
       with_mocked_response_and_key(nil, fn ->
         assert {:reply, {:error, message}, :frame} =
-                 StatementsHallsUpdate.execute(%{statement_id: statement.id, main_hall: "ai"}, :frame)
+                 StatementsHallsUpdate.execute(
+                   %{statement_id: statement.id, main_hall: "ai"},
+                   :frame
+                 )
 
         assert message == "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
+      end)
+    end
+  end
+
+  describe "StatementPopulate.execute/2" do
+    test "enqueues a quote job when admin provides API key" do
+      admin = admin_fixture()
+      api_key = api_key_fixture(admin)
+      statement = statement_fixture(title: "Energy policy")
+      statement_id = statement.id
+      admin_id = admin.id
+
+      with_mocked_response_and_key(
+        api_key.token,
+        fn ->
+          assert {:reply, {:json, payload}, :frame} =
+                   StatementPopulate.execute(%{statement_id: statement.id}, :frame)
+
+          assert payload.statement_id == statement.id
+          assert payload.status == "quote_generation_started"
+          assert payload.message =~ "Queued AI job"
+
+          assert_received(
+            {:oban_insert,
+             %Ecto.Changeset{
+               changes: %{args: %{statement_id: ^statement_id, user_id: ^admin_id}}
+             }}
+          )
+        end,
+        [
+          {Oban, [],
+           [
+             insert: fn job ->
+               send(self(), {:oban_insert, job})
+               {:ok, Map.put(job, :id, Ecto.UUID.generate())}
+             end
+           ]}
+        ]
+      )
+    end
+
+    test "rejects non-admin users" do
+      user = user_fixture()
+      api_key = api_key_fixture(user)
+      statement = statement_fixture()
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply, {:error, message}, :frame} =
+                 StatementPopulate.execute(%{statement_id: statement.id}, :frame)
+
+        assert message == "Only administrators can trigger automated quote discovery."
       end)
     end
   end
@@ -144,8 +200,8 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
     end
   end
 
-  defp with_mocked_response_and_key(key, fun) do
-    with_mocks([
+  defp with_mocked_response_and_key(key, fun, extra_mocks \\ []) do
+    base_mocks = [
       {Anubis.Server.Response, [],
        [
          tool: fn -> :tool end,
@@ -156,7 +212,9 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
        [
          get_query_param: fn _frame, "key" -> key end
        ]}
-    ]) do
+    ]
+
+    with_mocks(base_mocks ++ extra_mocks) do
       fun.()
     end
   end

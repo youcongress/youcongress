@@ -33,20 +33,14 @@ defmodule YouCongress.StatementsTest do
       assert {:error, %Ecto.Changeset{}} = Statements.create_statement(@invalid_attrs)
     end
 
-    test "create_statement/1 enqueues a find quotes job when the statement has a creator" do
+    test "create_statement/1 does not enqueue a quote job automatically" do
       user = admin_fixture()
 
       Oban.Testing.with_testing_mode(:manual, fn ->
-        assert {:ok, %Statement{} = statement} =
+        assert {:ok, %Statement{} = _statement} =
                  Statements.create_statement(%{title: "Auto quote me", user_id: user.id})
 
-        assert_enqueued(
-          worker: YouCongress.Workers.QuotatorWorker,
-          args: %{
-            "statement_id" => statement.id,
-            "user_id" => user.id
-          }
-        )
+        refute_enqueued(worker: YouCongress.Workers.QuotatorWorker)
       end)
     end
 

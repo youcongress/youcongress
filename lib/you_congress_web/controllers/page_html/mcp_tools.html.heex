@@ -178,6 +178,11 @@
     <div class="mt-6">
       <h3 class="text-lg font-semibold border-b border-gray-200 pb-2">Statements</h3>
       <p class="text-gray-600 mt-1">Policy proposals and claims that people vote on.</p>
+      <p class="text-gray-600 mt-2">
+        Admins can trigger automatic quote discovery, but anyone can ask their own
+        Claude, ChatGPT, Cursor, or other MCP-connected assistant to find sourced quotes and then
+        add them to YouCongress through the opinions and votes tools.
+      </p>
       <dl class="mt-3 space-y-3">
         <div class="pl-4">
           <dt class="font-mono text-sm font-semibold text-blue-700">
@@ -221,6 +226,19 @@
             Create a new statement. Requires: <code class="bg-gray-100 px-1 rounded">title</code>,
             <code class="bg-gray-100 px-1 rounded">nice_slug</code>
             (used as the last part of <code class="bg-gray-100 px-1 rounded">https://youcongress.org/p/[nice_slug]</code>).
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            statement_populate
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
+              admin
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Queue the AI-powered quote discovery job for a statement. Requires <code class="bg-gray-100 px-1 rounded">statement_id</code>. If you are not an admin,
+            simply use your own Claude, ChatGPT, or other assistant to gather sourced quotes and
+            add them via the opinions and votes tools.
           </dd>
         </div>
         <div class="pl-4">

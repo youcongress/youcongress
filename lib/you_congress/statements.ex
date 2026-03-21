@@ -12,7 +12,6 @@ defmodule YouCongress.Statements do
   alias YouCongress.HallsStatements
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Workers.StatementHallsGeneratorWorker
-  alias YouCongress.Workers.QuotatorWorker
   alias YouCongress.Votes.Vote
 
   @doc """
@@ -251,7 +250,6 @@ defmodule YouCongress.Statements do
     result =
       Ecto.Multi.new()
       |> Ecto.Multi.insert(:statement, statement_changeset)
-      |> maybe_enqueue_find_quotes_job()
       |> Oban.insert(:job, fn %{statement: statement} ->
         StatementHallsGeneratorWorker.new(%{statement_id: statement.id})
       end)
@@ -405,19 +403,5 @@ defmodule YouCongress.Statements do
     statement
     |> Statement.changeset(%{updated_at: DateTime.utc_now()})
     |> Repo.update()
-  end
-
-  defp maybe_enqueue_find_quotes_job(multi) do
-    Ecto.Multi.run(multi, :find_quotes_job, fn _repo, %{statement: statement} ->
-      case statement.user_id do
-        nil ->
-          {:ok, :skipped}
-
-        user_id ->
-          %{statement_id: statement.id, user_id: user_id}
-          |> QuotatorWorker.new()
-          |> Oban.insert()
-      end
-    end)
   end
 end
