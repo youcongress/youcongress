@@ -350,31 +350,53 @@ defmodule YouCongress.Statements.StatementQueries do
   Ordering prioritizes quotes with more likes and verified sources, similar to
   `Votes.list_votes_with_opinion/2`.
   """
-  def get_top_votes_by_answer_for_statements([]), do: %{}
+  def get_top_votes_by_answer_for_statements(statement_ids, opts \\ [])
 
-  def get_top_votes_by_answer_for_statements(statement_ids) when is_list(statement_ids) do
+  def get_top_votes_by_answer_for_statements([], _opts), do: %{}
+
+  def get_top_votes_by_answer_for_statements(statement_ids, opts) when is_list(statement_ids) do
+    order_by = Keyword.get(opts, :order_by, :likes)
+
     ranking_query =
-      from v in Vote,
-        join: o in assoc(v, :opinion),
-        join: a in assoc(v, :author),
-        where: v.statement_id in ^statement_ids and not is_nil(v.opinion_id),
-        select: %{
-          vote_id: v.id,
-          statement_id: v.statement_id,
-          answer: v.answer,
-          rank:
-            fragment(
-              "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY ? DESC, ? DESC, CASE WHEN ? IS NOT NULL THEN 1 WHEN ? IS NOT NULL THEN 2 WHEN ? = FALSE THEN 3 ELSE 4 END, ? DESC)",
-              v.statement_id,
-              v.answer,
-              o.likes_count,
-              o.descendants_count,
-              o.source_url,
-              a.wikipedia_url,
-              v.twin,
-              o.id
-            )
-        }
+      if order_by == :recency do
+        from v in Vote,
+          join: o in assoc(v, :opinion),
+          where: v.statement_id in ^statement_ids and not is_nil(v.opinion_id),
+          select: %{
+            vote_id: v.id,
+            statement_id: v.statement_id,
+            answer: v.answer,
+            rank:
+              fragment(
+                "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY ? DESC)",
+                v.statement_id,
+                v.answer,
+                o.id
+              )
+          }
+      else
+        from v in Vote,
+          join: o in assoc(v, :opinion),
+          join: a in assoc(v, :author),
+          where: v.statement_id in ^statement_ids and not is_nil(v.opinion_id),
+          select: %{
+            vote_id: v.id,
+            statement_id: v.statement_id,
+            answer: v.answer,
+            rank:
+              fragment(
+                "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY ? DESC, ? DESC, CASE WHEN ? IS NOT NULL THEN 1 WHEN ? IS NOT NULL THEN 2 WHEN ? = FALSE THEN 3 ELSE 4 END, ? DESC)",
+                v.statement_id,
+                v.answer,
+                o.likes_count,
+                o.descendants_count,
+                o.source_url,
+                a.wikipedia_url,
+                v.twin,
+                o.id
+              )
+          }
+      end
 
     ranked_votes_query =
       from rv in subquery(ranking_query),
