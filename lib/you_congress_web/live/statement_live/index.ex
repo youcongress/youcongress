@@ -367,9 +367,14 @@ defmodule YouCongressWeb.StatementLive.Index do
       statement_ids = cards |> Enum.map(& &1.statement.id) |> Enum.uniq()
       votes_by_answer = StatementQueries.get_top_votes_by_answer_for_statements(statement_ids)
 
+      opinion_counts =
+        Votes.count_by_response_map_for_statements(statement_ids, has_opinion_id: true)
+
       cards =
         Enum.map(cards, fn card ->
-          Map.put(card, :votes_by_answer, Map.get(votes_by_answer, card.statement.id, %{}))
+          card
+          |> Map.put(:votes_by_answer, Map.get(votes_by_answer, card.statement.id, %{}))
+          |> Map.put(:opinion_counts, Map.get(opinion_counts, card.statement.id, %{}))
         end)
 
       new_liked_opinion_ids = Likes.get_liked_opinion_ids(current_user)

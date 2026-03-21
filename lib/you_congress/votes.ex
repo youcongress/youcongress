@@ -461,6 +461,34 @@ defmodule YouCongress.Votes do
     |> Enum.into(%{})
   end
 
+  def count_by_response_map_for_statements(statement_ids, opts \\ [])
+
+  def count_by_response_map_for_statements([], _opts), do: %{}
+
+  def count_by_response_map_for_statements(statement_ids, opts) when is_list(statement_ids) do
+    has_opinion_id = Keyword.get(opts, :has_opinion_id, nil)
+
+    base_query =
+      from(v in Vote,
+        where: v.statement_id in ^statement_ids,
+        group_by: [v.statement_id, v.answer],
+        select: {v.statement_id, v.answer, count(v.id)}
+      )
+
+    query =
+      case has_opinion_id do
+        true -> from(v in base_query, where: not is_nil(v.opinion_id))
+        false -> from(v in base_query, where: is_nil(v.opinion_id))
+        _ -> base_query
+      end
+
+    query
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn {statement_id, answer, count}, acc ->
+      Map.update(acc, statement_id, %{answer => count}, &Map.put(&1, answer, count))
+    end)
+  end
+
   def count_with_opinion_source(statement_id, opts \\ []) do
     source_filter = Keyword.get(opts, :source_filter)
     answer = Keyword.get(opts, :answer)
