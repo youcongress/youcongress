@@ -77,6 +77,8 @@ defmodule YouCongressWeb.MCPServer.VotesCreate do
     |> Map.take([:statement_id, :author_id, :answer, :opinion_id])
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
     |> Map.new()
+    |> Map.put_new(:direct, true)
+    |> Map.put_new(:twin, false)
   end
 
   defp ensure_vote_absent(statement_id, author_id) do

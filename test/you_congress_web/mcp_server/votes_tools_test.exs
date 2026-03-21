@@ -28,9 +28,7 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
                    %{
                      statement_id: statement.id,
                      author_id: owner.author_id,
-                     answer: "against",
-                     direct: false,
-                     twin: true
+                     answer: "against"
                    },
                    :frame
                  )
@@ -38,13 +36,13 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
         assert payload.statement_id == statement.id
         assert payload.author_id == owner.author_id
         assert payload.answer == "against"
-        refute payload.direct
-        assert payload.twin
+        assert payload.direct
+        refute payload.twin
       end)
 
       vote = Votes.get_by(%{statement_id: statement.id, author_id: owner.author_id})
-      refute vote.direct
-      assert vote.twin
+      assert vote.direct
+      refute vote.twin
       assert vote.answer == :against
     end
 

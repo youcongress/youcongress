@@ -43,9 +43,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ "Search AI quotes, people, policies..."
     end
 
-    test "shows only statements with wikipedia-backed opinions in Top mode by default", %{
-      conn: conn
-    } do
+    test "Top mode hides statements without wikipedia-backed opinions", %{conn: conn} do
       wikipedia_statement =
         statement_fixture(title: "Wikipedia-backed AI Statement")
         |> add_statement_to_ai_hall()
@@ -56,10 +54,18 @@ defmodule YouCongressWeb.HomeLiveTest do
         |> add_statement_to_ai_hall()
         |> add_opinion_to_statement(%{wikipedia_url: nil})
 
-      {:ok, _view, html} = live(conn, ~p"/")
+      {:ok, view, html} = live(conn, ~p"/")
 
+      # Default "New" mode shows both statements
       assert html =~ wikipedia_statement.title
-      refute html =~ non_wikipedia_statement.title
+      assert html =~ non_wikipedia_statement.title
+
+      # Switch to Top mode and ensure the non-wikipedia statement is hidden
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
+
+      top_html = render(view)
+      assert top_html =~ wikipedia_statement.title
+      refute top_html =~ non_wikipedia_statement.title
     end
 
     test "shows statements feed in New mode", %{conn: conn} do
@@ -68,23 +74,17 @@ defmodule YouCongressWeb.HomeLiveTest do
         |> add_statement_to_ai_hall()
         |> add_opinion_to_statement()
 
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, _view, html} = live(conn, ~p"/")
 
-      # Switch to New mode (default is Top mode which filters by Wikipedia authors)
-      view |> element("button[phx-click='toggle-switch']") |> render_click()
-
-      assert render(view) =~ statement.title
+      assert html =~ statement.title
     end
 
     test "guest can vote and sees flash message", %{conn: conn} do
       statement_fixture(title: "Test Statement")
-      |> add_statement_to_ai_hall()
-      |> add_opinion_to_statement()
+        |> add_statement_to_ai_hall()
+        |> add_opinion_to_statement()
 
       {:ok, view, _html} = live(conn, ~p"/")
-
-      # Switch to New mode to see the statement regardless of Wikipedia metadata
-      view |> element("button[phx-click='toggle-switch']") |> render_click()
 
       # Vote For
       view
@@ -122,9 +122,6 @@ defmodule YouCongressWeb.HomeLiveTest do
       conn = log_in_user(conn, user)
 
       {:ok, view, _html} = live(conn, ~p"/")
-
-      # Switch to New mode to see the statement regardless of Wikipedia metadata
-      view |> element("button[phx-click='toggle-switch']") |> render_click()
 
       # Vote For
       view
