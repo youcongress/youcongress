@@ -15,7 +15,14 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
   def render(assigns) do
     ~H"""
-    <div id="registration-flow" class="mx-auto max-w-sm" phx-hook="SessionLogin">
+    <div
+      id="registration-flow"
+      class="mx-auto max-w-sm"
+      phx-hook="SessionLogin"
+      data-step={@step}
+      data-hide-targets={Enum.join(@hide_targets || [], ",")}
+      data-reload-on-login={@reload_on_login}
+    >
       <%= if @step == :enter_email_password do %>
         <%= unless @embedded do %>
           <div class="mt-6 space-y-3">
@@ -234,7 +241,11 @@ defmodule YouCongressWeb.UserRegistrationLive do
         </.simple_form>
 
         <div class="mt-4 text-center">
-          <.link navigate={~p"/welcome"} class="text-sm text-gray-600 hover:text-gray-800 underline">
+          <.link
+            href="#"
+            phx-click="skip_phone"
+            class="text-sm text-gray-600 hover:text-gray-800 underline"
+          >
             Maybe later
           </.link>
         </div>
@@ -280,7 +291,11 @@ defmodule YouCongressWeb.UserRegistrationLive do
             Change phone number or/and resend code
           </.link>
           <span class="mx-2 text-gray-400">|</span>
-          <.link navigate={~p"/welcome"} class="text-sm text-gray-600 hover:text-gray-800 underline">
+          <.link
+            href="#"
+            phx-click="skip_phone"
+            class="text-sm text-gray-600 hover:text-gray-800 underline"
+          >
             Maybe later
           </.link>
         </div>
@@ -308,6 +323,8 @@ defmodule YouCongressWeb.UserRegistrationLive do
       |> assign(:votes, votes)
       |> assign(:pending_actions, pending_actions)
       |> assign(:embedded, session["embedded"] || false)
+      |> assign(:hide_targets, session["hide_targets"] || [])
+      |> assign(:reload_on_login, session["reload_on_login"] || false)
 
     current_user = socket.assigns.current_user
 
@@ -601,6 +618,14 @@ defmodule YouCongressWeb.UserRegistrationLive do
     {:noreply, assign(socket, :step, :enter_mobile_phone) |> assign_form(changeset)}
   end
 
+  def handle_event("skip_phone", _params, %{assigns: %{user: %User{} = user}} = socket) do
+    {:noreply, session_login(socket, user, ~p"/welcome")}
+  end
+
+  def handle_event("skip_phone", _params, socket) do
+    {:noreply, redirect(socket, to: ~p"/welcome")}
+  end
+
   defp proceed_after_email_confirmation(socket, %User{} = user) do
     step = determine_registration_step(user)
 
@@ -652,7 +677,9 @@ defmodule YouCongressWeb.UserRegistrationLive do
   end
 
   defp changeset_for_step(:validate_phone, user, _initial_values) do
-    Accounts.change_user_phone_number(user || %User{}, %{"phone_number" => user && user.phone_number})
+    Accounts.change_user_phone_number(user || %User{}, %{
+      "phone_number" => user && user.phone_number
+    })
   end
 
   defp changeset_for_step(_step, user, initial_values) do

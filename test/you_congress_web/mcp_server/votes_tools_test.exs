@@ -212,6 +212,7 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
       other_user = user_fixture()
       api_key = api_key_fixture(other_user)
       statement = statement_fixture()
+
       opinion =
         opinion_fixture(%{
           author_id: owner.author_id,
@@ -248,6 +249,7 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
       owner = user_fixture()
       api_key = api_key_fixture(owner)
       statement = statement_fixture()
+
       opinion =
         opinion_fixture(%{
           author_id: owner.author_id,

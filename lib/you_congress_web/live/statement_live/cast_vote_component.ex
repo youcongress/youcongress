@@ -4,13 +4,11 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
   require Logger
 
   alias YouCongress.Votes
-  alias YouCongress.Votes.Vote
   alias YouCongress.Votes.VoteFrequencies
   alias YouCongress.Track
   alias YouCongressWeb.StatementLive.CastVoteComponent
   alias YouCongressWeb.StatementLive.ResultsComponent
   alias YouCongress.DelegationVotes
-  alias YouCongress.Votes.VoteFrequencies
   alias YouCongressWeb.StatementLive.Index.OpinateComponent
   alias YouCongressWeb.Components.LoginButtons
   @impl true
@@ -162,11 +160,16 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
 
   @impl true
   def handle_event("vote", %{"response" => response}, %{assigns: %{current_user: nil}} = socket) do
-    socket =
-      socket
-      |> assign(:display_results, true)
-      |> assign_results_variables()
-      |> assign(:current_user_vote, %Vote{answer: String.to_existing_atom(response)})
+    %{assigns: %{statement: statement}} = socket
+
+    send(self(),
+      {:require_auth_to_vote,
+       %{
+         statement_id: statement.id,
+         statement_title: statement.title,
+         answer: response
+       }}
+    )
 
     {:noreply, socket}
   end

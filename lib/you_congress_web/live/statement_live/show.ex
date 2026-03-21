@@ -27,7 +27,12 @@ defmodule YouCongressWeb.StatementLive.Show do
       Track.event("View Statement", current_user)
     end
 
-    {:ok, assign(socket, :random_statements_from_main_hall, [])}
+    {:ok,
+     socket
+     |> assign(:random_statements_from_main_hall, [])
+     |> assign(:pending_guest_votes, %{})
+     |> assign(:pending_vote_prompt, nil)
+     |> assign(:show_vote_auth_modal, false)}
   end
 
   @impl true
@@ -188,6 +193,15 @@ defmodule YouCongressWeb.StatementLive.Show do
     {:noreply, socket}
   end
 
+  def handle_event("close-vote-auth-modal", _, socket) do
+    socket =
+      socket
+      |> assign(:show_vote_auth_modal, false)
+      |> assign(:pending_vote_prompt, nil)
+
+    {:noreply, socket}
+  end
+
   @impl true
 
   def handle_info(:reload, socket) do
@@ -203,6 +217,10 @@ defmodule YouCongressWeb.StatementLive.Show do
       |> put_flash(kind, msg)
 
     {:noreply, socket}
+  end
+
+  def handle_info({:require_auth_to_vote, payload}, socket) do
+    {:noreply, record_guest_vote(socket, payload)}
   end
 
   def handle_info({:voted, vote}, socket) do
@@ -242,4 +260,5 @@ defmodule YouCongressWeb.StatementLive.Show do
 
     assign(socket, :random_statements_from_main_hall, random_statements_from_main_hall)
   end
+
 end
