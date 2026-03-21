@@ -287,8 +287,10 @@ defmodule YouCongress.Statements.StatementQueries do
       FROM statements s
       JOIN votes v ON v.statement_id = s.id
       JOIN opinions o ON o.id = v.opinion_id
+      JOIN authors a ON a.id = v.author_id
       #{hall_filter}
       WHERE v.opinion_id IS NOT NULL
+        AND a.wikipedia_url IS NOT NULL
     )
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
