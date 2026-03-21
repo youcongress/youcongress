@@ -8,7 +8,6 @@ defmodule YouCongressWeb.Components.LoginButtons do
   use YouCongressWeb, :verified_routes
   alias YouCongress.FeatureFlags
 
-  attr :message, :string, default: "Log in to save your vote:"
   attr :class, :string, default: ""
   attr :pending_actions, :string, default: nil
 
@@ -22,7 +21,6 @@ defmodule YouCongressWeb.Components.LoginButtons do
 
     ~H"""
     <div class={@class}>
-      <p class="text-sm text-gray-600 mb-3">{@message}</p>
       <div class="flex flex-wrap gap-2">
         <.link
           href={@google_href}
