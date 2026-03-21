@@ -117,14 +117,30 @@
           </div>
 
           <div class="border-t border-gray-100 pt-4 mt-2">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="space-y-6 md:space-y-0 md:flex md:gap-6">
               <%= for {label, answer} <- [{"For", :for}, {"Abstain", :abstain}, {"Against", :against}] do %>
                 <% count = Map.get(card.opinion_counts || %{}, answer, 0) %>
-                <div>
-                  <div class="text-sm font-semibold text-gray-700 mb-2">
-                    {label} ({count})
-                  </div>
-                  <%= if vote = Map.get(card.votes_by_answer, answer) do %>
+                <% vote = Map.get(card.votes_by_answer, answer) %>
+                <% column_classes =
+                  if count == 0 && is_nil(vote), do: "md:flex-none md:w-32", else: "md:flex-1" %>
+                <div class={"#{column_classes}"}>
+                  <.link href={~p"/p/#{card.statement.slug}"} class="text-sm font-semibold text-gray-700 mb-2 inline-flex items-center gap-1 hover:text-indigo-600">
+                    <span>{label} ({count})</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="h-4 w-4"
+                      aria-hidden="true"
+                    >
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </.link>
+                  <%= if vote do %>
                     <%= if vote.opinion && vote.opinion.id == @editing_opinion_id do %>
                       <form phx-submit="update-opinion" class="space-y-3">
                         <input type="hidden" name="opinion_id" value={vote.opinion.id} />
