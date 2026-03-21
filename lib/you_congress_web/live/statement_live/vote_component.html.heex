@@ -98,7 +98,7 @@
       <%= if @vote.opinion_id && @vote.opinion.source_url do %>
         <.live_component
           module={YouCongressWeb.Components.VerificationBadge}
-          id={"#{@vote.opinion.id}-#{@statement.id}"}
+          id={"#{@id}-#{@vote.opinion.id}-#{@statement.id}"}
           opinion={@vote.opinion}
           current_user={@current_user}
         />

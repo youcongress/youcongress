@@ -265,7 +265,8 @@ defmodule YouCongress.Statements.StatementQueries do
 
     {hall_filter, params, param_idx} =
       if has_hall do
-        {"JOIN halls_statements hs ON hs.statement_id = s.id\n         JOIN halls h ON h.id = hs.hall_id AND h.name = $1", [hall_name], 2}
+        {"JOIN halls_statements hs ON hs.statement_id = s.id\n         JOIN halls h ON h.id = hs.hall_id AND h.name = $1",
+         [hall_name], 2}
       else
         {"", [], 1}
       end
@@ -341,6 +342,62 @@ defmodule YouCongress.Statements.StatementQueries do
         }
       end)
     end
+  end
+
+  @doc """
+  Returns a map of statement_id => %{answer => vote} with the top vote per answer.
+
+  Ordering prioritizes quotes with more likes and verified sources, similar to
+  `Votes.list_votes_with_opinion/2`.
+  """
+  def get_top_votes_by_answer_for_statements([]), do: %{}
+
+  def get_top_votes_by_answer_for_statements(statement_ids) when is_list(statement_ids) do
+    ranking_query =
+      from v in Vote,
+        join: o in assoc(v, :opinion),
+        join: a in assoc(v, :author),
+        where: v.statement_id in ^statement_ids and not is_nil(v.opinion_id),
+        select: %{
+          vote_id: v.id,
+          statement_id: v.statement_id,
+          answer: v.answer,
+          rank:
+            fragment(
+              "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY ? DESC, ? DESC, CASE WHEN ? IS NOT NULL THEN 1 WHEN ? IS NOT NULL THEN 2 WHEN ? = FALSE THEN 3 ELSE 4 END, ? DESC)",
+              v.statement_id,
+              v.answer,
+              o.likes_count,
+              o.descendants_count,
+              o.source_url,
+              a.wikipedia_url,
+              v.twin,
+              o.id
+            )
+        }
+
+    ranked_votes_query =
+      from rv in subquery(ranking_query),
+        where: rv.rank == 1,
+        select: {rv.statement_id, rv.answer, rv.vote_id}
+
+    results = Repo.all(ranked_votes_query)
+
+    vote_ids = Enum.map(results, fn {_, _, vote_id} -> vote_id end)
+
+    votes_by_id =
+      Vote
+      |> where([v], v.id in ^vote_ids)
+      |> preload([:author, opinion: [:author]])
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
+    Enum.reduce(results, %{}, fn {statement_id, answer, vote_id}, acc ->
+      case Map.get(votes_by_id, vote_id) do
+        nil -> acc
+        vote -> Map.update(acc, statement_id, %{answer => vote}, &Map.put(&1, answer, vote))
+      end
+    end)
   end
 
   @doc """
