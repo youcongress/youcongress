@@ -9,20 +9,19 @@ defmodule YouCongressWeb.MCPServer.StatementsList do
   alias YouCongress.Statements
 
   schema do
+    field :include_halls, :boolean, default: false
   end
 
   @limit 100
 
-  def execute(_, frame) do
+  def execute(params, frame) do
+    include_halls? = Map.get(params, :include_halls, false)
+
     statements =
       [limit: @limit]
+      |> maybe_include_halls(include_halls?)
       |> Statements.list_statements()
-      |> Enum.map(fn statement ->
-        %{
-          title: statement.title,
-          id: statement.id
-        }
-      end)
+      |> Enum.map(&serialize_statement(&1, include_halls?))
 
     data = %{
       statements: statements
@@ -30,4 +29,37 @@ defmodule YouCongressWeb.MCPServer.StatementsList do
 
     {:reply, Response.json(Response.tool(), data), frame}
   end
+
+  defp maybe_include_halls(opts, true) do
+    existing = Keyword.get(opts, :preload, []) |> List.wrap()
+    Keyword.put(opts, :preload, Enum.uniq([:halls | existing]))
+  end
+
+  defp maybe_include_halls(opts, _include_halls), do: opts
+
+  defp serialize_statement(statement, include_halls?) do
+    base = %{
+      title: statement.title,
+      id: statement.id
+    }
+
+    if include_halls? do
+      Map.put(base, :halls, serialize_halls(statement))
+    else
+      base
+    end
+  end
+
+  defp serialize_halls(%{halls: halls}) when is_list(halls) do
+    halls
+    |> Enum.sort_by(& &1.name)
+    |> Enum.map(fn hall ->
+      %{
+        id: hall.id,
+        name: hall.name
+      }
+    end)
+  end
+
+  defp serialize_halls(_), do: []
 end
