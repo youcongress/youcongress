@@ -421,7 +421,7 @@ defmodule YouCongress.Statements.StatementQueries do
     # Build params and hall filter
     {hall_filter, params, param_idx} =
       if has_hall do
-        {"JOIN halls_statements hs ON hs.statement_id = v.statement_id
+        {"JOIN halls_statements hs ON hs.statement_id = s.id
          JOIN halls h ON h.id = hs.hall_id AND h.name = $1", [hall_name], 2}
       else
         {"", [], 1}
@@ -432,25 +432,25 @@ defmodule YouCongress.Statements.StatementQueries do
     params = params ++ [offset, limit]
 
     sql = """
-    WITH unique_opinion_votes AS (
+    WITH ranked_votes AS (
       SELECT
         v.id as vote_id,
-        v.statement_id,
-        o.updated_at as opinion_updated_at,
+        s.id as statement_id,
+        o.id as opinion_id,
         ROW_NUMBER() OVER (
-          PARTITION BY v.opinion_id
-          ORDER BY v.inserted_at DESC
+          PARTITION BY s.id
+          ORDER BY o.id DESC, v.inserted_at DESC
         ) as vote_rank
-      FROM votes v
+      FROM statements s
+      JOIN votes v ON v.statement_id = s.id
       JOIN opinions o ON o.id = v.opinion_id
-      JOIN statements s ON s.id = v.statement_id
       #{hall_filter}
       WHERE v.opinion_id IS NOT NULL
     )
-    SELECT vote_id, statement_id, opinion_updated_at
-    FROM unique_opinion_votes
-    WHERE vote_rank = 1
-    ORDER BY opinion_updated_at DESC
+    SELECT rv.vote_id, rv.statement_id
+    FROM ranked_votes rv
+    WHERE rv.vote_rank = 1
+    ORDER BY rv.opinion_id DESC
     OFFSET #{offset_param}
     LIMIT #{limit_param}
     """
@@ -461,7 +461,7 @@ defmodule YouCongress.Statements.StatementQueries do
       []
     else
       results =
-        Enum.map(result.rows, fn [vote_id, statement_id, _opinion_updated_at] ->
+        Enum.map(result.rows, fn [vote_id, statement_id] ->
           %{vote_id: vote_id, statement_id: statement_id}
         end)
 
