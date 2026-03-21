@@ -256,12 +256,6 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   def handle_info(_, socket), do: {:noreply, socket}
 
-  defp order_featured_authors(authors) do
-    Enum.sort_by(authors, fn author ->
-      Enum.find_index(@featured_author_names, &(&1 == author.name)) || length(@featured_author_names)
-    end)
-  end
-
   defp maybe_assign_cards(%{assigns: %{new_poll_visible?: true}} = socket), do: socket
   defp maybe_assign_cards(socket), do: assign_cards(socket, 1)
 
