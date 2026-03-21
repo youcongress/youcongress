@@ -9,6 +9,8 @@ defmodule YouCongressWeb.MCPServer do
   # component(YouCongressWeb.MCPServer.StatementsSearch)
   component(YouCongressWeb.MCPServer.StatementsCreate)
   component(YouCongressWeb.MCPServer.StatementsList)
+  component(YouCongressWeb.MCPServer.StatementsShow)
+  component(YouCongressWeb.MCPServer.StatementsHallsUpdate)
   component(YouCongressWeb.MCPServer.AuthorsSearch)
   component(YouCongressWeb.MCPServer.AuthorsCreate)
   component(YouCongressWeb.MCPServer.AuthorsUpdate)

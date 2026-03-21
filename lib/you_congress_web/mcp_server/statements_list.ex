@@ -7,6 +7,7 @@ defmodule YouCongressWeb.MCPServer.StatementsList do
 
   alias Anubis.Server.Response
   alias YouCongress.Statements
+  alias YouCongressWeb.MCPServer.StatementSerializer
 
   schema do
     field :include_halls, :boolean, default: false
@@ -44,22 +45,9 @@ defmodule YouCongressWeb.MCPServer.StatementsList do
     }
 
     if include_halls? do
-      Map.put(base, :halls, serialize_halls(statement))
+      Map.put(base, :halls, StatementSerializer.halls(statement))
     else
       base
     end
   end
-
-  defp serialize_halls(%{halls: halls}) when is_list(halls) do
-    halls
-    |> Enum.sort_by(& &1.name)
-    |> Enum.map(fn hall ->
-      %{
-        id: hall.id,
-        name: hall.name
-      }
-    end)
-  end
-
-  defp serialize_halls(_), do: []
 end
