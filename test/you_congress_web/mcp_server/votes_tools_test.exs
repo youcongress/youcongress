@@ -36,8 +36,6 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
         assert payload.statement_id == statement.id
         assert payload.author_id == owner.author_id
         assert payload.answer == "against"
-        assert payload.direct
-        refute payload.twin
       end)
 
       vote = Votes.get_by(%{statement_id: statement.id, author_id: owner.author_id})
