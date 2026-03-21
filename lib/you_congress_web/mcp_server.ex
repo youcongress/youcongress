@@ -8,6 +8,7 @@ defmodule YouCongressWeb.MCPServer do
   # (lib/you_congress_web/controllers/page_html/mcp_tools.html.heex)
   # component(YouCongressWeb.MCPServer.StatementsSearch)
   component(YouCongressWeb.MCPServer.StatementsCreate)
+  component(YouCongressWeb.MCPServer.StatementPopulate)
   component(YouCongressWeb.MCPServer.StatementsList)
   component(YouCongressWeb.MCPServer.StatementsShow)
   component(YouCongressWeb.MCPServer.StatementsHallsUpdate)
