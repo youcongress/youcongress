@@ -1,6 +1,8 @@
 defmodule YouCongressWeb.PageController do
   use YouCongressWeb, :controller
 
+  alias YouCongress.FeatureFlags
+
   def terms(conn, _params) do
     render(conn, :terms)
   end
@@ -14,7 +16,15 @@ defmodule YouCongressWeb.PageController do
   end
 
   def about(conn, _params) do
-    render(conn, :about)
+    render(conn, :about,
+      search: nil,
+      search_tab: :quotes,
+      halls: [],
+      authors: [],
+      statements: [],
+      quotes: [],
+      log_in_with_x_enabled: FeatureFlags.enabled?(:log_in_with_x)
+    )
   end
 
   def faq(conn, _params) do
