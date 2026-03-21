@@ -84,47 +84,6 @@
     </div>
   </section>
   
-<!-- Setup Examples Section -->
-  <section aria-labelledby="setup-heading">
-    <h2 id="setup-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
-      Setup Examples
-    </h2>
-    <div class="mt-6 space-y-6">
-      <div>
-        <h3 class="font-semibold text-lg">Claude Desktop / Claude Code</h3>
-        <p class="text-gray-700 leading-relaxed mt-1">
-          Add this to your Claude MCP settings (<code class="bg-gray-100 px-1 rounded">claude_desktop_config.json</code> or <code class="bg-gray-100 px-1 rounded">.mcp.json</code>):
-        </p>
-        <pre class="mt-2 p-3 bg-gray-100 rounded-lg text-sm overflow-x-auto"><code><%= raw("""
-{
-  "mcpServers": {
-    "youcongress": {
-      "type": "url",
-      "url": "https://youcongress.org/mcp?key=YOUR_API_KEY"
-    }
-  }
-}
-""" |> String.trim() |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()) %></code></pre>
-      </div>
-
-      <div>
-        <h3 class="font-semibold text-lg">Cursor</h3>
-        <p class="text-gray-700 leading-relaxed mt-1">
-          Go to <strong>Settings &gt; MCP</strong>
-          and add a new server with the URL <code class="bg-gray-100 px-1 rounded">https://youcongress.org/mcp?key=YOUR_API_KEY</code>.
-        </p>
-      </div>
-
-      <div>
-        <h3 class="font-semibold text-lg">Other MCP-compatible tools</h3>
-        <p class="text-gray-700 leading-relaxed mt-1">
-          Any tool that supports the MCP standard can connect using the same URL.
-          Check your tool's documentation for how to add an MCP server.
-        </p>
-      </div>
-    </div>
-  </section>
-  
 <!-- Available Tools Section -->
   <section aria-labelledby="tools-heading">
     <h2 id="tools-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
