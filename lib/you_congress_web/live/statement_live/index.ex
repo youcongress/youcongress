@@ -245,9 +245,25 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   defp find_card_by_opinion_id(cards_by_id, opinion_id) do
     Enum.find_value(cards_by_id, fn {_card_id, card} ->
-      if card.vote && card.vote.opinion && card.vote.opinion.id == opinion_id do
-        card
+      cond do
+        card.vote && card.vote.opinion && card.vote.opinion.id == opinion_id ->
+          card
+
+        opinion_in_votes_by_answer?(card.votes_by_answer, opinion_id) ->
+          card
+
+        true ->
+          nil
       end
+    end)
+  end
+
+  defp opinion_in_votes_by_answer?(votes_by_answer, opinion_id) do
+    votes_by_answer
+    |> Map.values()
+    |> Enum.any?(fn
+      %{opinion: %{id: id}} when id == opinion_id -> true
+      _ -> false
     end)
   end
 
@@ -347,6 +363,12 @@ defmodule YouCongressWeb.StatementLive.Index do
     else
       # Extract statement IDs for loading current user's data
       statement_ids = cards |> Enum.map(& &1.statement.id) |> Enum.uniq()
+      votes_by_answer = StatementQueries.get_top_votes_by_answer_for_statements(statement_ids)
+
+      cards =
+        Enum.map(cards, fn card ->
+          Map.put(card, :votes_by_answer, Map.get(votes_by_answer, card.statement.id, %{}))
+        end)
 
       new_liked_opinion_ids = Likes.get_liked_opinion_ids(current_user)
       new_votes = load_votes(statement_ids, current_user)
@@ -388,7 +410,8 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   defp order_featured_authors(authors) do
     Enum.sort_by(authors, fn author ->
-      Enum.find_index(@featured_author_names, &(&1 == author.name)) || length(@featured_author_names)
+      Enum.find_index(@featured_author_names, &(&1 == author.name)) ||
+        length(@featured_author_names)
     end)
   end
 
