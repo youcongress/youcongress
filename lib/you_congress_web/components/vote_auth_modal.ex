@@ -112,23 +112,4 @@ defmodule YouCongressWeb.Components.VoteAuthModal do
     [login_buttons_id, login_heading_id, email_heading_wrapper_id, email_heading_id]
   end
 
-  defp humanize_answer(answer) when is_atom(answer) do
-    answer
-    |> to_string()
-    |> humanize_answer()
-  end
-
-  defp humanize_answer(answer) when is_binary(answer) do
-    answer
-    |> String.trim()
-    |> String.downcase()
-    |> case do
-      "for" -> "For"
-      "against" -> "Against"
-      "abstain" -> "Abstain"
-      other -> String.capitalize(other)
-    end
-  end
-
-  defp humanize_answer(answer), do: to_string(answer)
 end

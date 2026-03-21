@@ -124,7 +124,10 @@
                 <% column_classes =
                   if count == 0 && is_nil(vote), do: "md:flex-none md:w-32", else: "md:flex-1" %>
                 <div class={"#{column_classes}"}>
-                  <.link href={~p"/p/#{card.statement.slug}"} class="text-sm font-semibold text-gray-700 mb-2 inline-flex items-center gap-1 hover:text-indigo-600">
+                  <.link
+                    href={~p"/p/#{card.statement.slug}"}
+                    class="text-sm font-semibold text-gray-700 mb-2 inline-flex items-center gap-1 hover:text-indigo-600"
+                  >
                     <span>{label} ({count})</span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -186,7 +189,7 @@
                   <% else %>
                     <div class="text-sm text-gray-500">
                       <.link href={~p"/p/#{card.statement.slug}"} class="hover:text-indigo-600">
-                        Share a {label} opinion
+                        Add an opinion
                       </.link>
                     </div>
                   <% end %>
