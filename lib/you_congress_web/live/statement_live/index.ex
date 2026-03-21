@@ -122,12 +122,6 @@ defmodule YouCongressWeb.StatementLive.Index do
     {:noreply, assign(socket, search_tab: :delegates)}
   end
 
-  defp order_featured_authors(authors) do
-    Enum.sort_by(authors, fn author ->
-      Enum.find_index(@featured_author_names, &(&1 == author.name)) || length(@featured_author_names)
-    end)
-  end
-
   def handle_event("search-tab", %{"tab" => "halls"}, socket) do
     {:noreply, assign(socket, search_tab: :halls)}
   end
@@ -390,6 +384,12 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   defp get_current_user_delegation_ids(current_user) do
     Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
+  end
+
+  defp order_featured_authors(authors) do
+    Enum.sort_by(authors, fn author ->
+      Enum.find_index(@featured_author_names, &(&1 == author.name)) || length(@featured_author_names)
+    end)
   end
 
   defp perform_search(socket, search) do
