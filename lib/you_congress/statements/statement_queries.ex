@@ -432,13 +432,25 @@ defmodule YouCongress.Statements.StatementQueries do
     params = params ++ [offset, limit]
 
     sql = """
-    SELECT v.id as vote_id, v.statement_id, o.updated_at as opinion_updated_at
-    FROM votes v
-    JOIN opinions o ON o.id = v.opinion_id
-    JOIN statements s ON s.id = v.statement_id
-    #{hall_filter}
-    WHERE v.opinion_id IS NOT NULL
-    ORDER BY o.updated_at DESC
+    WITH unique_opinion_votes AS (
+      SELECT
+        v.id as vote_id,
+        v.statement_id,
+        o.updated_at as opinion_updated_at,
+        ROW_NUMBER() OVER (
+          PARTITION BY v.opinion_id
+          ORDER BY v.inserted_at DESC
+        ) as vote_rank
+      FROM votes v
+      JOIN opinions o ON o.id = v.opinion_id
+      JOIN statements s ON s.id = v.statement_id
+      #{hall_filter}
+      WHERE v.opinion_id IS NOT NULL
+    )
+    SELECT vote_id, statement_id, opinion_updated_at
+    FROM unique_opinion_votes
+    WHERE vote_rank = 1
+    ORDER BY opinion_updated_at DESC
     OFFSET #{offset_param}
     LIMIT #{limit_param}
     """
