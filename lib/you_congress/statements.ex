@@ -212,6 +212,13 @@ defmodule YouCongress.Statements do
     Repo.get(Statement, id)
   end
 
+  def get_statement(id, preload: tables) do
+    case Repo.get(Statement, id) do
+      nil -> nil
+      statement -> Repo.preload(statement, tables)
+    end
+  end
+
   @doc """
   Gets a single statement with a table preloaded such as votes and authors.
 

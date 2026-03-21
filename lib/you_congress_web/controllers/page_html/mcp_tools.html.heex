@@ -194,6 +194,22 @@
         </div>
         <div class="pl-4">
           <dt class="font-mono text-sm font-semibold text-blue-700">
+            statements_show
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 font-sans text-xs font-medium">
+              public
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Fetch a single statement with its ID. Returns a
+            <code class="bg-gray-100 px-1 rounded">statement</code> map containing the
+            <code class="bg-gray-100 px-1 rounded">statement_id</code>, title, halls
+            (id + name), and authors (id, name, bio, country, twitter_username) who have
+            opinions linked to it. Requires:
+            <code class="bg-gray-100 px-1 rounded">statement_id</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
             statements_create
             <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
               admin
@@ -206,6 +222,27 @@
             Create a new statement. Requires: <code class="bg-gray-100 px-1 rounded">title</code>,
             <code class="bg-gray-100 px-1 rounded">nice_slug</code>
             (used as the last part of <code class="bg-gray-100 px-1 rounded">https://youcongress.org/p/[nice_slug]</code>).
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            statements_halls_update
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
+              admin
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-orange-100 text-orange-800 font-sans text-xs font-medium">
+              creator
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Update the halls attached to a statement. Requires:
+            <code class="bg-gray-100 px-1 rounded">statement_id</code> and a
+            <code class="bg-gray-100 px-1 rounded">main_hall</code> name.
+            Optional:<br />
+            • <code class="bg-gray-100 px-1 rounded">other_halls</code> — list or comma/line separated.<br />
+            • <code class="bg-gray-100 px-1 rounded">halls</code> — accepts the same format as other_halls for compatibility.<br />
+            Returns the updated <code class="bg-gray-100 px-1 rounded">statement</code>
+            (id, title, main_hall, halls). Admins and the statement owner can call this.
           </dd>
         </div>
       </dl>
