@@ -168,6 +168,7 @@ defmodule YouCongress.Votes do
             WHEN ? = FALSE THEN 3
             ELSE 4
           END", o.source_url, a.wikipedia_url, o.twin),
+      fragment("? DESC NULLS LAST", o.year),
       {:desc, o.id}
     ])
     |> preload(^include_tables)
