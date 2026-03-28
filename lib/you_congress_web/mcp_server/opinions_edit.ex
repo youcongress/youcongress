@@ -108,11 +108,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsEdit do
       content: opinion.content,
       source_url: opinion.source_url,
       year: opinion.year,
-      twin: opinion.twin,
       verification_status: opinion.verification_status,
-      ancestry: opinion.ancestry,
-      descendants_count: opinion.descendants_count,
-      likes_count: opinion.likes_count,
       author_id: opinion.author_id,
       user_id: opinion.user_id
     }
