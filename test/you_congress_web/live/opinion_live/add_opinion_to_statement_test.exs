@@ -30,7 +30,7 @@ defmodule YouCongressWeb.OpinionLive.AddOpinionToStatementTest do
 
       # Toggle search
       show_live
-      |> element("button", "Add to Poll")
+      |> element("button", "Add to Statement")
       |> render_click()
 
       # Search for statement
