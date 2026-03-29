@@ -139,18 +139,18 @@
           <button
             phx-click="add-to-statement-with-vote"
             phx-value-statement_id={@selected_statement_id}
-            phx-value-answer="Against"
-            class="inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
-          >
-            Against
-          </button>
-          <button
-            phx-click="add-to-statement-with-vote"
-            phx-value-statement_id={@selected_statement_id}
             phx-value-answer="Abstain"
             class="inline-flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
           >
             Abstain
+          </button>
+          <button
+            phx-click="add-to-statement-with-vote"
+            phx-value-statement_id={@selected_statement_id}
+            phx-value-answer="Against"
+            class="inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+          >
+            Against
           </button>
         </div>
         <button
