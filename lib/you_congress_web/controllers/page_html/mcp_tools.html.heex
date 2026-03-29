@@ -366,7 +366,10 @@
             </span>
           </dt>
           <dd class="text-gray-700">
-            Link an opinion to a statement. Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>.
+            Link an opinion to a statement and set the author's vote for that statement. Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>,
+            <code class="bg-gray-100 px-1 rounded">vote_answer</code>
+            ("For", "Against", or "Abstain"). If a vote already exists, it will be updated with the
+            new answer.
           </dd>
         </div>
         <div class="pl-4">

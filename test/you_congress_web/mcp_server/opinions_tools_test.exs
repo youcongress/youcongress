@@ -11,6 +11,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
 
   alias YouCongress.Accounts
   alias YouCongress.Opinions
+  alias YouCongress.Votes
   alias YouCongressWeb.MCPServer.OpinionsCreate
   alias YouCongressWeb.MCPServer.OpinionsDelete
   alias YouCongressWeb.MCPServer.OpinionsEdit
@@ -21,6 +22,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @not_found_message "Opinion not found."
+  @invalid_vote_answer_message "Answer must be one of: For, Abstain, Against."
 
   describe "OpinionsShow.execute/2" do
     test "returns a serialized opinion payload" do
@@ -288,7 +290,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       with_mocked_response_and_key(api_key.token, fn ->
         assert {:reply, {:json, payload}, :frame} =
                  OpinionsStatementsAdd.execute(
-                   %{opinion_id: opinion.id, statement_id: statement.id},
+                   %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "For"},
                    :frame
                  )
 
@@ -296,10 +298,17 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
         assert payload.opinion_id == opinion.id
         assert payload.statement_id == statement.id
         assert payload.statement_title == statement.title
+        assert payload.vote.answer == "for"
+        assert payload.vote.author_id == opinion.author_id
       end)
 
       opinion = Opinions.get_opinion!(opinion.id, preload: [:statements])
       assert Enum.any?(opinion.statements, &(&1.id == statement.id))
+
+      vote = Votes.get_by(%{statement_id: statement.id, author_id: opinion.author_id})
+      assert vote
+      assert vote.answer == :for
+      assert vote.opinion_id == opinion.id
     end
 
     test "returns missing-key error when no API key is provided" do
@@ -309,7 +318,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       with_mocked_response_and_key(nil, fn ->
         assert {:reply, {:error, @missing_key_message}, :frame} =
                  OpinionsStatementsAdd.execute(
-                   %{opinion_id: opinion.id, statement_id: statement.id},
+                   %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "For"},
                    :frame
                  )
       end)
@@ -325,7 +334,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
         assert {:reply, {:error, "Your account is not allowed to attach opinions to statements."},
                 :frame} =
                  OpinionsStatementsAdd.execute(
-                   %{opinion_id: opinion.id, statement_id: statement.id},
+                   %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "Against"},
                    :frame
                  )
       end)
@@ -342,10 +351,51 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       with_mocked_response_and_key(api_key.token, fn ->
         assert {:reply, {:error, "Opinion is already associated with this statement."}, :frame} =
                  OpinionsStatementsAdd.execute(
-                   %{opinion_id: opinion.id, statement_id: statement.id},
+                   %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "Abstain"},
                    :frame
                  )
       end)
+    end
+
+    test "returns an error when answer is outside the allowed values" do
+      admin = admin_fixture()
+      api_key = api_key_fixture(admin)
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply, {:error, @invalid_vote_answer_message}, :frame} =
+                 OpinionsStatementsAdd.execute(
+                   %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "maybe"},
+                   :frame
+                 )
+      end)
+
+      refute Votes.get_by(%{statement_id: statement.id, author_id: opinion.author_id})
+    end
+
+    test "updates an existing vote when the author already voted for the statement" do
+      admin = admin_fixture()
+      api_key = api_key_fixture(admin)
+      statement = statement_fixture()
+      existing_vote = vote_fixture(%{statement_id: statement.id, answer: :against})
+      opinion = opinion_fixture(%{author_id: existing_vote.author_id})
+
+      with_mocked_response_and_key(api_key.token, fn ->
+        assert {:reply, {:json, payload}, :frame} =
+                 OpinionsStatementsAdd.execute(
+                   %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "For"},
+                   :frame
+                 )
+
+        assert payload.vote.vote_id == existing_vote.id
+        assert payload.vote.answer == "for"
+      end)
+
+      vote = Votes.get_by(%{statement_id: statement.id, author_id: opinion.author_id})
+      assert vote.id == existing_vote.id
+      assert vote.answer == :for
+      assert vote.opinion_id == opinion.id
     end
   end
 
