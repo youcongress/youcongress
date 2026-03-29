@@ -14,6 +14,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Opinions
   alias YouCongress.Statements
+  alias YouCongress.Votes
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
@@ -21,25 +22,40 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
   @opinion_not_found "Opinion not found."
   @statement_not_found "Statement not found."
   @already_linked "Opinion is already associated with this statement."
+  @vote_answer_options ["For", "Abstain", "Against"]
+  @invalid_vote_answer_message "Answer must be one of: #{Enum.join(@vote_answer_options, ", ")}."
+  @vote_answer_lookup %{"for" => :for, "against" => :against, "abstain" => :abstain}
 
   schema do
     field :opinion_id, :integer, required: true
     field :statement_id, :integer, required: true
+    field :vote_answer, :string, required: true
   end
 
   @impl true
-  def execute(%{opinion_id: opinion_id, statement_id: statement_id}, frame) do
-    with {:ok, user} <- authenticate_user(frame),
+  def execute(
+        %{opinion_id: opinion_id, statement_id: statement_id, vote_answer: vote_answer},
+        frame
+      ) do
+    with {:ok, normalized_vote_answer} <- normalize_vote_answer(vote_answer),
+         {:ok, user} <- authenticate_user(frame),
          :ok <- ensure_permission(user),
          {:ok, opinion} <- fetch_opinion(opinion_id),
          {:ok, statement} <- fetch_statement(statement_id),
-         {:ok, _} <- Opinions.add_opinion_to_statement(opinion, statement, user.id) do
+         {:ok, _} <- Opinions.add_opinion_to_statement(opinion, statement, user.id),
+         {:ok, vote} <- upsert_vote(opinion, statement, normalized_vote_answer) do
       data = %{
         opinion_id: opinion.id,
         statement_id: statement.id,
         statement_title: statement.title,
         statement_slug: statement.slug,
-        attached: true
+        attached: true,
+        vote: %{
+          vote_id: vote.id,
+          statement_id: vote.statement_id,
+          author_id: vote.author_id,
+          answer: vote.answer && Atom.to_string(vote.answer)
+        }
       }
 
       {:reply, Response.json(Response.tool(), data), frame}
@@ -62,9 +78,13 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
       {:error, :already_associated} ->
         {:reply, Response.error(Response.tool(), @already_linked), frame}
 
+      {:error, :invalid_vote_answer} ->
+        {:reply, Response.error(Response.tool(), @invalid_vote_answer_message), frame}
+
       {:error, :user_id_required} ->
         {:reply,
-         Response.error(Response.tool(), "A valid user is required to attach the opinion."), frame}
+         Response.error(Response.tool(), "A valid user is required to attach the opinion."),
+         frame}
 
       {:error, :transaction_failed} ->
         {:reply,
@@ -107,6 +127,46 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
     case Statements.get_statement(statement_id) do
       nil -> {:error, :statement_not_found}
       statement -> {:ok, statement}
+    end
+  end
+
+  defp normalize_vote_answer(answer) when is_binary(answer) do
+    answer
+    |> String.trim()
+    |> String.downcase()
+    |> case do
+      normalized ->
+        case Map.fetch(@vote_answer_lookup, normalized) do
+          {:ok, value} -> {:ok, value}
+          :error -> {:error, :invalid_vote_answer}
+        end
+    end
+  end
+
+  defp normalize_vote_answer(answer) when is_atom(answer) do
+    answer
+    |> Atom.to_string()
+    |> normalize_vote_answer()
+  end
+
+  defp normalize_vote_answer(_), do: {:error, :invalid_vote_answer}
+
+  defp upsert_vote(opinion, statement, vote_answer) do
+    attrs = %{
+      author_id: opinion.author_id,
+      statement_id: statement.id,
+      opinion_id: opinion.id,
+      answer: vote_answer,
+      direct: true
+    }
+
+    case Votes.get_by(%{statement_id: statement.id, author_id: opinion.author_id}) do
+      nil ->
+        Votes.create_vote(attrs)
+
+      vote ->
+        update_attrs = Map.take(attrs, [:answer, :direct, :opinion_id])
+        Votes.update_vote(vote, update_attrs)
     end
   end
 
