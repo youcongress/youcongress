@@ -479,6 +479,7 @@ defmodule YouCongress.Opinions do
             :sync_opinions_count,
             SyncStatementOpinionsCountWorker.new(%{"statement_id" => statement.id})
           )
+          |> maybe_delete_vote(opinion, statement)
           |> Repo.transaction()
 
         case result do
@@ -493,4 +494,16 @@ defmodule YouCongress.Opinions do
         end
     end
   end
+
+  defp maybe_delete_vote(multi, %Opinion{source_url: source_url} = opinion, statement)
+       when not is_nil(source_url) do
+    Ecto.Multi.run(multi, :delete_vote, fn repo, _ ->
+      case repo.get_by(Vote, author_id: opinion.author_id, statement_id: statement.id) do
+        nil -> {:ok, nil}
+        vote -> repo.delete(vote)
+      end
+    end)
+  end
+
+  defp maybe_delete_vote(multi, _opinion, _statement), do: multi
 end

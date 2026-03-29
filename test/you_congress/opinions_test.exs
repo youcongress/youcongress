@@ -64,7 +64,7 @@ defmodule YouCongress.OpinionsTest do
       assert Votes.get_vote(other_author_vote.id) != nil
     end
 
-    test "keeps author votes for non-quote opinions" do
+    test "keeps author votes for non-quote opinions on delete" do
       opinion = opinion_fixture(%{source_url: nil, twin: false})
       statement = statement_fixture()
 
@@ -80,6 +80,55 @@ defmodule YouCongress.OpinionsTest do
       assert {:ok, _deleted_opinion} = Opinions.delete_opinion(opinion)
 
       assert Votes.get_vote(vote.id) != nil
+    end
+  end
+
+  describe "remove_opinion_from_statement/2" do
+    test "deletes the vote when opinion has source_url" do
+      quote_opinion = opinion_fixture(%{twin: false})
+      statement = statement_fixture()
+
+      {:ok, _} = Opinions.add_opinion_to_statement(quote_opinion, statement)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: quote_opinion.author_id,
+          answer: :for
+        })
+
+      assert {:ok, _} = Opinions.remove_opinion_from_statement(quote_opinion, statement)
+
+      assert Votes.get_vote(vote.id) == nil
+
+      %{statements: statements} = Opinions.get_opinion!(quote_opinion.id, preload: [:statements])
+      assert statements == []
+    end
+
+    test "keeps the vote when opinion has no source_url" do
+      opinion = opinion_fixture(%{source_url: nil, twin: false})
+      statement = statement_fixture()
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: opinion.author_id,
+          answer: :for
+        })
+
+      assert {:ok, _} = Opinions.remove_opinion_from_statement(opinion, statement)
+
+      assert Votes.get_vote(vote.id) != nil
+    end
+
+    test "returns not_associated when no link exists" do
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+
+      assert {:error, :not_associated} =
+               Opinions.remove_opinion_from_statement(opinion, statement)
     end
   end
 end
