@@ -25,6 +25,7 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
 
         assert result = Enum.find(payload, &(&1.id == statement.id))
         assert result.title == "AI Charter"
+        assert result.opinions_count == statement.opinions_count
         refute Map.has_key?(result, :halls)
       end)
     end
@@ -39,7 +40,10 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
         assert {:reply, {:json, %{statements: payload}}, :frame} =
                  StatementsList.execute(%{include_halls: true}, :frame)
 
-        assert %{halls: halls} = Enum.find(payload, &(&1.id == statement.id))
+        assert %{halls: halls, opinions_count: opinions_count} =
+                 Enum.find(payload, &(&1.id == statement.id))
+
+        assert opinions_count == statement.opinions_count
         assert Enum.map(halls, & &1.name) == ["ai", "climate"]
         assert Enum.all?(halls, fn hall -> is_integer(hall.id) end)
       end)
