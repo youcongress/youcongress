@@ -305,6 +305,14 @@
       <p class="text-gray-600 mt-1">
         Quotes and opinions attributed to authors, linked to statements.
       </p>
+      <p class="text-gray-600 mt-2">
+        Every "quote" in YouCongress is simply an opinion that includes a
+        <code class="bg-gray-100 px-1 rounded">source_url</code>
+        (and usually a <code class="bg-gray-100 px-1 rounded">source_excerpt</code>). User-authored
+        positions without a source URL are still stored as opinions, but they will not appear in the
+        quote verification tools below. Use the opinions tools to create both sourced quotes and
+        unsourced user stances—just include the source fields when you want the opinion treated as a quote.
+      </p>
       <dl class="mt-3 space-y-3">
         <div class="pl-4">
           <dt class="font-mono text-sm font-semibold text-blue-700">
@@ -418,8 +426,11 @@
     
 <!-- Quotes / Verification -->
     <div class="mt-6">
-      <h3 class="text-lg font-semibold border-b border-gray-200 pb-2">Quote Verification</h3>
-      <p class="text-gray-600 mt-1">Search and verify quotes attributed to authors.</p>
+      <h3 class="text-lg font-semibold border-b border-gray-200 pb-2">Quotes &amp; Verification</h3>
+      <p class="text-gray-600 mt-1">
+        Search and verify sourced opinions (quotes). These tools return the same opinion IDs as above;
+        they simply filter to entries that include a <code class="bg-gray-100 px-1 rounded">source_url</code>.
+      </p>
       <dl class="mt-3 space-y-3">
         <div class="pl-4">
           <dt class="font-mono text-sm font-semibold text-blue-700">
