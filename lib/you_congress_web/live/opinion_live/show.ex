@@ -241,6 +241,33 @@ defmodule YouCongressWeb.OpinionLive.Show do
     end
   end
 
+  def handle_event("remove-from-statement", %{"statement_id" => statement_id}, socket) do
+    %{assigns: %{opinion: opinion, current_user: current_user}} = socket
+
+    if Permissions.can_add_opinion_to_statement?(current_user) do
+      case Opinions.remove_opinion_from_statement(opinion, String.to_integer(statement_id)) do
+        {:ok, _} ->
+          Track.event("Remove Opinion from Statement", current_user)
+
+          socket =
+            socket
+            |> load_opinion!(opinion.id)
+            |> put_flash(:info, "Opinion removed from poll successfully.")
+
+          {:noreply, socket}
+
+        {:error, :not_associated} ->
+          {:noreply, socket |> put_flash(:error, "Opinion is not associated with this statement.")}
+
+        {:error, error} ->
+          Logger.error("Error removing opinion from statement: #{inspect(error)}")
+          {:noreply, socket |> put_flash(:error, "Failed to remove opinion from statement.")}
+      end
+    else
+      {:noreply, socket |> put_flash(:error, "You don't have permission to do this.")}
+    end
+  end
+
   def handle_event("add-to-statement", %{"statement_id" => statement_id}, socket) do
     %{assigns: %{opinion: opinion, current_user: current_user}} = socket
 
