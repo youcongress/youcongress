@@ -20,7 +20,6 @@ defmodule YouCongressWeb.Router do
     plug(:accepts, ["json"])
     plug(:fetch_query_params)
     plug(YouCongressWeb.Plugs.MCPSessionPlug)
-    plug(YouCongressWeb.Plugs.MCPClusterGuard)
   end
 
   scope "/" do
