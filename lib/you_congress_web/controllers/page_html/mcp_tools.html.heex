@@ -175,6 +175,25 @@
         </div>
         <div class="pl-4">
           <dt class="font-mono text-sm font-semibold text-blue-700">
+            statements_authors
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 font-sans text-xs font-medium">
+              public
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            List the authors who already have at least one sourced quote on a statement.
+            Returns the <code class="bg-gray-100 px-1 rounded">statement_id</code>,
+            <code class="bg-gray-100 px-1 rounded">statement_title</code>, and an
+            <code class="bg-gray-100 px-1 rounded">authors</code>
+            array where each entry includes the <code class="bg-gray-100 px-1 rounded">author_id</code>,
+            <code class="bg-gray-100 px-1 rounded">name</code>, and
+            <code class="bg-gray-100 px-1 rounded">opinion_year</code>
+            (the year of the quote, useful for finding authors without a recent opinion). Requires:
+            <code class="bg-gray-100 px-1 rounded">statement_id</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
             statements_create
             <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
               admin
@@ -388,7 +407,10 @@
             </span>
           </dt>
           <dd class="text-gray-700">
-            Unlink an opinion from a statement. Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>.
+            Unlink an opinion from a statement. If the opinion is a sourced quote
+            (has a <code class="bg-gray-100 px-1 rounded">source_url</code>),
+            the author's vote on that statement is also removed.
+            Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>.
           </dd>
         </div>
       </dl>
