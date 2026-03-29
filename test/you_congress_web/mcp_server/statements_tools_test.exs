@@ -10,11 +10,11 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
   alias YouCongress.Accounts
   alias YouCongress.HallsStatements
   alias YouCongress.OpinionsStatements
-  alias YouCongressWeb.MCPServer.StatementsAuthors
+  alias YouCongressWeb.MCPServer.StatementAuthors
   alias YouCongressWeb.MCPServer.StatementPopulate
   alias YouCongressWeb.MCPServer.StatementsHallsUpdate
   alias YouCongressWeb.MCPServer.StatementsList
-  alias YouCongressWeb.MCPServer.StatementsShow
+  alias YouCongressWeb.MCPServer.StatementHalls
 
   describe "StatementsList.execute/2" do
     test "returns statements without halls by default" do
@@ -51,8 +51,8 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
     end
   end
 
-  describe "StatementsShow.execute/2" do
-    test "returns title, halls, and authors" do
+  describe "StatementHalls.execute/2" do
+    test "returns statement id, title, and halls" do
       statement = statement_fixture(title: "AI Charter")
       {:ok, _} = HallsStatements.sync!(statement.id, %{main_tag: "ai", other_tags: ["climate"]})
 
@@ -67,25 +67,25 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
         })
 
       with_mocked_response(fn ->
-        assert {:reply, {:json, %{statement: payload}}, :frame} =
-                 StatementsShow.execute(%{statement_id: statement.id}, :frame)
+        assert {:reply, {:json, payload}, :frame} =
+                 StatementHalls.execute(%{statement_id: statement.id}, :frame)
 
         assert payload.statement_id == statement.id
-        assert payload.title == "AI Charter"
+        assert payload.statement_title == "AI Charter"
         assert Enum.map(payload.halls, & &1.name) == ["ai", "climate"]
-        assert Enum.map(payload.authors, & &1.name) == ["Ada Lovelace"]
+        refute Map.has_key?(payload, :authors)
       end)
     end
 
     test "returns error when statement does not exist" do
       with_mocked_response(fn ->
         assert {:reply, {:error, "Statement not found."}, :frame} =
-                 StatementsShow.execute(%{statement_id: -1}, :frame)
+                 StatementHalls.execute(%{statement_id: -1}, :frame)
       end)
     end
   end
 
-  describe "StatementsAuthors.execute/2" do
+  describe "StatementAuthors.execute/2" do
     test "returns author ids and names for sourced quotes" do
       statement = statement_fixture(title: "AI Charter")
 
@@ -120,7 +120,7 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
 
       with_mocked_response(fn ->
         assert {:reply, {:json, payload}, :frame} =
-                 StatementsAuthors.execute(%{statement_id: statement.id}, :frame)
+                 StatementAuthors.execute(%{statement_id: statement.id}, :frame)
 
         assert payload.statement_id == statement.id
         assert payload.statement_title == "AI Charter"
@@ -135,7 +135,7 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
     test "returns error when statement is missing" do
       with_mocked_response(fn ->
         assert {:reply, {:error, "Statement not found."}, :frame} =
-                 StatementsAuthors.execute(%{statement_id: -1}, :frame)
+                 StatementAuthors.execute(%{statement_id: -1}, :frame)
       end)
     end
   end

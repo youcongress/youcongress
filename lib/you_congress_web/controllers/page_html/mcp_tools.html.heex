@@ -160,22 +160,22 @@
         </div>
         <div class="pl-4">
           <dt class="font-mono text-sm font-semibold text-blue-700">
-            statements_show
+            statement_halls
             <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 font-sans text-xs font-medium">
               public
             </span>
           </dt>
           <dd class="text-gray-700">
-            Fetch a single statement with its ID. Returns a
-            <code class="bg-gray-100 px-1 rounded">statement</code>
-            map containing the <code class="bg-gray-100 px-1 rounded">statement_id</code>, title, halls
-            (id + name), and authors (id, name, bio, country, twitter_username) who have
-            opinions linked to it. Requires: <code class="bg-gray-100 px-1 rounded">statement_id</code>.
+            Fetch a statement's halls with its ID. Returns the
+            <code class="bg-gray-100 px-1 rounded">statement_id</code>,
+            <code class="bg-gray-100 px-1 rounded">statement_title</code>, and
+            <code class="bg-gray-100 px-1 rounded">halls</code> array (each hall's id + name).
+            Requires: <code class="bg-gray-100 px-1 rounded">statement_id</code>.
           </dd>
         </div>
         <div class="pl-4">
           <dt class="font-mono text-sm font-semibold text-blue-700">
-            statements_authors
+            statement_authors
             <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 font-sans text-xs font-medium">
               public
             </span>

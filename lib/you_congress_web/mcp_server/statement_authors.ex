@@ -1,4 +1,4 @@
-defmodule YouCongressWeb.MCPServer.StatementsAuthors do
+defmodule YouCongressWeb.MCPServer.StatementAuthors do
   @moduledoc """
   List every author that already has at least one sourced quote (opinion with a
   non-nil source URL) attached to a statement.
