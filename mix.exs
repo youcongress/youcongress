@@ -68,6 +68,7 @@ defmodule YouCongress.MixProject do
       {:tidewave, "~> 0.5.2", only: :dev},
       {:castore, "~> 1.0"},
       {:req, "~> 0.5"},
+      {:redix, "~> 1.5"},
       {:anubis_mcp, "~> 0.17.0"}
     ]
   end

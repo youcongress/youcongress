@@ -124,3 +124,18 @@ if config_env() in [:dev, :prod] do
   config :you_congress, :turnstile_site_key, System.get_env("TURNSTILE_SITE_KEY")
   config :you_congress, :turnstile_secret_key, System.get_env("TURNSTILE_SECRET_KEY")
 end
+
+if redis_url = System.get_env("MCP_SESSION_REDIS_URL") do
+  ttl = (System.get_env("MCP_SESSION_TTL_MS") || "1800000") |> String.to_integer()
+  pool_size = (System.get_env("MCP_SESSION_REDIS_POOL") || "5") |> String.to_integer()
+  namespace_prefix = System.get_env("FLY_APP_NAME") || "you_congress"
+
+  config :anubis_mcp, :session_store,
+    enabled: true,
+    adapter: Anubis.Server.Session.Store.Redis,
+    redis_url: redis_url,
+    namespace: "#{namespace_prefix}:mcp_sessions",
+    connection_name: :mcp_session_store,
+    pool_size: pool_size,
+    ttl: ttl
+end
