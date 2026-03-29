@@ -15,8 +15,8 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     {"all", "All"},
     {"ai-governance", "AI governance"},
     {"ai-safety", "AI safety"},
-    {"cern-for-ai", "CERN for AI"},
     {"impact-on-labor", "Impact on labor"},
+    {"cern-for-ai", "CERN for AI"},
     {"open-source", "Open Source"},
     {"us-congress", "🇺🇸 Congress"},
     {"congreso-es", "🇪🇸 Congreso"}
