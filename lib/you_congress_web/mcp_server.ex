@@ -11,6 +11,7 @@ defmodule YouCongressWeb.MCPServer do
   component(YouCongressWeb.MCPServer.StatementPopulate)
   component(YouCongressWeb.MCPServer.StatementsList)
   component(YouCongressWeb.MCPServer.StatementsShow)
+  component(YouCongressWeb.MCPServer.StatementsAuthors)
   component(YouCongressWeb.MCPServer.StatementsHallsUpdate)
   component(YouCongressWeb.MCPServer.AuthorsSearch)
   component(YouCongressWeb.MCPServer.AuthorsCreate)

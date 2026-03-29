@@ -10,6 +10,7 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
   alias YouCongress.Accounts
   alias YouCongress.HallsStatements
   alias YouCongress.OpinionsStatements
+  alias YouCongressWeb.MCPServer.StatementsAuthors
   alias YouCongressWeb.MCPServer.StatementPopulate
   alias YouCongressWeb.MCPServer.StatementsHallsUpdate
   alias YouCongressWeb.MCPServer.StatementsList
@@ -80,6 +81,61 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
       with_mocked_response(fn ->
         assert {:reply, {:error, "Statement not found."}, :frame} =
                  StatementsShow.execute(%{statement_id: -1}, :frame)
+      end)
+    end
+  end
+
+  describe "StatementsAuthors.execute/2" do
+    test "returns author ids and names for sourced quotes" do
+      statement = statement_fixture(title: "AI Charter")
+
+      author_a = author_fixture(name: "Ada Lovelace")
+      author_b = author_fixture(name: "Grace Hopper")
+
+      opinion_a1 =
+        opinion_fixture(
+          author_id: author_a.id,
+          content: "AI is a tool for humans",
+          source_url: "https://example.com/ada"
+        )
+
+      opinion_b1 =
+        opinion_fixture(
+          author_id: author_b.id,
+          content: "We must govern AI",
+          source_url: "https://example.com/grace"
+        )
+
+      # Unsourced opinion should be ignored
+      unsourced_opinion = opinion_fixture(author_id: author_a.id, source_url: nil)
+
+      for opinion <- [opinion_a1, opinion_b1, unsourced_opinion] do
+        {:ok, _} =
+          OpinionsStatements.create_opinion_statement(%{
+            opinion_id: opinion.id,
+            statement_id: statement.id,
+            user_id: opinion.user_id
+          })
+      end
+
+      with_mocked_response(fn ->
+        assert {:reply, {:json, payload}, :frame} =
+                 StatementsAuthors.execute(%{statement_id: statement.id}, :frame)
+
+        assert payload.statement_id == statement.id
+        assert payload.statement_title == "AI Charter"
+
+        assert payload.authors == [
+                 %{author_id: author_a.id, name: "Ada Lovelace", opinion_year: nil},
+                 %{author_id: author_b.id, name: "Grace Hopper", opinion_year: nil}
+               ]
+      end)
+    end
+
+    test "returns error when statement is missing" do
+      with_mocked_response(fn ->
+        assert {:reply, {:error, "Statement not found."}, :frame} =
+                 StatementsAuthors.execute(%{statement_id: -1}, :frame)
       end)
     end
   end
