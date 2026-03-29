@@ -137,5 +137,6 @@ if redis_url = System.get_env("MCP_SESSION_REDIS_URL") do
     namespace: "#{namespace_prefix}:mcp_sessions",
     connection_name: :mcp_session_store,
     pool_size: pool_size,
-    ttl: ttl
+    ttl: ttl,
+    redix_opts: [socket_opts: [:inet6]]
 end
