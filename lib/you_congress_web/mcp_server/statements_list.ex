@@ -41,7 +41,8 @@ defmodule YouCongressWeb.MCPServer.StatementsList do
   defp serialize_statement(statement, include_halls?) do
     base = %{
       title: statement.title,
-      id: statement.id
+      id: statement.id,
+      opinions_count: statement.opinions_count
     }
 
     if include_halls? do
