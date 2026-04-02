@@ -31,6 +31,19 @@ defmodule YouCongress.VotesFixtures do
     vote
   end
 
+  @doc """
+  Create enough opinion-votes for a statement to meet the 10+ quotes threshold
+  required by the home page feed queries.
+  """
+  def fill_statement_with_quotes(statement_id, count \\ 10) do
+    Enum.each(1..count, fn _ ->
+      author = author_fixture()
+      opinion = YouCongress.OpinionsFixtures.opinion_fixture(%{author_id: author.id})
+      {:ok, _} = YouCongress.Opinions.add_opinion_to_statement(opinion, statement_id)
+      {:ok, _} = Votes.create_vote(%{author_id: author.id, statement_id: statement_id, opinion_id: opinion.id, answer: :for})
+    end)
+  end
+
   defp add_opinion_if_not_present(attrs, statement_id, generate_opinion) do
     if !generate_opinion || attrs[:opinion_id] do
       {attrs, nil}

@@ -4,6 +4,7 @@ defmodule YouCongress.Statements.StatementQueriesTest do
   import YouCongress.AuthorsFixtures
   import YouCongress.OpinionsFixtures
   import YouCongress.StatementsFixtures
+  import YouCongress.VotesFixtures
 
   alias YouCongress.Opinions
   alias YouCongress.Statements.StatementQueries
@@ -42,11 +43,14 @@ defmodule YouCongress.Statements.StatementQueriesTest do
           answer: :for
         })
 
-      cards = StatementQueries.get_opinion_cards_by_recency(limit: 10)
+      fill_statement_with_quotes(statement.id)
 
+      cards = StatementQueries.get_opinion_cards_by_recency(limit: 20)
+
+      # The statement should appear exactly once despite multiple votes
       matching_cards =
         Enum.filter(cards, fn card ->
-          card.statement.id == statement.id && card.vote.opinion.id == opinion.id
+          card.statement.id == statement.id
         end)
 
       assert length(matching_cards) == 1

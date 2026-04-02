@@ -48,6 +48,7 @@ defmodule YouCongressWeb.StatementLiveTest do
     opinion = opinion_fixture(%{author_id: author.id})
     {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
     vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
+    fill_statement_with_quotes(statement.id)
     {:ok, _} = Opinions.update_opinion(opinion, %{likes_count: likes_count})
 
     %{statement: statement, likes: likes_count}
@@ -63,6 +64,8 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       _vote =
         vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
+
+      fill_statement_with_quotes(statement.id)
 
       conn = log_in_as_user(conn)
       {:ok, index_live, html} = live(conn, ~p"/")
@@ -443,12 +446,7 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ "Quotes (2)"
       assert html =~ "Users (2)"
 
-      # Test Quotes filter
-      html =
-        show_live
-        |> element("span", "Quotes")
-        |> render_click()
-
+      # Default is Quotes filter - should show quote authors, not human authors
       assert html =~ ai_author.name
       refute html =~ human_author.name
 
@@ -460,6 +458,15 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       assert html =~ human_author.name
       refute html =~ ai_author.name
+
+      # Test switching back to Quotes filter
+      html =
+        show_live
+        |> element("span", "Quotes")
+        |> render_click()
+
+      assert html =~ ai_author.name
+      refute html =~ human_author.name
     end
   end
 end
