@@ -26,6 +26,7 @@ defmodule YouCongress.Authors.Author do
     # or if GPT returned an opinion while being disabled (see digital_twins.ex)
     field :twin_origin, :boolean, default: true
     field :twin_enabled, :boolean, default: true
+    field :public_figure, :boolean, default: false
 
     has_many :votes, YouCongress.Votes.Vote
 
@@ -46,6 +47,7 @@ defmodule YouCongress.Authors.Author do
       :twitter_id_str,
       :profile_image_url,
       :twin_enabled,
+      :public_figure,
       :description,
       :followers_count,
       :friends_count,
