@@ -162,7 +162,8 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
   def handle_event("vote", %{"response" => response}, %{assigns: %{current_user: nil}} = socket) do
     %{assigns: %{statement: statement}} = socket
 
-    send(self(),
+    send(
+      self(),
       {:require_auth_to_vote,
        %{
          statement_id: statement.id,

@@ -152,7 +152,8 @@
           </dt>
           <dd class="text-gray-700">
             List all statements. Use this to find statement IDs for other tools. Optional:
-            set <code class="bg-gray-100 px-1 rounded">include_halls</code> to true to
+            set <code class="bg-gray-100 px-1 rounded">include_halls</code>
+            to true to
             include each statement's halls (id and name). Every result also includes the
             <code class="bg-gray-100 px-1 rounded">opinions_count</code>
             so you can see how many sourced opinions exist per statement.
@@ -166,10 +167,9 @@
             </span>
           </dt>
           <dd class="text-gray-700">
-            Fetch a statement's halls with its ID. Returns the
-            <code class="bg-gray-100 px-1 rounded">statement_id</code>,
-            <code class="bg-gray-100 px-1 rounded">statement_title</code>, and
-            <code class="bg-gray-100 px-1 rounded">halls</code> array (each hall's id + name).
+            Fetch a statement's halls with its ID. Returns the <code class="bg-gray-100 px-1 rounded">statement_id</code>, <code class="bg-gray-100 px-1 rounded">statement_title</code>, and
+            <code class="bg-gray-100 px-1 rounded">halls</code>
+            array (each hall's id + name).
             Requires: <code class="bg-gray-100 px-1 rounded">statement_id</code>.
           </dd>
         </div>
@@ -182,14 +182,11 @@
           </dt>
           <dd class="text-gray-700">
             List the authors who already have at least one sourced quote on a statement.
-            Returns the <code class="bg-gray-100 px-1 rounded">statement_id</code>,
-            <code class="bg-gray-100 px-1 rounded">statement_title</code>, and an
+            Returns the <code class="bg-gray-100 px-1 rounded">statement_id</code>, <code class="bg-gray-100 px-1 rounded">statement_title</code>, and an
             <code class="bg-gray-100 px-1 rounded">authors</code>
-            array where each entry includes the <code class="bg-gray-100 px-1 rounded">author_id</code>,
-            <code class="bg-gray-100 px-1 rounded">name</code>, and
+            array where each entry includes the <code class="bg-gray-100 px-1 rounded">author_id</code>, <code class="bg-gray-100 px-1 rounded">name</code>, and
             <code class="bg-gray-100 px-1 rounded">opinion_year</code>
-            (the year of the quote, useful for finding authors without a recent opinion). Requires:
-            <code class="bg-gray-100 px-1 rounded">statement_id</code>.
+            (the year of the quote, useful for finding authors without a recent opinion). Requires: <code class="bg-gray-100 px-1 rounded">statement_id</code>.
           </dd>
         </div>
         <div class="pl-4">
@@ -426,7 +423,9 @@
     
 <!-- Quotes / Verification -->
     <div class="mt-6">
-      <h3 class="text-lg font-semibold border-b border-gray-200 pb-2">Quotes &amp; Verification</h3>
+      <h3 class="text-lg font-semibold border-b border-gray-200 pb-2">
+        Quotes &amp; Verification
+      </h3>
       <p class="text-gray-600 mt-1">
         Search and verify sourced opinions (quotes). These tools return the same opinion IDs as above;
         they simply filter to entries that include a <code class="bg-gray-100 px-1 rounded">source_url</code>.

@@ -383,7 +383,12 @@ defmodule YouCongressWeb.StatementLive.Index do
       statement_ids = cards |> Enum.map(& &1.statement.id) |> Enum.uniq()
 
       votes_by_answer_opts = if order_by_date, do: [order_by: :recency], else: []
-      votes_by_answer = StatementQueries.get_top_votes_by_answer_for_statements(statement_ids, votes_by_answer_opts)
+
+      votes_by_answer =
+        StatementQueries.get_top_votes_by_answer_for_statements(
+          statement_ids,
+          votes_by_answer_opts
+        )
 
       opinion_counts =
         Votes.count_by_response_map_for_statements(statement_ids, has_opinion_id: true)

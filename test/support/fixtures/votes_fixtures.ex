@@ -40,7 +40,14 @@ defmodule YouCongress.VotesFixtures do
       author = author_fixture()
       opinion = YouCongress.OpinionsFixtures.opinion_fixture(%{author_id: author.id})
       {:ok, _} = YouCongress.Opinions.add_opinion_to_statement(opinion, statement_id)
-      {:ok, _} = Votes.create_vote(%{author_id: author.id, statement_id: statement_id, opinion_id: opinion.id, answer: :for})
+
+      {:ok, _} =
+        Votes.create_vote(%{
+          author_id: author.id,
+          statement_id: statement_id,
+          opinion_id: opinion.id,
+          answer: :for
+        })
     end)
   end
 

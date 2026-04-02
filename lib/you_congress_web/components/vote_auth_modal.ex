@@ -111,5 +111,4 @@ defmodule YouCongressWeb.Components.VoteAuthModal do
        ) do
     [login_buttons_id, login_heading_id, email_heading_wrapper_id, email_heading_id]
   end
-
 end
