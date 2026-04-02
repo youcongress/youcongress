@@ -53,7 +53,7 @@ defmodule YouCongressWeb.StatementLive.Show do
       |> assign(full_width: true)
       |> assign(:regenerating_opinion_id, nil)
       |> assign(:find_quotes_in_progress, QuotatorAI.check_polling_job_status(statement.id))
-      |> assign(:source_filter, nil)
+      |> assign(:source_filter, :quotes)
       |> assign(:answer_filter, nil)
       |> VotesLoader.load_statement_and_votes(statement.id)
       |> load_random_statements(statement.id)
