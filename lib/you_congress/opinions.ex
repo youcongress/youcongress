@@ -10,6 +10,7 @@ defmodule YouCongress.Opinions do
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Votes.Vote
+  alias YouCongress.Workers.UpdateAuthorPublicFigureWorker
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
   alias YouCongress.Workers.SyncStatementOpinionsCountWorker
 
@@ -91,6 +92,7 @@ defmodule YouCongress.Opinions do
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:opinion, Opinion.changeset(%Opinion{}, attrs))
     |> enqueue_update_ancestor_counts(attrs["ancestry"])
+    |> maybe_enqueue_update_author_public_figure(attrs)
     |> Repo.transaction()
   end
 
@@ -106,6 +108,21 @@ defmodule YouCongress.Opinions do
         UpdateOpinionDescendantsCountWorker.new(%{"opinion_id" => ascestor_id})
       )
     end)
+  end
+
+  defp maybe_enqueue_update_author_public_figure(multi, attrs) do
+    author_id = attrs["author_id"] || attrs[:author_id]
+    source_url = attrs["source_url"] || attrs[:source_url]
+
+    if author_id && source_url do
+      Ecto.Multi.insert(
+        multi,
+        :update_author_public_figure,
+        UpdateAuthorPublicFigureWorker.new(%{"author_id" => author_id})
+      )
+    else
+      multi
+    end
   end
 
   defp enqueue_sync_opinions_count(multi, []), do: multi
