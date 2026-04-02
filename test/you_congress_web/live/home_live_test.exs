@@ -49,10 +49,14 @@ defmodule YouCongressWeb.HomeLiveTest do
         |> add_statement_to_ai_hall()
         |> add_opinion_to_statement()
 
+      fill_statement_with_quotes(wikipedia_statement.id)
+
       non_wikipedia_statement =
         statement_fixture(title: "Non-Wikipedia AI Statement")
         |> add_statement_to_ai_hall()
         |> add_opinion_to_statement(%{wikipedia_url: nil})
+
+      fill_statement_with_quotes(non_wikipedia_statement.id)
 
       {:ok, _view, html} = live(conn, ~p"/")
 
@@ -67,15 +71,20 @@ defmodule YouCongressWeb.HomeLiveTest do
         |> add_statement_to_ai_hall()
         |> add_opinion_to_statement()
 
+      fill_statement_with_quotes(statement.id)
+
       {:ok, _view, html} = live(conn, ~p"/")
 
       assert html =~ statement.title
     end
 
     test "guest can vote and sees flash message", %{conn: conn} do
-      statement_fixture(title: "Test Statement")
-      |> add_statement_to_ai_hall()
-      |> add_opinion_to_statement()
+      statement =
+        statement_fixture(title: "Test Statement")
+        |> add_statement_to_ai_hall()
+        |> add_opinion_to_statement()
+
+      fill_statement_with_quotes(statement.id)
 
       {:ok, view, _html} = live(conn, ~p"/")
 
@@ -111,6 +120,8 @@ defmodule YouCongressWeb.HomeLiveTest do
         statement_fixture(title: "Test Statement")
         |> add_statement_to_ai_hall()
         |> add_opinion_to_statement()
+
+      fill_statement_with_quotes(statement.id)
 
       conn = log_in_user(conn, user)
 
