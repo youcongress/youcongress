@@ -292,7 +292,7 @@ defmodule YouCongress.Statements.StatementQueries do
       JOIN authors a ON a.id = v.author_id
       #{hall_filter}
       WHERE v.opinion_id IS NOT NULL
-        AND a.wikipedia_url IS NOT NULL
+        AND a.public_figure = TRUE
         AND (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= 10
     )
     SELECT rv.vote_id, rv.statement_id
@@ -362,7 +362,10 @@ defmodule YouCongress.Statements.StatementQueries do
       if order_by == :recency do
         from v in Vote,
           join: o in assoc(v, :opinion),
-          where: v.statement_id in ^statement_ids and not is_nil(v.opinion_id),
+          join: a in assoc(v, :author),
+          where:
+            v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
+              a.public_figure == true,
           select: %{
             vote_id: v.id,
             statement_id: v.statement_id,
@@ -379,7 +382,9 @@ defmodule YouCongress.Statements.StatementQueries do
         from v in Vote,
           join: o in assoc(v, :opinion),
           join: a in assoc(v, :author),
-          where: v.statement_id in ^statement_ids and not is_nil(v.opinion_id),
+          where:
+            v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
+              a.public_figure == true,
           select: %{
             vote_id: v.id,
             statement_id: v.statement_id,
@@ -467,8 +472,10 @@ defmodule YouCongress.Statements.StatementQueries do
       FROM statements s
       JOIN votes v ON v.statement_id = s.id
       JOIN opinions o ON o.id = v.opinion_id
+      JOIN authors a ON a.id = v.author_id
       #{hall_filter}
       WHERE v.opinion_id IS NOT NULL
+        AND a.public_figure = TRUE
         AND (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= 10
     )
     SELECT rv.vote_id, rv.statement_id

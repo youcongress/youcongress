@@ -260,5 +260,4 @@ defmodule YouCongressWeb.StatementLive.Show do
 
     assign(socket, :random_statements_from_main_hall, random_statements_from_main_hall)
   end
-
 end

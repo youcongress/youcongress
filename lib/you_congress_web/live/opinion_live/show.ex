@@ -257,7 +257,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
           {:noreply, socket}
 
         {:error, :not_associated} ->
-          {:noreply, socket |> put_flash(:error, "Opinion is not associated with this statement.")}
+          {:noreply,
+           socket |> put_flash(:error, "Opinion is not associated with this statement.")}
 
         {:error, error} ->
           Logger.error("Error removing opinion from statement: #{inspect(error)}")

@@ -29,7 +29,7 @@ defmodule YouCongress.AuthorsTest do
       assert Authors.list_authors(search: "hawki") == [author1]
       assert Authors.list_authors(search: "steph") == [author1]
       assert Authors.list_authors(search: "einstein") == [author2]
-      assert Authors.list_authors(search: "bert") == [author2]
+      assert Authors.list_authors(search: "albert") == [author2]
     end
 
     test "list_authors/1 with multiple search terms (AND logic)" do
