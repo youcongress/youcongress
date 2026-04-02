@@ -293,6 +293,7 @@ defmodule YouCongress.Statements.StatementQueries do
       #{hall_filter}
       WHERE v.opinion_id IS NOT NULL
         AND a.wikipedia_url IS NOT NULL
+        AND (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= 10
     )
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
@@ -468,6 +469,7 @@ defmodule YouCongress.Statements.StatementQueries do
       JOIN opinions o ON o.id = v.opinion_id
       #{hall_filter}
       WHERE v.opinion_id IS NOT NULL
+        AND (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= 10
     )
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
