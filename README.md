@@ -31,6 +31,7 @@ Open [http://localhost:4000](http://localhost:4000) in your browser.
 
 # How to contribute
 Welcome to YouCongress! Feel free to:
+- Reach hector@youcongress.org if you'd like to help validating quotes found by our AI agents.
 - [Take any unassigned issue](https://github.com/youcongress/youcongress/issues)
 
 # Acknowledgments
