@@ -1,4 +1,4 @@
-# YouCongress
+# YouCongress.org
 
 [YouCongress.org](https://youcongress.org) aims to make public preferences on policy questions transparent, structured, and backed by verifiable sources.
 
