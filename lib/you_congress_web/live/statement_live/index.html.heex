@@ -9,8 +9,8 @@
     </p>
   </div>
 </div>
-<div :if={!@new_poll_visible?} class="pt-4 md:flex md:justify-between">
-  <div class="w-80 pb-4 md:pb-0">
+<div :if={!@new_poll_visible?} class="pt-4 flex flex-wrap gap-3 md:gap-4">
+  <div class="w-full md:w-80 flex-shrink-0">
     <form phx-change="search" phx-submit="search">
       <input
         phx-debounce="300"
@@ -26,8 +26,31 @@
   </div>
 
   <%= if is_nil(@search) do %>
-    <div class="flex">
+    <div class="flex-1 min-w-[200px] flex justify-center w-full md:w-auto flex items-center gap-3 justify-center md:justify-end flex-shrink-0">
       <SwitchComponent.render is_active={@order_by_date} label1="Top" label2="New" />
+      <div>
+        <.link
+          href={~p"/mcp/claude"}
+          class="inline-flex items-center gap-2 rounded-md border border-[#1D1B16] bg-[#F5E6D3] px-3 py-2 text-sm font-semibold text-[#1D1B16] shadow-sm hover:bg-[#ECDDC7]"
+        >
+          <img src="/images/claude-logo.svg" alt="Claude logo" class="h-5 w-5" />
+          Claude integration
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="h-4 w-4"
+            aria-hidden="true"
+          >
+            <path d="M5 12h14" />
+            <path d="M13 6l6 6-6 6" />
+          </svg>
+        </.link>
+      </div>
       <div :if={@can_create_statement?}>
         <button
           id="create-poll-button"
