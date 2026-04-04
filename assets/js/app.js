@@ -53,3 +53,56 @@ liveSocket.connect()
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
+
+async function writeToClipboard(text) {
+  if ((navigator.clipboard && window.isSecureContext)) {
+    return navigator.clipboard.writeText(text)
+  }
+
+  const textarea = document.createElement("textarea")
+  textarea.value = text
+  textarea.style.position = "fixed"
+  textarea.style.top = "-1000px"
+  textarea.style.left = "-1000px"
+  document.body.appendChild(textarea)
+  textarea.focus()
+  textarea.select()
+
+  try {
+    document.execCommand("copy")
+  } finally {
+    document.body.removeChild(textarea)
+  }
+}
+
+function setupPromptCopyButtons() {
+  document.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-copy-target]")
+    if (!button) return
+
+    const targetId = button.dataset.copyTarget
+    if (!targetId) return
+
+    const content = document.getElementById(targetId)
+    if (!content) return
+
+    const text = content.innerText.trim()
+    if (!text) return
+
+    try {
+      await writeToClipboard(text)
+      const originalLabel = button.getAttribute("data-original-label") || button.getAttribute("aria-label") || "Copy prompt"
+      button.setAttribute("data-original-label", originalLabel)
+      button.setAttribute("aria-label", "Copied!")
+      button.classList.add("text-blue-600")
+      setTimeout(() => {
+        button.classList.remove("text-blue-600")
+        button.setAttribute("aria-label", button.getAttribute("data-original-label") || "Copy prompt")
+      }, 1500)
+    } catch (error) {
+      console.error("Unable to copy prompt", error)
+    }
+  })
+}
+
+setupPromptCopyButtons()

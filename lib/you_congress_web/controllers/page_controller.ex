@@ -35,6 +35,10 @@ defmodule YouCongressWeb.PageController do
     render(conn, :mcp_tools)
   end
 
+  def mcp_claude(conn, _params) do
+    render(conn, :mcp_claude)
+  end
+
   def redirect_to_questions(conn, _params) do
     conn
     |> redirect(to: ~p"/")
