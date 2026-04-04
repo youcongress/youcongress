@@ -42,4 +42,20 @@ defmodule YouCongressWeb.PageControllerTest do
     conn = get(conn, ~p"/email-login-waiting-list/thanks")
     assert html_response(conn, 302) =~ "redirected"
   end
+
+  test "GET /mcp-tools shows the MCP reference page", %{conn: conn} do
+    conn = get(conn, ~p"/mcp-tools")
+    html = html_response(conn, 200)
+
+    assert html =~ "YouCongress MCP Tools"
+    assert html =~ "How to Connect"
+  end
+
+  test "GET /mcp/claude shows the Claude setup guide", %{conn: conn} do
+    conn = get(conn, ~p"/mcp/claude")
+    html = html_response(conn, 200)
+
+    assert html =~ "Use YouCongress from Claude"
+    assert html =~ "Log In to Get Started"
+  end
 end
