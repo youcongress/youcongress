@@ -23,12 +23,6 @@ defmodule YouCongressWeb.Router do
     plug(YouCongressWeb.Plugs.MCPClusterGuard)
   end
 
-  scope "/" do
-    pipe_through(:mcp)
-
-    forward "/mcp", Anubis.Server.Transport.StreamableHTTP.Plug, server: YouCongressWeb.MCPServer
-  end
-
   scope "/", YouCongressWeb do
     pipe_through(:browser)
 
@@ -49,12 +43,19 @@ defmodule YouCongressWeb.Router do
     get("/about", PageController, :about)
     get("/faq", PageController, :faq)
     get("/mcp-tools", PageController, :mcp_tools)
+    get("/mcp/claude", PageController, :mcp_claude)
     get("/email-login-waiting-list", PageController, :email_login_waiting_list)
     get("/email-login-waiting-list/thanks", PageController, :email_login_waiting_list_thanks)
     live("/sign_up", UserRegistrationLive, :new)
 
     # Legacy redirection from /v/:slug to /p/:slug
     get("/v/:slug", StatementController, :redirect_to_p)
+  end
+
+  scope "/" do
+    pipe_through(:mcp)
+
+    forward "/mcp", Anubis.Server.Transport.StreamableHTTP.Plug, server: YouCongressWeb.MCPServer
   end
 
   scope "/", YouCongressWeb do
