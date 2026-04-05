@@ -16,7 +16,7 @@ defmodule YouCongress.MCP.ToolUsageTracker do
   Tracks the tool invocation and returns the Accounts.get_user_by_api_key/1 result.
   """
   def track(tool_module, frame, opts \\ []) do
-    key = Frame.get_query_param(frame, "key")
+    key = get_query_param(frame, "key")
     user_result = opts[:user_result] || Accounts.get_user_by_api_key(key)
 
     user_id =
@@ -89,16 +89,24 @@ defmodule YouCongress.MCP.ToolUsageTracker do
     end
   end
 
-  defp get_session_id(%Frame{} = frame), do: Frame.get_mcp_session_id(frame)
+  defp get_session_id(%Frame{context: context}), do: context.session_id
   defp get_session_id(_frame), do: nil
 
-  defp get_client_info(%Frame{} = frame) do
-    frame
-    |> Frame.get_client_info()
+  defp get_client_info(%Frame{context: context}) do
+    (context.client_info || %{})
     |> normalize_map_keys()
   end
 
   defp get_client_info(_frame), do: %{}
+
+  defp get_query_param(%Frame{assigns: assigns}, key) do
+    case assigns[:query_params] do
+      %{} = params -> Map.get(params, key)
+      _ -> nil
+    end
+  end
+
+  defp get_query_param(_frame, _key), do: nil
 
   defp normalize_map_keys(nil), do: %{}
 

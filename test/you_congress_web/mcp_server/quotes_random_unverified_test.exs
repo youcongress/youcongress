@@ -78,10 +78,6 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverifiedTest do
          tool: fn -> :tool end,
          json: fn :tool, data -> {:json, data} end,
          error: fn :tool, message -> {:error, message} end
-       ]},
-      {Anubis.Server.Frame, [],
-       [
-         get_query_param: fn _frame, _key -> nil end
        ]}
     ]) do
       fun.()

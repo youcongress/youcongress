@@ -22,15 +22,15 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
       api_key = api_key_fixture(owner)
       statement = statement_fixture()
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:json, %{vote: payload}}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, %{vote: payload}}, ^frame} =
                  VotesCreate.execute(
                    %{
                      statement_id: statement.id,
                      author_id: owner.author_id,
                      answer: "against"
                    },
-                   :frame
+                   frame
                  )
 
         assert payload.statement_id == statement.id
@@ -48,11 +48,11 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
       owner = user_fixture()
       statement = statement_fixture()
 
-      with_mocked_response_and_key(nil, fn ->
-        assert {:reply, {:error, @missing_key_message}, :frame} =
+      with_mocked_response_and_key(nil, fn frame ->
+        assert {:reply, {:error, @missing_key_message}, ^frame} =
                  VotesCreate.execute(
                    %{statement_id: statement.id, author_id: owner.author_id, answer: "for"},
-                   :frame
+                   frame
                  )
       end)
     end
@@ -61,11 +61,11 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
       owner = user_fixture()
       statement = statement_fixture()
 
-      with_mocked_response_and_key("invalid-token", fn ->
-        assert {:reply, {:error, @invalid_key_message}, :frame} =
+      with_mocked_response_and_key("invalid-token", fn frame ->
+        assert {:reply, {:error, @invalid_key_message}, ^frame} =
                  VotesCreate.execute(
                    %{statement_id: statement.id, author_id: owner.author_id, answer: "for"},
-                   :frame
+                   frame
                  )
       end)
     end
@@ -76,11 +76,11 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
       api_key = api_key_fixture(other_user)
       statement = statement_fixture()
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, "Your account is not allowed to create this vote."}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, "Your account is not allowed to create this vote."}, ^frame} =
                  VotesCreate.execute(
                    %{statement_id: statement.id, author_id: owner.author_id, answer: "for"},
-                   :frame
+                   frame
                  )
       end)
 
@@ -92,16 +92,16 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
       api_key = api_key_fixture(owner)
       vote = vote_fixture(%{author_id: owner.author_id, answer: :for})
 
-      with_mocked_response_and_key(api_key.token, fn ->
+      with_mocked_response_and_key(api_key.token, fn frame ->
         assert {:reply, {:error, "This author already has a vote for the selected statement."},
-                :frame} =
+                ^frame} =
                  VotesCreate.execute(
                    %{
                      statement_id: vote.statement_id,
                      author_id: vote.author_id,
                      answer: "against"
                    },
-                   :frame
+                   frame
                  )
       end)
 
@@ -116,15 +116,15 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
       api_key = api_key_fixture(owner)
       vote = vote_fixture(%{author_id: owner.author_id, answer: :for})
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:json, %{vote: payload}}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, %{vote: payload}}, ^frame} =
                  VotesEdit.execute(
                    %{
                      statement_id: vote.statement_id,
                      author_id: vote.author_id,
                      answer: "against"
                    },
-                   :frame
+                   frame
                  )
 
         assert payload.vote_id == vote.id
@@ -142,11 +142,11 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
       api_key = api_key_fixture(owner)
       vote = vote_fixture(%{author_id: owner.author_id})
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, "Provide at least one field to update: answer."}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, "Provide at least one field to update: answer."}, ^frame} =
                  VotesEdit.execute(
                    %{statement_id: vote.statement_id, author_id: vote.author_id},
-                   :frame
+                   frame
                  )
       end)
     end
@@ -154,15 +154,15 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
     test "returns missing-key error when no API key is provided" do
       vote = vote_fixture()
 
-      with_mocked_response_and_key(nil, fn ->
-        assert {:reply, {:error, @missing_key_message}, :frame} =
+      with_mocked_response_and_key(nil, fn frame ->
+        assert {:reply, {:error, @missing_key_message}, ^frame} =
                  VotesEdit.execute(
                    %{
                      statement_id: vote.statement_id,
                      author_id: vote.author_id,
                      answer: "against"
                    },
-                   :frame
+                   frame
                  )
       end)
     end
@@ -170,15 +170,15 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
     test "returns invalid-key error when API key token is unknown" do
       vote = vote_fixture()
 
-      with_mocked_response_and_key("invalid-token", fn ->
-        assert {:reply, {:error, @invalid_key_message}, :frame} =
+      with_mocked_response_and_key("invalid-token", fn frame ->
+        assert {:reply, {:error, @invalid_key_message}, ^frame} =
                  VotesEdit.execute(
                    %{
                      statement_id: vote.statement_id,
                      author_id: vote.author_id,
                      answer: "against"
                    },
-                   :frame
+                   frame
                  )
       end)
     end
@@ -189,15 +189,15 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
       api_key = api_key_fixture(other_user)
       vote = vote_fixture(%{author_id: owner.author_id, answer: :for})
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, "Your account is not allowed to edit this vote."}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, "Your account is not allowed to edit this vote."}, ^frame} =
                  VotesEdit.execute(
                    %{
                      statement_id: vote.statement_id,
                      author_id: vote.author_id,
                      answer: "against"
                    },
-                   :frame
+                   frame
                  )
       end)
 
@@ -227,15 +227,15 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
           answer: :for
         })
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, "Your account is not allowed to edit this vote."}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, "Your account is not allowed to edit this vote."}, ^frame} =
                  VotesEdit.execute(
                    %{
                      statement_id: vote.statement_id,
                      author_id: vote.author_id,
                      answer: "against"
                    },
-                   :frame
+                   frame
                  )
       end)
 
@@ -264,15 +264,15 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
           answer: :for
         })
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:json, %{vote: payload}}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, %{vote: payload}}, ^frame} =
                  VotesEdit.execute(
                    %{
                      statement_id: vote.statement_id,
                      author_id: vote.author_id,
                      answer: "against"
                    },
-                   :frame
+                   frame
                  )
 
         assert payload.vote_id == vote.id
@@ -289,9 +289,9 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
       owner = user_fixture()
       api_key = api_key_fixture(owner)
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, @not_found_message}, :frame} =
-                 VotesEdit.execute(%{statement_id: -1, author_id: -1, answer: "against"}, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, @not_found_message}, ^frame} =
+                 VotesEdit.execute(%{statement_id: -1, author_id: -1, answer: "against"}, frame)
       end)
     end
   end
@@ -308,13 +308,10 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
          tool: fn -> :tool end,
          json: fn :tool, data -> {:json, data} end,
          error: fn :tool, message -> {:error, message} end
-       ]},
-      {Anubis.Server.Frame, [],
-       [
-         get_query_param: fn _frame, "key" -> key end
        ]}
     ]) do
-      fun.()
+      frame = Anubis.Server.Frame.new(%{query_params: %{"key" => key}})
+      fun.(frame)
     end
   end
 end

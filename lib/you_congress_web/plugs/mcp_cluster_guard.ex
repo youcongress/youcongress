@@ -5,7 +5,7 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuard do
   import Plug.Conn
   require Logger
 
-  @registry Anubis.Server.Registry
+  @registry_impl Anubis.Server.Registry.Local
   @server YouCongressWeb.MCPServer
 
   def init(opts), do: opts
@@ -39,9 +39,11 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuard do
   end
 
   defp session_exists_locally?(session_id) do
-    case Registry.lookup(@registry, {:session, @server, session_id}) do
-      [{_pid, _value}] -> true
-      _ -> false
+    registry_name = Anubis.Server.Registry.registry_name(@server)
+
+    case @registry_impl.lookup_session(registry_name, session_id) do
+      {:ok, _pid} -> true
+      {:error, :not_found} -> false
     end
   end
 
