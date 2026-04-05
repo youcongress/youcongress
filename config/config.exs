@@ -67,7 +67,8 @@ config :you_congress, Oban,
     Oban.Plugins.Lifeline
   ],
   queues: [
-    default: 10
+    default: 10,
+    amplitude: 5
   ]
 
 # Import environment specific config. This must remain at the bottom
