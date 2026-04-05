@@ -61,7 +61,7 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuard do
 
       nil ->
         log_missing_session(session_id)
-        reject_stale_session(conn)
+        clear_stale_session(conn)
     end
   end
 
@@ -74,12 +74,10 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuard do
     end
   end
 
-  defp reject_stale_session(conn) do
+  defp clear_stale_session(conn) do
     conn
     |> delete_resp_cookie("_you_congress_mcp_session", path: "/mcp")
-    |> put_resp_content_type("application/json")
-    |> send_resp(404, Jason.encode!(%{error: "Session not found. Please re-initialize."}))
-    |> halt()
+    |> delete_req_header("mcp-session-id")
   end
 
   defp log_missing_session(session_id) do
