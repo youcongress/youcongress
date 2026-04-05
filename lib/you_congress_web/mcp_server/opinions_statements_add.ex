@@ -8,13 +8,13 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
 
   use Anubis.Server.Component, type: :tool
 
-  alias Anubis.Server.{Frame, Response}
+  alias Anubis.Server.Response
   alias Ecto.Changeset
-  alias YouCongress.Accounts
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Opinions
   alias YouCongress.Statements
   alias YouCongress.Votes
+  alias YouCongress.MCP.ToolUsageTracker
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
@@ -37,8 +37,10 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
         %{opinion_id: opinion_id, statement_id: statement_id, vote_answer: vote_answer},
         frame
       ) do
+    user_result = ToolUsageTracker.track(__MODULE__, frame)
+
     with {:ok, normalized_vote_answer} <- normalize_vote_answer(vote_answer),
-         {:ok, user} <- authenticate_user(frame),
+         {:ok, user} <- user_result,
          :ok <- ensure_permission(user),
          {:ok, opinion} <- fetch_opinion(opinion_id),
          {:ok, statement} <- fetch_statement(statement_id),
@@ -100,12 +102,6 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
            "Could not attach opinion to statement: #{format_changeset_errors(changeset)}"
          ), frame}
     end
-  end
-
-  defp authenticate_user(frame) do
-    frame
-    |> Frame.get_query_param("key")
-    |> Accounts.get_user_by_api_key()
   end
 
   defp ensure_permission(user) do

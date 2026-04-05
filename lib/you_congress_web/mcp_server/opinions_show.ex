@@ -10,6 +10,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsShow do
   alias YouCongress.Opinions
   alias YouCongress.Votes
   alias YouCongress.Votes
+  alias YouCongress.MCP.ToolUsageTracker
 
   @not_found_message "Opinion not found."
 
@@ -19,6 +20,8 @@ defmodule YouCongressWeb.MCPServer.OpinionsShow do
 
   @impl true
   def execute(%{opinion_id: opinion_id}, frame) do
+    ToolUsageTracker.track(__MODULE__, frame)
+
     case fetch_opinion(opinion_id) do
       nil ->
         {:reply, Response.error(Response.tool(), @not_found_message), frame}

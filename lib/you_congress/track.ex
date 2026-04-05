@@ -3,9 +3,7 @@ defmodule YouCongress.Track do
   Track events with Amplitude
   """
 
-  @api_url "https://api.eu.amplitude.com/2/httpapi"
-
-  alias YouCongress.Authors
+  alias YouCongress.{Amplitude, Authors}
 
   def event(_, nil), do: nil
 
@@ -16,26 +14,11 @@ defmodule YouCongress.Track do
   end
 
   def track_now(event_type, current_user_id, author_id) do
-    api_key = Application.get_env(:you_congress, :amplitude_api_key)
-
-    if api_key do
+    if Amplitude.enabled?() do
       author = Authors.get_author!(author_id)
+      user_id = amplitude_user_id(author.twitter_username, current_user_id)
 
-      body = %{
-        "api_key" => api_key,
-        "events" => [
-          %{
-            "event_type" => event_type,
-            "user_id" => amplitude_user_id(author.twitter_username, current_user_id)
-          }
-        ]
-      }
-
-      headers = [{"Content-Type", "application/json"}, {"Accept", "*/*"}]
-
-      :post
-      |> Finch.build(@api_url, headers, Jason.encode!(body))
-      |> Finch.request(Swoosh.Finch)
+      Amplitude.deliver_event(event_type, user_id)
     else
       :ok
     end

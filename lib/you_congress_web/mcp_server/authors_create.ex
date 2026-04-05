@@ -8,11 +8,11 @@ defmodule YouCongressWeb.MCPServer.AuthorsCreate do
 
   use Anubis.Server.Component, type: :tool
 
-  alias Anubis.Server.{Frame, Response}
+  alias Anubis.Server.Response
   alias Ecto.Changeset
-  alias YouCongress.Accounts
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors
+  alias YouCongress.MCP.ToolUsageTracker
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
@@ -36,12 +36,14 @@ defmodule YouCongressWeb.MCPServer.AuthorsCreate do
 
   @impl true
   def execute(params, frame) do
+    user_result = ToolUsageTracker.track(__MODULE__, frame)
+
     attrs =
       params
       |> attrs_from_params()
       |> Map.put(:twin_origin, false)
 
-    with {:ok, user} <- authenticate_user(frame),
+    with {:ok, user} <- user_result,
          :ok <- ensure_permission(user),
          {:ok, author} <- Authors.create_author(attrs) do
       {:reply, Response.json(Response.tool(), %{author: take_fields(author)}), frame}
@@ -77,12 +79,6 @@ defmodule YouCongressWeb.MCPServer.AuthorsCreate do
       {nil, attrs} -> attrs
       {one_line_bio, attrs} -> Map.put(attrs, :bio, one_line_bio)
     end
-  end
-
-  defp authenticate_user(frame) do
-    frame
-    |> Frame.get_query_param("key")
-    |> Accounts.get_user_by_api_key()
   end
 
   defp ensure_permission(user) do

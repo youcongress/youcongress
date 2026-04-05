@@ -8,13 +8,13 @@ defmodule YouCongressWeb.MCPServer.AuthorsUpdate do
 
   use Anubis.Server.Component, type: :tool
 
-  alias Anubis.Server.{Frame, Response}
+  alias Anubis.Server.Response
   alias Ecto.Changeset
   alias Ecto.NoResultsError
-  alias YouCongress.Accounts
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors
   alias YouCongress.Authors.Author
+  alias YouCongress.MCP.ToolUsageTracker
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
@@ -43,8 +43,10 @@ defmodule YouCongressWeb.MCPServer.AuthorsUpdate do
   def execute(%{author_id: author_id} = params, frame) do
     attrs = attrs_from_params(params)
 
+    user_result = ToolUsageTracker.track(__MODULE__, frame)
+
     with :ok <- ensure_attrs_present(attrs),
-         {:ok, user} <- authenticate_user(frame),
+         {:ok, user} <- user_result,
          {:ok, author} <- fetch_author(author_id),
          :ok <- ensure_permission(user),
          {:ok, updated_author} <- normalize_update_result(Authors.update_author(author, attrs)) do
@@ -98,12 +100,6 @@ defmodule YouCongressWeb.MCPServer.AuthorsUpdate do
 
   defp ensure_attrs_present(%{} = attrs) when map_size(attrs) > 0, do: :ok
   defp ensure_attrs_present(_), do: {:error, :no_fields_to_update}
-
-  defp authenticate_user(frame) do
-    frame
-    |> Frame.get_query_param("key")
-    |> Accounts.get_user_by_api_key()
-  end
 
   defp fetch_author(author_id) do
     {:ok, Authors.get_author!(author_id)}
