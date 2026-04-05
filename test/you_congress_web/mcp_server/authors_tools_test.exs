@@ -47,9 +47,9 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
         country: "Wonderland"
       }
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:json, %{author: payload}}, :frame} =
-                 AuthorsCreate.execute(params, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, %{author: payload}}, ^frame} =
+                 AuthorsCreate.execute(params, frame)
 
         assert payload.name == "Dr. Example"
         assert payload.one_line_bio == "Example bio"
@@ -62,16 +62,16 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
     end
 
     test "returns missing-key error when no API key is provided" do
-      with_mocked_response_and_key(nil, fn ->
-        assert {:reply, {:error, @missing_key_message}, :frame} =
-                 AuthorsCreate.execute(%{one_line_bio: "Dr."}, :frame)
+      with_mocked_response_and_key(nil, fn frame ->
+        assert {:reply, {:error, @missing_key_message}, ^frame} =
+                 AuthorsCreate.execute(%{one_line_bio: "Dr."}, frame)
       end)
     end
 
     test "returns invalid-key error when API key token is unknown" do
-      with_mocked_response_and_key("invalid", fn ->
-        assert {:reply, {:error, @invalid_key_message}, :frame} =
-                 AuthorsCreate.execute(%{one_line_bio: "Dr."}, :frame)
+      with_mocked_response_and_key("invalid", fn frame ->
+        assert {:reply, {:error, @invalid_key_message}, ^frame} =
+                 AuthorsCreate.execute(%{one_line_bio: "Dr."}, frame)
       end)
     end
 
@@ -79,9 +79,9 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
       user = user_fixture()
       api_key = api_key_fixture(user)
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, @create_forbidden_message}, :frame} =
-                 AuthorsCreate.execute(%{one_line_bio: "Dr."}, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, @create_forbidden_message}, ^frame} =
+                 AuthorsCreate.execute(%{one_line_bio: "Dr."}, frame)
       end)
     end
 
@@ -95,8 +95,8 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
         wikipedia_url: "https://example.com/not_wiki"
       }
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, message}, :frame} = AuthorsCreate.execute(params, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, message}, ^frame} = AuthorsCreate.execute(params, frame)
         assert message =~ "wikipedia_url must be a valid Wikipedia URL"
       end)
     end
@@ -114,9 +114,9 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
         one_line_bio: "Updated"
       }
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:json, %{author: payload}}, :frame} =
-                 AuthorsUpdate.execute(params, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, %{author: payload}}, ^frame} =
+                 AuthorsUpdate.execute(params, frame)
 
         assert payload.name == "After"
         assert payload.one_line_bio == "Updated"
@@ -132,27 +132,27 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
       api_key = api_key_fixture(admin)
       author = author_fixture(twin_origin: false)
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, @missing_fields_message}, :frame} =
-                 AuthorsUpdate.execute(%{author_id: author.id}, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, @missing_fields_message}, ^frame} =
+                 AuthorsUpdate.execute(%{author_id: author.id}, frame)
       end)
     end
 
     test "returns missing-key error when no API key is provided" do
       author = author_fixture(twin_origin: false)
 
-      with_mocked_response_and_key(nil, fn ->
-        assert {:reply, {:error, @missing_key_message}, :frame} =
-                 AuthorsUpdate.execute(%{author_id: author.id, one_line_bio: "Updated"}, :frame)
+      with_mocked_response_and_key(nil, fn frame ->
+        assert {:reply, {:error, @missing_key_message}, ^frame} =
+                 AuthorsUpdate.execute(%{author_id: author.id, one_line_bio: "Updated"}, frame)
       end)
     end
 
     test "returns invalid-key error when API key token is unknown" do
       author = author_fixture(twin_origin: false)
 
-      with_mocked_response_and_key("invalid", fn ->
-        assert {:reply, {:error, @invalid_key_message}, :frame} =
-                 AuthorsUpdate.execute(%{author_id: author.id, one_line_bio: "Updated"}, :frame)
+      with_mocked_response_and_key("invalid", fn frame ->
+        assert {:reply, {:error, @invalid_key_message}, ^frame} =
+                 AuthorsUpdate.execute(%{author_id: author.id, one_line_bio: "Updated"}, frame)
       end)
     end
 
@@ -161,9 +161,9 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
       api_key = api_key_fixture(user)
       author = author_fixture(twin_origin: false)
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, @update_forbidden_message}, :frame} =
-                 AuthorsUpdate.execute(%{author_id: author.id, one_line_bio: "Updated"}, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, @update_forbidden_message}, ^frame} =
+                 AuthorsUpdate.execute(%{author_id: author.id, one_line_bio: "Updated"}, frame)
       end)
     end
 
@@ -171,9 +171,9 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
       admin = admin_fixture()
       api_key = api_key_fixture(admin)
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, @not_found_message}, :frame} =
-                 AuthorsUpdate.execute(%{author_id: -1, one_line_bio: "Updated"}, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, @not_found_message}, ^frame} =
+                 AuthorsUpdate.execute(%{author_id: -1, one_line_bio: "Updated"}, frame)
       end)
     end
 
@@ -187,8 +187,8 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
         wikipedia_url: "http://example.org/wiki/Person"
       }
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, message}, :frame} = AuthorsUpdate.execute(params, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, message}, ^frame} = AuthorsUpdate.execute(params, frame)
         assert message =~ "wikipedia_url must start with https://"
       end)
     end
@@ -206,10 +206,6 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
          tool: fn -> :tool end,
          json: fn :tool, data -> {:json, data} end,
          error: fn :tool, message -> {:error, message} end
-       ]},
-      {Anubis.Server.Frame, [],
-       [
-         get_query_param: fn _frame, _key -> nil end
        ]}
     ]) do
       fun.()
@@ -223,13 +219,10 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
          tool: fn -> :tool end,
          json: fn :tool, data -> {:json, data} end,
          error: fn :tool, message -> {:error, message} end
-       ]},
-      {Anubis.Server.Frame, [],
-       [
-         get_query_param: fn _frame, "key" -> key end
        ]}
     ]) do
-      fun.()
+      frame = Anubis.Server.Frame.new(%{query_params: %{"key" => key}})
+      fun.(frame)
     end
   end
 end

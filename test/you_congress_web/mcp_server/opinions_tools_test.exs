@@ -67,8 +67,8 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       api_key = api_key_fixture(owner)
 
       opinion_id =
-        with_mocked_response_and_key(api_key.token, fn ->
-          assert {:reply, {:json, %{opinion: payload}}, :frame} =
+        with_mocked_response_and_key(api_key.token, fn frame ->
+          assert {:reply, {:json, %{opinion: payload}}, ^frame} =
                    OpinionsCreate.execute(
                      %{
                        content: "We should invest more in quantum research.",
@@ -76,7 +76,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
                        source_url: "https://example.com",
                        year: 2026
                      },
-                     :frame
+                     frame
                    )
 
           assert payload.content == "We should invest more in quantum research."
@@ -99,11 +99,11 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
     test "returns missing-key error when no API key is provided" do
       owner = user_fixture()
 
-      with_mocked_response_and_key(nil, fn ->
-        assert {:reply, {:error, @missing_key_message}, :frame} =
+      with_mocked_response_and_key(nil, fn frame ->
+        assert {:reply, {:error, @missing_key_message}, ^frame} =
                  OpinionsCreate.execute(
                    %{content: "Education is vital.", author_id: owner.author_id},
-                   :frame
+                   frame
                  )
       end)
     end
@@ -111,11 +111,11 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
     test "returns invalid-key error when API key token is unknown" do
       owner = user_fixture()
 
-      with_mocked_response_and_key("invalid-token", fn ->
-        assert {:reply, {:error, @invalid_key_message}, :frame} =
+      with_mocked_response_and_key("invalid-token", fn frame ->
+        assert {:reply, {:error, @invalid_key_message}, ^frame} =
                  OpinionsCreate.execute(
                    %{content: "Democracy must be protected.", author_id: owner.author_id},
-                   :frame
+                   frame
                  )
       end)
     end
@@ -125,11 +125,11 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       other_user = user_fixture()
       api_key = api_key_fixture(other_user)
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, "Your account is not allowed to create this opinion."}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, "Your account is not allowed to create this opinion."}, ^frame} =
                  OpinionsCreate.execute(
                    %{content: "Universal childcare now.", author_id: owner.author_id},
-                   :frame
+                   frame
                  )
       end)
     end
@@ -138,16 +138,16 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       owner = user_fixture()
       api_key = api_key_fixture(owner)
 
-      with_mocked_response_and_key(api_key.token, fn ->
+      with_mocked_response_and_key(api_key.token, fn frame ->
         assert {:reply, {:error, "Could not create opinion: source_url is not a valid URL"},
-                :frame} =
+                ^frame} =
                  OpinionsCreate.execute(
                    %{
                      content: "Healthcare should be universal.",
                      author_id: owner.author_id,
                      source_url: "ftp://example.com"
                    },
-                   :frame
+                   frame
                  )
       end)
     end
@@ -161,9 +161,9 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       opinion =
         opinion_fixture(%{user_id: owner.id, author_id: owner.author_id, content: "Before"})
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:json, %{opinion: payload}}, :frame} =
-                 OpinionsEdit.execute(%{opinion_id: opinion.id, content: "After"}, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, %{opinion: payload}}, ^frame} =
+                 OpinionsEdit.execute(%{opinion_id: opinion.id, content: "After"}, frame)
 
         assert payload.content == "After"
       end)
@@ -176,30 +176,30 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       api_key = api_key_fixture(owner)
       opinion = opinion_fixture(%{user_id: owner.id, author_id: owner.author_id})
 
-      with_mocked_response_and_key(api_key.token, fn ->
+      with_mocked_response_and_key(api_key.token, fn frame ->
         assert {:reply,
                 {:error,
                  "Provide at least one field to update: content, source_url, year, author_id."},
-                :frame} =
-                 OpinionsEdit.execute(%{opinion_id: opinion.id}, :frame)
+                ^frame} =
+                 OpinionsEdit.execute(%{opinion_id: opinion.id}, frame)
       end)
     end
 
     test "returns missing-key error when no API key is provided" do
       opinion = opinion_fixture()
 
-      with_mocked_response_and_key(nil, fn ->
-        assert {:reply, {:error, @missing_key_message}, :frame} =
-                 OpinionsEdit.execute(%{opinion_id: opinion.id, content: "After"}, :frame)
+      with_mocked_response_and_key(nil, fn frame ->
+        assert {:reply, {:error, @missing_key_message}, ^frame} =
+                 OpinionsEdit.execute(%{opinion_id: opinion.id, content: "After"}, frame)
       end)
     end
 
     test "returns invalid-key error when API key token is unknown" do
       opinion = opinion_fixture()
 
-      with_mocked_response_and_key("invalid-token", fn ->
-        assert {:reply, {:error, @invalid_key_message}, :frame} =
-                 OpinionsEdit.execute(%{opinion_id: opinion.id, content: "After"}, :frame)
+      with_mocked_response_and_key("invalid-token", fn frame ->
+        assert {:reply, {:error, @invalid_key_message}, ^frame} =
+                 OpinionsEdit.execute(%{opinion_id: opinion.id, content: "After"}, frame)
       end)
     end
 
@@ -211,9 +211,9 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       opinion =
         opinion_fixture(%{user_id: owner.id, author_id: owner.author_id, content: "Before"})
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, "Your account is not allowed to edit this opinion."}, :frame} =
-                 OpinionsEdit.execute(%{opinion_id: opinion.id, content: "After"}, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, "Your account is not allowed to edit this opinion."}, ^frame} =
+                 OpinionsEdit.execute(%{opinion_id: opinion.id, content: "After"}, frame)
       end)
 
       assert Opinions.get_opinion!(opinion.id).content == "Before"
@@ -223,9 +223,9 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       owner = user_fixture()
       api_key = api_key_fixture(owner)
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, @not_found_message}, :frame} =
-                 OpinionsEdit.execute(%{opinion_id: -1, content: "After"}, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, @not_found_message}, ^frame} =
+                 OpinionsEdit.execute(%{opinion_id: -1, content: "After"}, frame)
       end)
     end
   end
@@ -236,9 +236,9 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       api_key = api_key_fixture(owner)
       opinion = opinion_fixture(%{user_id: owner.id, author_id: owner.author_id})
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:json, %{deleted: true, deleted_opinion_id: deleted_id}}, :frame} =
-                 OpinionsDelete.execute(%{opinion_id: opinion.id}, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, %{deleted: true, deleted_opinion_id: deleted_id}}, ^frame} =
+                 OpinionsDelete.execute(%{opinion_id: opinion.id}, frame)
 
         assert deleted_id == opinion.id
       end)
@@ -249,9 +249,9 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
     test "returns missing-key error when no API key is provided" do
       opinion = opinion_fixture()
 
-      with_mocked_response_and_key(nil, fn ->
-        assert {:reply, {:error, @missing_key_message}, :frame} =
-                 OpinionsDelete.execute(%{opinion_id: opinion.id}, :frame)
+      with_mocked_response_and_key(nil, fn frame ->
+        assert {:reply, {:error, @missing_key_message}, ^frame} =
+                 OpinionsDelete.execute(%{opinion_id: opinion.id}, frame)
       end)
     end
 
@@ -261,9 +261,9 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       api_key = api_key_fixture(other_user)
       opinion = opinion_fixture(%{user_id: owner.id, author_id: owner.author_id})
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, "Your account is not allowed to delete this opinion."}, :frame} =
-                 OpinionsDelete.execute(%{opinion_id: opinion.id}, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, "Your account is not allowed to delete this opinion."}, ^frame} =
+                 OpinionsDelete.execute(%{opinion_id: opinion.id}, frame)
       end)
 
       assert Opinions.get_opinion(opinion.id)
@@ -273,9 +273,9 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       owner = user_fixture()
       api_key = api_key_fixture(owner)
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, @not_found_message}, :frame} =
-                 OpinionsDelete.execute(%{opinion_id: -1}, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, @not_found_message}, ^frame} =
+                 OpinionsDelete.execute(%{opinion_id: -1}, frame)
       end)
     end
   end
@@ -287,11 +287,11 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       opinion = opinion_fixture()
       statement = statement_fixture()
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:json, payload}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, payload}, ^frame} =
                  OpinionsStatementsAdd.execute(
                    %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "For"},
-                   :frame
+                   frame
                  )
 
         assert payload.attached
@@ -315,11 +315,11 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       opinion = opinion_fixture()
       statement = statement_fixture()
 
-      with_mocked_response_and_key(nil, fn ->
-        assert {:reply, {:error, @missing_key_message}, :frame} =
+      with_mocked_response_and_key(nil, fn frame ->
+        assert {:reply, {:error, @missing_key_message}, ^frame} =
                  OpinionsStatementsAdd.execute(
                    %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "For"},
-                   :frame
+                   frame
                  )
       end)
     end
@@ -330,12 +330,12 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       opinion = opinion_fixture()
       statement = statement_fixture()
 
-      with_mocked_response_and_key(api_key.token, fn ->
+      with_mocked_response_and_key(api_key.token, fn frame ->
         assert {:reply, {:error, "Your account is not allowed to attach opinions to statements."},
-                :frame} =
+                ^frame} =
                  OpinionsStatementsAdd.execute(
                    %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "Against"},
-                   :frame
+                   frame
                  )
       end)
     end
@@ -348,11 +348,11 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
 
       {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, "Opinion is already associated with this statement."}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, "Opinion is already associated with this statement."}, ^frame} =
                  OpinionsStatementsAdd.execute(
                    %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "Abstain"},
-                   :frame
+                   frame
                  )
       end)
     end
@@ -363,11 +363,11 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       opinion = opinion_fixture()
       statement = statement_fixture()
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, @invalid_vote_answer_message}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, @invalid_vote_answer_message}, ^frame} =
                  OpinionsStatementsAdd.execute(
                    %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "maybe"},
-                   :frame
+                   frame
                  )
       end)
 
@@ -381,11 +381,11 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       existing_vote = vote_fixture(%{statement_id: statement.id, answer: :against})
       opinion = opinion_fixture(%{author_id: existing_vote.author_id})
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:json, payload}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, payload}, ^frame} =
                  OpinionsStatementsAdd.execute(
                    %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "For"},
-                   :frame
+                   frame
                  )
 
         assert payload.vote.vote_id == existing_vote.id
@@ -407,11 +407,11 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       statement = statement_fixture()
       {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:json, payload}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, payload}, ^frame} =
                  OpinionsStatementsRemove.execute(
                    %{opinion_id: opinion.id, statement_id: statement.id},
-                   :frame
+                   frame
                  )
 
         assert payload.removed
@@ -427,11 +427,11 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       opinion = opinion_fixture()
       statement = statement_fixture()
 
-      with_mocked_response_and_key(nil, fn ->
-        assert {:reply, {:error, @missing_key_message}, :frame} =
+      with_mocked_response_and_key(nil, fn frame ->
+        assert {:reply, {:error, @missing_key_message}, ^frame} =
                  OpinionsStatementsRemove.execute(
                    %{opinion_id: opinion.id, statement_id: statement.id},
-                   :frame
+                   frame
                  )
       end)
     end
@@ -442,13 +442,13 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       opinion = opinion_fixture()
       statement = statement_fixture()
 
-      with_mocked_response_and_key(api_key.token, fn ->
+      with_mocked_response_and_key(api_key.token, fn frame ->
         assert {:reply,
                 {:error, "Your account is not allowed to remove opinions from statements."},
-                :frame} =
+                ^frame} =
                  OpinionsStatementsRemove.execute(
                    %{opinion_id: opinion.id, statement_id: statement.id},
-                   :frame
+                   frame
                  )
       end)
     end
@@ -459,11 +459,11 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       opinion = opinion_fixture()
       statement = statement_fixture()
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, "Opinion is not associated with this statement."}, :frame} =
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, "Opinion is not associated with this statement."}, ^frame} =
                  OpinionsStatementsRemove.execute(
                    %{opinion_id: opinion.id, statement_id: statement.id},
-                   :frame
+                   frame
                  )
       end)
     end
@@ -481,10 +481,6 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
          tool: fn -> :tool end,
          json: fn :tool, data -> {:json, data} end,
          error: fn :tool, message -> {:error, message} end
-       ]},
-      {Anubis.Server.Frame, [],
-       [
-         get_query_param: fn _frame, _key -> nil end
        ]}
     ]) do
       fun.()
@@ -498,13 +494,10 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
          tool: fn -> :tool end,
          json: fn :tool, data -> {:json, data} end,
          error: fn :tool, message -> {:error, message} end
-       ]},
-      {Anubis.Server.Frame, [],
-       [
-         get_query_param: fn _frame, "key" -> key end
        ]}
     ]) do
-      fun.()
+      frame = Anubis.Server.Frame.new(%{query_params: %{"key" => key}})
+      fun.(frame)
     end
   end
 end

@@ -13,7 +13,8 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuardTest do
   end
 
   test "passes through when session exists locally" do
-    with_mock Registry, lookup: fn _registry, _key -> [{self(), nil}] end do
+    with_mock Anubis.Server.Registry.Local,
+      lookup_session: fn _name, _id -> {:ok, self()} end do
       conn =
         conn(:get, "/mcp")
         |> put_req_header("mcp-session-id", "local-session")
@@ -25,7 +26,8 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuardTest do
 
   test "replays when session exists remotely" do
     with_mocks([
-      {Registry, [], [lookup: fn _registry, _key -> [] end]},
+      {Anubis.Server.Registry.Local, [],
+       [lookup_session: fn _name, _id -> {:error, :not_found} end]},
       {YouCongressWeb.ClusterUtils, [],
        [find_session_owner: fn _mod, _func, _args -> {:ok, "instance-123"} end]}
     ]) do
@@ -41,7 +43,8 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuardTest do
 
   test "clears stale session and passes through when session not found anywhere" do
     with_mocks([
-      {Registry, [], [lookup: fn _registry, _key -> [] end]},
+      {Anubis.Server.Registry.Local, [],
+       [lookup_session: fn _name, _id -> {:error, :not_found} end]},
       {YouCongressWeb.ClusterUtils, [], [find_session_owner: fn _mod, _func, _args -> nil end]}
     ]) do
       conn =
@@ -56,7 +59,8 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuardTest do
 
   test "uses cookie when header missing" do
     with_mocks([
-      {Registry, [], [lookup: fn _registry, _key -> [] end]},
+      {Anubis.Server.Registry.Local, [],
+       [lookup_session: fn _name, _id -> {:error, :not_found} end]},
       {YouCongressWeb.ClusterUtils, [],
        [find_session_owner: fn _mod, _func, _args -> {:ok, "instance-456"} end]}
     ]) do

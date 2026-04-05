@@ -126,7 +126,8 @@ if config_env() in [:dev, :prod] do
 end
 
 if redis_url = System.get_env("MCP_SESSION_REDIS_URL") do
-  ttl = (System.get_env("MCP_SESSION_TTL_MS") || "1800000") |> String.to_integer()
+  # Default 2 hours — should match or exceed session_idle_timeout in application.ex
+  ttl = (System.get_env("MCP_SESSION_TTL_MS") || "7200000") |> String.to_integer()
   pool_size = (System.get_env("MCP_SESSION_REDIS_POOL") || "5") |> String.to_integer()
   namespace_prefix = System.get_env("FLY_APP_NAME") || "you_congress"
 

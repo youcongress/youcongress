@@ -56,8 +56,8 @@ defmodule YouCongress.MCP.ToolUsageTrackerTest do
 
   defp build_frame(query_params) do
     %Frame{
-      transport: %{type: :http, query_params: query_params},
-      private: %{
+      assigns: %{query_params: query_params},
+      context: %Anubis.Server.Context{
         session_id: "session-123",
         client_info: %{"name" => "Test Client", "version" => "1.0"}
       }

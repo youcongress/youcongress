@@ -152,9 +152,9 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
         other_halls: "climate, future"
       }
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:json, %{statement: payload}}, :frame} =
-                 StatementsHallsUpdate.execute(params, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, %{statement: payload}}, ^frame} =
+                 StatementsHallsUpdate.execute(params, frame)
 
         assert payload.statement_id == statement.id
         assert payload.main_hall == "ai"
@@ -173,9 +173,9 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
         halls: "climate; future-of-work\nfuture-of-work"
       }
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:json, %{statement: payload}}, :frame} =
-                 StatementsHallsUpdate.execute(params, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, %{statement: payload}}, ^frame} =
+                 StatementsHallsUpdate.execute(params, frame)
 
         assert Enum.map(payload.halls, & &1.name) == ["ai", "climate", "future-of-work"]
       end)
@@ -184,11 +184,11 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
     test "requires API key" do
       statement = statement_fixture(title: "Tax policy")
 
-      with_mocked_response_and_key(nil, fn ->
-        assert {:reply, {:error, message}, :frame} =
+      with_mocked_response_and_key(nil, fn frame ->
+        assert {:reply, {:error, message}, ^frame} =
                  StatementsHallsUpdate.execute(
                    %{statement_id: statement.id, main_hall: "ai"},
-                   :frame
+                   frame
                  )
 
         assert message == "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
@@ -206,9 +206,9 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
 
       with_mocked_response_and_key(
         api_key.token,
-        fn ->
-          assert {:reply, {:json, payload}, :frame} =
-                   StatementPopulate.execute(%{statement_id: statement.id}, :frame)
+        fn frame ->
+          assert {:reply, {:json, payload}, ^frame} =
+                   StatementPopulate.execute(%{statement_id: statement.id}, frame)
 
           assert payload.statement_id == statement.id
           assert payload.status == "quote_generation_started"
@@ -238,9 +238,9 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
       api_key = api_key_fixture(user)
       statement = statement_fixture()
 
-      with_mocked_response_and_key(api_key.token, fn ->
-        assert {:reply, {:error, message}, :frame} =
-                 StatementPopulate.execute(%{statement_id: statement.id}, :frame)
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, message}, ^frame} =
+                 StatementPopulate.execute(%{statement_id: statement.id}, frame)
 
         assert message == "Only administrators can trigger automated quote discovery."
       end)
@@ -254,10 +254,6 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
          tool: fn -> :tool end,
          json: fn :tool, data -> {:json, data} end,
          error: fn :tool, message -> {:error, message} end
-       ]},
-      {Anubis.Server.Frame, [],
-       [
-         get_query_param: fn _frame, _key -> nil end
        ]}
     ]) do
       fun.()
@@ -271,15 +267,12 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
          tool: fn -> :tool end,
          json: fn :tool, data -> {:json, data} end,
          error: fn :tool, message -> {:error, message} end
-       ]},
-      {Anubis.Server.Frame, [],
-       [
-         get_query_param: fn _frame, "key" -> key end
        ]}
     ]
 
     with_mocks(base_mocks ++ extra_mocks) do
-      fun.()
+      frame = Anubis.Server.Frame.new(%{query_params: %{"key" => key}})
+      fun.(frame)
     end
   end
 
