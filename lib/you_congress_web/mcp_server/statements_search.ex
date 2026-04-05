@@ -8,6 +8,7 @@ defmodule YouCongressWeb.MCPServer.StatementsSearch do
 
   alias Anubis.Server.Response
   alias YouCongress.Statements
+  alias YouCongress.MCP.ToolUsageTracker
 
   @limit 100
 
@@ -16,6 +17,8 @@ defmodule YouCongressWeb.MCPServer.StatementsSearch do
   end
 
   def execute(%{query: query}, frame) do
+    ToolUsageTracker.track(__MODULE__, frame)
+
     statements = find_statements(query)
     more_statements = more_statements(statements)
 

@@ -7,6 +7,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsSearch do
 
   alias Anubis.Server.Response
   alias YouCongress.Authors
+  alias YouCongress.MCP.ToolUsageTracker
 
   @limit 50
 
@@ -16,6 +17,8 @@ defmodule YouCongressWeb.MCPServer.AuthorsSearch do
 
   @impl true
   def execute(%{query: query}, frame) do
+    ToolUsageTracker.track(__MODULE__, frame)
+
     matches = query |> search_authors()
 
     data = %{matches: matches}

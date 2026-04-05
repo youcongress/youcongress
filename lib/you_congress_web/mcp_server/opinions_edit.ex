@@ -8,12 +8,12 @@ defmodule YouCongressWeb.MCPServer.OpinionsEdit do
 
   use Anubis.Server.Component, type: :tool
 
-  alias Anubis.Server.{Frame, Response}
+  alias Anubis.Server.Response
   alias Ecto.Changeset
-  alias YouCongress.Accounts
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Opinions
   alias YouCongress.Votes
+  alias YouCongress.MCP.ToolUsageTracker
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
@@ -32,9 +32,10 @@ defmodule YouCongressWeb.MCPServer.OpinionsEdit do
   @impl true
   def execute(%{opinion_id: opinion_id} = params, frame) do
     attrs = attrs_from_params(params)
+    user_result = ToolUsageTracker.track(__MODULE__, frame)
 
     with :ok <- ensure_attrs_present(attrs),
-         {:ok, user} <- authenticate_user(frame),
+         {:ok, user} <- user_result,
          opinion when not is_nil(opinion) <- Opinions.get_opinion(opinion_id),
          :ok <- ensure_permission(opinion, user),
          {:ok, _updated_opinion} <- Opinions.update_opinion(opinion, attrs),
@@ -65,12 +66,6 @@ defmodule YouCongressWeb.MCPServer.OpinionsEdit do
            "Could not edit opinion: #{format_changeset_errors(changeset)}"
          ), frame}
     end
-  end
-
-  defp authenticate_user(frame) do
-    frame
-    |> Frame.get_query_param("key")
-    |> Accounts.get_user_by_api_key()
   end
 
   defp ensure_permission(opinion, user) do

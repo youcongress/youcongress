@@ -8,6 +8,7 @@ defmodule YouCongressWeb.MCPServer.StatementsList do
   alias Anubis.Server.Response
   alias YouCongress.Statements
   alias YouCongressWeb.MCPServer.StatementSerializer
+  alias YouCongress.MCP.ToolUsageTracker
 
   schema do
     field :include_halls, :boolean, default: false
@@ -16,6 +17,8 @@ defmodule YouCongressWeb.MCPServer.StatementsList do
   @limit 100
 
   def execute(params, frame) do
+    ToolUsageTracker.track(__MODULE__, frame)
+
     include_halls? = Map.get(params, :include_halls, false)
 
     statements =

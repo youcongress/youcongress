@@ -8,11 +8,11 @@ defmodule YouCongressWeb.MCPServer.OpinionsDelete do
 
   use Anubis.Server.Component, type: :tool
 
-  alias Anubis.Server.{Frame, Response}
+  alias Anubis.Server.Response
   alias Ecto.Changeset
-  alias YouCongress.Accounts
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Opinions
+  alias YouCongress.MCP.ToolUsageTracker
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
@@ -26,7 +26,9 @@ defmodule YouCongressWeb.MCPServer.OpinionsDelete do
 
   @impl true
   def execute(%{opinion_id: opinion_id}, frame) do
-    with {:ok, user} <- authenticate_user(frame),
+    user_result = ToolUsageTracker.track(__MODULE__, frame)
+
+    with {:ok, user} <- user_result,
          opinion when not is_nil(opinion) <- Opinions.get_opinion(opinion_id),
          :ok <- ensure_permission(opinion, user),
          {:ok, _deleted_opinion} <- Opinions.delete_opinion(opinion) do
@@ -55,12 +57,6 @@ defmodule YouCongressWeb.MCPServer.OpinionsDelete do
       {:error, _} ->
         {:reply, Response.error(Response.tool(), @delete_error_message), frame}
     end
-  end
-
-  defp authenticate_user(frame) do
-    frame
-    |> Frame.get_query_param("key")
-    |> Accounts.get_user_by_api_key()
   end
 
   defp ensure_permission(opinion, user) do

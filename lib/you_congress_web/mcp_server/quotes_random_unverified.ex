@@ -12,6 +12,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
   alias Anubis.Server.Response
   alias YouCongress.Opinions
   alias YouCongress.Votes
+  alias YouCongress.MCP.ToolUsageTracker
 
   @no_quote_message "No unverified quotes available."
   @unsupported_source_prefixes [
@@ -25,6 +26,8 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
 
   @impl true
   def execute(_params, frame) do
+    ToolUsageTracker.track(__MODULE__, frame)
+
     case random_unverified_quote() do
       nil ->
         {:reply, Response.error(Response.tool(), @no_quote_message), frame}

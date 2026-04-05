@@ -8,6 +8,7 @@ defmodule YouCongressWeb.MCPServer.StatementHalls do
   alias Anubis.Server.Response
   alias YouCongress.Statements
   alias YouCongressWeb.MCPServer.StatementSerializer
+  alias YouCongress.MCP.ToolUsageTracker
 
   @not_found_message "Statement not found."
 
@@ -17,6 +18,8 @@ defmodule YouCongressWeb.MCPServer.StatementHalls do
 
   @impl true
   def execute(%{statement_id: statement_id}, frame) do
+    ToolUsageTracker.track(__MODULE__, frame)
+
     case fetch_statement(statement_id) do
       nil ->
         {:reply, Response.error(Response.tool(), @not_found_message), frame}

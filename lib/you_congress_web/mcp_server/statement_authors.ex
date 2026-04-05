@@ -11,6 +11,7 @@ defmodule YouCongressWeb.MCPServer.StatementAuthors do
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Statements
+  alias YouCongress.MCP.ToolUsageTracker
 
   @statement_not_found_message "Statement not found."
 
@@ -20,6 +21,8 @@ defmodule YouCongressWeb.MCPServer.StatementAuthors do
 
   @impl true
   def execute(%{statement_id: statement_id}, frame) do
+    ToolUsageTracker.track(__MODULE__, frame)
+
     case Statements.get_statement(statement_id) do
       nil ->
         {:reply, Response.error(Response.tool(), @statement_not_found_message), frame}

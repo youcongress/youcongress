@@ -9,12 +9,12 @@ defmodule YouCongressWeb.MCPServer.StatementsHallsUpdate do
 
   use Anubis.Server.Component, type: :tool
 
-  alias Anubis.Server.{Frame, Response}
-  alias YouCongress.Accounts
+  alias Anubis.Server.Response
   alias YouCongress.Accounts.Permissions
   alias YouCongress.HallsStatements
   alias YouCongress.Statements
   alias YouCongressWeb.MCPServer.StatementSerializer
+  alias YouCongress.MCP.ToolUsageTracker
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
@@ -32,10 +32,11 @@ defmodule YouCongressWeb.MCPServer.StatementsHallsUpdate do
   @impl true
   def execute(%{statement_id: statement_id} = params, frame) do
     other_input = Map.get(params, :other_halls) || Map.get(params, :halls)
+    user_result = ToolUsageTracker.track(__MODULE__, frame)
 
     with {:ok, main_hall} <- normalize_main_hall(Map.get(params, :main_hall)),
          other_halls <- normalize_other_halls(other_input),
-         {:ok, user} <- authenticate_user(frame),
+         {:ok, user} <- user_result,
          statement when not is_nil(statement) <- Statements.get_statement(statement_id),
          :ok <- ensure_permission(statement, user),
          {:ok, updated_statement} <- sync_halls(statement.id, main_hall, other_halls) do
@@ -98,12 +99,6 @@ defmodule YouCongressWeb.MCPServer.StatementsHallsUpdate do
       "" -> nil
       name -> name
     end
-  end
-
-  defp authenticate_user(frame) do
-    frame
-    |> Frame.get_query_param("key")
-    |> Accounts.get_user_by_api_key()
   end
 
   defp ensure_permission(statement, user) do

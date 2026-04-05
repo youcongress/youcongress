@@ -6,6 +6,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
   alias Anubis.Server.Response
   alias YouCongress.Opinions
   alias YouCongress.Votes
+  alias YouCongress.MCP.ToolUsageTracker
 
   @limit 250
 
@@ -19,6 +20,8 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
   end
 
   def execute(params, frame) do
+    ToolUsageTracker.track(__MODULE__, frame)
+
     statement_id = Map.get(params, :statement_id)
     query = Map.get(params, :query)
 
