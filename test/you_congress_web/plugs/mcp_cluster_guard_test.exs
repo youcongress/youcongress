@@ -41,7 +41,7 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuardTest do
     end
   end
 
-  test "clears stale session and passes through when session not found anywhere" do
+  test "returns 404 when session not found anywhere" do
     with_mocks([
       {Anubis.Server.Registry.Local, [],
        [lookup_session: fn _name, _id -> {:error, :not_found} end]},
@@ -52,8 +52,8 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuardTest do
         |> put_req_header("mcp-session-id", "unknown-session")
         |> MCPClusterGuard.call([])
 
-      refute conn.halted
-      assert get_req_header(conn, "mcp-session-id") == []
+      assert conn.halted
+      assert conn.status == 404
     end
   end
 
