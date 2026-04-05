@@ -11,14 +11,17 @@ defmodule YouCongress.MCP.ToolUsageTrackerTest do
   describe "track/3" do
     test "returns the user lookup result and includes user_id in the event" do
       user = user_fixture()
-      {:ok, api_key} = Accounts.create_api_key_for_user(user, %{"name" => "CLI", "scope" => :write})
+
+      {:ok, api_key} =
+        Accounts.create_api_key_for_user(user, %{"name" => "CLI", "scope" => :write})
 
       frame = build_frame(%{"key" => api_key.token})
 
-      with_mock YouCongress.Amplitude, track_event: fn event_type, user_id, props ->
-        send(self(), {:event, event_type, user_id, props})
-        :ok
-      end do
+      with_mock YouCongress.Amplitude,
+        track_event: fn event_type, user_id, props ->
+          send(self(), {:event, event_type, user_id, props})
+          :ok
+        end do
         assert {:ok, ^user} =
                  ToolUsageTracker.track(YouCongressWeb.MCPServer.StatementsSearch, frame)
 
@@ -36,10 +39,11 @@ defmodule YouCongress.MCP.ToolUsageTrackerTest do
     test "reports null user_id when API key is missing" do
       frame = build_frame(%{})
 
-      with_mock YouCongress.Amplitude, track_event: fn event_type, user_id, props ->
-        send(self(), {:event, event_type, user_id, props})
-        :ok
-      end do
+      with_mock YouCongress.Amplitude,
+        track_event: fn event_type, user_id, props ->
+          send(self(), {:event, event_type, user_id, props})
+          :ok
+        end do
         assert {:error, :missing_api_key} =
                  ToolUsageTracker.track(YouCongressWeb.MCPServer.StatementsSearch, frame)
 
