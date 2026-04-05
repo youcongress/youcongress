@@ -1,6 +1,6 @@
 # Welcome to YouCongress.org
 
-[YouCongress.org](https://youcongress.org) is a non-profit, open-source platform that pairs a verifiable quotes database with a liquid democracy participation layer focused on AI governance. We gather what leaders, researchers, technologists, and citizens actually said about AI policy.
+[YouCongress.org](https://youcongress.org) is a non-profit, open-source platform that combines a verifiable quotes database with a liquid democracy participation layer focused on AI governance. We gather what leaders, researchers, technologists, and citizens actually said about AI policy.
 
 The sourced quotes power structured policy statements, community votes, and optional delegation so collective preferences stay visible and legible. Citizens can search AI governance topics, vote directly, pick delegates (including public figures whose stances we infer from their sourced quotes), or help validate new quotes to improve the dataset. The result is a decision-support tool that helps people coordinate.
 
