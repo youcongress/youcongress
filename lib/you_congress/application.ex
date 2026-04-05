@@ -37,7 +37,8 @@ defmodule YouCongress.Application do
       {Oban, Application.fetch_env!(:you_congress, Oban)},
       # MCP Server
       Anubis.Server.Registry,
-      {YouCongressWeb.MCPServer, transport: :streamable_http},
+      {YouCongressWeb.MCPServer,
+       transport: :streamable_http, session_idle_timeout: :timer.hours(2)},
       # Setup for clustering
       {Cluster.Supervisor, [topologies, [name: YouCongress.ClusterSupervisor]]}
     ]
