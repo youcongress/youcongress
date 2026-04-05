@@ -16,7 +16,7 @@ defmodule YouCongressWeb.Components.McpPromptExamples do
   def prompt_examples(assigns) do
     ~H"""
     <p class="mt-4 text-lg leading-relaxed">
-      <%= render_slot(@intro) %>
+      {render_slot(@intro)}
     </p>
 
     <div class="mt-4 space-y-4">
@@ -81,7 +81,7 @@ defmodule YouCongressWeb.Components.McpPromptExamples do
     </div>
 
     <p class="mt-4 text-lg leading-relaxed">
-      <%= render_slot(@permission_notice) %>
+      {render_slot(@permission_notice)}
     </p>
     """
   end
