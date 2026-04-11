@@ -27,33 +27,18 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
   attr :hall_name, :string, required: true
 
   def render(assigns) do
-    assigns = assign(assigns, :featured_halls, @featured_halls)
+    assigns = assign(assigns, :hall_pills, hall_pills(assigns.hall_name))
 
     ~H"""
     <div class="pb-2">
       <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
         <div class="flex flex-wrap gap-2">
-          <%= if @hall_name in Enum.map(@featured_halls, &elem(&1, 0)) do %>
-            <%= for {hall_slug, hall_title} <- @featured_halls do %>
-              <HallNav.pill
-                url_hall_name={@hall_name}
-                hall_name={hall_slug}
-                hall_link={hall_link(hall_slug)}
-                hall_title={hall_title}
-              />
-            <% end %>
-          <% else %>
-            <HallNav.pill
-              url_hall_name="all"
-              hall_name={@hall_name}
-              hall_link={~p"/h/all"}
-              hall_title="All"
-            />
+          <%= for {hall_slug, hall_title} <- @hall_pills do %>
             <HallNav.pill
               url_hall_name={@hall_name}
-              hall_name={@hall_name}
-              hall_link={~p"/h/#{@hall_name}"}
-              hall_title={StringUtils.titleize_hall(@hall_name)}
+              hall_name={hall_slug}
+              hall_link={hall_link(hall_slug)}
+              hall_title={hall_title}
             />
           <% end %>
         </div>
@@ -64,6 +49,14 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
 
   defp hall_link(@default_hall), do: ~p"/"
   defp hall_link(hall_name), do: ~p"/h/#{hall_name}"
+
+  defp hall_pills(hall_name) do
+    if Enum.any?(@featured_halls, fn {slug, _} -> slug == hall_name end) do
+      @featured_halls
+    else
+      [{hall_name, StringUtils.titleize_hall(hall_name)} | @featured_halls]
+    end
+  end
 
   attr :url_hall_name, :string, required: true
   attr :hall_link, :string, required: true
