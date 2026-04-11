@@ -26,8 +26,9 @@ defmodule YouCongressWeb.PageController do
       Enum.map(statements, fn statement ->
         lastmod =
           (statement.updated_at || statement.inserted_at)
-          |> NaiveDateTime.truncate(:second)
-          |> NaiveDateTime.to_iso8601()
+          |> DateTime.from_naive!("Etc/UTC")
+          |> DateTime.truncate(:second)
+          |> DateTime.to_iso8601()
 
         loc = url(~p"/p/#{statement.slug}")
 
