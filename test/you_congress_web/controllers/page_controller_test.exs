@@ -1,6 +1,8 @@
 defmodule YouCongressWeb.PageControllerTest do
   use YouCongressWeb.ConnCase, async: true
 
+  import YouCongress.StatementsFixtures
+
   test "GET / loads successfully", %{conn: conn} do
     conn = get(conn, ~p"/")
 
@@ -57,5 +59,15 @@ defmodule YouCongressWeb.PageControllerTest do
 
     assert html =~ "Use YouCongress from Claude"
     assert html =~ "Log In to Get Started"
+  end
+
+  test "GET /sitemap.xml lists statement URLs", %{conn: conn} do
+    statement = statement_fixture(%{title: "Transparent AI policy"})
+
+    conn = get(conn, ~p"/sitemap.xml")
+    body = response(conn, 200)
+
+    assert get_resp_header(conn, "content-type") == ["application/xml; charset=utf-8"]
+    assert body =~ "<loc>#{YouCongressWeb.Endpoint.url()}#{~p"/p/#{statement.slug}"}</loc>"
   end
 end
