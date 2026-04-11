@@ -5,7 +5,7 @@ defmodule YouCongressWeb.Router do
   import YouCongressWeb.UserAuth
 
   pipeline :browser do
-    plug(:accepts, ["html"])
+    plug(:accepts, ["html", "xml"])
     plug(:fetch_session)
     plug(:fetch_live_flash)
     plug(:put_root_layout, html: {YouCongressWeb.Layouts, :root})
@@ -38,6 +38,7 @@ defmodule YouCongressWeb.Router do
 
     get("/terms", PageController, :terms)
     get("/privacy-policy", PageController, :privacy_policy)
+    get("/sitemap.xml", PageController, :sitemap)
 
     get("/waiting_list", PageController, :waiting_list)
     get("/about", PageController, :about)
