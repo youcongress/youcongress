@@ -10,7 +10,7 @@ defmodule YouCongress.FeatureFlags do
   @type flag :: :log_in_with_x
 
   @default_flags %{
-    log_in_with_x: false
+    log_in_with_x: true
   }
 
   @doc """
