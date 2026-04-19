@@ -223,18 +223,23 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   defp load_votes(author_id, false, hall_name) do
-    hall = Halls.get_by_name(hall_name, preload: [:statements])
-    statement_ids = Enum.map(hall.statements, fn statement -> statement.id end)
+    case Halls.get_by_name(hall_name, preload: [:statements]) do
+      nil ->
+        load_votes(author_id, false, nil)
 
-    args = [
-      author_ids: [author_id],
-      order_by_strong_opinions_first: true,
-      preload: [:opinion, statement: [:halls]],
-      statement_ids: statement_ids,
-      without_opinion: false
-    ]
+      hall ->
+        statement_ids = Enum.map(hall.statements, fn statement -> statement.id end)
 
-    Votes.list_votes(args)
+        args = [
+          author_ids: [author_id],
+          order_by_strong_opinions_first: true,
+          preload: [:opinion, statement: [:halls]],
+          statement_ids: statement_ids,
+          without_opinion: false
+        ]
+
+        Votes.list_votes(args)
+    end
   end
 
   defp load_votes(author_id, true, nil) do
@@ -249,17 +254,22 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   defp load_votes(author_id, true, hall_name) do
-    hall = Halls.get_by_name(hall_name, preload: [:statements])
-    statement_ids = Enum.map(hall.statements, fn statement -> statement.id end)
+    case Halls.get_by_name(hall_name, preload: [:statements]) do
+      nil ->
+        load_votes(author_id, true, nil)
 
-    args = [
-      author_ids: [author_id],
-      order_by: [desc: :id],
-      preload: [:opinion, statement: [:halls]],
-      statement_ids: statement_ids,
-      without_opinion: false
-    ]
+      hall ->
+        statement_ids = Enum.map(hall.statements, fn statement -> statement.id end)
 
-    Votes.list_votes(args)
+        args = [
+          author_ids: [author_id],
+          order_by: [desc: :id],
+          preload: [:opinion, statement: [:halls]],
+          statement_ids: statement_ids,
+          without_opinion: false
+        ]
+
+        Votes.list_votes(args)
+    end
   end
 end
