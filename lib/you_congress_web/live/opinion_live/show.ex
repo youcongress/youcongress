@@ -136,22 +136,24 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   def handle_event("delete-comment", %{"opinion_id" => opinion_id}, socket) do
+    %{assigns: %{current_user: current_user}} = socket
     opinion = Opinions.get_opinion!(opinion_id, preload: [:statements])
 
-    {_count, nil} =
-      Opinions.delete_opinion_and_descendants(opinion)
+    if Permissions.can_edit_opinion?(opinion, current_user) do
+      {_count, nil} = Opinions.delete_opinion_and_descendants(opinion)
 
-    Track.event("Delete Opinion", socket.assigns.current_user)
+      Track.event("Delete Opinion", current_user)
 
-    parent_opinion_id = Opinion.parent_id(opinion)
-    url = if parent_opinion_id, do: "/c/#{parent_opinion_id}", else: "/"
+      parent_opinion_id = Opinion.parent_id(opinion)
+      url = if parent_opinion_id, do: "/c/#{parent_opinion_id}", else: "/"
 
-    socket =
-      socket
-      |> redirect(to: url)
-      |> put_flash(:info, "Opinion deleted successfully.")
-
-    {:noreply, socket}
+      {:noreply,
+       socket
+       |> redirect(to: url)
+       |> put_flash(:info, "Opinion deleted successfully.")}
+    else
+      {:noreply, put_flash(socket, :error, "You are not allowed to delete this opinion.")}
+    end
   end
 
   def handle_event("toggle-search", _params, socket) do
