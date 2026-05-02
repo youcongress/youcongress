@@ -11,13 +11,14 @@ defmodule YouCongressWeb.Components.VerificationHistory do
   attr :verifications, :list, required: true
   attr :wrapper_class, :string, default: ""
   attr :title, :string, default: "Verification History"
+  attr :title_tag, :string, default: "h3"
   attr :title_class, :string, default: "text-xs font-semibold mb-2 text-gray-500"
   attr :entries_class, :string, default: "space-y-1"
 
   def verification_history(assigns) do
     ~H"""
     <div class={@wrapper_class}>
-      <h3 class={@title_class}>{@title}</h3>
+      <.dynamic_tag tag_name={@title_tag} class={@title_class}>{@title}</.dynamic_tag>
       <div class={@entries_class}>
         <%= for verification <- @verifications do %>
           <div class="flex items-center gap-2 text-xs text-gray-500">
