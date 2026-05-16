@@ -3,6 +3,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
 
   import Mock
   import YouCongress.AccountsFixtures
+  import YouCongress.DelegationsFixtures
   import YouCongress.OpinionsFixtures
   import YouCongress.StatementsFixtures
   import YouCongress.VotesFixtures
@@ -309,6 +310,32 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       assert vote
       assert vote.answer == :for
       assert vote.opinion_id == opinion.id
+    end
+
+    test "recalculates delegated votes for authors delegating to the opinion author" do
+      admin = admin_fixture()
+      api_key = api_key_fixture(admin)
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+      deleguee = user_fixture()
+
+      delegation_fixture(%{deleguee_id: deleguee.author_id, delegate_id: opinion.author_id})
+
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, payload}, ^frame} =
+                 OpinionsStatementsAdd.execute(
+                   %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "For"},
+                   frame
+                 )
+
+        assert payload.attached
+      end)
+
+      delegated_vote = Votes.get_by(%{statement_id: statement.id, author_id: deleguee.author_id})
+      assert delegated_vote
+      assert delegated_vote.answer == :for
+      assert delegated_vote.direct == false
+      assert delegated_vote.opinion_id == nil
     end
 
     test "returns missing-key error when no API key is provided" do

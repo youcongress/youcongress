@@ -9,6 +9,7 @@ defmodule YouCongress.DelegationVotes do
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
   alias YouCongress.Delegations
+  alias YouCongress.Workers.RefreshAuthorStatementDelegatedVotesWorker
 
   @doc """
   Updates the delegated votes of an author.
@@ -52,6 +53,21 @@ defmodule YouCongress.DelegationVotes do
       update_votes(statement_id, author_id, delegate_ids)
       :ok
     end
+  end
+
+  @doc """
+  Enqueues delegated-vote refresh jobs for every author delegating to the given delegate
+  on the given statement.
+  """
+  @spec enqueue_deleguees_for_delegate_statement(integer, integer) :: :ok
+  def enqueue_deleguees_for_delegate_statement(delegate_id, statement_id) do
+    for deleguee_id <- Delegations.deleguee_ids_by_delegate_id(delegate_id) do
+      %{"author_id" => deleguee_id, "statement_id" => statement_id}
+      |> RefreshAuthorStatementDelegatedVotesWorker.new()
+      |> Oban.insert()
+    end
+
+    :ok
   end
 
   defp update_votes(statement_id, author_id, delegate_ids) do

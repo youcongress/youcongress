@@ -12,9 +12,9 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
   alias Ecto.Changeset
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Opinions
+  alias YouCongress.MCP.ToolUsageTracker
   alias YouCongress.Statements
   alias YouCongress.Votes
-  alias YouCongress.MCP.ToolUsageTracker
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
