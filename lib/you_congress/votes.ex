@@ -5,6 +5,7 @@ defmodule YouCongress.Votes do
 
   import Ecto.Query, warn: false
 
+  alias YouCongress.DelegationVotes
   alias YouCongress.Votes.Vote
   alias YouCongress.Repo
 
@@ -304,6 +305,7 @@ defmodule YouCongress.Votes do
     %Vote{}
     |> Vote.changeset(attrs)
     |> Repo.insert()
+    |> maybe_refresh_vote_side_effects_after_create()
   end
 
   @doc """
@@ -322,6 +324,7 @@ defmodule YouCongress.Votes do
     vote
     |> Vote.changeset(attrs)
     |> Repo.update()
+    |> maybe_refresh_vote_side_effects_after_update(vote)
   end
 
   @doc """
@@ -368,14 +371,35 @@ defmodule YouCongress.Votes do
 
   """
   def delete_vote(%Vote{} = vote) do
-    Repo.delete(vote)
+    result = Repo.delete(vote)
+
+    case result do
+      {:ok, deleted_vote} ->
+        refresh_vote_side_effects_after_delete(vote)
+        {:ok, deleted_vote}
+
+      error ->
+        error
+    end
   end
 
   def delete_vote(%{statement_id: statement_id, author_id: author_id}) do
-    from(v in Vote,
-      where: v.statement_id == ^statement_id and v.author_id == ^author_id
-    )
-    |> Repo.delete_all()
+    vote = Repo.get_by(Vote, statement_id: statement_id, author_id: author_id)
+
+    result =
+      from(v in Vote,
+        where: v.statement_id == ^statement_id and v.author_id == ^author_id
+      )
+      |> Repo.delete_all()
+
+    case {result, vote} do
+      {{count, nil}, %Vote{} = existing_vote} when count > 0 ->
+        refresh_vote_side_effects_after_delete(existing_vote)
+        result
+
+      _ ->
+        result
+    end
   end
 
   @doc """
@@ -602,5 +626,71 @@ defmodule YouCongress.Votes do
   """
   def public?(%Vote{} = _vote) do
     true
+  end
+
+  defp maybe_refresh_vote_side_effects_after_create({:ok, %Vote{} = vote} = result) do
+    maybe_enqueue_direct_vote_deleguee_refresh(vote)
+    result
+  end
+
+  defp maybe_refresh_vote_side_effects_after_create(result), do: result
+
+  defp maybe_refresh_vote_side_effects_after_update({:ok, %Vote{} = updated_vote} = result, vote) do
+    maybe_enqueue_direct_vote_deleguee_refresh(vote, updated_vote)
+    maybe_restore_delegated_vote_after_direct_vote_removal(vote, updated_vote)
+    result
+  end
+
+  defp maybe_refresh_vote_side_effects_after_update(result, _vote), do: result
+
+  defp refresh_vote_side_effects_after_delete(vote) do
+    maybe_enqueue_direct_vote_deleguee_refresh(vote)
+    maybe_restore_delegated_vote_after_direct_vote_removal(vote, nil)
+  end
+
+  defp maybe_enqueue_direct_vote_deleguee_refresh(%Vote{} = vote) do
+    if vote.direct do
+      DelegationVotes.enqueue_deleguees_for_delegate_statement(vote.author_id, vote.statement_id)
+    end
+  end
+
+  defp maybe_enqueue_direct_vote_deleguee_refresh(%Vote{} = original_vote, %Vote{} = updated_vote) do
+    [
+      {original_vote.author_id, original_vote.statement_id, original_vote.direct},
+      {updated_vote.author_id, updated_vote.statement_id, updated_vote.direct}
+    ]
+    |> Enum.filter(fn {_author_id, _statement_id, direct} -> direct end)
+    |> Enum.map(fn {author_id, statement_id, _direct} -> {author_id, statement_id} end)
+    |> Enum.uniq()
+    |> Enum.each(fn {author_id, statement_id} ->
+      DelegationVotes.enqueue_deleguees_for_delegate_statement(author_id, statement_id)
+    end)
+  end
+
+  defp maybe_restore_delegated_vote_after_direct_vote_removal(
+         %Vote{direct: false},
+         _updated_vote
+       ),
+       do: :ok
+
+  defp maybe_restore_delegated_vote_after_direct_vote_removal(
+         %Vote{} = original_vote,
+         %Vote{} = updated_vote
+       ) do
+    if !updated_vote.direct or
+         updated_vote.author_id != original_vote.author_id or
+         updated_vote.statement_id != original_vote.statement_id do
+      DelegationVotes.update_author_statement_delegated_votes(
+        original_vote.author_id,
+        original_vote.statement_id
+      )
+    end
+  end
+
+  defp maybe_restore_delegated_vote_after_direct_vote_removal(%Vote{} = original_vote, nil) do
+    DelegationVotes.update_author_statement_delegated_votes(
+      original_vote.author_id,
+      original_vote.statement_id
+    )
   end
 end

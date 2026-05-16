@@ -8,7 +8,6 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
   alias YouCongress.Track
   alias YouCongressWeb.StatementLive.CastVoteComponent
   alias YouCongressWeb.StatementLive.ResultsComponent
-  alias YouCongress.DelegationVotes
   alias YouCongressWeb.StatementLive.Index.OpinateComponent
   alias YouCongressWeb.Components.LoginButtons
   @impl true
@@ -235,11 +234,6 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
     case result do
       {:ok, _} ->
         Track.event("Delete Vote", current_user)
-
-        DelegationVotes.update_author_statement_delegated_votes(
-          current_user.author_id,
-          current_user_vote.statement_id
-        )
 
         # Load it in case she's delegating now
         vote =
