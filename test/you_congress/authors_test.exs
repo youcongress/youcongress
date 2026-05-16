@@ -43,6 +43,17 @@ defmodule YouCongress.AuthorsTest do
       assert Authors.list_authors(search: "hawki steph") == [author]
     end
 
+    test "list_authors/1 supports limit" do
+      a1 = author_fixture(name: "Ada Lovelace")
+      a2 = author_fixture(name: "Alan Turing")
+      a3 = author_fixture(name: "Grace Hopper")
+
+      results = Authors.list_authors(limit: 2)
+
+      assert length(results) == 2
+      assert Enum.all?(results, &(&1.id in [a1.id, a2.id, a3.id]))
+    end
+
     test "get_author!/1 returns the author with given id" do
       author = author_fixture()
       assert Authors.get_author!(author.id) == author

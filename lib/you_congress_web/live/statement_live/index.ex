@@ -31,6 +31,8 @@ defmodule YouCongressWeb.StatementLive.Index do
     "Yoshua Bengio",
     "Yann LeCun"
   ]
+  @search_page_size 20
+  @search_tabs [:quotes, :delegates, :statements, :halls]
 
   @impl true
   def mount(params, session, socket) do
@@ -47,7 +49,9 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:search_tab, :quotes)
       |> assign(:halls, [])
       |> assign(:authors, [])
+      |> assign(:statements, [])
       |> assign(:quotes, [])
+      |> assign(:search_has_more, empty_search_has_more())
       |> assign(:order_by_date, true)
       |> assign(:hall_name, params["hall"] || HallNav.default_hall())
       |> assign(:new_poll_visible?, false)
@@ -108,13 +112,24 @@ defmodule YouCongressWeb.StatementLive.Index do
     socket =
       socket
       |> assign_cards(1)
-      |> assign(search: nil, search_tab: nil)
+      |> reset_search_results()
 
     {:noreply, socket}
   end
 
   def handle_event("search", %{"search" => search}, socket) do
-    {:noreply, perform_search(socket, search)}
+    case normalize_search(search) do
+      nil ->
+        socket =
+          socket
+          |> assign_cards(1)
+          |> reset_search_results()
+
+        {:noreply, socket}
+
+      normalized_search ->
+        {:noreply, perform_search(socket, normalized_search)}
+    end
   end
 
   def handle_event("search-tab", %{"tab" => "statements"}, socket) do
@@ -131,6 +146,14 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   def handle_event("search-tab", %{"tab" => "quotes"}, socket) do
     {:noreply, assign(socket, search_tab: :quotes)}
+  end
+
+  def handle_event("load-more-search", _, %{assigns: %{search: nil}} = socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("load-more-search", _, socket) do
+    {:noreply, load_more_search_results(socket)}
   end
 
   def handle_event("close-vote-auth-modal", _, socket) do
@@ -302,11 +325,16 @@ defmodule YouCongressWeb.StatementLive.Index do
     |> assign(:main_padding_classes, "px-2 pb-6 sm:px-4 lg:px-6")
   end
 
-  defp maybe_apply_search_params(socket, %{"search" => search} = params)
-       when is_binary(search) and search != "" do
-    socket
-    |> perform_search(search)
-    |> assign_tab_from_params(Map.get(params, "tab"))
+  defp maybe_apply_search_params(socket, %{"search" => search} = params) when is_binary(search) do
+    case normalize_search(search) do
+      nil ->
+        socket
+
+      normalized_search ->
+        socket
+        |> perform_search(normalized_search)
+        |> assign_tab_from_params(Map.get(params, "tab"))
+    end
   end
 
   defp maybe_apply_search_params(socket, _params), do: socket
@@ -447,10 +475,15 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   defp perform_search(socket, search) do
     Track.event("Search", socket.assigns.current_user)
-    statements = Statements.list_statements(search: search, preload: [:halls])
-    authors = Authors.list_authors(search: search)
-    halls = Halls.list_halls(search: search)
-    quotes = Opinions.list_opinions(search: search, preload: [:author])
+
+    {quotes, quotes_has_more} = load_search_results(:quotes, search, @search_page_size)
+
+    {authors, authors_has_more} = load_search_results(:delegates, search, @search_page_size)
+
+    {statements, statements_has_more} =
+      load_search_results(:statements, search, @search_page_size)
+
+    {halls, halls_has_more} = load_search_results(:halls, search, @search_page_size)
 
     search_tab =
       cond do
@@ -467,7 +500,110 @@ defmodule YouCongressWeb.StatementLive.Index do
       search_tab: search_tab,
       authors: authors,
       halls: halls,
-      quotes: quotes
+      quotes: quotes,
+      search_has_more: %{
+        quotes: quotes_has_more,
+        delegates: authors_has_more,
+        statements: statements_has_more,
+        halls: halls_has_more
+      }
     )
+  end
+
+  defp normalize_search(search) do
+    case String.trim(search) do
+      "" -> nil
+      normalized_search -> normalized_search
+    end
+  end
+
+  defp load_more_search_results(socket) do
+    %{search: search, search_tab: search_tab, search_has_more: search_has_more} = socket.assigns
+
+    if Map.get(search_has_more, search_tab, false) do
+      visible_limit =
+        search_results_for_tab(socket, search_tab) |> length() |> Kernel.+(@search_page_size)
+
+      {results, has_more} = load_search_results(search_tab, search, visible_limit)
+
+      socket
+      |> assign(search_results_key(search_tab), results)
+      |> assign(:search_has_more, Map.put(search_has_more, search_tab, has_more))
+    else
+      socket
+    end
+  end
+
+  defp load_search_results(:quotes, search, visible_limit) do
+    search
+    |> quote_search_opts(visible_limit + 1)
+    |> Opinions.list_opinions()
+    |> take_visible_results(visible_limit)
+  end
+
+  defp load_search_results(:delegates, search, visible_limit) do
+    search
+    |> author_search_opts(visible_limit + 1)
+    |> Authors.list_authors()
+    |> take_visible_results(visible_limit)
+  end
+
+  defp load_search_results(:statements, search, visible_limit) do
+    search
+    |> statement_search_opts(visible_limit + 1)
+    |> Statements.list_statements()
+    |> take_visible_results(visible_limit)
+  end
+
+  defp load_search_results(:halls, search, visible_limit) do
+    search
+    |> hall_search_opts(visible_limit + 1)
+    |> Halls.list_halls()
+    |> take_visible_results(visible_limit)
+  end
+
+  defp quote_search_opts(search, limit) do
+    [search: search, preload: [:author], order_by: [desc: :id], limit: limit]
+  end
+
+  defp author_search_opts(search, limit) do
+    [search: search, order_by: [asc: :name, asc: :id], limit: limit]
+  end
+
+  defp statement_search_opts(search, limit) do
+    [search: search, preload: [:halls], order: :inserted_at_desc, limit: limit]
+  end
+
+  defp hall_search_opts(search, limit) do
+    [search: search, order_by: [asc: :name, asc: :id], limit: limit]
+  end
+
+  defp take_visible_results(results, visible_limit) do
+    {Enum.take(results, visible_limit), length(results) > visible_limit}
+  end
+
+  defp search_results_for_tab(socket, search_tab) do
+    Map.fetch!(socket.assigns, search_results_key(search_tab))
+  end
+
+  defp search_results_key(:quotes), do: :quotes
+  defp search_results_key(:delegates), do: :authors
+  defp search_results_key(:statements), do: :statements
+  defp search_results_key(:halls), do: :halls
+
+  defp reset_search_results(socket) do
+    assign(socket,
+      search: nil,
+      search_tab: nil,
+      quotes: [],
+      authors: [],
+      statements: [],
+      halls: [],
+      search_has_more: empty_search_has_more()
+    )
+  end
+
+  defp empty_search_has_more do
+    Map.new(@search_tabs, &{&1, false})
   end
 end

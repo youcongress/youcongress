@@ -33,6 +33,12 @@ defmodule YouCongress.Halls do
           from h in query_acc, where: ilike(h.name, ^"%#{term_slug}%")
         end)
 
+      {:order_by, order_by}, query ->
+        order_by(query, ^order_by)
+
+      {:limit, limit}, query ->
+        limit(query, ^limit)
+
       _, query ->
         query
     end)

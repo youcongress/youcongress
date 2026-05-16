@@ -15,6 +15,17 @@ defmodule YouCongress.HallsTest do
       assert Halls.list_halls() == [hall]
     end
 
+    test "list_halls/1 supports limit" do
+      h1 = hall_fixture(name: "alignment")
+      h2 = hall_fixture(name: "governance")
+      h3 = hall_fixture(name: "safety")
+
+      results = Halls.list_halls(limit: 2)
+
+      assert length(results) == 2
+      assert Enum.all?(results, &(&1.id in [h1.id, h2.id, h3.id]))
+    end
+
     test "get_hall!/1 returns the hall with given id" do
       hall = hall_fixture()
       assert Halls.get_hall!(hall.id) == hall

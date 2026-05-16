@@ -15,113 +15,141 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
   attr :authors, :map, required: true
   attr :halls, :map, required: true
   attr :quotes, :map, required: true
+  attr :search_has_more, :map, required: true
 
   def render(assigns) do
     parsed_terms = YouCongress.SearchParser.parse(assigns.search_term)
-    assigns = assign(assigns, :parsed_terms, parsed_terms)
+
+    assigns =
+      assigns
+      |> assign(:parsed_terms, parsed_terms)
+      |> assign(:quotes_label, results_label(assigns.quotes, assigns.search_has_more[:quotes]))
+      |> assign(
+        :authors_label,
+        results_label(assigns.authors, assigns.search_has_more[:delegates])
+      )
+      |> assign(
+        :statements_label,
+        results_label(assigns.statements, assigns.search_has_more[:statements])
+      )
+      |> assign(:halls_label, results_label(assigns.halls, assigns.search_has_more[:halls]))
+      |> assign(:active_tab_has_more, Map.get(assigns.search_has_more, assigns.search_tab, false))
+      |> assign(:active_results_count, active_results_count(assigns))
 
     ~H"""
-    <div class="border-b border-gray-200 pt-4">
-      <div class="pb-2">
-        <nav class="-mb-px grid grid-cols-2 md:flex md:space-x-8" aria-label="Tabs">
-          <Search.tab search_tab={@search_tab} tab={:quotes} label={"Quotes (#{length(@quotes)})"} />
-          <Search.tab
-            search_tab={@search_tab}
-            tab={:delegates}
-            label={"Delegates (#{length(@authors)})"}
-          />
-          <Search.tab
-            search_tab={@search_tab}
-            tab={:statements}
-            label={"Policies & claims (#{length(@statements)})"}
-          />
-          <Search.tab search_tab={@search_tab} tab={:halls} label={"Halls (#{length(@halls)})"} />
-        </nav>
+    <div id="search-results" class="pt-4">
+      <div class="border-b border-gray-200">
+        <div class="pb-2">
+          <nav class="-mb-px grid grid-cols-2 md:flex md:space-x-8" aria-label="Tabs">
+            <Search.tab search_tab={@search_tab} tab={:quotes} label={"Quotes (#{@quotes_label})"} />
+            <Search.tab
+              search_tab={@search_tab}
+              tab={:delegates}
+              label={"Delegates (#{@authors_label})"}
+            />
+            <Search.tab
+              search_tab={@search_tab}
+              tab={:statements}
+              label={"Policies & claims (#{@statements_label})"}
+            />
+            <Search.tab search_tab={@search_tab} tab={:halls} label={"Halls (#{@halls_label})"} />
+          </nav>
+        </div>
+      </div>
+      <%= if @search_tab == :statements do %>
+        <table class="w-full">
+          <%= for statement <- @statements do %>
+            <tr>
+              <td class="py-4 border-b border-gray-200">
+                <a href={~p"/p/#{statement.slug}"} phx-no-format><.highlight text={statement.title} terms={@parsed_terms} /></a>
+              </td>
+            </tr>
+          <% end %>
+        </table>
+      <% end %>
+      <%= if @search_tab == :delegates do %>
+        <table class="w-full">
+          <%= for author <- @authors do %>
+            <tr>
+              <td class="py-4 border-b border-gray-200">
+                <% bio = author_bio(author) %>
+                <div class="flex flex-col gap-1 text-sm sm:flex-row sm:items-start sm:justify-between">
+                  <a
+                    href={author_path(author)}
+                    class="font-medium text-gray-900 hover:underline"
+                    phx-no-format
+                  ><.highlight text={author.name || "x/#{author.twitter_username}"} terms={@parsed_terms}/></a>
+                  <p :if={bio} class="text-xs text-gray-500 sm:text-right sm:text-sm sm:pl-6">
+                    {bio}
+                  </p>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </table>
+      <% end %>
+      <%= if @search_tab == :halls do %>
+        <table class="w-full">
+          <%= for hall <- @halls do %>
+            <tr>
+              <td class="py-4 border-b border-gray-200">
+                <a href={~p"/h/#{hall.name}"} phx-no-format>h/<.highlight text={hall.name} terms={@parsed_terms}/></a>
+              </td>
+            </tr>
+          <% end %>
+        </table>
+      <% end %>
+      <%= if @search_tab == :quotes do %>
+        <table class="w-full">
+          <%= for quote <- @quotes do %>
+            <tr>
+              <td class="py-4 border-b border-gray-200">
+                <div class="space-y-2">
+                  <div class="text-sm text-gray-600">
+                    <% bio = author_bio(quote.author) %>
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                      <a
+                        href={author_path(quote.author)}
+                        class="font-medium hover:underline"
+                        phx-no-format
+                      ><.highlight text={quote.author.name || "x/#{quote.author.twitter_username}"} terms={@parsed_terms}/></a>
+                      <p :if={bio} class="text-xs text-gray-500 sm:text-right sm:text-sm sm:pl-6">
+                        {bio}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="text-sm">
+                    <a
+                      href={~p"/c/#{quote.id}"}
+                      class="hover:bg-gray-50 block p-2 -m-2 rounded"
+                      phx-no-format
+                    ><.highlight text={quote.content} terms={@parsed_terms}/></a>
+                  </div>
+                  <%= if quote.source_url do %>
+                    <div class="text-xs text-gray-500 flex items-center gap-2">
+                      <a href={quote.source_url} target="_blank" class="hover:underline">
+                        Source
+                      </a>
+                      <span :if={quote.year} class="text-gray-400">{quote.year}</span>
+                    </div>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </table>
+      <% end %>
+      <div
+        :if={@active_tab_has_more}
+        id="search-results-sentinel"
+        phx-hook="InfiniteSearchResults"
+        data-has-more={to_string(@active_tab_has_more)}
+        data-result-count={@active_results_count}
+        class="flex justify-center py-4 text-sm text-gray-500"
+      >
+        Loading more results...
       </div>
     </div>
-    <%= if @search_tab == :statements do %>
-      <table>
-        <%= for statement <- @statements do %>
-          <tr>
-            <td class="py-4 border-b border-gray-200">
-              <a href={~p"/p/#{statement.slug}"} phx-no-format><.highlight text={statement.title} terms={@parsed_terms} /></a>
-            </td>
-          </tr>
-        <% end %>
-      </table>
-    <% end %>
-    <%= if @search_tab == :delegates do %>
-      <table>
-        <%= for author <- @authors do %>
-          <tr>
-            <td class="py-4 border-b border-gray-200">
-              <% bio = author_bio(author) %>
-              <div class="flex flex-col gap-1 text-sm sm:flex-row sm:items-start sm:justify-between">
-                <a
-                  href={author_path(author)}
-                  class="font-medium text-gray-900 hover:underline"
-                  phx-no-format
-                ><.highlight text={author.name || "x/#{author.twitter_username}"} terms={@parsed_terms}/></a>
-                <p :if={bio} class="text-xs text-gray-500 sm:text-right sm:text-sm sm:pl-6">
-                  {bio}
-                </p>
-              </div>
-            </td>
-          </tr>
-        <% end %>
-      </table>
-    <% end %>
-    <%= if @search_tab == :halls do %>
-      <table>
-        <%= for hall <- @halls do %>
-          <tr>
-            <td class="py-4 border-b border-gray-200">
-              <a href={~p"/h/#{hall.name}"} phx-no-format>h/<.highlight text={hall.name} terms={@parsed_terms}/></a>
-            </td>
-          </tr>
-        <% end %>
-      </table>
-    <% end %>
-    <%= if @search_tab == :quotes do %>
-      <table>
-        <%= for quote <- @quotes do %>
-          <tr>
-            <td class="py-4 border-b border-gray-200">
-              <div class="space-y-2">
-                <div class="text-sm text-gray-600">
-                  <% bio = author_bio(quote.author) %>
-                  <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                    <a
-                      href={author_path(quote.author)}
-                      class="font-medium hover:underline"
-                      phx-no-format
-                    ><.highlight text={quote.author.name || "x/#{quote.author.twitter_username}"} terms={@parsed_terms}/></a>
-                    <p :if={bio} class="text-xs text-gray-500 sm:text-right sm:text-sm sm:pl-6">
-                      {bio}
-                    </p>
-                  </div>
-                </div>
-                <div class="text-sm">
-                  <a
-                    href={~p"/c/#{quote.id}"}
-                    class="hover:bg-gray-50 block p-2 -m-2 rounded"
-                    phx-no-format
-                  ><.highlight text={quote.content} terms={@parsed_terms}/></a>
-                </div>
-                <%= if quote.source_url do %>
-                  <div class="text-xs text-gray-500 flex items-center gap-2">
-                    <a href={quote.source_url} target="_blank" class="hover:underline">
-                      Source
-                    </a>
-                    <span :if={quote.year} class="text-gray-400">{quote.year}</span>
-                  </div>
-                <% end %>
-              </div>
-            </td>
-          </tr>
-        <% end %>
-      </table>
-    <% end %>
     """
   end
 
@@ -181,4 +209,16 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
 
   defp present?(value) when is_binary(value), do: String.trim(value) != ""
   defp present?(_), do: false
+
+  defp results_label(results, true), do: "#{length(results)}+"
+  defp results_label(results, false), do: length(results)
+
+  defp active_results_count(%{search_tab: :quotes, quotes: quotes}), do: length(quotes)
+  defp active_results_count(%{search_tab: :delegates, authors: authors}), do: length(authors)
+
+  defp active_results_count(%{search_tab: :statements, statements: statements}),
+    do: length(statements)
+
+  defp active_results_count(%{search_tab: :halls, halls: halls}), do: length(halls)
+  defp active_results_count(_), do: 0
 end
