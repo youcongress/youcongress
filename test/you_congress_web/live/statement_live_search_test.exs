@@ -55,7 +55,7 @@ defmodule YouCongressWeb.StatementLiveSearchTest do
 
       {:ok, view, html} = live(conn, ~p"/?search=AI", on_error: :warn)
 
-      assert html =~ "Quotes (20+)"
+      assert html =~ "Quotes (21)"
       assert html =~ "search-results-sentinel"
       assert length(Regex.scan(~r/<b>AI<\/b> quote \d+/, html)) == 20
 
@@ -73,7 +73,7 @@ defmodule YouCongressWeb.StatementLiveSearchTest do
 
       {:ok, view, html} = live(conn, ~p"/?search=AI&tab=delegates", on_error: :warn)
 
-      assert html =~ "Delegates (20+)"
+      assert html =~ "Delegates (21)"
       assert html =~ "search-results-sentinel"
       assert length(Regex.scan(~r/<b>AI<\/b> Delegate \d+/, html)) == 20
 

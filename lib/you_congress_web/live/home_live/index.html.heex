@@ -58,6 +58,14 @@
                     halls: false
                   }
                 }
+                search_totals={
+                  %{
+                    quotes: length(@quotes),
+                    delegates: length(@authors),
+                    statements: length(@statements),
+                    halls: length(@halls)
+                  }
+                }
               />
             </div>
           </div>

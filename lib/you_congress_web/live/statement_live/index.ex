@@ -52,6 +52,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:statements, [])
       |> assign(:quotes, [])
       |> assign(:search_has_more, empty_search_has_more())
+      |> assign(:search_totals, empty_search_totals())
       |> assign(:order_by_date, true)
       |> assign(:hall_name, params["hall"] || HallNav.default_hall())
       |> assign(:new_poll_visible?, false)
@@ -477,13 +478,13 @@ defmodule YouCongressWeb.StatementLive.Index do
     Track.event("Search", socket.assigns.current_user)
 
     {quotes, quotes_has_more} = load_search_results(:quotes, search, @search_page_size)
-
     {authors, authors_has_more} = load_search_results(:delegates, search, @search_page_size)
 
     {statements, statements_has_more} =
       load_search_results(:statements, search, @search_page_size)
 
     {halls, halls_has_more} = load_search_results(:halls, search, @search_page_size)
+    search_totals = load_search_totals(search)
 
     search_tab =
       cond do
@@ -506,7 +507,8 @@ defmodule YouCongressWeb.StatementLive.Index do
         delegates: authors_has_more,
         statements: statements_has_more,
         halls: halls_has_more
-      }
+      },
+      search_totals: search_totals
     )
   end
 
@@ -578,6 +580,15 @@ defmodule YouCongressWeb.StatementLive.Index do
     [search: search, order_by: [asc: :name, asc: :id], limit: limit]
   end
 
+  defp load_search_totals(search) do
+    %{
+      quotes: Opinions.count(search: search),
+      delegates: Authors.count(search: search),
+      statements: Statements.count(search: search),
+      halls: Halls.count(search: search)
+    }
+  end
+
   defp take_visible_results(results, visible_limit) do
     {Enum.take(results, visible_limit), length(results) > visible_limit}
   end
@@ -599,11 +610,16 @@ defmodule YouCongressWeb.StatementLive.Index do
       authors: [],
       statements: [],
       halls: [],
-      search_has_more: empty_search_has_more()
+      search_has_more: empty_search_has_more(),
+      search_totals: empty_search_totals()
     )
   end
 
   defp empty_search_has_more do
     Map.new(@search_tabs, &{&1, false})
+  end
+
+  defp empty_search_totals do
+    Map.new(@search_tabs, &{&1, 0})
   end
 end

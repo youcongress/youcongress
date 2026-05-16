@@ -39,61 +39,8 @@ defmodule YouCongress.Statements do
   def list_statements(opts) do
     preload = opts[:preload] || []
 
-    base_query = from(v in Statement)
-
-    query =
-      Enum.reduce(
-        opts,
-        base_query,
-        fn
-          {:hall_name, hall_name}, query ->
-            from(v in query,
-              join: h in assoc(v, :halls),
-              where: h.name == ^hall_name,
-              distinct: true
-            )
-
-          {:title_contains, title}, query ->
-            where(query, [v], ilike(v.title, ^"%#{title}%"))
-
-          {:exclude_ids, ids}, query ->
-            where(query, [v], v.id not in ^ids)
-
-          {:search, search}, query ->
-            terms = YouCongress.SearchParser.parse(search)
-
-            Enum.reduce(terms, query, fn term, query_acc ->
-              term_pattern = "%#{term}%"
-              where(query_acc, [v], ilike(v.title, ^term_pattern))
-            end)
-
-          {:order, :updated_at_desc}, query ->
-            order_by(query, desc: :updated_at)
-
-          {:order, :opinion_likes_count_desc}, query ->
-            order_by(query, desc: :opinion_likes_count, desc: :inserted_at)
-
-          {:order, :inserted_at_desc}, query ->
-            order_by(query, desc: :inserted_at)
-
-          {:order, :desc}, query ->
-            order_by(query, desc: :updated_at)
-
-          {:order, :random}, query ->
-            order_by(query, fragment("RANDOM()"))
-
-          {:limit, limit}, query ->
-            limit(query, ^limit)
-
-          {:offset, offset}, query ->
-            offset(query, ^offset)
-
-          _, query ->
-            query
-        end
-      )
-
-    query
+    opts
+    |> build_list_query()
     |> Repo.all()
     |> Repo.preload(preload)
   end
@@ -343,8 +290,13 @@ defmodule YouCongress.Statements do
       42
 
   """
-  def count do
-    Repo.aggregate(Statement, :count, :id)
+  def count(opts \\ []) do
+    opts
+    |> build_list_query()
+    |> exclude(:order_by)
+    |> exclude(:limit)
+    |> exclude(:offset)
+    |> Repo.aggregate(:count, :id)
   end
 
   @doc """
@@ -403,5 +355,60 @@ defmodule YouCongress.Statements do
     statement
     |> Statement.changeset(%{updated_at: DateTime.utc_now()})
     |> Repo.update()
+  end
+
+  defp build_list_query(opts) do
+    base_query = from(v in Statement)
+
+    Enum.reduce(
+      opts,
+      base_query,
+      fn
+        {:hall_name, hall_name}, query ->
+          from(v in query,
+            join: h in assoc(v, :halls),
+            where: h.name == ^hall_name,
+            distinct: true
+          )
+
+        {:title_contains, title}, query ->
+          where(query, [v], ilike(v.title, ^"%#{title}%"))
+
+        {:exclude_ids, ids}, query ->
+          where(query, [v], v.id not in ^ids)
+
+        {:search, search}, query ->
+          terms = YouCongress.SearchParser.parse(search)
+
+          Enum.reduce(terms, query, fn term, query_acc ->
+            term_pattern = "%#{term}%"
+            where(query_acc, [v], ilike(v.title, ^term_pattern))
+          end)
+
+        {:order, :updated_at_desc}, query ->
+          order_by(query, desc: :updated_at)
+
+        {:order, :opinion_likes_count_desc}, query ->
+          order_by(query, desc: :opinion_likes_count, desc: :inserted_at)
+
+        {:order, :inserted_at_desc}, query ->
+          order_by(query, desc: :inserted_at)
+
+        {:order, :desc}, query ->
+          order_by(query, desc: :updated_at)
+
+        {:order, :random}, query ->
+          order_by(query, fragment("RANDOM()"))
+
+        {:limit, limit}, query ->
+          limit(query, ^limit)
+
+        {:offset, offset}, query ->
+          offset(query, ^offset)
+
+        _, query ->
+          query
+      end
+    )
   end
 end
