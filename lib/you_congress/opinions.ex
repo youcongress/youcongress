@@ -391,9 +391,14 @@ defmodule YouCongress.Opinions do
     result
   end
 
-  def count do
-    from(o in Opinion, select: count(o.id))
-    |> Repo.one()
+  def count(opts \\ []) do
+    opts
+    |> build_query()
+    |> exclude(:preload)
+    |> exclude(:order_by)
+    |> exclude(:limit)
+    |> exclude(:offset)
+    |> Repo.aggregate(:count, :id)
   end
 
   @doc """

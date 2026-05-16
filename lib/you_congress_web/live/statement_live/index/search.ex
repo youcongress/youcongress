@@ -16,6 +16,7 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
   attr :halls, :map, required: true
   attr :quotes, :map, required: true
   attr :search_has_more, :map, required: true
+  attr :search_totals, :map, required: true
 
   def render(assigns) do
     parsed_terms = YouCongress.SearchParser.parse(assigns.search_term)
@@ -23,16 +24,10 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
     assigns =
       assigns
       |> assign(:parsed_terms, parsed_terms)
-      |> assign(:quotes_label, results_label(assigns.quotes, assigns.search_has_more[:quotes]))
-      |> assign(
-        :authors_label,
-        results_label(assigns.authors, assigns.search_has_more[:delegates])
-      )
-      |> assign(
-        :statements_label,
-        results_label(assigns.statements, assigns.search_has_more[:statements])
-      )
-      |> assign(:halls_label, results_label(assigns.halls, assigns.search_has_more[:halls]))
+      |> assign(:quotes_label, results_label(assigns.search_totals[:quotes]))
+      |> assign(:authors_label, results_label(assigns.search_totals[:delegates]))
+      |> assign(:statements_label, results_label(assigns.search_totals[:statements]))
+      |> assign(:halls_label, results_label(assigns.search_totals[:halls]))
       |> assign(:active_tab_has_more, Map.get(assigns.search_has_more, assigns.search_tab, false))
       |> assign(:active_results_count, active_results_count(assigns))
 
@@ -210,8 +205,7 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
   defp present?(value) when is_binary(value), do: String.trim(value) != ""
   defp present?(_), do: false
 
-  defp results_label(results, true), do: "#{length(results)}+"
-  defp results_label(results, false), do: length(results)
+  defp results_label(total), do: total
 
   defp active_results_count(%{search_tab: :quotes, quotes: quotes}), do: length(quotes)
   defp active_results_count(%{search_tab: :delegates, authors: authors}), do: length(authors)

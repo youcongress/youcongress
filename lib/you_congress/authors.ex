@@ -20,47 +20,20 @@ defmodule YouCongress.Authors do
   """
   def list_authors(opts \\ []) do
     preload = opts[:preload] || []
-    base_query = from a in Author, preload: ^preload
 
-    Enum.reduce(
-      opts,
-      base_query,
-      fn
-        {:ids, ids}, query ->
-          where(query, [author], author.id in ^ids)
-
-        {:search, search}, query ->
-          terms = YouCongress.SearchParser.parse(search)
-
-          Enum.reduce(terms, query, fn term, query_acc ->
-            term_pattern = "%#{term}%"
-
-            from a in query_acc,
-              where:
-                ilike(a.name, ^term_pattern) or
-                  ilike(a.twitter_username, ^term_pattern)
-          end)
-
-        {:twin_origin, twin_origin}, query ->
-          where(query, [author], author.twin_origin == ^twin_origin)
-
-        {:twin_enabled, twin_enabled}, query ->
-          where(query, [author], author.twin_enabled == ^twin_enabled)
-
-        {:names, names}, query ->
-          where(query, [author], author.name in ^names)
-
-        {:order_by, order_by}, query ->
-          order_by(query, ^order_by)
-
-        {:limit, limit}, query ->
-          limit(query, ^limit)
-
-        _, query ->
-          query
-      end
-    )
+    opts
+    |> build_list_query()
     |> Repo.all()
+    |> Repo.preload(preload)
+  end
+
+  def count(opts \\ []) do
+    opts
+    |> build_list_query()
+    |> exclude(:order_by)
+    |> exclude(:limit)
+    |> exclude(:offset)
+    |> Repo.aggregate(:count, :id)
   end
 
   @doc """
@@ -322,5 +295,51 @@ defmodule YouCongress.Authors do
   """
   def change_author(%Author{} = author, attrs \\ %{}) do
     Author.changeset(author, attrs)
+  end
+
+  defp build_list_query(opts) do
+    base_query = from(a in Author)
+
+    Enum.reduce(
+      opts,
+      base_query,
+      fn
+        {:ids, ids}, query ->
+          where(query, [author], author.id in ^ids)
+
+        {:search, search}, query ->
+          terms = YouCongress.SearchParser.parse(search)
+
+          Enum.reduce(terms, query, fn term, query_acc ->
+            term_pattern = "%#{term}%"
+
+            from a in query_acc,
+              where:
+                ilike(a.name, ^term_pattern) or
+                  ilike(a.twitter_username, ^term_pattern)
+          end)
+
+        {:twin_origin, twin_origin}, query ->
+          where(query, [author], author.twin_origin == ^twin_origin)
+
+        {:twin_enabled, twin_enabled}, query ->
+          where(query, [author], author.twin_enabled == ^twin_enabled)
+
+        {:names, names}, query ->
+          where(query, [author], author.name in ^names)
+
+        {:order_by, order_by}, query ->
+          order_by(query, ^order_by)
+
+        {:limit, limit}, query ->
+          limit(query, ^limit)
+
+        {:offset, offset}, query ->
+          offset(query, ^offset)
+
+        _, query ->
+          query
+      end
+    )
   end
 end
