@@ -50,6 +50,12 @@ defmodule YouCongress.Authors do
         {:names, names}, query ->
           where(query, [author], author.name in ^names)
 
+        {:order_by, order_by}, query ->
+          order_by(query, ^order_by)
+
+        {:limit, limit}, query ->
+          limit(query, ^limit)
+
         _, query ->
           query
       end

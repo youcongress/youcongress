@@ -4,6 +4,7 @@ defmodule YouCongressWeb.StatementLiveSearchTest do
   import Phoenix.LiveViewTest
   import YouCongress.StatementsFixtures
   import YouCongress.AuthorsFixtures
+  import YouCongress.OpinionsFixtures
 
   describe "StatementLive search via URL params" do
     test "renders search results when search param is present", %{conn: conn} do
@@ -45,6 +46,42 @@ defmodule YouCongressWeb.StatementLiveSearchTest do
       {:ok, _view, html} = live(conn, ~p"/?search=Asimov&tab=delegates", on_error: :warn)
 
       assert html =~ "Isaac <b>Asimov</b>"
+    end
+
+    test "loads more quote results on /", %{conn: conn} do
+      for index <- 1..21 do
+        opinion_fixture(content: "AI quote #{index}")
+      end
+
+      {:ok, view, html} = live(conn, ~p"/?search=AI", on_error: :warn)
+
+      assert html =~ "Quotes (20+)"
+      assert html =~ "search-results-sentinel"
+      assert length(Regex.scan(~r/<b>AI<\/b> quote \d+/, html)) == 20
+
+      html = render_hook(view, "load-more-search")
+
+      assert html =~ "Quotes (21)"
+      refute html =~ "search-results-sentinel"
+      assert length(Regex.scan(~r/<b>AI<\/b> quote \d+/, html)) == 21
+    end
+
+    test "loads more delegate results for the active tab", %{conn: conn} do
+      for index <- 1..21 do
+        author_fixture(name: "AI Delegate #{index}")
+      end
+
+      {:ok, view, html} = live(conn, ~p"/?search=AI&tab=delegates", on_error: :warn)
+
+      assert html =~ "Delegates (20+)"
+      assert html =~ "search-results-sentinel"
+      assert length(Regex.scan(~r/<b>AI<\/b> Delegate \d+/, html)) == 20
+
+      html = render_hook(view, "load-more-search")
+
+      assert html =~ "Delegates (21)"
+      refute html =~ "search-results-sentinel"
+      assert length(Regex.scan(~r/<b>AI<\/b> Delegate \d+/, html)) == 21
     end
   end
 end
