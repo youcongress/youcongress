@@ -18,21 +18,22 @@ defmodule YouCongress.MCP.ToolUsageTrackerTest do
       frame = build_frame(%{"key" => api_key.token})
 
       with_mock YouCongress.Amplitude,
-        track_event: fn event_type, user_id, props ->
-          send(self(), {:event, event_type, user_id, props})
+        track_event: fn event_type, user_id, props, opts ->
+          send(self(), {:event, event_type, user_id, props, opts})
           :ok
         end do
         assert {:ok, ^user} =
                  ToolUsageTracker.track(YouCongressWeb.MCPServer.StatementsSearch, frame)
 
         user_id = user.id
-        assert_received {:event, "MCP Tool Used", ^user_id, props}
+        assert_received {:event, "MCP Tool Used", ^user_id, props, opts}
         assert props["tool_name"] == "statements_search"
         assert props["session_id"] == "session-123"
         assert props["client_name"] == "Test Client"
         assert props["client_version"] == "1.0"
         assert props["used_api_key"]
         assert props["api_key_present"]
+        assert opts[:device_id] == "session-123"
       end
     end
 
@@ -40,16 +41,17 @@ defmodule YouCongress.MCP.ToolUsageTrackerTest do
       frame = build_frame(%{})
 
       with_mock YouCongress.Amplitude,
-        track_event: fn event_type, user_id, props ->
-          send(self(), {:event, event_type, user_id, props})
+        track_event: fn event_type, user_id, props, opts ->
+          send(self(), {:event, event_type, user_id, props, opts})
           :ok
         end do
         assert {:error, :missing_api_key} =
                  ToolUsageTracker.track(YouCongressWeb.MCPServer.StatementsSearch, frame)
 
-        assert_received {:event, "MCP Tool Used", nil, props}
+        assert_received {:event, "MCP Tool Used", nil, props, opts}
         refute props["used_api_key"]
         refute props["api_key_present"]
+        assert opts[:device_id] == "session-123"
       end
     end
   end
