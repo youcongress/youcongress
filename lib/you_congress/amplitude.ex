@@ -60,7 +60,8 @@ defmodule YouCongress.Amplitude do
         payload =
           %{
             "api_key" => key,
-            "events" => [build_event(event_type, user_id, event_properties, opts)]
+            "events" => [build_event(event_type, user_id, event_properties, opts)],
+            "options" => %{"min_id_length" => 1}
           }
 
         headers = [{"Content-Type", "application/json"}, {"Accept", "*/*"}]
