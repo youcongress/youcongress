@@ -30,7 +30,7 @@ defmodule YouCongress.MCP.ToolUsageTracker do
       |> build_event_properties(frame, key, user_result)
       |> maybe_merge_extra(opts[:extra_properties])
 
-    Amplitude.track_event(@event_type, user_id, properties)
+    Amplitude.track_event(@event_type, user_id, properties, device_id: get_session_id(frame))
 
     user_result
   end
