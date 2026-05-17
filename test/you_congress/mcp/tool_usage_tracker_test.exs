@@ -10,7 +10,8 @@ defmodule YouCongress.MCP.ToolUsageTrackerTest do
 
   describe "track/3" do
     test "returns the user lookup result and includes user_id in the event" do
-      user = user_fixture()
+      twitter_username = "mcp_test_user"
+      user = user_fixture(%{}, %{twitter_username: twitter_username, twin_origin: false})
 
       {:ok, api_key} =
         Accounts.create_api_key_for_user(user, %{"name" => "CLI", "scope" => :write})
@@ -25,7 +26,7 @@ defmodule YouCongress.MCP.ToolUsageTrackerTest do
         assert {:ok, ^user} =
                  ToolUsageTracker.track(YouCongressWeb.MCPServer.StatementsSearch, frame)
 
-        user_id = user.id
+        user_id = "twitter:#{twitter_username}; user_id:#{user.id}"
         assert_received {:event, "MCP Tool Used", ^user_id, props, opts}
         assert props["tool_name"] == "statements_search"
         assert props["session_id"] == "session-123"

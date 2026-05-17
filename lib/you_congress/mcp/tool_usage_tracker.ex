@@ -4,7 +4,9 @@ defmodule YouCongress.MCP.ToolUsageTracker do
   """
 
   alias Anubis.Server.Frame
-  alias YouCongress.{Accounts, Amplitude}
+  import Ecto.Query
+
+  alias YouCongress.{Accounts, Amplitude, Repo, Track}
   alias YouCongress.Accounts.User
   alias YouCongressWeb.MCPServer
 
@@ -21,8 +23,13 @@ defmodule YouCongress.MCP.ToolUsageTracker do
 
     user_id =
       case user_result do
-        {:ok, %User{id: id}} -> id
-        _ -> nil
+        {:ok, %User{id: id, author_id: author_id}} ->
+          author_id
+          |> get_twitter_username()
+          |> Track.format_user_identifier(id)
+
+        _ ->
+          nil
       end
 
     properties =
@@ -121,4 +128,14 @@ defmodule YouCongress.MCP.ToolUsageTracker do
 
   defp key_present?(key) when is_binary(key), do: String.trim(key) != ""
   defp key_present?(_key), do: false
+
+  defp get_twitter_username(nil), do: nil
+
+  defp get_twitter_username(author_id) when is_integer(author_id) do
+    from(a in "authors",
+      where: a.id == ^author_id,
+      select: a.twitter_username
+    )
+    |> Repo.one()
+  end
 end

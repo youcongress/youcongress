@@ -15,8 +15,7 @@ defmodule YouCongress.Track do
 
   def track_now(event_type, current_user_id, author_id) do
     if Amplitude.enabled?() do
-      author = Authors.get_author!(author_id)
-      user_id = amplitude_user_id(author.twitter_username, current_user_id)
+      user_id = amplitude_user_id(current_user_id, author_id)
 
       Amplitude.deliver_event(event_type, user_id)
     else
@@ -24,9 +23,18 @@ defmodule YouCongress.Track do
     end
   end
 
-  defp amplitude_user_id(nil, current_user_id), do: "user_id:#{current_user_id}"
+  def format_user_identifier(nil, user_id), do: "user_id:#{user_id}"
 
-  defp amplitude_user_id(twitter_username, current_user_id) do
-    "twitter:" <> twitter_username <> "; user_id:#{current_user_id}"
+  def format_user_identifier(twitter_username, user_id) do
+    "twitter:" <> twitter_username <> "; user_id:#{user_id}"
+  end
+
+  def amplitude_user_id(current_user_id, nil), do: format_user_identifier(nil, current_user_id)
+
+  def amplitude_user_id(current_user_id, author_id) when is_integer(author_id) do
+    author_id
+    |> Authors.get_author!()
+    |> Map.get(:twitter_username)
+    |> format_user_identifier(current_user_id)
   end
 end
