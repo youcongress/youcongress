@@ -9,6 +9,51 @@ defmodule YouCongress.OpinionsTest do
   alias YouCongress.Opinions
   alias YouCongress.Votes
 
+  describe "get_opinion/1" do
+    test "honors descending id order when filtering opinions with statements" do
+      user = user_fixture()
+      statement = statement_fixture()
+
+      {:ok, %{opinion: older_quote}} =
+        Opinions.create_opinion(%{
+          content: "older quote",
+          source_url: "https://example.com/older",
+          twin: false,
+          user_id: user.id
+        })
+
+      {:ok, %{opinion: newer_quote}} =
+        Opinions.create_opinion(%{
+          content: "newer quote",
+          source_url: "https://example.com/newer",
+          twin: false,
+          user_id: user.id
+        })
+
+      {:ok, %{opinion: _unlinked_quote}} =
+        Opinions.create_opinion(%{
+          content: "unlinked quote",
+          source_url: "https://example.com/unlinked",
+          twin: false,
+          user_id: user.id
+        })
+
+      assert {:ok, _} = Opinions.add_opinion_to_statement(older_quote, statement, user.id)
+      assert {:ok, _} = Opinions.add_opinion_to_statement(newer_quote, statement, user.id)
+
+      assert %{} =
+               opinion =
+               Opinions.get_opinion(
+                 has_statements: true,
+                 only_quotes: true,
+                 is_verified: false,
+                 order_by: [desc: :id]
+               )
+
+      assert opinion.id == newer_quote.id
+    end
+  end
+
   describe "add_opinion_to_statement/3" do
     test "returns already_associated when the link exists" do
       opinion = opinion_fixture()
