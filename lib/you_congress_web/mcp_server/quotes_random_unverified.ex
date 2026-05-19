@@ -57,10 +57,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
       exclude_source_prefixes: @unsupported_source_prefixes
     ]
 
-    case Opinions.list_opinions(opts) do
-      [opinion | _] -> opinion
-      _ -> nil
-    end
+    Opinions.get_opinion(opts)
   end
 
   defp votes_by_statement(%{id: opinion_id}) do

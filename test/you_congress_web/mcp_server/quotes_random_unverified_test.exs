@@ -1,86 +1,129 @@
 defmodule YouCongressWeb.MCPServer.QuotesRandomUnverifiedTest do
-  use YouCongress.DataCase, async: false
+  use ExUnit.Case, async: false
 
   import Mock
-  import YouCongress.OpinionsFixtures
-  import YouCongress.StatementsFixtures
-  import YouCongress.VotesFixtures
 
-  alias YouCongress.Opinions
   alias YouCongressWeb.MCPServer.QuotesRandomUnverified
 
   describe "execute/2" do
     test "returns a random unverified quote with statements and votes" do
-      statement = statement_fixture(%{title: "Tax carbon emissions"})
-      opinion = opinion_fixture(%{content: "We need to tax carbon to save the planet."})
-      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement)
+      opinion = %{
+        id: 11,
+        content: "We need to tax carbon to save the planet.",
+        author_id: 7,
+        author: %{name: "Ada", bio: "Climate advocate"},
+        source_url: "https://example.com/carbon-tax",
+        year: 2024,
+        verification_status: nil,
+        statements: [%{id: 3, title: "Tax carbon emissions"}]
+      }
 
-      vote =
-        vote_fixture(%{
-          statement_id: statement.id,
-          author_id: opinion.author_id,
-          opinion_id: opinion.id,
-          answer: :for
-        })
+      vote = %{
+        id: 13,
+        statement_id: 3,
+        answer: :for,
+        author_id: 7,
+        author: %{name: "Ada"},
+        direct: true
+      }
 
-      with_mocked_response(fn ->
+      with_mocks([
+        {Anubis.Server.Response, [],
+         [
+           tool: fn -> :tool end,
+           json: fn :tool, data -> {:json, data} end,
+           error: fn :tool, message -> {:error, message} end
+         ]},
+        {YouCongress.Opinions, [],
+         [
+           get_opinion: fn opts ->
+             assert opts[:has_statements] == true
+             assert opts[:only_quotes] == true
+             assert opts[:is_verified] == false
+             assert opts[:preload] == [:author, :statements]
+             assert opts[:exclude_source_prefixes] == unsupported_source_prefixes()
+             assert opts[:order_by] != nil
+             opinion
+           end
+         ]},
+        {YouCongress.Votes, [],
+         [
+           list_votes: fn opts ->
+             assert opts == [opinion_ids: [11], preload: [:author]]
+             [vote]
+           end
+         ]}
+      ]) do
         assert {:reply, {:json, %{quote: quote_payload, statements: [statement_payload]}}, :frame} =
                  QuotesRandomUnverified.execute(%{}, :frame)
 
         assert quote_payload.opinion_id == opinion.id
-        assert quote_payload.quote == "We need to tax carbon to save the planet."
-        assert statement_payload.statement_id == statement.id
-        assert statement_payload.statement_title == statement.title
+        assert quote_payload.quote == opinion.content
+        assert statement_payload.statement_id == 3
+        assert statement_payload.statement_title == "Tax carbon emissions"
         assert statement_payload.vote.vote_id == vote.id
         assert statement_payload.vote.answer == :for
-      end)
+      end
     end
 
-    test "skips quotes from unsupported sources" do
-      statement = statement_fixture(%{title: "End partisan gerrymandering"})
+    test "passes unsupported source prefixes to the query" do
+      allowed_article = %{
+        id: 22,
+        content: "We must end partisan gerrymandering immediately.",
+        author_id: 9,
+        author: %{name: "Lin", bio: "Election reform advocate"},
+        source_url: "https://example.com/opinion",
+        year: 2024,
+        verification_status: nil,
+        statements: [%{id: 5, title: "End partisan gerrymandering"}]
+      }
 
-      excluded_tweet =
-        opinion_fixture(%{
-          content: "This thread is wild",
-          source_url: "https://twitter.com/someone/status/1"
-        })
-
-      allowed_article =
-        opinion_fixture(%{
-          content: "We must end partisan gerrymandering immediately.",
-          source_url: "https://example.com/opinion"
-        })
-
-      {:ok, _} = Opinions.add_opinion_to_statement(excluded_tweet, statement)
-      {:ok, _} = Opinions.add_opinion_to_statement(allowed_article, statement)
-
-      with_mocked_response(fn ->
+      with_mocks([
+        {Anubis.Server.Response, [],
+         [
+           tool: fn -> :tool end,
+           json: fn :tool, data -> {:json, data} end,
+           error: fn :tool, message -> {:error, message} end
+         ]},
+        {YouCongress.Opinions, [],
+         [
+           get_opinion: fn opts ->
+             assert opts[:exclude_source_prefixes] == unsupported_source_prefixes()
+             assert opts[:order_by] != nil
+             allowed_article
+           end
+         ]},
+        {YouCongress.Votes, [], [list_votes: fn _opts -> [] end]}
+      ]) do
         assert {:reply, {:json, %{quote: quote_payload}}, :frame} =
                  QuotesRandomUnverified.execute(%{}, :frame)
 
         assert quote_payload.opinion_id == allowed_article.id
         assert quote_payload.source_url == "https://example.com/opinion"
-      end)
+      end
     end
 
     test "returns deterministic error when no unverified quotes exist" do
-      with_mocked_response(fn ->
+      with_mocks([
+        {Anubis.Server.Response, [],
+         [
+           tool: fn -> :tool end,
+           json: fn :tool, data -> {:json, data} end,
+           error: fn :tool, message -> {:error, message} end
+         ]},
+        {YouCongress.Opinions, [], [get_opinion: fn _opts -> nil end]}
+      ]) do
         assert {:reply, {:error, "No unverified quotes available."}, :frame} =
                  QuotesRandomUnverified.execute(%{}, :frame)
-      end)
+      end
     end
   end
 
-  defp with_mocked_response(fun) do
-    with_mocks([
-      {Anubis.Server.Response, [],
-       [
-         tool: fn -> :tool end,
-         json: fn :tool, data -> {:json, data} end,
-         error: fn :tool, message -> {:error, message} end
-       ]}
-    ]) do
-      fun.()
-    end
+  defp unsupported_source_prefixes do
+    [
+      "https://twitter.com",
+      "https://x.com",
+      "https://www.youtube.com"
+    ]
   end
 end
