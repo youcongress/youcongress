@@ -269,9 +269,11 @@ defmodule YouCongress.Opinions do
 
       {:has_statements, true}, query ->
         from q in query,
-          join: ov in "opinions_statements",
-          on: ov.opinion_id == q.id,
-          distinct: q.id
+          where:
+            fragment(
+              "EXISTS (SELECT 1 FROM opinions_statements os WHERE os.opinion_id = ?)",
+              q.id
+            )
 
       {:content, content}, query ->
         from q in query, where: q.content == ^content
