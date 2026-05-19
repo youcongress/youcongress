@@ -1,18 +1,15 @@
-defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
+defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
   @moduledoc """
-  Return a random unverified quote plus the statements and votes that already use it.
+  Return the most recent unverified quote plus the statements and votes that already use it.
   We skip quotes with source_url starting with twitter, x, youtube as AI is not able to access them.
   """
 
   use Anubis.Server.Component, type: :tool
 
-  import Ecto.Query, warn: false
-  require Ecto.Query
-
   alias Anubis.Server.Response
+  alias YouCongress.MCP.ToolUsageTracker
   alias YouCongress.Opinions
   alias YouCongress.Votes
-  alias YouCongress.MCP.ToolUsageTracker
 
   @no_quote_message "No unverified quotes available."
   @unsupported_source_prefixes [
@@ -28,7 +25,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
   def execute(_params, frame) do
     ToolUsageTracker.track(__MODULE__, frame)
 
-    case random_unverified_quote() do
+    case recent_unverified_quote() do
       nil ->
         {:reply, Response.error(Response.tool(), @no_quote_message), frame}
 
@@ -44,15 +41,12 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
     end
   end
 
-  defp random_unverified_quote do
-    random_order = dynamic([q], fragment("RANDOM()"))
-
+  defp recent_unverified_quote do
     opts = [
       has_statements: true,
       only_quotes: true,
       is_verified: false,
-      limit: 1,
-      order_by: random_order,
+      order_by: [desc: :id],
       preload: [:author, :statements],
       exclude_source_prefixes: @unsupported_source_prefixes
     ]
