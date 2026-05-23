@@ -70,9 +70,12 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
       author_biography: opinion.author && opinion.author.bio,
       source_url: opinion.source_url,
       year: opinion.year,
-      verified_by_humans: opinion.verification_status != nil
+      verification_status: verification_status(opinion)
     }
   end
+
+  defp verification_status(%{verification_status: nil}), do: :unverified
+  defp verification_status(%{verification_status: status}), do: status
 
   defp serialize_statements(opinion, vote_map) do
     opinion.statements
