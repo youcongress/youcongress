@@ -27,7 +27,8 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
 
     opinions = find_opinions(query, statement_id)
     more_opinions = more_opinions(statement_id, opinions)
-    vote_map = votes_by_opinion(opinions ++ more_opinions)
+    all_opinions = opinions ++ more_opinions
+    vote_map = votes_by_opinion(all_opinions)
 
     data = %{
       matches: take_fields(opinions, vote_map),
@@ -86,10 +87,13 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
         author_biography: opinion.author.bio,
         source_url: opinion.source_url,
         year: opinion.year,
-        verified_by_humans: opinion.verification_status != nil,
+        verification_status: verification_status(opinion),
         vote_id: vote && vote.id,
         vote_answer: vote && vote.answer
       }
     end)
   end
+
+  defp verification_status(%{verification_status: nil}), do: :unverified
+  defp verification_status(%{verification_status: status}), do: status
 end
