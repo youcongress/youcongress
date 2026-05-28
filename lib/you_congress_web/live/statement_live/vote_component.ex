@@ -156,6 +156,12 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
     end
   end
 
+  defp added_at(%{opinion: %{inserted_at: inserted_at}}) when not is_nil(inserted_at) do
+    inserted_at
+  end
+
+  defp added_at(vote), do: vote.inserted_at
+
   defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
 
   defp response(assigns, response) do
