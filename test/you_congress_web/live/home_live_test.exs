@@ -1,6 +1,7 @@
 defmodule YouCongressWeb.HomeLiveTest do
   use YouCongressWeb.ConnCase, async: false
 
+  import Ecto.Query
   import Phoenix.LiveViewTest
   import YouCongress.StatementsFixtures
   import YouCongress.AccountsFixtures
@@ -10,7 +11,9 @@ defmodule YouCongressWeb.HomeLiveTest do
 
   alias YouCongress.Halls
   alias YouCongress.HallsStatements.HallStatement
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Repo
+  alias YouCongress.Votes.Vote
 
   defp add_statement_to_ai_hall(statement) do
     {:ok, hall} = Halls.get_or_create_by_name("ai")
@@ -76,6 +79,42 @@ defmodule YouCongressWeb.HomeLiveTest do
       {:ok, _view, html} = live(conn, ~p"/")
 
       assert html =~ statement.title
+    end
+
+    test "uses the opinion creation time for opinion card added labels", %{conn: conn} do
+      statement =
+        statement_fixture(title: "Timestamp Statement")
+        |> add_statement_to_ai_hall()
+
+      fill_statement_with_quotes(statement.id)
+
+      author = author_fixture()
+      opinion = opinion_fixture(%{author_id: author.id, content: "Timestamped opinion content"})
+
+      vote =
+        vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
+
+      opinion_inserted_at =
+        NaiveDateTime.utc_now()
+        |> NaiveDateTime.add(-90 * 60, :second)
+        |> NaiveDateTime.truncate(:second)
+
+      vote_inserted_at =
+        NaiveDateTime.utc_now()
+        |> NaiveDateTime.add(-13 * 86_400, :second)
+        |> NaiveDateTime.truncate(:second)
+
+      from(o in Opinion, where: o.id == ^opinion.id)
+      |> Repo.update_all(set: [inserted_at: opinion_inserted_at, updated_at: opinion_inserted_at])
+
+      from(v in Vote, where: v.id == ^vote.id)
+      |> Repo.update_all(set: [inserted_at: vote_inserted_at, updated_at: vote_inserted_at])
+
+      {:ok, _view, html} = live(conn, ~p"/")
+
+      assert html =~ "Timestamped opinion content"
+      assert html =~ "added 1h ago"
+      refute html =~ "added 13d ago"
     end
 
     test "guest can vote and sees flash message", %{conn: conn} do

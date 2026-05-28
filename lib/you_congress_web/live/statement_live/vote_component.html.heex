@@ -55,7 +55,7 @@
             and says:
           <% else %>
             <span class="text-xs text-gray-500">
-              · added {TimeAgo.short_time(@vote.inserted_at)}
+              · added {TimeAgo.short_time(added_at(@vote))}
             </span>
           <% end %>
         <% end %>
@@ -130,7 +130,7 @@
           current_user={@current_user}
         />
         <span class="text-xs text-gray-500 pl-3">
-          added {TimeAgo.short_time(@vote.inserted_at)}
+          added {TimeAgo.short_time(added_at(@vote))}
         </span>
       </div>
     <% end %>
