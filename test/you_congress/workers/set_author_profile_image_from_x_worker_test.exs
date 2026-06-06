@@ -27,7 +27,7 @@ defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorkerTest do
       end
     end
 
-    test "returns :ok without retrying when the X user is not found" do
+    test "deletes the twitter_username without retrying when the X user is not found" do
       author = author_fixture(twitter_username: "missing_user")
 
       with_mock XAPI,
@@ -37,7 +37,9 @@ defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorkerTest do
                    args: %{"author_id" => author.id}
                  })
 
-        assert Authors.get_author!(author.id).profile_image_url == nil
+        author = Authors.get_author!(author.id)
+        assert author.profile_image_url == nil
+        assert author.twitter_username == nil
       end
     end
 
