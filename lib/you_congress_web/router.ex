@@ -111,28 +111,9 @@ defmodule YouCongressWeb.Router do
   end
 
   scope "/" do
-    pipe_through([:browser, :oban_web_auth])
+    pipe_through([:browser, :require_admin_user])
 
     oban_dashboard("/oban")
-  end
-
-  # Protects the Oban dashboard with HTTP Basic Auth in production.
-  # Credentials come from OBAN_WEB_USERNAME / OBAN_WEB_PASSWORD (see config/runtime.exs).
-  # Fails closed: if they are not set in production, access is denied.
-  defp oban_web_auth(conn, _opts) do
-    if Application.get_env(:you_congress, :env) == :prod do
-      auth = Application.get_env(:you_congress, :oban_web_auth) || []
-
-      if auth[:username] && auth[:password] do
-        Plug.BasicAuth.basic_auth(conn, auth)
-      else
-        conn
-        |> send_resp(:unauthorized, "Unauthorized")
-        |> halt()
-      end
-    else
-      conn
-    end
   end
 
   ## Authentication routes
