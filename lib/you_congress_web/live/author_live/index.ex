@@ -11,7 +11,7 @@ defmodule YouCongressWeb.AuthorLive.Index do
     socket =
       socket
       |> assign_current_user(session["user_token"])
-      |> stream(:authors, Authors.list_authors())
+      |> stream(:authors, Authors.list_authors(preload: [:country]))
 
     {:ok, socket}
   end
@@ -24,7 +24,7 @@ defmodule YouCongressWeb.AuthorLive.Index do
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
     |> assign(:page_title, "Settings")
-    |> assign(:author, Authors.get_author!(id))
+    |> assign(:author, Authors.get_author!(id, include: [:country]))
   end
 
   defp apply_action(socket, :new, _params) do
@@ -41,7 +41,7 @@ defmodule YouCongressWeb.AuthorLive.Index do
 
   @impl true
   def handle_info({YouCongressWeb.AuthorLive.FormComponent, {:saved, author}}, socket) do
-    {:noreply, stream_insert(socket, :authors, author)}
+    {:noreply, stream_insert(socket, :authors, Authors.preload(author, [:country]))}
   end
 
   @impl true

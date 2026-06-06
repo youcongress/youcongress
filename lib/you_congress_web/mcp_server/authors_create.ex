@@ -23,6 +23,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsCreate do
     :one_line_bio,
     :wikipedia_url,
     :twitter_username,
+    :country_id,
     :country
   ]
 
@@ -31,6 +32,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsCreate do
     field :one_line_bio, :string
     field :wikipedia_url, :string
     field :twitter_username, :string
+    field :country_id, :integer
     field :country, :string
   end
 
@@ -46,6 +48,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsCreate do
     with {:ok, user} <- user_result,
          :ok <- ensure_permission(user),
          {:ok, author} <- Authors.create_author(attrs) do
+      author = Authors.preload(author, [:country])
       {:reply, Response.json(Response.tool(), %{author: take_fields(author)}), frame}
     else
       {:error, :missing_api_key} ->
@@ -96,7 +99,8 @@ defmodule YouCongressWeb.MCPServer.AuthorsCreate do
       one_line_bio: author.bio,
       wikipedia_url: author.wikipedia_url,
       twitter_username: author.twitter_username,
-      country: author.country
+      country_id: author.country_id,
+      country: Authors.country_name(author)
     }
   end
 

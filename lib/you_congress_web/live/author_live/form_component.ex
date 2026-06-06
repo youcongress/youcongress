@@ -2,6 +2,7 @@ defmodule YouCongressWeb.AuthorLive.FormComponent do
   use YouCongressWeb, :live_component
 
   alias YouCongress.Authors
+  alias YouCongress.Countries
 
   @impl true
   def render(assigns) do
@@ -23,7 +24,13 @@ defmodule YouCongressWeb.AuthorLive.FormComponent do
         <.input field={@form[:bio]} type="text" label="Bio" />
         <.input field={@form[:wikipedia_url]} type="text" label="Wikipedia url" />
         <.input field={@form[:twitter_username]} type="text" label="Twitter username" />
-        <.input field={@form[:country]} type="text" label="Country" />
+        <.input
+          field={@form[:country_id]}
+          type="select"
+          label="Country"
+          prompt="Select country"
+          options={@country_options}
+        />
         <.input field={@form[:twin_origin]} type="checkbox" label="Is twin" />
         <:actions>
           <.button phx-disable-with="Saving...">Save Author</.button>
@@ -40,6 +47,7 @@ defmodule YouCongressWeb.AuthorLive.FormComponent do
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:country_options, Countries.country_options())
      |> assign_form(changeset)}
   end
 
@@ -60,7 +68,7 @@ defmodule YouCongressWeb.AuthorLive.FormComponent do
   defp save_author(socket, :edit, author_params) do
     case Authors.update_author(socket.assigns.author, author_params) do
       {:ok, author} ->
-        notify_parent({:saved, author})
+        notify_parent({:saved, Authors.preload(author, [:country])})
 
         {:noreply,
          socket
@@ -75,7 +83,7 @@ defmodule YouCongressWeb.AuthorLive.FormComponent do
   defp save_author(socket, :new, author_params) do
     case Authors.create_author(author_params) do
       {:ok, author} ->
-        notify_parent({:saved, author})
+        notify_parent({:saved, Authors.preload(author, [:country])})
 
         {:noreply,
          socket

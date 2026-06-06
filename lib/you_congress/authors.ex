@@ -7,6 +7,7 @@ defmodule YouCongress.Authors do
   alias YouCongress.Repo
 
   alias YouCongress.Authors.Author
+  alias YouCongress.Countries
   alias YouCongress.Votes.Vote
 
   @doc """
@@ -67,6 +68,10 @@ defmodule YouCongress.Authors do
   def get_author_by!(opts) do
     query = build_query(opts)
     Repo.one!(query)
+  end
+
+  def preload(author_or_authors, preloads) do
+    Repo.preload(author_or_authors, preloads)
   end
 
   @doc """
@@ -164,9 +169,16 @@ defmodule YouCongress.Authors do
 
   """
   def create_author(attrs \\ %{}) do
-    %Author{}
-    |> Author.changeset(attrs)
-    |> Repo.insert()
+    author = %Author{}
+
+    with {:ok, attrs} <- resolve_country_attrs(attrs) do
+      author
+      |> Author.changeset(attrs)
+      |> Repo.insert()
+    else
+      {:error, :unknown_country, country, attrs} ->
+        {:error, unknown_country_changeset(author, attrs, country)}
+    end
   end
 
   @doc """
@@ -245,17 +257,32 @@ defmodule YouCongress.Authors do
         %Author{twin_enabled: true} = author_before,
         %{"twin_enabled" => "false"} = attrs
       ) do
-    update_author_and_delete_twin_options(author_before, attrs)
+    with {:ok, attrs} <- resolve_country_attrs(attrs) do
+      update_author_and_delete_twin_options(author_before, attrs)
+    else
+      {:error, :unknown_country, country, attrs} ->
+        {:error, unknown_country_changeset(author_before, attrs, country)}
+    end
   end
 
   def update_author(%Author{twin_enabled: true} = author_before, %{twin_enabled: false} = attrs) do
-    update_author_and_delete_twin_options(author_before, attrs)
+    with {:ok, attrs} <- resolve_country_attrs(attrs) do
+      update_author_and_delete_twin_options(author_before, attrs)
+    else
+      {:error, :unknown_country, country, attrs} ->
+        {:error, unknown_country_changeset(author_before, attrs, country)}
+    end
   end
 
   def update_author(%Author{} = author_before, attrs) do
-    author_before
-    |> Author.changeset(attrs)
-    |> Repo.update()
+    with {:ok, attrs} <- resolve_country_attrs(attrs) do
+      author_before
+      |> Author.changeset(attrs)
+      |> Repo.update()
+    else
+      {:error, :unknown_country, country, attrs} ->
+        {:error, unknown_country_changeset(author_before, attrs, country)}
+    end
   end
 
   defp update_author_and_delete_twin_options(author_before, attrs) do
@@ -296,6 +323,8 @@ defmodule YouCongress.Authors do
   def change_author(%Author{} = author, attrs \\ %{}) do
     Author.changeset(author, attrs)
   end
+
+  def country_name(%Author{} = author), do: Countries.country_name(author)
 
   defp build_list_query(opts) do
     base_query = from(a in Author)
@@ -340,6 +369,49 @@ defmodule YouCongress.Authors do
         _, query ->
           query
       end
+    )
+  end
+
+  defp resolve_country_attrs(attrs) do
+    {country, attrs} = pop_country(attrs)
+
+    cond do
+      blank?(country) or country_id_present?(attrs) ->
+        {:ok, attrs}
+
+      true ->
+        case Countries.get_country_by_name_or_iso(country) do
+          nil -> {:error, :unknown_country, country, attrs}
+          country -> {:ok, Map.put(attrs, :country_id, country.id)}
+        end
+    end
+  end
+
+  defp pop_country(%{} = attrs) do
+    case Map.pop(attrs, :country) do
+      {nil, attrs} -> Map.pop(attrs, "country")
+      {country, attrs} -> {country, Map.delete(attrs, "country")}
+    end
+  end
+
+  defp country_id_present?(attrs) do
+    attrs
+    |> country_id_value()
+    |> blank?()
+    |> Kernel.not()
+  end
+
+  defp country_id_value(attrs), do: Map.get(attrs, :country_id) || Map.get(attrs, "country_id")
+
+  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
+  defp blank?(nil), do: true
+  defp blank?(_), do: false
+
+  defp unknown_country_changeset(%Author{} = author, attrs, country) do
+    author
+    |> Author.changeset(attrs)
+    |> Ecto.Changeset.add_error(:country_id, "does not match an existing country",
+      country: country
     )
   end
 end

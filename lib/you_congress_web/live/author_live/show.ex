@@ -89,11 +89,13 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   defp get_author!(%{"id" => user_id}) do
-    Authors.get_author!(user_id)
+    Authors.get_author!(user_id, include: [:country])
   end
 
   defp get_author!(%{"twitter_username" => twitter_username}) do
-    Authors.get_author_by!(twitter_username: twitter_username)
+    [twitter_username: twitter_username]
+    |> Authors.get_author_by!()
+    |> Authors.preload([:country])
   end
 
   @impl true

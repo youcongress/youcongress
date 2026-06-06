@@ -19,8 +19,6 @@ defmodule YouCongress.Authors.Author do
     field :google_id, :string
     # bio is AI-generated for twins and is displayed instead of description if present
     field :bio, :string
-    # country is AI-generated for twins and is displayed location if present
-    field :country, :string
     field :wikipedia_url, :string
     # twin_origin indicates if the author started as a digital twin
     # or if GPT returned an opinion while being disabled (see digital_twins.ex)
@@ -29,6 +27,7 @@ defmodule YouCongress.Authors.Author do
     field :public_figure, :boolean, default: false
 
     has_many :votes, YouCongress.Votes.Vote
+    belongs_to :country, YouCongress.Countries.Country
 
     timestamps()
   end
@@ -42,7 +41,7 @@ defmodule YouCongress.Authors.Author do
       :wikipedia_url,
       :twitter_username,
       :google_id,
-      :country,
+      :country_id,
       :twin_origin,
       :twitter_id_str,
       :profile_image_url,
@@ -60,6 +59,7 @@ defmodule YouCongress.Authors.Author do
     |> unique_constraint(:twitter_id_str)
     |> unique_constraint(:google_id)
     |> unique_constraint(:wikipedia_url)
+    |> foreign_key_constraint(:country_id)
     |> validate_wikipedia_url_if_present()
   end
 

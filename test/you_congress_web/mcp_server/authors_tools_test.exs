@@ -4,6 +4,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
   import Mock
   import YouCongress.AccountsFixtures
   import YouCongress.AuthorsFixtures
+  import YouCongress.CountriesFixtures
 
   alias YouCongress.Accounts
   alias YouCongress.Authors
@@ -16,7 +17,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
   @create_forbidden_message "Your account is not allowed to create authors."
   @update_forbidden_message "Your account is not allowed to edit this author."
   @not_found_message "Author not found."
-  @missing_fields_message "Provide at least one field to update: name, one_line_bio, wikipedia_url, twitter_username, country."
+  @missing_fields_message "Provide at least one field to update: name, one_line_bio, wikipedia_url, twitter_username, country_id, country."
 
   describe "AuthorsSearch.execute/2" do
     test "returns serialized author matches" do
@@ -38,13 +39,14 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
     test "creates an author when authenticated and authorized" do
       admin = admin_fixture()
       api_key = api_key_fixture(admin)
+      country = country_fixture(name: "United States", iso_alpha2: "US", iso_alpha3: "USA")
 
       params = %{
         name: "Dr. Example",
         one_line_bio: "Example bio",
         wikipedia_url: "https://en.wikipedia.org/wiki/Example_person",
         twitter_username: "example_person",
-        country: "Wonderland"
+        country: "US"
       }
 
       with_mocked_response_and_key(api_key.token, fn frame ->
@@ -54,7 +56,8 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
         assert payload.name == "Dr. Example"
         assert payload.one_line_bio == "Example bio"
         assert payload.twitter_username == "example_person"
-        assert payload.country == "Wonderland"
+        assert payload.country_id == country.id
+        assert payload.country == "United States"
       end)
 
       assert [%{twitter_username: "example_person"}] =
@@ -107,11 +110,13 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
       admin = admin_fixture()
       api_key = api_key_fixture(admin)
       author = author_fixture(name: "Before", twin_origin: false, bio: "First")
+      country = country_fixture(name: "Spain", iso_alpha2: "ES", iso_alpha3: "ESP")
 
       params = %{
         author_id: author.id,
         name: "After",
-        one_line_bio: "Updated"
+        one_line_bio: "Updated",
+        country_id: country.id
       }
 
       with_mocked_response_and_key(api_key.token, fn frame ->
@@ -120,11 +125,14 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
 
         assert payload.name == "After"
         assert payload.one_line_bio == "Updated"
+        assert payload.country_id == country.id
+        assert payload.country == "Spain"
       end)
 
       updated = Authors.get_author!(author.id)
       assert updated.name == "After"
       assert updated.bio == "Updated"
+      assert updated.country_id == country.id
     end
 
     test "returns an error when no updatable fields are provided" do

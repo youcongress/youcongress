@@ -30,6 +30,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsSearch do
     [search: query]
     |> Authors.list_authors()
     |> Enum.take(@limit)
+    |> Authors.preload([:country])
     |> Enum.map(&take_fields/1)
   end
 
@@ -40,7 +41,8 @@ defmodule YouCongressWeb.MCPServer.AuthorsSearch do
       bio: author.bio,
       wikipedia_url: author.wikipedia_url,
       twitter_username: author.twitter_username,
-      country: author.country
+      country_id: author.country_id,
+      country: Authors.country_name(author)
     }
   end
 end

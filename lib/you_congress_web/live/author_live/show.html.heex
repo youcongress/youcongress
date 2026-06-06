@@ -83,9 +83,9 @@
   </.link>
 
   <div class="pt-6 space-y-2">
-    <%= if @author.country || @author.location do %>
+    <%= if Authors.country_name(@author) || @author.location do %>
       <div class="text-sm text-gray-600">
-        Location: {@author.country || @author.location}
+        Location: {Authors.country_name(@author) || @author.location}
       </div>
     <% end %>
   </div>
