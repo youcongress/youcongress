@@ -93,6 +93,49 @@ defmodule YouCongress.X.XAPI do
     end
   end
 
+  @doc """
+  Fetches public user information from X API by username (app-only auth).
+  Returns user data including id, username, name, and profile_image_url.
+  """
+  def fetch_user_by_username(username) do
+    with {:ok, token} <- app_bearer_token() do
+      url =
+        "https://api.twitter.com/2/users/by/username/#{username}?user.fields=id,username,name,profile_image_url,description,public_metrics,verified"
+
+      case Req.get(
+             url,
+             headers: [
+               {"Authorization", "Bearer #{token}"}
+             ]
+           ) do
+        {:ok, %Req.Response{status: 200, body: %{"data" => user_data}}} ->
+          {:ok, normalize_user_data(user_data)}
+
+        {:ok, %Req.Response{status: 200, body: %{"errors" => errors}}} ->
+          Logger.error("X user not found: username=#{username}, errors=#{inspect(errors)}")
+          {:error, "User not found"}
+
+        {:ok, %Req.Response{status: status, body: body}} ->
+          Logger.error("X user fetch failed: status=#{status}, body=#{inspect(body)}")
+          {:error, "Failed to fetch user"}
+
+        {:error, reason} ->
+          Logger.error("X user fetch request failed: #{inspect(reason)}")
+          {:error, "Request failed"}
+      end
+    end
+  end
+
+  # App-only Bearer Token from the X developer portal (Keys & Tokens).
+  # Required for public user lookups; the OAuth 2.0 client credentials
+  # (X_CLIENT_ID/X_CLIENT_SECRET) only support user-context auth.
+  defp app_bearer_token do
+    case Application.get_env(:you_congress, :x_bearer_token) do
+      token when is_binary(token) and token != "" -> {:ok, token}
+      _ -> {:error, "X_BEARER_TOKEN is not configured"}
+    end
+  end
+
   defp normalize_user_data(data) do
     %{
       twitter_id_str: data["id"],

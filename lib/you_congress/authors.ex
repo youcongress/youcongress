@@ -285,6 +285,32 @@ defmodule YouCongress.Authors do
     end
   end
 
+  @doc """
+  Fetches the author's profile picture from the X API using their X username
+  and updates the author's profile_image_url.
+
+  ## Examples
+
+      iex> set_profile_image_from_x(author)
+      {:ok, %Author{}}
+
+      iex> set_profile_image_from_x(author_without_twitter_username)
+      {:error, :no_twitter_username}
+
+  """
+  def set_profile_image_from_x(%Author{twitter_username: nil}),
+    do: {:error, :no_twitter_username}
+
+  def set_profile_image_from_x(%Author{twitter_username: twitter_username} = author) do
+    with {:ok, %{profile_image_url: profile_image_url}} when is_binary(profile_image_url) <-
+           YouCongress.X.XAPI.fetch_user_by_username(twitter_username) do
+      update_author(author, %{profile_image_url: profile_image_url})
+    else
+      {:ok, _} -> {:error, :no_profile_image}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   defp update_author_and_delete_twin_options(author_before, attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:update_author, Author.changeset(author_before, attrs))
