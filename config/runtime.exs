@@ -114,6 +114,12 @@ if config_env() == :prod do
     adapter: Swoosh.Adapters.Sendgrid,
     api_key: System.get_env("SENDGRID_API_KEY")
 
+  # HTTP Basic Auth for the Oban Web dashboard (/oban).
+  # If unset, the dashboard returns 401 for everyone in production.
+  config :you_congress, :oban_web_auth,
+    username: System.get_env("OBAN_WEB_USERNAME"),
+    password: System.get_env("OBAN_WEB_PASSWORD")
+
   config :swoosh, :api_client, Swoosh.ApiClient.Finch
 end
 
