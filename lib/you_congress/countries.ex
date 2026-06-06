@@ -69,6 +69,34 @@ defmodule YouCongress.Countries do
 
   def get_country_by_name_or_iso(_), do: nil
 
+  def get_country_by_phone_number(phone_number) when is_binary(phone_number) do
+    get_country_by_phone_number(phone_number, list_countries())
+  end
+
+  def get_country_by_phone_number(_), do: nil
+
+  def get_country_by_phone_number(phone_number, countries)
+      when is_binary(phone_number) and is_list(countries) do
+    with normalized_phone_number when is_binary(normalized_phone_number) <-
+           normalize_phone_prefix(phone_number) do
+      countries
+      |> Enum.map(fn country -> {country, normalize_phone_prefix(country.phone_prefix)} end)
+      |> Enum.filter(fn {_country, phone_prefix} ->
+        is_binary(phone_prefix) && String.starts_with?(normalized_phone_number, phone_prefix)
+      end)
+      |> Enum.sort_by(fn {country, phone_prefix} ->
+        {-String.length(phone_prefix), country.name}
+      end)
+      |> List.first()
+      |> case do
+        {country, _phone_prefix} -> country
+        nil -> nil
+      end
+    end
+  end
+
+  def get_country_by_phone_number(_, _), do: nil
+
   def create_country(attrs \\ %{}) do
     %Country{}
     |> Country.changeset(attrs)
@@ -137,4 +165,15 @@ defmodule YouCongress.Countries do
     |> String.trim()
     |> String.downcase()
   end
+
+  defp normalize_phone_prefix(value) when is_binary(value) do
+    digits = String.replace(value, ~r/[^0-9]/, "")
+
+    case digits do
+      "" -> nil
+      digits -> "+" <> digits
+    end
+  end
+
+  defp normalize_phone_prefix(_), do: nil
 end

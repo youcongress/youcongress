@@ -8,6 +8,7 @@ defmodule YouCongress.Accounts do
 
   alias YouCongress.Accounts.{ApiKey, User, UserToken, UserNotifier}
   alias YouCongress.Authors.Author
+  alias YouCongress.Countries
 
   ## Database getters
 
@@ -275,6 +276,7 @@ defmodule YouCongress.Accounts do
   def update_user_phone_number(user, phone_number) do
     user
     |> User.phone_number_changeset(%{"phone_number" => phone_number})
+    |> reset_phone_confirmation_on_change()
     |> Repo.update()
   end
 
@@ -624,8 +626,16 @@ defmodule YouCongress.Accounts do
 
   """
   def confirm_user_phone(%User{} = user) do
-    changeset = User.phone_number_confirm_changeset(user)
-    Repo.update(changeset)
+    country = Countries.get_country_by_phone_number(user.phone_number)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, User.phone_number_confirm_changeset(user))
+    |> maybe_update_phone_verified_author_country(user, country)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: user}} -> {:ok, user}
+      {:error, _operation, changeset, _changes} -> {:error, changeset}
+    end
   end
 
   ## API keys
@@ -687,6 +697,39 @@ defmodule YouCongress.Accounts do
     |> :crypto.strong_rand_bytes()
     |> Base.url_encode64(padding: false)
   end
+
+  defp reset_phone_confirmation_on_change(changeset) do
+    case Ecto.Changeset.get_change(changeset, :phone_number) do
+      nil -> changeset
+      _phone_number -> Ecto.Changeset.put_change(changeset, :phone_number_confirmed_at, nil)
+    end
+  end
+
+  defp maybe_update_phone_verified_author_country(multi, %User{} = user, country) do
+    if phone_number_present?(user.phone_number) && user.author_id do
+      Ecto.Multi.run(multi, :author, fn repo, _changes ->
+        case repo.get(Author, user.author_id) do
+          nil ->
+            {:ok, nil}
+
+          %Author{} = author ->
+            attrs = %{country_id: country && country.id, location: nil}
+
+            author
+            |> Author.changeset(attrs)
+            |> repo.update()
+        end
+      end)
+    else
+      multi
+    end
+  end
+
+  defp phone_number_present?(phone_number) when is_binary(phone_number) do
+    String.trim(phone_number) != ""
+  end
+
+  defp phone_number_present?(_), do: false
 
   def sign_up_complete?(user) do
     # All users need to have email, X users and newer users must confirm it

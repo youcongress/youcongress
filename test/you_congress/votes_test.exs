@@ -263,6 +263,7 @@ defmodule YouCongress.VotesTest do
         })
 
       {:ok, phone_user} = Accounts.update_user_phone_number(phone_user, "+34123456789")
+      {:ok, phone_user} = Accounts.confirm_user_phone(phone_user)
 
       vote_fixture(%{
         statement_id: statement.id,

@@ -131,7 +131,7 @@ defmodule YouCongress.Votes.VoteFrequencies do
 
   defp country_key(row, %{phone_verified: true}, countries) do
     if phone_verified?(row) do
-      case phone_country(row.user_phone_number, countries) do
+      case Countries.get_country_by_phone_number(row.user_phone_number, countries) do
         nil -> author_country_key(row)
         country -> {country.id, country.name}
       end
@@ -145,22 +145,6 @@ defmodule YouCongress.Votes.VoteFrequencies do
   defp author_country_key(%{author_country_id: country_id, author_country_name: country_name}) do
     {country_id, country_name || @unknown_country}
   end
-
-  defp phone_country(phone_number, countries) when is_binary(phone_number) do
-    normalized_phone_number = normalize_phone_number(phone_number)
-
-    countries
-    |> Enum.filter(fn country ->
-      is_binary(country.phone_prefix) &&
-        String.starts_with?(normalized_phone_number, country.phone_prefix)
-    end)
-    |> Enum.max_by(fn country -> String.length(country.phone_prefix) end, fn -> nil end)
-  end
-
-  defp phone_country(_, _), do: nil
-
-  defp normalize_phone_number("+" <> _ = phone_number), do: phone_number
-  defp normalize_phone_number(phone_number), do: "+#{phone_number}"
 
   defp email_verified?(%{user_email_confirmed: user_email_confirmed}), do: user_email_confirmed
 
