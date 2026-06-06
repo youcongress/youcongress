@@ -3,13 +3,13 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
   import Phoenix.LiveViewTest
   import YouCongress.AuthorsFixtures
+  import YouCongress.CountriesFixtures
   import YouCongress.AccountsFixtures
   import YouCongress.VotesFixtures
   import YouCongress.StatementsFixtures
 
   @create_attrs %{
     bio: "some bio",
-    country: "some country",
     twin_origin: true,
     name: "some name",
     twitter_username: "some twitter_username",
@@ -17,7 +17,6 @@ defmodule YouCongressWeb.AuthorLiveTest do
   }
   @update_attrs %{
     bio: "some updated bio",
-    country: "some updated country",
     twin_origin: true,
     name: "some updated name",
     twitter_username: "whatever",
@@ -25,7 +24,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
   }
   @invalid_attrs %{
     bio: nil,
-    country: nil,
+    country_id: nil,
     twin_origin: true,
     name: nil,
     twitter_username: nil,
@@ -51,6 +50,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
     test "saves new author", %{conn: conn} do
       conn = log_in_as_admin(conn)
+      country = country_fixture(name: "Some Country")
 
       {:ok, index_live, _html} = live(conn, ~p"/authors")
 
@@ -64,7 +64,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
              |> render_change() =~ "can&#39;t be blank"
 
       assert index_live
-             |> form("#author-form", author: @create_attrs)
+             |> form("#author-form", author: Map.put(@create_attrs, :country_id, country.id))
              |> render_submit()
 
       assert_patch(index_live, ~p"/authors")
@@ -101,6 +101,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
     test "updates author within modal", %{conn: conn, author: author} do
       conn = log_in_as_admin(conn)
+      country = country_fixture(name: "Updated Country")
       {:ok, show_live, _html} = live(conn, ~p"/x/#{author.twitter_username}")
 
       assert show_live |> element("a", "Edit") |> render_click() =~
@@ -113,7 +114,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
              |> render_change() =~ "can&#39;t be blank"
 
       assert show_live
-             |> form("#author-form", author: @update_attrs)
+             |> form("#author-form", author: Map.put(@update_attrs, :country_id, country.id))
              |> render_submit()
 
       assert_patch(show_live, ~p"/x/#{author.twitter_username}")

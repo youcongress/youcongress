@@ -8,11 +8,15 @@ defmodule YouCongress.AuthorsFixtures do
   Generate a author.
   """
   def author_fixture(attrs \\ %{}) do
+    attrs =
+      attrs
+      |> Map.new()
+      |> put_default_country()
+
     {:ok, author} =
       attrs
       |> Enum.into(%{
         bio: Faker.Lorem.sentence(),
-        country: Faker.Address.country(),
         twin_origin: true,
         public_figure: true,
         name: Faker.Person.name() |> String.replace("'", ""),
@@ -24,5 +28,14 @@ defmodule YouCongress.AuthorsFixtures do
       |> YouCongress.Authors.create_author()
 
     author
+  end
+
+  defp put_default_country(attrs) do
+    if Map.has_key?(attrs, :country_id) or Map.has_key?(attrs, "country_id") or
+         Map.has_key?(attrs, :country) or Map.has_key?(attrs, "country") do
+      attrs
+    else
+      Map.put(attrs, :country_id, YouCongress.CountriesFixtures.country_fixture().id)
+    end
   end
 end

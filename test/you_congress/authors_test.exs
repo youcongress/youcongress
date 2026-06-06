@@ -7,10 +7,11 @@ defmodule YouCongress.AuthorsTest do
     alias YouCongress.Authors.Author
 
     import YouCongress.AuthorsFixtures
+    import YouCongress.CountriesFixtures
 
     @invalid_attrs %{
       bio: nil,
-      country: nil,
+      country_id: nil,
       twin_origin: nil,
       name: nil,
       twitter_username: nil,
@@ -60,9 +61,11 @@ defmodule YouCongress.AuthorsTest do
     end
 
     test "create_author/1 with valid data creates a author" do
+      country = country_fixture(name: "Some Country")
+
       valid_attrs = %{
         bio: "some bio",
-        country: "some country",
+        country_id: country.id,
         twin_origin: true,
         name: "some name",
         twitter_username: "some twitter_username",
@@ -71,11 +74,41 @@ defmodule YouCongress.AuthorsTest do
 
       assert {:ok, %Author{} = author} = Authors.create_author(valid_attrs)
       assert author.bio == "some bio"
-      assert author.country == "some country"
+      assert author.country_id == country.id
       assert author.twin_origin == true
       assert author.name == "some name"
       assert author.twitter_username == "some twitter_username"
       assert author.wikipedia_url == "https://en.wikipedia.org/wiki/whatever"
+    end
+
+    test "create_author/1 resolves legacy country names and ISO codes" do
+      country = country_fixture(name: "United States", iso_alpha2: "US", iso_alpha3: "USA")
+
+      valid_attrs = %{
+        bio: "some bio",
+        country: "USA",
+        twin_origin: true,
+        name: "some name",
+        twitter_username: "some twitter_username",
+        wikipedia_url: "https://en.wikipedia.org/wiki/whatever"
+      }
+
+      assert {:ok, %Author{} = author} = Authors.create_author(valid_attrs)
+      assert author.country_id == country.id
+    end
+
+    test "create_author/1 rejects unknown legacy country names" do
+      valid_attrs = %{
+        bio: "some bio",
+        country: "Wonderland",
+        twin_origin: true,
+        name: "some name",
+        twitter_username: "some twitter_username",
+        wikipedia_url: "https://en.wikipedia.org/wiki/whatever"
+      }
+
+      assert {:error, changeset} = Authors.create_author(valid_attrs)
+      assert "does not match an existing country" in errors_on(changeset).country_id
     end
 
     test "create_author/1 with invalid data returns error changeset" do
@@ -84,10 +117,11 @@ defmodule YouCongress.AuthorsTest do
 
     test "update_author/2 with valid data updates the author" do
       author = author_fixture()
+      country = country_fixture(name: "Updated Country")
 
       update_attrs = %{
         bio: "some updated bio",
-        country: "some updated country",
+        country_id: country.id,
         twin_origin: false,
         name: "some updated name",
         twitter_username: "some updated twitter_username",
@@ -96,7 +130,7 @@ defmodule YouCongress.AuthorsTest do
 
       assert {:ok, %Author{} = author} = Authors.update_author(author, update_attrs)
       assert author.bio == "some updated bio"
-      assert author.country == "some updated country"
+      assert author.country_id == country.id
       assert author.twin_origin == false
       assert author.name == "some updated name"
       assert author.twitter_username == "some updated twitter_username"

@@ -20,13 +20,14 @@ defmodule YouCongressWeb.MCPServer.AuthorsUpdate do
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @forbidden_message "Your account is not allowed to edit this author."
   @not_found_message "Author not found."
-  @missing_fields_message "Provide at least one field to update: name, one_line_bio, wikipedia_url, twitter_username, country."
+  @missing_fields_message "Provide at least one field to update: name, one_line_bio, wikipedia_url, twitter_username, country_id, country."
 
   @author_fields [
     :name,
     :one_line_bio,
     :wikipedia_url,
     :twitter_username,
+    :country_id,
     :country
   ]
 
@@ -36,6 +37,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsUpdate do
     field :one_line_bio, :string
     field :wikipedia_url, :string
     field :twitter_username, :string
+    field :country_id, :integer
     field :country, :string
   end
 
@@ -50,6 +52,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsUpdate do
          {:ok, author} <- fetch_author(author_id),
          :ok <- ensure_permission(user),
          {:ok, updated_author} <- normalize_update_result(Authors.update_author(author, attrs)) do
+      updated_author = Authors.preload(updated_author, [:country])
       {:reply, Response.json(Response.tool(), %{author: take_fields(updated_author)}), frame}
     else
       {:error, :no_fields_to_update} ->
@@ -142,7 +145,8 @@ defmodule YouCongressWeb.MCPServer.AuthorsUpdate do
       one_line_bio: author.bio,
       wikipedia_url: author.wikipedia_url,
       twitter_username: author.twitter_username,
-      country: author.country
+      country_id: author.country_id,
+      country: Authors.country_name(author)
     }
   end
 
