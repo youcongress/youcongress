@@ -189,15 +189,24 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   end
 
   attr :is_human, :boolean, default: true
+  attr :profile_image_url, :string, default: nil
 
   def avatar_icon(assigns) do
     ~H"""
     <%= if @is_human do %>
-      <img
-        src="/images/human-avatar.svg"
-        alt="Human avatar"
-        class="h-8 w-8 inline"
-      />
+      <%= if @profile_image_url do %>
+        <img
+          src={@profile_image_url}
+          alt="Avatar"
+          class="h-8 w-8 inline rounded-full object-cover"
+        />
+      <% else %>
+        <img
+          src="/images/human-avatar.svg"
+          alt="Human avatar"
+          class="h-8 w-8 inline"
+        />
+      <% end %>
     <% else %>
       <img
         src="/images/robot-avatar.svg"

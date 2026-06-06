@@ -5,7 +5,10 @@
         <div class="flex justify-between space-x-2">
           <div class="pt-2">
             <.link href={author_path(@author)} class="cursor-pointer">
-              <OpinionComponent.avatar_icon is_human={!@vote.twin} />
+              <OpinionComponent.avatar_icon
+                is_human={!@vote.twin}
+                profile_image_url={@author.profile_image_url}
+              />
             </.link>
           </div>
           <div>
@@ -36,7 +39,11 @@
   <%= if @show_vote do %>
     <div class="flex justify-between">
       <div class="text-sm pb-2">
-        <OpinionComponent.avatar_icon :if={@page == :author_show} is_human={!@vote.twin} />
+        <OpinionComponent.avatar_icon
+          :if={@page == :author_show}
+          is_human={!@vote.twin}
+          profile_image_url={@author.profile_image_url}
+        />
         <%= if @vote.twin do %>
           <%= if @page == :author_show do %>
             {"#{@author.name} AI"}
