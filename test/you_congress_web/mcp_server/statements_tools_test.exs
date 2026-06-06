@@ -31,6 +31,44 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
       end)
     end
 
+    test "orders by id desc by default and paginates with last_id" do
+      s1 = statement_fixture(title: "First")
+      s2 = statement_fixture(title: "Second")
+      s3 = statement_fixture(title: "Third")
+
+      with_mocked_response(fn ->
+        assert {:reply, {:json, %{statements: payload, last_id: last_id}}, :frame} =
+                 StatementsList.execute(%{}, :frame)
+
+        assert Enum.map(payload, & &1.id) == [s3.id, s2.id, s1.id]
+        assert last_id == s1.id
+
+        assert {:reply, {:json, %{statements: next_page}}, :frame} =
+                 StatementsList.execute(%{last_id: s3.id}, :frame)
+
+        assert Enum.map(next_page, & &1.id) == [s2.id, s1.id]
+      end)
+    end
+
+    test "orders by id asc and paginates with last_id" do
+      s1 = statement_fixture(title: "First")
+      s2 = statement_fixture(title: "Second")
+      s3 = statement_fixture(title: "Third")
+
+      with_mocked_response(fn ->
+        assert {:reply, {:json, %{statements: payload, last_id: last_id}}, :frame} =
+                 StatementsList.execute(%{order: "asc"}, :frame)
+
+        assert Enum.map(payload, & &1.id) == [s1.id, s2.id, s3.id]
+        assert last_id == s3.id
+
+        assert {:reply, {:json, %{statements: next_page}}, :frame} =
+                 StatementsList.execute(%{order: "asc", last_id: s1.id}, :frame)
+
+        assert Enum.map(next_page, & &1.id) == [s2.id, s3.id]
+      end)
+    end
+
     test "includes hall data when requested" do
       statement = statement_fixture(title: "Climate plan")
 

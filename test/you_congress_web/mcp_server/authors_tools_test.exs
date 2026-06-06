@@ -9,6 +9,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
   alias YouCongress.Accounts
   alias YouCongress.Authors
   alias YouCongressWeb.MCPServer.AuthorsCreate
+  alias YouCongressWeb.MCPServer.AuthorsList
   alias YouCongressWeb.MCPServer.AuthorsSearch
   alias YouCongressWeb.MCPServer.AuthorsUpdate
 
@@ -31,6 +32,48 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
         assert payload.author_id == target.id
         assert payload.name == "Ada Lovelace"
         assert payload.twitter_username == "ada_l"
+      end)
+    end
+  end
+
+  describe "AuthorsList.execute/2" do
+    test "lists authors newest first and paginates with last_id" do
+      a1 = author_fixture(name: "Ada Lovelace")
+      a2 = author_fixture(name: "Grace Hopper")
+      a3 = author_fixture(name: "Alan Turing", twitter_username: "alan_t")
+
+      with_mocked_response(fn ->
+        assert {:reply, {:json, %{authors: payload, last_id: last_id}}, :frame} =
+                 AuthorsList.execute(%{}, :frame)
+
+        assert Enum.map(payload, & &1.author_id) == [a3.id, a2.id, a1.id]
+        assert last_id == a1.id
+
+        assert %{name: "Alan Turing", twitter_username: "alan_t"} = hd(payload)
+
+        assert {:reply, {:json, %{authors: next_page}}, :frame} =
+                 AuthorsList.execute(%{last_id: a3.id}, :frame)
+
+        assert Enum.map(next_page, & &1.author_id) == [a2.id, a1.id]
+      end)
+    end
+
+    test "lists authors in ascending order and paginates with last_id" do
+      a1 = author_fixture(name: "Ada Lovelace")
+      a2 = author_fixture(name: "Grace Hopper")
+      a3 = author_fixture(name: "Alan Turing")
+
+      with_mocked_response(fn ->
+        assert {:reply, {:json, %{authors: payload, last_id: last_id}}, :frame} =
+                 AuthorsList.execute(%{order: "asc"}, :frame)
+
+        assert Enum.map(payload, & &1.author_id) == [a1.id, a2.id, a3.id]
+        assert last_id == a3.id
+
+        assert {:reply, {:json, %{authors: next_page}}, :frame} =
+                 AuthorsList.execute(%{order: "asc", last_id: a1.id}, :frame)
+
+        assert Enum.map(next_page, & &1.author_id) == [a2.id, a3.id]
       end)
     end
   end

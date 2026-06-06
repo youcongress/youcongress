@@ -193,10 +193,15 @@
             </span>
           </dt>
           <dd class="text-gray-700">
-            List all statements. Use this to find statement IDs for other tools. Optional:
+            List statements (up to 100 per page). Use this to find statement IDs for other tools. Optional:
             set <code class="bg-gray-100 px-1 rounded">include_halls</code>
             to true to
-            include each statement's halls (id and name). Every result also includes the
+            include each statement's halls (id and name);
+            <code class="bg-gray-100 px-1 rounded">order</code>
+            ("desc" by id — newest first, default — or "asc");
+            <code class="bg-gray-100 px-1 rounded">last_id</code>
+            (pass the <code class="bg-gray-100 px-1 rounded">last_id</code>
+            from a previous response to get the next page). Every result also includes the
             <code class="bg-gray-100 px-1 rounded">opinions_count</code>
             so you can see how many sourced opinions exist per statement.
           </dd>
@@ -298,6 +303,22 @@
           </dt>
           <dd class="text-gray-700">
             Search authors by name. Requires: <code class="bg-gray-100 px-1 rounded">query</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            authors_list
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 font-sans text-xs font-medium">
+              public
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            List authors (up to 100 per page). Optional:
+            <code class="bg-gray-100 px-1 rounded">order</code>
+            ("desc" by id — newest first, default — or "asc");
+            <code class="bg-gray-100 px-1 rounded">last_id</code>
+            (pass the <code class="bg-gray-100 px-1 rounded">last_id</code>
+            from a previous response to get the next page).
           </dd>
         </div>
         <div class="pl-4">
@@ -484,6 +505,22 @@
           </dt>
           <dd class="text-gray-700">
             Search quotes for a statement. Requires: <code class="bg-gray-100 px-1 rounded">query</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            quotes_list
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-800 font-sans text-xs font-medium">
+              public
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            List quotes (up to 100 per page), each with its author, source, verification status
+            and vote. Optional: <code class="bg-gray-100 px-1 rounded">order</code>
+            ("desc" by id — newest first, default — or "asc");
+            <code class="bg-gray-100 px-1 rounded">last_id</code>
+            (pass the <code class="bg-gray-100 px-1 rounded">last_id</code>
+            from a previous response to get the next page).
           </dd>
         </div>
         <div class="pl-4">
