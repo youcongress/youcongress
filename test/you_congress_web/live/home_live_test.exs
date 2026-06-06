@@ -143,7 +143,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ "relative top-1 inline-flex cursor-pointer"
 
       assert html =~
-               "inline-block h-12 w-12 min-w-[2.5rem] shrink-0 rounded-full object-cover align-middle"
+               "inline-block h-10 w-10 min-w-[2.5rem] shrink-0 rounded-full object-cover align-middle"
     end
 
     test "guest can vote and sees flash message", %{conn: conn} do
