@@ -17,6 +17,7 @@ defmodule YouCongressWeb.StatementLive.Show do
   alias YouCongressWeb.StatementLive.ResultsComponent
   alias YouCongress.HallsStatements
   alias YouCongress.Opinions.Quotes.QuotatorAI
+  alias YouCongress.Votes.VoteFrequencies
 
   @impl true
   def mount(_, session, socket) do
@@ -32,7 +33,9 @@ defmodule YouCongressWeb.StatementLive.Show do
      |> assign(:random_statements_from_main_hall, [])
      |> assign(:pending_guest_votes, %{})
      |> assign(:pending_vote_prompt, nil)
-     |> assign(:show_vote_auth_modal, false)}
+     |> assign(:show_vote_auth_modal, false)
+     |> assign(:show_country_results, false)
+     |> assign(:country_vote_frequencies, nil)}
   end
 
   @impl true
@@ -202,6 +205,21 @@ defmodule YouCongressWeb.StatementLive.Show do
     {:noreply, socket}
   end
 
+  def handle_event("toggle-country-results", %{"statement_id" => statement_id}, socket) do
+    statement_id = String.to_integer(statement_id)
+
+    socket =
+      if socket.assigns.show_country_results do
+        assign(socket, :show_country_results, false)
+      else
+        socket
+        |> assign(:show_country_results, true)
+        |> assign(:country_vote_frequencies, VoteFrequencies.get_by_country(statement_id))
+      end
+
+    {:noreply, socket}
+  end
+
   @impl true
 
   def handle_info(:reload, socket) do
@@ -229,6 +247,7 @@ defmodule YouCongressWeb.StatementLive.Show do
     socket =
       socket
       |> VotesLoader.load_statement_and_votes(statement.id)
+      |> maybe_reload_country_vote_frequencies()
 
     vote = socket.assigns.current_user_vote
     socket = assign(socket, editing: !vote || !vote.opinion_id)
@@ -264,4 +283,14 @@ defmodule YouCongressWeb.StatementLive.Show do
 
     assign(socket, :random_statements_from_main_hall, random_statements_from_main_hall)
   end
+
+  defp maybe_reload_country_vote_frequencies(%{assigns: %{show_country_results: true}} = socket) do
+    assign(
+      socket,
+      :country_vote_frequencies,
+      VoteFrequencies.get_by_country(socket.assigns.statement.id)
+    )
+  end
+
+  defp maybe_reload_country_vote_frequencies(socket), do: socket
 end

@@ -115,6 +115,59 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ "some updated comment"
     end
 
+    test "loads country vote results on home only after clicking by country", %{
+      conn: conn,
+      statement: statement
+    } do
+      unique = System.unique_integer([:positive])
+      quote_country = country_fixture(%{name: "Home Quote Country #{unique}"})
+      voter_country = country_fixture(%{name: "Home Voter Country #{unique}"})
+
+      author = author_fixture(%{country_id: quote_country.id})
+      opinion = opinion_fixture(%{author_id: author.id, content: "Country test opinion"})
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: author.id,
+        opinion_id: opinion.id,
+        answer: :against
+      })
+
+      fill_statement_with_quotes(statement.id)
+
+      current_user =
+        user_fixture(%{}, %{
+          name: "Home Voter #{unique}",
+          twitter_username: "home_voter_#{unique}",
+          bio: "Bio",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Home_Voter_#{unique}",
+          twin_origin: false,
+          country_id: voter_country.id
+        })
+
+      conn = log_in_user(conn, current_user)
+      {:ok, index_live, html} = live(conn, ~p"/")
+
+      assert html =~ statement.title
+      refute html =~ voter_country.name
+
+      html =
+        index_live
+        |> element("button[id$='-vote-for']")
+        |> render_click()
+
+      assert html =~ "By country"
+      refute html =~ voter_country.name
+
+      html =
+        index_live
+        |> element("button[id$='-results-by-country']", "By country")
+        |> render_click()
+
+      assert html =~ voter_country.name
+      assert html =~ quote_country.name
+    end
+
     test "Top mode orders cards by most liked opinions", %{conn: conn} do
       data =
         [
@@ -268,7 +321,10 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert show_live |> element("button#cast-vote-abstain") |> render() =~ "Abstain"
     end
 
-    test "shows total results and closed country breakdown", %{conn: conn, statement: statement} do
+    test "loads country vote results only after clicking by country", %{
+      conn: conn,
+      statement: statement
+    } do
       spain = country_fixture(%{name: "Spain"})
       france = country_fixture(%{name: "France"})
 
@@ -318,7 +374,7 @@ defmodule YouCongressWeb.StatementLiveTest do
         answer: :against
       })
 
-      {:ok, _show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+      {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}")
 
       assert html =~ "Results (3 votes):"
       assert html =~ "Total"
@@ -326,8 +382,14 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ "Abstain 1 (33%)"
       assert html =~ "Against 1 (33%)"
       assert html =~ "By country"
-      assert html =~ "<details"
-      refute html =~ "<details open"
+      refute html =~ "Spain"
+      refute html =~ "France"
+
+      html =
+        show_live
+        |> element("#statement-results-by-country", "By country")
+        |> render_click()
+
       assert html =~ "Spain"
       assert html =~ "France"
     end

@@ -50,8 +50,13 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
       />
       <%= if @display_results do %>
         <ResultsComponent.horizontal_bar
+          id={"#{@id}-results"}
+          statement_id={@statement.id}
           total_votes={@total_votes}
           vote_frequencies={@vote_frequencies}
+          country_vote_frequencies={@country_vote_frequencies}
+          show_country_results={@show_country_results}
+          country_results_target={@myself}
         />
 
         <div :if={@page == :statements_index && @current_user} class="pt-4">
@@ -79,7 +84,10 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
     # Preserve the component's internal vote state if user voted this session
     current_vote_internal = socket.assigns[:current_user_vote]
 
-    socket = assign(socket, assigns)
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign_country_result_defaults()
 
     # Preserve the voted_this_session flag and internal vote state
     socket =
@@ -91,8 +99,8 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
         socket
       end
 
-    # Show results if user voted in this session
-    if voted_this_session do
+    # Show results if user voted in this session or the caller asks for them.
+    if voted_this_session || socket.assigns.display_results do
       {:ok, maybe_assign_results_variables(socket)}
     else
       {:ok, socket}
@@ -273,12 +281,33 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
     {:noreply, socket}
   end
 
+  def handle_event("toggle-country-results", _params, socket) do
+    %{assigns: %{statement: statement}} = socket
+
+    socket =
+      if socket.assigns.show_country_results do
+        assign(socket, :show_country_results, false)
+      else
+        socket
+        |> assign(:show_country_results, true)
+        |> assign(:country_vote_frequencies, VoteFrequencies.get_by_country(statement.id))
+      end
+
+    {:noreply, socket}
+  end
+
   defp maybe_assign_results_variables(%{assigns: %{page: page}} = socket)
-       when page in [:statements_index, :author_show] do
+       when page in [:statements_index, :author_show, :home_index] do
     assign_results_variables(socket)
   end
 
   defp maybe_assign_results_variables(socket), do: socket
+
+  defp assign_country_result_defaults(socket) do
+    socket
+    |> assign_new(:show_country_results, fn -> false end)
+    |> assign_new(:country_vote_frequencies, fn -> nil end)
+  end
 
   defp assign_results_variables(socket) do
     %{assigns: %{statement: statement}} = socket
@@ -287,5 +316,16 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
     |> assign(:display_results, true)
     |> assign(:vote_frequencies, VoteFrequencies.get(statement.id))
     |> assign(:total_votes, Votes.count_by_statement(statement.id))
+    |> maybe_reload_country_vote_frequencies()
   end
+
+  defp maybe_reload_country_vote_frequencies(%{assigns: %{show_country_results: true}} = socket) do
+    assign(
+      socket,
+      :country_vote_frequencies,
+      VoteFrequencies.get_by_country(socket.assigns.statement.id)
+    )
+  end
+
+  defp maybe_reload_country_vote_frequencies(socket), do: socket
 end
