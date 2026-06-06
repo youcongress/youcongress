@@ -354,6 +354,12 @@ defmodule YouCongress.Authors do
                   ilike(a.twitter_username, ^term_pattern)
           end)
 
+        {:country_id, nil}, query ->
+          where(query, [author], is_nil(author.country_id))
+
+        {:country_id, country_id}, query ->
+          where(query, [author], author.country_id == ^country_id)
+
         {:twin_origin, twin_origin}, query ->
           where(query, [author], author.twin_origin == ^twin_origin)
 
