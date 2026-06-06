@@ -1,6 +1,6 @@
 defmodule YouCongress.Opinions.Quotes.QuotatorAI do
   @moduledoc """
-  Find and return 20 relevant public-figure quotes about a question using OpenAI.
+  Find and return relevant public-figure quotes about a statement using OpenAI.
   """
 
   require Logger
@@ -14,7 +14,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
   def number_of_quotes, do: Quotator.number_of_quotes()
 
   @doc """
-  Generate 20 quotes for a question.
+  Generate sourced quotes for a statement.
 
   ## Examples
 
@@ -167,32 +167,50 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
       end
 
     """
-    Question: #{question_title}
+    You are helping populate YouCongress (youcongress.org) with real, sourced quotes from public figures on policy statements.
 
-    Task: find #{number_of_quotes()} quotes from different public figures where it's clear that they agree or disagree with the ENTIRE question above – not just a part of it (this is CRITICAL).
+    Statement: #{question_title}
 
-    Constraints (all these are CRITICAL):
-    - The source_url must exist, be a primary source or a reliable secondary source and contain the exact quote text.
-    - Each quote must address the COMPLETE question, not just a subset or aspect of it. The author's position must be clear regarding the entire question as stated.
-    - Each of the #{number_of_quotes()} quotes must be verbatim and attributable.
-    - If all the text of the quote is not consecutive, use [...] to indicate the missing text/s. Don't add more than two [...] in a quote.
-    - Quotes must refer to the whole question and not just a part of it. For example, if the question is "Should we implement universal basic income?", quotes should address universal basic income as a complete policy – not just quotes about poverty reduction, economic stimulus, or welfare reform in general.
-    - The quote from the source_url must indicate that the author agrees or disagrees with the whole question (not just a part of it).
-    - Quotes should be of two or three paragraphs long and at least three sentences long, if possible.
-    - If the quote is in a different language, translate it to English. Make sure the quote returned is in English.
-    - Ideally, quotes should be informative about the reasons why they agree or provide other useful information related to the question.
-    - The source_url must include the exact quote text. Prefer the original or primary source or, in its absence, a reliable secondary source.
-    - If you provide wikipedia_url and https://x.com/[twitter_username], the pages must exist and belong to the author.
-    - Authors must be experts, public figures or relevant organisations.
-    - The author is the person who wrote the quote. Do not use the media outlet as the author unless the quote is from an editorial by that outlet.
-    - Do not include quotes from a document/open letter/paper with multiple signers.
-    - The quote must have one single author, a person or an organisation.
-    - If the question starts with `🇪🇸 Congreso, [date]`, it is something voted in the Spanish Congreso de los Diputados. In this case, try to find quotes about that vote from Spanish politicians and experts (but don't be limited to Spanish politicians and experts).
-    - Fill all fields in the JSON. Use empty string when unavailable.
-    - Carefully analyze each quote to determine the author's agreement level and set agree_rate appropriately to one of "For", "Against" or "Abstain".
-    - Do not repeat any author across the #{number_of_quotes()} quotes. No name that appears in any item's authors.name may appear in any other item.#{exclusion_text}
+    Objective:
+    Find up to #{number_of_quotes()} real quotes from different notable authors whose position on the statement can be classified as "For", "Against", or "Abstain".
 
-    Output: Return ONLY a valid JSON object matching the schema with #{number_of_quotes()} items (if there are enough quotes that are relevant to the WHOLE question).
+    Research workflow:
+    1. Search for quotes, interviews, speeches, testimony, articles, posts, reports, or transcripts about the exact statement topic.
+    2. Prefer primary sources: official pages, transcripts, testimony, speeches, interviews, author-written articles, company/organisation posts, or direct social posts. Use reliable secondary sources only when they reproduce the exact quote and attribution.
+    3. Prefer expert, academic, business, activist, civil-society, or other domain-relevant authors. Politicians are acceptable when they are notable and directly address the statement.
+    4. Prefer recent quotes, especially 2026-or-later quotes for current AI governance, AI safety, or AI-in-society statements. Do not use a weak or partial quote merely because it is recent.
+    5. Before returning a quote, verify that source_url exists, is accessible, attributes the quote to the author, and contains the exact quote text.
+    6. Check existing exclusions and do not reuse authors that are already excluded.#{exclusion_text}
+
+    Relevance rules (all are critical):
+    - Each quote must address the COMPLETE statement, not just one word, theme, subtopic, or nearby issue. For example, for "Should we implement universal basic income?", use quotes about universal basic income as a complete policy, not quotes only about poverty reduction, stimulus, automation, or welfare reform.
+    - The source quote must make the author's For/Against/Abstain position on the whole statement clear. Do not infer a position from general sentiment, party membership, job title, or unrelated comments.
+    - If a quote supports only part of the statement, opposes only part of it, or would require extra assumptions to classify, omit it.
+    - Favor quotes that include the author's reasoning, tradeoffs, evidence, or policy argument.
+
+    Quote quality rules:
+    - Only use real, verifiable, verbatim quotes. Never fabricate, paraphrase, or invent attribution.
+    - If not enough qualifying quotes exist, return fewer quotes rather than padding the response with weak, unverifiable, duplicate, or fabricated items.
+    - If all quote text is not consecutive, use [...] for omitted text. Do not use more than two [...] in a quote.
+    - Quotes should be two or three paragraphs and at least three sentences when the source supports that length, but shorter quotes are acceptable when they clearly answer the statement.
+    - If the source quote is not in English, translate it to English and keep the meaning faithful.
+    - Do not include quotes from documents, open letters, petitions, or papers with multiple signers unless the named author personally wrote the quoted passage.
+    - The quote must have one clear author: a person or an organisation. Use the media outlet as author only for a signed/official editorial by that outlet.
+
+    Metadata rules:
+    - Fill every JSON field. Use an empty string when unavailable.
+    - If you provide wikipedia_url or twitter_username, the page/account must exist and belong to the author.
+    - Authors must be experts, public figures, relevant organisations, or otherwise notable in the statement's domain.
+    - Do not repeat any author across returned quotes. No name that appears in any item's author.name may appear in any other item.
+    - Carefully set agree_rate to exactly one of "For", "Against", or "Abstain".
+    - If the statement starts with `🇪🇸 Congreso, [date]`, it is about a vote in the Spanish Congreso de los Diputados. In that case, prioritize quotes about that vote from Spanish politicians and experts, without excluding relevant non-Spanish experts.
+
+    Final QA before output:
+    - Re-check that every source_url includes the quoted text.
+    - Re-check that every quote is about the whole statement.
+    - Remove any quote that fails verification, attribution, uniqueness, or relevance.
+
+    Output: Return ONLY a valid JSON object matching the schema with as many qualifying items as you can find, up to #{number_of_quotes()} items.
     """
   end
 
@@ -322,8 +340,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
         "quotes" => %{
           type: "array",
           description:
-            "#{number_of_quotes()} quotes (if the quotes are relevant to the whole question), each with author and metadata. Do not repeat any author across items.",
-          minItems: number_of_quotes(),
+            "Up to #{number_of_quotes()} quotes, each relevant to the whole statement and with author metadata. Return fewer items rather than weak, duplicate, unverifiable, or fabricated quotes. Do not repeat any author across items.",
+          minItems: 0,
           maxItems: number_of_quotes(),
           items: %{
             type: "object",
@@ -332,11 +350,12 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
               "quote" => %{
                 type: "string",
                 description:
-                  "The exact quote string in English (one-three paragraphs maximum, verbatim, ideally of at least three sentences long). Don't use quotation marks."
+                  "The exact quote string in English (one-three paragraphs maximum, verbatim or faithfully translated, ideally at least three sentences long). Do not use quotation marks."
               },
               "source_url" => %{
                 type: "string",
-                description: "Primary source URL that includes the exact quote"
+                description:
+                  "Primary source URL, or reliable secondary source URL when necessary, that includes the exact quote"
               },
               "year" => %{type: "string", description: "Year of the quote"},
               "author" => %{
@@ -355,7 +374,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
               },
               "agree_rate" => %{
                 type: "string",
-                description: "How much the author agrees with the question",
+                description: "The author's position on the whole statement",
                 enum: [
                   "For",
                   "Against",
