@@ -392,10 +392,11 @@ defmodule YouCongressWeb.StatementLiveTest do
         |> element("#statement-results-by-country", "By country")
         |> render_click()
 
-      assert html =~ "Results (2 votes):"
-      assert html =~ "For 1 (50%)"
-      assert html =~ "Abstain 0 (0%)"
-      assert html =~ "Against 1 (50%)"
+      # Opening country results doesn't change the total
+      assert html =~ "Results (3 votes):"
+      assert html =~ "For 1 (33%)"
+      assert html =~ "Abstain 1 (33%)"
+      assert html =~ "Against 1 (33%)"
       assert html =~ "Spain"
       assert html =~ "France"
 

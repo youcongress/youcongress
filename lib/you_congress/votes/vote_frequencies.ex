@@ -114,20 +114,36 @@ defmodule YouCongress.Votes.VoteFrequencies do
   defp include_vote_kind?(%{direct: false}, %{delegated: include_delegated}),
     do: include_delegated
 
-  defp include_source?(%{source_url: source_url}, %{quotes: include_quotes})
-       when is_binary(source_url) do
-    include_quotes
-  end
-
   defp include_source?(row, filters) do
-    (filters.phone_verified && phone_verified?(row)) ||
-      (filters.email_verified && email_verified?(row))
+    cond do
+      quote_sourced?(row) ->
+        filters.quotes
+
+      filters.phone_verified && phone_verified?(row) ->
+        true
+
+      filters.email_verified && email_verified?(row) ->
+        true
+
+      # Legacy accounts could vote before email verification was required
+      filters.email_verified && !phone_verified?(row) ->
+        true
+
+      true ->
+        false
+    end
   end
 
-  defp country_key(%{source_url: source_url} = row, _filters, _countries)
-       when is_binary(source_url) do
-    author_country_key(row)
-  end
+  # A vote is quote-sourced when its author has no user account (public figures)
+  # or when it comes from an opinion that is not a user comment.
+  defp quote_sourced?(%{has_user: false}), do: true
+  defp quote_sourced?(%{source_url: source_url}) when is_binary(source_url), do: true
+
+  defp quote_sourced?(%{opinion_id: opinion_id, opinion_user_id: nil})
+       when not is_nil(opinion_id),
+       do: true
+
+  defp quote_sourced?(_), do: false
 
   defp country_key(row, %{phone_verified: true}, countries) do
     if phone_verified?(row) do
