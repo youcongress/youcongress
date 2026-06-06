@@ -518,6 +518,9 @@ defmodule YouCongress.Votes do
         author_country_id: a.country_id,
         author_country_name: c.name,
         source_url: o.source_url,
+        opinion_id: o.id,
+        opinion_user_id: o.user_id,
+        has_user: not is_nil(u.id),
         user_email_confirmed: not is_nil(u.email_confirmed_at),
         user_phone_confirmed: not is_nil(u.phone_number_confirmed_at),
         user_phone_number: u.phone_number
