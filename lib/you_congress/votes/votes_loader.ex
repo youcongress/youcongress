@@ -71,7 +71,6 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
       total_opinions: Votes.count_by(statement_id: statement_id),
       opinions_by_response: get_opinions_by_response(statement.id, source_filter),
       vote_frequencies: VoteFrequencies.get(statement_id),
-      country_vote_frequencies: VoteFrequencies.get_by_country(statement_id),
       total_votes: Votes.count_by_statement(statement_id)
     )
     |> assign_main_variables(statement, current_user)

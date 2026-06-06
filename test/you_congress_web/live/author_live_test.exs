@@ -195,5 +195,46 @@ defmodule YouCongressWeb.AuthorLiveTest do
       assert show_live |> element("button##{statement.id}-vote-abstain") |> render() =~ "✓"
       assert show_live |> element("button##{statement.id}-vote-abstain") |> render() =~ "Abstain"
     end
+
+    test "loads country vote results on author page only after clicking by country", %{conn: conn} do
+      unique = System.unique_integer([:positive])
+      author_country = country_fixture(%{name: "Author Vote Country #{unique}"})
+      voter_country = country_fixture(%{name: "Author Page Voter Country #{unique}"})
+
+      current_user =
+        user_fixture(%{}, %{
+          name: "Author Page Voter #{unique}",
+          twitter_username: "author_page_voter_#{unique}",
+          bio: "Bio",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Author_Page_Voter_#{unique}",
+          twin_origin: false,
+          country_id: voter_country.id
+        })
+
+      conn = log_in_user(conn, current_user)
+      author = author_fixture(%{twitter_username: "asimov", country_id: author_country.id})
+      statement = statement_fixture()
+      vote_fixture(%{statement_id: statement.id, author_id: author.id, answer: :against}, true)
+
+      {:ok, show_live, html} = live(conn, ~p"/x/asimov")
+
+      assert html =~ statement.title
+      refute html =~ voter_country.name
+
+      html =
+        show_live
+        |> element("button##{statement.id}-vote-for")
+        |> render_click()
+
+      assert html =~ "By country"
+      refute html =~ voter_country.name
+
+      html =
+        show_live
+        |> element("button##{statement.id}-results-by-country", "By country")
+        |> render_click()
+
+      assert html =~ voter_country.name
+    end
   end
 end

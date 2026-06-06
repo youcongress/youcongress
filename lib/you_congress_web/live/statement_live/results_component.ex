@@ -6,9 +6,13 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
 
   alias YouCongressWeb.StatementLive.ResultsComponent
 
+  attr :id, :string, default: nil
+  attr :statement_id, :integer, default: nil
   attr :total_votes, :integer, required: true
   attr :vote_frequencies, :map, required: true
-  attr :country_vote_frequencies, :list, default: []
+  attr :country_vote_frequencies, :list, default: nil
+  attr :show_country_results, :boolean, default: false
+  attr :country_results_target, :any, default: nil
 
   def horizontal_bar(assigns) do
     ~H"""
@@ -24,11 +28,36 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
         emphasis={true}
       />
 
-      <details :if={@country_vote_frequencies != []} class="space-y-3">
-        <summary class="cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700">
+      <div :if={@statement_id} class="space-y-3">
+        <button
+          id={if @id, do: "#{@id}-by-country"}
+          type="button"
+          phx-click="toggle-country-results"
+          phx-value-statement_id={@statement_id}
+          phx-target={@country_results_target}
+          class="text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700"
+        >
           By country
-        </summary>
-        <div class="space-y-3 pt-2">
+        </button>
+        <div
+          :if={@show_country_results && is_nil(@country_vote_frequencies)}
+          class="text-xs text-gray-500"
+        >
+          Loading country results...
+        </div>
+        <div
+          :if={@show_country_results && @country_vote_frequencies == []}
+          class="text-xs text-gray-500"
+        >
+          No country results yet.
+        </div>
+        <div
+          :if={
+            @show_country_results && is_list(@country_vote_frequencies) &&
+              @country_vote_frequencies != []
+          }
+          class="space-y-3"
+        >
           <ResultsComponent.result_row
             :for={country <- @country_vote_frequencies}
             label={country.country_name}
@@ -36,7 +65,7 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
             vote_frequencies={country.vote_frequencies}
           />
         </div>
-      </details>
+      </div>
     </div>
     """
   end
