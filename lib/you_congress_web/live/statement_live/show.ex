@@ -223,11 +223,15 @@ defmodule YouCongressWeb.StatementLive.Show do
     {:noreply, record_guest_vote(socket, payload)}
   end
 
-  def handle_info({:voted, vote}, socket) do
+  def handle_info({:voted, _vote}, socket) do
+    statement = socket.assigns.statement
+
     socket =
       socket
-      |> assign(:current_user_vote, vote)
-      |> assign(editing: !vote || !vote.opinion_id)
+      |> VotesLoader.load_statement_and_votes(statement.id)
+
+    vote = socket.assigns.current_user_vote
+    socket = assign(socket, editing: !vote || !vote.opinion_id)
 
     {:noreply, socket}
   end

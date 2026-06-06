@@ -3,6 +3,7 @@ defmodule YouCongress.VotesTest do
   use Oban.Testing, repo: YouCongress.Repo
 
   import YouCongress.AuthorsFixtures
+  import YouCongress.CountriesFixtures
   import YouCongress.DelegationsFixtures
   import YouCongress.StatementsFixtures
   import YouCongress.VotesFixtures
@@ -12,6 +13,7 @@ defmodule YouCongress.VotesTest do
   alias YouCongress.Repo
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
+  alias YouCongress.Votes.VoteFrequencies
   alias YouCongress.Workers.RefreshAuthorStatementDelegatedVotesWorker
 
   describe "votes" do
@@ -184,6 +186,60 @@ defmodule YouCongress.VotesTest do
       vote_fixture()
       vote_fixture(author_id: author.id)
       assert Votes.count_by_author_id(author.id) == 2
+    end
+
+    test "VoteFrequencies.get_by_country/1 groups statement votes by country" do
+      statement = statement_fixture()
+      spain = country_fixture(%{name: "Spain"})
+      france = country_fixture(%{name: "France"})
+
+      spain_for_1 = author_fixture(%{country_id: spain.id})
+      spain_for_2 = author_fixture(%{country_id: spain.id})
+      spain_abstain = author_fixture(%{country_id: spain.id})
+      france_against = author_fixture(%{country_id: france.id})
+      unknown_for = author_fixture(%{country_id: nil})
+
+      vote_fixture(%{statement_id: statement.id, author_id: spain_for_1.id, answer: :for})
+      vote_fixture(%{statement_id: statement.id, author_id: spain_for_2.id, answer: :for})
+      vote_fixture(%{statement_id: statement.id, author_id: spain_abstain.id, answer: :abstain})
+      vote_fixture(%{statement_id: statement.id, author_id: france_against.id, answer: :against})
+      vote_fixture(%{statement_id: statement.id, author_id: unknown_for.id, answer: :for})
+
+      assert [
+               %{
+                 country_id: spain_id,
+                 country_name: "Spain",
+                 total_votes: 3,
+                 vote_frequencies: %{
+                   for: {2, 67},
+                   abstain: {1, 33},
+                   against: {0, 0}
+                 }
+               },
+               %{
+                 country_id: france_id,
+                 country_name: "France",
+                 total_votes: 1,
+                 vote_frequencies: %{
+                   for: {0, 0},
+                   abstain: {0, 0},
+                   against: {1, 100}
+                 }
+               },
+               %{
+                 country_id: nil,
+                 country_name: "Unknown country",
+                 total_votes: 1,
+                 vote_frequencies: %{
+                   for: {1, 100},
+                   abstain: {0, 0},
+                   against: {0, 0}
+                 }
+               }
+             ] = VoteFrequencies.get_by_country(statement.id)
+
+      assert spain_id == spain.id
+      assert france_id == france.id
     end
   end
 end
