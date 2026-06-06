@@ -45,7 +45,7 @@ defmodule YouCongressWeb.Components.VoteAuthModal do
     <.modal id={@id} show={@show} on_cancel={JS.push("close-vote-auth-modal")}>
       <div class="space-y-5">
         <div id={@login_heading_id}>
-          <h2 class="text-xl font-semibold text-gray-900">Log in to vote</h2>
+          <h2 class="text-xl font-semibold text-gray-900">Log in to vote and see voting results by country</h2>
         </div>
 
         <div id={@login_buttons_id}>
