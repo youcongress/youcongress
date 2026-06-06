@@ -336,6 +336,12 @@ defmodule YouCongress.Authors do
         {:ids, ids}, query ->
           where(query, [author], author.id in ^ids)
 
+        {:id_less_than, id}, query ->
+          where(query, [author], author.id < ^id)
+
+        {:id_greater_than, id}, query ->
+          where(query, [author], author.id > ^id)
+
         {:search, search}, query ->
           terms = YouCongress.SearchParser.parse(search)
 

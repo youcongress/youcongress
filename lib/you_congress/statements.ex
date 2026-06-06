@@ -377,6 +377,12 @@ defmodule YouCongress.Statements do
         {:exclude_ids, ids}, query ->
           where(query, [v], v.id not in ^ids)
 
+        {:id_less_than, id}, query ->
+          where(query, [v], v.id < ^id)
+
+        {:id_greater_than, id}, query ->
+          where(query, [v], v.id > ^id)
+
         {:search, search}, query ->
           terms = YouCongress.SearchParser.parse(search)
 
@@ -399,6 +405,12 @@ defmodule YouCongress.Statements do
 
         {:order, :random}, query ->
           order_by(query, fragment("RANDOM()"))
+
+        {:order, :id_desc}, query ->
+          order_by(query, desc: :id)
+
+        {:order, :id_asc}, query ->
+          order_by(query, asc: :id)
 
         {:limit, limit}, query ->
           limit(query, ^limit)
