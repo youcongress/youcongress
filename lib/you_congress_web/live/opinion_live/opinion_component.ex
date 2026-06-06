@@ -198,20 +198,20 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
         <img
           src={@profile_image_url}
           alt="Avatar"
-          class="h-8 w-8 inline rounded-full object-cover"
+          class="inline-block h-8 w-8 min-w-[2rem] shrink-0 rounded-full object-cover align-middle"
         />
       <% else %>
         <img
           src="/images/human-avatar.svg"
           alt="Human avatar"
-          class="h-8 w-8 inline"
+          class="inline-block h-8 w-8 min-w-[2rem] shrink-0 rounded-full object-cover align-middle"
         />
       <% end %>
     <% else %>
       <img
         src="/images/robot-avatar.svg"
         alt="AI avatar"
-        class="h-8 w-8 inline"
+        class="inline-block h-8 w-8 min-w-[2rem] shrink-0 rounded-full object-cover align-middle"
       />
     <% end %>
     """

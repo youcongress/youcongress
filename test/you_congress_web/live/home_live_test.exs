@@ -117,6 +117,33 @@ defmodule YouCongressWeb.HomeLiveTest do
       refute html =~ "added 13d ago"
     end
 
+    test "renders home feed profile images as square non-shrinking circles", %{conn: conn} do
+      statement =
+        statement_fixture(title: "Avatar Shape Statement")
+        |> add_statement_to_ai_hall()
+
+      fill_statement_with_quotes(statement.id)
+
+      profile_image_url = "https://example.com/portrait.jpg"
+      author = author_fixture(%{profile_image_url: profile_image_url})
+      opinion = opinion_fixture(%{author_id: author.id, content: "Profile image opinion"})
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: author.id,
+        opinion_id: opinion.id,
+        answer: :for
+      })
+
+      {:ok, _view, html} = live(conn, ~p"/")
+
+      assert html =~ profile_image_url
+      assert html =~ "pt-2 shrink-0"
+
+      assert html =~
+               "inline-block h-8 w-8 min-w-[2rem] shrink-0 rounded-full object-cover align-middle"
+    end
+
     test "guest can vote and sees flash message", %{conn: conn} do
       statement =
         statement_fixture(title: "Test Statement")
