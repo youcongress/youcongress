@@ -1,5 +1,11 @@
 <.header>
   <span class="inline-flex items-center gap-2 flex-wrap">
+    <img
+      :if={@author.profile_image_url}
+      src={@author.profile_image_url}
+      alt={@author.name || "Anonymous"}
+      class="h-14 w-14 rounded-full object-cover"
+    />
     <span>{@author.name || "Anonymous"}</span>
     <span
       :if={@author.twitter_username || @author.wikipedia_url}
