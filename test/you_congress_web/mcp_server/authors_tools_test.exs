@@ -76,6 +76,61 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
         assert Enum.map(next_page, & &1.author_id) == [a2.id, a3.id]
       end)
     end
+
+    test "filters authors by country name or ISO code" do
+      spain = country_fixture(name: "Spain", iso_alpha2: "ES", iso_alpha3: "ESP")
+      france = country_fixture(name: "France", iso_alpha2: "FR", iso_alpha3: "FRA")
+      a1 = author_fixture(name: "Ada Lovelace", country_id: spain.id)
+      _a2 = author_fixture(name: "Grace Hopper", country_id: france.id)
+      _a3 = author_fixture(name: "Alan Turing", country_id: nil)
+
+      with_mocked_response(fn ->
+        assert {:reply, {:json, %{authors: payload}}, :frame} =
+                 AuthorsList.execute(%{country: "Spain"}, :frame)
+
+        assert Enum.map(payload, & &1.author_id) == [a1.id]
+        assert hd(payload).country == "Spain"
+
+        assert {:reply, {:json, %{authors: payload}}, :frame} =
+                 AuthorsList.execute(%{country: "ES"}, :frame)
+
+        assert Enum.map(payload, & &1.author_id) == [a1.id]
+      end)
+    end
+
+    test "filters authors without a country" do
+      spain = country_fixture(name: "Spain", iso_alpha2: "ES", iso_alpha3: "ESP")
+      _a1 = author_fixture(name: "Ada Lovelace", country_id: spain.id)
+      a2 = author_fixture(name: "Grace Hopper", country_id: nil)
+
+      with_mocked_response(fn ->
+        assert {:reply, {:json, %{authors: payload}}, :frame} =
+                 AuthorsList.execute(%{without_country: true}, :frame)
+
+        assert Enum.map(payload, & &1.author_id) == [a2.id]
+        assert hd(payload).country_id == nil
+      end)
+    end
+
+    test "lists authors from all countries (including without country) by default" do
+      spain = country_fixture(name: "Spain", iso_alpha2: "ES", iso_alpha3: "ESP")
+      a1 = author_fixture(name: "Ada Lovelace", country_id: spain.id)
+      a2 = author_fixture(name: "Grace Hopper", country_id: nil)
+
+      with_mocked_response(fn ->
+        assert {:reply, {:json, %{authors: payload}}, :frame} =
+                 AuthorsList.execute(%{without_country: false}, :frame)
+
+        assert Enum.map(payload, & &1.author_id) == [a2.id, a1.id]
+      end)
+    end
+
+    test "returns an error for an unknown country" do
+      with_mocked_response(fn ->
+        assert {:reply, {:error, "Unknown country: Atlantis"}, :frame} =
+                 AuthorsList.execute(%{country: "Atlantis"}, :frame)
+      end)
+    end
   end
 
   describe "AuthorsCreate.execute/2" do
