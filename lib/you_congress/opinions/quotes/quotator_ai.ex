@@ -1,6 +1,8 @@
 defmodule YouCongress.Opinions.Quotes.QuotatorAI do
   @moduledoc """
   Find and return relevant public-figure quotes about a statement using OpenAI.
+
+  This module is not often used but external AI agents use our MCP tools to find and add quotes.
   """
 
   require Logger
@@ -178,7 +180,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     1. Search for quotes, interviews, speeches, testimony, articles, posts, reports, or transcripts about the exact statement topic.
     2. Prefer primary sources: official pages, transcripts, testimony, speeches, interviews, author-written articles, company/organisation posts, or direct social posts. Use reliable secondary sources only when they reproduce the exact quote and attribution.
     3. Prefer expert, academic, business, activist, civil-society, or other domain-relevant authors. Politicians are acceptable when they are notable and directly address the statement.
-    4. Prefer recent quotes, especially 2026-or-later quotes for current AI governance, AI safety, or AI-in-society statements. Do not use a weak or partial quote merely because it is recent.
+    4. The quotes must be from 2026 or later.
     5. Before returning a quote, verify that source_url exists, is accessible, attributes the quote to the author, and contains the exact quote text.
     6. Check existing exclusions and do not reuse authors that are already excluded.#{exclusion_text}
 
