@@ -191,5 +191,11 @@ defmodule YouCongress.AuthorsTest do
       found = Authors.get_author_by_twitter_id_str_or_username(nil, "casesensitive")
       assert found.id == author.id
     end
+
+    test "set_profile_image_from_x/1 returns error when author has no twitter_username" do
+      author = author_fixture(twitter_username: nil)
+
+      assert Authors.set_profile_image_from_x(author) == {:error, :no_twitter_username}
+    end
   end
 end
