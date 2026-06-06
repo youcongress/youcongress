@@ -152,7 +152,7 @@
           <span class="inline-flex items-center px-2 py-0.5 rounded bg-yellow-100 text-yellow-800">
             own author
           </span>
-          <span class="text-gray-600">Your own linked author or opinion</span>
+          <span class="text-gray-600">Your own linked author, opinion or statement</span>
         </div>
         <div class="flex items-center gap-2">
           <span class="inline-flex items-center px-2 py-0.5 rounded bg-purple-100 text-purple-800">
@@ -268,11 +268,11 @@
         <div class="pl-4">
           <dt class="font-mono text-sm font-semibold text-blue-700">
             statements_halls_update
-            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
-              admin
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-sans text-xs font-medium">
+              own statement
             </span>
-            <span class="inline-flex items-center px-2 py-0.5 rounded bg-orange-100 text-orange-800 font-sans text-xs font-medium">
-              creator
+            <span class="inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 font-sans text-xs font-medium">
+              admin
             </span>
           </dt>
           <dd class="text-gray-700">
@@ -373,12 +373,12 @@
         Quotes and opinions attributed to authors, linked to statements.
       </p>
       <p class="text-gray-600 mt-2">
-        Every "quote" in YouCongress is simply an opinion that includes a
-        <code class="bg-gray-100 px-1 rounded">source_url</code>
-        (and usually a <code class="bg-gray-100 px-1 rounded">source_excerpt</code>). User-authored
+        Every "quote" in YouCongress is simply an opinion that includes a <code class="bg-gray-100 px-1 rounded">source_url</code>. User-authored
         positions without a source URL are still stored as opinions, but they will not appear in the
         quote verification tools below. Use the opinions tools to create both sourced quotes and
-        unsourced user stances—just include the source fields when you want the opinion treated as a quote.
+        unsourced user stances—just include the
+        <code class="bg-gray-100 px-1 rounded">source_url</code>
+        when you want the opinion treated as a quote.
       </p>
       <dl class="mt-3 space-y-3">
         <div class="pl-4">
@@ -593,7 +593,7 @@
             Create a vote. Requires: <code class="bg-gray-100 px-1 rounded">author_id</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>,
             <code class="bg-gray-100 px-1 rounded">answer</code>
             (for / against / abstain).
-            Optional: <code class="bg-gray-100 px-1 rounded">opinion_id</code>, <code class="bg-gray-100 px-1 rounded">direct</code>, <code class="bg-gray-100 px-1 rounded">twin</code>.
+            Optional: <code class="bg-gray-100 px-1 rounded">opinion_id</code>.
           </dd>
         </div>
         <div class="pl-4">
