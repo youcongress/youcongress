@@ -29,6 +29,32 @@
     </div>
   <% end %>
 
+  <%= if phone_location_locked?(@current_user) do %>
+    <div :if={@profile_country_name} class="mt-4 text-sm">
+      <div class="font-semibold text-zinc-800">Location</div>
+      <div class="text-zinc-700">{@profile_country_name}</div>
+      <div class="text-xs text-zinc-500">
+        Set from your verified phone number.
+      </div>
+    </div>
+  <% else %>
+    <.input
+      type="select"
+      field={@form[:country_id]}
+      label="Country"
+      prompt="Select your country"
+      options={@country_options}
+    />
+    <div class="text-sm">
+      <.link navigate={~p"/sign_up"} class="font-semibold text-blue-600 hover:underline">
+        Verify with phone
+      </.link>
+      <span class="text-zinc-500">
+        to show you're likely a real person and update your location.
+      </span>
+    </div>
+  <% end %>
+
   <:actions>
     <.button phx-disable-with="Saving...">Save</.button>
   </:actions>

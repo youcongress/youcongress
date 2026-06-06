@@ -33,6 +33,20 @@ defmodule YouCongress.CountriesTest do
       assert country.iso_alpha3 == "CAN"
       assert country.phone_prefix == "+1"
     end
+
+    test "get_country_by_phone_number/1 matches normalized phone prefixes" do
+      country = country_fixture(name: "Spain", phone_prefix: "+34")
+
+      assert Countries.get_country_by_phone_number("+34611111111").id == country.id
+      assert Countries.get_country_by_phone_number("34611111111").id == country.id
+    end
+
+    test "get_country_by_phone_number/1 prefers the longest matching prefix" do
+      _shared_prefix = country_fixture(name: "Shared Prefix", phone_prefix: "+1")
+      country = country_fixture(name: "Long Prefix", phone_prefix: "+1-340")
+
+      assert Countries.get_country_by_phone_number("+13405551234").id == country.id
+    end
   end
 
   describe "GeoNamesImporter" do

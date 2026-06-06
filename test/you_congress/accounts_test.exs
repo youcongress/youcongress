@@ -4,6 +4,7 @@ defmodule YouCongress.AccountsTest do
   alias YouCongress.Accounts
 
   import YouCongress.AccountsFixtures
+  import YouCongress.CountriesFixtures
   alias YouCongress.Accounts.{User, UserToken}
 
   describe "get_user_by_email/1" do
@@ -90,6 +91,46 @@ defmodule YouCongress.AccountsTest do
     test "returns a user changeset" do
       assert %Ecto.Changeset{} = changeset = Accounts.change_user_email(%User{})
       assert changeset.required == [:email]
+    end
+  end
+
+  describe "phone verification" do
+    test "confirm_user_phone/1 sets the author country from the phone prefix" do
+      phone_country = country_fixture(name: "Phone Spain", phone_prefix: "+34")
+      declared_country = country_fixture(name: "Declared Country", phone_prefix: "+999")
+
+      user =
+        user_fixture(
+          %{},
+          %{
+            name: "Phone User",
+            bio: "Bio",
+            twin_origin: false,
+            country_id: declared_country.id,
+            location: "Declared location"
+          },
+          false
+        )
+
+      {:ok, user} = Accounts.update_user_phone_number(user, "+34611111111")
+
+      assert {:ok, confirmed_user} = Accounts.confirm_user_phone(user)
+      assert confirmed_user.phone_number_confirmed_at
+
+      author = YouCongress.Authors.get_author!(user.author_id)
+      assert author.country_id == phone_country.id
+      assert author.location == nil
+    end
+
+    test "update_user_phone_number/2 clears confirmation when the number changes" do
+      user = user_fixture(%{}, %{name: "Phone User", bio: "Bio", twin_origin: false}, false)
+
+      {:ok, user} = Accounts.update_user_phone_number(user, "+34611111111")
+      {:ok, user} = Accounts.confirm_user_phone(user)
+      assert user.phone_number_confirmed_at
+
+      {:ok, user} = Accounts.update_user_phone_number(user, "+33611111111")
+      assert user.phone_number_confirmed_at == nil
     end
   end
 
