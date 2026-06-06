@@ -504,6 +504,28 @@ defmodule YouCongress.Votes do
     |> Repo.all()
   end
 
+  def country_result_vote_rows(statement_id) do
+    from(v in Vote,
+      join: a in assoc(v, :author),
+      left_join: c in assoc(a, :country),
+      left_join: o in assoc(v, :opinion),
+      left_join: u in YouCongress.Accounts.User,
+      on: u.author_id == v.author_id,
+      where: v.statement_id == ^statement_id,
+      select: %{
+        answer: v.answer,
+        direct: v.direct,
+        author_country_id: a.country_id,
+        author_country_name: c.name,
+        source_url: o.source_url,
+        user_email_confirmed: not is_nil(u.email_confirmed_at),
+        user_phone_confirmed: not is_nil(u.phone_number_confirmed_at),
+        user_phone_number: u.phone_number
+      }
+    )
+    |> Repo.all()
+  end
+
   def count_by_response_map_for_statements(statement_ids, opts \\ [])
 
   def count_by_response_map_for_statements([], _opts), do: %{}

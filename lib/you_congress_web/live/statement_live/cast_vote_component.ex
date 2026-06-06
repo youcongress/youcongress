@@ -56,6 +56,7 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
           vote_frequencies={@vote_frequencies}
           country_vote_frequencies={@country_vote_frequencies}
           show_country_results={@show_country_results}
+          country_results_filters={@country_results_filters}
           country_results_target={@myself}
         />
 
@@ -290,8 +291,26 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
       else
         socket
         |> assign(:show_country_results, true)
-        |> assign(:country_vote_frequencies, VoteFrequencies.get_by_country(statement.id))
+        |> assign(
+          :country_vote_frequencies,
+          VoteFrequencies.get_by_country(statement.id, socket.assigns.country_results_filters)
+        )
       end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("toggle-country-results-filter", %{"filter" => filter}, socket) do
+    %{assigns: %{statement: statement}} = socket
+
+    filters =
+      VoteFrequencies.toggle_country_filter(socket.assigns.country_results_filters, filter)
+
+    socket =
+      socket
+      |> assign(:show_country_results, true)
+      |> assign(:country_results_filters, filters)
+      |> assign(:country_vote_frequencies, VoteFrequencies.get_by_country(statement.id, filters))
 
     {:noreply, socket}
   end
@@ -307,6 +326,7 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
     socket
     |> assign_new(:show_country_results, fn -> false end)
     |> assign_new(:country_vote_frequencies, fn -> nil end)
+    |> assign_new(:country_results_filters, fn -> VoteFrequencies.default_country_filters() end)
   end
 
   defp assign_results_variables(socket) do
@@ -323,7 +343,10 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
     assign(
       socket,
       :country_vote_frequencies,
-      VoteFrequencies.get_by_country(socket.assigns.statement.id)
+      VoteFrequencies.get_by_country(
+        socket.assigns.statement.id,
+        socket.assigns.country_results_filters
+      )
     )
   end
 

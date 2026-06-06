@@ -353,6 +353,7 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       spain_author = author_fixture(%{country_id: spain.id})
       france_author = author_fixture(%{country_id: france.id})
+      france_quote = opinion_fixture(%{author_id: france_author.id})
 
       vote_fixture(%{
         statement_id: statement.id,
@@ -371,6 +372,7 @@ defmodule YouCongressWeb.StatementLiveTest do
       vote_fixture(%{
         statement_id: statement.id,
         author_id: france_author.id,
+        opinion_id: france_quote.id,
         answer: :against
       })
 
@@ -390,8 +392,23 @@ defmodule YouCongressWeb.StatementLiveTest do
         |> element("#statement-results-by-country", "By country")
         |> render_click()
 
+      assert html =~ "Results (2 votes):"
+      assert html =~ "For 1 (50%)"
+      assert html =~ "Abstain 0 (0%)"
+      assert html =~ "Against 1 (50%)"
       assert html =~ "Spain"
       assert html =~ "France"
+
+      html =
+        show_live
+        |> element("input[phx-value-filter='quotes']")
+        |> render_click()
+
+      assert html =~ "Results (1 vote):"
+      assert html =~ "For 1 (100%)"
+      assert html =~ "Against 0 (0%)"
+      assert html =~ "Spain"
+      refute html =~ "France"
     end
 
     test "creates a comment", %{conn: conn, statement: statement} do
