@@ -138,10 +138,12 @@ defmodule YouCongressWeb.HomeLiveTest do
       {:ok, _view, html} = live(conn, ~p"/")
 
       assert html =~ profile_image_url
-      assert html =~ "pt-2 shrink-0"
+      assert html =~ "flex items-center space-x-2"
+      assert html =~ "shrink-0"
+      assert html =~ "relative top-1 inline-flex cursor-pointer"
 
       assert html =~
-               "inline-block h-8 w-8 min-w-[2rem] shrink-0 rounded-full object-cover align-middle"
+               "inline-block h-12 w-12 min-w-[2.5rem] shrink-0 rounded-full object-cover align-middle"
     end
 
     test "guest can vote and sees flash message", %{conn: conn} do
