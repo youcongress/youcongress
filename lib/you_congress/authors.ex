@@ -9,6 +9,7 @@ defmodule YouCongress.Authors do
   alias YouCongress.Authors.Author
   alias YouCongress.Countries
   alias YouCongress.Votes.Vote
+  alias YouCongress.Workers.SetAuthorProfileImageFromXWorker
 
   @doc """
   Returns the list of authors.
@@ -175,6 +176,7 @@ defmodule YouCongress.Authors do
       author
       |> Author.changeset(attrs)
       |> Repo.insert()
+      |> maybe_enqueue_profile_image_fetch()
     else
       {:error, :unknown_country, country, attrs} ->
         {:error, unknown_country_changeset(author, attrs, country)}
@@ -279,6 +281,7 @@ defmodule YouCongress.Authors do
       author_before
       |> Author.changeset(attrs)
       |> Repo.update()
+      |> maybe_enqueue_profile_image_fetch()
     else
       {:error, :unknown_country, country, attrs} ->
         {:error, unknown_country_changeset(author_before, attrs, country)}
@@ -319,6 +322,27 @@ defmodule YouCongress.Authors do
       from(v in Vote, where: v.author_id == ^author_before.id and v.twin)
     )
     |> Repo.transaction()
+    |> maybe_enqueue_profile_image_fetch()
+  end
+
+  defp maybe_enqueue_profile_image_fetch({:ok, %Author{} = author} = result) do
+    enqueue_profile_image_fetch_if_needed(author)
+    result
+  end
+
+  defp maybe_enqueue_profile_image_fetch({:ok, %{update_author: %Author{} = author}} = result) do
+    enqueue_profile_image_fetch_if_needed(author)
+    result
+  end
+
+  defp maybe_enqueue_profile_image_fetch(result), do: result
+
+  defp enqueue_profile_image_fetch_if_needed(%Author{} = author) do
+    if author.profile_image_url in [nil, ""] and author.twitter_username not in [nil, ""] do
+      %{author_id: author.id}
+      |> SetAuthorProfileImageFromXWorker.new()
+      |> Oban.insert()
+    end
   end
 
   @doc """

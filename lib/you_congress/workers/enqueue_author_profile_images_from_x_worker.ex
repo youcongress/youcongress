@@ -14,7 +14,7 @@ defmodule YouCongress.Workers.EnqueueAuthorProfileImagesFromXWorker do
   alias YouCongress.Repo
   alias YouCongress.Workers.SetAuthorProfileImageFromXWorker
 
-  @stagger_interval 2
+  @stagger_interval 4
 
   @impl true
   def perform(%Oban.Job{}) do

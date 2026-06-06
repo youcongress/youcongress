@@ -1,7 +1,9 @@
 defmodule YouCongress.AuthorsTest do
   use YouCongress.DataCase
+  use Oban.Testing, repo: YouCongress.Repo
 
   alias YouCongress.Authors
+  alias YouCongress.Workers.SetAuthorProfileImageFromXWorker
 
   describe "authors" do
     alias YouCongress.Authors.Author
@@ -141,6 +143,73 @@ defmodule YouCongress.AuthorsTest do
       author = author_fixture()
       assert {:error, %Ecto.Changeset{}} = Authors.update_author(author, @invalid_attrs)
       assert author == Authors.get_author!(author.id)
+    end
+
+    test "create_author/1 enqueues a profile image fetch when there is an X username but no picture" do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        author = author_fixture(twitter_username: "some_username")
+
+        assert_enqueued(
+          worker: SetAuthorProfileImageFromXWorker,
+          args: %{author_id: author.id}
+        )
+      end)
+    end
+
+    test "create_author/1 does not enqueue a profile image fetch when the author already has a picture" do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        author =
+          author_fixture(
+            twitter_username: "some_username",
+            profile_image_url: "https://pbs.twimg.com/profile_images/123/abc.jpg"
+          )
+
+        refute_enqueued(
+          worker: SetAuthorProfileImageFromXWorker,
+          args: %{author_id: author.id}
+        )
+      end)
+    end
+
+    test "create_author/1 does not enqueue a profile image fetch without an X username" do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        author = author_fixture(twitter_username: nil)
+
+        refute_enqueued(
+          worker: SetAuthorProfileImageFromXWorker,
+          args: %{author_id: author.id}
+        )
+      end)
+    end
+
+    test "update_author/2 enqueues a profile image fetch when there is an X username but no picture" do
+      author = author_fixture(twitter_username: nil)
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        assert {:ok, author} = Authors.update_author(author, %{twitter_username: "some_username"})
+
+        assert_enqueued(
+          worker: SetAuthorProfileImageFromXWorker,
+          args: %{author_id: author.id}
+        )
+      end)
+    end
+
+    test "update_author/2 does not enqueue a profile image fetch when the author already has a picture" do
+      author =
+        author_fixture(
+          twitter_username: "some_username",
+          profile_image_url: "https://pbs.twimg.com/profile_images/123/abc.jpg"
+        )
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        assert {:ok, author} = Authors.update_author(author, %{bio: "updated bio"})
+
+        refute_enqueued(
+          worker: SetAuthorProfileImageFromXWorker,
+          args: %{author_id: author.id}
+        )
+      end)
     end
 
     test "delete_author/1 deletes the author" do
