@@ -2,6 +2,7 @@ defmodule YouCongress.VotesTest do
   use YouCongress.DataCase
   use Oban.Testing, repo: YouCongress.Repo
 
+  import YouCongress.AccountsFixtures
   import YouCongress.AuthorsFixtures
   import YouCongress.CountriesFixtures
   import YouCongress.DelegationsFixtures
@@ -11,6 +12,7 @@ defmodule YouCongress.VotesTest do
   import YouCongress.OpinionsFixtures
 
   alias YouCongress.Repo
+  alias YouCongress.Accounts
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
   alias YouCongress.Votes.VoteFrequencies
@@ -240,6 +242,91 @@ defmodule YouCongress.VotesTest do
 
       assert spain_id == spain.id
       assert france_id == france.id
+    end
+
+    test "VoteFrequencies.get_by_country/2 filters vote type and source" do
+      statement = statement_fixture()
+      phone_country = country_fixture(%{name: "Phone Verified Spain", phone_prefix: "+34"})
+      declared_country = country_fixture(%{name: "Declared Country", phone_prefix: "+999"})
+      quote_country = country_fixture(%{name: "Quote Country", phone_prefix: "+33"})
+
+      unique = System.unique_integer([:positive])
+
+      phone_user =
+        user_fixture(%{}, %{
+          name: "Phone User #{unique}",
+          twitter_username: "phone_user_#{unique}",
+          bio: "Bio",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Phone_User_#{unique}",
+          twin_origin: false,
+          country_id: declared_country.id
+        })
+
+      {:ok, phone_user} = Accounts.update_user_phone_number(phone_user, "+34123456789")
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: phone_user.author_id,
+        answer: :for
+      })
+
+      direct_quote_author = author_fixture(%{country_id: quote_country.id})
+      direct_quote = opinion_fixture(%{author_id: direct_quote_author.id})
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: direct_quote_author.id,
+        opinion_id: direct_quote.id,
+        answer: :against,
+        direct: true
+      })
+
+      delegated_quote_author = author_fixture(%{country_id: quote_country.id})
+      delegated_quote = opinion_fixture(%{author_id: delegated_quote_author.id})
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: delegated_quote_author.id,
+        opinion_id: delegated_quote.id,
+        answer: :against,
+        direct: false
+      })
+
+      assert [
+               %{
+                 country_id: phone_country_id,
+                 country_name: "Phone Verified Spain",
+                 total_votes: 1,
+                 vote_frequencies: %{for: {1, 100}, abstain: {0, 0}, against: {0, 0}}
+               }
+             ] =
+               VoteFrequencies.get_by_country(statement.id, %{
+                 direct: true,
+                 delegated: false,
+                 quotes: false,
+                 email_verified: false,
+                 phone_verified: true
+               })
+
+      assert phone_country_id == phone_country.id
+
+      assert [
+               %{
+                 country_id: quote_country_id,
+                 country_name: "Quote Country",
+                 total_votes: 1,
+                 vote_frequencies: %{for: {0, 0}, abstain: {0, 0}, against: {1, 100}}
+               }
+             ] =
+               VoteFrequencies.get_by_country(statement.id, %{
+                 direct: false,
+                 delegated: true,
+                 quotes: true,
+                 email_verified: false,
+                 phone_verified: false
+               })
+
+      assert quote_country_id == quote_country.id
     end
   end
 end

@@ -35,7 +35,8 @@ defmodule YouCongressWeb.StatementLive.Show do
      |> assign(:pending_vote_prompt, nil)
      |> assign(:show_vote_auth_modal, false)
      |> assign(:show_country_results, false)
-     |> assign(:country_vote_frequencies, nil)}
+     |> assign(:country_vote_frequencies, nil)
+     |> assign(:country_results_filters, VoteFrequencies.default_country_filters())}
   end
 
   @impl true
@@ -214,8 +215,30 @@ defmodule YouCongressWeb.StatementLive.Show do
       else
         socket
         |> assign(:show_country_results, true)
-        |> assign(:country_vote_frequencies, VoteFrequencies.get_by_country(statement_id))
+        |> assign(
+          :country_vote_frequencies,
+          VoteFrequencies.get_by_country(statement_id, socket.assigns.country_results_filters)
+        )
       end
+
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "toggle-country-results-filter",
+        %{"filter" => filter, "statement_id" => statement_id},
+        socket
+      ) do
+    filters =
+      VoteFrequencies.toggle_country_filter(socket.assigns.country_results_filters, filter)
+
+    statement_id = String.to_integer(statement_id)
+
+    socket =
+      socket
+      |> assign(:show_country_results, true)
+      |> assign(:country_results_filters, filters)
+      |> assign(:country_vote_frequencies, VoteFrequencies.get_by_country(statement_id, filters))
 
     {:noreply, socket}
   end
@@ -288,7 +311,10 @@ defmodule YouCongressWeb.StatementLive.Show do
     assign(
       socket,
       :country_vote_frequencies,
-      VoteFrequencies.get_by_country(socket.assigns.statement.id)
+      VoteFrequencies.get_by_country(
+        socket.assigns.statement.id,
+        socket.assigns.country_results_filters
+      )
     )
   end
 

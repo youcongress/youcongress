@@ -6,25 +6,30 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
 
   alias YouCongressWeb.StatementLive.ResultsComponent
 
+  @responses [:for, :abstain, :against]
+
   attr :id, :string, default: nil
   attr :statement_id, :integer, default: nil
   attr :total_votes, :integer, required: true
   attr :vote_frequencies, :map, required: true
   attr :country_vote_frequencies, :list, default: nil
   attr :show_country_results, :boolean, default: false
+  attr :country_results_filters, :map, default: %{}
   attr :country_results_target, :any, default: nil
 
   def horizontal_bar(assigns) do
+    assigns = assign_display_results(assigns)
+
     ~H"""
     <div class="pt-6 pb-1 space-y-4">
       <div class="text-sm font-semibold">
-        Results ({vote_count_label(@total_votes)}):
+        Results ({vote_count_label(@display_total_votes)}):
       </div>
 
       <ResultsComponent.result_row
         label="Total"
-        total_votes={@total_votes}
-        vote_frequencies={@vote_frequencies}
+        total_votes={@display_total_votes}
+        vote_frequencies={@display_vote_frequencies}
         emphasis={true}
       />
 
@@ -39,6 +44,29 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
         >
           By country
         </button>
+        <div :if={@show_country_results} class="grid gap-3 text-xs md:grid-cols-2">
+          <ResultsComponent.country_filter_group
+            title="Vote type"
+            filters={@country_results_filters}
+            statement_id={@statement_id}
+            target={@country_results_target}
+            options={[
+              {:direct, "Direct votes"},
+              {:delegated, "Delegated votes"}
+            ]}
+          />
+          <ResultsComponent.country_filter_group
+            title="Source"
+            filters={@country_results_filters}
+            statement_id={@statement_id}
+            target={@country_results_target}
+            options={[
+              {:quotes, "Quotes"},
+              {:email_verified, "Users verified by email"},
+              {:phone_verified, "Users verified by phone"}
+            ]}
+          />
+        </div>
         <div
           :if={@show_country_results && is_nil(@country_vote_frequencies)}
           class="text-xs text-gray-500"
@@ -67,6 +95,32 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
         </div>
       </div>
     </div>
+    """
+  end
+
+  attr :title, :string, required: true
+  attr :filters, :map, required: true
+  attr :statement_id, :integer, required: true
+  attr :target, :any, default: nil
+  attr :options, :list, required: true
+
+  def country_filter_group(assigns) do
+    ~H"""
+    <fieldset class="space-y-1">
+      <legend class="font-semibold text-gray-600">{@title}</legend>
+      <label :for={{filter, label} <- @options} class="flex items-center gap-2 text-gray-700">
+        <input
+          type="checkbox"
+          checked={Map.get(@filters, filter, false)}
+          phx-click="toggle-country-results-filter"
+          phx-value-filter={filter}
+          phx-value-statement_id={@statement_id}
+          phx-target={@target}
+          class="h-3.5 w-3.5 rounded border-gray-300 text-zinc-900"
+        />
+        <span>{label}</span>
+      </label>
+    </fieldset>
     """
   end
 
@@ -156,7 +210,7 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
   def response_text_color(_), do: "text-gray-800"
 
   defp vote_stats(vote_frequencies) do
-    Enum.map([:for, :abstain, :against], fn response ->
+    Enum.map(@responses, fn response ->
       {count, percentage} = Map.get(vote_frequencies, response, {0, 0})
 
       %{
@@ -181,6 +235,46 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
   defp has_percentage?(vote_frequencies, response) do
     percentage(vote_frequencies, response) > 0
   end
+
+  defp assign_display_results(
+         %{show_country_results: true, country_vote_frequencies: country_vote_frequencies} =
+           assigns
+       )
+       when is_list(country_vote_frequencies) do
+    counts =
+      Map.new(@responses, fn response ->
+        count =
+          Enum.sum_by(country_vote_frequencies, fn country ->
+            country.vote_frequencies
+            |> Map.get(response, {0, 0})
+            |> elem(0)
+          end)
+
+        {response, count}
+      end)
+
+    assigns
+    |> assign(:display_total_votes, Enum.sum(Map.values(counts)))
+    |> assign(:display_vote_frequencies, frequencies(counts))
+  end
+
+  defp assign_display_results(assigns) do
+    assigns
+    |> assign(:display_total_votes, assigns.total_votes)
+    |> assign(:display_vote_frequencies, assigns.vote_frequencies)
+  end
+
+  defp frequencies(counts) do
+    total = Enum.sum(Map.values(counts))
+
+    Map.new(@responses, fn response ->
+      count = Map.get(counts, response, 0)
+      {response, {count, frequency_percentage(count, total)}}
+    end)
+  end
+
+  defp frequency_percentage(_count, 0), do: 0
+  defp frequency_percentage(count, total), do: round(count * 100 / total)
 
   defp vote_count_label(1), do: "1 vote"
   defp vote_count_label(count), do: "#{count} votes"
