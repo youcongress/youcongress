@@ -486,6 +486,24 @@ defmodule YouCongress.Votes do
     |> Enum.into(%{})
   end
 
+  @doc """
+  Returns the number of votes of a statement grouped by country and response.
+
+  Example:
+  > count_by_country_and_response(1)
+  [{1, "Spain", :for, 4}, {1, "Spain", :against, 2}, {nil, nil, :abstain, 1}]
+  """
+  def count_by_country_and_response(statement_id) do
+    from(v in Vote,
+      join: a in assoc(v, :author),
+      left_join: c in assoc(a, :country),
+      where: v.statement_id == ^statement_id,
+      group_by: [a.country_id, c.name, v.answer],
+      select: {a.country_id, c.name, v.answer, count(v.id)}
+    )
+    |> Repo.all()
+  end
+
   def count_by_response_map_for_statements(statement_ids, opts \\ [])
 
   def count_by_response_map_for_statements([], _opts), do: %{}

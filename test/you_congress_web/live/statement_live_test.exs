@@ -10,6 +10,7 @@ defmodule YouCongressWeb.StatementLiveTest do
   import YouCongress.OpinionsFixtures
   import YouCongress.VotesFixtures
   import YouCongress.AuthorsFixtures
+  import YouCongress.CountriesFixtures
 
   alias YouCongress.Statements
   alias YouCongress.HallsStatements
@@ -265,6 +266,70 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       assert show_live |> element("button#cast-vote-abstain") |> render() =~ "✓"
       assert show_live |> element("button#cast-vote-abstain") |> render() =~ "Abstain"
+    end
+
+    test "shows total results and closed country breakdown", %{conn: conn, statement: statement} do
+      spain = country_fixture(%{name: "Spain"})
+      france = country_fixture(%{name: "France"})
+
+      unique = System.unique_integer([:positive])
+
+      user =
+        user_fixture(%{}, %{
+          name: "Current Voter #{unique}",
+          twitter_username: "current_voter_#{unique}",
+          bio: "Bio",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Current_Voter_#{unique}",
+          twin_origin: false,
+          country_id: spain.id
+        })
+
+      conn = log_in_user(conn, user)
+
+      opinion =
+        opinion_fixture(%{
+          statement_id: statement.id,
+          author_id: user.author_id,
+          user_id: user.id,
+          source_url: nil,
+          twin: false
+        })
+
+      spain_author = author_fixture(%{country_id: spain.id})
+      france_author = author_fixture(%{country_id: france.id})
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: user.author_id,
+        opinion_id: opinion.id,
+        answer: :for,
+        twin: false
+      })
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: spain_author.id,
+        answer: :abstain
+      })
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: france_author.id,
+        answer: :against
+      })
+
+      {:ok, _show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+
+      assert html =~ "Results (3 votes):"
+      assert html =~ "Total"
+      assert html =~ "For 1 (33%)"
+      assert html =~ "Abstain 1 (33%)"
+      assert html =~ "Against 1 (33%)"
+      assert html =~ "By country"
+      assert html =~ "<details"
+      refute html =~ "<details open"
+      assert html =~ "Spain"
+      assert html =~ "France"
     end
 
     test "creates a comment", %{conn: conn, statement: statement} do
