@@ -33,7 +33,9 @@ defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorker do
       {:error, :no_profile_image} ->
         :ok
 
+      # The X account no longer exists: remove the stale username
       {:error, "User not found"} ->
+        Authors.update_author(author, %{twitter_username: nil})
         :ok
 
       # Retry on transient errors (rate limits, network, missing config)
