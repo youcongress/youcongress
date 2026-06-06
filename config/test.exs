@@ -43,6 +43,10 @@ config :you_congress, :hall_classifier, YouCongress.Halls.ClassificationFake
 config :you_congress, :quotator_implementation, YouCongress.Opinions.Quotes.QuotatorFake
 config :you_congress, :title_rewording_implementation, YouCongress.Statements.TitleRewordingFake
 
+config :you_congress,
+       :author_country_inference_implementation,
+       YouCongress.Authors.CountryInferenceFake
+
 # Disable the MCP session store during tests to avoid runtime warnings.
 config :anubis_mcp, :session_store, enabled: false
 
