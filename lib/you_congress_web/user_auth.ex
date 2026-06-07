@@ -258,7 +258,7 @@ defmodule YouCongressWeb.UserAuth do
       |> redirect(to: signed_in_path(conn))
       |> halt()
     else
-      conn
+      maybe_store_login_return_to(conn)
     end
   end
 
@@ -330,6 +330,41 @@ defmodule YouCongressWeb.UserAuth do
   end
 
   defp maybe_store_return_to(conn), do: conn
+
+  defp maybe_store_login_return_to(%{method: "GET", request_path: "/log_in"} = conn) do
+    return_to =
+      [
+        query_param(conn, "return_to"),
+        referrer_return_to(conn)
+      ]
+      |> first_valid_return_to()
+
+    case return_to do
+      nil -> conn
+      path -> put_session(conn, :user_return_to, path)
+    end
+  end
+
+  defp maybe_store_login_return_to(conn), do: conn
+
+  defp first_valid_return_to(candidates) do
+    Enum.find_value(candidates, &ReturnTo.sanitize/1)
+  end
+
+  defp query_param(%{query_string: query_string}, key) when is_binary(query_string) do
+    query_string
+    |> Plug.Conn.Query.decode()
+    |> Map.get(key)
+  end
+
+  defp query_param(_, _), do: nil
+
+  defp referrer_return_to(conn) do
+    conn
+    |> get_req_header("referer")
+    |> List.first()
+    |> ReturnTo.from_same_origin_url(conn.host)
+  end
 
   defp signed_in_path(_conn), do: ~p"/"
 end

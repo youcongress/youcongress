@@ -298,9 +298,20 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ "Invite others"
       assert html =~ "data-copy-current-url"
       assert html =~ "Add quotes with AI"
-      assert has_element?(show_live, "a[href='/log_in']", "Add quotes with AI")
+      login_path = "/log_in?return_to=%2Fp%2F#{statement.slug}"
+      assert has_element?(show_live, "a[href='#{login_path}']", "Add quotes with AI")
+      assert html =~ ~s(href="#{login_path}")
       refute html =~ "Find quotes"
       refute html =~ "Biased? Add more"
+    end
+
+    test "header sign up link keeps the statement page as return_to", %{
+      conn: conn,
+      statement: statement
+    } do
+      {:ok, _show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+
+      assert html =~ ~s(href="/sign_up?return_to=%2Fp%2F#{statement.slug}")
     end
 
     test "shows credit purchase message when AI quote action needs permission", %{

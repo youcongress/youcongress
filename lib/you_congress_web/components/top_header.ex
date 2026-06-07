@@ -6,6 +6,8 @@ defmodule YouCongressWeb.TopHeaderComponent do
   use Phoenix.Component
   use YouCongressWeb, :html
 
+  alias YouCongressWeb.ReturnTo
+
   defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
 
   def top_header(assigns) do
@@ -47,7 +49,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
             </.link>
           <% else %>
             <.link
-              href={~p"/sign_up"}
+              href={ReturnTo.sign_up_path(@return_to)}
               class="px-3 py-2 bg-zinc-900 text-white rounded-md hover:bg-zinc-700 transition-colors"
             >
               Sign up
@@ -80,7 +82,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
               </.link>
             <% else %>
               <.link
-                href={~p"/sign_up"}
+                href={ReturnTo.sign_up_path(@return_to)}
                 class="px-1 py-3 rounded-md hover:bg-zinc-700 transition-colors min-w-[44px] text-center"
               >
                 Sign up

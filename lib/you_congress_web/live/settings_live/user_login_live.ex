@@ -105,7 +105,11 @@ defmodule YouCongressWeb.UserLoginLive do
 
     delegate_ids = session["delegate_ids"] || []
     votes = session["votes"] || %{}
-    return_to = ReturnTo.sanitize(params["return_to"] || session["registration_return_to"])
+
+    return_to =
+      ReturnTo.sanitize(
+        params["return_to"] || session["user_return_to"] || session["registration_return_to"]
+      )
 
     pending_actions =
       cond do

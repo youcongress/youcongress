@@ -33,6 +33,43 @@ defmodule YouCongressWeb.GoogleAuthControllerTest do
       assert get_session(conn, :google_oauth_state)
     end
 
+    test "stores return_to from the login session when redirecting to Google", %{conn: conn} do
+      Application.put_env(:you_congress, :google_client_id, "test_client_id")
+
+      Application.put_env(
+        :you_congress,
+        :google_callback_url,
+        "https://test.com/auth/google/callback"
+      )
+
+      conn =
+        conn
+        |> init_test_session(%{user_return_to: "/p/test-statement"})
+        |> put_req_header("referer", "http://www.example.com/log_in")
+        |> get(~p"/auth/google")
+
+      assert redirected_to(conn) =~ "https://accounts.google.com/o/oauth2/v2/auth"
+      assert get_session(conn, :oauth_return_to) == "/p/test-statement"
+    end
+
+    test "stores return_to from a same-origin referrer when redirecting to Google", %{conn: conn} do
+      Application.put_env(:you_congress, :google_client_id, "test_client_id")
+
+      Application.put_env(
+        :you_congress,
+        :google_callback_url,
+        "https://test.com/auth/google/callback"
+      )
+
+      conn =
+        conn
+        |> put_req_header("referer", "http://www.example.com/p/test-statement?tab=quotes")
+        |> get(~p"/auth/google")
+
+      assert redirected_to(conn) =~ "https://accounts.google.com/o/oauth2/v2/auth"
+      assert get_session(conn, :oauth_return_to) == "/p/test-statement?tab=quotes"
+    end
+
     test "redirects to login with error when not configured", %{conn: conn} do
       Application.put_env(:you_congress, :google_client_id, nil)
       Application.put_env(:you_congress, :google_callback_url, nil)
@@ -200,6 +237,31 @@ defmodule YouCongressWeb.GoogleAuthControllerTest do
           YouCongress.Accounts.get_user_by_session_token(get_session(conn, :user_token))
 
         assert logged_in_user.id == user.id
+      end
+    end
+
+    test "redirects existing users to the stored OAuth return_to", %{conn: conn} do
+      author_attrs = %{
+        name: "Existing User",
+        google_id: @google_user_data.google_id,
+        twin_origin: false
+      }
+
+      google_user_fixture(%{email: @google_user_data.email}, author_attrs)
+
+      with_mock GoogleAPI,
+        fetch_token: fn _code, _url -> {:ok, "access_token"} end,
+        fetch_user_info: fn _token -> {:ok, @google_user_data} end do
+        conn =
+          conn
+          |> init_test_session(%{
+            google_oauth_state: "valid_state",
+            oauth_return_to: "/p/test-statement"
+          })
+          |> get(~p"/auth/google/callback", %{"code" => "auth_code", "state" => "valid_state"})
+
+        assert redirected_to(conn) == "/p/test-statement"
+        assert get_session(conn, :user_token)
       end
     end
 
