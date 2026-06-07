@@ -11,6 +11,7 @@ defmodule YouCongress.Likes do
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Accounts.User
   alias YouCongress.Statements.Statement
+  alias YouCongress.Votes.Vote
   alias YouCongress.Workers.UpdateOpinionLikesCountWorker
   alias YouCongress.Track
 
@@ -23,8 +24,11 @@ defmodule YouCongress.Likes do
   end
 
   def like(opinion_id, %User{} = current_user) do
+    like_changeset =
+      Like.changeset(%Like{}, %{opinion_id: opinion_id, user_id: current_user.id})
+
     Ecto.Multi.new()
-    |> Ecto.Multi.insert(:like, %Like{opinion_id: opinion_id, user_id: current_user.id})
+    |> Ecto.Multi.insert(:like, like_changeset)
     |> Oban.insert(:job, UpdateOpinionLikesCountWorker.new(%{opinion_id: opinion_id}))
     |> Repo.transaction()
     |> case do
@@ -85,12 +89,14 @@ defmodule YouCongress.Likes do
   def get_liked_opinion_ids(nil, _), do: []
 
   def get_liked_opinion_ids(%User{id: user_id}, %Statement{} = statement) do
-    from(o in Opinion,
-      join: l in assoc(o, :likes),
-      join: ov in "opinions_statements",
-      on: ov.opinion_id == o.id,
-      where: l.user_id == ^user_id and ov.statement_id == ^statement.id,
-      select: o.id
+    from(l in Like,
+      left_join: os in "opinions_statements",
+      on: os.opinion_id == l.opinion_id and os.statement_id == ^statement.id,
+      left_join: v in Vote,
+      on: v.opinion_id == l.opinion_id and v.statement_id == ^statement.id,
+      where: l.user_id == ^user_id and (not is_nil(os.opinion_id) or not is_nil(v.id)),
+      distinct: true,
+      select: l.opinion_id
     )
     |> Repo.all()
   end

@@ -46,7 +46,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
     opinion_id = String.to_integer(opinion_id)
 
     case Likes.like(opinion_id, current_user) do
-      {:ok, _} ->
+      {:ok, :liked} ->
         opinion = %{opinion | likes_count: opinion.likes_count + 1}
 
         socket =
@@ -55,6 +55,9 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
           |> assign(:liked, true)
 
         {:noreply, socket}
+
+      {:ok, :already_liked} ->
+        {:noreply, assign(socket, :liked, true)}
 
       {:error, _} ->
         send(self(), {:put_flash, :error, "Failed to like opinion."})
@@ -68,11 +71,10 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
     opinion_id = String.to_integer(opinion_id)
 
     case Likes.unlike(opinion_id, current_user) do
-      {:ok, _} ->
+      {:ok, :unliked} ->
         opinion =
           opinion
-          |> Map.put(:likes_count, opinion.likes_count - 1)
-          |> Map.put(:descendants_count, opinion.descendants_count - 1)
+          |> Map.put(:likes_count, max(opinion.likes_count - 1, 0))
 
         socket =
           socket
@@ -80,6 +82,9 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
           |> assign(:liked, false)
 
         {:noreply, socket}
+
+      {:ok, :already_unliked} ->
+        {:noreply, assign(socket, :liked, false)}
 
       {:error, _} ->
         send(self(), {:put_flash, :error, "Failed to unlike opinion."})

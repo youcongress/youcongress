@@ -32,13 +32,23 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
     opinion_id = String.to_integer(opinion_id)
 
     case Likes.like(opinion_id, current_user) do
-      {:ok, _} ->
+      {:ok, :liked} ->
         visible_opinion = Map.put(visible_opinion, :likes_count, visible_opinion.likes_count + 1)
 
         socket =
           socket
           |> put_visible_opinion(visible_opinion)
           |> assign_liked(true)
+          |> notify_liked_opinion(true)
+          |> assign_content_variables()
+
+        {:noreply, socket}
+
+      {:ok, :already_liked} ->
+        socket =
+          socket
+          |> assign_liked(true)
+          |> notify_liked_opinion(true)
           |> assign_content_variables()
 
         {:noreply, socket}
@@ -53,7 +63,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
     opinion_id = String.to_integer(opinion_id)
 
     case Likes.unlike(opinion_id, current_user) do
-      {:ok, _} ->
+      {:ok, :unliked} ->
         visible_opinion =
           Map.put(visible_opinion, :likes_count, max(visible_opinion.likes_count - 1, 0))
 
@@ -61,6 +71,16 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
           socket
           |> put_visible_opinion(visible_opinion)
           |> assign_liked(false)
+          |> notify_liked_opinion(false)
+          |> assign_content_variables()
+
+        {:noreply, socket}
+
+      {:ok, :already_unliked} ->
+        socket =
+          socket
+          |> assign_liked(false)
+          |> notify_liked_opinion(false)
           |> assign_content_variables()
 
         {:noreply, socket}
@@ -243,6 +263,17 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
 
     assign(socket, :liked, liked)
   end
+
+  defp notify_liked_opinion(
+         %{assigns: %{page: :statement_show, visible_opinion: opinion}} = socket,
+         liked
+       )
+       when not is_nil(opinion) do
+    send(self(), {:opinion_like_changed, opinion.id, liked})
+    socket
+  end
+
+  defp notify_liked_opinion(socket, _liked), do: socket
 
   defp assign_liked_for_visible_opinion(%{assigns: %{visible_opinion: nil}} = socket), do: socket
 
