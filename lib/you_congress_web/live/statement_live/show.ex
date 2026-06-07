@@ -55,6 +55,7 @@ defmodule YouCongressWeb.StatementLive.Show do
       |> assign(:statement, statement)
       |> assign(reload: false)
       |> assign(full_width: true)
+      |> assign(:show_ai_quote_action, true)
       |> assign(:regenerating_opinion_id, nil)
       |> assign(:find_quotes_in_progress, QuotatorAI.check_polling_job_status(statement.id))
       |> assign(:source_filter, :quotes)
@@ -82,6 +83,7 @@ defmodule YouCongressWeb.StatementLive.Show do
       )
       |> assign(:statement, statement)
       |> assign(:current_user, current_user)
+      |> assign(:show_ai_quote_action, true)
 
     {:noreply, socket}
   end
@@ -95,10 +97,15 @@ defmodule YouCongressWeb.StatementLive.Show do
 
     cond do
       is_nil(current_user) ->
-        {:noreply, put_flash(socket, :error, "Please log in to find quotes.")}
+        {:noreply, redirect(socket, to: ~p"/log_in")}
 
       not Permissions.can_generate_ai_votes?(current_user) ->
-        {:noreply, put_flash(socket, :error, "You don't have permission to find quotes.")}
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "AI quote search uses credits. Email hello@youcongress.org to purchase access."
+         )}
 
       true ->
         %{statement_id: statement_id, user_id: current_user.id}

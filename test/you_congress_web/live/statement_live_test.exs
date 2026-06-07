@@ -247,6 +247,83 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ statement.title
     end
 
+    test "shows voting and opinion controls without existing votes", %{
+      conn: conn,
+      statement: statement
+    } do
+      conn = log_in_as_user(conn)
+
+      {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+
+      assert html =~ "Cast your vote:"
+      assert has_element?(show_live, "button#cast-vote-for", "For")
+      assert has_element?(show_live, "button#cast-vote-abstain", "Abstain")
+      assert has_element?(show_live, "button#cast-vote-against", "Against")
+      assert has_element?(show_live, "#comment-form")
+
+      show_live
+      |> form("#comment-form", comment: "first comment on an empty statement")
+      |> render_submit()
+
+      html = render(show_live)
+      assert html =~ "Comment created successfully"
+      assert html =~ "first comment on an empty statement"
+    end
+
+    test "shows statement header actions", %{
+      conn: conn,
+      statement: statement
+    } do
+      {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+
+      assert html =~ "Add quotes manually"
+      assert html =~ ~s(href="/p/#{statement.slug}/add-quote")
+      assert html =~ "Invite others"
+      assert html =~ "data-copy-current-url"
+      assert html =~ "Add quotes with AI"
+      assert has_element?(show_live, "a[href='/log_in']", "Add quotes with AI")
+      refute html =~ "Find quotes"
+      refute html =~ "Biased? Add more"
+    end
+
+    test "shows credit purchase message when AI quote action needs permission", %{
+      conn: conn,
+      statement: statement
+    } do
+      conn = log_in_as_user(conn)
+
+      {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+
+      assert html =~ "Add quotes with AI"
+
+      html =
+        show_live
+        |> element("button[phx-click='find-sourced-quotes']", "Add quotes with AI")
+        |> render_click()
+
+      assert html =~
+               "AI quote search uses credits. Email hello@youcongress.org to purchase access."
+    end
+
+    test "shows AI quote action to users with permission", %{
+      conn: conn,
+      statement: statement
+    } do
+      conn = log_in_as_creator(conn)
+
+      {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+
+      assert html =~ "Add quotes with AI"
+
+      assert has_element?(
+               show_live,
+               "button[phx-click='find-sourced-quotes']",
+               "Add quotes with AI"
+             )
+
+      refute html =~ "Find quotes"
+    end
+
     test "updates statement within modal", %{conn: conn, statement: statement} do
       conn = log_in_as_admin(conn)
 
