@@ -1,4 +1,4 @@
-<div>
+<div id={"vote-component-#{@id}"} data-testid={"vote-card-#{@vote.id}"}>
   <%= if @page != :author_show do %>
     <div>
       <div class="flex justify-between">
@@ -22,11 +22,11 @@
             </div>
           </div>
         </div>
-        <%= if @vote.opinion_id do %>
+        <%= if @visible_opinion do %>
           <QuoteMenu.render
             author={@author}
             id={@vote.id}
-            opinion={@vote.opinion}
+            opinion={@visible_opinion}
             current_user={@current_user}
             statement={@statement}
             page={@page}
@@ -58,11 +58,11 @@
           <%= unless @vote.direct do %>
             via delegates
           <% end %>
-          <%= if @vote.opinion do %>
+          <%= if @visible_opinion do %>
             and says:
           <% else %>
             <span class="text-xs text-gray-500">
-              · added {TimeAgo.short_time(added_at(@vote))}
+              · added {TimeAgo.short_time(added_at(@visible_opinion, @vote))}
             </span>
           <% end %>
         <% end %>
@@ -71,7 +71,7 @@
         <QuoteMenu.render
           author={@author}
           id={@vote.id}
-          opinion={@vote.opinion}
+          opinion={@visible_opinion}
           current_user={@current_user}
           statement={@statement}
           page={@page}
@@ -80,7 +80,7 @@
       <% end %>
     </div>
   <% end %>
-  <%= if @show_opinion && @vote.opinion_id do %>
+  <%= if @show_opinion && @visible_opinion do %>
     <div>
       <%= if @current_user && @current_user.author_id == @author.id do %>
         <.link href={"/p/#{@statement.slug}"}>
@@ -99,22 +99,49 @@
           more
         </.link>
       <% end %>
-      <%= if @regenerating_opinion_id == @vote.opinion.id do %>
+      <%= if @regenerating_opinion_id == @visible_opinion.id do %>
         <img src="/images/loading.gif" alt="Loading" />
       <% end %>
-      <%= if @vote.opinion_id && @vote.opinion.source_url do %>
+      <%= if @visible_opinion.source_url do %>
         <.live_component
           module={YouCongressWeb.Components.VerificationBadge}
-          id={"#{@id}-#{@vote.opinion.id}-#{@statement.id}"}
-          opinion={@vote.opinion}
+          id={"#{@id}-#{@visible_opinion.id}-#{@statement.id}"}
+          opinion={@visible_opinion}
           current_user={@current_user}
         />
         <span class="text-xs">
-          <.link href={@vote.opinion.source_url} target="_blank" class="underline">source</.link>
+          <.link href={@visible_opinion.source_url} target="_blank" class="underline">
+            source
+          </.link>
         </span>
       <% end %>
-      <%= if @vote.opinion.year do %>
-        <span class="text-xs text-gray-500">({@vote.opinion.year})</span>
+      <%= if @visible_opinion.year do %>
+        <span class="text-xs text-gray-500">({@visible_opinion.year})</span>
+      <% end %>
+      <%= if @opinion_count > 1 do %>
+        <span class="inline-flex items-center gap-1 pl-2 text-xs text-gray-500">
+          <button
+            type="button"
+            phx-click="previous-opinion"
+            phx-target={@myself}
+            aria-label="Previous quote"
+            class="rounded border border-gray-300 px-1 leading-4 hover:bg-gray-50"
+          >
+            &lt;
+          </button>
+          <span data-testid={"quote-position-#{@vote.id}"}>
+            {@visible_opinion_position} of {@opinion_count}
+          </span>
+          <button
+            type="button"
+            phx-click="next-opinion"
+            phx-target={@myself}
+            aria-label="Next quote"
+            class="rounded border border-gray-300 px-1 leading-4 hover:bg-gray-50"
+          >
+            &gt;
+          </button>
+        </span>
       <% end %>
     </div>
   <% end %>
@@ -122,22 +149,22 @@
     "flex justify-between pt-4",
     !@current_user || (@current_user.author_id != @vote.author_id && "pb-4")
   ]}>
-    <%= if @vote.opinion_id && @show_opinion do %>
+    <%= if @visible_opinion && @show_opinion do %>
       <div>
         <span class="pr-2">
-          <OpinionComponent.like_icon opinion={@vote.opinion} liked={@liked} target={@myself} />
+          <OpinionComponent.like_icon opinion={@visible_opinion} liked={@liked} target={@myself} />
         </span>
         <span class="pr-2">
-          <OpinionComponent.comment_icon opinion={@vote.opinion} />
+          <OpinionComponent.comment_icon opinion={@visible_opinion} />
         </span>
         <OpinionComponent.x_icon
           author={@author}
           statement={@statement}
-          opinion={@vote.opinion}
+          opinion={@visible_opinion}
           current_user={@current_user}
         />
         <span class="text-xs text-gray-500 pl-3">
-          added {TimeAgo.short_time(added_at(@vote))}
+          added {TimeAgo.short_time(added_at(@visible_opinion, @vote))}
         </span>
       </div>
     <% end %>

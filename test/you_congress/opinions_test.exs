@@ -67,10 +67,38 @@ defmodule YouCongress.OpinionsTest do
       %{statements: statements} = Opinions.get_opinion!(opinion.id, preload: [:statements])
       assert length(statements) == 1
     end
+
+    test "keeps one vote and updates it to a newly linked sourced quote" do
+      older_quote = opinion_fixture(%{twin: false})
+      newer_quote = opinion_fixture(%{author_id: older_quote.author_id, twin: false})
+      statement = statement_fixture()
+
+      assert {:ok, _} = Opinions.add_opinion_to_statement(older_quote, statement)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: older_quote.author_id,
+          opinion_id: older_quote.id,
+          answer: :for
+        })
+
+      assert {:ok, _} = Opinions.add_opinion_to_statement(newer_quote, statement)
+
+      vote = Votes.get_vote(vote.id)
+      assert vote.opinion_id == newer_quote.id
+      assert Votes.count_by(statement_id: statement.id) == 1
+
+      older_quote = Opinions.get_opinion!(older_quote.id, preload: [:statements])
+      newer_quote = Opinions.get_opinion!(newer_quote.id, preload: [:statements])
+
+      assert Enum.map(older_quote.statements, & &1.id) == [statement.id]
+      assert Enum.map(newer_quote.statements, & &1.id) == [statement.id]
+    end
   end
 
   describe "delete_opinion/1" do
-    test "deletes inferred author votes for quote opinions" do
+    test "deletes current quote votes when no replacement quote exists" do
       quote = opinion_fixture(%{twin: false})
       statement_1 = statement_fixture()
       statement_2 = statement_fixture()
@@ -84,14 +112,16 @@ defmodule YouCongress.OpinionsTest do
         vote_fixture(%{
           statement_id: statement_1.id,
           author_id: quote.author_id,
-          answer: :for
+          answer: :for,
+          opinion_id: quote.id
         })
 
       inferred_vote_2 =
         vote_fixture(%{
           statement_id: statement_2.id,
           author_id: quote.author_id,
-          answer: :against
+          answer: :against,
+          opinion_id: quote.id
         })
 
       unrelated_vote =
@@ -107,6 +137,55 @@ defmodule YouCongress.OpinionsTest do
       assert Votes.get_vote(inferred_vote_2.id) == nil
       assert Votes.get_vote(unrelated_vote.id) != nil
       assert Votes.get_vote(other_author_vote.id) != nil
+    end
+
+    test "keeps vote unchanged when deleting an older linked quote" do
+      older_quote = opinion_fixture(%{twin: false})
+      current_quote = opinion_fixture(%{author_id: older_quote.author_id, twin: false})
+      statement = statement_fixture()
+
+      assert {:ok, _} = Opinions.add_opinion_to_statement(older_quote, statement)
+      assert {:ok, _} = Opinions.add_opinion_to_statement(current_quote, statement)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: older_quote.author_id,
+          opinion_id: current_quote.id,
+          answer: :for
+        })
+
+      assert {:ok, _deleted_quote} = Opinions.delete_opinion(older_quote)
+
+      assert Votes.get_vote(vote.id).opinion_id == current_quote.id
+    end
+
+    test "reassigns vote by highest quote year when deleting the current quote" do
+      high_year_quote = opinion_fixture(%{twin: false, year: 2025})
+
+      higher_id_quote =
+        opinion_fixture(%{author_id: high_year_quote.author_id, twin: false, year: 2020})
+
+      current_quote =
+        opinion_fixture(%{author_id: high_year_quote.author_id, twin: false, year: 2030})
+
+      statement = statement_fixture()
+
+      assert {:ok, _} = Opinions.add_opinion_to_statement(high_year_quote, statement)
+      assert {:ok, _} = Opinions.add_opinion_to_statement(higher_id_quote, statement)
+      assert {:ok, _} = Opinions.add_opinion_to_statement(current_quote, statement)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: high_year_quote.author_id,
+          opinion_id: current_quote.id,
+          answer: :for
+        })
+
+      assert {:ok, _deleted_quote} = Opinions.delete_opinion(current_quote)
+
+      assert Votes.get_vote(vote.id).opinion_id == high_year_quote.id
     end
 
     test "keeps author votes for non-quote opinions on delete" do
@@ -129,7 +208,7 @@ defmodule YouCongress.OpinionsTest do
   end
 
   describe "remove_opinion_from_statement/2" do
-    test "deletes the vote when opinion has source_url" do
+    test "deletes the vote when removing its current quote and no replacement exists" do
       quote_opinion = opinion_fixture(%{twin: false})
       statement = statement_fixture()
 
@@ -139,7 +218,8 @@ defmodule YouCongress.OpinionsTest do
         vote_fixture(%{
           statement_id: statement.id,
           author_id: quote_opinion.author_id,
-          answer: :for
+          answer: :for,
+          opinion_id: quote_opinion.id
         })
 
       assert {:ok, _} = Opinions.remove_opinion_from_statement(quote_opinion, statement)
@@ -148,6 +228,55 @@ defmodule YouCongress.OpinionsTest do
 
       %{statements: statements} = Opinions.get_opinion!(quote_opinion.id, preload: [:statements])
       assert statements == []
+    end
+
+    test "keeps the vote when removing an older linked quote" do
+      older_quote = opinion_fixture(%{twin: false})
+      current_quote = opinion_fixture(%{author_id: older_quote.author_id, twin: false})
+      statement = statement_fixture()
+
+      {:ok, _} = Opinions.add_opinion_to_statement(older_quote, statement)
+      {:ok, _} = Opinions.add_opinion_to_statement(current_quote, statement)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: older_quote.author_id,
+          answer: :for,
+          opinion_id: current_quote.id
+        })
+
+      assert {:ok, _} = Opinions.remove_opinion_from_statement(older_quote, statement)
+
+      assert Votes.get_vote(vote.id).opinion_id == current_quote.id
+    end
+
+    test "reassigns the vote by highest id when removing the current quote and years tie" do
+      lower_id_quote = opinion_fixture(%{twin: false, year: 2025})
+
+      higher_id_quote =
+        opinion_fixture(%{author_id: lower_id_quote.author_id, twin: false, year: 2025})
+
+      current_quote =
+        opinion_fixture(%{author_id: lower_id_quote.author_id, twin: false, year: 2030})
+
+      statement = statement_fixture()
+
+      {:ok, _} = Opinions.add_opinion_to_statement(lower_id_quote, statement)
+      {:ok, _} = Opinions.add_opinion_to_statement(higher_id_quote, statement)
+      {:ok, _} = Opinions.add_opinion_to_statement(current_quote, statement)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: lower_id_quote.author_id,
+          answer: :for,
+          opinion_id: current_quote.id
+        })
+
+      assert {:ok, _} = Opinions.remove_opinion_from_statement(current_quote, statement)
+
+      assert Votes.get_vote(vote.id).opinion_id == higher_id_quote.id
     end
 
     test "keeps the vote when opinion has no source_url" do
