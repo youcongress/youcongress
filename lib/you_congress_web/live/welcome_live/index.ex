@@ -4,6 +4,7 @@ defmodule YouCongressWeb.WelcomeLive.Index do
   alias YouCongress.Accounts
   alias YouCongress.Accounts.User
   alias YouCongress.Track
+  alias YouCongressWeb.ReturnTo
 
   @impl true
   def mount(_params, session, socket) do
@@ -32,10 +33,18 @@ defmodule YouCongressWeb.WelcomeLive.Index do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
 
+  defp apply_action(socket, :index, %{"return_to" => return_to}) do
+    socket
+    |> assign(:page_title, "Welcome")
+    |> assign(:statement, nil)
+    |> assign(:return_to, ReturnTo.sanitize(return_to))
+  end
+
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:page_title, "Welcome")
     |> assign(:statement, nil)
+    |> assign(:return_to, nil)
   end
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
@@ -46,7 +55,7 @@ defmodule YouCongressWeb.WelcomeLive.Index do
   def handle_event("save", %{"user" => user_params}, socket) do
     case Accounts.welcome_update(socket.assigns.current_user, user_params) do
       {:ok, _} ->
-        {:noreply, redirect(socket, to: ~p"/")}
+        {:noreply, redirect(socket, to: socket.assigns[:return_to] || ~p"/")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}

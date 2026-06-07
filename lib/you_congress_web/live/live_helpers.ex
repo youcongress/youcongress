@@ -6,6 +6,7 @@ defmodule YouCongressWeb.LiveHelpers do
   import Phoenix.Component, only: [assign: 3]
 
   alias Phoenix.LiveView.Socket
+  alias YouCongressWeb.ReturnTo
 
   @spec assign_current_user(Socket.t(), binary) :: Socket.t()
   def assign_current_user(socket, nil), do: assign(socket, :current_user, nil)
@@ -31,9 +32,15 @@ defmodule YouCongressWeb.LiveHelpers do
       answer: vote_answer_to_atom(normalized_answer)
     }
 
+    return_to =
+      payload[:return_to] ||
+        socket.assigns[:vote_auth_return_to] ||
+        socket.assigns[:return_to]
+
     socket
     |> assign(:pending_guest_votes, Map.put(votes, statement_id, vote))
     |> assign(:pending_vote_prompt, %{statement_title: statement_title, answer: normalized_answer})
+    |> assign(:vote_auth_return_to, ReturnTo.sanitize(return_to))
     |> assign(:show_vote_auth_modal, true)
   end
 

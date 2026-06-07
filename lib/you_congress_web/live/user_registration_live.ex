@@ -9,6 +9,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
   alias YouCongress.Accounts.SmsVerification
   alias YouCongress.Track
   alias YouCongress.Turnstile
+  alias YouCongressWeb.ReturnTo
 
   @max_email_code_attempts 3
   @email_code_lock_seconds 60
@@ -27,11 +28,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
         <%= unless @embedded do %>
           <div class="mt-6 space-y-3">
             <.link
-              href={
-                if @pending_actions,
-                  do: ~p"/auth/google?#{%{pending_actions: @pending_actions}}",
-                  else: ~p"/auth/google"
-              }
+              href={ReturnTo.auth_path(:google, @pending_actions, @return_to)}
               class="w-full inline-flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-gray-700 text-sm font-medium hover:bg-gray-50"
             >
               <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -56,11 +53,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
             </.link>
             <%= if FeatureFlags.enabled?(:log_in_with_x) do %>
               <.link
-                href={
-                  if @pending_actions,
-                    do: ~p"/auth/x?#{%{pending_actions: @pending_actions}}",
-                    else: ~p"/auth/x"
-                }
+                href={ReturnTo.auth_path(:x, @pending_actions, @return_to)}
                 class="w-full inline-flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-black text-white text-sm font-medium hover:bg-gray-800"
               >
                 <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -86,7 +79,10 @@ defmodule YouCongressWeb.UserRegistrationLive do
             Sign up
             <:subtitle>
               Already registered?
-              <.link navigate={~p"/log_in"} class="font-semibold text-brand hover:underline">
+              <.link
+                navigate={ReturnTo.log_in_path(@pending_actions, @return_to)}
+                class="font-semibold text-brand hover:underline"
+              >
                 Log in
               </.link>
               to your account now.
@@ -304,24 +300,23 @@ defmodule YouCongressWeb.UserRegistrationLive do
     """
   end
 
-  def mount(_params, session, socket) do
+  def mount(params, session, socket) do
+    params = normalize_params(params)
     socket = assign_current_user(socket, session["user_token"])
 
-    delegate_ids = session["delegate_ids"] || []
-    votes = session["votes"] || %{}
+    {delegate_ids, votes, pending_actions} = pending_actions(params, session)
 
-    pending_actions =
-      if delegate_ids != [] or map_size(votes) > 0 do
-        Jason.encode!(%{delegate_ids: delegate_ids, votes: votes})
-      else
-        nil
-      end
+    return_to =
+      ReturnTo.sanitize(
+        params["return_to"] || session["return_to"] || session["registration_return_to"]
+      )
 
     socket =
       socket
       |> assign(:delegate_ids, delegate_ids)
       |> assign(:votes, votes)
       |> assign(:pending_actions, pending_actions)
+      |> assign(:return_to, return_to)
       |> assign(:embedded, session["embedded"] || false)
       |> assign(:hide_targets, session["hide_targets"] || [])
       |> assign(:reload_on_login, session["reload_on_login"] || false)
@@ -331,7 +326,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
     step = determine_registration_step(current_user)
 
     if step == :done do
-      {:ok, redirect(socket, to: ~p"/welcome")}
+      {:ok, redirect(socket, to: ReturnTo.welcome_path(return_to))}
     else
       # For X users, preload their name from the author
       initial_values =
@@ -359,6 +354,37 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
       {:ok, socket, temporary_assigns: [form: nil]}
     end
+  end
+
+  defp normalize_params(params) when is_map(params), do: params
+  defp normalize_params(_params), do: %{}
+
+  defp pending_actions(%{"pending_actions" => pending_actions}, session)
+       when is_binary(pending_actions) do
+    case Jason.decode(pending_actions) do
+      {:ok, %{"delegate_ids" => delegate_ids, "votes" => votes}}
+      when is_list(delegate_ids) and is_map(votes) ->
+        {delegate_ids, votes, pending_actions}
+
+      _ ->
+        pending_actions(session)
+    end
+  end
+
+  defp pending_actions(_params, session), do: pending_actions(session)
+
+  defp pending_actions(session) do
+    delegate_ids = session["delegate_ids"] || []
+    votes = session["votes"] || %{}
+
+    pending_actions =
+      if delegate_ids != [] or map_size(votes) > 0 do
+        Jason.encode!(%{delegate_ids: delegate_ids, votes: votes})
+      else
+        nil
+      end
+
+    {delegate_ids, votes, pending_actions}
   end
 
   def handle_event("save_email_password", params, socket) do
@@ -393,8 +419,8 @@ defmodule YouCongressWeb.UserRegistrationLive do
       if map_size(socket.assigns.votes) > 0 do
         Enum.each(socket.assigns.votes, fn {_statement_id, vote_data} ->
           YouCongress.Votes.create_or_update(%{
-            statement_id: vote_data.statement_id,
-            answer: vote_data.answer,
+            statement_id: pending_vote_statement_id(vote_data),
+            answer: pending_vote_answer(vote_data),
             author_id: author.id,
             direct: true
           })
@@ -547,7 +573,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
         case Accounts.confirm_user_phone(user) do
           {:ok, _} ->
             Track.event("Phone number verified", user)
-            {:noreply, redirect(socket, to: ~p"/welcome")}
+            {:noreply, redirect(socket, to: ReturnTo.welcome_path(socket.assigns.return_to))}
 
           {:error, changeset} ->
             {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
@@ -619,11 +645,11 @@ defmodule YouCongressWeb.UserRegistrationLive do
   end
 
   def handle_event("skip_phone", _params, %{assigns: %{user: %User{} = user}} = socket) do
-    {:noreply, session_login(socket, user, ~p"/welcome")}
+    {:noreply, session_login(socket, user, ReturnTo.welcome_path(socket.assigns.return_to))}
   end
 
   def handle_event("skip_phone", _params, socket) do
-    {:noreply, redirect(socket, to: ~p"/welcome")}
+    {:noreply, redirect(socket, to: ReturnTo.welcome_path(socket.assigns.return_to))}
   end
 
   defp proceed_after_email_confirmation(socket, %User{} = user) do
@@ -649,7 +675,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
       :done ->
         socket
-        |> session_login(user, ~p"/welcome")
+        |> session_login(user, ReturnTo.welcome_path(socket.assigns.return_to))
 
       _ ->
         socket
@@ -696,8 +722,23 @@ defmodule YouCongressWeb.UserRegistrationLive do
     token = Accounts.generate_live_login_token(user)
 
     socket
-    |> push_event("session-login", %{token: token, redirect_to: redirect_to})
+    |> push_event("session-login", %{
+      token: token,
+      redirect_to: redirect_to,
+      return_to: socket.assigns[:return_to]
+    })
     |> assign(:session_login_sent, true)
+  end
+
+  defp pending_vote_statement_id(vote_data) do
+    vote_data[:statement_id] || vote_data["statement_id"]
+  end
+
+  defp pending_vote_answer(vote_data) do
+    case vote_data[:answer] || vote_data["answer"] do
+      answer when is_binary(answer) -> String.to_existing_atom(answer)
+      answer -> answer
+    end
   end
 
   defp email_code_changeset(attrs \\ %{}) do

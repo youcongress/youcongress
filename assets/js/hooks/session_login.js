@@ -2,7 +2,7 @@ const SessionLogin = {
   mounted() {
     this.toggleAuthPrompts()
 
-    this.handleEvent("session-login", ({ token, redirect_to }) => {
+    this.handleEvent("session-login", ({ token, redirect_to, return_to }) => {
       if (!token) return
 
       fetch("/users/live_login", {
@@ -12,7 +12,7 @@ const SessionLogin = {
           "content-type": "application/json",
           "x-csrf-token": this.csrfToken()
         },
-        body: JSON.stringify({ token })
+        body: JSON.stringify({ token, return_to })
       }).then(() => {
         if (redirect_to) {
           window.location.href = redirect_to

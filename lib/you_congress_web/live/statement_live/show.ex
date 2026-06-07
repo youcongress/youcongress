@@ -18,6 +18,7 @@ defmodule YouCongressWeb.StatementLive.Show do
   alias YouCongress.HallsStatements
   alias YouCongress.Opinions.Quotes.QuotatorAI
   alias YouCongress.Votes.VoteFrequencies
+  alias YouCongressWeb.ReturnTo
 
   @impl true
   def mount(_, session, socket) do
@@ -33,6 +34,7 @@ defmodule YouCongressWeb.StatementLive.Show do
      |> assign(:random_statements_from_main_hall, [])
      |> assign(:pending_guest_votes, %{})
      |> assign(:pending_vote_prompt, nil)
+     |> assign(:vote_auth_return_to, nil)
      |> assign(:show_vote_auth_modal, false)
      |> assign(:show_country_results, false)
      |> assign(:country_vote_frequencies, nil)
@@ -41,12 +43,13 @@ defmodule YouCongressWeb.StatementLive.Show do
 
   @impl true
   @spec handle_params(map, binary, Socket.t()) :: {:noreply, Socket.t()}
-  def handle_params(%{"slug" => slug}, _, socket) do
+  def handle_params(%{"slug" => slug}, url, socket) do
     statement = Statements.get_by!(slug: slug)
     current_user = socket.assigns.current_user
 
     socket =
       socket
+      |> assign(:return_to, ReturnTo.from_url(url))
       |> assign(:page_title, page_title(socket.assigns.live_action, statement.title))
       |> assign(
         :page_description,

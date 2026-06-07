@@ -21,6 +21,7 @@ defmodule YouCongressWeb.VerificationLive.Index do
     {:ok,
      socket
      |> assign(:page_title, "Verifications")
+     |> assign(:return_to, "/verifications")
      |> assign(:page, 1)
      |> assign(:has_more, true)
      |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
@@ -28,6 +29,7 @@ defmodule YouCongressWeb.VerificationLive.Index do
      |> load_cards(1)
      |> assign(:pending_guest_votes, %{})
      |> assign(:pending_vote_prompt, nil)
+     |> assign(:vote_auth_return_to, nil)
      |> assign(:show_vote_auth_modal, false)}
   end
 
