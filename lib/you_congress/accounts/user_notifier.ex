@@ -40,10 +40,16 @@ defmodule YouCongress.Accounts.UserNotifier do
   defp build_html_email(title, paragraphs, button_label, button_url) do
     paragraph_markup =
       paragraphs
-      |> Enum.map(fn paragraph ->
-        text = html_escape_text(paragraph)
+      |> Enum.map(fn
+        {:code, code} ->
+          text = html_escape_text(code)
 
-        "<p style=\"margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #0f172a;\">#{text}</p>"
+          "<p style=\"margin: 24px 0; text-align: center; font-size: 36px; font-weight: 700; letter-spacing: 0.25em; color: #0f172a;\">#{text}</p>"
+
+        paragraph ->
+          text = html_escape_text(paragraph)
+
+          "<p style=\"margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #0f172a;\">#{text}</p>"
       end)
       |> Enum.join("\n")
 
@@ -146,7 +152,7 @@ defmodule YouCongress.Accounts.UserNotifier do
         [
           "Thanks for signing up for YouCongress.",
           "Enter the six-digit code below on the sign-up screen within 24 hours to confirm your email address.",
-          "Confirmation code: #{code}"
+          {:code, code}
         ],
         nil,
         nil
