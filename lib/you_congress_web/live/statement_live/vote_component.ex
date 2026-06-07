@@ -15,6 +15,8 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
       socket
       |> assign(assigns)
       |> assign_new(:expanded, fn -> false end)
+      |> assign_new(:visible_opinion_id, fn -> nil end)
+      |> assign_visible_opinion()
       |> assign_content_variables()
 
     {:ok, socket}
@@ -26,18 +28,18 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
   end
 
   def handle_event("like", %{"opinion_id" => opinion_id}, socket) do
-    %{assigns: %{current_user: current_user, vote: vote}} = socket
+    %{assigns: %{current_user: current_user, visible_opinion: visible_opinion}} = socket
     opinion_id = String.to_integer(opinion_id)
 
     case Likes.like(opinion_id, current_user) do
       {:ok, _} ->
-        opinion = Map.put(vote.opinion, :likes_count, vote.opinion.likes_count + 1)
-        vote = Map.put(vote, :opinion, opinion)
+        visible_opinion = Map.put(visible_opinion, :likes_count, visible_opinion.likes_count + 1)
 
         socket =
           socket
-          |> assign(:liked, true)
-          |> assign(:vote, vote)
+          |> put_visible_opinion(visible_opinion)
+          |> assign_liked(true)
+          |> assign_content_variables()
 
         {:noreply, socket}
 
@@ -47,18 +49,19 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
   end
 
   def handle_event("unlike", %{"opinion_id" => opinion_id}, socket) do
-    %{assigns: %{current_user: current_user, vote: vote}} = socket
+    %{assigns: %{current_user: current_user, visible_opinion: visible_opinion}} = socket
     opinion_id = String.to_integer(opinion_id)
 
     case Likes.unlike(opinion_id, current_user) do
       {:ok, _} ->
-        opinion = Map.put(vote.opinion, :likes_count, vote.opinion.likes_count - 1)
-        vote = Map.put(vote, :opinion, opinion)
+        visible_opinion =
+          Map.put(visible_opinion, :likes_count, max(visible_opinion.likes_count - 1, 0))
 
         socket =
           socket
-          |> assign(:liked, false)
-          |> assign(:vote, vote)
+          |> put_visible_opinion(visible_opinion)
+          |> assign_liked(false)
+          |> assign_content_variables()
 
         {:noreply, socket}
 
@@ -133,8 +136,130 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
     {:noreply, socket}
   end
 
+  def handle_event("previous-opinion", _, socket) do
+    {:noreply, shift_visible_opinion(socket, -1)}
+  end
+
+  def handle_event("next-opinion", _, socket) do
+    {:noreply, shift_visible_opinion(socket, 1)}
+  end
+
+  defp assign_visible_opinion(socket) do
+    opinions = opinion_options(socket.assigns.vote)
+    count = length(opinions)
+
+    index = visible_opinion_index(opinions, socket.assigns.visible_opinion_id)
+
+    visible_opinion = Enum.at(opinions, index)
+
+    socket
+    |> assign(:opinion_options, opinions)
+    |> assign(:opinion_count, count)
+    |> assign(:visible_opinion_index, index)
+    |> assign(:visible_opinion_position, index + 1)
+    |> assign(:visible_opinion_id, visible_opinion && visible_opinion.id)
+    |> assign(:visible_opinion, visible_opinion)
+    |> assign_liked_for_visible_opinion()
+  end
+
+  defp opinion_options(%{opinion: nil}), do: []
+
+  defp opinion_options(%{alternate_opinions: opinions, opinion: opinion})
+       when is_list(opinions) and opinions != [] do
+    if Enum.any?(opinions, &(&1.id == opinion.id)) do
+      opinions
+    else
+      [opinion | opinions]
+    end
+  end
+
+  defp opinion_options(%{opinion: opinion}), do: [opinion]
+
+  defp visible_opinion_index([], _visible_opinion_id), do: 0
+
+  defp visible_opinion_index(opinions, visible_opinion_id) do
+    opinion_index(opinions, visible_opinion_id) || 0
+  end
+
+  defp opinion_index(_opinions, nil), do: nil
+
+  defp opinion_index(opinions, opinion_id) do
+    Enum.find_index(opinions, &(&1.id == opinion_id))
+  end
+
+  defp shift_visible_opinion(%{assigns: %{opinion_count: count}} = socket, _shift)
+       when count <= 1,
+       do: socket
+
+  defp shift_visible_opinion(socket, shift) do
+    index =
+      Integer.mod(socket.assigns.visible_opinion_index + shift, socket.assigns.opinion_count)
+
+    socket
+    |> assign(:visible_opinion_id, Enum.at(socket.assigns.opinion_options, index).id)
+    |> assign(:expanded, false)
+    |> assign_visible_opinion()
+    |> assign_content_variables()
+  end
+
+  defp put_visible_opinion(socket, opinion) do
+    opinion_options =
+      Enum.map(socket.assigns.opinion_options, fn
+        %{id: id} when id == opinion.id -> opinion
+        other -> other
+      end)
+
+    vote =
+      if socket.assigns.vote.opinion_id == opinion.id do
+        Map.put(socket.assigns.vote, :opinion, opinion)
+      else
+        socket.assigns.vote
+      end
+
+    socket
+    |> assign(:vote, vote)
+    |> assign(:opinion_options, opinion_options)
+    |> assign(:visible_opinion_id, opinion.id)
+    |> assign(:visible_opinion, opinion)
+  end
+
+  defp assign_liked(socket, liked) do
+    socket =
+      if Map.has_key?(socket.assigns, :liked_opinion_ids) do
+        liked_opinion_ids =
+          if liked do
+            Enum.uniq([socket.assigns.visible_opinion.id | socket.assigns.liked_opinion_ids])
+          else
+            Enum.reject(
+              socket.assigns.liked_opinion_ids,
+              &(&1 == socket.assigns.visible_opinion.id)
+            )
+          end
+
+        assign(socket, :liked_opinion_ids, liked_opinion_ids)
+      else
+        socket
+      end
+
+    assign(socket, :liked, liked)
+  end
+
+  defp assign_liked_for_visible_opinion(%{assigns: %{visible_opinion: nil}} = socket), do: socket
+
+  defp assign_liked_for_visible_opinion(socket) do
+    liked =
+      if Map.has_key?(socket.assigns, :liked_opinion_ids) do
+        socket.assigns.visible_opinion.id in socket.assigns.liked_opinion_ids
+      else
+        Map.get(socket.assigns, :liked, false) &&
+          socket.assigns.visible_opinion.id == socket.assigns.vote.opinion_id
+      end
+
+    assign(socket, :liked, liked)
+  end
+
   defp assign_content_variables(socket) do
-    opinion = socket.assigns.vote.opinion
+    opinion = socket.assigns.visible_opinion
 
     if opinion do
       content = opinion.content || ""
@@ -156,11 +281,11 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
     end
   end
 
-  defp added_at(%{opinion: %{inserted_at: inserted_at}}) when not is_nil(inserted_at) do
+  defp added_at(%{inserted_at: inserted_at}, _vote) when not is_nil(inserted_at) do
     inserted_at
   end
 
-  defp added_at(vote), do: vote.inserted_at
+  defp added_at(_opinion, vote), do: vote.inserted_at
 
   defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
 

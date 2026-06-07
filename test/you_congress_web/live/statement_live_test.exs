@@ -41,6 +41,8 @@ defmodule YouCongressWeb.StatementLiveTest do
     %{statement: statement}
   end
 
+  defp occurrences(string, substring), do: length(:binary.matches(string, substring))
+
   defp create_statement_with_top_opinion(title, likes_count) do
     statement = statement_fixture(%{title: title})
     {:ok, _} = HallsStatements.sync!(statement.id, %{main_tag: "ai", other_tags: []})
@@ -704,6 +706,75 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       assert html =~ ai_author.name
       refute html =~ human_author.name
+    end
+
+    test "shows one card per author and browses older sourced quotes", %{
+      conn: conn,
+      statement: statement
+    } do
+      author = author_fixture(%{name: "Multiple Quote Author"})
+
+      higher_year_quote =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Higher year sourced quote text",
+          source_url: "https://example.com/higher-year-quote",
+          year: 2025,
+          twin: false
+        })
+
+      current_quote =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Active lower year sourced quote text",
+          source_url: "https://example.com/lower-year-quote",
+          year: 2020,
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(higher_year_quote, statement)
+      {:ok, _} = Opinions.add_opinion_to_statement(current_quote, statement)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: current_quote.id,
+          answer: :for,
+          twin: false
+        })
+
+      {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+
+      assert occurrences(html, ~s(data-testid="vote-card-#{vote.id}")) == 1
+      assert html =~ "Higher year sourced quote text"
+      refute html =~ "Active lower year sourced quote text"
+      assert html =~ "1 of 2"
+      assert html =~ "Quotes (1)"
+      assert html =~ "For (1)"
+
+      show_live
+      |> element("#vote-component-#{vote.id} button[aria-label='Next quote']")
+      |> render_click()
+
+      html = render(show_live)
+      assert occurrences(html, ~s(data-testid="vote-card-#{vote.id}")) == 1
+      assert html =~ "Active lower year sourced quote text"
+      refute html =~ "Higher year sourced quote text"
+      assert html =~ "2 of 2"
+      assert html =~ "Quotes (1)"
+      assert html =~ "For (1)"
+
+      show_live
+      |> element("#vote-component-#{vote.id} button[aria-label='Previous quote']")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "Higher year sourced quote text"
+      refute html =~ "Active lower year sourced quote text"
+      assert html =~ "1 of 2"
+      assert html =~ "Quotes (1)"
+      assert html =~ "For (1)"
     end
   end
 end

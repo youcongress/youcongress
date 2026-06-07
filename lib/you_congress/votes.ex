@@ -6,6 +6,7 @@ defmodule YouCongress.Votes do
   import Ecto.Query, warn: false
 
   alias YouCongress.DelegationVotes
+  alias YouCongress.Opinions
   alias YouCongress.Votes.Vote
   alias YouCongress.Repo
 
@@ -174,6 +175,46 @@ defmodule YouCongress.Votes do
     ])
     |> preload(^include_tables)
     |> Repo.all()
+    |> with_alternate_sourced_opinions(statement_id)
+  end
+
+  defp with_alternate_sourced_opinions([], _statement_id), do: []
+
+  defp with_alternate_sourced_opinions(votes, statement_id) do
+    author_ids =
+      votes
+      |> Enum.filter(&sourced_opinion_vote?/1)
+      |> Enum.map(& &1.author_id)
+      |> Enum.uniq()
+
+    opinions_by_author =
+      Opinions.list_sourced_statement_opinions_by_author(statement_id, author_ids)
+
+    Enum.map(votes, fn vote ->
+      if sourced_opinion_vote?(vote) do
+        alternate_opinions =
+          vote
+          |> ordered_alternate_opinions(Map.get(opinions_by_author, vote.author_id, []))
+
+        Map.put(vote, :alternate_opinions, alternate_opinions)
+      else
+        vote
+      end
+    end)
+  end
+
+  defp sourced_opinion_vote?(%Vote{opinion: %{source_url: source_url}})
+       when not is_nil(source_url),
+       do: true
+
+  defp sourced_opinion_vote?(_vote), do: false
+
+  defp ordered_alternate_opinions(%Vote{opinion: current_opinion}, opinions) do
+    if Enum.any?(opinions, &(&1.id == current_opinion.id)) do
+      opinions
+    else
+      [current_opinion | opinions]
+    end
   end
 
   @doc """

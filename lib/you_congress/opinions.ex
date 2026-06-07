@@ -9,6 +9,7 @@ defmodule YouCongress.Opinions do
   alias YouCongress.Likes
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
+  alias YouCongress.Votes
   alias YouCongress.Votes.Vote
   alias YouCongress.Workers.UpdateAuthorPublicFigureWorker
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
@@ -204,13 +205,22 @@ defmodule YouCongress.Opinions do
 
   defp maybe_delete_inferred_quote_votes(multi, _opinion, []), do: multi
 
-  defp maybe_delete_inferred_quote_votes(multi, %Opinion{author_id: author_id}, statement_ids) do
-    inferred_votes_query =
-      from(v in Vote,
-        where: v.author_id == ^author_id and v.statement_id in ^statement_ids
-      )
+  defp maybe_delete_inferred_quote_votes(
+         multi,
+         %Opinion{id: opinion_id, author_id: author_id},
+         statement_ids
+       ) do
+    Ecto.Multi.run(multi, :inferred_quote_votes, fn _repo, _changes ->
+      votes =
+        from(v in Vote,
+          where:
+            v.author_id == ^author_id and v.statement_id in ^statement_ids and
+              v.opinion_id == ^opinion_id
+        )
+        |> Repo.all()
 
-    Ecto.Multi.delete_all(multi, :inferred_quote_votes, inferred_votes_query)
+      reassign_or_delete_current_quote_votes(votes, author_id, opinion_id)
+    end)
   end
 
   @doc """
@@ -229,6 +239,25 @@ defmodule YouCongress.Opinions do
   def exists?(opts) do
     query = build_query(opts)
     Repo.exists?(query)
+  end
+
+  def list_sourced_statement_opinions_by_author(_statement_id, []), do: %{}
+
+  def list_sourced_statement_opinions_by_author(statement_id, author_ids)
+      when is_integer(statement_id) and is_list(author_ids) do
+    author_ids = Enum.reject(author_ids, &is_nil/1)
+
+    from(o in Opinion,
+      join: os in "opinions_statements",
+      on: os.opinion_id == o.id,
+      where:
+        os.statement_id == ^statement_id and o.author_id in ^author_ids and
+          not is_nil(o.source_url),
+      order_by: [fragment("? DESC NULLS LAST", o.year), desc: o.id],
+      preload: [:author]
+    )
+    |> Repo.all()
+    |> Enum.group_by(& &1.author_id)
   end
 
   defp build_query(opts) do
@@ -458,6 +487,7 @@ defmodule YouCongress.Opinions do
           :sync_opinions_count,
           SyncStatementOpinionsCountWorker.new(%{"statement_id" => statement.id})
         )
+        |> maybe_update_current_quote_vote(opinion, statement)
         |> Repo.transaction()
 
       case result do
@@ -513,7 +543,7 @@ defmodule YouCongress.Opinions do
             :sync_opinions_count,
             SyncStatementOpinionsCountWorker.new(%{"statement_id" => statement.id})
           )
-          |> maybe_delete_vote(opinion, statement)
+          |> maybe_reassign_or_delete_current_quote_vote(opinion, statement)
           |> Repo.transaction()
 
         case result do
@@ -529,15 +559,73 @@ defmodule YouCongress.Opinions do
     end
   end
 
-  defp maybe_delete_vote(multi, %Opinion{source_url: source_url} = opinion, statement)
-       when not is_nil(source_url) do
-    Ecto.Multi.run(multi, :delete_vote, fn repo, _ ->
-      case repo.get_by(Vote, author_id: opinion.author_id, statement_id: statement.id) do
+  defp maybe_update_current_quote_vote(
+         multi,
+         %Opinion{source_url: source_url, author_id: author_id} = opinion,
+         statement
+       )
+       when not is_nil(source_url) and not is_nil(author_id) do
+    Ecto.Multi.run(multi, :current_quote_vote, fn _repo, _changes ->
+      case Votes.get_by(%{author_id: author_id, statement_id: statement.id}) do
         nil -> {:ok, nil}
-        vote -> repo.delete(vote)
+        vote -> Votes.update_vote(vote, %{opinion_id: opinion.id, twin: false})
       end
     end)
   end
 
-  defp maybe_delete_vote(multi, _opinion, _statement), do: multi
+  defp maybe_update_current_quote_vote(multi, _opinion, _statement), do: multi
+
+  defp maybe_reassign_or_delete_current_quote_vote(
+         multi,
+         %Opinion{source_url: source_url, author_id: author_id} = opinion,
+         statement
+       )
+       when not is_nil(source_url) and not is_nil(author_id) do
+    Ecto.Multi.run(multi, :current_quote_vote, fn _repo, _changes ->
+      case Votes.get_by(%{
+             author_id: author_id,
+             statement_id: statement.id,
+             opinion_id: opinion.id
+           }) do
+        nil ->
+          {:ok, nil}
+
+        vote ->
+          reassign_or_delete_current_quote_votes([vote], author_id, opinion.id)
+      end
+    end)
+  end
+
+  defp maybe_reassign_or_delete_current_quote_vote(multi, _opinion, _statement), do: multi
+
+  defp reassign_or_delete_current_quote_votes(votes, author_id, removed_opinion_id) do
+    Enum.reduce_while(votes, {:ok, []}, fn vote, {:ok, changed_votes} ->
+      case next_sourced_statement_opinion(vote.statement_id, author_id, removed_opinion_id) do
+        %Opinion{} = replacement ->
+          case Votes.update_vote(vote, %{opinion_id: replacement.id, twin: false}) do
+            {:ok, updated_vote} -> {:cont, {:ok, [updated_vote | changed_votes]}}
+            {:error, reason} -> {:halt, {:error, reason}}
+          end
+
+        nil ->
+          case Votes.delete_vote(vote) do
+            {:ok, deleted_vote} -> {:cont, {:ok, [deleted_vote | changed_votes]}}
+            {:error, reason} -> {:halt, {:error, reason}}
+          end
+      end
+    end)
+  end
+
+  defp next_sourced_statement_opinion(statement_id, author_id, removed_opinion_id) do
+    from(o in Opinion,
+      join: os in "opinions_statements",
+      on: os.opinion_id == o.id,
+      where:
+        os.statement_id == ^statement_id and o.author_id == ^author_id and
+          o.id != ^removed_opinion_id and not is_nil(o.source_url),
+      order_by: [fragment("? DESC NULLS LAST", o.year), desc: o.id],
+      limit: 1
+    )
+    |> Repo.one()
+  end
 end

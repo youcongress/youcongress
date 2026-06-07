@@ -135,6 +135,7 @@
                   current_user={@current_user}
                   delegable={true}
                   liked={vote.opinion_id in @liked_opinion_ids}
+                  liked_opinion_ids={@liked_opinion_ids}
                   regenerating_opinion_id={@regenerating_opinion_id}
                   page={:statement_show}
                 />
@@ -154,6 +155,7 @@
                   current_user={@current_user}
                   delegable={true}
                   liked={vote.opinion_id in @liked_opinion_ids}
+                  liked_opinion_ids={@liked_opinion_ids}
                   regenerating_opinion_id={@regenerating_opinion_id}
                   page={:statement_show}
                 />

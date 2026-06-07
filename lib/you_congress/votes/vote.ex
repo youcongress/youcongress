@@ -19,6 +19,7 @@ defmodule YouCongress.Votes.Vote do
     # opinion_id links to the main opinion
     # authors can have more than one opinion per statement, but at the moment we only display one
     belongs_to :opinion, Opinion
+    field :alternate_opinions, {:array, :map}, virtual: true, default: []
 
     timestamps()
   end
