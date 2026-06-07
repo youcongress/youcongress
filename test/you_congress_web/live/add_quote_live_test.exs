@@ -46,11 +46,13 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
         live(conn, ~p"/p/#{statement.slug}/add-quote?twitter_username=someone")
 
       assert html =~ "Add a quote"
+      assert html =~ "Year"
 
       assert add_quote_live
              |> form("form",
                opinion: "Democracy is essential.",
                source_url: "http://example.com/democracy_quote",
+               year: "2024",
                agree_rate: "For"
              )
              |> render_submit()
@@ -70,6 +72,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert opinion.author_id == author.id
       assert opinion.content == "Democracy is essential."
       assert opinion.source_url == "http://example.com/democracy_quote"
+      assert opinion.year == 2024
       assert opinion.user_id == current_user.id
       assert opinion.twin == false
     end

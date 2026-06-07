@@ -38,6 +38,13 @@
       <span class="text-red-600 text-sm">Please provide a valid URL</span>
     <% end %>
     <.input
+      field={@form[:year]}
+      type="number"
+      label="Year"
+      data-lpignore="true"
+      placeholder="e.g., 2020"
+    />
+    <.input
       field={@form[:agree_rate]}
       type="select"
       options={[nil | @agree_rate_options]}
