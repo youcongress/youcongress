@@ -119,6 +119,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert opinion.twin == false
 
       assert vote.opinion_id == opinion.id
+      first_opinion = opinion
 
       {:ok, add_quote_live, _html} =
         live(conn, ~p"/p/#{statement.slug}/add-quote?twitter_username=someone")
@@ -147,6 +148,20 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert opinion.source_url == "http://example.com/democracy_quote2"
       assert opinion.user_id == current_user.id
       assert opinion.twin == false
+
+      linked_opinions =
+        Opinions.list_opinions(
+          author_ids: [author.id],
+          statement_ids: [statement.id],
+          order_by: [asc: :id]
+        )
+
+      assert Enum.map(linked_opinions, & &1.id) == [first_opinion.id, opinion.id]
+
+      assert Enum.map(linked_opinions, & &1.content) == [
+               "Democracy is essential.",
+               "Democracy is essential 2."
+             ]
     end
 
     test "creates an author and adds a quote", %{conn: conn, statement: statement} do

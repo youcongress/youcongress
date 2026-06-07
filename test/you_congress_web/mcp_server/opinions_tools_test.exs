@@ -424,6 +424,63 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       assert vote.answer == :for
       assert vote.opinion_id == opinion.id
     end
+
+    test "keeps existing linked opinions when attaching another quote by the same author" do
+      admin = admin_fixture()
+      api_key = api_key_fixture(admin)
+      statement = statement_fixture()
+
+      existing_opinion =
+        opinion_fixture(%{
+          content: "Existing quote",
+          source_url: "https://example.com/existing",
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(existing_opinion, statement.id)
+
+      existing_vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: existing_opinion.author_id,
+          opinion_id: existing_opinion.id,
+          answer: :against
+        })
+
+      new_opinion =
+        opinion_fixture(%{
+          author_id: existing_opinion.author_id,
+          content: "New quote",
+          source_url: "https://example.com/new",
+          twin: false
+        })
+
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:json, payload}, ^frame} =
+                 OpinionsStatementsAdd.execute(
+                   %{opinion_id: new_opinion.id, statement_id: statement.id, vote_answer: "For"},
+                   frame
+                 )
+
+        assert payload.vote.vote_id == existing_vote.id
+        assert payload.vote.answer == "for"
+      end)
+
+      vote = Votes.get_by(%{statement_id: statement.id, author_id: existing_opinion.author_id})
+      assert vote.id == existing_vote.id
+      assert vote.answer == :for
+      assert vote.opinion_id == new_opinion.id
+
+      linked_opinions =
+        Opinions.list_opinions(
+          author_ids: [existing_opinion.author_id],
+          statement_ids: [statement.id],
+          order_by: [asc: :id]
+        )
+
+      assert Enum.map(linked_opinions, & &1.id) == [existing_opinion.id, new_opinion.id]
+      assert Enum.map(linked_opinions, & &1.content) == ["Existing quote", "New quote"]
+    end
   end
 
   describe "OpinionsStatementsRemove.execute/2" do
