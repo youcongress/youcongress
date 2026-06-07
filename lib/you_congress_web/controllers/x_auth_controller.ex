@@ -33,7 +33,7 @@ defmodule YouCongressWeb.XAuthController do
       |> put_session(:x_oauth_code_verifier, code_verifier)
       |> put_session(:x_oauth_state, state)
       |> maybe_store_pending_actions(params["pending_actions"])
-      |> maybe_store_return_to(params["return_to"])
+      |> maybe_store_return_to(request_return_to(conn, params))
       |> redirect(external: authorize_url)
     end
   end
@@ -49,6 +49,23 @@ defmodule YouCongressWeb.XAuthController do
       nil -> conn
       path -> put_session(conn, :oauth_return_to, path)
     end
+  end
+
+  defp request_return_to(conn, params) do
+    [
+      params["return_to"],
+      referrer_return_to(conn),
+      get_session(conn, :user_return_to),
+      get_session(conn, :registration_return_to)
+    ]
+    |> Enum.find_value(&ReturnTo.sanitize/1)
+  end
+
+  defp referrer_return_to(conn) do
+    conn
+    |> get_req_header("referer")
+    |> List.first()
+    |> ReturnTo.from_same_origin_url(conn.host)
   end
 
   @doc """

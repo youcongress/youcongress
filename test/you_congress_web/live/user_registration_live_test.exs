@@ -11,5 +11,11 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
       assert html =~ "Log in"
       assert html =~ "Create Account"
     end
+
+    test "preserves return_to in OAuth links", %{conn: conn} do
+      {:ok, _lv, html} = live(conn, ~p"/sign_up?return_to=/p/test-statement")
+
+      assert html =~ ~s(href="/auth/google?return_to=%2Fp%2Ftest-statement")
+    end
   end
 end

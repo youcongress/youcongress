@@ -40,6 +40,20 @@ defmodule YouCongressWeb.XAuthControllerTest do
       assert get_session(conn, :x_oauth_state)
     end
 
+    test "stores return_to from the login session when redirecting to X", %{conn: conn} do
+      Application.put_env(:you_congress, :x_client_id, "test_client_id")
+      Application.put_env(:you_congress, :x_callback_url, "https://test.com/auth/x/callback")
+
+      conn =
+        conn
+        |> init_test_session(%{user_return_to: "/p/test-statement"})
+        |> put_req_header("referer", "http://www.example.com/log_in")
+        |> get(~p"/auth/x")
+
+      assert redirected_to(conn) =~ "https://twitter.com/i/oauth2/authorize"
+      assert get_session(conn, :oauth_return_to) == "/p/test-statement"
+    end
+
     test "redirects to login with error when not configured", %{conn: conn} do
       Application.put_env(:you_congress, :x_client_id, nil)
       Application.put_env(:you_congress, :x_callback_url, nil)

@@ -3,6 +3,7 @@
   votes_count={if assigns[:votes_count], do: @votes_count}
   user_votes_count={if assigns[:user_votes_count], do: @user_votes_count}
   page={assigns[:page]}
+  return_to={assigns[:return_to]}
 />
 <main class={assigns[:main_padding_classes] || "px-4 pb-6 sm:px-6 lg:px-8"}>
   <%= if assigns[:statement] && assigns[:statement].id do %>
@@ -24,7 +25,7 @@
                 !assigns[:find_quotes_in_progress] &&
                 !assigns[:current_user]
             }
-            href={~p"/log_in"}
+            href={YouCongressWeb.ReturnTo.log_in_path(nil, assigns[:return_to])}
             class="inline-flex items-center rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-700"
           >
             Add quotes with AI

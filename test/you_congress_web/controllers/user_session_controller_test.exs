@@ -4,10 +4,21 @@ defmodule YouCongressWeb.UserSessionControllerTest do
   alias YouCongress.Repo
   alias YouCongress.Accounts
   import YouCongress.AccountsFixtures
+  import Phoenix.LiveViewTest
   import Ecto.Changeset
 
   setup do
     %{user: user_fixture()}
+  end
+
+  describe "GET /log_in" do
+    test "uses the same-origin referrer as return_to for OAuth links", %{conn: conn} do
+      conn = put_req_header(conn, "referer", "http://www.example.com/p/test-statement")
+
+      {:ok, _view, html} = live(conn, ~p"/log_in")
+
+      assert html =~ ~s(href="/auth/google?return_to=%2Fp%2Ftest-statement")
+    end
   end
 
   describe "POST /log_in" do

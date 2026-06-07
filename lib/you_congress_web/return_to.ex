@@ -37,6 +37,18 @@ defmodule YouCongressWeb.ReturnTo do
 
   def from_url(_), do: nil
 
+  def from_same_origin_url(url, host) when is_binary(url) and is_binary(host) do
+    uri = URI.parse(url)
+
+    if same_origin?(uri, host) do
+      sanitize(URI.to_string(%URI{path: uri.path || "/", query: uri.query}))
+    end
+  rescue
+    URI.Error -> nil
+  end
+
+  def from_same_origin_url(_, _), do: nil
+
   def welcome_path(return_to) do
     path_with_query("/welcome", return_to: sanitize(return_to))
   end
@@ -72,5 +84,11 @@ defmodule YouCongressWeb.ReturnTo do
       "" -> path
       query -> "#{path}?#{query}"
     end
+  end
+
+  defp same_origin?(%URI{host: nil}, _host), do: true
+
+  defp same_origin?(%URI{host: url_host}, host) do
+    String.downcase(url_host) == String.downcase(host)
   end
 end

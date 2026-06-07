@@ -100,7 +100,7 @@ defmodule YouCongressWeb.StatementLive.Show do
 
     cond do
       is_nil(current_user) ->
-        {:noreply, redirect(socket, to: ~p"/log_in")}
+        {:noreply, redirect(socket, to: ReturnTo.log_in_path(nil, socket.assigns[:return_to]))}
 
       not Permissions.can_generate_ai_votes?(current_user) ->
         {:noreply,

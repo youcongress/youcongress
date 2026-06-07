@@ -96,7 +96,7 @@
     </form>
   </div>
   <span :if={!@current_user} class="hidden md:block text-xs text-gray-500">
-    <.link href={~p"/log_in"} class="underline">Log in</.link> to comment or vote
+    <.link href={ReturnTo.log_in_path(nil, @return_to)} class="underline">Log in</.link> to comment or vote
   </span>
   <span
     phx-click="filter-quotes"
@@ -199,7 +199,7 @@
   <%= if !@current_user do %>
     <div class="pt-6">
       <.link
-        href={~p"/log_in"}
+        href={ReturnTo.log_in_path(nil, @return_to)}
         class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
       >
         Log in to comment
