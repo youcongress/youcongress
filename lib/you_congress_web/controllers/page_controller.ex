@@ -13,7 +13,7 @@ defmodule YouCongressWeb.PageController do
   end
 
   def sitemap(conn, _params) do
-    statements = Statements.list_statements(order: :updated_at_desc)
+    statements = Statements.list_statements(order: :updated_at_desc, limit: 1_000)
     body = build_sitemap(statements)
 
     conn
