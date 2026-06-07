@@ -45,7 +45,6 @@ defmodule YouCongressWeb.StatementLive.Show do
   @spec handle_params(map, binary, Socket.t()) :: {:noreply, Socket.t()}
   def handle_params(%{"slug" => slug}, url, socket) do
     statement = Statements.get_by!(slug: slug)
-    current_user = socket.assigns.current_user
 
     socket =
       socket
@@ -63,9 +62,8 @@ defmodule YouCongressWeb.StatementLive.Show do
       |> assign(:find_quotes_in_progress, QuotatorAI.check_polling_job_status(statement.id))
       |> assign(:source_filter, :quotes)
       |> assign(:answer_filter, nil)
-      |> VotesLoader.load_statement_and_votes(statement.id)
+      |> load_statement_and_likes(statement)
       |> load_random_statements(statement.id)
-      |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user, statement))
 
     current_user_vote = socket.assigns.current_user_vote
     socket = assign(socket, editing: !current_user_vote || !current_user_vote.opinion_id)
@@ -148,7 +146,7 @@ defmodule YouCongressWeb.StatementLive.Show do
 
     socket =
       socket
-      |> VotesLoader.load_statement_and_votes(statement.id)
+      |> load_statement_and_likes(statement)
       |> assign(:find_quotes_in_progress, QuotatorAI.check_polling_job_status(statement.id))
       |> assign(reload: false)
       |> clear_flash()
@@ -173,7 +171,7 @@ defmodule YouCongressWeb.StatementLive.Show do
     socket =
       socket
       |> assign(:source_filter, source_filter)
-      |> VotesLoader.load_statement_and_votes(statement.id)
+      |> load_statement_and_likes(statement)
 
     {:noreply, socket}
   end
@@ -191,7 +189,7 @@ defmodule YouCongressWeb.StatementLive.Show do
     socket =
       socket
       |> assign(:source_filter, source_filter)
-      |> VotesLoader.load_statement_and_votes(statement.id)
+      |> load_statement_and_likes(statement)
 
     {:noreply, socket}
   end
@@ -202,7 +200,7 @@ defmodule YouCongressWeb.StatementLive.Show do
     socket =
       socket
       |> assign(:answer_filter, answer)
-      |> VotesLoader.load_statement_and_votes(statement.id)
+      |> load_statement_and_likes(statement)
 
     {:noreply, socket}
   end
@@ -256,7 +254,7 @@ defmodule YouCongressWeb.StatementLive.Show do
   @impl true
 
   def handle_info(:reload, socket) do
-    socket = VotesLoader.load_statement_and_votes(socket, socket.assigns.statement.id)
+    socket = load_statement_and_likes(socket, socket.assigns.statement)
 
     {:noreply, socket}
   end
@@ -274,12 +272,23 @@ defmodule YouCongressWeb.StatementLive.Show do
     {:noreply, record_guest_vote(socket, payload)}
   end
 
+  def handle_info({:opinion_like_changed, opinion_id, liked}, socket) do
+    liked_opinion_ids =
+      if liked do
+        Enum.uniq([opinion_id | socket.assigns.liked_opinion_ids])
+      else
+        Enum.reject(socket.assigns.liked_opinion_ids, &(&1 == opinion_id))
+      end
+
+    {:noreply, assign(socket, :liked_opinion_ids, liked_opinion_ids)}
+  end
+
   def handle_info({:voted, _vote}, socket) do
     statement = socket.assigns.statement
 
     socket =
       socket
-      |> VotesLoader.load_statement_and_votes(statement.id)
+      |> load_statement_and_likes(statement)
       |> maybe_reload_country_vote_frequencies()
 
     vote = socket.assigns.current_user_vote
@@ -329,4 +338,13 @@ defmodule YouCongressWeb.StatementLive.Show do
   end
 
   defp maybe_reload_country_vote_frequencies(socket), do: socket
+
+  defp load_statement_and_likes(socket, statement) do
+    socket
+    |> VotesLoader.load_statement_and_votes(statement.id)
+    |> assign(
+      :liked_opinion_ids,
+      Likes.get_liked_opinion_ids(socket.assigns.current_user, statement)
+    )
+  end
 end

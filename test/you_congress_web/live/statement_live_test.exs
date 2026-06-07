@@ -15,6 +15,7 @@ defmodule YouCongressWeb.StatementLiveTest do
   alias YouCongress.Statements
   alias YouCongress.HallsStatements
   alias YouCongress.Opinions
+  alias YouCongress.Likes
 
   @create_attrs %{title: "nuclear energy"}
   @suggested_titles [
@@ -628,6 +629,37 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert has_element?(show_live, "img[src='/images/heart.svg']")
 
       # We don't have a filled heart icon
+      refute has_element?(show_live, "img[src='/images/filled-heart.svg']")
+    end
+
+    test "already liked vote opinion renders with filled heart", %{
+      conn: conn,
+      statement: statement
+    } do
+      current_user = user_fixture()
+      conn = log_in_user(conn, current_user)
+      author = author_fixture()
+      opinion = opinion_fixture(%{author_id: author.id})
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: author.id,
+        opinion_id: opinion.id
+      })
+
+      {:ok, :liked} = Likes.like(opinion.id, current_user)
+
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}")
+
+      assert has_element?(show_live, "img[src='/images/filled-heart.svg']")
+      refute has_element?(show_live, "img[src='/images/heart.svg']")
+
+      show_live
+      |> element("img[src='/images/filled-heart.svg']")
+      |> render_click()
+
+      assert Likes.count(opinion_id: opinion.id) == 0
+      assert has_element?(show_live, "img[src='/images/heart.svg']")
       refute has_element?(show_live, "img[src='/images/filled-heart.svg']")
     end
 
