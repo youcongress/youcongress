@@ -247,6 +247,21 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ statement.title
     end
 
+    test "guest vote auth modal keeps the statement page as return_to", %{
+      conn: conn,
+      statement: statement
+    } do
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}")
+
+      show_live
+      |> element("button#cast-vote-for", "For")
+      |> render_click()
+
+      html = render(show_live)
+      assert html =~ "vote-auth-modal"
+      assert html =~ "return_to=%2Fp%2F#{statement.slug}"
+    end
+
     test "shows voting and opinion controls without existing votes", %{
       conn: conn,
       statement: statement

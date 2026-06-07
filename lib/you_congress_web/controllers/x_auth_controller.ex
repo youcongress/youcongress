@@ -8,6 +8,7 @@ defmodule YouCongressWeb.XAuthController do
   alias YouCongress.FeatureFlags
   alias YouCongress.X.XAPI
   alias YouCongress.Track
+  alias YouCongressWeb.ReturnTo
   alias YouCongressWeb.UserAuth
 
   plug :ensure_x_login_enabled
@@ -32,6 +33,7 @@ defmodule YouCongressWeb.XAuthController do
       |> put_session(:x_oauth_code_verifier, code_verifier)
       |> put_session(:x_oauth_state, state)
       |> maybe_store_pending_actions(params["pending_actions"])
+      |> maybe_store_return_to(params["return_to"])
       |> redirect(external: authorize_url)
     end
   end
@@ -40,6 +42,13 @@ defmodule YouCongressWeb.XAuthController do
 
   defp maybe_store_pending_actions(conn, pending_actions) do
     put_session(conn, :oauth_pending_actions, pending_actions)
+  end
+
+  defp maybe_store_return_to(conn, return_to) do
+    case ReturnTo.sanitize(return_to) do
+      nil -> conn
+      path -> put_session(conn, :oauth_return_to, path)
+    end
   end
 
   @doc """
@@ -152,10 +161,11 @@ defmodule YouCongressWeb.XAuthController do
         Track.event("Register via X", user)
 
         conn = process_pending_actions(conn, user)
+        {conn, return_to} = pop_oauth_return_to(conn)
 
         # Log in the user and redirect to sign_up to complete profile (add email)
         conn
-        |> put_session(:user_return_to, ~p"/sign_up")
+        |> put_sign_up_return_to(return_to)
         |> UserAuth.log_in_user(user)
 
       {:error, :author, changeset, _} ->
@@ -184,10 +194,11 @@ defmodule YouCongressWeb.XAuthController do
         Track.event("Register via X (existing author)", user)
 
         conn = process_pending_actions(conn, user)
+        {conn, return_to} = pop_oauth_return_to(conn)
 
         # Log in the user and redirect to sign_up to complete profile (add email)
         conn
-        |> put_session(:user_return_to, ~p"/sign_up")
+        |> put_sign_up_return_to(return_to)
         |> UserAuth.log_in_user(user)
 
       {:error, :author, changeset, _} ->
@@ -214,14 +225,16 @@ defmodule YouCongressWeb.XAuthController do
     Track.event("Login via X", user)
 
     conn = process_pending_actions(conn, user)
+    {conn, return_to} = pop_oauth_return_to(conn)
 
     # Check if user needs to complete profile (no confirmed email)
     if user.email_confirmed_at do
       conn
+      |> maybe_put_user_return_to(return_to)
       |> UserAuth.log_in_user(user)
     else
       conn
-      |> put_session(:user_return_to, ~p"/sign_up")
+      |> put_sign_up_return_to(return_to)
       |> UserAuth.log_in_user(user)
     end
   end
@@ -264,6 +277,21 @@ defmodule YouCongressWeb.XAuthController do
     end
 
     conn
+  end
+
+  defp pop_oauth_return_to(conn) do
+    return_to = get_session(conn, :oauth_return_to)
+    {delete_session(conn, :oauth_return_to), ReturnTo.sanitize(return_to)}
+  end
+
+  defp maybe_put_user_return_to(conn, nil), do: conn
+
+  defp maybe_put_user_return_to(conn, return_to) do
+    put_session(conn, :user_return_to, return_to)
+  end
+
+  defp put_sign_up_return_to(conn, return_to) do
+    put_session(conn, :user_return_to, ReturnTo.sign_up_path(return_to))
   end
 
   defp create_pending_vote(user, vote_data) do

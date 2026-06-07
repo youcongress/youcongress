@@ -10,6 +10,7 @@ defmodule YouCongressWeb.ActivityLive.Index do
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongressWeb.StatementLive.CastVoteComponent
   alias YouCongressWeb.Components.SwitchComponent
+  alias YouCongressWeb.ReturnTo
 
   @per_page 15
 
@@ -20,6 +21,7 @@ defmodule YouCongressWeb.ActivityLive.Index do
       |> assign_current_user(session["user_token"])
       |> assign(:pending_guest_votes, %{})
       |> assign(:pending_vote_prompt, nil)
+      |> assign(:vote_auth_return_to, nil)
       |> assign(:show_vote_auth_modal, false)
 
     if connected?(socket) do
@@ -30,11 +32,12 @@ defmodule YouCongressWeb.ActivityLive.Index do
   end
 
   @impl true
-  def handle_params(_params, _, socket) do
+  def handle_params(_params, url, socket) do
     %{assigns: %{current_user: current_user}} = socket
 
     socket =
       socket
+      |> assign(:return_to, ReturnTo.from_url(url))
       |> assign(:include_user_opinions, false)
       |> load_opinions_and_votes()
       |> assign(page_title: "Activity")

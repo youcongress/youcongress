@@ -7,17 +7,21 @@ defmodule YouCongressWeb.Components.LoginButtons do
   use Phoenix.Component
   use YouCongressWeb, :verified_routes
   alias YouCongress.FeatureFlags
+  alias YouCongressWeb.ReturnTo
 
   attr :class, :string, default: ""
   attr :pending_actions, :string, default: nil
+  attr :return_to, :string, default: nil
 
   def render(assigns) do
     pending_actions = assigns.pending_actions
+    return_to = assigns.return_to
 
     assigns =
       assigns
-      |> assign(:google_href, auth_url(:google, pending_actions))
-      |> assign(:x_href, auth_url(:x, pending_actions))
+      |> assign(:google_href, ReturnTo.auth_path(:google, pending_actions, return_to))
+      |> assign(:x_href, ReturnTo.auth_path(:x, pending_actions, return_to))
+      |> assign(:email_href, ReturnTo.log_in_path(pending_actions, return_to))
 
     ~H"""
     <div class={@class}>
@@ -58,7 +62,7 @@ defmodule YouCongressWeb.Components.LoginButtons do
           </.link>
         <% end %>
         <.link
-          href={~p"/log_in"}
+          href={@email_href}
           class="inline-flex items-center py-1.5 px-3 text-sm text-gray-600 hover:text-indigo-600 hover:underline"
         >
           Log in with email/password
@@ -67,13 +71,4 @@ defmodule YouCongressWeb.Components.LoginButtons do
     </div>
     """
   end
-
-  defp auth_url(:google, nil), do: ~p"/auth/google"
-
-  defp auth_url(:google, pending_actions),
-    do: ~p"/auth/google?#{%{pending_actions: pending_actions}}"
-
-  defp auth_url(:x, nil), do: ~p"/auth/x"
-
-  defp auth_url(:x, pending_actions), do: ~p"/auth/x?#{%{pending_actions: pending_actions}}"
 end

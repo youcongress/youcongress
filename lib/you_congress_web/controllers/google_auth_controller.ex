@@ -7,6 +7,7 @@ defmodule YouCongressWeb.GoogleAuthController do
   alias YouCongress.Authors
   alias YouCongress.Google.GoogleAPI
   alias YouCongress.Track
+  alias YouCongressWeb.ReturnTo
   alias YouCongressWeb.UserAuth
 
   @doc """
@@ -28,6 +29,7 @@ defmodule YouCongressWeb.GoogleAuthController do
       conn
       |> put_session(:google_oauth_state, state)
       |> maybe_store_pending_actions(params["pending_actions"])
+      |> maybe_store_return_to(params["return_to"])
       |> redirect(external: authorize_url)
     end
   end
@@ -36,6 +38,13 @@ defmodule YouCongressWeb.GoogleAuthController do
 
   defp maybe_store_pending_actions(conn, pending_actions) do
     put_session(conn, :oauth_pending_actions, pending_actions)
+  end
+
+  defp maybe_store_return_to(conn, return_to) do
+    case ReturnTo.sanitize(return_to) do
+      nil -> conn
+      path -> put_session(conn, :oauth_return_to, path)
+    end
   end
 
   @doc """
@@ -168,15 +177,17 @@ defmodule YouCongressWeb.GoogleAuthController do
           end
 
         conn = process_pending_actions(conn, user)
+        {conn, return_to} = pop_oauth_return_to(conn)
 
         if user.email_confirmed_at do
           conn
           |> put_flash(:info, "Welcome back! Your Google account has been linked.")
+          |> maybe_put_user_return_to(return_to)
           |> UserAuth.log_in_user(user)
         else
           conn
           |> put_flash(:info, "Welcome back! Your Google account has been linked.")
-          |> put_session(:user_return_to, ~p"/sign_up")
+          |> put_sign_up_return_to(return_to)
           |> UserAuth.log_in_user(user)
         end
 
@@ -209,18 +220,13 @@ defmodule YouCongressWeb.GoogleAuthController do
           end
 
         conn = process_pending_actions(conn, user)
+        {conn, return_to} = pop_oauth_return_to(conn)
 
         # Google provides email, so we may skip the profile completion step
         # but still need phone verification
-        if user.email_confirmed_at do
-          conn
-          |> put_session(:user_return_to, ~p"/sign_up")
-          |> UserAuth.log_in_user(user)
-        else
-          conn
-          |> put_session(:user_return_to, ~p"/sign_up")
-          |> UserAuth.log_in_user(user)
-        end
+        conn
+        |> put_sign_up_return_to(return_to)
+        |> UserAuth.log_in_user(user)
 
       {:error, :author, changeset, _} ->
         Logger.error("Failed to create author for Google signup: #{inspect(changeset.errors)}")
@@ -262,9 +268,10 @@ defmodule YouCongressWeb.GoogleAuthController do
           end
 
         conn = process_pending_actions(conn, user)
+        {conn, return_to} = pop_oauth_return_to(conn)
 
         conn
-        |> put_session(:user_return_to, ~p"/sign_up")
+        |> put_sign_up_return_to(return_to)
         |> UserAuth.log_in_user(user)
 
       {:error, :author, changeset, _} ->
@@ -291,14 +298,17 @@ defmodule YouCongressWeb.GoogleAuthController do
     Track.event("Login via Google", user)
 
     conn = process_pending_actions(conn, user)
+    {conn, return_to} = pop_oauth_return_to(conn)
 
     # Check if user needs to complete profile (no confirmed email or phone)
     if user.email_confirmed_at do
-      UserAuth.log_in_user(conn, user)
+      conn
+      |> maybe_put_user_return_to(return_to)
+      |> UserAuth.log_in_user(user)
     else
       conn
       |> put_flash(:info, "Welcome back! Please complete your profile.")
-      |> put_session(:user_return_to, ~p"/sign_up")
+      |> put_sign_up_return_to(return_to)
       |> UserAuth.log_in_user(user)
     end
   end
@@ -344,6 +354,21 @@ defmodule YouCongressWeb.GoogleAuthController do
     end
 
     conn
+  end
+
+  defp pop_oauth_return_to(conn) do
+    return_to = get_session(conn, :oauth_return_to)
+    {delete_session(conn, :oauth_return_to), ReturnTo.sanitize(return_to)}
+  end
+
+  defp maybe_put_user_return_to(conn, nil), do: conn
+
+  defp maybe_put_user_return_to(conn, return_to) do
+    put_session(conn, :user_return_to, return_to)
+  end
+
+  defp put_sign_up_return_to(conn, return_to) do
+    put_session(conn, :user_return_to, ReturnTo.sign_up_path(return_to))
   end
 
   defp create_pending_vote(user, vote_data) do

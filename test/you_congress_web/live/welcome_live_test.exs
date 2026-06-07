@@ -45,6 +45,21 @@ defmodule YouCongressWeb.WelcomeLiveTest do
       assert current_user.newsletter == true
     end
 
+    test "Accepting the newsletter redirects to return_to when provided", %{
+      conn: conn,
+      current_user: current_user
+    } do
+      conn = log_in_user(conn, current_user)
+      return_to = "/p/ai-alignment-public-deliberation"
+
+      {:ok, welcome_live, _html} = live(conn, ~p"/welcome?#{%{return_to: return_to}}")
+
+      {:error, {:redirect, %{to: ^return_to}}} =
+        welcome_live
+        |> form("#user-form", %{"user[newsletter]" => true})
+        |> render_submit()
+    end
+
     test "Not accepting the newsletter, saves it and redirects to home", %{
       conn: conn,
       current_user: current_user

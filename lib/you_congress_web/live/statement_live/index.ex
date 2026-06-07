@@ -23,6 +23,7 @@ defmodule YouCongressWeb.StatementLive.Index do
   alias YouCongress.Halls
   alias YouCongressWeb.AuthorLive.Show, as: AuthorShow
   alias YouCongressWeb.StatementLive.VoteComponent
+  alias YouCongressWeb.ReturnTo
 
   @featured_author_names [
     "Geoffrey Hinton",
@@ -68,6 +69,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign_cards(1)
       |> assign(:pending_guest_votes, %{})
       |> assign(:pending_vote_prompt, nil)
+      |> assign(:vote_auth_return_to, nil)
       |> assign(:show_vote_auth_modal, false)
 
     if connected?(socket) do
@@ -79,9 +81,10 @@ defmodule YouCongressWeb.StatementLive.Index do
   end
 
   @impl true
-  def handle_params(params, _url, socket) do
+  def handle_params(params, url, socket) do
     socket =
       socket
+      |> assign(:return_to, ReturnTo.from_url(url))
       |> apply_action(socket.assigns.live_action, params)
       |> maybe_apply_search_params(params)
 

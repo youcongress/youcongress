@@ -1,6 +1,7 @@
 defmodule YouCongressWeb.UserLoginLive do
   use YouCongressWeb, :live_view
   alias YouCongress.FeatureFlags
+  alias YouCongressWeb.ReturnTo
 
   def render(assigns) do
     ~H"""
@@ -8,11 +9,7 @@ defmodule YouCongressWeb.UserLoginLive do
       <%= unless @embedded do %>
         <div class="mt-6 space-y-3">
           <.link
-            href={
-              if @pending_actions,
-                do: ~p"/auth/google?#{%{pending_actions: @pending_actions}}",
-                else: ~p"/auth/google"
-            }
+            href={ReturnTo.auth_path(:google, @pending_actions, @return_to)}
             class="w-full inline-flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-gray-700 text-sm font-medium hover:bg-gray-50"
           >
             <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -37,11 +34,7 @@ defmodule YouCongressWeb.UserLoginLive do
           </.link>
           <%= if FeatureFlags.enabled?(:log_in_with_x) do %>
             <.link
-              href={
-                if @pending_actions,
-                  do: ~p"/auth/x?#{%{pending_actions: @pending_actions}}",
-                  else: ~p"/auth/x"
-              }
+              href={ReturnTo.auth_path(:x, @pending_actions, @return_to)}
               class="w-full inline-flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-black text-white text-sm font-medium hover:bg-gray-800"
             >
               <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -68,7 +61,10 @@ defmodule YouCongressWeb.UserLoginLive do
         <.header class="text-center">
           Log in to account
           <:subtitle>
-            Don't have an account? <.link href="/sign_up" class="underline">Sign up</.link>
+            Don't have an account?
+            <.link href={ReturnTo.sign_up_path(@return_to, @pending_actions)} class="underline">
+              Sign up
+            </.link>
           </:subtitle>
         </.header>
       <% end %>
@@ -83,6 +79,9 @@ defmodule YouCongressWeb.UserLoginLive do
         <:actions>
           <%= if @pending_actions do %>
             <input type="hidden" name="user[pending_actions]" value={@pending_actions} />
+          <% end %>
+          <%= if @return_to do %>
+            <input type="hidden" name="user[return_to]" value={@return_to} />
           <% end %>
           <.button phx-disable-with="Signing in..." class="w-full bg-indigo-500 hover:bg-indigo-700">
             Log in <span aria-hidden="true">→</span>
@@ -99,25 +98,36 @@ defmodule YouCongressWeb.UserLoginLive do
     """
   end
 
-  def mount(_params, session, socket) do
+  def mount(params, session, socket) do
+    params = normalize_params(params)
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "user")
 
     delegate_ids = session["delegate_ids"] || []
     votes = session["votes"] || %{}
+    return_to = ReturnTo.sanitize(params["return_to"] || session["registration_return_to"])
 
     pending_actions =
-      if delegate_ids != [] or map_size(votes) > 0 do
-        Jason.encode!(%{delegate_ids: delegate_ids, votes: votes})
-      else
-        nil
+      cond do
+        is_binary(params["pending_actions"]) ->
+          params["pending_actions"]
+
+        delegate_ids != [] or map_size(votes) > 0 ->
+          Jason.encode!(%{delegate_ids: delegate_ids, votes: votes})
+
+        true ->
+          nil
       end
 
     {:ok,
      assign(socket,
        form: form,
        pending_actions: pending_actions,
+       return_to: return_to,
        embedded: session["embedded"] || false
      ), temporary_assigns: [form: form]}
   end
+
+  defp normalize_params(params) when is_map(params), do: params
+  defp normalize_params(_params), do: %{}
 end

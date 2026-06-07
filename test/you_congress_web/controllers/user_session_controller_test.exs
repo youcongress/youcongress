@@ -2,6 +2,7 @@ defmodule YouCongressWeb.UserSessionControllerTest do
   use YouCongressWeb.ConnCase, async: true
 
   alias YouCongress.Repo
+  alias YouCongress.Accounts
   import YouCongress.AccountsFixtures
   import Ecto.Changeset
 
@@ -48,6 +49,40 @@ defmodule YouCongressWeb.UserSessionControllerTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
                "Your account has been blocked as it seemed spam. If you're a real person or a useful bot, please contact support@youcongress.org if this is an error."
+    end
+
+    test "redirects to form return_to after successful login", %{conn: conn} do
+      password = valid_user_password()
+      email = unique_user_email()
+      {:ok, %{user: user}} = Accounts.register_user(%{"email" => email, "password" => password})
+
+      conn =
+        post(conn, ~p"/log_in", %{
+          "user" => %{
+            "email" => user.email,
+            "password" => password,
+            "return_to" => "/p/ai-alignment-public-deliberation"
+          }
+        })
+
+      assert redirected_to(conn) == "/p/ai-alignment-public-deliberation"
+      assert get_session(conn, :user_token)
+    end
+  end
+
+  describe "POST /users/live_login" do
+    test "stores registration_return_to for live registration login", %{conn: conn, user: user} do
+      token = Accounts.generate_live_login_token(user)
+
+      conn =
+        post(conn, ~p"/users/live_login", %{
+          "token" => token,
+          "return_to" => "/p/ai-alignment-public-deliberation"
+        })
+
+      assert json_response(conn, 200) == %{"success" => true}
+      assert get_session(conn, :registration_return_to) == "/p/ai-alignment-public-deliberation"
+      assert get_session(conn, :user_token)
     end
   end
 

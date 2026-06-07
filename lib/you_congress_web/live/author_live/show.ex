@@ -17,6 +17,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongressWeb.StatementLive.CastVoteComponent
   alias YouCongressWeb.Components.SwitchComponent
   alias YouCongress.Halls
+  alias YouCongressWeb.ReturnTo
 
   @impl true
   def mount(_params, session, socket) do
@@ -26,6 +27,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
       |> assign(:order_by_date, false)
       |> assign(:pending_guest_votes, %{})
       |> assign(:pending_vote_prompt, nil)
+      |> assign(:vote_auth_return_to, nil)
       |> assign(:show_vote_auth_modal, false)
 
     if connected?(socket) do
@@ -36,7 +38,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   @impl true
-  def handle_params(params, _, socket) do
+  def handle_params(params, url, socket) do
     order_by_date = socket.assigns.order_by_date
     hall_name = params["hall"]
 
@@ -64,6 +66,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
     {:noreply,
      socket
+     |> assign(:return_to, ReturnTo.from_url(url))
      |> assign(:page_title, title)
      |> assign(:page_description, "Delegate to #{name} to vote on your behalf.")
      |> assign(:author, author)

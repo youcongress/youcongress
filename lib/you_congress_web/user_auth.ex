@@ -8,6 +8,7 @@ defmodule YouCongressWeb.UserAuth do
   import Phoenix.Controller
 
   alias YouCongress.Accounts
+  alias YouCongressWeb.ReturnTo
 
   # Make the remember me cookie valid for 60 days.
   # If you want bump or reduce this value, also change
@@ -145,14 +146,17 @@ defmodule YouCongressWeb.UserAuth do
     allow_prefix = ["/dev/mailbox", "/users/confirm/"]
 
     current = current_path(conn)
+    current_path_only = URI.parse(current).path
 
     path_allowed? =
-      current in allowed_paths or
-        Enum.any?(allow_prefix, fn prefix -> String.starts_with?(current, prefix) end)
+      current_path_only in allowed_paths or
+        Enum.any?(allow_prefix, fn prefix -> String.starts_with?(current_path_only, prefix) end)
 
     if user && !Accounts.sign_up_complete?(user) && !path_allowed? do
+      return_to = get_session(conn, :registration_return_to) || current
+
       conn
-      |> redirect(to: ~p"/sign_up")
+      |> redirect(to: ReturnTo.sign_up_path(return_to))
       |> halt()
     else
       conn

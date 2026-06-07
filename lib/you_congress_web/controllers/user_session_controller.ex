@@ -5,6 +5,7 @@ defmodule YouCongressWeb.UserSessionController do
   alias YouCongress.Accounts.User
   alias YouCongressWeb.UserAuth
   alias YouCongress.Accounts.Permissions
+  alias YouCongressWeb.ReturnTo
 
   def create(conn, %{"_action" => "registered"} = params) do
     create(conn, params, "Account created successfully!")
@@ -39,7 +40,12 @@ defmodule YouCongressWeb.UserSessionController do
 
       user = Accounts.get_user_by_email_and_password(email, password) ->
         handle_pending_actions(user, user_params["pending_actions"])
-        conn = if info, do: put_flash(conn, :info, info), else: conn
+
+        conn =
+          conn
+          |> maybe_put_user_return_to(user_params["return_to"])
+          |> then(fn conn -> if info, do: put_flash(conn, :info, info), else: conn end)
+
         UserAuth.log_in_user(conn, user, user_params)
 
       true ->
@@ -89,11 +95,12 @@ defmodule YouCongressWeb.UserSessionController do
     UserAuth.log_out_user(conn)
   end
 
-  def live_login(conn, %{"token" => token}) do
+  def live_login(conn, %{"token" => token} = params) do
     case Accounts.consume_live_login_token(token) do
       {:ok, user} ->
         conn
         |> UserAuth.log_in_user_without_redirect(user)
+        |> maybe_put_registration_return_to(params["return_to"])
         |> json(%{success: true})
 
       :error ->
@@ -107,5 +114,19 @@ defmodule YouCongressWeb.UserSessionController do
     conn
     |> put_status(:bad_request)
     |> json(%{success: false})
+  end
+
+  defp maybe_put_user_return_to(conn, return_to) do
+    case ReturnTo.sanitize(return_to) do
+      nil -> conn
+      path -> put_session(conn, :user_return_to, path)
+    end
+  end
+
+  defp maybe_put_registration_return_to(conn, return_to) do
+    case ReturnTo.sanitize(return_to) do
+      nil -> conn
+      path -> put_session(conn, :registration_return_to, path)
+    end
   end
 end

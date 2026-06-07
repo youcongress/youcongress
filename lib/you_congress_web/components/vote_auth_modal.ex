@@ -10,11 +10,13 @@ defmodule YouCongressWeb.Components.VoteAuthModal do
 
   alias Phoenix.LiveView.JS
   alias YouCongressWeb.Components.LoginButtons
+  alias YouCongressWeb.ReturnTo
 
   attr :socket, :any, required: true
   attr :show, :boolean, default: true
   attr :pending_vote, :map, default: nil
   attr :votes, :map, default: %{}
+  attr :return_to, :string, default: nil
   attr :id, :string, default: "vote-auth-modal"
 
   def vote_auth_modal(assigns) do
@@ -26,6 +28,7 @@ defmodule YouCongressWeb.Components.VoteAuthModal do
     assigns =
       assigns
       |> assign(:pending_actions_json, pending_actions(assigns.votes))
+      |> assign(:return_to, ReturnTo.sanitize(assigns.return_to))
       |> assign(:registration_component_id, registration_component_id(assigns.votes))
       |> assign(:login_buttons_id, login_buttons_id)
       |> assign(:login_heading_id, login_heading_id)
@@ -45,11 +48,13 @@ defmodule YouCongressWeb.Components.VoteAuthModal do
     <.modal id={@id} show={@show} on_cancel={JS.push("close-vote-auth-modal")}>
       <div class="space-y-5">
         <div id={@login_heading_id}>
-          <h2 class="text-xl font-semibold text-gray-900">Log in to vote and see voting results by country</h2>
+          <h2 class="text-xl font-semibold text-gray-900">
+            Log in to vote and see voting results by country
+          </h2>
         </div>
 
         <div id={@login_buttons_id}>
-          <LoginButtons.render pending_actions={@pending_actions_json} />
+          <LoginButtons.render pending_actions={@pending_actions_json} return_to={@return_to} />
         </div>
 
         <div class="pt-4">
@@ -64,6 +69,7 @@ defmodule YouCongressWeb.Components.VoteAuthModal do
               session: %{
                 "delegate_ids" => [],
                 "votes" => @votes,
+                "return_to" => @return_to,
                 "embedded" => true,
                 "hide_targets" => @hide_target_ids,
                 "reload_on_login" => true
