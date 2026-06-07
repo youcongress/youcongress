@@ -7,10 +7,13 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
   alias YouCongress.Statements
   alias YouCongress.Authors
 
+  alias YouCongress.Accounts.Permissions
   alias YouCongress.Votes
   alias YouCongress.Opinions
   alias YouCongress.OpinionsStatements
+  alias YouCongress.Opinions.Quotes.QuotatorAI
   alias YouCongress.Track
+  alias YouCongress.Workers.QuotatorWorker
 
   @impl true
   def mount(_, session, socket) do
@@ -55,8 +58,9 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
           })
 
         {:noreply,
-         assign(socket,
-           statement: statement,
+         socket
+         |> assign_statement_actions(statement)
+         |> assign(
            form: form,
            agree_rate_options: ["For", "Against", "Abstain"],
            errors: nil,
@@ -78,8 +82,8 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
         socket =
           socket
           |> assign(:page_title, "Add quote")
+          |> assign_statement_actions(statement)
           |> assign(
-            statement: statement,
             form: form,
             agree_rate_options: ["For", "Against", "Abstain"],
             errors: nil,
@@ -95,6 +99,38 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
   end
 
   @impl true
+  def handle_event("find-sourced-quotes", %{"statement_id" => statement_id}, socket) do
+    statement_id = String.to_integer(statement_id)
+    current_user = socket.assigns.current_user
+
+    cond do
+      is_nil(current_user) ->
+        {:noreply, redirect(socket, to: ~p"/log_in")}
+
+      not Permissions.can_generate_ai_votes?(current_user) ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "AI quote search uses credits. Email hello@youcongress.org to purchase access."
+         )}
+
+      true ->
+        %{statement_id: statement_id, user_id: current_user.id}
+        |> QuotatorWorker.new()
+        |> Oban.insert()
+
+        Track.event("Find quotes", current_user)
+
+        socket =
+          socket
+          |> assign(:find_quotes_in_progress, true)
+          |> clear_flash()
+
+        {:noreply, socket}
+    end
+  end
+
   def handle_event("remove-author", _, socket) do
     {:noreply,
      push_patch(socket,
@@ -316,6 +352,13 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
         {:noreply,
          socket |> put_flash(:error, "Error. Please try again") |> assign(:errors, error_message)}
     end
+  end
+
+  defp assign_statement_actions(socket, statement) do
+    socket
+    |> assign(:statement, statement)
+    |> assign(:show_ai_quote_action, true)
+    |> assign(:find_quotes_in_progress, QuotatorAI.check_polling_job_status(statement.id))
   end
 
   defp add_quote_url(statement, author) do

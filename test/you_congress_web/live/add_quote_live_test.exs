@@ -19,6 +19,24 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
   describe "Add quote" do
     setup [:create_statement]
 
+    test "shows AI quote action and credit message", %{conn: conn, statement: statement} do
+      current_user = user_fixture()
+      conn = log_in_user(conn, current_user)
+
+      {:ok, add_quote_live, html} =
+        live(conn, ~p"/p/#{statement.slug}/add-quote")
+
+      assert html =~ "Add quotes with AI"
+
+      html =
+        add_quote_live
+        |> element("button[phx-click='find-sourced-quotes']", "Add quotes with AI")
+        |> render_click()
+
+      assert html =~
+               "AI quote search uses credits. Email hello@youcongress.org to purchase access."
+    end
+
     test "adds a quote with twitter username in URL", %{conn: conn, statement: statement} do
       author = author_fixture(%{twitter_username: "someone"})
       current_user = user_fixture()

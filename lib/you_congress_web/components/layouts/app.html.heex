@@ -7,13 +7,48 @@
 <main class={assigns[:main_padding_classes] || "px-4 pb-6 sm:px-6 lg:px-8"}>
   <%= if assigns[:statement] && assigns[:statement].id do %>
     <div class="mb-4 -mx-4 sm:-mx-6 lg:-mx-8">
-      <div class="pl-4 py-2 bg-gray-200 text-gray-800 text-sm text-center">
-        <div>
-          Biased? Add more <.link
+      <div class="px-4 py-2 bg-gray-100 text-gray-800 text-sm">
+        <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            data-copy-current-url
+            data-copy-success-label="Link copied"
+            aria-label="Copy page URL"
+            class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            Invite others
+          </button>
+          <.link
+            :if={
+              assigns[:show_ai_quote_action] &&
+                !assigns[:find_quotes_in_progress] &&
+                !assigns[:current_user]
+            }
+            href={~p"/log_in"}
+            class="inline-flex items-center rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-700"
+          >
+            Add quotes with AI
+          </.link>
+          <button
+            :if={
+              assigns[:show_ai_quote_action] &&
+                !assigns[:find_quotes_in_progress] &&
+                assigns[:current_user]
+            }
+            type="button"
+            phx-click="find-sourced-quotes"
+            phx-value-statement_id={@statement.id}
+            class="phx-submit-loading:opacity-75 inline-flex items-center rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-700"
+          >
+            Add quotes with AI
+          </button>
+          <.link
             href={~p"/p/#{@statement.slug}/add-quote"}
-            class="underline"
+            class="inline-flex items-center rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
             rel="nofollow"
-          >sourced quotes</.link>.
+          >
+            Add quotes manually
+          </.link>
         </div>
       </div>
     </div>

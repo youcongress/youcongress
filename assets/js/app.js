@@ -77,34 +77,52 @@ async function writeToClipboard(text) {
   }
 }
 
-function setupPromptCopyButtons() {
+function setupCopyButtons() {
   document.addEventListener("click", async (event) => {
-    const button = event.target.closest("[data-copy-target]")
+    const button = event.target.closest("[data-copy-target], [data-copy-current-url]")
     if (!button) return
 
-    const targetId = button.dataset.copyTarget
-    if (!targetId) return
+    let text = ""
 
-    const content = document.getElementById(targetId)
-    if (!content) return
+    if (button.hasAttribute("data-copy-current-url")) {
+      text = window.location.href
+    } else {
+      const targetId = button.dataset.copyTarget
+      if (!targetId) return
 
-    const text = content.innerText.trim()
+      const content = document.getElementById(targetId)
+      if (!content) return
+
+      text = content.innerText.trim()
+    }
+
     if (!text) return
 
     try {
       await writeToClipboard(text)
-      const originalLabel = button.getAttribute("data-original-label") || button.getAttribute("aria-label") || "Copy prompt"
+      const originalLabel = button.getAttribute("data-original-label") || button.getAttribute("aria-label") || button.innerText.trim() || "Copy"
       button.setAttribute("data-original-label", originalLabel)
       button.setAttribute("aria-label", "Copied!")
+
+      const originalText = button.getAttribute("data-original-text") || button.innerText.trim()
+      const successLabel = button.dataset.copySuccessLabel
+      if (successLabel) {
+        button.setAttribute("data-original-text", originalText)
+        button.textContent = successLabel
+      }
+
       button.classList.add("text-blue-600")
       setTimeout(() => {
         button.classList.remove("text-blue-600")
-        button.setAttribute("aria-label", button.getAttribute("data-original-label") || "Copy prompt")
+        button.setAttribute("aria-label", button.getAttribute("data-original-label") || "Copy")
+        if (successLabel) {
+          button.textContent = button.getAttribute("data-original-text") || originalText
+        }
       }, 1500)
     } catch (error) {
-      console.error("Unable to copy prompt", error)
+      console.error("Unable to copy text", error)
     }
   })
 }
 
-setupPromptCopyButtons()
+setupCopyButtons()

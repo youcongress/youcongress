@@ -14,18 +14,6 @@
     {@statement.title}
   </h1>
   <div class="flex-none flex gap-2">
-    <%= if Permissions.can_generate_ai_votes?(@current_user) do %>
-      <%= unless @find_quotes_in_progress do %>
-        <.link
-          phx-click="find-sourced-quotes"
-          phx-value-statement_id={@statement.id}
-          class="phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3 text-sm font-semibold leading-6 text-white active:text-white/80"
-        >
-          Find quotes
-        </.link>
-      <% end %>
-    <% end %>
-
     <%= if Permissions.can_edit_statement?(@statement, @current_user) do %>
       <.link patch={~p"/p/#{@statement.slug}/show/edit"} phx-click={JS.push_focus()} class="pl-2">
         Edit
@@ -34,48 +22,46 @@
   </div>
 </div>
 
-<%= if @total_opinions > 0 do %>
-  <div class="mt-4">
-    <div class="pb-1 text-xs">
-      Cast your vote:
-    </div>
-    <.live_component
-      module={CastVoteComponent}
-      id={:cast}
-      statement={@statement}
-      current_user_vote={@current_user_vote}
-      current_user={@current_user}
-      display_results={false}
-      page={:statement_show}
-    />
-
-    <%= if @current_user_vote && @current_user_vote.answer do %>
-      <ResultsComponent.horizontal_bar
-        id="statement-results"
-        statement_id={@statement.id}
-        total_votes={@total_votes}
-        vote_frequencies={@vote_frequencies}
-        country_vote_frequencies={@country_vote_frequencies}
-        show_country_results={@show_country_results}
-        country_results_filters={@country_results_filters}
-      />
-    <% end %>
+<div class="mt-4">
+  <div class="pb-1 text-xs">
+    Cast your vote:
   </div>
+  <.live_component
+    module={CastVoteComponent}
+    id={:cast}
+    statement={@statement}
+    current_user_vote={@current_user_vote}
+    current_user={@current_user}
+    display_results={false}
+    page={:statement_show}
+  />
 
-  <div class="mt-4 pb-2">
-    <.live_component
-      module={CurrentUserVoteComponent}
-      id={:v}
-      statement={@statement}
-      current_user_vote={@current_user_vote}
-      current_user={@current_user}
-      editing={@editing}
-      liked={@current_user_vote && @current_user_vote.opinion_id in @liked_opinion_ids}
-      regenerating_opinion_id={@regenerating_opinion_id}
-      page={:statement_show}
+  <%= if @current_user_vote && @current_user_vote.answer do %>
+    <ResultsComponent.horizontal_bar
+      id="statement-results"
+      statement_id={@statement.id}
+      total_votes={@total_votes}
+      vote_frequencies={@vote_frequencies}
+      country_vote_frequencies={@country_vote_frequencies}
+      show_country_results={@show_country_results}
+      country_results_filters={@country_results_filters}
     />
-  </div>
-<% end %>
+  <% end %>
+</div>
+
+<div class="mt-4 pb-2">
+  <.live_component
+    module={CurrentUserVoteComponent}
+    id={:v}
+    statement={@statement}
+    current_user_vote={@current_user_vote}
+    current_user={@current_user}
+    editing={@editing}
+    liked={@current_user_vote && @current_user_vote.opinion_id in @liked_opinion_ids}
+    regenerating_opinion_id={@regenerating_opinion_id}
+    page={:statement_show}
+  />
+</div>
 
 <div
   :if={@total_opinions > 0}
