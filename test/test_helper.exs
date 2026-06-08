@@ -1,4 +1,5 @@
 Application.put_env(:you_congress, :hall_classifier, YouCongress.Halls.ClassificationFake)
+Application.put_env(:you_congress, :embeddings_implementation, YouCongress.Embeddings.Fake)
 
 Application.put_env(
   :you_congress,

@@ -11,6 +11,7 @@ defmodule YouCongress.Opinions.Opinion do
   schema "opinions" do
     field :source_url, :string
     field :content, :string
+    field :content_embedding, Pgvector.Ecto.Vector
     field :twin, :boolean, default: false
 
     field :verification_status, Ecto.Enum,
@@ -44,6 +45,7 @@ defmodule YouCongress.Opinions.Opinion do
     opinion
     |> cast(attrs, [
       :content,
+      :content_embedding,
       :source_url,
       :twin,
       :verification_status,

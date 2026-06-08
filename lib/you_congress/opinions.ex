@@ -4,8 +4,10 @@ defmodule YouCongress.Opinions do
   """
 
   import Ecto.Query, warn: false
+  import Pgvector.Ecto.Query, only: [cosine_distance: 2]
   alias YouCongress.Repo
 
+  alias YouCongress.Embeddings
   alias YouCongress.Likes
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
@@ -82,6 +84,32 @@ defmodule YouCongress.Opinions do
   end
 
   @doc """
+  Returns sourced quotes ordered by content embedding cosine similarity.
+  """
+  def get_by_content_similarity(text) when is_binary(text) do
+    if String.trim(text) == "" do
+      []
+    else
+      case Embeddings.embed(text) do
+        {:ok, embedding} when is_list(embedding) ->
+          query_embedding = Pgvector.new(embedding)
+
+          from(o in Opinion,
+            where: not is_nil(o.source_url) and not is_nil(o.content_embedding),
+            order_by: cosine_distance(o.content_embedding, ^query_embedding),
+            limit: 20
+          )
+          |> Repo.all()
+
+        _ ->
+          []
+      end
+    end
+  end
+
+  def get_by_content_similarity(_text), do: []
+
+  @doc """
   Creates a opinion.
 
   ## Examples
@@ -94,6 +122,8 @@ defmodule YouCongress.Opinions do
 
   """
   def create_opinion(attrs \\ %{}) do
+    attrs = maybe_put_content_embedding(attrs, %Opinion{})
+
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:opinion, Opinion.changeset(%Opinion{}, attrs))
     |> enqueue_update_ancestor_counts(attrs["ancestry"])
@@ -161,10 +191,75 @@ defmodule YouCongress.Opinions do
 
   """
   def update_opinion(%Opinion{} = opinion, attrs) do
+    attrs = maybe_put_content_embedding(attrs, opinion)
+
     opinion
     |> Opinion.changeset(attrs)
     |> Repo.update()
   end
+
+  defp maybe_put_content_embedding(attrs, %Opinion{} = opinion) when is_map(attrs) do
+    if has_attr?(attrs, :content_embedding) do
+      attrs
+    else
+      content = effective_attr(attrs, :content, opinion.content)
+      source_url = effective_attr(attrs, :source_url, opinion.source_url)
+
+      if should_generate_content_embedding?(attrs, opinion, content, source_url) do
+        case Embeddings.embed(content) do
+          {:ok, embedding} when is_list(embedding) ->
+            put_attr(attrs, :content_embedding, embedding)
+
+          _ ->
+            attrs
+        end
+      else
+        attrs
+      end
+    end
+  end
+
+  defp maybe_put_content_embedding(attrs, _opinion), do: attrs
+
+  defp should_generate_content_embedding?(attrs, opinion, content, source_url) do
+    present?(content) and present?(source_url) and
+      (is_nil(opinion.id) or is_nil(opinion.content_embedding) or has_attr?(attrs, :content) or
+         has_attr?(attrs, :source_url))
+  end
+
+  defp has_attr?(attrs, key) do
+    Map.has_key?(attrs, key) or Map.has_key?(attrs, Atom.to_string(key))
+  end
+
+  defp get_attr(attrs, key) do
+    string_key = Atom.to_string(key)
+
+    cond do
+      Map.has_key?(attrs, key) -> Map.get(attrs, key)
+      Map.has_key?(attrs, string_key) -> Map.get(attrs, string_key)
+      true -> nil
+    end
+  end
+
+  defp effective_attr(attrs, key, fallback) do
+    if has_attr?(attrs, key), do: get_attr(attrs, key), else: fallback
+  end
+
+  defp put_attr(attrs, key, value), do: Map.put(attrs, attr_key(attrs, key), value)
+
+  defp attr_key(attrs, key) do
+    string_key = Atom.to_string(key)
+    keys = Map.keys(attrs)
+
+    cond do
+      Map.has_key?(attrs, string_key) -> string_key
+      Enum.any?(keys, &is_binary/1) and not Enum.any?(keys, &is_atom/1) -> string_key
+      true -> key
+    end
+  end
+
+  defp present?(value) when is_binary(value), do: String.trim(value) != ""
+  defp present?(value), do: not is_nil(value)
 
   @doc """
   Deletes a opinion.

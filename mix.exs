@@ -55,6 +55,7 @@ defmodule YouCongress.MixProject do
       {:faker, "~> 0.17", only: [:test, :dev]},
       {:mock, "~> 0.3.8", only: :test},
       {:openai, "~> 0.5.4"},
+      {:pgvector, "~> 0.3.0"},
       {:oban, "~> 2.20.2"},
       {:oban_web, "~> 2.11.6"},
       {:igniter, "~> 0.5", only: [:dev]},

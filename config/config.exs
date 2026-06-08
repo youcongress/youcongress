@@ -10,6 +10,8 @@ import Config
 config :you_congress,
   ecto_repos: [YouCongress.Repo]
 
+config :you_congress, YouCongress.Repo, types: YouCongress.PostgrexTypes
+
 # Configures the endpoint
 config :you_congress, YouCongressWeb.Endpoint,
   url: [host: "localhost"],

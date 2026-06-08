@@ -9,6 +9,26 @@ defmodule YouCongress.OpinionsTest do
   alias YouCongress.Opinions
   alias YouCongress.Votes
 
+  @embedding_dimensions 1536
+
+  describe "content_embedding" do
+    test "stores opinion content embeddings" do
+      embedding = embedding([1.0, 0.5, -0.25])
+
+      {:ok, %{opinion: opinion}} =
+        Opinions.create_opinion(%{
+          content: "quoted content",
+          content_embedding: embedding,
+          source_url: "https://example.com/quote",
+          twin: false
+        })
+
+      opinion = Opinions.get_opinion!(opinion.id)
+
+      assert Pgvector.to_list(opinion.content_embedding) == embedding
+    end
+  end
+
   describe "get_opinion/1" do
     test "honors descending id order when filtering opinions with statements" do
       user = user_fixture()
@@ -304,5 +324,9 @@ defmodule YouCongress.OpinionsTest do
       assert {:error, :not_associated} =
                Opinions.remove_opinion_from_statement(opinion, statement)
     end
+  end
+
+  defp embedding(values) do
+    values ++ List.duplicate(0.0, @embedding_dimensions - length(values))
   end
 end
