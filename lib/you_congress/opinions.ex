@@ -85,6 +85,9 @@ defmodule YouCongress.Opinions do
 
   @doc """
   Returns sourced quotes ordered by content embedding cosine similarity.
+
+  Each returned opinion has its `:similarity` virtual field populated with the
+  cosine similarity (1.0 - cosine distance) to the query text.
   """
   def get_by_content_similarity(text) when is_binary(text) do
     if String.trim(text) == "" do
@@ -97,7 +100,10 @@ defmodule YouCongress.Opinions do
           from(o in Opinion,
             where: not is_nil(o.source_url) and not is_nil(o.content_embedding),
             order_by: cosine_distance(o.content_embedding, ^query_embedding),
-            limit: 20
+            limit: 20,
+            select_merge: %{
+              similarity: 1.0 - cosine_distance(o.content_embedding, ^query_embedding)
+            }
           )
           |> Repo.all()
 

@@ -12,6 +12,7 @@ defmodule YouCongress.Opinions.Opinion do
     field :source_url, :string
     field :content, :string
     field :content_embedding, Pgvector.Ecto.Vector
+    field :similarity, :float, virtual: true
     field :twin, :boolean, default: false
 
     field :verification_status, Ecto.Enum,

@@ -52,6 +52,11 @@ defmodule YouCongress.OpinionsSearchTest do
       with_mock Embeddings, embed: fn "query text" -> {:ok, embedding([1.0, 0.0, 0.0])} end do
         assert [first, second] = Opinions.get_by_content_similarity("query text")
         assert [first.id, second.id] == [near_quote.id, far_quote.id]
+
+        # Each opinion carries its cosine similarity to the query
+        assert_in_delta first.similarity, 1.0, 0.0001
+        assert_in_delta second.similarity, 0.0, 0.0001
+        assert first.similarity > second.similarity
       end
     end
 
