@@ -100,7 +100,7 @@ defmodule YouCongress.Opinions do
           from(o in Opinion,
             where: not is_nil(o.source_url) and not is_nil(o.content_embedding),
             order_by: cosine_distance(o.content_embedding, ^query_embedding),
-            limit: 20,
+            limit: 100,
             select_merge: %{
               similarity: 1.0 - cosine_distance(o.content_embedding, ^query_embedding)
             }
