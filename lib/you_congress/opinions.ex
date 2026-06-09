@@ -211,16 +211,21 @@ defmodule YouCongress.Opinions do
       content = effective_attr(attrs, :content, opinion.content)
       source_url = effective_attr(attrs, :source_url, opinion.source_url)
 
-      if should_generate_content_embedding?(attrs, opinion, content, source_url) do
-        case Embeddings.embed(content) do
-          {:ok, embedding} when is_list(embedding) ->
-            put_attr(attrs, :content_embedding, embedding)
+      cond do
+        not sourced_quote?(content, source_url) ->
+          maybe_clear_content_embedding(attrs, opinion)
 
-          _ ->
-            attrs
-        end
-      else
-        attrs
+        should_generate_content_embedding?(attrs, opinion, content, source_url) ->
+          case Embeddings.embed(content) do
+            {:ok, embedding} when is_list(embedding) ->
+              put_attr(attrs, :content_embedding, embedding)
+
+            _ ->
+              maybe_clear_stale_content_embedding(attrs, opinion)
+          end
+
+        true ->
+          attrs
       end
     end
   end
@@ -228,9 +233,32 @@ defmodule YouCongress.Opinions do
   defp maybe_put_content_embedding(attrs, _opinion), do: attrs
 
   defp should_generate_content_embedding?(attrs, opinion, content, source_url) do
-    present?(content) and present?(source_url) and
-      (is_nil(opinion.id) or is_nil(opinion.content_embedding) or has_attr?(attrs, :content) or
-         has_attr?(attrs, :source_url))
+    sourced_quote?(content, source_url) and
+      (is_nil(opinion.id) or is_nil(opinion.content_embedding) or
+         content_changed?(attrs, opinion) or quote_became_sourced?(attrs, opinion))
+  end
+
+  defp sourced_quote?(content, source_url), do: present?(content) and present?(source_url)
+
+  defp maybe_clear_content_embedding(attrs, %Opinion{content_embedding: nil}), do: attrs
+
+  defp maybe_clear_content_embedding(attrs, %Opinion{}),
+    do: put_attr(attrs, :content_embedding, nil)
+
+  defp maybe_clear_stale_content_embedding(attrs, opinion) do
+    if content_changed?(attrs, opinion) or quote_became_sourced?(attrs, opinion) do
+      maybe_clear_content_embedding(attrs, opinion)
+    else
+      attrs
+    end
+  end
+
+  defp content_changed?(attrs, opinion) do
+    has_attr?(attrs, :content) and get_attr(attrs, :content) != opinion.content
+  end
+
+  defp quote_became_sourced?(attrs, opinion) do
+    has_attr?(attrs, :source_url) and not present?(opinion.source_url)
   end
 
   defp has_attr?(attrs, key) do
