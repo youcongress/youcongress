@@ -1,30 +1,44 @@
 defmodule YouCongressWeb.MCPServer.QuotesSearch do
-  @moduledoc "Search quotes on YouCongress for a given statement (policy proposal or claim)."
+  @moduledoc """
+  Search quotes on YouCongress.
+
+  With a statement_id, performs a keyword search for quotes within that statement
+  (policy proposal or claim). Without a statement_id, performs a general semantic
+  similarity search across all statements, returning quotes ranked by how closely
+  their meaning matches the query (each with a similarity score, 0.0–1.0).
+  """
 
   use Anubis.Server.Component, type: :tool
 
   alias Anubis.Server.Response
   alias YouCongress.Opinions
+  alias YouCongress.Repo
   alias YouCongress.Votes
   alias YouCongress.MCP.ToolUsageTracker
 
   @limit 250
 
   schema do
-    # We force LLMs to provide statement_id because:
-    # - Listing statements first and then getting many quotes within a statement works best for now
-    # - If we make it optional, LLMs rarely use it
-    # - We don't have tons of quotes yet
-    field :statement_id, :integer, required: true
+    # statement_id is optional:
+    # - With it: keyword search within that statement (works best when you already
+    #   know the statement — list statements first, then drill into one).
+    # - Without it: semantic similarity search across all statements.
+    field :statement_id, :integer
     field :query, :string, required: true
   end
 
   def execute(params, frame) do
     ToolUsageTracker.track(__MODULE__, frame)
 
-    statement_id = Map.get(params, :statement_id)
     query = Map.get(params, :query)
 
+    case Map.get(params, :statement_id) do
+      nil -> semantic_search(query, frame)
+      statement_id -> statement_search(query, statement_id, frame)
+    end
+  end
+
+  defp statement_search(query, statement_id, frame) do
     opinions = find_opinions(query, statement_id)
     more_opinions = more_opinions(statement_id, opinions)
     all_opinions = opinions ++ more_opinions
@@ -33,6 +47,22 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
     data = %{
       matches: take_fields(opinions, vote_map),
       more_quotes: take_fields(more_opinions, vote_map)
+    }
+
+    {:reply, Response.json(Response.tool(), data), frame}
+  end
+
+  defp semantic_search(query, frame) do
+    opinions =
+      query
+      |> Opinions.get_by_content_similarity()
+      |> Repo.preload(:author)
+
+    vote_map = votes_by_opinion(opinions)
+
+    data = %{
+      matches: take_fields(opinions, vote_map),
+      more_quotes: []
     }
 
     {:reply, Response.json(Response.tool(), data), frame}
@@ -80,7 +110,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
     Enum.map(opinions, fn opinion ->
       vote = Map.get(vote_map, opinion.id)
 
-      %{
+      base = %{
         opinion_id: opinion.id,
         quote: opinion.content,
         author: opinion.author.name,
@@ -91,6 +121,11 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
         vote_id: vote && vote.id,
         vote_answer: vote && vote.answer
       }
+
+      case opinion.similarity do
+        nil -> base
+        similarity -> Map.put(base, :similarity, similarity)
+      end
     end)
   end
 
