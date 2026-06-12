@@ -40,6 +40,7 @@ config :you_congress, Oban, testing: :inline
 config :you_congress, amplitude_api_key: nil
 
 config :you_congress, :hall_classifier, YouCongress.Halls.ClassificationFake
+config :you_congress, :embeddings_implementation, YouCongress.Embeddings.Fake
 config :you_congress, :quotator_implementation, YouCongress.Opinions.Quotes.QuotatorFake
 config :you_congress, :title_rewording_implementation, YouCongress.Statements.TitleRewordingFake
 

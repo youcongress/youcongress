@@ -1,16 +1,5 @@
 import Config
 
-if !System.get_env("OPENAI_API_KEY") do
-  # Use a fake to classify halls in development
-  config :you_congress, :hall_classifier, YouCongress.Halls.ClassificationFake
-  config :you_congress, :quotator_implementation, YouCongress.Opinions.Quotes.QuotatorFake
-  config :you_congress, :title_rewording_implementation, YouCongress.Statements.TitleRewordingFake
-
-  config :you_congress,
-         :author_country_inference_implementation,
-         YouCongress.Authors.CountryInferenceFake
-end
-
 # Configure your database
 config :you_congress, YouCongress.Repo,
   username: "postgres",
