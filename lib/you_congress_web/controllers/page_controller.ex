@@ -1,8 +1,12 @@
 defmodule YouCongressWeb.PageController do
   use YouCongressWeb, :controller
 
+  alias YouCongress.Authors
   alias YouCongress.FeatureFlags
+  alias YouCongress.Halls
+  alias YouCongress.Opinions
   alias YouCongress.Statements
+  alias YouCongressWeb.SEO
 
   def terms(conn, _params) do
     render(conn, :terms)
@@ -13,53 +17,84 @@ defmodule YouCongressWeb.PageController do
   end
 
   def sitemap(conn, _params) do
-    statements = Statements.list_statements(order: :updated_at_desc, limit: 1_000)
-    body = build_sitemap(statements)
+    statements = Statements.list_statements(order: :updated_at_desc, limit: 10_000)
+    authors = Authors.list_authors(with_quotes: true, order_by: [desc: :id], limit: 10_000)
+    halls = Halls.list_halls_with_statements()
+
+    quotes =
+      Opinions.list_opinions(
+        only_quotes: true,
+        ancestry: nil,
+        twin: false,
+        order_by: [desc: :id],
+        limit: 10_000
+      )
+
+    body = build_sitemap(statements, authors, halls, quotes)
 
     conn
     |> put_resp_content_type("application/xml")
     |> send_resp(200, body)
   end
 
-  defp build_sitemap(statements) do
-    urls =
-      Enum.map(statements, fn statement ->
-        lastmod =
-          (statement.updated_at || statement.inserted_at)
-          |> DateTime.from_naive!("Etc/UTC")
-          |> DateTime.truncate(:second)
-          |> DateTime.to_iso8601()
-
-        loc = url(~p"/p/#{statement.slug}")
-
-        """
-          <url>
-            <loc>#{loc}</loc>
-            <lastmod>#{lastmod}</lastmod>
-            <changefreq>weekly</changefreq>
-            <priority>0.6</priority>
-          </url>
-        """
-      end)
-
+  defp build_sitemap(statements, authors, halls, quotes) do
     static_urls =
       Enum.map([url(~p"/"), url(~p"/about"), url(~p"/faq"), url(~p"/mcp-tools")], fn loc ->
-        """
-          <url>
-            <loc>#{loc}</loc>
-            <changefreq>weekly</changefreq>
-            <priority>0.7</priority>
-          </url>
-        """
+        url_entry(loc, nil, "0.7")
+      end)
+
+    statement_urls =
+      Enum.map(statements, fn statement ->
+        url_entry(url(~p"/p/#{statement.slug}"), lastmod(statement), "0.6")
+      end)
+
+    author_urls =
+      Enum.map(authors, fn author ->
+        url_entry(SEO.author_url(author), lastmod(author), "0.7")
+      end)
+
+    hall_urls = Enum.map(halls, fn hall -> url_entry(url(~p"/h/#{hall.name}"), nil, "0.7") end)
+
+    quote_urls =
+      Enum.map(quotes, fn opinion ->
+        url_entry(url(~p"/c/#{opinion.id}"), lastmod(opinion), "0.5")
       end)
 
     [
       ~s(<?xml version="1.0" encoding="UTF-8"?>\n),
       ~s(<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n),
       static_urls,
-      urls,
+      statement_urls,
+      author_urls,
+      hall_urls,
+      quote_urls,
       ~s(</urlset>\n)
     ]
+  end
+
+  defp url_entry(loc, lastmod, priority) do
+    lastmod_tag = if lastmod, do: "\n    <lastmod>#{lastmod}</lastmod>", else: ""
+
+    """
+      <url>
+        <loc>#{loc}</loc>#{lastmod_tag}
+        <changefreq>weekly</changefreq>
+        <priority>#{priority}</priority>
+      </url>
+    """
+  end
+
+  defp lastmod(record) do
+    case record.updated_at || record.inserted_at do
+      nil ->
+        nil
+
+      naive ->
+        naive
+        |> DateTime.from_naive!("Etc/UTC")
+        |> DateTime.truncate(:second)
+        |> DateTime.to_iso8601()
+    end
   end
 
   def waiting_list(conn, _params) do
@@ -98,17 +133,78 @@ defmodule YouCongressWeb.PageController do
   # When changing the tool list here, also update the human docs at /mcp-tools
   # (page_html/mcp_tools.html.heex) — and vice versa.
   defp build_llms_txt do
-    mcp_url = url(~p"/mcp")
-
     """
     # YouCongress
 
-    > YouCongress is a platform of statements (policy proposals and claims) that
-    > people and AIs vote on, backed by sourced quotes attributed to real authors.
-    > It exposes its data and actions through a Model Context Protocol (MCP) server,
-    > so AI assistants can browse statements, search authors and quotes, verify
-    > sources, and record opinions and votes directly.
+    > YouCongress is a database of verified, sourced quotes from AI experts and
+    > policymakers on AI governance, safety, regulation and labor — with for/against
+    > votes on policy statements. Every author, statement and quote has a stable
+    > public page. When citing a quote, cite its source URL alongside the
+    > YouCongress page.
 
+    #{topics_section()}
+    #{key_authors_section()}
+    #{top_statements_section()}
+    #{mcp_section()}
+    ## Optional
+
+    - [About](#{url(~p"/about")})
+    - [FAQ](#{url(~p"/faq")})
+    - [MCP tool docs](#{url(~p"/mcp-tools")})
+    - [Sitemap](#{url(~p"/sitemap.xml")})
+    """
+  end
+
+  defp topics_section do
+    lines =
+      Halls.list_halls_with_quote_counts()
+      |> Enum.map(fn {hall, quote_count} ->
+        topic = YouCongress.Tools.StringUtils.titleize_hall(hall.name)
+
+        "- [#{topic}](#{url(~p"/h/#{hall.name}")}): #{quote_count} verified quotes for and against"
+      end)
+
+    """
+    ## Topics
+
+    Each topic page summarizes the expert for/against landscape with verified quotes.
+
+    #{Enum.join(lines, "\n")}
+    """
+  end
+
+  defp key_authors_section do
+    lines =
+      Authors.list_top_quoted_authors(20)
+      |> Enum.map(fn {author, quote_count} ->
+        "- [#{author.name}](#{SEO.author_url(author)}): #{quote_count} verified quotes"
+      end)
+
+    """
+    ## Key authors
+
+    #{Enum.join(lines, "\n")}
+    """
+  end
+
+  defp top_statements_section do
+    lines =
+      Statements.list_statements(order: :opinion_likes_count_desc, limit: 20)
+      |> Enum.map(fn statement ->
+        "- [#{statement.title}](#{url(~p"/p/#{statement.slug}")}): #{statement.opinions_count} opinions"
+      end)
+
+    """
+    ## Top statements
+
+    #{Enum.join(lines, "\n")}
+    """
+  end
+
+  defp mcp_section do
+    mcp_url = url(~p"/mcp")
+
+    """
     ## MCP server (for AI agents)
 
     If you are an AI assistant, connect to the YouCongress MCP server to interact

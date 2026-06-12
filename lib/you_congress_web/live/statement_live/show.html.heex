@@ -1,3 +1,10 @@
+<.json_ld data={
+  SEO.statement_graph(
+    @statement,
+    @votes_from_delegates ++ @votes_from_non_delegates,
+    url(~p"/p/#{@statement.slug}")
+  )
+} />
 <%= if @reload do %>
   <div class="pb-6">
     <button
@@ -9,7 +16,7 @@
   </div>
 <% end %>
 
-<div class="flex items-center justify-between gap-6 mb-4">
+<div class="flex items-center justify-between gap-6 mb-2">
   <h1 class="text-2xl font-bold text-center flex-1">
     {@statement.title}
   </h1>
@@ -20,6 +27,20 @@
       </.link>
     <% end %>
   </div>
+</div>
+
+<div
+  :if={Enum.any?(@statement.halls, &(&1.name != "all"))}
+  class="flex flex-wrap gap-2 justify-center mb-4"
+>
+  <%= for hall <- @statement.halls, hall.name != "all" do %>
+    <.link
+      href={~p"/h/#{hall.name}"}
+      class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 hover:bg-gray-100"
+    >
+      {hall.name}
+    </.link>
+  <% end %>
 </div>
 
 <div class="mt-4">
@@ -96,7 +117,8 @@
     </form>
   </div>
   <span :if={!@current_user} class="hidden md:block text-xs text-gray-500">
-    <.link href={ReturnTo.log_in_path(nil, @return_to)} class="underline">Log in</.link> to comment or vote
+    <.link href={ReturnTo.log_in_path(nil, @return_to)} class="underline">Log in</.link>
+    to comment or vote
   </span>
   <span
     phx-click="filter-quotes"

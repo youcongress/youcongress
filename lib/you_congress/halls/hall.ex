@@ -108,6 +108,7 @@ defmodule YouCongress.Halls.Hall do
 
   schema "halls" do
     field :name, :string
+    field :description, :string
 
     many_to_many(
       :statements,
@@ -122,7 +123,7 @@ defmodule YouCongress.Halls.Hall do
   @doc false
   def changeset(hall, attrs) do
     hall
-    |> cast(attrs, [:name])
+    |> cast(attrs, [:name, :description])
     |> validate_required([:name])
   end
 

@@ -71,4 +71,65 @@ defmodule YouCongressWeb.PageControllerTest do
     assert body =~ "<loc>#{YouCongressWeb.Endpoint.url()}#{~p"/p/#{statement.slug}"}</loc>"
     assert body =~ ~r"<lastmod>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z</lastmod>"
   end
+
+  test "GET /sitemap.xml includes quoted authors, halls and quote pages", %{conn: conn} do
+    statement = statement_fixture(%{title: "Sitemap test statement"})
+
+    {:ok, _} =
+      YouCongress.HallsStatements.sync!(statement.id, %{main_tag: "ai-safety", other_tags: []})
+
+    quoted_author =
+      YouCongress.AuthorsFixtures.author_fixture(%{
+        name: "Quoted Author",
+        twitter_username: "quotedauthor"
+      })
+
+    quote_opinion =
+      YouCongress.OpinionsFixtures.opinion_fixture(%{
+        author_id: quoted_author.id,
+        twin: false,
+        source_url: "https://example.com/quote"
+      })
+
+    YouCongress.AuthorsFixtures.author_fixture(%{
+      name: "Quoteless Author",
+      twitter_username: "quotelessauthor"
+    })
+
+    conn = get(conn, ~p"/sitemap.xml")
+    body = response(conn, 200)
+    base = YouCongressWeb.Endpoint.url()
+
+    assert body =~ "<loc>#{base}/x/quotedauthor</loc>"
+    refute body =~ "<loc>#{base}/x/quotelessauthor</loc>"
+    assert body =~ "<loc>#{base}/h/ai-safety</loc>"
+    assert body =~ "<loc>#{base}/c/#{quote_opinion.id}</loc>"
+  end
+
+  test "GET /llms.txt lists content sections and keeps the MCP docs", %{conn: conn} do
+    statement = statement_fixture(%{title: "Llms statement title"})
+
+    {:ok, _} =
+      YouCongress.HallsStatements.sync!(statement.id, %{main_tag: "ai-safety", other_tags: []})
+
+    author = YouCongress.AuthorsFixtures.author_fixture(%{name: "Llms Author"})
+
+    YouCongress.OpinionsFixtures.opinion_fixture(%{
+      author_id: author.id,
+      twin: false,
+      source_url: "https://example.com/llms"
+    })
+
+    conn = get(conn, ~p"/llms.txt")
+    body = response(conn, 200)
+
+    assert body =~ "## Topics"
+    assert body =~ "[AI Safety]("
+    assert body =~ "## Key authors"
+    assert body =~ "[Llms Author]("
+    assert body =~ "## Top statements"
+    assert body =~ "Llms statement title"
+    assert body =~ "## MCP server (for AI agents)"
+    assert body =~ url(~p"/mcp")
+  end
 end

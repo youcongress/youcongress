@@ -91,6 +91,7 @@ defmodule YouCongressWeb do
       import YouCongressWeb.Components.VerificationHistory
       import YouCongressWeb.Components.VoteAuthModal
       import YouCongressWeb.Gettext
+      import YouCongressWeb.SEOComponents
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
