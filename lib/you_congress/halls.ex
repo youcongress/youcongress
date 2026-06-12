@@ -212,6 +212,105 @@ defmodule YouCongress.Halls do
     |> Repo.all()
   end
 
+  @doc """
+  Stats for a hall's topic-hub page: statement and sourced-quote counts,
+  top authors by quote count, and overall for/against vote totals.
+
+  Returns nil if the hall doesn't exist.
+  """
+  def hall_stats(hall_name) do
+    case get_by_name(hall_name) do
+      nil -> nil
+      hall -> build_hall_stats(hall)
+    end
+  end
+
+  defp build_hall_stats(hall) do
+    statements =
+      Repo.all(
+        from s in YouCongress.Statements.Statement,
+          join: hs in "halls_statements",
+          on: hs.statement_id == s.id,
+          where: hs.hall_id == ^hall.id,
+          select: %{id: s.id, slug: s.slug, title: s.title}
+      )
+
+    statement_ids = Enum.map(statements, & &1.id)
+
+    quotes_query =
+      from o in YouCongress.Opinions.Opinion,
+        join: os in "opinions_statements",
+        on: os.opinion_id == o.id,
+        where: os.statement_id in ^statement_ids,
+        where: not is_nil(o.source_url) and o.twin == false
+
+    quote_count = Repo.one(from o in quotes_query, select: count(o.id, :distinct))
+
+    top_authors =
+      Repo.all(
+        from o in quotes_query,
+          join: a in YouCongress.Authors.Author,
+          on: a.id == o.author_id,
+          where: not is_nil(a.name),
+          group_by: a.id,
+          order_by: [desc: count(o.id, :distinct)],
+          limit: 6,
+          select: a
+      )
+
+    vote_totals =
+      statement_ids
+      |> YouCongress.Votes.count_by_response_map_for_statements()
+      |> Map.values()
+      |> Enum.reduce(%{}, fn counts, acc ->
+        Map.merge(acc, counts, fn _answer, a, b -> a + b end)
+      end)
+
+    %{
+      hall: hall,
+      statements: statements,
+      statement_count: length(statement_ids),
+      quote_count: quote_count,
+      top_authors: top_authors,
+      vote_totals: vote_totals
+    }
+  end
+
+  @doc """
+  Returns halls that have at least one statement, excluding the virtual
+  "all" hall. Used for the sitemap and llms.txt.
+  """
+  def list_halls_with_statements do
+    from(h in Hall,
+      join: hs in "halls_statements",
+      on: hs.hall_id == h.id,
+      where: h.name != "all",
+      group_by: h.id,
+      order_by: h.name
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Halls with statements plus their sourced-quote count, most-quoted
+  first. Used for llms.txt.
+  """
+  def list_halls_with_quote_counts do
+    from(h in Hall,
+      join: hs in "halls_statements",
+      on: hs.hall_id == h.id,
+      left_join: os in "opinions_statements",
+      on: os.statement_id == hs.statement_id,
+      left_join: o in YouCongress.Opinions.Opinion,
+      on: os.opinion_id == o.id and not is_nil(o.source_url) and o.twin == false,
+      where: h.name != "all",
+      group_by: h.id,
+      order_by: [desc: count(o.id, :distinct), asc: h.name],
+      select: {h, count(o.id, :distinct)}
+    )
+    |> Repo.all()
+  end
+
   defp classifier_impl do
     Application.get_env(:you_congress, :hall_classifier, YouCongress.Halls.Classification)
   end

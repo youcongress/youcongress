@@ -789,9 +789,11 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}")
 
+      # Both quotes appear in the page's JSON-LD; only one is visible in the card
+      card_html = show_live |> element("#vote-component-#{vote.id}") |> render()
       assert occurrences(html, ~s(data-testid="vote-card-#{vote.id}")) == 1
-      assert html =~ "Higher year sourced quote text"
-      refute html =~ "Active lower year sourced quote text"
+      assert card_html =~ "Higher year sourced quote text"
+      refute card_html =~ "Active lower year sourced quote text"
       assert html =~ "1 of 2"
       assert html =~ "Quotes (1)"
       assert html =~ "For (1)"
@@ -801,9 +803,10 @@ defmodule YouCongressWeb.StatementLiveTest do
       |> render_click()
 
       html = render(show_live)
+      card_html = show_live |> element("#vote-component-#{vote.id}") |> render()
       assert occurrences(html, ~s(data-testid="vote-card-#{vote.id}")) == 1
-      assert html =~ "Active lower year sourced quote text"
-      refute html =~ "Higher year sourced quote text"
+      assert card_html =~ "Active lower year sourced quote text"
+      refute card_html =~ "Higher year sourced quote text"
       assert html =~ "2 of 2"
       assert html =~ "Quotes (1)"
       assert html =~ "For (1)"
@@ -813,8 +816,9 @@ defmodule YouCongressWeb.StatementLiveTest do
       |> render_click()
 
       html = render(show_live)
-      assert html =~ "Higher year sourced quote text"
-      refute html =~ "Active lower year sourced quote text"
+      card_html = show_live |> element("#vote-component-#{vote.id}") |> render()
+      assert card_html =~ "Higher year sourced quote text"
+      refute card_html =~ "Active lower year sourced quote text"
       assert html =~ "1 of 2"
       assert html =~ "Quotes (1)"
       assert html =~ "For (1)"

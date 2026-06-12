@@ -13,6 +13,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.Statements
   alias YouCongress.Votes
   alias YouCongress.Accounts.Permissions
+  alias YouCongressWeb.SEO
 
   @impl true
   def mount(_params, session, socket) do
@@ -40,8 +41,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
     {:noreply,
      socket
+     |> assign_page_meta(opinion)
      |> assign(
-       page_title: "Opinion",
        opinion: opinion,
        parent_opinion: parent_opinion,
        changeset: changeset,
@@ -431,4 +432,30 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   defp quote?(_), do: false
+
+  # Verified quotes get a search-friendly title; plain comments and
+  # replies are thin pages and get noindex.
+  defp assign_page_meta(socket, opinion) do
+    socket = assign(socket, :canonical_url, url(~p"/c/#{opinion.id}"))
+
+    if quote?(opinion) do
+      is_part_of =
+        case opinion.statements do
+          [statement | _] -> url(~p"/p/#{statement.slug}")
+          _ -> nil
+        end
+
+      socket
+      |> assign(:page_title, SEO.opinion_title(opinion))
+      |> assign(:skip_page_suffix, true)
+      |> assign(:page_description, SEO.opinion_description(opinion))
+      |> assign(:og_type, "article")
+      |> assign(:quote_json_ld, SEO.quotation(opinion, root: true, is_part_of: is_part_of))
+    else
+      socket
+      |> assign(:page_title, "Opinion")
+      |> assign(:noindex, true)
+      |> assign(:quote_json_ld, nil)
+    end
+  end
 end
