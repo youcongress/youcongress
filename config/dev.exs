@@ -1,9 +1,5 @@
 import Config
 
-# NOTE: The fake-implementation switch based on OPENAI_API_KEY lives in
-# config/runtime.exs, not here. dev.exs is evaluated at compile time, before
-# Dotenvy loads .env, so System.get_env/1 would not see keys from .env.
-
 # Configure your database
 config :you_congress, YouCongress.Repo,
   username: "postgres",
