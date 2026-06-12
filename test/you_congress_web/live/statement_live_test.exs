@@ -250,6 +250,25 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ statement.title
     end
 
+    test "shows vote results to non-logged visitors without voting", %{
+      conn: conn,
+      statement: statement
+    } do
+      author = author_fixture()
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: author.id,
+        answer: :for
+      })
+
+      {:ok, _show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+
+      assert html =~ "Results (1 vote):"
+      assert html =~ "For 1 (100%)"
+      assert html =~ "By country"
+    end
+
     test "guest vote auth modal keeps the statement page as return_to", %{
       conn: conn,
       statement: statement

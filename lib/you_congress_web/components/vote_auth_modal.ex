@@ -49,7 +49,7 @@ defmodule YouCongressWeb.Components.VoteAuthModal do
       <div class="space-y-5">
         <div id={@login_heading_id}>
           <h2 class="text-xl font-semibold text-gray-900">
-            Log in to vote and see voting results by country
+            Log in to vote
           </h2>
         </div>
 

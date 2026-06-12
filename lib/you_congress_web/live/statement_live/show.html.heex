@@ -57,17 +57,15 @@
     page={:statement_show}
   />
 
-  <%= if @current_user_vote && @current_user_vote.answer do %>
-    <ResultsComponent.horizontal_bar
-      id="statement-results"
-      statement_id={@statement.id}
-      total_votes={@total_votes}
-      vote_frequencies={@vote_frequencies}
-      country_vote_frequencies={@country_vote_frequencies}
-      show_country_results={@show_country_results}
-      country_results_filters={@country_results_filters}
-    />
-  <% end %>
+  <ResultsComponent.horizontal_bar
+    id="statement-results"
+    statement_id={@statement.id}
+    total_votes={@total_votes}
+    vote_frequencies={@vote_frequencies}
+    country_vote_frequencies={@country_vote_frequencies}
+    show_country_results={@show_country_results}
+    country_results_filters={@country_results_filters}
+  />
 </div>
 
 <div class="mt-4 pb-2">
