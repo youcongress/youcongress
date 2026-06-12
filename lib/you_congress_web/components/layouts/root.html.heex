@@ -22,6 +22,10 @@
       <meta content={assigns[:page_description]} property="og:description" />
     <% end %>
 
+    <%!-- Discovery hints for AI assistants/agents: YouCongress exposes an MCP server. --%>
+    <link rel="llms" type="text/markdown" href={~p"/llms.txt"} title="YouCongress for AI agents" />
+    <meta name="mcp-server" content={url(~p"/mcp")} />
+
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <script defer phx-track-static src={~p"/assets/app.js"}>
     </script>
