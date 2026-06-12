@@ -13,6 +13,7 @@ defmodule YouCongressWeb.StatementLive.Index do
   alias YouCongress.Statements
   alias YouCongress.Statements.Statement
   alias YouCongress.Track
+  alias YouCongressWeb.StatementLive.Index.HallHero
   alias YouCongressWeb.StatementLive.Index.HallNav
   alias YouCongressWeb.StatementLive.NewFormComponent
   alias YouCongressWeb.StatementLive.FormComponent
@@ -24,6 +25,7 @@ defmodule YouCongressWeb.StatementLive.Index do
   alias YouCongressWeb.AuthorLive.Show, as: AuthorShow
   alias YouCongressWeb.StatementLive.VoteComponent
   alias YouCongressWeb.ReturnTo
+  alias YouCongressWeb.SEO
 
   @featured_author_names [
     "Geoffrey Hinton",
@@ -56,6 +58,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:search_totals, empty_search_totals())
       |> assign(:order_by_date, true)
       |> assign(:hall_name, params["hall"] || HallNav.default_hall())
+      |> assign(:hall_stats, nil)
       |> assign(:new_poll_visible?, false)
       |> assign(:current_user_delegation_ids, get_current_user_delegation_ids(current_user))
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
@@ -316,6 +319,24 @@ defmodule YouCongressWeb.StatementLive.Index do
     |> assign(:statement, %Statement{})
   end
 
+  defp apply_action(socket, :index, %{"hall" => hall_name}) when hall_name != "all" do
+    # Computed here (handle_params) so the stats are part of the dead
+    # render that crawlers see.
+    hall_stats = Halls.hall_stats(hall_name)
+
+    socket
+    |> assign(
+      page_title: SEO.hall_title(hall_name),
+      skip_page_suffix: true,
+      page_description: SEO.hall_description(hall_name, hall_stats),
+      canonical_url: url(~p"/h/#{hall_name}"),
+      hall_stats: hall_stats,
+      statement: %Statement{}
+    )
+    |> assign(:full_width, true)
+    |> assign(:main_padding_classes, "px-2 pb-6 sm:px-4 lg:px-6")
+  end
+
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(
@@ -323,6 +344,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       skip_page_suffix: true,
       page_description:
         "We gather verifiable expert quotes and use liquid democracy to surface alignment on AI governance.",
+      canonical_url: url(~p"/"),
       statement: %Statement{}
     )
     |> assign(:full_width, true)

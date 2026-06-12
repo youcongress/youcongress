@@ -1,3 +1,4 @@
+<.json_ld :if={@author.name} data={SEO.person(@author, SEO.author_url(@author))} />
 <.header>
   <span class="inline-flex items-center gap-2 flex-wrap">
     <img
@@ -80,6 +81,18 @@
 
 <div>
   <div>{@author.bio || @author.description}</div>
+
+  <div
+    :if={@halls != []}
+    class="pt-2 text-sm text-gray-600 flex flex-wrap gap-x-2 gap-y-1"
+  >
+    <span class="text-gray-500">Speaks on:</span>
+    <%= for {hall_name, _count} <- Enum.take(Enum.reject(@halls, fn {name, _} -> name == "all" end), 5) do %>
+      <.link href={~p"/h/#{hall_name}"} class="hover:text-indigo-600 underline">
+        {StringUtils.titleize_hall(hall_name)}
+      </.link>
+    <% end %>
+  </div>
 
   <.link
     navigate={~p"/faq#my-profile"}

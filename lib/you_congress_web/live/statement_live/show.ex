@@ -19,6 +19,7 @@ defmodule YouCongressWeb.StatementLive.Show do
   alias YouCongress.Opinions.Quotes.QuotatorAI
   alias YouCongress.Votes.VoteFrequencies
   alias YouCongressWeb.ReturnTo
+  alias YouCongressWeb.SEO
 
   @impl true
   def mount(_, session, socket) do
@@ -50,10 +51,8 @@ defmodule YouCongressWeb.StatementLive.Show do
       socket
       |> assign(:return_to, ReturnTo.from_url(url))
       |> assign(:page_title, page_title(socket.assigns.live_action, statement.title))
-      |> assign(
-        :page_description,
-        "Find agreement, understand disagreement."
-      )
+      |> assign(:canonical_url, url(~p"/p/#{statement.slug}"))
+      |> assign(:og_type, "article")
       |> assign(:statement, statement)
       |> assign(reload: false)
       |> assign(full_width: true)
@@ -63,6 +62,7 @@ defmodule YouCongressWeb.StatementLive.Show do
       |> assign(:source_filter, :quotes)
       |> assign(:answer_filter, nil)
       |> load_statement_and_likes(statement)
+      |> assign_page_description()
       |> load_random_statements(statement.id)
 
     current_user_vote = socket.assigns.current_user_vote
@@ -309,6 +309,19 @@ defmodule YouCongressWeb.StatementLive.Show do
   @spec page_title(atom, binary) :: binary
   defp page_title(:show, statement_title), do: statement_title
   defp page_title(:edit, _), do: "Edit Poll"
+
+  # Depends on vote_frequencies and quotes_votes_count, so it must run
+  # after VotesLoader has populated the assigns.
+  defp assign_page_description(socket) do
+    %{statement: statement, vote_frequencies: vote_frequencies, quotes_votes_count: quotes_count} =
+      socket.assigns
+
+    assign(
+      socket,
+      :page_description,
+      SEO.statement_description(statement.title, vote_frequencies, quotes_count)
+    )
+  end
 
   defp load_random_statements(socket, statement_id) do
     random_statements_from_main_hall =

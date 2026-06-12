@@ -20,6 +20,19 @@
     <%= if assigns[:page_description] do %>
       <meta name="description" content={assigns[:page_description]} />
       <meta content={assigns[:page_description]} property="og:description" />
+      <meta name="twitter:description" content={assigns[:page_description]} />
+    <% end %>
+    <%= if assigns[:canonical_url] do %>
+      <link rel="canonical" href={assigns[:canonical_url]} />
+      <meta property="og:url" content={assigns[:canonical_url]} />
+    <% end %>
+    <meta property="og:type" content={assigns[:og_type] || "website"} />
+    <meta property="og:site_name" content="YouCongress" />
+    <meta property="og:image" content={assigns[:page_image] || url(~p"/images/og-default.png")} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={assigns[:page_title] || "YouCongress"} />
+    <%= if assigns[:noindex] do %>
+      <meta name="robots" content="noindex" />
     <% end %>
 
     <%!-- Discovery hints for AI assistants/agents: YouCongress exposes an MCP server. --%>

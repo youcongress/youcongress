@@ -1,14 +1,19 @@
-<h1 class="sr-only">YouCongress Polls</h1>
-<div class="text-center pt-2 pb-4">
-  <div class="leading-8 text-gray-600">
-    <h2 class="text-2xl font-bold">
-      Expert and Citizen Preferences on AI Governance
-    </h2>
-    <p class="text-lg">
-      Sourced quotes and a participation layer keep expert and citizen preferences in plain view.
-    </p>
+<%= if @hall_name == "all" do %>
+  <.json_ld data={SEO.website()} />
+  <h1 class="sr-only">YouCongress Polls</h1>
+  <div class="text-center pt-2 pb-4">
+    <div class="leading-8 text-gray-600">
+      <h2 class="text-2xl font-bold">
+        Expert and Citizen Preferences on AI Governance
+      </h2>
+      <p class="text-lg">
+        Sourced quotes and a participation layer keep expert and citizen preferences in plain view.
+      </p>
+    </div>
   </div>
-</div>
+<% else %>
+  <HallHero.render hall_name={@hall_name} stats={@hall_stats} />
+<% end %>
 <div :if={!@new_poll_visible?} class="pt-4 flex flex-wrap gap-3 md:gap-4">
   <div class="w-full md:w-80 flex-shrink-0">
     <form phx-change="search" phx-submit="search">
