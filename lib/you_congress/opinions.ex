@@ -4,9 +4,12 @@ defmodule YouCongress.Opinions do
   """
 
   import Ecto.Query, warn: false
+  import Pgvector.Ecto.Query, only: [cosine_distance: 2]
   alias YouCongress.Repo
 
+  alias YouCongress.Embeddings
   alias YouCongress.Likes
+  alias YouCongress.Opinions.ContentEmbedding
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Votes
@@ -82,6 +85,38 @@ defmodule YouCongress.Opinions do
   end
 
   @doc """
+  Returns sourced quotes ordered by content embedding cosine similarity.
+
+  Each returned opinion has its `:similarity` virtual field populated with the
+  cosine similarity (1.0 - cosine distance) to the query text.
+  """
+  def get_by_content_similarity(text) when is_binary(text) do
+    if String.trim(text) == "" do
+      []
+    else
+      case Embeddings.embed(text) do
+        {:ok, embedding} when is_list(embedding) ->
+          query_embedding = Pgvector.new(embedding)
+
+          from(o in Opinion,
+            where: not is_nil(o.source_url) and not is_nil(o.content_embedding),
+            order_by: cosine_distance(o.content_embedding, ^query_embedding),
+            limit: 100,
+            select_merge: %{
+              similarity: 1.0 - cosine_distance(o.content_embedding, ^query_embedding)
+            }
+          )
+          |> Repo.all()
+
+        _ ->
+          []
+      end
+    end
+  end
+
+  def get_by_content_similarity(_text), do: []
+
+  @doc """
   Creates a opinion.
 
   ## Examples
@@ -94,6 +129,8 @@ defmodule YouCongress.Opinions do
 
   """
   def create_opinion(attrs \\ %{}) do
+    attrs = ContentEmbedding.put(attrs, %Opinion{})
+
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:opinion, Opinion.changeset(%Opinion{}, attrs))
     |> enqueue_update_ancestor_counts(attrs["ancestry"])
@@ -161,6 +198,8 @@ defmodule YouCongress.Opinions do
 
   """
   def update_opinion(%Opinion{} = opinion, attrs) do
+    attrs = ContentEmbedding.put(attrs, opinion)
+
     opinion
     |> Opinion.changeset(attrs)
     |> Repo.update()

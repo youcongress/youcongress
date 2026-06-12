@@ -12,6 +12,18 @@ if env_files != [] do
   System.put_env(env)
 end
 
+# In dev, fall back to fake implementations when no OpenAI key is available.
+# This runs after Dotenvy has loaded .env, so the key set there is visible.
+if config_env() == :dev and !System.get_env("OPENAI_API_KEY") do
+  config :you_congress, :hall_classifier, YouCongress.Halls.ClassificationFake
+  config :you_congress, :quotator_implementation, YouCongress.Opinions.Quotes.QuotatorFake
+  config :you_congress, :title_rewording_implementation, YouCongress.Statements.TitleRewordingFake
+
+  config :you_congress,
+         :author_country_inference_implementation,
+         YouCongress.Authors.CountryInferenceFake
+end
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration

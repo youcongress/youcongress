@@ -5,9 +5,102 @@ defmodule YouCongress.OpinionsTest do
   import YouCongress.OpinionsFixtures
   import YouCongress.StatementsFixtures
   import YouCongress.VotesFixtures
+  import Mock
 
+  alias YouCongress.Embeddings
   alias YouCongress.Opinions
   alias YouCongress.Votes
+
+  @embedding_dimensions 1536
+
+  describe "content_embedding" do
+    test "generates an embedding when a sourced quote is created" do
+      embedding = embedding([1.0, 0.5, -0.25])
+
+      with_mock Embeddings, embed: fn "quoted content" -> {:ok, embedding} end do
+        {:ok, %{opinion: opinion}} =
+          Opinions.create_opinion(%{
+            content: "quoted content",
+            source_url: "https://example.com/quote",
+            twin: false
+          })
+
+        opinion = Opinions.get_opinion!(opinion.id)
+
+        assert Pgvector.to_list(opinion.content_embedding) == embedding
+      end
+    end
+
+    test "stores opinion content embeddings" do
+      embedding = embedding([1.0, 0.5, -0.25])
+
+      {:ok, %{opinion: opinion}} =
+        Opinions.create_opinion(%{
+          content: "quoted content",
+          content_embedding: embedding,
+          source_url: "https://example.com/quote",
+          twin: false
+        })
+
+      opinion = Opinions.get_opinion!(opinion.id)
+
+      assert Pgvector.to_list(opinion.content_embedding) == embedding
+    end
+
+    test "updates the embedding when sourced quote content changes" do
+      old_embedding = embedding([1.0, 0.0, 0.0])
+      new_embedding = embedding([0.0, 1.0, 0.0])
+
+      opinion =
+        opinion_fixture(%{
+          content: "old quoted content",
+          content_embedding: old_embedding,
+          source_url: "https://example.com/quote"
+        })
+
+      with_mock Embeddings, embed: fn "updated quoted content" -> {:ok, new_embedding} end do
+        {:ok, opinion} =
+          Opinions.update_opinion(opinion, %{
+            content: "updated quoted content"
+          })
+
+        assert Pgvector.to_list(opinion.content_embedding) == new_embedding
+      end
+    end
+
+    test "clears a stale embedding when quote content changes and embedding generation fails" do
+      old_embedding = embedding([1.0, 0.0, 0.0])
+
+      opinion =
+        opinion_fixture(%{
+          content: "old quoted content",
+          content_embedding: old_embedding,
+          source_url: "https://example.com/quote"
+        })
+
+      with_mock Embeddings, embed: fn "updated quoted content" -> {:error, :boom} end do
+        {:ok, opinion} =
+          Opinions.update_opinion(opinion, %{
+            content: "updated quoted content"
+          })
+
+        assert opinion.content_embedding == nil
+      end
+    end
+
+    test "clears the embedding when a quote source URL is removed" do
+      opinion =
+        opinion_fixture(%{
+          content_embedding: embedding([1.0, 0.0, 0.0]),
+          source_url: "https://example.com/quote"
+        })
+
+      {:ok, opinion} = Opinions.update_opinion(opinion, %{source_url: nil})
+
+      assert opinion.source_url == nil
+      assert opinion.content_embedding == nil
+    end
+  end
 
   describe "get_opinion/1" do
     test "honors descending id order when filtering opinions with statements" do
@@ -304,5 +397,9 @@ defmodule YouCongress.OpinionsTest do
       assert {:error, :not_associated} =
                Opinions.remove_opinion_from_statement(opinion, statement)
     end
+  end
+
+  defp embedding(values) do
+    values ++ List.duplicate(0.0, @embedding_dimensions - length(values))
   end
 end
