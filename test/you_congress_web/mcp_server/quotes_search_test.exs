@@ -7,6 +7,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
   import YouCongress.StatementsFixtures
 
   alias YouCongress.Opinions
+  alias YouCongress.Repo
   alias YouCongress.Verifications
   alias YouCongress.Votes
   alias YouCongressWeb.MCPServer.QuotesSearch
@@ -66,6 +67,33 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
         assert payload_by_id[ai_disputed_quote.id].verification_status == :disputed
         assert payload_by_id[unverified_quote.id].verification_status == :unverified
       end)
+    end
+
+    test "without statement_id, runs semantic similarity search across all statements" do
+      statement = statement_fixture(%{title: "Price carbon emissions"})
+
+      quote =
+        statement
+        |> quote_fixture("Carbon pricing is the most effective policy.")
+        |> Repo.preload(:author)
+
+      similar_quote = %{quote | similarity: 0.91}
+
+      with_mocks([
+        {Anubis.Server.Response, [],
+         [
+           tool: fn -> :tool end,
+           json: fn :tool, data -> {:json, data} end,
+           error: fn :tool, message -> {:error, message} end
+         ]},
+        {Opinions, [:passthrough], [get_by_content_similarity: fn _query -> [similar_quote] end]}
+      ]) do
+        assert {:reply, {:json, %{matches: matches, more_quotes: []}}, :frame} =
+                 QuotesSearch.execute(%{query: "carbon tax"}, :frame)
+
+        assert [%{opinion_id: opinion_id, similarity: 0.91}] = matches
+        assert opinion_id == quote.id
+      end
     end
   end
 
