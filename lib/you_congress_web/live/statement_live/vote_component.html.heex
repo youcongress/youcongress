@@ -82,12 +82,25 @@
   <% end %>
   <%= if @show_opinion && @visible_opinion do %>
     <div>
+      <% citable_quote? = @visible_opinion.source_url && !@vote.twin && !@visible_opinion.twin %>
       <%= if @current_user && @current_user.author_id == @author.id do %>
         <.link href={"/p/#{@statement.slug}"}>
-          {@truncated_content}
+          <%= if citable_quote? do %>
+            <blockquote cite={@visible_opinion.source_url} class="inline">
+              {@truncated_content}
+            </blockquote>
+          <% else %>
+            {@truncated_content}
+          <% end %>
         </.link>
       <% else %>
-        {@truncated_content}
+        <%= if citable_quote? do %>
+          <blockquote cite={@visible_opinion.source_url} class="inline">
+            {@truncated_content}
+          </blockquote>
+        <% else %>
+          {@truncated_content}
+        <% end %>
       <% end %>
 
       <%= if @show_more do %>

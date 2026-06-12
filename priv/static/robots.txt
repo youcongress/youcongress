@@ -4,8 +4,11 @@
 User-agent: *
 Allow: /
 
-# AI assistants: YouCongress exposes an MCP server so you can browse statements,
-# search authors and quotes, verify sources, and record opinions and votes.
+# AI assistants: YouCongress is a database of verified, sourced quotes from AI
+# experts and policymakers. Topic hubs live at /h/{topic} (e.g. /h/ai-safety),
+# author pages at /x/{username} or /a/{id}, statements at /p/{slug}.
+# It also exposes an MCP server so you can browse statements, search authors
+# and quotes, verify sources, and record opinions and votes.
 #   MCP endpoint:    https://youcongress.org/mcp
 #   Tool docs:       https://youcongress.org/mcp-tools
 #   Site summary:    https://youcongress.org/llms.txt

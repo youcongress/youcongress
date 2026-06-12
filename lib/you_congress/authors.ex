@@ -376,6 +376,23 @@ defmodule YouCongress.Authors do
 
   def country_name(%Author{} = author), do: Countries.country_name(author)
 
+  @doc """
+  Authors with the most sourced (non-twin) quotes, with their quote
+  count. Used for llms.txt.
+  """
+  def list_top_quoted_authors(limit) do
+    from(a in Author,
+      join: o in YouCongress.Opinions.Opinion,
+      on: o.author_id == a.id,
+      where: not is_nil(o.source_url) and o.twin == false and not is_nil(a.name),
+      group_by: a.id,
+      order_by: [desc: count(o.id)],
+      limit: ^limit,
+      select: {a, count(o.id)}
+    )
+    |> Repo.all()
+  end
+
   defp build_list_query(opts) do
     base_query = from(a in Author)
 
@@ -412,6 +429,16 @@ defmodule YouCongress.Authors do
 
         {:twin_origin, twin_origin}, query ->
           where(query, [author], author.twin_origin == ^twin_origin)
+
+        {:with_quotes, true}, query ->
+          where(
+            query,
+            [author],
+            fragment(
+              "EXISTS (SELECT 1 FROM opinions o WHERE o.author_id = ? AND o.source_url IS NOT NULL)",
+              author.id
+            )
+          )
 
         {:twin_enabled, twin_enabled}, query ->
           where(query, [author], author.twin_enabled == ^twin_enabled)

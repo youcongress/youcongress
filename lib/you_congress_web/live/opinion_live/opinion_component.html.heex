@@ -38,7 +38,11 @@
   </div>
 
   <div class="pt-2">
-    {@opinion.content}
+    <%= if @opinion.source_url && !@opinion.twin do %>
+      <blockquote cite={@opinion.source_url} class="inline">{@opinion.content}</blockquote>
+    <% else %>
+      {@opinion.content}
+    <% end %>
     <%= if @opinion.source_url do %>
       <.live_component
         module={YouCongressWeb.Components.VerificationBadge}

@@ -17,7 +17,9 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongressWeb.StatementLive.CastVoteComponent
   alias YouCongressWeb.Components.SwitchComponent
   alias YouCongress.Halls
+  alias YouCongress.Tools.StringUtils
   alias YouCongressWeb.ReturnTo
+  alias YouCongressWeb.SEO
 
   @impl true
   def mount(_params, session, socket) do
@@ -60,15 +62,13 @@ defmodule YouCongressWeb.AuthorLive.Show do
       |> Enum.take(15)
 
     name = author.name || author.twitter_username || "Anonymous user"
-    title = page_title(socket.assigns.live_action, name)
 
     current_user = socket.assigns.current_user
 
     {:noreply,
      socket
      |> assign(:return_to, ReturnTo.from_url(url))
-     |> assign(:page_title, title)
-     |> assign(:page_description, "Delegate to #{name} to vote on your behalf.")
+     |> assign_page_meta(socket.assigns.live_action, author, name, halls)
      |> assign(:author, author)
      |> assign(:votes, votes)
      |> assign(:halls, halls)
@@ -195,16 +195,34 @@ defmodule YouCongressWeb.AuthorLive.Show do
   @impl true
   def handle_info(_, socket), do: {:noreply, socket}
 
-  def author_path(%{twitter_username: nil, id: author_id}) do
-    ~p"/a/#{author_id}"
+  defdelegate author_path(author), to: SEO
+
+  # Question-format title/description so author pages rank for
+  # "what does {name} say about {topic}" queries. Authors without a real
+  # name are thin pages and get noindex instead.
+  defp assign_page_meta(socket, :show, author, name, halls) do
+    socket
+    |> assign(:canonical_url, SEO.author_url(author))
+    |> assign(:og_type, "profile")
+    |> assign(:page_image, author.profile_image_url)
+    |> then(fn socket ->
+      if author.name do
+        socket
+        |> assign(:page_title, SEO.author_title(name, halls))
+        |> assign(:skip_page_suffix, true)
+        |> assign(:page_description, SEO.author_description(name, halls))
+      else
+        socket
+        |> assign(:page_title, name)
+        |> assign(:page_description, "Delegate to #{name} to vote on your behalf.")
+        |> assign(:noindex, true)
+      end
+    end)
   end
 
-  def author_path(%{twitter_username: twitter_username}) do
-    ~p"/x/#{twitter_username}"
+  defp assign_page_meta(socket, :edit, _author, name, _halls) do
+    assign(socket, :page_title, "Edit Author #{name}")
   end
-
-  defp page_title(:show, name), do: name
-  defp page_title(:edit, name), do: "Edit Author #{name}"
 
   defp assign_delegating?(%{assigns: %{current_user: nil}} = socket) do
     assign(socket, :delegating?, false)
