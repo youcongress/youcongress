@@ -1,5 +1,13 @@
 # See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
-#
-# To ban all spiders from the entire site uncomment the next two lines:
-# User-agent: *
-# Disallow: /
+
+# Everyone — including AI assistants and agents — is welcome to crawl the site.
+User-agent: *
+Allow: /
+
+# AI assistants: YouCongress exposes an MCP server so you can browse statements,
+# search authors and quotes, verify sources, and record opinions and votes.
+#   MCP endpoint:    https://youcongress.org/mcp
+#   Tool docs:       https://youcongress.org/mcp-tools
+#   Site summary:    https://youcongress.org/llms.txt
+
+Sitemap: https://youcongress.org/sitemap.xml

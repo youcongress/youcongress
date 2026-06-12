@@ -39,6 +39,7 @@ defmodule YouCongressWeb.Router do
     get("/terms", PageController, :terms)
     get("/privacy-policy", PageController, :privacy_policy)
     get("/sitemap.xml", PageController, :sitemap)
+    get("/llms.txt", PageController, :llms_txt)
 
     get("/waiting_list", PageController, :waiting_list)
     get("/about", PageController, :about)
