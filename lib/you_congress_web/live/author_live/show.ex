@@ -26,7 +26,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     socket =
       socket
       |> assign_current_user(session["user_token"])
-      |> assign(:order_by_date, false)
+      |> assign(:order_by_date, true)
       |> assign(:pending_guest_votes, %{})
       |> assign(:pending_vote_prompt, nil)
       |> assign(:vote_auth_return_to, nil)
@@ -272,7 +272,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
   defp load_votes(author_id, true, nil) do
     args = [
       author_ids: [author_id],
-      order_by: [desc: :id],
+      order_by_recent_opinions_first: true,
       preload: [:opinion, statement: [:halls]],
       without_opinion: false
     ]
@@ -292,7 +292,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
 
         args = [
           author_ids: [author_id],
-          order_by: [desc: :id],
+          order_by_recent_opinions_first: true,
           preload: [:opinion, statement: [:halls]],
           statement_ids: statement_ids,
           without_opinion: false
