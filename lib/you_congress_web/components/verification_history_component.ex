@@ -10,7 +10,7 @@ defmodule YouCongressWeb.Components.VerificationHistory do
 
   attr :verifications, :list, required: true
   attr :wrapper_class, :string, default: ""
-  attr :title, :string, default: "Verification History"
+  attr :title, :string, default: "Quote authenticity verification history"
   attr :title_tag, :string, default: "h3"
   attr :title_class, :string, default: "text-xs font-semibold mb-2 text-gray-500"
   attr :entries_class, :string, default: "space-y-1"

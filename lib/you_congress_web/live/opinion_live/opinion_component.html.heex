@@ -49,6 +49,7 @@
         id={"#{@opinion.id}-#{if @statement, do: @statement.id}"}
         opinion={@opinion}
         current_user={@current_user}
+        link_to_opinion={@page != :opinion_show}
       />
       <span class="text-xs">
         <.link href={@opinion.source_url} target="_blank" class="underline">source</.link>
