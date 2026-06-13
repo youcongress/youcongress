@@ -150,6 +150,79 @@ defmodule YouCongressWeb.AuthorLiveTest do
       assert has_element?(view, "[data-testid='quote-position-#{vote.id}']", "2 of 2")
     end
 
+    test "orders cards by opinion year and opinion id", %{conn: conn} do
+      unique = System.unique_integer([:positive])
+      twitter_username = "recent_quote_author_#{unique}"
+      author = author_fixture(%{twitter_username: twitter_username})
+
+      older_statement = statement_fixture(title: "Older opinion statement #{unique}")
+      lower_tie_statement = statement_fixture(title: "Lower tie opinion statement #{unique}")
+      higher_tie_statement = statement_fixture(title: "Higher tie opinion statement #{unique}")
+
+      lower_tie_opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Lower tie author page quote",
+          source_url: "https://example.com/author-lower-tie-#{unique}",
+          year: 2024
+        })
+
+      higher_tie_opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Higher tie author page quote",
+          source_url: "https://example.com/author-higher-tie-#{unique}",
+          year: 2024
+        })
+
+      older_opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Older author page quote",
+          source_url: "https://example.com/author-older-#{unique}",
+          year: 2023
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(older_opinion, older_statement.id)
+      {:ok, _} = Opinions.add_opinion_to_statement(lower_tie_opinion, lower_tie_statement.id)
+      {:ok, _} = Opinions.add_opinion_to_statement(higher_tie_opinion, higher_tie_statement.id)
+
+      vote_fixture(%{
+        statement_id: higher_tie_statement.id,
+        author_id: author.id,
+        opinion_id: higher_tie_opinion.id
+      })
+
+      vote_fixture(%{
+        statement_id: lower_tie_statement.id,
+        author_id: author.id,
+        opinion_id: lower_tie_opinion.id
+      })
+
+      vote_fixture(%{
+        statement_id: older_statement.id,
+        author_id: author.id,
+        opinion_id: older_opinion.id
+      })
+
+      {:ok, _view, html} = live(conn, ~p"/x/#{twitter_username}")
+
+      indexes =
+        [
+          higher_tie_statement.title,
+          lower_tie_statement.title,
+          older_statement.title
+        ]
+        |> Enum.map(fn title ->
+          case :binary.match(html, title) do
+            {pos, _length} -> pos
+            :nomatch -> flunk("Expected to find #{title} on author page")
+          end
+        end)
+
+      assert indexes == Enum.sort(indexes)
+    end
+
     test "updates author within modal", %{conn: conn, author: author} do
       conn = log_in_as_admin(conn)
       country = country_fixture(name: "Updated Country")
