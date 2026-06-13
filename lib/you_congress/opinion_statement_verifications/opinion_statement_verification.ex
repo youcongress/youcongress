@@ -32,7 +32,7 @@ defmodule YouCongress.OpinionStatementVerifications.OpinionStatementVerification
   def changeset(verification, attrs) do
     verification
     |> cast(attrs, [:opinion_statement_id, :user_id, :status, :comment, :model])
-    |> validate_required([:opinion_statement_id, :user_id, :status, :comment])
+    |> validate_required([:opinion_statement_id, :user_id, :status])
     |> foreign_key_constraint(:opinion_statement_id)
     |> foreign_key_constraint(:user_id)
   end

@@ -36,7 +36,7 @@ defmodule YouCongress.VoteVerifications.VoteVerification do
   def changeset(verification, attrs) do
     verification
     |> cast(attrs, [:vote_id, :opinion_id, :user_id, :status, :comment, :model])
-    |> validate_required([:vote_id, :user_id, :status, :comment])
+    |> validate_required([:vote_id, :user_id, :status])
     |> foreign_key_constraint(:vote_id)
     |> foreign_key_constraint(:opinion_id)
     |> foreign_key_constraint(:user_id)

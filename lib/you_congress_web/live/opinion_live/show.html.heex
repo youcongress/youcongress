@@ -41,7 +41,7 @@
   <div class="pb-2">Policy proposals and claims</div>
   <div class="bg-gray-100 rounded-md p-4 mb-6">
     <%= for statement <- @opinion.statements do %>
-      <div class="mb-3 last:mb-0">
+      <div class="mb-3 last:mb-0" data-testid={"statement-verify-#{statement.id}"}>
         <div class="flex items-center justify-between">
           <.link href={~p"/p/#{statement.slug}"} class="underline">
             {statement.title}
@@ -57,27 +57,110 @@
             </button>
           <% end %>
         </div>
-        <div
-          class="flex items-center gap-2 mt-1 text-sm"
-          data-testid={"statement-verify-#{statement.id}"}
-        >
+        <div class="flex items-center gap-2 mt-1 text-sm">
           <span
             :if={statement.author_vote}
             class={vote_answer_class(statement.author_vote.answer)}
           >
             {vote_answer_label(statement.author_vote.answer)}
           </span>
-          <%= if @opinion.source_url do %>
-            <.live_component
-              module={VerificationAggregate}
-              id={"agg-opinion-#{@opinion.id}-#{statement.id}"}
-              opinion={@opinion}
-              opinion_statement={statement.opinion_statement}
-              vote={statement.author_vote}
-              current_user={@current_user}
-              class=""
+        </div>
+        <div
+          :if={@opinion.source_url}
+          class="relative mt-2 space-y-3 border-l border-gray-200 pl-3"
+        >
+          <.live_component
+            module={VerificationAggregate}
+            id={"agg-opinion-#{@opinion.id}-#{statement.id}"}
+            opinion={@opinion}
+            opinion_statement={statement.opinion_statement}
+            vote={statement.author_vote}
+            current_user={@current_user}
+            trigger={false}
+            class="absolute"
+          />
+
+          <div>
+            <div class="mb-1 flex items-center gap-2 text-xs">
+              <span class="w-32 shrink-0 font-semibold text-gray-600">Statement relation</span>
+              <%= if Permissions.can_verify_opinion?(@current_user) do %>
+                <button
+                  type="button"
+                  phx-click="toggle-dropdown"
+                  phx-target={"#agg-opinion-#{@opinion.id}-#{statement.id}"}
+                  class={[
+                    "inline-flex items-center rounded px-2 py-0.5 font-medium cursor-pointer",
+                    verification_status_badge_class(relation_verification_status(statement))
+                  ]}
+                  title="Change quote, statement relation, and vote answer verifications"
+                  data-testid={"statement-relation-verification-badge-#{statement.id}"}
+                >
+                  {verification_status_label(relation_verification_status(statement))}
+                </button>
+              <% else %>
+                <span class={[
+                  "inline-flex items-center rounded px-2 py-0.5 font-medium",
+                  verification_status_badge_class(relation_verification_status(statement))
+                ]}>
+                  {verification_status_label(relation_verification_status(statement))}
+                </span>
+              <% end %>
+            </div>
+            <.verification_history
+              :if={statement.relation_verifications != []}
+              verifications={statement.relation_verifications}
+              title="Statement relation comments"
+              title_tag="h4"
+              title_class="sr-only"
+              entries_class="space-y-1"
             />
-          <% end %>
+            <div :if={statement.relation_verifications == []} class="text-xs text-gray-500">
+              No statement relation verification comments yet.
+            </div>
+          </div>
+
+          <div>
+            <div class="mb-1 flex items-center gap-2 text-xs">
+              <span class="w-32 shrink-0 font-semibold text-gray-600">Vote answer</span>
+              <%= if Permissions.can_verify_opinion?(@current_user) do %>
+                <button
+                  type="button"
+                  phx-click="toggle-dropdown"
+                  phx-target={"#agg-opinion-#{@opinion.id}-#{statement.id}"}
+                  class={[
+                    "inline-flex items-center rounded px-2 py-0.5 font-medium cursor-pointer",
+                    verification_status_badge_class(vote_verification_status(statement))
+                  ]}
+                  title="Change quote, statement relation, and vote answer verifications"
+                  data-testid={"vote-answer-verification-badge-#{statement.id}"}
+                >
+                  {verification_status_label(vote_verification_status(statement))}
+                </button>
+              <% else %>
+                <span class={[
+                  "inline-flex items-center rounded px-2 py-0.5 font-medium",
+                  verification_status_badge_class(vote_verification_status(statement))
+                ]}>
+                  {verification_status_label(vote_verification_status(statement))}
+                </span>
+              <% end %>
+            </div>
+            <.verification_history
+              :if={statement.vote_verifications != []}
+              verifications={statement.vote_verifications}
+              title="Vote answer comments"
+              title_tag="h4"
+              title_class="sr-only"
+              entries_class="space-y-1"
+            />
+            <div :if={statement.vote_verifications == []} class="text-xs text-gray-500">
+              <%= if statement.author_vote do %>
+                No vote answer verification comments yet.
+              <% else %>
+                No vote to verify yet.
+              <% end %>
+            </div>
+          </div>
         </div>
       </div>
     <% end %>

@@ -31,6 +31,20 @@ defmodule YouCongressWeb.StatementAggregateVerifyTest do
 
   setup [:setup_quote]
 
+  defp pick_and_save(view, scope, subject, status, comment) do
+    view
+    |> element(~s|#{scope} button[phx-value-subject="#{subject}"][phx-value-status="#{status}"]|)
+    |> render_click()
+
+    view
+    |> element(~s|#{scope} input[data-testid="verification-comment-input-#{subject}"]|)
+    |> render_keyup(%{"value" => comment})
+
+    view
+    |> element(~s|#{scope} button[data-testid="verification-save-#{subject}"]|)
+    |> render_click()
+  end
+
   test "an admin can verify quote, relevance and answer from the statement page",
        %{conn: conn, statement: statement, opinion: opinion, vote: vote} do
     conn = log_in_as_admin(conn)
@@ -43,23 +57,23 @@ defmodule YouCongressWeb.StatementAggregateVerifyTest do
     end
 
     # Open the popover.
-    view |> element(~s|#{card} span[phx-click="toggle-dropdown"]|) |> render_click()
+    view |> element(~s|#{card} button[phx-click="toggle-dropdown"]|) |> render_click()
 
     # Downstream rows start gated.
     refute has_element?(view, btn.("relevance", "verified"))
     refute has_element?(view, btn.("vote", "verified"))
 
     # Verify the quote -> relevance unlocks, answer still gated.
-    view |> element(btn.("quote", "verified")) |> render_click()
+    pick_and_save(view, card, "quote", "verified", "Quote is authentic")
     assert has_element?(view, btn.("relevance", "verified"))
     refute has_element?(view, btn.("vote", "verified"))
 
     # Verify relevance -> answer unlocks.
-    view |> element(btn.("relevance", "verified")) |> render_click()
+    pick_and_save(view, card, "relevance", "verified", "Quote matches statement")
     assert has_element?(view, btn.("vote", "verified"))
 
     # Verify the answer.
-    view |> element(btn.("vote", "verified")) |> render_click()
+    pick_and_save(view, card, "vote", "verified", "Vote answer is correct")
 
     assert Votes.get_vote!(vote.id).verification_status == :verified
 
@@ -105,11 +119,11 @@ defmodule YouCongressWeb.StatementAggregateVerifyTest do
 
     # The displayed quote is the higher-year alternate, but the answer (bound to
     # the vote's own quote) is still verifiable from here.
-    view |> element(~s|#{card} span[phx-click="toggle-dropdown"]|) |> render_click()
-    view |> element(btn.("quote", "verified")) |> render_click()
-    view |> element(btn.("relevance", "verified")) |> render_click()
+    view |> element(~s|#{card} button[phx-click="toggle-dropdown"]|) |> render_click()
+    pick_and_save(view, card, "quote", "verified", "Quote is authentic")
+    pick_and_save(view, card, "relevance", "verified", "Quote matches statement")
     assert has_element?(view, btn.("vote", "verified"))
-    view |> element(btn.("vote", "verified")) |> render_click()
+    pick_and_save(view, card, "vote", "verified", "Vote answer is correct")
 
     assert Votes.get_vote!(vote.id).verification_status == :verified
   end

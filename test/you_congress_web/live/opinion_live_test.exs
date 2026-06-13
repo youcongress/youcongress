@@ -9,8 +9,25 @@ defmodule YouCongressWeb.OpinionLiveTest do
   import YouCongress.AccountsFixtures
 
   alias YouCongress.Opinions
+  alias YouCongress.OpinionsStatements
+  alias YouCongress.OpinionStatementVerifications
   alias YouCongress.Votes
+  alias YouCongress.VoteVerifications
   alias YouCongress.Verifications
+
+  defp pick_and_save(view, scope, subject, status, comment) do
+    view
+    |> element(~s|#{scope} button[phx-value-subject="#{subject}"][phx-value-status="#{status}"]|)
+    |> render_click()
+
+    view
+    |> element(~s|#{scope} input[data-testid="verification-comment-input-#{subject}"]|)
+    |> render_keyup(%{"value" => comment})
+
+    view
+    |> element(~s|#{scope} button[data-testid="verification-save-#{subject}"]|)
+    |> render_click()
+  end
 
   describe "Index" do
     test "comment under a comment", %{conn: conn} do
@@ -386,6 +403,134 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert html =~ "Disputed"
     end
 
+    test "shows relation and vote verification histories for each statement", %{conn: conn} do
+      user = user_fixture()
+      author = author_fixture(%{name: "Quote Author"})
+      statement = statement_fixture(%{title: "We should deliberate publicly"})
+
+      opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: user.id,
+          content: "A quote with full verification history",
+          source_url: "https://example.com/source",
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: opinion.id,
+          answer: :for
+        })
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Quote authentic"
+        })
+
+      opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+
+      {:ok, _} =
+        OpinionStatementVerifications.create_verification(%{
+          opinion_statement_id: opinion_statement.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Relation is exact"
+        })
+
+      {:ok, _} =
+        VoteVerifications.create_verification(%{
+          vote_id: vote.id,
+          user_id: user.id,
+          status: :disputed,
+          comment: "Vote answer needs review"
+        })
+
+      {:ok, _view, html} = live(conn, ~p"/c/#{opinion.id}")
+
+      assert html =~ "Verification History"
+      assert html =~ "Quote authentic"
+      assert html =~ "Statement relation"
+      assert html =~ "Relation is exact"
+      assert html =~ "Vote answer"
+      assert html =~ "Vote answer needs review"
+    end
+
+    test "shows empty relation row when only vote answer history is visible", %{conn: conn} do
+      user = user_fixture()
+      author = author_fixture(%{name: "Quote Author"})
+      statement = statement_fixture(%{title: "We should deliberate publicly"})
+
+      shown_quote =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: user.id,
+          content: "Shown quote",
+          source_url: "https://example.com/shown",
+          twin: false
+        })
+
+      voted_quote =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: user.id,
+          content: "Voted quote",
+          source_url: "https://example.com/voted",
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(shown_quote, statement.id)
+      {:ok, _} = Opinions.add_opinion_to_statement(voted_quote, statement.id)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: voted_quote.id,
+          answer: :for
+        })
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: voted_quote.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Voted quote authentic"
+        })
+
+      voted_relation = OpinionsStatements.get_opinion_statement(voted_quote.id, statement.id)
+
+      {:ok, _} =
+        OpinionStatementVerifications.create_verification(%{
+          opinion_statement_id: voted_relation.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Voted quote relation is exact"
+        })
+
+      {:ok, _} =
+        VoteVerifications.create_verification(%{
+          vote_id: vote.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Vote answer is correct"
+        })
+
+      {:ok, _view, html} = live(conn, ~p"/c/#{shown_quote.id}")
+
+      assert html =~ "Statement relation"
+      assert html =~ "No statement relation verification comments yet."
+      assert html =~ "Vote answer"
+      assert html =~ "Vote answer is correct"
+    end
+
     test "shows step-by-step verification badge and vote next to each statement", %{conn: conn} do
       user = user_fixture(%{role: "moderator"})
       author = author_fixture(%{name: "Quote Author"})
@@ -417,13 +562,18 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert html =~ "We should deliberate publicly"
       assert html =~ "votes For"
 
-      # The aggregate verification badge is rendered next to the statement
+      # The statement verification area is rendered next to the statement.
       card = ~s|[data-testid="statement-verify-#{statement.id}"]|
       assert has_element?(view, card)
 
-      # Clicking the badge reveals the step-by-step rows and lets the user verify
-      # each part (quote -> relevance -> vote) gated progressively.
-      view |> element(~s|#{card} span[phx-click="toggle-dropdown"]|) |> render_click()
+      # Clicking a verification badge reveals the step-by-step editor and lets
+      # the user verify each part (quote -> relation -> vote answer) with a
+      # comment, gated progressively.
+      view
+      |> element(
+        ~s|#{card} button[data-testid="statement-relation-verification-badge-#{statement.id}"]|
+      )
+      |> render_click()
 
       btn = fn subject, status ->
         ~s|#{card} button[phx-value-subject="#{subject}"][phx-value-status="#{status}"]|
@@ -432,11 +582,65 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert has_element?(view, btn.("quote", "verified"))
       refute has_element?(view, btn.("relevance", "verified"))
 
-      view |> element(btn.("quote", "verified")) |> render_click()
+      pick_and_save(view, card, "quote", "verified", "Quote is authentic")
       assert has_element?(view, btn.("relevance", "verified"))
 
-      view |> element(btn.("relevance", "verified")) |> render_click()
+      pick_and_save(view, card, "relevance", "verified", "Quote matches statement")
       assert has_element?(view, btn.("vote", "verified"))
+    end
+
+    test "blank verification comments are stored as nil", %{conn: conn} do
+      user = user_fixture(%{role: "moderator"})
+      author = author_fixture(%{name: "Quote Author"})
+      conn = log_in_user(conn, user)
+
+      statement = statement_fixture(%{title: "We should deliberate publicly"})
+
+      opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: user.id,
+          content: "A citable quote",
+          source_url: "https://example.com/source",
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: opinion.id,
+          answer: :for
+        })
+
+      {:ok, view, _html} = live(conn, ~p"/c/#{opinion.id}")
+      card = ~s|[data-testid="statement-verify-#{statement.id}"]|
+
+      view
+      |> element(
+        ~s|#{card} button[data-testid="statement-relation-verification-badge-#{statement.id}"]|
+      )
+      |> render_click()
+
+      pick_and_save(view, card, "quote", "verified", "")
+      pick_and_save(view, card, "relevance", "verified", "")
+      pick_and_save(view, card, "vote", "verified", "")
+
+      [quote_verification] = Verifications.list_verifications(opinion_id: opinion.id)
+      opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+
+      [relation_verification] =
+        OpinionStatementVerifications.list_verifications(
+          opinion_statement_id: opinion_statement.id
+        )
+
+      [vote_verification] = VoteVerifications.list_verifications(vote_id: vote.id)
+
+      assert quote_verification.comment == nil
+      assert relation_verification.comment == nil
+      assert vote_verification.comment == nil
     end
 
     test "can verify the vote even when it is backed by a different quote", %{conn: conn} do
@@ -485,9 +689,12 @@ defmodule YouCongressWeb.OpinionLiveTest do
         ~s|#{card} button[phx-value-subject="#{subject}"][phx-value-status="#{status}"]|
       end
 
-      view |> element(~s|#{card} span[phx-click="toggle-dropdown"]|) |> render_click()
-      view |> element(btn.("quote", "verified")) |> render_click()
-      view |> element(btn.("relevance", "verified")) |> render_click()
+      view
+      |> element(~s|#{card} button[data-testid="vote-answer-verification-badge-#{statement.id}"]|)
+      |> render_click()
+
+      pick_and_save(view, card, "quote", "verified", "Quote is authentic")
+      pick_and_save(view, card, "relevance", "verified", "Quote matches statement")
 
       # The vote row is actionable (no longer "n/a for this quote").
       assert has_element?(view, btn.("vote", "verified"))
