@@ -28,9 +28,11 @@ defmodule YouCongressWeb.Components.VerificationAggregateTest do
     html = render_badge(%{})
     assert html =~ "Unverified"
     # Quote row is always actionable; downstream rows point at the next step.
-    assert html =~ "Quote"
-    assert html =~ "Relevance"
-    assert html =~ "Vote"
+    assert html =~ "Quote authenticity"
+    assert html =~ "Statement relation"
+    assert html =~ "Vote answer"
+    refute html =~ "Edit"
+    refute html =~ "Comment (optional)"
     assert html =~ "verify quote first"
     refute html =~ "verify relevance first"
   end

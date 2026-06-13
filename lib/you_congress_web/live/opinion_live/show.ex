@@ -4,6 +4,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   require Logger
 
   alias YouCongress.Likes
+  alias YouCongress.OpinionStatementVerifications
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Verifications
@@ -14,6 +15,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.Statements
   alias YouCongress.OpinionsStatements
   alias YouCongress.Votes
+  alias YouCongress.VoteVerifications
   alias YouCongress.Accounts.Permissions
   alias YouCongressWeb.SEO
 
@@ -376,7 +378,11 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
   defp load_opinion!(socket, opinion_id) do
     opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :statements])
-    opinion_with_votes = load_author_votes_for_opinion(opinion)
+
+    opinion_with_votes =
+      opinion
+      |> load_author_votes_for_opinion()
+      |> load_statement_verification_histories()
 
     verifications =
       Verifications.list_verifications(
@@ -386,6 +392,76 @@ defmodule YouCongressWeb.OpinionLive.Show do
       )
 
     assign(socket, opinion: opinion_with_votes, verifications: verifications)
+  end
+
+  defp load_statement_verification_histories(%{statements: statements} = opinion)
+       when is_list(statements) and statements != [] do
+    relation_verifications_by_id = relation_verifications_by_id(statements)
+    vote_verifications_by_id = vote_verifications_by_id(statements)
+
+    statements =
+      Enum.map(statements, fn statement ->
+        opinion_statement = Map.get(statement, :opinion_statement)
+        author_vote = Map.get(statement, :author_vote)
+        opinion_statement_id = opinion_statement && opinion_statement.id
+        vote_id = author_vote && author_vote.id
+
+        statement
+        |> Map.put(
+          :relation_verifications,
+          Map.get(relation_verifications_by_id, opinion_statement_id, [])
+        )
+        |> Map.put(:vote_verifications, Map.get(vote_verifications_by_id, vote_id, []))
+      end)
+
+    Map.put(opinion, :statements, statements)
+  end
+
+  defp load_statement_verification_histories(opinion), do: opinion
+
+  defp relation_verifications_by_id(statements) do
+    opinion_statement_ids =
+      statements
+      |> Enum.map(fn statement ->
+        opinion_statement = Map.get(statement, :opinion_statement)
+        opinion_statement && opinion_statement.id
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    if opinion_statement_ids == [] do
+      %{}
+    else
+      OpinionStatementVerifications.list_verifications(
+        opinion_statement_id: opinion_statement_ids,
+        order_by: [desc: :updated_at],
+        preload: [user: [:author]]
+      )
+      |> Enum.group_by(& &1.opinion_statement_id)
+    end
+  end
+
+  defp vote_verifications_by_id(statements) do
+    vote_opinion_id_by_vote_id =
+      statements
+      |> Enum.map(&Map.get(&1, :author_vote))
+      |> Enum.reject(&is_nil/1)
+      |> Map.new(fn vote -> {vote.id, vote.opinion_id} end)
+
+    vote_ids = Map.keys(vote_opinion_id_by_vote_id)
+
+    if vote_ids == [] do
+      %{}
+    else
+      VoteVerifications.list_verifications(
+        vote_id: vote_ids,
+        order_by: [desc: :updated_at],
+        preload: [user: [:author]]
+      )
+      |> Enum.filter(fn verification ->
+        verification.opinion_id == Map.fetch!(vote_opinion_id_by_vote_id, verification.vote_id)
+      end)
+      |> Enum.group_by(& &1.vote_id)
+    end
   end
 
   defp load_author_votes_for_opinion(opinion) do
@@ -475,6 +551,32 @@ defmodule YouCongressWeb.OpinionLive.Show do
   defp vote_answer_class(:against), do: "text-red-800 font-semibold"
   defp vote_answer_class(:abstain), do: "text-blue-800 font-semibold"
   defp vote_answer_class(_), do: "text-gray-800 font-semibold"
+
+  defp relation_verification_status(%{opinion_statement: %{verification_status: status}}),
+    do: status
+
+  defp relation_verification_status(_), do: nil
+
+  defp vote_verification_status(%{author_vote: nil}), do: :no_vote
+  defp vote_verification_status(%{author_vote: %{verification_status: status}}), do: status
+  defp vote_verification_status(_), do: nil
+
+  defp verification_status_badge_class(:verified), do: "bg-green-100 text-green-800"
+  defp verification_status_badge_class(:ai_verified), do: "bg-gray-100 text-gray-600"
+  defp verification_status_badge_class(:ai_unverifiable), do: "bg-gray-100 text-gray-600"
+  defp verification_status_badge_class(:endorsed), do: "bg-blue-100 text-blue-800"
+  defp verification_status_badge_class(:disputed), do: "bg-orange-100 text-orange-800"
+  defp verification_status_badge_class(:unverifiable), do: "bg-gray-200 text-gray-600"
+  defp verification_status_badge_class(_), do: "bg-gray-100 text-gray-800"
+
+  defp verification_status_label(:verified), do: "Verified"
+  defp verification_status_label(:ai_verified), do: "AI Verified"
+  defp verification_status_label(:ai_unverifiable), do: "AI Unverifiable"
+  defp verification_status_label(:endorsed), do: "Endorsed"
+  defp verification_status_label(:disputed), do: "Disputed"
+  defp verification_status_label(:unverifiable), do: "Unverifiable"
+  defp verification_status_label(:no_vote), do: "No vote"
+  defp verification_status_label(_), do: "Unverified"
 
   # Verified quotes get a search-friendly title; plain comments and
   # replies are thin pages and get noindex.

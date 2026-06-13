@@ -28,8 +28,10 @@ defmodule YouCongressWeb.Components.VerificationHistory do
             ]}>
               {status_label(verification.status)}
             </span>
-            <span>{verification.comment}</span>
-            <span>&middot;</span>
+            <%= if verification.comment && verification.comment != "" do %>
+              <span>{verification.comment}</span>
+              <span>&middot;</span>
+            <% end %>
             <%= if verification.user && verification.user.author do %>
               <a
                 href={~p"/a/#{verification.user.author.id}"}
