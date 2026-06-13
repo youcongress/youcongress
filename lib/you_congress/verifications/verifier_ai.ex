@@ -29,9 +29,9 @@ defmodule YouCongress.Verifications.VerifierAI do
 
   @impl true
   def submit(subject_type, subject) do
-    with {:ok, %{prompt: prompt, schema: schema, name: name, system: system}} <-
+    with {:ok, %{prompt: prompt, schema: schema, name: name, system: system} = spec} <-
            build(subject_type, subject),
-         {:ok, data} <- ask_gpt(prompt, schema, name, system),
+         {:ok, data} <- ask_gpt(prompt, schema, name, system, spec[:web_search] || false),
          {:ok, job_id} <- extract_job_id(data) do
       {:ok, job_id}
     end
@@ -112,6 +112,7 @@ defmodule YouCongress.Verifications.VerifierAI do
        prompt: prompt,
        schema: status_schema(),
        name: "QuoteVerification",
+       web_search: true,
        system:
          "You are a meticulous fact-checker. You only confirm a quote when a reliable source contains the exact text and attributes it to the author."
      }}
@@ -215,7 +216,7 @@ defmodule YouCongress.Verifications.VerifierAI do
 
   # --- OpenAI plumbing (mirrors QuotatorAI) ----------------------------------
 
-  defp ask_gpt(prompt, schema, name, system) do
+  defp ask_gpt(prompt, schema, name, system, web_search?) do
     api_key = System.get_env("OPENAI_API_KEY")
 
     if is_nil(api_key) or api_key == "" do
@@ -223,28 +224,28 @@ defmodule YouCongress.Verifications.VerifierAI do
     else
       url = "https://api.openai.com/v1/responses"
 
-      body = %{
-        "model" => to_string(@model),
-        "reasoning" => %{"effort" => "high"},
-        "tools" => [%{"type" => "web_search"}],
-        "tool_choice" => "auto",
-        "text" => %{
-          "format" => %{
-            "name" => name,
-            "type" => "json_schema",
-            "schema" => schema
-          }
-        },
-        "background" => true,
-        "input" => [
-          %{"role" => "system", "content" => system},
-          %{
-            "role" => "user",
-            "content" => "Return one JSON object strictly conforming to the provided JSON Schema."
+      body =
+        %{
+          "model" => to_string(@model),
+          "reasoning" => %{"effort" => "high"},
+          "text" => %{
+            "format" => %{
+              "name" => name,
+              "type" => "json_schema",
+              "schema" => schema
+            }
           },
-          %{"role" => "user", "content" => prompt}
-        ]
-      }
+          "background" => true,
+          "input" => [
+            %{"role" => "system", "content" => system},
+            %{
+              "role" => "user",
+              "content" => "Return one JSON object strictly conforming to the provided JSON Schema."
+            },
+            %{"role" => "user", "content" => prompt}
+          ]
+        }
+        |> maybe_put_web_search(web_search?)
 
       headers = [
         {"content-type", "application/json"},
@@ -268,6 +269,16 @@ defmodule YouCongress.Verifications.VerifierAI do
       end
     end
   end
+
+  # Only quote-authenticity checks need to browse for primary sources; relevance
+  # and vote-answer checks are judged from the quote text and statement alone.
+  defp maybe_put_web_search(body, true) do
+    body
+    |> Map.put("tools", [%{"type" => "web_search"}])
+    |> Map.put("tool_choice", "auto")
+  end
+
+  defp maybe_put_web_search(body, false), do: body
 
   defp extract_job_id(%{"id" => id}), do: {:ok, id}
   defp extract_job_id(_), do: {:error, "No Job ID found"}
