@@ -155,7 +155,8 @@ defmodule YouCongressWeb.SEOMetaTest do
           twin: false,
           content: "Some quoted words",
           source_url: "https://example.com/q",
-          year: 2024
+          date: ~D[2024-01-01],
+          date_precision: :year
         })
 
       conn = get(conn, ~p"/c/#{opinion.id}")

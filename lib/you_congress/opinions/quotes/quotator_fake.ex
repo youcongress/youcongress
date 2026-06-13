@@ -53,7 +53,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorFake do
         |> Enum.join(" ")
         |> Kernel.<>(" (re: #{question_title})"),
       "source_url" => Faker.Internet.url(),
-      "year" => Integer.to_string(Enum.random(1980..2025)),
+      "date" => "#{Enum.random(1980..2025)}-01-01",
+      "date_precision" => "year",
       "author" => %{
         "name" => name,
         "bio" => Faker.Lorem.words(5) |> Enum.join(" "),

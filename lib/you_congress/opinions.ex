@@ -325,7 +325,7 @@ defmodule YouCongress.Opinions do
       where:
         os.statement_id == ^statement_id and o.author_id in ^author_ids and
           not is_nil(o.source_url),
-      order_by: [fragment("? DESC NULLS LAST", o.year), desc: o.id],
+      order_by: [fragment("? DESC NULLS LAST", o.date), desc: o.id],
       preload: [:author]
     )
     |> Repo.all()
@@ -349,7 +349,7 @@ defmodule YouCongress.Opinions do
         order_by: [
           asc: os.statement_id,
           asc: o.author_id,
-          desc_nulls_last: o.year,
+          desc_nulls_last: o.date,
           desc: o.id
         ],
         preload: [:author],
@@ -441,6 +441,10 @@ defmodule YouCongress.Opinions do
 
       {:only_quotes, true}, query ->
         from q in query, where: not is_nil(q.source_url)
+
+      {:year, year}, query ->
+        from q in query,
+          where: fragment("EXTRACT(YEAR FROM ?)::integer = ?", q.date, ^year)
 
       {:exclude_source_prefixes, prefixes}, query ->
         prefixes
@@ -741,7 +745,7 @@ defmodule YouCongress.Opinions do
       where:
         os.statement_id == ^statement_id and o.author_id == ^author_id and
           o.id != ^removed_opinion_id and not is_nil(o.source_url),
-      order_by: [fragment("? DESC NULLS LAST", o.year), desc: o.id],
+      order_by: [fragment("? DESC NULLS LAST", o.date), desc: o.id],
       limit: 1
     )
     |> Repo.one()

@@ -85,23 +85,25 @@ defmodule YouCongressWeb.StatementAggregateVerifyTest do
     statement = statement_fixture()
     author = author_fixture()
 
-    # Displayed first (higher year), but NOT the quote the vote points at.
+    # Displayed first (newer date), but NOT the quote the vote points at.
     shown =
       opinion_fixture(%{
         author_id: author.id,
-        content: "Higher year quote",
+        content: "Newer quote",
         source_url: "https://example.com/higher",
-        year: 2025,
+        date: ~D[2025-01-01],
+        date_precision: :year,
         twin: false
       })
 
-    # The vote's own quote (lower year) — what the answer is bound to.
+    # The vote's own quote (older date) — what the answer is bound to.
     voted =
       opinion_fixture(%{
         author_id: author.id,
-        content: "Lower year quote",
+        content: "Older quote",
         source_url: "https://example.com/lower",
-        year: 2020,
+        date: ~D[2020-01-01],
+        date_precision: :year,
         twin: false
       })
 
@@ -117,7 +119,7 @@ defmodule YouCongressWeb.StatementAggregateVerifyTest do
     card = ~s|[data-testid="vote-card-#{vote.id}"]|
     btn = fn s, st -> ~s|#{card} button[phx-value-subject="#{s}"][phx-value-status="#{st}"]| end
 
-    # The displayed quote is the higher-year alternate, but the answer (bound to
+    # The displayed quote is the newer alternate, but the answer (bound to
     # the vote's own quote) is still verifiable from here.
     view |> element(~s|#{card} button[phx-click="toggle-dropdown"]|) |> render_click()
     pick_and_save(view, card, "quote", "verified", "Quote is authentic")

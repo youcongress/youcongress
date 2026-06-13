@@ -242,8 +242,9 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
             Returns the <code class="bg-gray-100 px-1 rounded">statement_id</code>, <code class="bg-gray-100 px-1 rounded">statement_title</code>, and an
             <code class="bg-gray-100 px-1 rounded">authors</code>
             array where each entry includes the <code class="bg-gray-100 px-1 rounded">author_id</code>, <code class="bg-gray-100 px-1 rounded">name</code>, and
-            <code class="bg-gray-100 px-1 rounded">opinion_year</code>
-            (the year of the quote, useful for finding authors without a recent opinion). Requires: <code class="bg-gray-100 px-1 rounded">statement_id</code>.
+            <code class="bg-gray-100 px-1 rounded">opinion_date</code>
+            and <code class="bg-gray-100 px-1 rounded">opinion_date_precision</code>
+            (the date of the quote, useful for finding authors without a recent opinion). Requires: <code class="bg-gray-100 px-1 rounded">statement_id</code>.
           </dd>
         </div>
         <div class="pl-4">
@@ -409,7 +410,7 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
           </dt>
           <dd class="text-gray-700">
             Create a new opinion. Requires: <code class="bg-gray-100 px-1 rounded">content</code>, <code class="bg-gray-100 px-1 rounded">author_id</code>.
-            Optional: <code class="bg-gray-100 px-1 rounded">source_url</code>, <code class="bg-gray-100 px-1 rounded">year</code>.
+            Optional: <code class="bg-gray-100 px-1 rounded">source_url</code>, <code class="bg-gray-100 px-1 rounded">date</code>, <code class="bg-gray-100 px-1 rounded">date_precision</code>.
           </dd>
         </div>
         <div class="pl-4">
@@ -438,7 +439,7 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
           </dt>
           <dd class="text-gray-700">
             Edit an existing opinion. Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>.
-            Optional: <code class="bg-gray-100 px-1 rounded">content</code>, <code class="bg-gray-100 px-1 rounded">author_id</code>, <code class="bg-gray-100 px-1 rounded">source_url</code>, <code class="bg-gray-100 px-1 rounded">year</code>.
+            Optional: <code class="bg-gray-100 px-1 rounded">content</code>, <code class="bg-gray-100 px-1 rounded">author_id</code>, <code class="bg-gray-100 px-1 rounded">source_url</code>, <code class="bg-gray-100 px-1 rounded">date</code>, <code class="bg-gray-100 px-1 rounded">date_precision</code>.
           </dd>
         </div>
         <div class="pl-4">

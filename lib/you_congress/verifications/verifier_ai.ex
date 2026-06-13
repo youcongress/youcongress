@@ -88,7 +88,7 @@ defmodule YouCongress.Verifications.VerifierAI do
     Verify whether the following quote is authentic.
 
     Author: #{author || "Unknown"}
-    Year: #{opinion.year || "Unknown"}
+    Date: #{Opinion.display_date(opinion) || "Unknown"}
     Source URL: #{opinion.source_url || "None provided"}
     Quote:
     \"\"\"

@@ -112,7 +112,8 @@ defmodule YouCongressWeb.AuthorLiveTest do
           author_id: author.id,
           content: "Older author page quote",
           source_url: "https://example.com/author-older",
-          year: 2023
+          date: ~D[2023-01-01],
+          date_precision: :year
         })
 
       newer_opinion =
@@ -120,7 +121,8 @@ defmodule YouCongressWeb.AuthorLiveTest do
           author_id: author.id,
           content: "Newer author page quote",
           source_url: "https://example.com/author-newer",
-          year: 2024
+          date: ~D[2024-01-01],
+          date_precision: :year
         })
 
       {:ok, _} = Opinions.add_opinion_to_statement(older_opinion, statement.id)
@@ -150,7 +152,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
       assert has_element?(view, "[data-testid='quote-position-#{vote.id}']", "2 of 2")
     end
 
-    test "orders cards by opinion year and opinion id", %{conn: conn} do
+    test "orders cards by opinion date and opinion id", %{conn: conn} do
       unique = System.unique_integer([:positive])
       twitter_username = "recent_quote_author_#{unique}"
       author = author_fixture(%{twitter_username: twitter_username})
@@ -164,7 +166,8 @@ defmodule YouCongressWeb.AuthorLiveTest do
           author_id: author.id,
           content: "Lower tie author page quote",
           source_url: "https://example.com/author-lower-tie-#{unique}",
-          year: 2024
+          date: ~D[2024-01-01],
+          date_precision: :year
         })
 
       higher_tie_opinion =
@@ -172,7 +175,8 @@ defmodule YouCongressWeb.AuthorLiveTest do
           author_id: author.id,
           content: "Higher tie author page quote",
           source_url: "https://example.com/author-higher-tie-#{unique}",
-          year: 2024
+          date: ~D[2024-01-01],
+          date_precision: :year
         })
 
       older_opinion =
@@ -180,7 +184,8 @@ defmodule YouCongressWeb.AuthorLiveTest do
           author_id: author.id,
           content: "Older author page quote",
           source_url: "https://example.com/author-older-#{unique}",
-          year: 2023
+          date: ~D[2023-01-01],
+          date_precision: :year
         })
 
       {:ok, _} = Opinions.add_opinion_to_statement(older_opinion, older_statement.id)

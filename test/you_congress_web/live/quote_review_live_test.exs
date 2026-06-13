@@ -113,7 +113,8 @@ defmodule YouCongressWeb.QuoteReviewLiveTest do
             "quote_id" => opinion.id,
             "opinion" => %{
               "content" => "Updated quote",
-              "year" => "2020",
+              "date" => "2020-01-01",
+              "date_precision" => "year",
               "source_url" => "http://example.com/updated"
             }
           }
@@ -125,7 +126,8 @@ defmodule YouCongressWeb.QuoteReviewLiveTest do
       # Check database was actually updated
       updated = Opinions.get_opinion!(opinion.id)
       assert updated.content == "Updated quote"
-      assert updated.year == 2020
+      assert updated.date == ~D[2020-01-01]
+      assert updated.date_precision == :year
       assert updated.source_url == "http://example.com/updated"
     end
 

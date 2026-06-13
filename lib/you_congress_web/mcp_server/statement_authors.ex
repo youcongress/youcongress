@@ -61,7 +61,8 @@ defmodule YouCongressWeb.MCPServer.StatementAuthors do
       Map.put_new(acc, author.id, %{
         author_id: author.id,
         name: author.name,
-        opinion_year: opinion.year
+        opinion_date: Opinion.date_iso(opinion),
+        opinion_date_precision: Opinion.date_precision_string(opinion)
       })
     end)
     |> Map.values()

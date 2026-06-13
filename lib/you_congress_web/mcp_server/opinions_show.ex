@@ -8,7 +8,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsShow do
   alias Anubis.Server.Response
   alias Ecto.Association.NotLoaded
   alias YouCongress.Opinions
-  alias YouCongress.Votes
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Votes
   alias YouCongress.MCP.ToolUsageTracker
 
@@ -36,16 +36,17 @@ defmodule YouCongressWeb.MCPServer.OpinionsShow do
   end
 
   defp serialize_opinion(opinion) do
-    %{
+    opinion
+    |> Opinion.serialized_date_fields()
+    |> Map.merge(%{
       opinion_id: opinion.id,
       content: opinion.content,
       source_url: opinion.source_url,
-      year: opinion.year,
       author_id: opinion.author_id,
       user_id: opinion.user_id,
       verification_status: opinion.verification_status,
       statements: serialize_statements(opinion)
-    }
+    })
   end
 
   defp serialize_statements(%{statements: %NotLoaded{}}), do: []

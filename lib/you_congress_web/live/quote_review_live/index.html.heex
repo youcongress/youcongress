@@ -52,10 +52,10 @@
             <div class="text-sm text-gray-600 mt-2">
               <span>Author:</span>
               {if quote.author, do: quote.author.name, else: "Unknown"}
-              <%= if quote.year do %>
-                · <span>{quote.year}</span>
+              <%= if Opinion.display_date(quote) do %>
+                · <span>{Opinion.display_date(quote)}</span>
               <% else %>
-                · <span>Unknown year</span>
+                · <span>Unknown date</span>
               <% end %>
               · <span>Added {short_time(quote.inserted_at)}</span>
               <%= if quote.source_url do %>

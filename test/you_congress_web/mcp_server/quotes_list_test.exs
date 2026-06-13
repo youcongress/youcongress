@@ -18,7 +18,8 @@ defmodule YouCongressWeb.MCPServer.QuotesListTest do
           author_id: author.id,
           content: "Quote one",
           source_url: "https://example.com/1",
-          year: 2020
+          date: ~D[2020-01-01],
+          date_precision: :year
         )
 
       q2 = opinion_fixture(content: "Quote two", source_url: "https://example.com/2")
@@ -48,7 +49,8 @@ defmodule YouCongressWeb.MCPServer.QuotesListTest do
         assert q1_payload.author == "Ada Lovelace"
         assert q1_payload.author_biography == "Mathematician"
         assert q1_payload.source_url == "https://example.com/1"
-        assert q1_payload.year == 2020
+        assert q1_payload.date == "2020-01-01"
+        assert q1_payload.date_precision == "year"
         assert q1_payload.verification_status == :unverified
         assert q1_payload.vote_id == vote.id
         assert q1_payload.vote_answer == :for

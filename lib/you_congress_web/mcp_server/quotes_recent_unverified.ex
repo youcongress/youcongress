@@ -9,6 +9,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
   alias Anubis.Server.Response
   alias YouCongress.MCP.ToolUsageTracker
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Votes
 
   @no_quote_message "No unverified quotes available."
@@ -72,16 +73,17 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
   defp relevance_by_statement(_), do: %{}
 
   defp serialize_quote(opinion) do
-    %{
+    opinion
+    |> Opinion.serialized_date_fields()
+    |> Map.merge(%{
       opinion_id: opinion.id,
       quote: opinion.content,
       author_id: opinion.author_id,
       author_name: opinion.author && opinion.author.name,
       author_biography: opinion.author && opinion.author.bio,
       source_url: opinion.source_url,
-      year: opinion.year,
       verification_status: verification_status(opinion)
-    }
+    })
   end
 
   defp verification_status(%{verification_status: nil}), do: :unverified

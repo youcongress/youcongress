@@ -3,6 +3,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
 
   alias YouCongress.Delegations
   alias YouCongress.Likes
+  alias YouCongress.Opinions.Opinion
   alias YouCongressWeb.Tools.Tooltip
   alias YouCongressWeb.StatementLive.VoteComponent.QuoteMenu
   alias YouCongressWeb.OpinionLive.OpinionComponent

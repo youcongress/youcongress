@@ -35,7 +35,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
               },
               "quote" => "We want to replicate the success story of CERN in Geneva. As you all know, CERN holds the largest particle accelerator in the world, and it allows the best and the brightest minds in the world to work together. And we want the same to happen in our AI Gigafactory.",
               "source_url" => "https://www.reuters.com/technology/artificial-intelligence/quotes-eu-chief-von-der-leyens-ai-speech-paris-summit-2025-02-11/",
-              "year" => "2025"
+              "date" => "2025-02-11",
+              "date_precision" => "day"
             },
             %{
               "agree_rate" => "For",
@@ -47,7 +48,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
               },
               "quote" => "I’d love for there to be an International CERN, basically, for AI, where you get the top researchers in the world and you go: Look, let’s focus on the final few years of this project […] and really get it right.",
               "source_url" => "https://cfg.eu/cern-for-ai/",
-              "year" => "2025"
+              "date" => "2025",
+              "date_precision" => "year"
             },
             ...
           ]
@@ -201,6 +203,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
 
     Metadata rules:
     - Fill every JSON field. Use an empty string when unavailable.
+    - Set date to the quote/source date. Use YYYY-MM-DD when the exact day is recoverable, YYYY-MM when only the month is known, or YYYY when only the year is known. Set date_precision to "day", "month", or "year" to match.
     - If you provide wikipedia_url or twitter_username, the page/account must exist and belong to the author.
     - Authors must be experts, public figures, relevant organisations, or otherwise notable in the statement's domain.
     - Do not repeat any author across returned quotes. No name that appears in any item's author.name may appear in any other item.
@@ -359,7 +362,20 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
                 description:
                   "Primary source URL, or reliable secondary source URL when necessary, that includes the exact quote"
               },
-              "year" => %{type: "string", description: "Year of the quote"},
+              "date" => %{
+                type: "string",
+                description:
+                  "Date of the quote. Use YYYY-MM-DD when the exact day is known, YYYY-MM when only month is known, or YYYY when only year is known."
+              },
+              "date_precision" => %{
+                type: "string",
+                description: "Precision of the date field",
+                enum: [
+                  "day",
+                  "month",
+                  "year"
+                ]
+              },
               "author" => %{
                 type: "object",
                 additionalProperties: false,
@@ -387,7 +403,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
             required: [
               "quote",
               "source_url",
-              "year",
+              "date",
+              "date_precision",
               "author",
               "agree_rate"
             ]

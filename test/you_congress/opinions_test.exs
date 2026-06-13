@@ -13,6 +13,48 @@ defmodule YouCongress.OpinionsTest do
 
   @embedding_dimensions 1536
 
+  describe "date metadata" do
+    test "stores exact dates with day precision by default" do
+      {:ok, %{opinion: opinion}} =
+        Opinions.create_opinion(%{
+          content: "quoted content",
+          source_url: "https://example.com/quote",
+          date: "2026-04-13",
+          twin: false
+        })
+
+      assert opinion.date == ~D[2026-04-13]
+      assert opinion.date_precision == :day
+    end
+
+    test "normalizes year-only dates to January 1 with year precision" do
+      {:ok, %{opinion: opinion}} =
+        Opinions.create_opinion(%{
+          content: "quoted content",
+          source_url: "https://example.com/quote",
+          date: "2026",
+          twin: false
+        })
+
+      assert opinion.date == ~D[2026-01-01]
+      assert opinion.date_precision == :year
+    end
+
+    test "truncates stored date to the selected precision" do
+      {:ok, %{opinion: opinion}} =
+        Opinions.create_opinion(%{
+          content: "quoted content",
+          source_url: "https://example.com/quote",
+          date: "2026-04-13",
+          date_precision: "month",
+          twin: false
+        })
+
+      assert opinion.date == ~D[2026-04-01]
+      assert opinion.date_precision == :month
+    end
+  end
+
   describe "content_embedding" do
     test "generates an embedding when a sourced quote is created" do
       embedding = embedding([1.0, 0.5, -0.25])
@@ -253,32 +295,43 @@ defmodule YouCongress.OpinionsTest do
       assert Votes.get_vote(vote.id).opinion_id == current_quote.id
     end
 
-    test "reassigns vote by highest quote year when deleting the current quote" do
-      high_year_quote = opinion_fixture(%{twin: false, year: 2025})
+    test "reassigns vote by most recent quote date when deleting the current quote" do
+      high_date_quote =
+        opinion_fixture(%{twin: false, date: ~D[2025-01-01], date_precision: :year})
 
       higher_id_quote =
-        opinion_fixture(%{author_id: high_year_quote.author_id, twin: false, year: 2020})
+        opinion_fixture(%{
+          author_id: high_date_quote.author_id,
+          twin: false,
+          date: ~D[2020-01-01],
+          date_precision: :year
+        })
 
       current_quote =
-        opinion_fixture(%{author_id: high_year_quote.author_id, twin: false, year: 2030})
+        opinion_fixture(%{
+          author_id: high_date_quote.author_id,
+          twin: false,
+          date: ~D[2030-01-01],
+          date_precision: :year
+        })
 
       statement = statement_fixture()
 
-      assert {:ok, _} = Opinions.add_opinion_to_statement(high_year_quote, statement)
+      assert {:ok, _} = Opinions.add_opinion_to_statement(high_date_quote, statement)
       assert {:ok, _} = Opinions.add_opinion_to_statement(higher_id_quote, statement)
       assert {:ok, _} = Opinions.add_opinion_to_statement(current_quote, statement)
 
       vote =
         vote_fixture(%{
           statement_id: statement.id,
-          author_id: high_year_quote.author_id,
+          author_id: high_date_quote.author_id,
           opinion_id: current_quote.id,
           answer: :for
         })
 
       assert {:ok, _deleted_quote} = Opinions.delete_opinion(current_quote)
 
-      assert Votes.get_vote(vote.id).opinion_id == high_year_quote.id
+      assert Votes.get_vote(vote.id).opinion_id == high_date_quote.id
     end
 
     test "keeps author votes for non-quote opinions on delete" do
@@ -344,14 +397,25 @@ defmodule YouCongress.OpinionsTest do
       assert Votes.get_vote(vote.id).opinion_id == current_quote.id
     end
 
-    test "reassigns the vote by highest id when removing the current quote and years tie" do
-      lower_id_quote = opinion_fixture(%{twin: false, year: 2025})
+    test "reassigns the vote by highest id when removing the current quote and dates tie" do
+      lower_id_quote =
+        opinion_fixture(%{twin: false, date: ~D[2025-01-01], date_precision: :year})
 
       higher_id_quote =
-        opinion_fixture(%{author_id: lower_id_quote.author_id, twin: false, year: 2025})
+        opinion_fixture(%{
+          author_id: lower_id_quote.author_id,
+          twin: false,
+          date: ~D[2025-01-01],
+          date_precision: :year
+        })
 
       current_quote =
-        opinion_fixture(%{author_id: lower_id_quote.author_id, twin: false, year: 2030})
+        opinion_fixture(%{
+          author_id: lower_id_quote.author_id,
+          twin: false,
+          date: ~D[2030-01-01],
+          date_precision: :year
+        })
 
       statement = statement_fixture()
 

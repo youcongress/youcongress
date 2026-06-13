@@ -92,7 +92,8 @@ defmodule YouCongressWeb.OpinionLiveTest do
       |> form("form[phx-target]", %{
         opinion: %{
           content: "Updated content",
-          year: "2023",
+          date: "2023-01-01",
+          date_precision: "year",
           source_url: "https://example.com/updated-source"
         }
       })
@@ -104,7 +105,8 @@ defmodule YouCongressWeb.OpinionLiveTest do
       # Verify the opinion was actually updated in the database
       updated_opinion = Opinions.get_opinion!(opinion.id)
       assert updated_opinion.content == "Updated content"
-      assert updated_opinion.year == 2023
+      assert updated_opinion.date == ~D[2023-01-01]
+      assert updated_opinion.date_precision == :year
       assert updated_opinion.source_url == "https://example.com/updated-source"
 
       # Check that the edit form is hidden again
@@ -172,7 +174,8 @@ defmodule YouCongressWeb.OpinionLiveTest do
       |> form("form[phx-target]", %{
         opinion: %{
           content: "Updated content",
-          year: "2023",
+          date: "2023-01-01",
+          date_precision: "year",
           source_url: "https://example.com/updated-source"
         }
       })
@@ -184,7 +187,8 @@ defmodule YouCongressWeb.OpinionLiveTest do
       # Verify the opinion was actually updated in the database
       updated_opinion = Opinions.get_opinion!(opinion.id, preload: [:author])
       assert updated_opinion.content == "Updated content"
-      assert updated_opinion.year == 2023
+      assert updated_opinion.date == ~D[2023-01-01]
+      assert updated_opinion.date_precision == :year
       assert updated_opinion.source_url == "https://example.com/updated-source"
       assert updated_opinion.author_id == new_author.id
       assert updated_opinion.author.name == "New Author"
