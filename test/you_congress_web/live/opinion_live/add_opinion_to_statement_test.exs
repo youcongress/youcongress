@@ -8,6 +8,7 @@ defmodule YouCongressWeb.OpinionLive.AddOpinionToStatementTest do
   import YouCongress.AccountsFixtures
 
   alias YouCongress.Votes
+  alias YouCongress.Opinions
 
   describe "Show - Add to Statement" do
     test "search for statement and add opinion with vote", %{conn: conn} do
@@ -62,6 +63,37 @@ defmodule YouCongressWeb.OpinionLive.AddOpinionToStatementTest do
       [vote] = Votes.list_votes(author_ids: [author.id], statement_ids: [statement.id])
       assert vote.answer == :for
       assert vote.opinion_id == opinion.id
+    end
+
+    test "regular users cannot manually add an opinion to a statement", %{conn: conn} do
+      owner = user_fixture()
+      author = author_fixture(%{user_id: owner.id, name: "Opinion Author"})
+      regular_user = user_fixture()
+      conn = log_in_user(conn, regular_user)
+
+      opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: owner.id,
+          content: "Quote content",
+          twin: false,
+          source_url: "https://example.com"
+        })
+
+      statement = statement_fixture(%{title: "Relevant Poll Title"})
+
+      {:ok, show_live, _html} = live(conn, ~p"/c/#{opinion.id}")
+
+      html =
+        render_click(show_live, "add-to-statement", %{
+          "statement_id" => "#{statement.id}"
+        })
+
+      assert html =~ "You don&#39;t have permission to do this."
+
+      reloaded_opinion = Opinions.get_opinion!(opinion.id, preload: [:statements])
+      refute Enum.any?(reloaded_opinion.statements, &(&1.id == statement.id))
+      assert [] == Votes.list_votes(author_ids: [author.id], statement_ids: [statement.id])
     end
   end
 end

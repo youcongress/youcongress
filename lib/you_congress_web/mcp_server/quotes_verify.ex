@@ -31,7 +31,7 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
 
   @impl true
   def execute(%{opinion_id: opinion_id, status: status, comment: comment, model: model}, frame) do
-    user_result = ToolUsageTracker.track(__MODULE__, frame)
+    user_result = ToolUsageTracker.track(__MODULE__, frame, required_scope: :write)
 
     with {:ok, normalized_status} <- normalize_status(status),
          {:ok, user} <- user_result,

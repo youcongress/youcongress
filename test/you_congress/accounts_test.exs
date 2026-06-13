@@ -5,7 +5,7 @@ defmodule YouCongress.AccountsTest do
 
   import YouCongress.AccountsFixtures
   import YouCongress.CountriesFixtures
-  alias YouCongress.Accounts.{User, UserToken}
+  alias YouCongress.Accounts.{ApiKey, User, UserToken}
 
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do
@@ -330,7 +330,7 @@ defmodule YouCongress.AccountsTest do
   end
 
   describe "get_user_by_api_key/1" do
-    test "returns the API key owner" do
+    test "stores only a token hash and returns the API key owner" do
       user = user_fixture()
 
       {:ok, api_key} =
@@ -339,8 +339,46 @@ defmodule YouCongress.AccountsTest do
           "scope" => :write
         })
 
+      assert is_binary(api_key.token)
+      persisted_api_key = Repo.get!(ApiKey, api_key.id)
+      assert persisted_api_key.token == nil
+      assert persisted_api_key.token_hash == ApiKey.hash_token(api_key.token)
+      assert persisted_api_key.token_prefix == String.slice(api_key.token, 0, 8)
+
       assert {:ok, fetched_user} = Accounts.get_user_by_api_key(api_key.token)
       assert fetched_user.id == user.id
+    end
+
+    test "enforces required API key scopes" do
+      user = user_fixture()
+
+      {:ok, api_key} =
+        Accounts.create_api_key_for_user(user, %{
+          "name" => "Read only",
+          "scope" => :read
+        })
+
+      assert {:ok, fetched_user} =
+               Accounts.get_user_by_api_key(api_key.token, required_scope: :read)
+
+      assert fetched_user.id == user.id
+
+      assert {:error, :insufficient_scope} =
+               Accounts.get_user_by_api_key(api_key.token, required_scope: :write)
+    end
+
+    test "rejects API keys for blocked users" do
+      user = user_fixture()
+
+      {:ok, api_key} =
+        Accounts.create_api_key_for_user(user, %{
+          "name" => "CLI",
+          "scope" => :write
+        })
+
+      {:ok, _blocked_user} = Accounts.update_role(user, "blocked")
+
+      assert {:error, :invalid_api_key} = Accounts.get_user_by_api_key(api_key.token)
     end
 
     test "returns an error for missing tokens" do

@@ -19,7 +19,12 @@ defmodule YouCongress.MCP.ToolUsageTracker do
   """
   def track(tool_module, frame, opts \\ []) do
     key = get_query_param(frame, "key")
-    user_result = opts[:user_result] || Accounts.get_user_by_api_key(key)
+
+    user_result =
+      opts[:user_result] ||
+        key
+        |> Accounts.get_user_by_api_key(required_scope: opts[:required_scope])
+        |> normalize_user_result()
 
     user_id =
       case user_result do
@@ -41,6 +46,9 @@ defmodule YouCongress.MCP.ToolUsageTracker do
 
     user_result
   end
+
+  defp normalize_user_result({:error, :insufficient_scope}), do: {:error, :invalid_api_key}
+  defp normalize_user_result(result), do: result
 
   defp build_event_properties(tool_module, frame, key, user_result) do
     client_info = get_client_info(frame)

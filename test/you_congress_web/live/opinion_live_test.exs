@@ -413,6 +413,14 @@ defmodule YouCongressWeb.OpinionLiveTest do
       # Check that there's no edit button for non-owner
       # (since menu is JS-controlled, we just verify no edit form appears)
       refute has_element?(show_live, "form[phx-target]")
+
+      render_click(show_live, "edit", %{"opinion_id" => "#{opinion.id}"})
+
+      refute has_element?(show_live, "form[phx-target]")
+      assert render(show_live) =~ "You are not allowed to edit this opinion."
+
+      unchanged_opinion = Opinions.get_opinion!(opinion.id)
+      assert unchanged_opinion.content == "Owner's opinion"
     end
   end
 end
