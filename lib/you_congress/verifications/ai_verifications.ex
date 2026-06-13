@@ -194,7 +194,10 @@ defmodule YouCongress.Verifications.AIVerifications do
 
   defp normalize_status(status) when is_binary(status) do
     normalized = Map.get(@status_aliases, status, status)
-    if normalized in @allowed_statuses, do: String.to_existing_atom(normalized), else: :ai_unverifiable
+
+    if normalized in @allowed_statuses,
+      do: String.to_existing_atom(normalized),
+      else: :ai_unverifiable
   end
 
   defp normalize_status(_), do: :ai_unverifiable
