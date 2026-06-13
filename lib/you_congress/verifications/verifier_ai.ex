@@ -208,7 +208,10 @@ defmodule YouCongress.Verifications.VerifierAI do
       additionalProperties: false,
       properties: %{
         "correct_answer" => %{type: "string", enum: @answers},
-        "comment" => %{type: "string", description: "Short justification with the quote's wording."}
+        "comment" => %{
+          type: "string",
+          description: "Short justification with the quote's wording."
+        }
       },
       required: ["correct_answer", "comment"]
     }
@@ -240,7 +243,8 @@ defmodule YouCongress.Verifications.VerifierAI do
             %{"role" => "system", "content" => system},
             %{
               "role" => "user",
-              "content" => "Return one JSON object strictly conforming to the provided JSON Schema."
+              "content" =>
+                "Return one JSON object strictly conforming to the provided JSON Schema."
             },
             %{"role" => "user", "content" => prompt}
           ]

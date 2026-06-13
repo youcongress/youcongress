@@ -144,7 +144,9 @@ defmodule YouCongress.Opinions do
   end
 
   # A quote (an opinion with a source_url) is AI-verified whenever it is created.
-  defp maybe_enqueue_quote_verification({:ok, %{opinion: %Opinion{source_url: source_url, id: id}}})
+  defp maybe_enqueue_quote_verification(
+         {:ok, %{opinion: %Opinion{source_url: source_url, id: id}}}
+       )
        when not is_nil(source_url) do
     enqueue_quote_verification(id)
   end

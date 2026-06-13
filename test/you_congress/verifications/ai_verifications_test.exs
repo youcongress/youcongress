@@ -20,6 +20,7 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
   defmodule PositiveVerifier do
     @behaviour YouCongress.Verifications.Verifier
     def submit(subject_type, %{id: id}), do: {:ok, "#{subject_type}:#{id}"}
+
     def check_job_status("vote:" <> _),
       do: {:ok, :completed, %{"correct_answer" => "for", "comment" => "c", "model" => "m"}}
 
@@ -30,6 +31,7 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
   defmodule DisputedRelevanceVerifier do
     @behaviour YouCongress.Verifications.Verifier
     def submit(subject_type, %{id: id}), do: {:ok, "#{subject_type}:#{id}"}
+
     def check_job_status("quote:" <> _),
       do: {:ok, :completed, %{"status" => "ai_verified", "comment" => "c", "model" => "m"}}
 
@@ -43,6 +45,7 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
   defmodule UnverifiableQuoteVerifier do
     @behaviour YouCongress.Verifications.Verifier
     def submit(subject_type, %{id: id}), do: {:ok, "#{subject_type}:#{id}"}
+
     def check_job_status(_),
       do: {:ok, :completed, %{"status" => "ai_unverifiable", "comment" => "c", "model" => "m"}}
   end
@@ -50,7 +53,11 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
   defmodule MessageVerifier do
     @behaviour YouCongress.Verifications.Verifier
     def submit(subject_type, %{id: id}) do
-      send(Application.get_env(:you_congress, :verification_test_pid), {:submitted, subject_type, id})
+      send(
+        Application.get_env(:you_congress, :verification_test_pid),
+        {:submitted, subject_type, id}
+      )
+
       {:ok, "#{subject_type}:#{id}"}
     end
 
@@ -165,7 +172,10 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
       verify_quote(opinion.id)
 
       assert Opinions.get_opinion!(opinion.id).verification_status == :ai_unverifiable
-      assert OpinionsStatements.get_opinion_statement(opinion.id, statement.id).verification_status == nil
+
+      assert OpinionsStatements.get_opinion_statement(opinion.id, statement.id).verification_status ==
+               nil
+
       assert Votes.get_vote!(vote.id).verification_status == nil
     end
   end

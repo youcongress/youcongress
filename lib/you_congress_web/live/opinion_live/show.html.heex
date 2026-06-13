@@ -82,7 +82,9 @@
 
           <div>
             <div class="mb-1 flex items-center gap-2 text-xs">
-              <span class="w-56 shrink-0 font-semibold text-gray-600">Statement relation verification history</span>
+              <span class="w-56 shrink-0 font-semibold text-gray-600">
+                Statement relation verification history
+              </span>
               <%= if Permissions.can_verify_opinion?(@current_user) do %>
                 <button
                   type="button"
@@ -121,7 +123,9 @@
 
           <div>
             <div class="mb-1 flex items-center gap-2 text-xs">
-              <span class="w-56 shrink-0 font-semibold text-gray-600">Vote answer verification history</span>
+              <span class="w-56 shrink-0 font-semibold text-gray-600">
+                Vote answer verification history
+              </span>
               <%= if Permissions.can_verify_opinion?(@current_user) do %>
                 <button
                   type="button"

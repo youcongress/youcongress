@@ -39,7 +39,10 @@ defmodule YouCongress.Workers.VerificationWorker do
             :ok
 
           {:error, reason} ->
-            Logger.error("Failed to submit #{subject} verification for ##{id}: #{inspect(reason)}")
+            Logger.error(
+              "Failed to submit #{subject} verification for ##{id}: #{inspect(reason)}"
+            )
+
             {:error, reason}
         end
     end
