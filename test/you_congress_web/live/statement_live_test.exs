@@ -250,6 +250,39 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ statement.title
     end
 
+    test "source link underline does not include the date separator", %{
+      conn: conn,
+      statement: statement
+    } do
+      author = author_fixture()
+
+      opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Sourced opinion with date",
+          source_url: "https://example.com/source-whitespace",
+          date: ~D[2026-01-01],
+          date_precision: :month,
+          twin: false
+        })
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: opinion.id,
+          answer: :for,
+          twin: false
+        })
+
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}")
+
+      card_html = show_live |> element("#vote-component-#{vote.id}") |> render()
+
+      assert card_html =~
+               ~r/<a[^>]+href="https:\/\/example\.com\/source-whitespace"[^>]*>source<\/a>\s*<\/span>\s*<span[^>]*>\(2026-01\)<\/span>/
+    end
+
     test "shows vote results to non-logged visitors without voting", %{
       conn: conn,
       statement: statement
