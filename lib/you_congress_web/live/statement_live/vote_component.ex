@@ -17,10 +17,29 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
       |> assign_new(:expanded, fn -> false end)
       |> assign_new(:visible_opinion_id, fn -> nil end)
       |> assign_visible_opinion()
+      |> assign_opinion_statement()
       |> assign_content_variables()
 
     {:ok, socket}
   end
+
+  # The relevance link for the vote's own quote on this statement, used by the
+  # aggregate verification badge. The badge is about the vote's quote (the one the
+  # answer is bound to), not whichever alternate is currently being read.
+  defp assign_opinion_statement(socket) do
+    %{vote: vote, statement: statement} = socket.assigns
+    opinion = vote_opinion(vote)
+
+    opinion_statement =
+      if opinion && opinion.source_url && statement do
+        YouCongress.OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+      end
+
+    assign(socket, :opinion_statement, opinion_statement)
+  end
+
+  defp vote_opinion(%{opinion: %YouCongress.Opinions.Opinion{} = opinion}), do: opinion
+  defp vote_opinion(_), do: nil
 
   def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
     send(self(), {:put_flash, :warning, "Log in to like."})

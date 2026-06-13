@@ -29,6 +29,8 @@ defmodule YouCongressWeb.MCPServer do
   component(YouCongressWeb.MCPServer.OpinionsStatementsAdd)
   component(YouCongressWeb.MCPServer.OpinionsStatementsRemove)
   component(YouCongressWeb.MCPServer.QuotesVerify)
+  component(YouCongressWeb.MCPServer.OpinionStatementsVerify)
+  component(YouCongressWeb.MCPServer.VotesVerify)
   component(YouCongressWeb.MCPServer.VotesCreate)
   component(YouCongressWeb.MCPServer.VotesEdit)
 end

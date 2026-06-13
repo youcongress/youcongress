@@ -24,7 +24,8 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
         answer: :for,
         author_id: 12,
         author: %{name: "Ada"},
-        direct: true
+        direct: true,
+        verification_status: nil
       }
 
       with_mocks([
@@ -39,9 +40,9 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
            get_opinion: fn opts ->
              assert opts[:has_statements] == true
              assert opts[:only_quotes] == true
-             assert opts[:is_verified] == false
+             assert opts[:needs_verification] == true
              assert opts[:order_by] == [desc: :id]
-             assert opts[:preload] == [:author, :statements]
+             assert opts[:preload] == [:author, :statements, :opinion_statements]
              assert opts[:exclude_source_prefixes] == unsupported_source_prefixes()
              opinion
            end

@@ -575,7 +575,18 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
             </span>
           </dt>
           <dd class="text-gray-700">
-            Verify a quote. Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>, <code class="bg-gray-100 px-1 rounded">status</code>, <code class="bg-gray-100 px-1 rounded">comment</code>, <code class="bg-gray-100 px-1 rounded">model</code>.
+            Verify that a quote itself is authentic (really said, accurately transcribed). Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>, <code class="bg-gray-100 px-1 rounded">status</code>, <code class="bg-gray-100 px-1 rounded">comment</code>, <code class="bg-gray-100 px-1 rounded">model</code>.
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            opinion_statements_verify
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-sans text-xs font-medium">
+              any user
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Verify that a quote is exactly about a statement (relevance), independently of whether the quote is authentic. Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>, <code class="bg-gray-100 px-1 rounded">status</code>, <code class="bg-gray-100 px-1 rounded">comment</code>, <code class="bg-gray-100 px-1 rounded">model</code>.
           </dd>
         </div>
       </dl>
@@ -631,6 +642,17 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
             Edit an existing vote. Requires: <code class="bg-gray-100 px-1 rounded">author_id</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>.
             Optional: <code class="bg-gray-100 px-1 rounded">answer</code>
             (for / against / abstain).
+          </dd>
+        </div>
+        <div class="pl-4">
+          <dt class="font-mono text-sm font-semibold text-blue-700">
+            votes_verify
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-sans text-xs font-medium">
+              any user
+            </span>
+          </dt>
+          <dd class="text-gray-700">
+            Verify that a vote's answer (for / against / abstain) is correct for the statement, given the opinion it references. Requires: <code class="bg-gray-100 px-1 rounded">vote_id</code>, <code class="bg-gray-100 px-1 rounded">status</code>, <code class="bg-gray-100 px-1 rounded">comment</code>, <code class="bg-gray-100 px-1 rounded">model</code>.
           </dd>
         </div>
       </dl>

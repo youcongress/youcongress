@@ -2,6 +2,7 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Opinions
+  alias YouCongress.OpinionsStatements
   alias YouCongress.Verifications
   alias YouCongress.Halls
   import YouCongressWeb.Tools.TimeAgo
@@ -149,6 +150,15 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
     {:noreply, assign(socket, :editing_quote_id, nil)}
   end
 
+  # Relevance/vote badges update themselves optimistically; nothing else to do.
+  def handle_info({:verification_saved, _subject_type, _id}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_info({:put_flash, kind, message}, socket) do
+    {:noreply, put_flash(socket, kind, message)}
+  end
+
   defp remove_from_list(socket, id) do
     list = Enum.reject(socket.assigns.pending_quotes, &(&1.id == id))
     assign(socket, :pending_quotes, list)
@@ -204,10 +214,19 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
         # Create a map of statement_id -> vote for easy lookup
         votes_by_statement = Map.new(votes, fn vote -> {vote.statement_id, vote} end)
 
-        # Add votes to each statement
+        # Relevance join rows (statement_id -> opinion_statement) for this quote
+        opinion_statements_by_statement =
+          OpinionsStatements.get_opinion_statements_by_statement_ids(quote.id, statement_ids)
+
+        # Add votes and the relevance link to each statement
         statements_with_votes =
           Enum.map(quote.statements, fn statement ->
-            Map.put(statement, :author_vote, Map.get(votes_by_statement, statement.id))
+            statement
+            |> Map.put(:author_vote, Map.get(votes_by_statement, statement.id))
+            |> Map.put(
+              :opinion_statement,
+              Map.get(opinion_statements_by_statement, statement.id)
+            )
           end)
 
         Map.put(quote, :statements, statements_with_votes)

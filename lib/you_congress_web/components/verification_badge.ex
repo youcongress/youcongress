@@ -1,28 +1,48 @@
 defmodule YouCongressWeb.Components.VerificationBadge do
   @moduledoc """
-  A reusable LiveComponent for displaying and managing opinion verification status.
+  A reusable LiveComponent for displaying and managing a verification status.
 
-  For logged-in users, it renders a clickable badge with a dropdown to select status.
-  For non-logged-in users, it renders a static link to the FAQ.
+  It works for three independently verifiable subjects:
+
+    * `:opinion` — is the quote authentic?
+    * `:opinion_statement` — is the quote exactly about this statement?
+    * `:vote` — is the vote's answer correct for the statement?
+
+  For logged-in users with permission, it renders a clickable badge with a
+  dropdown to select a status. For everyone else, it renders a static link to
+  the FAQ.
+
+  Callers pass either the new `subject_type` + `subject` assigns, or the legacy
+  `opinion` assign (treated as `subject_type: :opinion`).
   """
 
   use YouCongressWeb, :live_component
 
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Verifications
+  alias YouCongress.OpinionStatementVerifications
+  alias YouCongress.VoteVerifications
 
   @statuses ~w(verified disputed unverifiable unverified)a
 
   def update(assigns, socket) do
+    {subject_type, subject} = resolve_subject(assigns)
+
     {:ok,
      socket
-     |> assign(:opinion, assigns.opinion)
+     |> assign(:subject_type, subject_type)
+     |> assign(:subject, subject)
      |> assign(:current_user, assigns[:current_user])
      |> assign(:class, assigns[:class] || "ml-2")
      |> assign_new(:show_dropdown, fn -> false end)
      |> assign_new(:selected_status, fn -> nil end)
      |> assign_new(:comment, fn -> "" end)}
   end
+
+  defp resolve_subject(%{subject_type: subject_type, subject: subject}),
+    do: {subject_type, subject}
+
+  defp resolve_subject(%{opinion: opinion}), do: {:opinion, opinion}
 
   def render(assigns) do
     ~H"""
@@ -31,12 +51,12 @@ defmodule YouCongressWeb.Components.VerificationBadge do
         <span
           class={[
             "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-pointer",
-            badge_classes(@opinion.verification_status)
+            badge_classes(@subject.verification_status)
           ]}
           phx-click="toggle-dropdown"
           phx-target={@myself}
         >
-          {badge_label(@opinion.verification_status)}
+          {badge_label(@subject.verification_status)}
         </span>
         <%= if @show_dropdown do %>
           <div class="absolute z-10 bottom-full mb-1 bg-white border rounded shadow-lg left-0">
@@ -46,7 +66,7 @@ defmodule YouCongressWeb.Components.VerificationBadge do
                   {badge_label(@selected_status)}
                 </div>
                 <input
-                  id={"verification-comment-#{@opinion.id}"}
+                  id={"verification-comment-#{@subject_type}-#{@subject.id}"}
                   type="text"
                   placeholder="Comment (optional)"
                   value={@comment}
@@ -74,7 +94,7 @@ defmodule YouCongressWeb.Components.VerificationBadge do
               </div>
             <% else %>
               <div class="w-40">
-                <%= for status <- statuses_for(@opinion, @current_user) do %>
+                <%= for status <- statuses_for(@subject_type, @subject, @current_user) do %>
                   <button
                     phx-click="pick-status"
                     phx-value-status={status}
@@ -96,10 +116,10 @@ defmodule YouCongressWeb.Components.VerificationBadge do
           href="/faq#verify-quotes"
           class={[
             "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium",
-            badge_classes(@opinion.verification_status)
+            badge_classes(@subject.verification_status)
           ]}
         >
-          {badge_label(@opinion.verification_status)}
+          {badge_label(@subject.verification_status)}
         </Phoenix.Component.link>
       <% end %>
     </span>
@@ -146,31 +166,23 @@ defmodule YouCongressWeb.Components.VerificationBadge do
     %{
       assigns: %{
         current_user: current_user,
-        opinion: opinion,
+        subject_type: subject_type,
+        subject: subject,
         selected_status: status,
         comment: comment
       }
-    } =
-      socket
+    } = socket
 
     comment = if comment == "", do: badge_label(status), else: comment
 
-    attrs = %{
-      opinion_id: opinion.id,
-      user_id: current_user.id,
-      status: status,
-      comment: comment,
-      model: "human"
-    }
-
-    case Verifications.create_verification(attrs) do
+    case create_verification(subject_type, subject, current_user, status, comment) do
       {:ok, _verification} ->
         cached_status = if status == :unverified, do: nil, else: status
-        updated_opinion = %{opinion | verification_status: cached_status}
-        send(self(), {:verification_saved, opinion.id})
+        updated_subject = %{subject | verification_status: cached_status}
+        send(self(), {:verification_saved, subject_type, subject.id})
 
         socket
-        |> assign(:opinion, updated_opinion)
+        |> assign(:subject, updated_subject)
         |> close_dropdown()
 
       {:error, :only_author_can_endorse} ->
@@ -183,6 +195,36 @@ defmodule YouCongressWeb.Components.VerificationBadge do
     end
   end
 
+  defp create_verification(:opinion, subject, current_user, status, comment) do
+    Verifications.create_verification(%{
+      opinion_id: subject.id,
+      user_id: current_user.id,
+      status: status,
+      comment: comment,
+      model: "human"
+    })
+  end
+
+  defp create_verification(:opinion_statement, subject, current_user, status, comment) do
+    OpinionStatementVerifications.create_verification(%{
+      opinion_statement_id: subject.id,
+      user_id: current_user.id,
+      status: status,
+      comment: comment,
+      model: "human"
+    })
+  end
+
+  defp create_verification(:vote, subject, current_user, status, comment) do
+    VoteVerifications.create_verification(%{
+      vote_id: subject.id,
+      user_id: current_user.id,
+      status: status,
+      comment: comment,
+      model: "human"
+    })
+  end
+
   defp close_dropdown(socket) do
     socket
     |> assign(:show_dropdown, false)
@@ -190,16 +232,13 @@ defmodule YouCongressWeb.Components.VerificationBadge do
     |> assign(:comment, "")
   end
 
-  defp statuses_for(opinion, current_user) do
-    base = @statuses
-
-    if opinion.author_id && current_user.author_id &&
-         opinion.author_id == current_user.author_id do
-      [:endorsed | base]
-    else
-      base
-    end
+  # Only an opinion's own author may endorse it; relevance/vote have no endorse.
+  defp statuses_for(:opinion, %{author_id: author_id}, %{author_id: author_id})
+       when not is_nil(author_id) do
+    [:endorsed | @statuses]
   end
+
+  defp statuses_for(_subject_type, _subject, _current_user), do: @statuses
 
   defp badge_classes(nil), do: "bg-gray-100 text-gray-800"
   defp badge_classes(:verified), do: "bg-green-100 text-green-800"
