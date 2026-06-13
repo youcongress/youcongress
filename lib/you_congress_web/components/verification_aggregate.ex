@@ -227,13 +227,9 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
   defp relevance_status(%{opinion_statement: %{verification_status: status}}), do: status
   defp relevance_status(_), do: nil
 
-  # The vote dimension only applies when the vote still backs the shown opinion.
-  defp vote_status(%{
-         vote: %{opinion_id: opinion_id, verification_status: status},
-         opinion: %{id: opinion_id}
-       }),
-       do: status
-
+  # The answer's correctness is a property of the vote itself, independent of
+  # which of the author's quotes is currently shown — so any present vote counts.
+  defp vote_status(%{vote: %{verification_status: status}}), do: status
   defp vote_status(_), do: nil
 
   defp row_status(assigns, :quote), do: authenticity_status(assigns)
@@ -261,9 +257,6 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
       is_nil(assigns.vote) ->
         {:disabled, "no vote"}
 
-      not votes_shown_opinion?(assigns) ->
-        {:disabled, "n/a for this quote"}
-
       not VerificationStatus.positive?(authenticity_status(assigns)) ->
         {:disabled, "verify quote first"}
 
@@ -274,11 +267,6 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
         :enabled
     end
   end
-
-  defp votes_shown_opinion?(%{vote: %{opinion_id: opinion_id}, opinion: %{id: opinion_id}}),
-    do: true
-
-  defp votes_shown_opinion?(_), do: false
 
   # The author may endorse their own quote (authenticity row only).
   defp row_options(:quote, %{opinion: opinion, current_user: %{author_id: author_id}})

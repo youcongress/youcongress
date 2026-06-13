@@ -386,6 +386,114 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert html =~ "Disputed"
     end
 
+    test "shows step-by-step verification badge and vote next to each statement", %{conn: conn} do
+      user = user_fixture(%{role: "moderator"})
+      author = author_fixture(%{name: "Quote Author"})
+      conn = log_in_user(conn, user)
+
+      statement = statement_fixture(%{title: "We should deliberate publicly"})
+
+      opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: user.id,
+          content: "A citable quote",
+          source_url: "https://example.com/source",
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: author.id,
+        opinion_id: opinion.id,
+        answer: :for
+      })
+
+      {:ok, view, html} = live(conn, ~p"/c/#{opinion.id}")
+
+      # The statement is listed with the author's vote answer
+      assert html =~ "We should deliberate publicly"
+      assert html =~ "votes For"
+
+      # The aggregate verification badge is rendered next to the statement
+      card = ~s|[data-testid="statement-verify-#{statement.id}"]|
+      assert has_element?(view, card)
+
+      # Clicking the badge reveals the step-by-step rows and lets the user verify
+      # each part (quote -> relevance -> vote) gated progressively.
+      view |> element(~s|#{card} span[phx-click="toggle-dropdown"]|) |> render_click()
+
+      btn = fn subject, status ->
+        ~s|#{card} button[phx-value-subject="#{subject}"][phx-value-status="#{status}"]|
+      end
+
+      assert has_element?(view, btn.("quote", "verified"))
+      refute has_element?(view, btn.("relevance", "verified"))
+
+      view |> element(btn.("quote", "verified")) |> render_click()
+      assert has_element?(view, btn.("relevance", "verified"))
+
+      view |> element(btn.("relevance", "verified")) |> render_click()
+      assert has_element?(view, btn.("vote", "verified"))
+    end
+
+    test "can verify the vote even when it is backed by a different quote", %{conn: conn} do
+      user = user_fixture(%{role: "moderator"})
+      author = author_fixture(%{name: "Quote Author"})
+      conn = log_in_user(conn, user)
+
+      statement = statement_fixture(%{title: "We should deliberate publicly"})
+
+      # The author's vote on the statement is backed by a primary quote...
+      primary_quote =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: user.id,
+          content: "Primary quote",
+          source_url: "https://example.com/primary",
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(primary_quote, statement.id)
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: author.id,
+        opinion_id: primary_quote.id,
+        answer: :for
+      })
+
+      # ...but we're viewing a secondary quote also linked to the statement.
+      secondary_quote =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: user.id,
+          content: "Secondary quote",
+          source_url: "https://example.com/secondary",
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(secondary_quote, statement.id)
+
+      {:ok, view, _html} = live(conn, ~p"/c/#{secondary_quote.id}")
+
+      card = ~s|[data-testid="statement-verify-#{statement.id}"]|
+
+      btn = fn subject, status ->
+        ~s|#{card} button[phx-value-subject="#{subject}"][phx-value-status="#{status}"]|
+      end
+
+      view |> element(~s|#{card} span[phx-click="toggle-dropdown"]|) |> render_click()
+      view |> element(btn.("quote", "verified")) |> render_click()
+      view |> element(btn.("relevance", "verified")) |> render_click()
+
+      # The vote row is actionable (no longer "n/a for this quote").
+      assert has_element?(view, btn.("vote", "verified"))
+      refute render(view) =~ "n/a for this quote"
+    end
+
     test "non-owner cannot edit opinion", %{conn: conn} do
       # Create two users
       owner_user = user_fixture()

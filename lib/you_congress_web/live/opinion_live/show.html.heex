@@ -41,20 +41,44 @@
   <div class="pb-2">Policy proposals and claims</div>
   <div class="bg-gray-100 rounded-md p-4 mb-6">
     <%= for statement <- @opinion.statements do %>
-      <div class="flex items-center justify-between mb-2">
-        <.link href={~p"/p/#{statement.slug}"} class="underline">
-          {statement.title}
-        </.link>
-        <%= if Permissions.can_add_opinion_to_statement?(@current_user) do %>
-          <button
-            phx-click="remove-from-statement"
-            phx-value-statement_id={statement.id}
-            data-confirm="Remove this comment from the poll?"
-            class="ml-2 text-xs text-red-600 hover:text-red-800"
+      <div class="mb-3 last:mb-0">
+        <div class="flex items-center justify-between">
+          <.link href={~p"/p/#{statement.slug}"} class="underline">
+            {statement.title}
+          </.link>
+          <%= if Permissions.can_add_opinion_to_statement?(@current_user) do %>
+            <button
+              phx-click="remove-from-statement"
+              phx-value-statement_id={statement.id}
+              data-confirm="Remove this comment from the poll?"
+              class="ml-2 text-xs text-red-600 hover:text-red-800"
+            >
+              Remove
+            </button>
+          <% end %>
+        </div>
+        <div
+          class="flex items-center gap-2 mt-1 text-sm"
+          data-testid={"statement-verify-#{statement.id}"}
+        >
+          <span
+            :if={statement.author_vote}
+            class={vote_answer_class(statement.author_vote.answer)}
           >
-            Remove
-          </button>
-        <% end %>
+            {vote_answer_label(statement.author_vote.answer)}
+          </span>
+          <%= if @opinion.source_url do %>
+            <.live_component
+              module={VerificationAggregate}
+              id={"agg-opinion-#{@opinion.id}-#{statement.id}"}
+              opinion={@opinion}
+              opinion_statement={statement.opinion_statement}
+              vote={statement.author_vote}
+              current_user={@current_user}
+              class=""
+            />
+          <% end %>
+        </div>
       </div>
     <% end %>
   </div>
