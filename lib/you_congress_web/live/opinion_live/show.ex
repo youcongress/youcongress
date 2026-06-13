@@ -10,7 +10,9 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.Track
   alias YouCongress.Delegations
   alias YouCongressWeb.OpinionLive.OpinionComponent
+  alias YouCongressWeb.Components.VerificationAggregate
   alias YouCongress.Statements
+  alias YouCongress.OpinionsStatements
   alias YouCongress.Votes
   alias YouCongress.Accounts.Permissions
   alias YouCongressWeb.SEO
@@ -351,19 +353,8 @@ defmodule YouCongressWeb.OpinionLive.Show do
     {:noreply, assign(socket, :editing_opinion_id, nil)}
   end
 
-  def handle_info({:verification_saved, :opinion, opinion_id}, socket) do
-    verifications =
-      Verifications.list_verifications(
-        opinion_id: opinion_id,
-        order_by: [desc: :updated_at],
-        preload: [user: [:author]]
-      )
-
-    {:noreply, assign(socket, :verifications, verifications)}
-  end
-
   def handle_info({:verification_saved, _subject_type, _id}, socket) do
-    {:noreply, socket}
+    {:noreply, load_opinion!(socket, socket.assigns.opinion.id)}
   end
 
   defp create_or_update_vote(_current_user, opinion, statement_id, answer) do
@@ -410,9 +401,17 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
       votes_by_statement = Map.new(votes, fn vote -> {vote.statement_id, vote} end)
 
+      opinion_statements_by_statement =
+        OpinionsStatements.get_opinion_statements_by_statement_ids(opinion.id, statement_ids)
+
       statements_with_votes =
         Enum.map(opinion.statements, fn statement ->
-          Map.put(statement, :author_vote, Map.get(votes_by_statement, statement.id))
+          statement
+          |> Map.put(:author_vote, Map.get(votes_by_statement, statement.id))
+          |> Map.put(
+            :opinion_statement,
+            Map.get(opinion_statements_by_statement, statement.id)
+          )
         end)
 
       Map.put(opinion, :statements, statements_with_votes)
@@ -466,6 +465,16 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   defp quote?(_), do: false
+
+  defp vote_answer_label(:for), do: "votes For"
+  defp vote_answer_label(:against), do: "votes Against"
+  defp vote_answer_label(:abstain), do: "abstains"
+  defp vote_answer_label(_), do: nil
+
+  defp vote_answer_class(:for), do: "text-green-800 font-semibold"
+  defp vote_answer_class(:against), do: "text-red-800 font-semibold"
+  defp vote_answer_class(:abstain), do: "text-blue-800 font-semibold"
+  defp vote_answer_class(_), do: "text-gray-800 font-semibold"
 
   # Verified quotes get a search-friendly title; plain comments and
   # replies are thin pages and get noindex.

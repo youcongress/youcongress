@@ -30,7 +30,7 @@ defmodule YouCongressWeb.Components.VerificationAggregateTest do
     # Quote row is always actionable; downstream rows point at the next step.
     assert html =~ "Quote"
     assert html =~ "Relevance"
-    assert html =~ "Answer"
+    assert html =~ "Vote"
     assert html =~ "verify quote first"
     refute html =~ "verify relevance first"
   end
