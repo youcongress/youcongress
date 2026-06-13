@@ -61,6 +61,15 @@ defmodule YouCongressWeb.PageControllerTest do
     assert html =~ "Log In to Get Started"
   end
 
+  test "GET /mcp/chatgpt shows the ChatGPT setup guide", %{conn: conn} do
+    conn = get(conn, ~p"/mcp/chatgpt")
+    html = html_response(conn, 200)
+
+    assert html =~ "Use YouCongress from ChatGPT"
+    assert html =~ "https://youcongress.org/mcp"
+    assert html =~ "Log In to Get Started"
+  end
+
   test "GET /sitemap.xml lists statement URLs", %{conn: conn} do
     statement = statement_fixture(%{title: "Transparent AI policy"})
 

@@ -78,6 +78,10 @@ defmodule YouCongressWeb.PageController do
     render(conn, :mcp_claude)
   end
 
+  def mcp_chatgpt(conn, _params) do
+    render(conn, :mcp_chatgpt)
+  end
+
   def redirect_to_questions(conn, _params) do
     conn
     |> redirect(to: ~p"/")

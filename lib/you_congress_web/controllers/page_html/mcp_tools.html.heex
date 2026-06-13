@@ -10,18 +10,26 @@
     </p>
   </section>
   
-<!-- Easy Setup for Claude Users -->
+<!-- Easy Setup for MCP Users -->
   <section class="mt-6 p-6 bg-indigo-50 rounded-lg border border-indigo-200">
-    <h2 class="text-lg font-bold text-indigo-900">New to MCP? Using Claude?</h2>
+    <h2 class="text-lg font-bold text-indigo-900">New to MCP? Pick your assistant.</h2>
     <p class="mt-2 text-indigo-800">
-      Follow our step-by-step guide to connect YouCongress to Claude in just a few clicks — no technical knowledge needed.
+      Follow a step-by-step guide to connect YouCongress to Claude or ChatGPT. Any other MCP-capable assistant can use the same endpoint below.
     </p>
-    <a
-      href="/mcp/claude"
-      class="mt-3 inline-block bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors duration-200"
-    >
-      Set up YouCongress in Claude
-    </a>
+    <div class="mt-3 flex flex-wrap gap-3">
+      <a
+        href="/mcp/claude"
+        class="inline-block bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+      >
+        Set up Claude
+      </a>
+      <a
+        href="/mcp/chatgpt"
+        class="inline-block bg-white text-indigo-700 border border-indigo-300 font-semibold py-2 px-4 rounded-lg hover:bg-indigo-100 transition-colors duration-200"
+      >
+        Set up ChatGPT
+      </a>
+    </div>
   </section>
   
 <!-- How to Connect Section -->
@@ -632,7 +640,14 @@
         Open a new chat in <.link
           href="/mcp/claude"
           class="underline text-blue-600 hover:text-blue-800"
-        >Claude</.link>, ChatGPT or other AI assistant and try pasting one of these prompts:
+        >Claude</.link>,
+        <.link
+          href="/mcp/chatgpt"
+          class="underline text-blue-600 hover:text-blue-800"
+        >
+          ChatGPT
+        </.link>
+        or another MCP-capable assistant and try pasting one of these prompts:
       </:intro>
       <:permission_notice>
         Your AI assistant will use the YouCongress tools automatically. The first time it tries to use a tool, it may ask for your permission — just click <strong>Allow</strong>.
