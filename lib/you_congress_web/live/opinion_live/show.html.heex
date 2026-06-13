@@ -18,6 +18,7 @@
     module={YouCongressWeb.OpinionEditComponent}
     id={"edit_#{@opinion.id}"}
     opinion={@opinion}
+    current_user={@current_user}
     show_content_label={false}
     show_author={true}
     show_statement_positions={true}
@@ -215,6 +216,7 @@
           module={YouCongressWeb.OpinionEditComponent}
           id={"edit_#{child_opinion.id}"}
           opinion={child_opinion}
+          current_user={@current_user}
           show_content_label={false}
           show_author={true}
           show_statement_positions={false}

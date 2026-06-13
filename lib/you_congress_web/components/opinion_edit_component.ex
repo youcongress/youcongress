@@ -6,6 +6,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
 
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.Accounts.Permissions
   alias YouCongress.Votes
 
   @impl true
@@ -91,29 +92,34 @@ defmodule YouCongressWeb.OpinionEditComponent do
 
     opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :statements])
 
-    case Opinions.update_opinion(opinion, opinion_params) do
-      {:ok, updated_opinion} ->
-        # Update votes if they were changed (only for full form mode)
-        if socket.assigns[:show_statement_positions] do
-          update_author_votes(params, opinion)
-        end
+    if Permissions.can_edit_opinion?(opinion, socket.assigns[:current_user]) do
+      case Opinions.update_opinion(opinion, opinion_params) do
+        {:ok, updated_opinion} ->
+          # Update votes if they were changed (only for full form mode)
+          if socket.assigns[:show_statement_positions] do
+            update_author_votes(params, opinion)
+          end
 
-        # If author was changed, update the associated votes' author_id
-        if socket.assigns.selected_author_id &&
-             socket.assigns.selected_author_id != opinion.author_id do
-          Votes.update_author_for_opinion_votes(opinion.id, socket.assigns.selected_author_id)
-        end
+          # If author was changed, update the associated votes' author_id
+          if socket.assigns.selected_author_id &&
+               socket.assigns.selected_author_id != opinion.author_id do
+            Votes.update_author_for_opinion_votes(opinion.id, socket.assigns.selected_author_id)
+          end
 
-        # Send success message to parent
-        send(self(), {:opinion_updated, updated_opinion})
+          # Send success message to parent
+          send(self(), {:opinion_updated, updated_opinion})
 
-        {:noreply, socket}
+          {:noreply, socket}
 
-      {:error, changeset} ->
-        # Send error message to parent
-        send(self(), {:opinion_update_error, changeset})
+        {:error, changeset} ->
+          # Send error message to parent
+          send(self(), {:opinion_update_error, changeset})
 
-        {:noreply, assign(socket, :form, to_form(changeset))}
+          {:noreply, assign(socket, :form, to_form(changeset))}
+      end
+    else
+      send(self(), {:opinion_update_forbidden, opinion.id})
+      {:noreply, socket}
     end
   end
 

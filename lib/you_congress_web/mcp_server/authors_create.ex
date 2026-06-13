@@ -38,7 +38,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsCreate do
 
   @impl true
   def execute(params, frame) do
-    user_result = ToolUsageTracker.track(__MODULE__, frame)
+    user_result = ToolUsageTracker.track(__MODULE__, frame, required_scope: :write)
 
     attrs =
       params

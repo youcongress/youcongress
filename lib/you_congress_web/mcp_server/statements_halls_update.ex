@@ -32,7 +32,7 @@ defmodule YouCongressWeb.MCPServer.StatementsHallsUpdate do
   @impl true
   def execute(%{statement_id: statement_id} = params, frame) do
     other_input = Map.get(params, :other_halls) || Map.get(params, :halls)
-    user_result = ToolUsageTracker.track(__MODULE__, frame)
+    user_result = ToolUsageTracker.track(__MODULE__, frame, required_scope: :write)
 
     with {:ok, main_hall} <- normalize_main_hall(Map.get(params, :main_hall)),
          other_halls <- normalize_other_halls(other_input),

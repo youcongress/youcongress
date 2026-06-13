@@ -6,7 +6,7 @@ defmodule YouCongress.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @user_roles ["user", "creator", "admin"]
+  @user_roles ["user", "creator", "moderator", "admin", "spam", "blocked", "waiting_list"]
 
   schema "users" do
     field :email, :string

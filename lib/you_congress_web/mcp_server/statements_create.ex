@@ -28,7 +28,7 @@ defmodule YouCongressWeb.MCPServer.StatementsCreate do
 
   @impl true
   def execute(%{title: title, nice_slug: nice_slug}, frame) do
-    user_result = ToolUsageTracker.track(__MODULE__, frame)
+    user_result = ToolUsageTracker.track(__MODULE__, frame, required_scope: :write)
 
     with {:ok, user} <- user_result,
          :ok <- ensure_permission(user),
