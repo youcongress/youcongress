@@ -11,6 +11,7 @@ defmodule YouCongressWeb.HomeLiveTest do
 
   alias YouCongress.Halls
   alias YouCongress.HallsStatements.HallStatement
+  alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Repo
   alias YouCongress.Votes.Vote
@@ -115,6 +116,58 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ "Timestamped opinion content"
       assert html =~ "added 1h ago"
       refute html =~ "added 13d ago"
+    end
+
+    test "lets visitors switch between an author's sourced quotes on the feed", %{conn: conn} do
+      statement =
+        statement_fixture(title: "Multi quote feed statement")
+        |> add_statement_to_ai_hall()
+
+      fill_statement_with_quotes(statement.id, 9)
+
+      author = author_fixture()
+
+      older_opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Older feed quote",
+          source_url: "https://example.com/feed-older",
+          year: 2023
+        })
+
+      newer_opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Newer feed quote",
+          source_url: "https://example.com/feed-newer",
+          year: 2024
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(older_opinion, statement.id)
+      {:ok, _} = Opinions.add_opinion_to_statement(newer_opinion, statement.id)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: newer_opinion.id,
+          answer: :for
+        })
+
+      {:ok, view, html} = live(conn, ~p"/")
+
+      assert html =~ statement.title
+      assert html =~ "Newer feed quote"
+      refute html =~ "Older feed quote"
+      assert has_element?(view, "[data-testid='quote-position-#{vote.id}']", "1 of 2")
+
+      view
+      |> element("[data-testid='vote-card-#{vote.id}'] button[aria-label='Next quote']")
+      |> render_click()
+
+      html = render(view)
+      assert html =~ "Older feed quote"
+      assert has_element?(view, "[data-testid='quote-position-#{vote.id}']", "2 of 2")
     end
 
     test "renders home feed profile images as square non-shrinking circles", %{conn: conn} do
