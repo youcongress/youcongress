@@ -32,7 +32,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsEdit do
   @impl true
   def execute(%{opinion_id: opinion_id} = params, frame) do
     attrs = attrs_from_params(params)
-    user_result = ToolUsageTracker.track(__MODULE__, frame)
+    user_result = ToolUsageTracker.track(__MODULE__, frame, required_scope: :write)
 
     with :ok <- ensure_attrs_present(attrs),
          {:ok, user} <- user_result,

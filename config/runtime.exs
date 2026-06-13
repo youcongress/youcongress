@@ -68,10 +68,31 @@ if config_env() == :prod do
       For example: ecto://USER:PASS@HOST/DATABASE
       """
 
+  database_ssl_opts =
+    if System.get_env("DATABASE_SSL_VERIFY", "true") == "false" do
+      [verify: :verify_none]
+    else
+      ssl_opts = [
+        verify: :verify_peer,
+        cacertfile: CAStore.file_path(),
+        customize_hostname_check: [
+          match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+        ]
+      ]
+
+      case URI.parse(database_url).host do
+        host when is_binary(host) ->
+          Keyword.put(ssl_opts, :server_name_indication, String.to_charlist(host))
+
+        _ ->
+          ssl_opts
+      end
+    end
+
   config :you_congress, YouCongress.Repo,
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    ssl: [verify: :verify_none]
+    ssl: database_ssl_opts
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

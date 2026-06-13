@@ -157,7 +157,6 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through([:browser])
 
-    get("/log_out", UserSessionController, :delete)
     delete("/log_out", UserSessionController, :delete)
     post("/users/live_login", UserSessionController, :live_login)
     get("/users/confirm/:token", UserConfirmationController, :confirm)

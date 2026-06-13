@@ -107,7 +107,7 @@
             <tr>
               <td class="px-4 py-3 font-medium">{api_key.name}</td>
               <td class="px-4 py-3">{human_scope(api_key.scope)}</td>
-              <td class="px-4 py-3 font-mono text-xs">{masked_token(api_key.token)}</td>
+              <td class="px-4 py-3 font-mono text-xs">{masked_token(api_key)}</td>
               <td class="px-4 py-3 text-zinc-500">
                 {Calendar.strftime(api_key.inserted_at, "%Y-%m-%d %H:%M")}
               </td>

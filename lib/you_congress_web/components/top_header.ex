@@ -44,7 +44,11 @@ defmodule YouCongressWeb.TopHeaderComponent do
             >
               Profile
             </.link>
-            <.link href={~p"/log_out"} class="px-3 py-2 hover:text-zinc-700 transition-colors">
+            <.link
+              href={~p"/log_out"}
+              method="delete"
+              class="px-3 py-2 hover:text-zinc-700 transition-colors"
+            >
               Log out
             </.link>
           <% else %>
@@ -76,6 +80,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
               </.link>
               <.link
                 href={~p"/log_out"}
+                method="delete"
                 class="px-1 py-3 text-zinc-600 hover:text-zinc-800 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
               >
                 Logout

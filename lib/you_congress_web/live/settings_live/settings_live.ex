@@ -1,10 +1,8 @@
 defmodule YouCongressWeb.SettingsLive do
   use YouCongressWeb, :live_view
 
+  alias YouCongress.Accounts.ApiKey
   alias YouCongress.{Accounts, Authors, Countries}
-
-  @profile_location_keys ["country", "country_id", "location", :country, :country_id, :location]
-  @country_id_keys ["country_id", :country_id]
 
   @impl true
   def mount(_params, session, socket) do
@@ -15,26 +13,38 @@ defmodule YouCongressWeb.SettingsLive do
       |> assign_profile_author()
       |> assign_country_options()
 
-    changeset = Authors.change_author(socket.assigns.profile_author)
+    changeset =
+      Authors.change_profile_author(
+        socket.assigns.profile_author,
+        profile_allowed_fields(socket.assigns.current_user)
+      )
+
     {:ok, assign_form(socket, changeset)}
   end
 
   @impl true
   def handle_event("validate", %{"author" => author_params}, socket) do
-    author_params = drop_profile_location_params(author_params, socket)
+    author_params = profile_author_params(author_params, socket)
 
     changeset =
       author(socket)
-      |> Authors.change_author(author_params)
+      |> Authors.change_profile_author(
+        author_params,
+        profile_allowed_fields(socket.assigns.current_user)
+      )
       |> Map.put(:action, :validate)
 
     {:noreply, assign_form(socket, changeset)}
   end
 
   def handle_event("save", %{"author" => author_params}, socket) do
-    author_params = drop_profile_location_params(author_params, socket)
+    author_params = profile_author_params(author_params, socket)
 
-    case Authors.update_author(author(socket), author_params) do
+    case Authors.update_profile_author(
+           author(socket),
+           author_params,
+           profile_allowed_fields(socket.assigns.current_user)
+         ) do
       {:ok, author} ->
         {:noreply,
          socket
@@ -102,18 +112,26 @@ defmodule YouCongressWeb.SettingsLive do
 
   defp author(socket), do: socket.assigns.profile_author
 
-  defp drop_profile_location_params(params, socket) when is_map(params) do
-    keys =
-      if phone_location_locked?(socket.assigns.current_user) do
-        @profile_location_keys
-      else
-        # Users without a verified phone can pick their country from the dropdown
-        @profile_location_keys -- @country_id_keys
-      end
+  defp profile_author_params(params, socket) when is_map(params) do
+    allowed_fields = profile_allowed_fields(socket.assigns.current_user)
+    allowed_keys = allowed_fields ++ Enum.map(allowed_fields, &Atom.to_string/1)
 
-    Enum.reduce(keys, params, fn key, params ->
-      Map.delete(params, key)
-    end)
+    Map.take(params, allowed_keys)
+  end
+
+  defp profile_allowed_fields(current_user) do
+    current_user
+    |> profile_text_fields()
+    |> maybe_allow_country(current_user)
+  end
+
+  defp profile_text_fields(%{hashed_password: hashed_password}) when not is_nil(hashed_password),
+    do: [:name, :bio]
+
+  defp profile_text_fields(_current_user), do: []
+
+  defp maybe_allow_country(fields, current_user) do
+    if phone_location_locked?(current_user), do: fields, else: [:country_id | fields]
   end
 
   defp phone_location_locked?(%{phone_number_confirmed_at: confirmed_at}),
@@ -132,6 +150,8 @@ defmodule YouCongressWeb.SettingsLive do
     |> String.capitalize()
   end
 
+  defp masked_token(%ApiKey{token: token}) when is_binary(token), do: masked_token(token)
+  defp masked_token(%ApiKey{token_prefix: prefix}) when is_binary(prefix), do: "#{prefix}..."
   defp masked_token(nil), do: ""
 
   defp masked_token(token) do

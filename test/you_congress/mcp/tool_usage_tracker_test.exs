@@ -55,6 +55,31 @@ defmodule YouCongress.MCP.ToolUsageTrackerTest do
         assert opts[:device_id] == "session-123"
       end
     end
+
+    test "rejects read-only API keys when write scope is required" do
+      user = user_fixture()
+
+      {:ok, api_key} =
+        Accounts.create_api_key_for_user(user, %{"name" => "Read only", "scope" => :read})
+
+      frame = build_frame(%{"key" => api_key.token})
+
+      with_mock YouCongress.Amplitude,
+        track_event: fn event_type, user_id, props, opts ->
+          send(self(), {:event, event_type, user_id, props, opts})
+          :ok
+        end do
+        assert {:error, :invalid_api_key} =
+                 ToolUsageTracker.track(YouCongressWeb.MCPServer.StatementsCreate, frame,
+                   required_scope: :write
+                 )
+
+        assert_received {:event, "MCP Tool Used", nil, props, opts}
+        refute props["used_api_key"]
+        assert props["api_key_present"]
+        assert opts[:device_id] == "session-123"
+      end
+    end
   end
 
   defp build_frame(query_params) do
