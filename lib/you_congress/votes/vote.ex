@@ -14,11 +14,15 @@ defmodule YouCongress.Votes.Vote do
     field :twin, :boolean, default: false
     field :answer, Ecto.Enum, values: [:for, :against, :abstain]
 
+    field :verification_status, Ecto.Enum,
+      values: [:verified, :ai_verified, :ai_unverifiable, :endorsed, :disputed, :unverifiable]
+
     belongs_to :author, Author
     belongs_to :statement, Statement
     # opinion_id links to the main opinion
     # authors can have more than one opinion per statement, but at the moment we only display one
     belongs_to :opinion, Opinion
+    has_many :verifications, YouCongress.VoteVerifications.VoteVerification
     field :alternate_opinions, {:array, :map}, virtual: true, default: []
 
     timestamps()
@@ -43,7 +47,8 @@ defmodule YouCongress.Votes.Vote do
       :author_id,
       :statement_id,
       :answer,
-      :opinion_id
+      :opinion_id,
+      :verification_status
     ])
     |> validate_required([:author_id, :statement_id])
     |> unique_constraint([:author_id, :statement_id])

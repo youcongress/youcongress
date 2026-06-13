@@ -33,6 +33,26 @@ defmodule YouCongress.OpinionsStatements do
   def get_opinions_by_statement_ids([], _), do: %{}
 
   @doc """
+  Fetches the join row linking an opinion to a statement, or nil.
+  """
+  def get_opinion_statement(opinion_id, statement_id) do
+    Repo.get_by(OpinionStatement, opinion_id: opinion_id, statement_id: statement_id)
+  end
+
+  @doc """
+  Returns a map of `{statement_id => %OpinionStatement{}}` for one opinion across
+  the given statement_ids.
+  """
+  def get_opinion_statements_by_statement_ids(opinion_id, statement_ids)
+      when is_list(statement_ids) do
+    from(os in OpinionStatement,
+      where: os.opinion_id == ^opinion_id and os.statement_id in ^statement_ids
+    )
+    |> Repo.all()
+    |> Map.new(fn os -> {os.statement_id, os} end)
+  end
+
+  @doc """
   Creates an opinion statement.
 
   ## Examples

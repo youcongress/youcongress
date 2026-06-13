@@ -349,7 +349,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
         })
 
       # Send the message that the badge would send
-      send(view.pid, {:verification_saved, opinion.id})
+      send(view.pid, {:verification_saved, :opinion, opinion.id})
 
       html = render(view)
       assert html =~ "Verification History"

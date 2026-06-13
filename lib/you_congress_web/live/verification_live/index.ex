@@ -56,7 +56,7 @@ defmodule YouCongressWeb.VerificationLive.Index do
     {:noreply, socket}
   end
 
-  def handle_info({:verification_saved, _opinion_id}, socket) do
+  def handle_info({:verification_saved, _subject_type, _id}, socket) do
     {:noreply, load_cards(socket, 1)}
   end
 

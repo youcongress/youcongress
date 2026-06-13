@@ -759,10 +759,23 @@ defmodule YouCongress.Votes do
   defp maybe_refresh_vote_side_effects_after_update({:ok, %Vote{} = updated_vote} = result, vote) do
     maybe_enqueue_direct_vote_deleguee_refresh(vote, updated_vote)
     maybe_restore_delegated_vote_after_direct_vote_removal(vote, updated_vote)
+    maybe_refresh_vote_verification_status(vote, updated_vote)
     result
   end
 
   defp maybe_refresh_vote_side_effects_after_update(result, _vote), do: result
+
+  # When a vote starts pointing at a different opinion, its prior verifications
+  # no longer apply. Recomputing scopes the cached status to the new opinion.
+  defp maybe_refresh_vote_verification_status(
+         %Vote{opinion_id: old_opinion_id},
+         %Vote{opinion_id: new_opinion_id, id: id}
+       )
+       when old_opinion_id != new_opinion_id do
+    YouCongress.VoteVerifications.update_vote_verification_status(id)
+  end
+
+  defp maybe_refresh_vote_verification_status(_vote, _updated_vote), do: :ok
 
   defp refresh_vote_side_effects_after_delete(vote) do
     maybe_enqueue_direct_vote_deleguee_refresh(vote)
