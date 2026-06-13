@@ -299,6 +299,37 @@ defmodule YouCongress.Opinions do
     |> Enum.group_by(& &1.author_id)
   end
 
+  def list_sourced_statement_opinions_by_statement_and_author(statement_ids, author_ids)
+      when is_list(statement_ids) and is_list(author_ids) do
+    statement_ids = statement_ids |> Enum.reject(&is_nil/1) |> Enum.uniq()
+    author_ids = author_ids |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+    if statement_ids == [] or author_ids == [] do
+      %{}
+    else
+      from(o in Opinion,
+        join: os in "opinions_statements",
+        on: os.opinion_id == o.id,
+        where:
+          os.statement_id in ^statement_ids and o.author_id in ^author_ids and
+            not is_nil(o.source_url),
+        order_by: [
+          asc: os.statement_id,
+          asc: o.author_id,
+          desc_nulls_last: o.year,
+          desc: o.id
+        ],
+        preload: [:author],
+        select: {os.statement_id, o}
+      )
+      |> Repo.all()
+      |> Enum.group_by(
+        fn {statement_id, opinion} -> {statement_id, opinion.author_id} end,
+        fn {_statement_id, opinion} -> opinion end
+      )
+    end
+  end
+
   defp build_query(opts) do
     base_query = from(o in Opinion)
 

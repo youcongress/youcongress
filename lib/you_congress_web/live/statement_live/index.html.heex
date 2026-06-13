@@ -210,6 +210,7 @@
                         show_vote={true}
                         show_opinion={true}
                         liked={vote.opinion && vote.opinion.id in @liked_opinion_ids}
+                        liked_opinion_ids={@liked_opinion_ids}
                         delegating?={vote.author_id in @delegate_ids}
                         delegable={true}
                         regenerating_opinion_id={nil}
