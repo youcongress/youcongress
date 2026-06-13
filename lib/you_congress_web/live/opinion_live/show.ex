@@ -351,7 +351,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
     {:noreply, assign(socket, :editing_opinion_id, nil)}
   end
 
-  def handle_info({:verification_saved, opinion_id}, socket) do
+  def handle_info({:verification_saved, :opinion, opinion_id}, socket) do
     verifications =
       Verifications.list_verifications(
         opinion_id: opinion_id,
@@ -360,6 +360,10 @@ defmodule YouCongressWeb.OpinionLive.Show do
       )
 
     {:noreply, assign(socket, :verifications, verifications)}
+  end
+
+  def handle_info({:verification_saved, _subject_type, _id}, socket) do
+    {:noreply, socket}
   end
 
   defp create_or_update_vote(_current_user, opinion, statement_id, answer) do

@@ -8,6 +8,7 @@ defmodule YouCongress.Verifications do
 
   alias YouCongress.Verifications.Verification
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.VerificationStatus
 
   def list_verifications(opts \\ []) do
     query = build_query(opts)
@@ -35,41 +36,9 @@ defmodule YouCongress.Verifications do
   end
 
   def update_opinion_verification_status(opinion_id) do
-    latest_human_status =
-      from(v in Verification,
-        where: v.opinion_id == ^opinion_id and v.model == "human",
-        order_by: [desc: v.updated_at, desc: v.id],
-        limit: 1,
-        select: v.status
-      )
-      |> Repo.one()
-
     cached_status =
-      case latest_human_status do
-        nil ->
-          # No human verification — fall back to latest AI verification
-          latest_ai_status =
-            from(v in Verification,
-              where: v.opinion_id == ^opinion_id and v.model != "human",
-              order_by: [desc: v.updated_at, desc: v.id],
-              limit: 1,
-              select: v.status
-            )
-            |> Repo.one()
-
-          case latest_ai_status do
-            :ai_verified -> :ai_verified
-            :unverified -> nil
-            nil -> nil
-            status -> status
-          end
-
-        :unverified ->
-          nil
-
-        status ->
-          status
-      end
+      from(v in Verification, where: v.opinion_id == ^opinion_id)
+      |> VerificationStatus.resolve()
 
     from(o in Opinion, where: o.id == ^opinion_id)
     |> Repo.update_all(set: [verification_status: cached_status])

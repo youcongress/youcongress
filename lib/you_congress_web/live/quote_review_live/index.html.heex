@@ -72,21 +72,43 @@
               <%= if quote.statements && quote.statements != [] do %>
                 · In
                 <%= for statement <- quote.statements do %>
-                  <a href={~p"/p/#{statement.slug}"} class="text-indigo-600 hover:underline">
-                    {statement.title}
-                  </a>
-                  <%= if statement.author_vote && statement.author_vote.answer do %>
-                    <span class={[
-                      "ml-1 px-2 py-0.5 text-xs font-medium rounded-full",
-                      get_vote_style(statement.author_vote.answer)
-                    ]}>
-                      {statement.author_vote.answer |> Atom.to_string() |> String.capitalize()}
-                    </span>
-                  <% else %>
-                    <span class="ml-1 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
-                      No position
-                    </span>
-                  <% end %>
+                  <span class="inline-flex flex-wrap items-center gap-1">
+                    <a href={~p"/p/#{statement.slug}"} class="text-indigo-600 hover:underline">
+                      {statement.title}
+                    </a>
+                    <%= if statement.opinion_statement do %>
+                      <span class="text-xs text-gray-400">relevance</span>
+                      <.live_component
+                        module={YouCongressWeb.Components.VerificationBadge}
+                        id={"relevance-#{quote.id}-#{statement.opinion_statement.id}"}
+                        subject_type={:opinion_statement}
+                        subject={statement.opinion_statement}
+                        current_user={@current_user}
+                        class=""
+                      />
+                    <% end %>
+                    <%= if statement.author_vote && statement.author_vote.answer do %>
+                      <span class={[
+                        "px-2 py-0.5 text-xs font-medium rounded-full",
+                        get_vote_style(statement.author_vote.answer)
+                      ]}>
+                        {statement.author_vote.answer |> Atom.to_string() |> String.capitalize()}
+                      </span>
+                      <span class="text-xs text-gray-400">answer</span>
+                      <.live_component
+                        module={YouCongressWeb.Components.VerificationBadge}
+                        id={"vote-#{quote.id}-#{statement.author_vote.id}"}
+                        subject_type={:vote}
+                        subject={statement.author_vote}
+                        current_user={@current_user}
+                        class=""
+                      />
+                    <% else %>
+                      <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                        No position
+                      </span>
+                    <% end %>
+                  </span>
                   {if statement != List.last(quote.statements), do: ", "}
                 <% end %>
               <% end %>

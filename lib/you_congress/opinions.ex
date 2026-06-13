@@ -432,6 +432,21 @@ defmodule YouCongress.Opinions do
       {:is_verified, false}, query ->
         from q in query, where: is_nil(q.verification_status)
 
+      {:needs_verification, true}, query ->
+        # Any of the three dimensions still pending: the quote's own authenticity,
+        # the relevance of any of its statement links, or any of its votes' answers.
+        from q in query,
+          where:
+            is_nil(q.verification_status) or
+              fragment(
+                "EXISTS (SELECT 1 FROM opinions_statements os WHERE os.opinion_id = ? AND os.verification_status IS NULL)",
+                q.id
+              ) or
+              fragment(
+                "EXISTS (SELECT 1 FROM votes v WHERE v.opinion_id = ? AND v.verification_status IS NULL)",
+                q.id
+              )
+
       {:preload, preloads}, query ->
         from q in query, preload: ^preloads
 

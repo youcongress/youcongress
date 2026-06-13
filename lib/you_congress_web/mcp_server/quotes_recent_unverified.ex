@@ -31,10 +31,11 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
 
       opinion ->
         votes = votes_by_statement(opinion)
+        relevance = relevance_by_statement(opinion)
 
         data = %{
           quote: serialize_quote(opinion),
-          statements: serialize_statements(opinion, votes)
+          statements: serialize_statements(opinion, votes, relevance)
         }
 
         {:reply, Response.json(Response.tool(), data), frame}
@@ -45,9 +46,9 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
     opts = [
       has_statements: true,
       only_quotes: true,
-      is_verified: false,
+      needs_verification: true,
       order_by: [desc: :id],
-      preload: [:author, :statements],
+      preload: [:author, :statements, :opinion_statements],
       exclude_source_prefixes: @unsupported_source_prefixes
     ]
 
@@ -60,6 +61,15 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
       Map.put(acc, vote.statement_id, vote)
     end)
   end
+
+  defp relevance_by_statement(%{opinion_statements: opinion_statements})
+       when is_list(opinion_statements) do
+    Enum.reduce(opinion_statements, %{}, fn os, acc ->
+      Map.put(acc, os.statement_id, os.verification_status || :unverified)
+    end)
+  end
+
+  defp relevance_by_statement(_), do: %{}
 
   defp serialize_quote(opinion) do
     %{
@@ -77,7 +87,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
   defp verification_status(%{verification_status: nil}), do: :unverified
   defp verification_status(%{verification_status: status}), do: status
 
-  defp serialize_statements(opinion, vote_map) do
+  defp serialize_statements(opinion, vote_map, relevance_map) do
     opinion.statements
     |> Enum.sort_by(& &1.id)
     |> Enum.map(fn statement ->
@@ -86,6 +96,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
       %{
         statement_id: statement.id,
         statement_title: statement.title,
+        relevance_status: Map.get(relevance_map, statement.id, :unverified),
         vote: serialize_vote(vote)
       }
     end)
@@ -99,7 +110,8 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
       answer: vote.answer,
       author_id: vote.author_id,
       author_name: vote.author && vote.author.name,
-      direct: vote.direct
+      direct: vote.direct,
+      verification_status: vote.verification_status || :unverified
     }
   end
 end
