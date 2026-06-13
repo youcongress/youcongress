@@ -242,7 +242,9 @@ defmodule YouCongressWeb.AuthorLive.Show do
       without_opinion: false
     ]
 
-    Votes.list_votes(args)
+    args
+    |> Votes.list_votes()
+    |> Votes.with_alternate_sourced_opinions()
   end
 
   defp load_votes(author_id, false, hall_name) do
@@ -261,7 +263,9 @@ defmodule YouCongressWeb.AuthorLive.Show do
           without_opinion: false
         ]
 
-        Votes.list_votes(args)
+        args
+        |> Votes.list_votes()
+        |> Votes.with_alternate_sourced_opinions()
     end
   end
 
@@ -273,7 +277,9 @@ defmodule YouCongressWeb.AuthorLive.Show do
       without_opinion: false
     ]
 
-    Votes.list_votes(args)
+    args
+    |> Votes.list_votes()
+    |> Votes.with_alternate_sourced_opinions()
   end
 
   defp load_votes(author_id, true, hall_name) do
@@ -292,7 +298,9 @@ defmodule YouCongressWeb.AuthorLive.Show do
           without_opinion: false
         ]
 
-        Votes.list_votes(args)
+        args
+        |> Votes.list_votes()
+        |> Votes.with_alternate_sourced_opinions()
     end
   end
 end

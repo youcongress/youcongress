@@ -6,6 +6,7 @@ defmodule YouCongress.Statements.StatementQueries do
   import Ecto.Query, warn: false
   alias YouCongress.Repo
 
+  alias YouCongress.Votes
   alias YouCongress.Votes.Vote
   alias YouCongress.Statements.Statement
   alias YouCongress.Statements.OpinionCard
@@ -418,6 +419,7 @@ defmodule YouCongress.Statements.StatementQueries do
       |> where([v], v.id in ^vote_ids)
       |> preload([:author, opinion: [:author]])
       |> Repo.all()
+      |> Votes.with_alternate_sourced_opinions()
       |> Map.new(&{&1.id, &1})
 
     Enum.reduce(results, %{}, fn {statement_id, answer, vote_id}, acc ->
