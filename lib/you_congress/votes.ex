@@ -90,6 +90,10 @@ defmodule YouCongress.Votes do
               desc: v.answer
             ]
 
+        {:order_by_recent_opinions_first, true}, query ->
+          from [_v, _a, o] in query,
+            order_by: [desc_nulls_last: o.year, desc: o.id]
+
         {:limit, limit}, query ->
           limit(query, ^limit)
 
