@@ -7,6 +7,9 @@ defmodule YouCongressWeb.AuthorLiveTest do
   import YouCongress.AccountsFixtures
   import YouCongress.VotesFixtures
   import YouCongress.StatementsFixtures
+  import YouCongress.OpinionsFixtures
+
+  alias YouCongress.Opinions
 
   @create_attrs %{
     bio: "some bio",
@@ -97,6 +100,54 @@ defmodule YouCongressWeb.AuthorLiveTest do
       assert has_element?(show_live, "img[src='/images/wikipedia.svg'][alt='Wikipedia']")
       refute html =~ "X: @#{author.twitter_username}"
       refute has_element?(show_live, "a", "Wikipedia")
+    end
+
+    test "lets visitors switch between an author's sourced quotes for a statement", %{conn: conn} do
+      twitter_username = "multi_quote_author_#{System.unique_integer([:positive])}"
+      author = author_fixture(%{twitter_username: twitter_username})
+      statement = statement_fixture(title: "Author multi quote statement")
+
+      older_opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Older author page quote",
+          source_url: "https://example.com/author-older",
+          year: 2023
+        })
+
+      newer_opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Newer author page quote",
+          source_url: "https://example.com/author-newer",
+          year: 2024
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(older_opinion, statement.id)
+      {:ok, _} = Opinions.add_opinion_to_statement(newer_opinion, statement.id)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: newer_opinion.id,
+          answer: :for
+        })
+
+      {:ok, view, html} = live(conn, ~p"/x/#{twitter_username}")
+
+      assert html =~ statement.title
+      assert html =~ "Newer author page quote"
+      refute html =~ "Older author page quote"
+      assert has_element?(view, "[data-testid='quote-position-#{vote.id}']", "1 of 2")
+
+      view
+      |> element("[data-testid='vote-card-#{vote.id}'] button[aria-label='Next quote']")
+      |> render_click()
+
+      html = render(view)
+      assert html =~ "Older author page quote"
+      assert has_element?(view, "[data-testid='quote-position-#{vote.id}']", "2 of 2")
     end
 
     test "updates author within modal", %{conn: conn, author: author} do

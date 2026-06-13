@@ -178,6 +178,39 @@ defmodule YouCongress.Votes do
     |> with_alternate_sourced_opinions(statement_id)
   end
 
+  def with_alternate_sourced_opinions([]), do: []
+
+  def with_alternate_sourced_opinions(votes) when is_list(votes) do
+    sourced_votes = Enum.filter(votes, &sourced_opinion_vote?/1)
+
+    statement_ids =
+      sourced_votes
+      |> Enum.map(& &1.statement_id)
+      |> Enum.uniq()
+
+    author_ids =
+      sourced_votes
+      |> Enum.map(& &1.author_id)
+      |> Enum.uniq()
+
+    opinions_by_statement_author =
+      Opinions.list_sourced_statement_opinions_by_statement_and_author(statement_ids, author_ids)
+
+    Enum.map(votes, fn vote ->
+      if sourced_opinion_vote?(vote) do
+        alternate_opinions =
+          vote
+          |> ordered_alternate_opinions(
+            Map.get(opinions_by_statement_author, {vote.statement_id, vote.author_id}, [])
+          )
+
+        Map.put(vote, :alternate_opinions, alternate_opinions)
+      else
+        vote
+      end
+    end)
+  end
+
   defp with_alternate_sourced_opinions([], _statement_id), do: []
 
   defp with_alternate_sourced_opinions(votes, statement_id) do
