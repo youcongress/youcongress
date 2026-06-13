@@ -22,7 +22,13 @@ if config_env() == :dev and !System.get_env("OPENAI_API_KEY") do
   config :you_congress,
          :author_country_inference_implementation,
          YouCongress.Authors.CountryInferenceFake
+
+  config :you_congress, :quote_verifier_implementation, YouCongress.Verifications.VerifierFake
 end
+
+# The admin/moderator user that owns AI-generated verifications. Without it, the
+# verification workers log and no-op.
+config :you_congress, :verification_user_id, System.get_env("VERIFICATION_USER_ID")
 
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
