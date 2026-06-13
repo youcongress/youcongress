@@ -90,7 +90,8 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
            Opinions.create_opinion(%{
              content: quote_data["quote"],
              source_url: quote_data["source_url"],
-             year: parse_year(quote_data["year"]),
+             date: quote_date(quote_data),
+             date_precision: quote_date_precision(quote_data),
              author_id: author.id,
              twin: false,
              statement_id: statement_id
@@ -171,16 +172,24 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
     end
   end
 
-  defp parse_year(nil), do: nil
-  defp parse_year(""), do: nil
-  defp parse_year(year) when is_integer(year), do: year
+  defp quote_date(%{"date" => date}) when date not in [nil, ""], do: date
+  defp quote_date(%{"year" => year}) when year not in [nil, ""], do: year
+  defp quote_date(_quote_data), do: nil
 
-  defp parse_year(year) when is_binary(year) do
-    case Integer.parse(year) do
-      {y, _} -> y
-      :error -> nil
+  defp quote_date_precision(%{"date_precision" => precision}) when precision not in [nil, ""],
+    do: precision
+
+  defp quote_date_precision(%{"date" => date}) when is_binary(date) do
+    cond do
+      Regex.match?(~r/^\d{4}$/, date) -> "year"
+      Regex.match?(~r/^\d{4}-\d{2}$/, date) -> "month"
+      Regex.match?(~r/^\d{4}-\d{2}-\d{2}$/, date) -> "day"
+      true -> nil
     end
   end
+
+  defp quote_date_precision(%{"year" => year}) when year not in [nil, ""], do: "year"
+  defp quote_date_precision(_quote_data), do: nil
 
   defp associate_opinion_with_statement(%Opinion{} = opinion, statement_id, user_id) do
     statement = Statements.get_statement!(statement_id)

@@ -776,25 +776,27 @@ defmodule YouCongressWeb.StatementLiveTest do
     } do
       author = author_fixture(%{name: "Multiple Quote Author"})
 
-      higher_year_quote =
+      newer_quote =
         opinion_fixture(%{
           author_id: author.id,
-          content: "Higher year sourced quote text",
-          source_url: "https://example.com/higher-year-quote",
-          year: 2025,
+          content: "Newer sourced quote text",
+          source_url: "https://example.com/newer-quote",
+          date: ~D[2025-01-01],
+          date_precision: :year,
           twin: false
         })
 
       current_quote =
         opinion_fixture(%{
           author_id: author.id,
-          content: "Active lower year sourced quote text",
-          source_url: "https://example.com/lower-year-quote",
-          year: 2020,
+          content: "Active older sourced quote text",
+          source_url: "https://example.com/older-quote",
+          date: ~D[2020-01-01],
+          date_precision: :year,
           twin: false
         })
 
-      {:ok, _} = Opinions.add_opinion_to_statement(higher_year_quote, statement)
+      {:ok, _} = Opinions.add_opinion_to_statement(newer_quote, statement)
       {:ok, _} = Opinions.add_opinion_to_statement(current_quote, statement)
 
       vote =
@@ -811,8 +813,8 @@ defmodule YouCongressWeb.StatementLiveTest do
       # Both quotes appear in the page's JSON-LD; only one is visible in the card
       card_html = show_live |> element("#vote-component-#{vote.id}") |> render()
       assert occurrences(html, ~s(data-testid="vote-card-#{vote.id}")) == 1
-      assert card_html =~ "Higher year sourced quote text"
-      refute card_html =~ "Active lower year sourced quote text"
+      assert card_html =~ "Newer sourced quote text"
+      refute card_html =~ "Active older sourced quote text"
       assert html =~ "1 of 2"
       assert html =~ "Quotes (1)"
       assert html =~ "For (1)"
@@ -824,8 +826,8 @@ defmodule YouCongressWeb.StatementLiveTest do
       html = render(show_live)
       card_html = show_live |> element("#vote-component-#{vote.id}") |> render()
       assert occurrences(html, ~s(data-testid="vote-card-#{vote.id}")) == 1
-      assert card_html =~ "Active lower year sourced quote text"
-      refute card_html =~ "Higher year sourced quote text"
+      assert card_html =~ "Active older sourced quote text"
+      refute card_html =~ "Newer sourced quote text"
       assert html =~ "2 of 2"
       assert html =~ "Quotes (1)"
       assert html =~ "For (1)"
@@ -836,8 +838,8 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       html = render(show_live)
       card_html = show_live |> element("#vote-component-#{vote.id}") |> render()
-      assert card_html =~ "Higher year sourced quote text"
-      refute card_html =~ "Active lower year sourced quote text"
+      assert card_html =~ "Newer sourced quote text"
+      refute card_html =~ "Active older sourced quote text"
       assert html =~ "1 of 2"
       assert html =~ "Quotes (1)"
       assert html =~ "For (1)"

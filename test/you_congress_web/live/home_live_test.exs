@@ -132,7 +132,8 @@ defmodule YouCongressWeb.HomeLiveTest do
           author_id: author.id,
           content: "Older feed quote",
           source_url: "https://example.com/feed-older",
-          year: 2023
+          date: ~D[2023-01-01],
+          date_precision: :year
         })
 
       newer_opinion =
@@ -140,7 +141,8 @@ defmodule YouCongressWeb.HomeLiveTest do
           author_id: author.id,
           content: "Newer feed quote",
           source_url: "https://example.com/feed-newer",
-          year: 2024
+          date: ~D[2024-01-01],
+          date_precision: :year
         })
 
       {:ok, _} = Opinions.add_opinion_to_statement(older_opinion, statement.id)

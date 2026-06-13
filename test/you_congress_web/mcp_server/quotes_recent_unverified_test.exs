@@ -13,7 +13,8 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
         author_id: 12,
         author: %{name: "Ada", bio: "Climate advocate"},
         source_url: "https://example.com/carbon-tax",
-        year: 2024,
+        date: ~D[2024-01-01],
+        date_precision: :year,
         verification_status: nil,
         statements: [%{id: 8, title: "Tax carbon emissions"}]
       }
@@ -74,7 +75,8 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
         author_id: 4,
         author: %{name: "Lin", bio: "Election reform advocate"},
         source_url: "https://example.com/opinion",
-        year: 2024,
+        date: ~D[2024-01-01],
+        date_precision: :year,
         verification_status: nil,
         statements: [%{id: 10, title: "End partisan gerrymandering"}]
       }

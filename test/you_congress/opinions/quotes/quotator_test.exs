@@ -30,10 +30,11 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
       # Opinions should be created and linked to the votes
       assert Enum.count(votes, &(not is_nil(&1.opinion_id))) == Quotator.number_of_quotes()
 
-      # Opinions should have parsed year as integer
+      # Opinions should have stored a date with explicit precision
       Enum.each(votes, fn v ->
         opinion = Opinions.get_opinion!(v.opinion_id)
-        assert is_integer(opinion.year)
+        assert %Date{} = opinion.date
+        assert opinion.date_precision == :year
       end)
     end
   end

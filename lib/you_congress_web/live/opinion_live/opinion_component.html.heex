@@ -54,8 +54,8 @@
       <span class="text-xs">
         <.link href={@opinion.source_url} target="_blank" class="underline">source</.link>
       </span>
-      <%= if @opinion.year do %>
-        <span class="text-xs text-gray-500">({@opinion.year})</span>
+      <%= if Opinion.display_date(@opinion) do %>
+        <span class="text-xs text-gray-500">({Opinion.display_date(@opinion)})</span>
       <% end %>
     <% end %>
   </div>

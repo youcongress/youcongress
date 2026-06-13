@@ -164,8 +164,18 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
         assert payload.statement_title == "AI Charter"
 
         assert payload.authors == [
-                 %{author_id: author_a.id, name: "Ada Lovelace", opinion_year: nil},
-                 %{author_id: author_b.id, name: "Grace Hopper", opinion_year: nil}
+                 %{
+                   author_id: author_a.id,
+                   name: "Ada Lovelace",
+                   opinion_date: nil,
+                   opinion_date_precision: nil
+                 },
+                 %{
+                   author_id: author_b.id,
+                   name: "Grace Hopper",
+                   opinion_date: nil,
+                   opinion_date_precision: nil
+                 }
                ]
       end)
     end

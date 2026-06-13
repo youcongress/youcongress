@@ -2,6 +2,7 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements
   alias YouCongress.Verifications
   alias YouCongress.Halls

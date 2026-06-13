@@ -7,6 +7,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   alias YouCongressWeb.StatementLive.VoteComponent.QuoteMenu
   alias YouCongressWeb.Tools.Tooltip
   alias YouCongressWeb.OpinionLive.OpinionComponent
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Likes
   alias YouCongress.Delegations
   alias YouCongressWeb.Tools.TimeAgo

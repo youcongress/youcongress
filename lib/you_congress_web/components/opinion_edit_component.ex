@@ -14,7 +14,8 @@ defmodule YouCongressWeb.OpinionEditComponent do
     changeset =
       Opinion.changeset(opinion, %{
         content: opinion.content,
-        year: opinion.year,
+        date: opinion.date,
+        date_precision: opinion.date_precision,
         source_url: opinion.source_url,
         author_id: opinion.author_id
       })
@@ -155,7 +156,8 @@ defmodule YouCongressWeb.OpinionEditComponent do
     # Update the form with the new author_id
     opinion_params = %{
       "content" => socket.assigns.opinion.content,
-      "year" => socket.assigns.opinion.year,
+      "date" => socket.assigns.opinion.date,
+      "date_precision" => socket.assigns.opinion.date_precision,
       "source_url" => socket.assigns.opinion.source_url,
       "author_id" => selected_author.id
     }
@@ -208,15 +210,25 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-full"
           />
         </div>
-        
-    <!-- Year -->
+
+    <!-- Date -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
           <.input
-            field={@form[:year]}
-            type="number"
-            placeholder="e.g., 2020"
-            class="w-32"
+            field={@form[:date]}
+            type="date"
+            class="w-44"
+          />
+        </div>
+
+    <!-- Date Precision -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Date precision</label>
+          <.input
+            field={@form[:date_precision]}
+            type="select"
+            options={[{"Unknown", ""}, {"Day", :day}, {"Month", :month}, {"Year", :year}]}
+            class="w-40"
           />
         </div>
         

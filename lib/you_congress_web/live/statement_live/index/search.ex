@@ -6,6 +6,7 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
   use Phoenix.VerifiedRoutes, endpoint: YouCongressWeb.Endpoint, router: YouCongressWeb.Router
 
   alias YouCongressWeb.StatementLive.Index.Search
+  alias YouCongress.Opinions.Opinion
 
   defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
 
@@ -125,7 +126,9 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
                       <a href={quote.source_url} target="_blank" class="hover:underline">
                         Source
                       </a>
-                      <span :if={quote.year} class="text-gray-400">{quote.year}</span>
+                      <span :if={Opinion.display_date(quote)} class="text-gray-400">
+                        {Opinion.display_date(quote)}
+                      </span>
                     </div>
                   <% end %>
                 </div>

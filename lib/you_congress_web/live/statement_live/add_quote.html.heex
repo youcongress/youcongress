@@ -38,11 +38,17 @@
       <span class="text-red-600 text-sm">Please provide a valid URL</span>
     <% end %>
     <.input
-      field={@form[:year]}
-      type="number"
-      label="Year"
+      field={@form[:date]}
+      type="date"
+      label="Date"
       data-lpignore="true"
-      placeholder="e.g., 2020"
+    />
+    <.input
+      field={@form[:date_precision]}
+      type="select"
+      options={[{"Unknown", ""}, {"Day", :day}, {"Month", :month}, {"Year", :year}]}
+      label="Date precision"
+      data-lpignore="true"
     />
     <.input
       field={@form[:agree_rate]}

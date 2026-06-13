@@ -133,8 +133,8 @@
           </.link>
         </span>
       <% end %>
-      <%= if @visible_opinion.year do %>
-        <span class="text-xs text-gray-500">({@visible_opinion.year})</span>
+      <%= if Opinion.display_date(@visible_opinion) do %>
+        <span class="text-xs text-gray-500">({Opinion.display_date(@visible_opinion)})</span>
       <% end %>
       <%= if @opinion_count > 1 do %>
         <span class="inline-flex items-center gap-1 pl-2 text-xs text-gray-500">

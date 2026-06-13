@@ -75,7 +75,8 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
                        content: "We should invest more in quantum research.",
                        author_id: owner.author_id,
                        source_url: "https://example.com",
-                       year: 2026
+                       date: "2026-04-13",
+                       date_precision: "day"
                      },
                      frame
                    )
@@ -83,10 +84,13 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
           assert payload.content == "We should invest more in quantum research."
           assert payload.author_id == owner.author_id
           assert payload.source_url == "https://example.com"
-          assert payload.year == 2026
+          assert payload.date == "2026-04-13"
+          assert payload.date_precision == "day"
 
           opinion = Opinions.get_opinion!(payload.opinion_id)
           assert opinion.user_id == owner.id
+          assert opinion.date == ~D[2026-04-13]
+          assert opinion.date_precision == :day
 
           payload.opinion_id
         end)
@@ -180,7 +184,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       with_mocked_response_and_key(api_key.token, fn frame ->
         assert {:reply,
                 {:error,
-                 "Provide at least one field to update: content, source_url, year, author_id."},
+                 "Provide at least one field to update: content, source_url, date, date_precision, author_id."},
                 ^frame} =
                  OpinionsEdit.execute(%{opinion_id: opinion.id}, frame)
       end)

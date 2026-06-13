@@ -12,6 +12,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
 
   alias Anubis.Server.Response
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Repo
   alias YouCongress.Votes
   alias YouCongress.MCP.ToolUsageTracker
@@ -110,17 +111,19 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
     Enum.map(opinions, fn opinion ->
       vote = Map.get(vote_map, opinion.id)
 
-      base = %{
-        opinion_id: opinion.id,
-        quote: opinion.content,
-        author: opinion.author.name,
-        author_biography: opinion.author.bio,
-        source_url: opinion.source_url,
-        year: opinion.year,
-        verification_status: verification_status(opinion),
-        vote_id: vote && vote.id,
-        vote_answer: vote && vote.answer
-      }
+      base =
+        opinion
+        |> Opinion.serialized_date_fields()
+        |> Map.merge(%{
+          opinion_id: opinion.id,
+          quote: opinion.content,
+          author: opinion.author.name,
+          author_biography: opinion.author.bio,
+          source_url: opinion.source_url,
+          verification_status: verification_status(opinion),
+          vote_id: vote && vote.id,
+          vote_answer: vote && vote.answer
+        })
 
       case opinion.similarity do
         nil -> base

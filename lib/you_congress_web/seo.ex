@@ -7,6 +7,7 @@ defmodule YouCongressWeb.SEO do
 
   use YouCongressWeb, :verified_routes
 
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Tools.StringUtils
 
   @doc """
@@ -79,8 +80,8 @@ defmodule YouCongressWeb.SEO do
 
   def opinion_description(opinion) do
     name = opinion.author.name || opinion.author.twitter_username || "Anonymous"
-    year = if opinion.year, do: ", #{opinion.year}"
-    "\"#{truncate(opinion.content, 110)}\" — #{name}#{year}. Verified quote with source."
+    date = if Opinion.display_date(opinion), do: ", #{Opinion.display_date(opinion)}"
+    "\"#{truncate(opinion.content, 110)}\" — #{name}#{date}. Verified quote with source."
   end
 
   # --- JSON-LD builders (schema.org) ---
@@ -126,7 +127,7 @@ defmodule YouCongressWeb.SEO do
       "creator" => creator
     }
     |> put_if("citation", opinion.source_url)
-    |> put_if("dateCreated", opinion.year && to_string(opinion.year))
+    |> put_if("dateCreated", schema_date(opinion))
     |> put_if("isPartOf", opts[:is_part_of])
     |> put_if("@context", if(opts[:root], do: "https://schema.org"))
   end
@@ -258,6 +259,11 @@ defmodule YouCongressWeb.SEO do
 
   defp put_if(map, _key, nil), do: map
   defp put_if(map, key, value), do: Map.put(map, key, value)
+
+  defp schema_date(%{date: nil}), do: nil
+  defp schema_date(%{date_precision: :year} = opinion), do: Opinion.display_date(opinion)
+  defp schema_date(%{date_precision: :month} = opinion), do: Opinion.display_date(opinion)
+  defp schema_date(opinion), do: Opinion.date_iso(opinion)
 
   defp plural(1, word), do: word
   defp plural(_, word), do: word <> "s"

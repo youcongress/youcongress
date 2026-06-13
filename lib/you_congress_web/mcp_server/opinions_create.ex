@@ -12,6 +12,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsCreate do
   alias Ecto.Changeset
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.MCP.ToolUsageTracker
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
@@ -23,7 +24,8 @@ defmodule YouCongressWeb.MCPServer.OpinionsCreate do
     field :content, :string, required: true
     field :author_id, :integer, required: true
     field :source_url, :string
-    field :year, :integer
+    field :date, :string
+    field :date_precision, :string
   end
 
   @impl true
@@ -78,19 +80,20 @@ defmodule YouCongressWeb.MCPServer.OpinionsCreate do
 
   defp attrs_from_params(params) do
     params
-    |> Map.take([:content, :author_id, :source_url, :year])
+    |> Map.take([:content, :author_id, :source_url, :date, :date_precision])
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
     |> Map.new()
   end
 
   defp serialize_opinion(opinion) do
-    %{
+    opinion
+    |> Opinion.serialized_date_fields()
+    |> Map.merge(%{
       opinion_id: opinion.id,
       content: opinion.content,
       source_url: opinion.source_url,
-      year: opinion.year,
       author_id: opinion.author_id
-    }
+    })
   end
 
   defp creation_error_response(%Changeset{} = changeset) do

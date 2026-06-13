@@ -55,7 +55,8 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
             "agree_rate" => nil,
             "opinion" => nil,
             "source_url" => nil,
-            "year" => nil
+            "date" => nil,
+            "date_precision" => nil
           })
 
         {:noreply,
@@ -78,7 +79,8 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
             "agree_rate" => nil,
             "opinion" => nil,
             "source_url" => nil,
-            "year" => nil
+            "date" => nil,
+            "date_precision" => nil
           })
 
         socket =
@@ -251,18 +253,46 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
       ) do
     %{assigns: %{statement: statement, author: author}} = socket
     answer = String.downcase(response || "") |> String.to_existing_atom()
-    year = Map.get(params, "year")
+    date = Map.get(params, "date")
+    date_precision = Map.get(params, "date_precision")
 
     case Votes.get_by(statement_id: statement.id, author_id: author.id) do
       nil ->
-        create_vote_and_opinion(statement, author, answer, opinion, source_url, year, socket)
+        create_vote_and_opinion(
+          statement,
+          author,
+          answer,
+          opinion,
+          source_url,
+          date,
+          date_precision,
+          socket
+        )
 
       vote ->
-        create_opinion_and_update_vote(vote, author, answer, opinion, source_url, year, socket)
+        create_opinion_and_update_vote(
+          vote,
+          author,
+          answer,
+          opinion,
+          source_url,
+          date,
+          date_precision,
+          socket
+        )
     end
   end
 
-  defp create_vote_and_opinion(statement, author, answer, opinion, source_url, year, socket) do
+  defp create_vote_and_opinion(
+         statement,
+         author,
+         answer,
+         opinion,
+         source_url,
+         date,
+         date_precision,
+         socket
+       ) do
     %{assigns: %{current_user: current_user}} = socket
 
     with {:ok, %{opinion: opinion}} <-
@@ -270,7 +300,8 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
              content: opinion,
              author_id: author.id,
              source_url: source_url,
-             year: year,
+             date: date,
+             date_precision: date_precision,
              user_id: current_user.id,
              direct: true,
              twin: false
@@ -312,7 +343,16 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
     end
   end
 
-  defp create_opinion_and_update_vote(vote, author, answer, opinion, source_url, year, socket) do
+  defp create_opinion_and_update_vote(
+         vote,
+         author,
+         answer,
+         opinion,
+         source_url,
+         date,
+         date_precision,
+         socket
+       ) do
     %{assigns: %{current_user: current_user, statement: statement}} = socket
 
     with {:ok, %{opinion: opinion}} <-
@@ -320,7 +360,8 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
              content: opinion,
              author_id: author.id,
              source_url: source_url,
-             year: year,
+             date: date,
+             date_precision: date_precision,
              user_id: current_user.id,
              direct: true,
              twin: false

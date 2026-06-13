@@ -92,7 +92,7 @@ defmodule YouCongress.Votes do
 
         {:order_by_recent_opinions_first, true}, query ->
           from [_v, _a, o] in query,
-            order_by: [desc_nulls_last: o.year, desc: o.id]
+            order_by: [desc_nulls_last: o.date, desc: o.id]
 
         {:limit, limit}, query ->
           limit(query, ^limit)
@@ -174,7 +174,7 @@ defmodule YouCongress.Votes do
             WHEN ? = FALSE THEN 3
             ELSE 4
           END", o.source_url, a.wikipedia_url, o.twin),
-      fragment("? DESC NULLS LAST", o.year),
+      fragment("? DESC NULLS LAST", o.date),
       {:desc, o.id}
     ])
     |> preload(^include_tables)
