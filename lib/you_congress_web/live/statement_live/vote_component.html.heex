@@ -128,9 +128,7 @@
       <% end %>
       <%= if @visible_opinion.source_url do %>
         <span class="text-xs">
-          <.link href={@visible_opinion.source_url} target="_blank" class="underline">
-            source
-          </.link>
+          <a href={@visible_opinion.source_url} target="_blank" class="underline">source</a>
         </span>
       <% end %>
       <%= if Opinion.display_date(@visible_opinion) do %>

@@ -52,7 +52,7 @@
         link_to_opinion={@page != :opinion_show}
       />
       <span class="text-xs">
-        <.link href={@opinion.source_url} target="_blank" class="underline">source</.link>
+        <a href={@opinion.source_url} target="_blank" class="underline">source</a>
       </span>
       <%= if Opinion.display_date(@opinion) do %>
         <span class="text-xs text-gray-500">({Opinion.display_date(@opinion)})</span>
