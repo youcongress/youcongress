@@ -29,7 +29,7 @@ defmodule YouCongressWeb.MCPServer.VotesCreate do
   @impl true
   def execute(%{author_id: author_id, statement_id: statement_id} = params, frame) do
     attrs = attrs_from_params(params)
-    user_result = ToolUsageTracker.track(__MODULE__, frame)
+    user_result = ToolUsageTracker.track(__MODULE__, frame, required_scope: :write)
 
     with {:ok, user} <- user_result,
          :ok <- ensure_permission(author_id, user),

@@ -63,6 +63,24 @@ defmodule YouCongress.Authors.Author do
     |> validate_wikipedia_url_if_present()
   end
 
+  def profile_changeset(author, attrs, allowed_fields) when is_list(allowed_fields) do
+    allowed_fields = Enum.map(allowed_fields, &normalize_profile_field!/1)
+
+    author
+    |> cast(attrs, allowed_fields)
+    |> foreign_key_constraint(:country_id)
+  end
+
+  defp normalize_profile_field!(field) when field in [:name, :bio, :country_id], do: field
+
+  defp normalize_profile_field!(field) when field in ["name", "bio", "country_id"] do
+    String.to_existing_atom(field)
+  end
+
+  defp normalize_profile_field!(field) do
+    raise ArgumentError, "unsupported profile field: #{inspect(field)}"
+  end
+
   def validate_required_if_twin_origin(changeset) do
     if get_field(changeset, :twin_origin) do
       validate_required(changeset, [:name, :bio])

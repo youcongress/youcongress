@@ -132,8 +132,15 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   def handle_event("edit", %{"opinion_id" => opinion_id}, socket) do
+    %{assigns: %{current_user: current_user}} = socket
     opinion_id = String.to_integer(opinion_id)
-    {:noreply, assign(socket, :editing_opinion_id, opinion_id)}
+    opinion = Opinions.get_opinion!(opinion_id, preload: [:statements])
+
+    if Permissions.can_edit_opinion?(opinion, current_user) do
+      {:noreply, assign(socket, :editing_opinion_id, opinion_id)}
+    else
+      {:noreply, put_flash(socket, :error, "You are not allowed to edit this opinion.")}
+    end
   end
 
   def handle_event("delete-comment", %{"opinion_id" => opinion_id}, socket) do
@@ -181,19 +188,27 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   def handle_event("show-vote-options", %{"statement_id" => statement_id}, socket) do
-    %{assigns: %{search_results: search_results}} = socket
+    %{assigns: %{current_user: current_user, search_results: search_results}} = socket
 
-    statement_id_int = String.to_integer(statement_id)
-    statement = Enum.find(search_results, fn s -> s.id == statement_id_int end)
+    if Permissions.can_add_opinion_to_statement?(current_user) do
+      statement_id_int = String.to_integer(statement_id)
+      statement = Enum.find(search_results, fn s -> s.id == statement_id_int end)
 
-    socket =
-      socket
-      |> assign(:show_search, false)
-      |> assign(:show_vote_modal, true)
-      |> assign(:selected_statement_id, statement_id_int)
-      |> assign(:selected_statement_title, statement.title)
+      if statement do
+        socket =
+          socket
+          |> assign(:show_search, false)
+          |> assign(:show_vote_modal, true)
+          |> assign(:selected_statement_id, statement_id_int)
+          |> assign(:selected_statement_title, statement.title)
 
-    {:noreply, socket}
+        {:noreply, socket}
+      else
+        {:noreply, put_flash(socket, :error, "Statement not found in search results.")}
+      end
+    else
+      {:noreply, socket |> put_flash(:error, "You don't have permission to do this.")}
+    end
   end
 
   def handle_event("cancel-vote-modal", _params, socket) do
@@ -213,34 +228,41 @@ defmodule YouCongressWeb.OpinionLive.Show do
       ) do
     %{assigns: %{opinion: opinion, current_user: current_user}} = socket
 
-    opinion = Map.put(opinion, :user_id, current_user.id)
+    if Permissions.can_add_opinion_to_statement?(current_user) do
+      opinion = Map.put(opinion, :user_id, current_user.id)
 
-    with {:ok, _updated_opinion} <-
-           Opinions.add_opinion_to_statement(opinion, String.to_integer(statement_id)),
-         {:ok, _vote} <-
-           create_or_update_vote(current_user, opinion, String.to_integer(statement_id), answer) do
-      Track.event("Add Opinion to Statement with Vote", current_user)
+      with {:ok, _updated_opinion} <-
+             Opinions.add_opinion_to_statement(opinion, String.to_integer(statement_id)),
+           {:ok, _vote} <-
+             create_or_update_vote(current_user, opinion, String.to_integer(statement_id), answer) do
+        Track.event("Add Opinion to Statement with Vote", current_user)
 
-      socket =
-        socket
-        |> load_opinion!(opinion.id)
-        |> assign(:show_search, false)
-        |> assign(:search_query, "")
-        |> assign(:search_results, [])
-        |> assign(:show_vote_modal, false)
-        |> assign(:selected_statement_id, nil)
-        |> assign(:selected_statement_title, nil)
-        |> put_flash(:info, "Opinion added to statement with your vote (#{answer}) successfully.")
+        socket =
+          socket
+          |> load_opinion!(opinion.id)
+          |> assign(:show_search, false)
+          |> assign(:search_query, "")
+          |> assign(:search_results, [])
+          |> assign(:show_vote_modal, false)
+          |> assign(:selected_statement_id, nil)
+          |> assign(:selected_statement_title, nil)
+          |> put_flash(
+            :info,
+            "Opinion added to statement with your vote (#{answer}) successfully."
+          )
 
-      {:noreply, socket}
+        {:noreply, socket}
+      else
+        {:error, :already_associated} ->
+          {:noreply,
+           socket |> put_flash(:error, "Opinion is already associated with this statement.")}
+
+        {:error, error} ->
+          Logger.error("Error adding opinion to statement: #{inspect(error)}")
+          {:noreply, socket |> put_flash(:error, "Failed to add opinion to statement.")}
+      end
     else
-      {:error, :already_associated} ->
-        {:noreply,
-         socket |> put_flash(:error, "Opinion is already associated with this statement.")}
-
-      {:error, error} ->
-        Logger.error("Error adding opinion to statement: #{inspect(error)}")
-        {:noreply, socket |> put_flash(:error, "Failed to add opinion to statement.")}
+      {:noreply, socket |> put_flash(:error, "You don't have permission to do this.")}
     end
   end
 
@@ -275,29 +297,33 @@ defmodule YouCongressWeb.OpinionLive.Show do
   def handle_event("add-to-statement", %{"statement_id" => statement_id}, socket) do
     %{assigns: %{opinion: opinion, current_user: current_user}} = socket
 
-    opinion = Map.put(opinion, :user_id, current_user.id)
+    if Permissions.can_add_opinion_to_statement?(current_user) do
+      opinion = Map.put(opinion, :user_id, current_user.id)
 
-    case Opinions.add_opinion_to_statement(opinion, String.to_integer(statement_id)) do
-      {:ok, _updated_opinion} ->
-        Track.event("Add Opinion to Statement", current_user)
+      case Opinions.add_opinion_to_statement(opinion, String.to_integer(statement_id)) do
+        {:ok, _updated_opinion} ->
+          Track.event("Add Opinion to Statement", current_user)
 
-        socket =
-          socket
-          |> load_opinion!(opinion.id)
-          |> assign(:show_search, false)
-          |> assign(:search_query, "")
-          |> assign(:search_results, [])
-          |> put_flash(:info, "Opinion added to statement successfully.")
+          socket =
+            socket
+            |> load_opinion!(opinion.id)
+            |> assign(:show_search, false)
+            |> assign(:search_query, "")
+            |> assign(:search_results, [])
+            |> put_flash(:info, "Opinion added to statement successfully.")
 
-        {:noreply, socket}
+          {:noreply, socket}
 
-      {:error, :already_associated} ->
-        {:noreply,
-         socket |> put_flash(:error, "Opinion is already associated with this statement.")}
+        {:error, :already_associated} ->
+          {:noreply,
+           socket |> put_flash(:error, "Opinion is already associated with this statement.")}
 
-      {:error, error} ->
-        Logger.error("Error adding opinion to statement: #{inspect(error)}")
-        {:noreply, socket |> put_flash(:error, "Failed to add opinion to statement.")}
+        {:error, error} ->
+          Logger.error("Error adding opinion to statement: #{inspect(error)}")
+          {:noreply, socket |> put_flash(:error, "Failed to add opinion to statement.")}
+      end
+    else
+      {:noreply, socket |> put_flash(:error, "You don't have permission to do this.")}
     end
   end
 
@@ -315,6 +341,10 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
   def handle_info({:opinion_update_error, _changeset}, socket) do
     {:noreply, put_flash(socket, :error, "Failed to update opinion")}
+  end
+
+  def handle_info({:opinion_update_forbidden, _opinion_id}, socket) do
+    {:noreply, put_flash(socket, :error, "You are not allowed to edit this opinion.")}
   end
 
   def handle_info(:opinion_edit_cancelled, socket) do

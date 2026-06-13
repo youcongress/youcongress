@@ -71,9 +71,9 @@ defmodule YouCongress.Accounts.Permissions do
   def can_edit_vote?(_vote, _user), do: false
 
   @doc """
-  Any logged-in user can verify opinions.
+  Checks if the user can mark opinions as human-verified.
   """
-  def can_verify_opinion?(%User{}), do: true
+  def can_verify_opinion?(%User{role: role}) when role in ["admin", "moderator"], do: true
   def can_verify_opinion?(_), do: false
 
   @doc """

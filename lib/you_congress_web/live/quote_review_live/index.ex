@@ -141,6 +141,10 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
     {:noreply, put_flash(socket, :error, "Failed to update quote")}
   end
 
+  def handle_info({:opinion_update_forbidden, _opinion_id}, socket) do
+    {:noreply, put_flash(socket, :error, "You are not allowed to edit this quote.")}
+  end
+
   def handle_info(:opinion_edit_cancelled, socket) do
     {:noreply, assign(socket, :editing_quote_id, nil)}
   end

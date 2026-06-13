@@ -26,7 +26,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsDelete do
 
   @impl true
   def execute(%{opinion_id: opinion_id}, frame) do
-    user_result = ToolUsageTracker.track(__MODULE__, frame)
+    user_result = ToolUsageTracker.track(__MODULE__, frame, required_scope: :write)
 
     with {:ok, user} <- user_result,
          opinion when not is_nil(opinion) <- Opinions.get_opinion(opinion_id),

@@ -57,11 +57,75 @@ defmodule YouCongressWeb.SettingsLiveTest do
       assert html =~ "Settings Dropdown Spain"
 
       render_submit(settings_live, "save", %{
-        "author" => %{"name" => "Someone", "country_id" => country.id}
+        "author" => %{
+          "name" => "Spoofed Name",
+          "bio" => "Spoofed bio",
+          "country_id" => country.id,
+          "twitter_username" => "spoofed_x",
+          "google_id" => "spoofed_google",
+          "public_figure" => "true",
+          "twin_enabled" => "false",
+          "verified" => "true"
+        }
       })
 
       author = Authors.get_author!(current_user.author_id)
+      assert author.name == "Someone"
+      assert author.bio != "Spoofed bio"
       assert author.country_id == country.id
+      refute author.twitter_username == "spoofed_x"
+      refute author.google_id == "spoofed_google"
+      refute author.public_figure
+      assert author.twin_enabled
+      refute author.verified
+    end
+
+    test "password users can update safe profile fields only", %{conn: conn} do
+      country = country_fixture(name: "Settings Password User Spain", phone_prefix: "+34")
+
+      {:ok, %{user: current_user}} =
+        Accounts.register_user(
+          %{
+            "email" => "settings-password@example.com",
+            "password" => "validpassword123"
+          },
+          %{
+            "name" => "Password User",
+            "bio" => "Old bio"
+          }
+        )
+
+      {:ok, current_user} = Accounts.confirm_user_email(current_user)
+
+      conn = log_in_user(conn, current_user)
+      {:ok, settings_live, _html} = live(conn, ~p"/settings")
+
+      render_submit(settings_live, "save", %{
+        "author" => %{
+          "name" => "Updated Password User",
+          "bio" => "Updated bio",
+          "country_id" => country.id,
+          "twitter_id_str" => "12345",
+          "twitter_username" => "spoofed_x",
+          "google_id" => "spoofed_google",
+          "profile_image_url" => "https://example.com/pic.jpg",
+          "public_figure" => "true",
+          "twin_enabled" => "false",
+          "verified" => "true"
+        }
+      })
+
+      author = Authors.get_author!(current_user.author_id)
+      assert author.name == "Updated Password User"
+      assert author.bio == "Updated bio"
+      assert author.country_id == country.id
+      assert author.twitter_id_str == nil
+      assert author.twitter_username == nil
+      assert author.google_id == nil
+      assert author.profile_image_url == nil
+      refute author.public_figure
+      assert author.twin_enabled
+      assert author.verified == nil
     end
 
     test "phone verified users don't see the verify with phone link", %{
@@ -109,7 +173,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
       })
 
       author = Authors.get_author!(current_user.author_id)
-      assert author.name == "Changed"
+      assert author.name == "Someone"
       assert author.country_id == phone_country.id
       assert author.location == nil
     end

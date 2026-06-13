@@ -7,6 +7,7 @@ defmodule YouCongress.Accounts do
   alias YouCongress.Repo
 
   alias YouCongress.Accounts.{ApiKey, User, UserToken, UserNotifier}
+  alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors.Author
   alias YouCongress.Countries
 
@@ -656,12 +657,17 @@ defmodule YouCongress.Accounts do
   def create_api_key_for_user(nil, _attrs), do: {:error, :unauthorized}
 
   def create_api_key_for_user(%User{} = user, attrs) do
-    attrs = Map.put(attrs, "token", generate_api_key())
+    token = generate_api_key()
+    attrs = Map.put(attrs, "token", token)
 
     user
     |> Ecto.build_assoc(:api_keys)
     |> ApiKey.creation_changeset(attrs)
     |> Repo.insert()
+    |> case do
+      {:ok, api_key} -> {:ok, %{api_key | token: token}}
+      error -> error
+    end
   end
 
   @doc """
@@ -669,28 +675,51 @@ defmodule YouCongress.Accounts do
 
   Returns `{:ok, user}` when the token exists or an error tuple otherwise.
   """
-  @spec get_user_by_api_key(String.t() | nil) ::
-          {:ok, User.t()} | {:error, :missing_api_key | :invalid_api_key}
-  def get_user_by_api_key(nil), do: {:error, :missing_api_key}
-  def get_user_by_api_key(""), do: {:error, :missing_api_key}
+  @spec get_user_by_api_key(String.t() | nil, Keyword.t()) ::
+          {:ok, User.t()} | {:error, :missing_api_key | :invalid_api_key | :insufficient_scope}
+  def get_user_by_api_key(token, opts \\ [])
+  def get_user_by_api_key(nil, _opts), do: {:error, :missing_api_key}
+  def get_user_by_api_key("", _opts), do: {:error, :missing_api_key}
 
-  def get_user_by_api_key(token) when is_binary(token) do
+  def get_user_by_api_key(token, opts) when is_binary(token) do
     cleaned_token = String.trim(token)
 
     if cleaned_token == "" do
       {:error, :missing_api_key}
     else
+      token_hash = ApiKey.hash_token(cleaned_token)
+
       query =
         from api_key in ApiKey,
-          where: api_key.token == ^cleaned_token,
+          where: api_key.token_hash == ^token_hash,
           preload: [:user]
 
       case Repo.one(query) do
-        %ApiKey{user: %User{} = user} -> {:ok, user}
-        _ -> {:error, :invalid_api_key}
+        %ApiKey{user: %User{} = user} = api_key ->
+          cond do
+            Permissions.blocked?(user) ->
+              {:error, :invalid_api_key}
+
+            !api_key_scope_allows?(api_key.scope, opts[:required_scope]) ->
+              {:error, :insufficient_scope}
+
+            true ->
+              {:ok, user}
+          end
+
+        _ ->
+          {:error, :invalid_api_key}
       end
     end
   end
+
+  defp api_key_scope_allows?(_scope, nil), do: true
+  defp api_key_scope_allows?(:write, _required_scope), do: true
+
+  defp api_key_scope_allows?(:read, required_scope) when required_scope in [:read, "read"],
+    do: true
+
+  defp api_key_scope_allows?(_scope, _required_scope), do: false
 
   defp generate_api_key do
     32

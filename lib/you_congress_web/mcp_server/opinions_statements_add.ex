@@ -37,7 +37,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
         %{opinion_id: opinion_id, statement_id: statement_id, vote_answer: vote_answer},
         frame
       ) do
-    user_result = ToolUsageTracker.track(__MODULE__, frame)
+    user_result = ToolUsageTracker.track(__MODULE__, frame, required_scope: :write)
 
     with {:ok, normalized_vote_answer} <- normalize_vote_answer(vote_answer),
          {:ok, user} <- user_result,

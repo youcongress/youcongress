@@ -29,7 +29,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsRemove do
 
   @impl true
   def execute(%{opinion_id: opinion_id, statement_id: statement_id}, frame) do
-    user_result = ToolUsageTracker.track(__MODULE__, frame)
+    user_result = ToolUsageTracker.track(__MODULE__, frame, required_scope: :write)
 
     with {:ok, user} <- user_result,
          :ok <- ensure_permission(user),

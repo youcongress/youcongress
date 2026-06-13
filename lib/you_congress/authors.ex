@@ -374,6 +374,27 @@ defmodule YouCongress.Authors do
     Author.changeset(author, attrs)
   end
 
+  def update_profile_author(%Author{} = author, attrs, allowed_fields)
+      when is_list(allowed_fields) do
+    with {:ok, attrs} <- resolve_country_attrs(attrs) do
+      author
+      |> Author.profile_changeset(attrs, allowed_fields)
+      |> Repo.update()
+    else
+      {:error, :unknown_country, country, attrs} ->
+        {:error, unknown_country_changeset(author, attrs, country)}
+    end
+  end
+
+  def change_profile_author(%Author{} = author, allowed_fields) when is_list(allowed_fields) do
+    change_profile_author(author, %{}, allowed_fields)
+  end
+
+  def change_profile_author(%Author{} = author, attrs, allowed_fields)
+      when is_list(allowed_fields) do
+    Author.profile_changeset(author, attrs, allowed_fields)
+  end
+
   def country_name(%Author{} = author), do: Countries.country_name(author)
 
   @doc """
