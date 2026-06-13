@@ -34,6 +34,8 @@ defmodule YouCongressWeb.Components.VerificationBadge do
      |> assign(:subject, subject)
      |> assign(:current_user, assigns[:current_user])
      |> assign(:class, assigns[:class] || "ml-2")
+     |> assign(:link_to_opinion, assigns[:link_to_opinion] || false)
+     |> assign(:opinion_id, opinion_id(subject_type, subject))
      |> assign_new(:show_dropdown, fn -> false end)
      |> assign_new(:selected_status, fn -> nil end)
      |> assign_new(:comment, fn -> "" end)}
@@ -47,84 +49,100 @@ defmodule YouCongressWeb.Components.VerificationBadge do
   def render(assigns) do
     ~H"""
     <span class={[@class, "relative inline-block"]}>
-      <%= if @current_user && Permissions.can_verify_opinion?(@current_user) do %>
-        <span
-          class={[
-            "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-pointer",
-            badge_classes(@subject.verification_status)
-          ]}
-          phx-click="toggle-dropdown"
-          phx-target={@myself}
-        >
-          {badge_label(@subject.verification_status)}
-        </span>
-        <%= if @show_dropdown do %>
-          <div class="absolute z-10 bottom-full mb-1 bg-white border rounded shadow-lg left-0">
-            <%= if @selected_status do %>
-              <div class="p-2 w-56">
-                <div class={["text-xs font-medium mb-1", badge_text_class(@selected_status)]}>
-                  {badge_label(@selected_status)}
-                </div>
-                <input
-                  id={"verification-comment-#{@subject_type}-#{@subject.id}"}
-                  type="text"
-                  placeholder="Comment (optional)"
-                  value={@comment}
-                  phx-keyup="update-comment"
-                  phx-target={@myself}
-                  phx-mounted={JS.focus()}
-                  class="w-full text-xs border rounded px-2 py-1 mb-2"
-                />
-                <div class="flex gap-1">
-                  <button
-                    phx-click="confirm-status"
-                    phx-target={@myself}
-                    class="flex-1 text-xs px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                  >
-                    Save
-                  </button>
-                  <button
-                    phx-click="cancel-status"
-                    phx-target={@myself}
-                    class="flex-1 text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            <% else %>
-              <div class="w-40">
-                <%= for status <- statuses_for(@subject_type, @subject, @current_user) do %>
-                  <button
-                    phx-click="pick-status"
-                    phx-value-status={status}
-                    phx-target={@myself}
-                    class={[
-                      "block w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100",
-                      badge_text_class(status)
-                    ]}
-                  >
-                    {badge_label(status)}
-                  </button>
-                <% end %>
-              </div>
-            <% end %>
-          </div>
-        <% end %>
-      <% else %>
-        <Phoenix.Component.link
-          href="/faq#verify-quotes"
+      <%= if @link_to_opinion && @opinion_id do %>
+        <.link
+          href={~p"/c/#{@opinion_id}"}
           class={[
             "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium",
             badge_classes(@subject.verification_status)
           ]}
         >
           {badge_label(@subject.verification_status)}
-        </Phoenix.Component.link>
+        </.link>
+      <% else %>
+        <%= if @current_user && Permissions.can_verify_opinion?(@current_user) do %>
+          <span
+            class={[
+              "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-pointer",
+              badge_classes(@subject.verification_status)
+            ]}
+            phx-click="toggle-dropdown"
+            phx-target={@myself}
+          >
+            {badge_label(@subject.verification_status)}
+          </span>
+          <%= if @show_dropdown do %>
+            <div class="absolute z-10 bottom-full mb-1 bg-white border rounded shadow-lg left-0">
+              <%= if @selected_status do %>
+                <div class="p-2 w-56">
+                  <div class={["text-xs font-medium mb-1", badge_text_class(@selected_status)]}>
+                    {badge_label(@selected_status)}
+                  </div>
+                  <input
+                    id={"verification-comment-#{@subject_type}-#{@subject.id}"}
+                    type="text"
+                    placeholder="Comment (optional)"
+                    value={@comment}
+                    phx-keyup="update-comment"
+                    phx-target={@myself}
+                    phx-mounted={JS.focus()}
+                    class="w-full text-xs border rounded px-2 py-1 mb-2"
+                  />
+                  <div class="flex gap-1">
+                    <button
+                      phx-click="confirm-status"
+                      phx-target={@myself}
+                      class="flex-1 text-xs px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                    >
+                      Save
+                    </button>
+                    <button
+                      phx-click="cancel-status"
+                      phx-target={@myself}
+                      class="flex-1 text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              <% else %>
+                <div class="w-40">
+                  <%= for status <- statuses_for(@subject_type, @subject, @current_user) do %>
+                    <button
+                      phx-click="pick-status"
+                      phx-value-status={status}
+                      phx-target={@myself}
+                      class={[
+                        "block w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100",
+                        badge_text_class(status)
+                      ]}
+                    >
+                      {badge_label(status)}
+                    </button>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        <% else %>
+          <Phoenix.Component.link
+            href="/faq#verify-quotes"
+            class={[
+              "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium",
+              badge_classes(@subject.verification_status)
+            ]}
+          >
+            {badge_label(@subject.verification_status)}
+          </Phoenix.Component.link>
+        <% end %>
       <% end %>
     </span>
     """
   end
+
+  defp opinion_id(:opinion, %{id: id}), do: id
+  defp opinion_id(_subject_type, %{opinion_id: opinion_id}), do: opinion_id
+  defp opinion_id(_subject_type, _subject), do: nil
 
   def handle_event("toggle-dropdown", _, socket) do
     show = !socket.assigns.show_dropdown

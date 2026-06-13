@@ -95,4 +95,28 @@ defmodule YouCongressWeb.Components.VerificationAggregateTest do
     assert html =~ "/faq#verify-quotes"
     refute html =~ "verify quote first"
   end
+
+  test "link mode sends permitted users to the opinion page instead of opening the popover" do
+    html =
+      render_badge(%{
+        link_to_opinion: true,
+        show_dropdown: true
+      })
+
+    assert html =~ ~s|href="/c/1"|
+    refute html =~ ~s|phx-click="toggle-dropdown"|
+    refute html =~ "Quote authenticity"
+  end
+
+  test "link mode sends non-permitted users to the opinion page instead of the FAQ" do
+    html =
+      render_badge(%{
+        current_user: %User{id: 2, role: "user", author_id: nil},
+        link_to_opinion: true,
+        show_dropdown: true
+      })
+
+    assert html =~ ~s|href="/c/1"|
+    refute html =~ "/faq#verify-quotes"
+  end
 end

@@ -35,6 +35,7 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
       |> assign(:current_user, assigns[:current_user])
       |> assign(:class, assigns[:class] || "ml-2")
       |> assign(:trigger, Map.get(assigns, :trigger, :aggregate))
+      |> assign(:link_to_opinion, assigns[:link_to_opinion] || false)
 
     # Honor an explicitly passed open state (e.g. tests); otherwise preserve the
     # current state across parent re-renders.
@@ -56,7 +57,20 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
 
     ~H"""
     <span id={@id} class={[@class, "relative inline-block"]}>
-      <%= if @trigger != false && @current_user && Permissions.can_verify_opinion?(@current_user) do %>
+      <%= if @trigger != false && @link_to_opinion do %>
+        <.link
+          href={~p"/c/#{@opinion.id}"}
+          class={[
+            "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium",
+            badge_classes(@aggregate)
+          ]}
+          title="View quote verification details"
+        >
+          {badge_label(@aggregate)}
+        </.link>
+      <% end %>
+
+      <%= if @trigger != false && !@link_to_opinion && @current_user && Permissions.can_verify_opinion?(@current_user) do %>
         <button
           type="button"
           class={[
@@ -71,7 +85,7 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
         </button>
       <% end %>
 
-      <%= if @trigger != false && (!@current_user || !Permissions.can_verify_opinion?(@current_user)) do %>
+      <%= if @trigger != false && !@link_to_opinion && (!@current_user || !Permissions.can_verify_opinion?(@current_user)) do %>
         <Phoenix.Component.link
           href="/faq#verify-quotes"
           class={[
@@ -83,7 +97,7 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
         </Phoenix.Component.link>
       <% end %>
 
-      <%= if @show_dropdown && @current_user && Permissions.can_verify_opinion?(@current_user) do %>
+      <%= if !@link_to_opinion && @show_dropdown && @current_user && Permissions.can_verify_opinion?(@current_user) do %>
         <div class="absolute z-10 bottom-full mb-1 left-0 w-max max-w-[90vw] bg-white border rounded shadow-lg p-2 space-y-2">
           {render_row(assign(assigns, :row, :quote))}
           {render_row(assign(assigns, :row, :relevance))}
