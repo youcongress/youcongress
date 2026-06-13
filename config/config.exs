@@ -70,7 +70,9 @@ config :you_congress, Oban,
   ],
   queues: [
     default: 10,
-    amplitude: 5
+    amplitude: 5,
+    verification: 3,
+    verification_polling: 5
   ]
 
 # Import environment specific config. This must remain at the bottom

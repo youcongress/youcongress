@@ -10,11 +10,16 @@ defmodule YouCongress.OpinionsStatements.OpinionStatement do
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Statements.Statement
   alias YouCongress.Accounts.User
+  alias YouCongress.OpinionStatementVerifications.OpinionStatementVerification
 
   schema "opinions_statements" do
+    field :verification_status, Ecto.Enum,
+      values: [:verified, :ai_verified, :ai_unverifiable, :endorsed, :disputed, :unverifiable]
+
     belongs_to :opinion, Opinion
     belongs_to :statement, Statement
     belongs_to :user, User
+    has_many :verifications, OpinionStatementVerification
 
     timestamps()
   end
@@ -22,7 +27,7 @@ defmodule YouCongress.OpinionsStatements.OpinionStatement do
   @doc false
   def changeset(opinion_statement, attrs) do
     opinion_statement
-    |> cast(attrs, [:opinion_id, :statement_id, :user_id])
+    |> cast(attrs, [:opinion_id, :statement_id, :user_id, :verification_status])
     |> validate_required([:opinion_id, :statement_id, :user_id])
     |> unique_constraint([:opinion_id, :statement_id])
     |> foreign_key_constraint(:opinion_id)
