@@ -17,6 +17,7 @@ defmodule YouCongress.Opinions do
   alias YouCongress.Workers.UpdateAuthorPublicFigureWorker
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
   alias YouCongress.Workers.SyncStatementOpinionsCountWorker
+  alias YouCongress.Workers.VerificationWorker
 
   @doc """
   Returns the list of opinions.
@@ -131,11 +132,29 @@ defmodule YouCongress.Opinions do
   def create_opinion(attrs \\ %{}) do
     attrs = ContentEmbedding.put(attrs, %Opinion{})
 
-    Ecto.Multi.new()
-    |> Ecto.Multi.insert(:opinion, Opinion.changeset(%Opinion{}, attrs))
-    |> enqueue_update_ancestor_counts(attrs["ancestry"])
-    |> maybe_enqueue_update_author_public_figure(attrs)
-    |> Repo.transaction()
+    result =
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:opinion, Opinion.changeset(%Opinion{}, attrs))
+      |> enqueue_update_ancestor_counts(attrs["ancestry"])
+      |> maybe_enqueue_update_author_public_figure(attrs)
+      |> Repo.transaction()
+
+    maybe_enqueue_quote_verification(result)
+    result
+  end
+
+  # A quote (an opinion with a source_url) is AI-verified whenever it is created.
+  defp maybe_enqueue_quote_verification({:ok, %{opinion: %Opinion{source_url: source_url, id: id}}})
+       when not is_nil(source_url) do
+    enqueue_quote_verification(id)
+  end
+
+  defp maybe_enqueue_quote_verification(_), do: :ok
+
+  defp enqueue_quote_verification(opinion_id) do
+    %{"subject" => "quote", "id" => opinion_id}
+    |> VerificationWorker.new()
+    |> Oban.insert()
   end
 
   defp enqueue_update_ancestor_counts(multi, nil), do: multi
@@ -199,11 +218,23 @@ defmodule YouCongress.Opinions do
   """
   def update_opinion(%Opinion{} = opinion, attrs) do
     attrs = ContentEmbedding.put(attrs, opinion)
-
-    opinion
-    |> Opinion.changeset(attrs)
-    |> Repo.update()
+    changeset = Opinion.changeset(opinion, attrs)
+    result = Repo.update(changeset)
+    maybe_reverify_quote_on_update(result, changeset)
+    result
   end
+
+  # Re-verify a quote only when its content or source changed (not on count-only updates).
+  defp maybe_reverify_quote_on_update({:ok, %Opinion{source_url: source_url, id: id}}, changeset)
+       when not is_nil(source_url) do
+    if Map.has_key?(changeset.changes, :content) or Map.has_key?(changeset.changes, :source_url) do
+      enqueue_quote_verification(id)
+    end
+
+    :ok
+  end
+
+  defp maybe_reverify_quote_on_update(_result, _changeset), do: :ok
 
   @doc """
   Deletes a opinion.
