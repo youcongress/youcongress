@@ -85,6 +85,15 @@
               <span class="w-56 shrink-0 font-semibold text-gray-600">
                 Statement relation verification history
               </span>
+              <.verification_enqueue_button
+                :if={
+                  Permissions.can_verify_opinion?(@current_user) && statement.opinion_statement
+                }
+                subject="relevance"
+                id={statement.opinion_statement.id}
+                label="Run AI statement relation verification"
+                testid={"statement-relation-verification-enqueue-#{statement.id}"}
+              />
               <%= if Permissions.can_verify_opinion?(@current_user) do %>
                 <button
                   type="button"
@@ -126,6 +135,13 @@
               <span class="w-56 shrink-0 font-semibold text-gray-600">
                 Vote inference verification history
               </span>
+              <.verification_enqueue_button
+                :if={Permissions.can_verify_opinion?(@current_user) && statement.author_vote}
+                subject="vote"
+                id={statement.author_vote.id}
+                label="Run AI vote inference verification"
+                testid={"vote-inference-verification-enqueue-#{statement.id}"}
+              />
               <%= if Permissions.can_verify_opinion?(@current_user) do %>
                 <button
                   type="button"
@@ -277,14 +293,32 @@
   </div>
 <% end %>
 
-<%= if @verifications != [] do %>
-  <.verification_history
-    verifications={@verifications}
-    wrapper_class="mb-6"
-    title_tag="h2"
-    title_class="text-sm font-semibold mb-2 text-gray-700"
-    entries_class="space-y-2"
-  />
+<%= if @verifications != [] || (quote?(@opinion) && Permissions.can_verify_opinion?(@current_user)) do %>
+  <div class="mb-6">
+    <div class="mb-2 flex items-center gap-2">
+      <h2 class="text-sm font-semibold text-gray-700">
+        Quote authenticity verification history
+      </h2>
+      <.verification_enqueue_button
+        :if={quote?(@opinion) && Permissions.can_verify_opinion?(@current_user)}
+        subject="quote"
+        id={@opinion.id}
+        label="Run AI quote authenticity verification"
+        testid="quote-authenticity-verification-enqueue"
+      />
+    </div>
+    <.verification_history
+      :if={@verifications != []}
+      verifications={@verifications}
+      title="Quote authenticity comments"
+      title_tag="h3"
+      title_class="sr-only"
+      entries_class="space-y-2"
+    />
+    <div :if={@verifications == []} class="text-xs text-gray-500">
+      No quote authenticity verification comments yet.
+    </div>
+  </div>
 <% end %>
 
 <div class="pb-2" id="reply">replying to {@opinion.author.name}</div>
