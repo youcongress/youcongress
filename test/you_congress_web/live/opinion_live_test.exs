@@ -2,6 +2,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
   use YouCongressWeb.ConnCase
 
   import Phoenix.LiveViewTest
+  import Mock
   import YouCongress.AuthorsFixtures
   import YouCongress.OpinionsFixtures
   import YouCongress.StatementsFixtures
@@ -311,7 +312,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/c/#{opinion.id}")
 
-      assert html =~ "Verification History"
+      assert html =~ "Quote authenticity verification history"
       assert html =~ "Verified"
       assert html =~ "This checks out"
     end
@@ -358,7 +359,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
       {:ok, view, _html} = live(conn, ~p"/c/#{opinion.id}")
 
       # Initially no verification history
-      refute render(view) =~ "Verification History"
+      refute render(view) =~ "Quote authenticity verification history"
 
       # Create a verification directly
       {:ok, _} =
@@ -373,7 +374,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
       send(view.pid, {:verification_saved, :opinion, opinion.id})
 
       html = render(view)
-      assert html =~ "Verification History"
+      assert html =~ "Quote authenticity verification history"
       assert html =~ "Disputed"
       assert html =~ "Source seems wrong"
     end
@@ -459,7 +460,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/c/#{opinion.id}")
 
-      assert html =~ "Verification History"
+      assert html =~ "Quote authenticity verification history"
       assert html =~ "Quote authentic"
       assert html =~ "Statement relation"
       assert html =~ "Relation is exact"
@@ -591,6 +592,135 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
       pick_and_save(view, card, "relevance", "verified", "Quote matches statement")
       assert has_element?(view, btn.("vote", "verified"))
+    end
+
+    test "moderator can enqueue AI quote, relation, and vote verifications", %{conn: conn} do
+      user = user_fixture(%{role: "moderator"})
+      author = author_fixture(%{name: "Quote Author"})
+      conn = log_in_user(conn, user)
+
+      statement = statement_fixture(%{title: "We should deliberate publicly"})
+
+      opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: user.id,
+          content: "A citable quote",
+          source_url: "https://example.com/source",
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: opinion.id,
+          answer: :for
+        })
+
+      opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+
+      opinion_id = opinion.id
+      opinion_statement_id = opinion_statement.id
+      vote_id = vote.id
+      test_pid = self()
+
+      with_mock Oban,
+        insert: fn job ->
+          send(test_pid, {:oban_insert, job})
+          {:ok, Map.put(job, :id, Ecto.UUID.generate())}
+        end do
+        {:ok, view, _html} = live(conn, ~p"/c/#{opinion.id}")
+
+        view
+        |> element(~s|button[data-testid="quote-authenticity-verification-enqueue"]|)
+        |> render_click()
+
+        card = ~s|[data-testid="statement-verify-#{statement.id}"]|
+
+        view
+        |> element(
+          ~s|#{card} button[data-testid="statement-relation-verification-enqueue-#{statement.id}"]|
+        )
+        |> render_click()
+
+        view
+        |> element(
+          ~s|#{card} button[data-testid="vote-inference-verification-enqueue-#{statement.id}"]|
+        )
+        |> render_click()
+      end
+
+      assert_received(
+        {:oban_insert,
+         %Ecto.Changeset{changes: %{args: %{"subject" => "quote", "id" => ^opinion_id}}}}
+      )
+
+      assert_received(
+        {:oban_insert,
+         %Ecto.Changeset{
+           changes: %{args: %{"subject" => "relevance", "id" => ^opinion_statement_id}}
+         }}
+      )
+
+      assert_received(
+        {:oban_insert,
+         %Ecto.Changeset{changes: %{args: %{"subject" => "vote", "id" => ^vote_id}}}}
+      )
+    end
+
+    test "regular users do not see AI verification enqueue buttons", %{conn: conn} do
+      reviewer = user_fixture()
+      regular_user = user_fixture()
+      author = author_fixture(%{name: "Quote Author"})
+      conn = log_in_user(conn, regular_user)
+
+      statement = statement_fixture(%{title: "We should deliberate publicly"})
+
+      opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: reviewer.id,
+          content: "A citable quote",
+          source_url: "https://example.com/source",
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: author.id,
+        opinion_id: opinion.id,
+        answer: :for
+      })
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: reviewer.id,
+          status: :verified,
+          comment: "Quote authentic"
+        })
+
+      {:ok, view, html} = live(conn, ~p"/c/#{opinion.id}")
+
+      assert html =~ "Quote authenticity verification history"
+      refute has_element?(view, ~s|button[data-testid="quote-authenticity-verification-enqueue"]|)
+
+      card = ~s|[data-testid="statement-verify-#{statement.id}"]|
+
+      refute has_element?(
+               view,
+               ~s|#{card} button[data-testid="statement-relation-verification-enqueue-#{statement.id}"]|
+             )
+
+      refute has_element?(
+               view,
+               ~s|#{card} button[data-testid="vote-inference-verification-enqueue-#{statement.id}"]|
+             )
     end
 
     test "blank verification comments are stored as nil", %{conn: conn} do

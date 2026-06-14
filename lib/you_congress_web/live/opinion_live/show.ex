@@ -17,7 +17,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.Votes
   alias YouCongress.VoteVerifications
   alias YouCongress.Accounts.Permissions
-  alias YouCongressWeb.SEO
+  alias YouCongress.Workers.VerificationWorker
   alias YouCongressWeb.SEO
 
   @impl true
@@ -332,6 +332,30 @@ defmodule YouCongressWeb.OpinionLive.Show do
     end
   end
 
+  def handle_event("enqueue-ai-verification", %{"subject" => subject, "id" => id}, socket) do
+    %{assigns: %{current_user: current_user, opinion: opinion}} = socket
+
+    if Permissions.can_verify_opinion?(current_user) do
+      with {:ok, id} <- parse_id(id),
+           true <- verification_target_on_page?(subject, id, opinion),
+           {:ok, _job} <- enqueue_verification(subject, id) do
+        {:noreply, put_flash(socket, :info, "#{verification_subject_label(subject)} queued.")}
+      else
+        false ->
+          {:noreply, put_flash(socket, :error, "Cannot queue verification for that item.")}
+
+        :error ->
+          {:noreply, put_flash(socket, :error, "Cannot queue verification for that item.")}
+
+        {:error, reason} ->
+          Logger.error("Error queueing AI verification: #{inspect(reason)}")
+          {:noreply, put_flash(socket, :error, "Failed to queue verification.")}
+      end
+    else
+      {:noreply, put_flash(socket, :error, "You don't have permission to do this.")}
+    end
+  end
+
   @impl true
   def handle_info({:opinion_updated, updated_opinion}, socket) do
     socket =
@@ -543,6 +567,75 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
   defp quote?(_), do: false
 
+  defp parse_id(id) when is_integer(id), do: {:ok, id}
+
+  defp parse_id(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {id, ""} -> {:ok, id}
+      _ -> :error
+    end
+  end
+
+  defp parse_id(_), do: :error
+
+  defp verification_target_on_page?("quote", id, opinion), do: quote?(opinion) && opinion.id == id
+
+  defp verification_target_on_page?("relevance", id, opinion) do
+    opinion.statements
+    |> Enum.any?(fn statement ->
+      case Map.get(statement, :opinion_statement) do
+        %{id: ^id} -> true
+        _ -> false
+      end
+    end)
+  end
+
+  defp verification_target_on_page?("vote", id, opinion) do
+    opinion.statements
+    |> Enum.any?(fn statement ->
+      case Map.get(statement, :author_vote) do
+        %{id: ^id} -> true
+        _ -> false
+      end
+    end)
+  end
+
+  defp verification_target_on_page?(_subject, _id, _opinion), do: false
+
+  defp enqueue_verification(subject, id) when subject in ~w(quote relevance vote) do
+    %{"subject" => subject, "id" => id}
+    |> VerificationWorker.new()
+    |> Oban.insert()
+  end
+
+  defp enqueue_verification(_subject, _id), do: :error
+
+  defp verification_subject_label("quote"), do: "Quote authenticity verification"
+  defp verification_subject_label("relevance"), do: "Statement relation verification"
+  defp verification_subject_label("vote"), do: "Vote inference verification"
+
+  attr :subject, :string, required: true
+  attr :id, :integer, required: true
+  attr :label, :string, required: true
+  attr :testid, :string, required: true
+
+  defp verification_enqueue_button(assigns) do
+    ~H"""
+    <button
+      type="button"
+      phx-click="enqueue-ai-verification"
+      phx-value-subject={@subject}
+      phx-value-id={@id}
+      class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-gray-400 hover:bg-white hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      title={@label}
+      aria-label={@label}
+      data-testid={@testid}
+    >
+      <.icon name="hero-sparkles" class="h-3 w-3" />
+    </button>
+    """
+  end
+
   # Verified quotes get a search-friendly title; plain comments and
   # replies are thin pages and get noindex.
   defp assign_page_meta(socket, opinion) do
@@ -604,30 +697,4 @@ defmodule YouCongressWeb.OpinionLive.Show do
   defp verification_status_label(:unverifiable), do: "Unverifiable"
   defp verification_status_label(:no_vote), do: "No vote"
   defp verification_status_label(_), do: "Unverified"
-
-  # Verified quotes get a search-friendly title; plain comments and
-  # replies are thin pages and get noindex.
-  defp assign_page_meta(socket, opinion) do
-    socket = assign(socket, :canonical_url, url(~p"/c/#{opinion.id}"))
-
-    if quote?(opinion) do
-      is_part_of =
-        case opinion.statements do
-          [statement | _] -> url(~p"/p/#{statement.slug}")
-          _ -> nil
-        end
-
-      socket
-      |> assign(:page_title, SEO.opinion_title(opinion))
-      |> assign(:skip_page_suffix, true)
-      |> assign(:page_description, SEO.opinion_description(opinion))
-      |> assign(:og_type, "article")
-      |> assign(:quote_json_ld, SEO.quotation(opinion, root: true, is_part_of: is_part_of))
-    else
-      socket
-      |> assign(:page_title, "Opinion")
-      |> assign(:noindex, true)
-      |> assign(:quote_json_ld, nil)
-    end
-  end
 end
