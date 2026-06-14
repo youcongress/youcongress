@@ -100,6 +100,7 @@
                         id={"vote-#{quote.id}-#{statement.author_vote.id}"}
                         subject_type={:vote}
                         subject={statement.author_vote}
+                        opinion_id={quote.id}
                         current_user={@current_user}
                         class=""
                       />

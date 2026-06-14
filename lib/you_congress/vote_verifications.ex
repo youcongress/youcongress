@@ -27,36 +27,55 @@ defmodule YouCongress.VoteVerifications do
   def get_verification!(id), do: Repo.get!(VoteVerification, id)
 
   @doc """
+  Resolves the verification status for one vote in the context of a specific
+  quote/opinion, without assuming the vote still points at that quote.
+  """
+  def status_for_vote_opinion(vote_id, opinion_id) do
+    vote_id
+    |> base_query_for_opinion(normalize_id(opinion_id))
+    |> VerificationStatus.resolve()
+  end
+
+  @doc """
   Creates a verification for a vote by a user.
   Always inserts a new record to preserve the full history. The verification is
-  stamped with the opinion the vote currently references.
+  stamped with the opinion the vote currently references unless an explicit
+  `opinion_id` is supplied by a quote-specific verification flow.
   """
   def create_verification(attrs) do
     vote_id = attrs[:vote_id] || attrs["vote_id"]
     status = attrs[:status] || attrs["status"]
     vote = Repo.get!(Vote, vote_id)
+    opinion_id = verification_opinion_id(attrs, vote)
+    attrs = Map.put(attrs, :opinion_id, opinion_id)
 
-    with :ok <- check_prerequisites(vote, status) do
-      # Stamp the verification with the vote's current opinion so it is ignored if
-      # the vote later points to a different opinion.
-      %VoteVerification{opinion_id: vote.opinion_id}
+    with :ok <- check_prerequisites(vote, opinion_id, status) do
+      %VoteVerification{}
       |> VoteVerification.changeset(attrs)
       |> Repo.insert()
-      |> tap_ok(fn _ -> update_vote_verification_status(vote_id) end)
+      |> tap_ok(fn _ -> maybe_update_vote_verification_status(vote, opinion_id) end)
     end
   end
 
   # Progressive gate: a vote can only be verified once both the quote's
   # authenticity and this statement's relevance are positive. A vote with no
   # sourced opinion has no pipeline, so it is not gated. Clearing is always allowed.
-  defp check_prerequisites(_vote, status) when status in [:unverified, "unverified"], do: :ok
-  defp check_prerequisites(%Vote{opinion_id: nil}, _status), do: :ok
+  defp check_prerequisites(_vote, _opinion_id, status) when status in [:unverified, "unverified"],
+    do: :ok
 
-  defp check_prerequisites(%Vote{opinion_id: opinion_id, statement_id: statement_id}, _status) do
+  defp check_prerequisites(_vote, nil, _status), do: :ok
+
+  defp check_prerequisites(%Vote{} = vote, opinion_id, _status) do
     opinion = Repo.get(Opinion, opinion_id)
-    opinion_statement = OpinionsStatements.get_opinion_statement(opinion_id, statement_id)
+    opinion_statement = OpinionsStatements.get_opinion_statement(opinion_id, vote.statement_id)
 
     cond do
+      is_nil(opinion) ->
+        {:error, :quote_not_found}
+
+      opinion.author_id != vote.author_id ->
+        {:error, :quote_author_mismatch}
+
       !VerificationStatus.positive?(opinion && opinion.verification_status) ->
         {:error, :quote_not_verified}
 
@@ -84,6 +103,19 @@ defmodule YouCongress.VoteVerifications do
     |> Repo.update_all(set: [verification_status: cached_status])
   end
 
+  defp verification_opinion_id(attrs, vote) do
+    (attrs[:opinion_id] || attrs["opinion_id"] || vote.opinion_id)
+    |> normalize_id()
+  end
+
+  defp maybe_update_vote_verification_status(
+         %Vote{id: vote_id, opinion_id: opinion_id},
+         opinion_id
+       ),
+       do: update_vote_verification_status(vote_id)
+
+  defp maybe_update_vote_verification_status(_vote, _opinion_id), do: :ok
+
   defp base_query_for_opinion(vote_id, nil) do
     from(v in VoteVerification, where: v.vote_id == ^vote_id and is_nil(v.opinion_id))
   end
@@ -99,6 +131,10 @@ defmodule YouCongress.VoteVerifications do
 
   defp tap_ok(error, _fun), do: error
 
+  defp normalize_id(nil), do: nil
+  defp normalize_id(id) when is_integer(id), do: id
+  defp normalize_id(id) when is_binary(id), do: String.to_integer(id)
+
   defp build_query(opts) do
     base_query = from(v in VoteVerification)
 
@@ -108,6 +144,9 @@ defmodule YouCongress.VoteVerifications do
 
       {:vote_id, id}, query ->
         from q in query, where: q.vote_id == ^id
+
+      {:opinion_id, opinion_id}, query when is_list(opinion_id) ->
+        from q in query, where: q.opinion_id in ^opinion_id
 
       {:opinion_id, opinion_id}, query ->
         from q in query, where: q.opinion_id == ^opinion_id

@@ -468,7 +468,8 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert html =~ "Vote answer needs review"
     end
 
-    test "shows empty relation row when only vote answer history is visible", %{conn: conn} do
+    test "shows quote-specific vote history when the vote is backed by another quote",
+         %{conn: conn} do
       user = user_fixture()
       author = author_fixture(%{name: "Quote Author"})
       statement = statement_fixture(%{title: "We should deliberate publicly"})
@@ -504,6 +505,33 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
       {:ok, _} =
         Verifications.create_verification(%{
+          opinion_id: shown_quote.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Shown quote authentic"
+        })
+
+      shown_relation = OpinionsStatements.get_opinion_statement(shown_quote.id, statement.id)
+
+      {:ok, _} =
+        OpinionStatementVerifications.create_verification(%{
+          opinion_statement_id: shown_relation.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Shown quote relation is exact"
+        })
+
+      {:ok, _} =
+        VoteVerifications.create_verification(%{
+          vote_id: vote.id,
+          opinion_id: shown_quote.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Shown quote vote answer is correct"
+        })
+
+      {:ok, _} =
+        Verifications.create_verification(%{
           opinion_id: voted_quote.id,
           user_id: user.id,
           status: :verified,
@@ -525,15 +553,15 @@ defmodule YouCongressWeb.OpinionLiveTest do
           vote_id: vote.id,
           user_id: user.id,
           status: :verified,
-          comment: "Vote answer is correct"
+          comment: "Voted quote vote answer is correct"
         })
 
       {:ok, _view, html} = live(conn, ~p"/c/#{shown_quote.id}")
 
       assert html =~ "Statement relation"
-      assert html =~ "No statement relation verification comments yet."
-      assert html =~ "Vote answer"
-      assert html =~ "Vote answer is correct"
+      assert html =~ "Shown quote relation is exact"
+      assert html =~ "Shown quote vote answer is correct"
+      refute html =~ "Voted quote vote answer is correct"
     end
 
     test "shows step-by-step verification badge and vote next to each statement", %{conn: conn} do

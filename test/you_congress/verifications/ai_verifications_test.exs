@@ -8,6 +8,7 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
 
   alias YouCongress.Opinions
   alias YouCongress.OpinionsStatements
+  alias YouCongress.VoteVerifications
   alias YouCongress.Votes
   alias YouCongress.Workers.VerificationWorker
 
@@ -60,6 +61,27 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
 
       {:ok, "#{subject_type}:#{id}"}
     end
+
+    def check_job_status("vote:" <> _),
+      do: {:ok, :completed, %{"correct_answer" => "for", "comment" => "c", "model" => "m"}}
+
+    def check_job_status(_),
+      do: {:ok, :completed, %{"status" => "ai_verified", "comment" => "c", "model" => "m"}}
+  end
+
+  defmodule CapturingVoteVerifier do
+    @behaviour YouCongress.Verifications.Verifier
+
+    def submit(:vote, vote) do
+      send(
+        Application.get_env(:you_congress, :verification_test_pid),
+        {:submitted_vote, vote.id, vote.opinion_id, vote.opinion && vote.opinion.content}
+      )
+
+      {:ok, "vote:#{vote.id}:#{vote.opinion_id}"}
+    end
+
+    def submit(subject_type, %{id: id}), do: {:ok, "#{subject_type}:#{id}"}
 
     def check_job_status("vote:" <> _),
       do: {:ok, :completed, %{"correct_answer" => "for", "comment" => "c", "model" => "m"}}
@@ -125,6 +147,14 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
     |> Oban.insert()
   end
 
+  defp flush_submitted_votes do
+    receive do
+      {:submitted_vote, _vote_id, _opinion_id, _content} -> flush_submitted_votes()
+    after
+      0 -> :ok
+    end
+  end
+
   # --- Tests ------------------------------------------------------------------
 
   describe "full cascade" do
@@ -144,6 +174,64 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
       assert reloaded.verification_status == :ai_verified
       # The quote supports "for", so the vote answer is corrected from :against.
       assert reloaded.answer == :for
+    end
+
+    test "verifies a vote using the cascaded quote, not another quote on the same statement" do
+      use_verifier(CapturingVoteVerifier)
+      put_env_restore(:verification_test_pid, self())
+      set_system_user()
+
+      author = author_fixture()
+      user = user_fixture(%{author_id: author.id})
+      statement = statement_fixture()
+
+      {:ok, %{opinion: first_quote}} =
+        Opinions.create_opinion(%{
+          content: "The public should deliberate on AI value alignment.",
+          source_url: "https://example.com/first",
+          twin: false,
+          author_id: author.id,
+          user_id: user.id
+        })
+
+      {:ok, %{opinion: dummy_quote}} =
+        Opinions.create_opinion(%{
+          content: "aaasd wewe wwe",
+          source_url: "https://example.com/dummy",
+          twin: false,
+          author_id: author.id,
+          user_id: user.id
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(first_quote, statement, user.id)
+      {:ok, _} = Opinions.add_opinion_to_statement(dummy_quote, statement, user.id)
+
+      {:ok, vote} =
+        Votes.create_vote(%{
+          author_id: author.id,
+          statement_id: statement.id,
+          opinion_id: dummy_quote.id,
+          answer: :against
+        })
+
+      flush_submitted_votes()
+      verify_quote(first_quote.id)
+
+      vote_id = vote.id
+      first_quote_id = first_quote.id
+
+      assert_received {:submitted_vote, ^vote_id, ^first_quote_id,
+                       "The public should deliberate on AI value alignment."}
+
+      [vote_verification] =
+        VoteVerifications.list_verifications(vote_id: vote.id, opinion_id: first_quote.id)
+
+      assert vote_verification.opinion_id == first_quote.id
+      assert VoteVerifications.status_for_vote_opinion(vote.id, first_quote.id) == :ai_verified
+
+      reloaded = Votes.get_vote!(vote.id)
+      assert reloaded.opinion_id == dummy_quote.id
+      assert reloaded.verification_status == nil
     end
   end
 

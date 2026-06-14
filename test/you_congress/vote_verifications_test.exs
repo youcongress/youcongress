@@ -173,6 +173,42 @@ defmodule YouCongress.VoteVerificationsTest do
       assert reload_vote_status(v.id) == :disputed
     end
 
+    test "can verify a vote in the context of a non-current quote" do
+      user = user_fixture()
+      author = author_fixture()
+      statement = statement_fixture()
+
+      old_quote = opinion_fixture(%{author_id: author.id, user_id: user.id})
+      current_quote = opinion_fixture(%{author_id: author.id, user_id: user.id})
+
+      {:ok, _} = YouCongress.Opinions.add_opinion_to_statement(old_quote, statement, user.id)
+      {:ok, _} = YouCongress.Opinions.add_opinion_to_statement(current_quote, statement, user.id)
+
+      {:ok, vote} =
+        Votes.create_vote(%{
+          author_id: author.id,
+          statement_id: statement.id,
+          opinion_id: current_quote.id,
+          answer: :for
+        })
+
+      verify_quote(old_quote, user)
+      verify_relevance(old_quote, statement, user)
+
+      assert {:ok, verification} =
+               VoteVerifications.create_verification(%{
+                 vote_id: vote.id,
+                 opinion_id: old_quote.id,
+                 user_id: user.id,
+                 status: :verified,
+                 comment: "Correct for the old quote"
+               })
+
+      assert verification.opinion_id == old_quote.id
+      assert VoteVerifications.status_for_vote_opinion(vote.id, old_quote.id) == :verified
+      assert reload_vote_status(vote.id) == nil
+    end
+
     test "requires all fields" do
       %{vote: v} = verified_vote_fixture()
 
