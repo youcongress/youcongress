@@ -114,19 +114,41 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
     user
   end
 
+  defp without_system_user(fun) do
+    original = Application.fetch_env(:you_congress, :verification_user_id)
+    Application.delete_env(:you_congress, :verification_user_id)
+
+    try do
+      fun.()
+    after
+      case original do
+        {:ok, original_value} ->
+          Application.put_env(:you_congress, :verification_user_id, original_value)
+
+        :error ->
+          Application.delete_env(:you_congress, :verification_user_id)
+      end
+    end
+  end
+
   defp build_quote_with_vote(answer \\ :against) do
     author = author_fixture()
     user = user_fixture(%{author_id: author.id})
     statement = statement_fixture()
 
-    {:ok, %{opinion: opinion}} =
-      Opinions.create_opinion(%{
-        content: "A real sourced quote",
-        source_url: "https://example.com/quote",
-        twin: false,
-        author_id: author.id,
-        user_id: user.id
-      })
+    opinion =
+      without_system_user(fn ->
+        {:ok, %{opinion: opinion}} =
+          Opinions.create_opinion(%{
+            content: "A real sourced quote",
+            source_url: "https://example.com/quote",
+            twin: false,
+            author_id: author.id,
+            user_id: user.id
+          })
+
+        opinion
+      end)
 
     {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement, user.id)
 

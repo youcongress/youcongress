@@ -1,5 +1,6 @@
 defmodule YouCongress.OpinionsTest do
   use YouCongress.DataCase
+  use Oban.Testing, repo: YouCongress.Repo
 
   import YouCongress.AccountsFixtures
   import YouCongress.OpinionsFixtures
@@ -9,7 +10,10 @@ defmodule YouCongress.OpinionsTest do
 
   alias YouCongress.Embeddings
   alias YouCongress.Opinions
+  alias YouCongress.OpinionsStatements
+  alias YouCongress.Verifications
   alias YouCongress.Votes
+  alias YouCongress.Workers.VerificationWorker
 
   @embedding_dimensions 1536
 
@@ -190,6 +194,48 @@ defmodule YouCongress.OpinionsTest do
   end
 
   describe "add_opinion_to_statement/3" do
+    test "enqueues relevance verification when linking a verified quote" do
+      user = user_fixture()
+      opinion = opinion_fixture(%{user_id: user.id})
+      statement = statement_fixture()
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Authentic"
+        })
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        assert {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement, user.id)
+
+        opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+
+        assert_enqueued(
+          worker: VerificationWorker,
+          args: %{"subject" => "relevance", "id" => opinion_statement.id}
+        )
+      end)
+    end
+
+    test "does not enqueue relevance verification before the quote is verified" do
+      user = user_fixture()
+      opinion = opinion_fixture(%{user_id: user.id})
+      statement = statement_fixture()
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        assert {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement, user.id)
+
+        opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+
+        refute_enqueued(
+          worker: VerificationWorker,
+          args: %{"subject" => "relevance", "id" => opinion_statement.id}
+        )
+      end)
+    end
+
     test "returns already_associated when the link exists" do
       opinion = opinion_fixture()
       statement = statement_fixture()

@@ -14,6 +14,7 @@ defmodule YouCongress.Opinions do
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
+  alias YouCongress.VerificationStatus
   alias YouCongress.Workers.UpdateAuthorPublicFigureWorker
   alias YouCongress.Workers.UpdateOpinionDescendantsCountWorker
   alias YouCongress.Workers.SyncStatementOpinionsCountWorker
@@ -609,6 +610,7 @@ defmodule YouCongress.Opinions do
           :sync_opinions_count,
           SyncStatementOpinionsCountWorker.new(%{"statement_id" => statement.id})
         )
+        |> maybe_enqueue_relevance_verification(opinion)
         |> maybe_update_current_quote_vote(opinion, statement)
         |> Repo.transaction()
 
@@ -638,6 +640,22 @@ defmodule YouCongress.Opinions do
       nil -> :ok
       _ -> {:error, :already_associated}
     end
+  end
+
+  defp maybe_enqueue_relevance_verification(multi, %Opinion{id: opinion_id}) do
+    if relevance_verification_ready?(opinion_id) do
+      Oban.insert(multi, :relevance_verification, fn %{opinion_statement: opinion_statement} ->
+        VerificationWorker.new(%{"subject" => "relevance", "id" => opinion_statement.id})
+      end)
+    else
+      multi
+    end
+  end
+
+  defp relevance_verification_ready?(opinion_id) do
+    from(o in Opinion, where: o.id == ^opinion_id, select: o.verification_status)
+    |> Repo.one()
+    |> VerificationStatus.positive?()
   end
 
   def remove_opinion_from_statement(%Opinion{} = opinion, statement_id)
