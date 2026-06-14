@@ -22,6 +22,7 @@ defmodule YouCongress.Verifications.AIVerifications do
 
   alias YouCongress.Repo
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Statements
   alias YouCongress.Votes
@@ -40,8 +41,8 @@ defmodule YouCongress.Verifications.AIVerifications do
   Record the verification for `subject`/`id` from a completed LLM `result` and
   cascade to the next stage. `subject` is `"quote"`, `"relevance"` or `"vote"`.
   """
-  @spec record_and_cascade(String.t(), integer(), map()) :: :ok
-  def record_and_cascade(subject, id, result) do
+  @spec record_and_cascade(String.t(), integer(), map(), map()) :: :ok
+  def record_and_cascade(subject, id, result, opts \\ %{}) do
     case system_user_id() do
       nil ->
         Logger.warning(
@@ -51,11 +52,11 @@ defmodule YouCongress.Verifications.AIVerifications do
         :ok
 
       user_id ->
-        do_record(subject, id, result, model(result), user_id)
+        do_record(subject, id, result, model(result), user_id, opts)
     end
   end
 
-  defp do_record("quote", opinion_id, result, model, user_id) do
+  defp do_record("quote", opinion_id, result, model, user_id, _opts) do
     status = normalize_status(result["status"])
 
     attrs = %{
@@ -77,7 +78,7 @@ defmodule YouCongress.Verifications.AIVerifications do
     end
   end
 
-  defp do_record("relevance", opinion_statement_id, result, model, user_id) do
+  defp do_record("relevance", opinion_statement_id, result, model, user_id, _opts) do
     status = normalize_status(result["status"])
 
     case Repo.get(OpinionStatement, opinion_statement_id) do
@@ -117,16 +118,18 @@ defmodule YouCongress.Verifications.AIVerifications do
     end
   end
 
-  defp do_record("vote", vote_id, result, model, user_id) do
+  defp do_record("vote", vote_id, result, model, user_id, opts) do
     case Repo.get(Vote, vote_id) do
       nil ->
         :ok
 
       %Vote{} = vote ->
         correct_answer = normalize_answer(result["correct_answer"])
+        opinion_id = explicit_opinion_id(opts) || vote.opinion_id
 
         attrs = %{
           vote_id: vote_id,
+          opinion_id: opinion_id,
           comment: comment(result),
           model: model,
           user_id: user_id
@@ -165,19 +168,29 @@ defmodule YouCongress.Verifications.AIVerifications do
   end
 
   defp enqueue_votes(%OpinionStatement{opinion_id: opinion_id, statement_id: statement_id}) do
-    from(v in Vote,
-      where: v.opinion_id == ^opinion_id and v.statement_id == ^statement_id,
-      select: v.id
-    )
-    |> Repo.all()
-    |> Enum.each(&enqueue("vote", &1))
+    case Opinions.get_opinion(opinion_id) do
+      %Opinion{author_id: author_id} when not is_nil(author_id) ->
+        from(v in Vote,
+          where: v.author_id == ^author_id and v.statement_id == ^statement_id,
+          select: v.id
+        )
+        |> Repo.all()
+        |> Enum.each(&enqueue("vote", &1, opinion_id: opinion_id))
+
+      _ ->
+        :ok
+    end
   end
 
-  defp enqueue(subject, id) do
+  defp enqueue(subject, id, opts \\ []) do
     %{"subject" => subject, "id" => id}
+    |> maybe_put_arg("opinion_id", opts[:opinion_id])
     |> VerificationWorker.new()
     |> Oban.insert()
   end
+
+  defp maybe_put_arg(args, _key, nil), do: args
+  defp maybe_put_arg(args, key, value), do: Map.put(args, key, value)
 
   defp unlink(%OpinionStatement{opinion_id: opinion_id, statement_id: statement_id}) do
     opinion = Opinions.get_opinion(opinion_id)
@@ -210,6 +223,14 @@ defmodule YouCongress.Verifications.AIVerifications do
   defp normalize_answer(_), do: nil
 
   defp comment(result), do: result["comment"] || "AI verification"
+
+  defp explicit_opinion_id(%{"opinion_id" => opinion_id}), do: normalize_id(opinion_id)
+  defp explicit_opinion_id(%{opinion_id: opinion_id}), do: normalize_id(opinion_id)
+  defp explicit_opinion_id(_opts), do: nil
+
+  defp normalize_id(id) when is_integer(id), do: id
+  defp normalize_id(id) when is_binary(id), do: String.to_integer(id)
+  defp normalize_id(_), do: nil
 
   # Never store "human" so resolve/1 treats it as an AI verification.
   defp model(result) do

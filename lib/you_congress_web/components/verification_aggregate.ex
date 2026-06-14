@@ -268,10 +268,11 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
   end
 
   defp verify(socket, :vote, status) do
-    %{vote: vote, current_user: user} = socket.assigns
+    %{opinion: opinion, vote: vote, current_user: user} = socket.assigns
 
     case VoteVerifications.create_verification(%{
            vote_id: vote.id,
+           opinion_id: opinion.id,
            user_id: user.id,
            status: status,
            comment: verification_comment(socket, status),
@@ -341,8 +342,9 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
   defp relevance_status(%{opinion_statement: %{verification_status: status}}), do: status
   defp relevance_status(_), do: nil
 
-  # The answer's correctness is a property of the vote itself, independent of
-  # which of the author's quotes is currently shown — so any present vote counts.
+  # The answer's correctness is evaluated in the quote context passed by the
+  # caller. Statement pages pass the vote's current quote; quote pages pass the
+  # quote being reviewed.
   defp vote_status(%{vote: %{verification_status: status}}), do: status
   defp vote_status(_), do: nil
 

@@ -15,11 +15,11 @@ defmodule YouCongress.Workers.VerificationPollingWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{
-        args: %{"subject" => subject, "id" => id, "job_id" => job_id}
+        args: %{"subject" => subject, "id" => id, "job_id" => job_id} = args
       }) do
     case Verifier.check_job_status(job_id) do
       {:ok, :completed, result} ->
-        AIVerifications.record_and_cascade(subject, id, result)
+        AIVerifications.record_and_cascade(subject, id, result, Map.take(args, ["opinion_id"]))
         :ok
 
       {:ok, :in_progress} ->

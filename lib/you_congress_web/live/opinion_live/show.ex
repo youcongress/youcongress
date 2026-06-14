@@ -432,12 +432,17 @@ defmodule YouCongressWeb.OpinionLive.Show do
   defp load_statement_verification_histories(%{statements: statements} = opinion)
        when is_list(statements) and statements != [] do
     relation_verifications_by_id = relation_verifications_by_id(statements)
-    vote_verifications_by_id = vote_verifications_by_id(statements)
+    vote_verifications_by_id = vote_verifications_by_id(statements, opinion.id)
 
     statements =
       Enum.map(statements, fn statement ->
         opinion_statement = Map.get(statement, :opinion_statement)
-        author_vote = Map.get(statement, :author_vote)
+
+        author_vote =
+          statement
+          |> Map.get(:author_vote)
+          |> vote_with_quote_status(opinion.id)
+
         opinion_statement_id = opinion_statement && opinion_statement.id
         vote_id = author_vote && author_vote.id
 
@@ -446,6 +451,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
           :relation_verifications,
           Map.get(relation_verifications_by_id, opinion_statement_id, [])
         )
+        |> Map.put(:author_vote, author_vote)
         |> Map.put(:vote_verifications, Map.get(vote_verifications_by_id, vote_id, []))
       end)
 
@@ -475,28 +481,30 @@ defmodule YouCongressWeb.OpinionLive.Show do
     end
   end
 
-  defp vote_verifications_by_id(statements) do
-    vote_opinion_id_by_vote_id =
+  defp vote_verifications_by_id(statements, opinion_id) do
+    vote_ids =
       statements
       |> Enum.map(&Map.get(&1, :author_vote))
       |> Enum.reject(&is_nil/1)
-      |> Map.new(fn vote -> {vote.id, vote.opinion_id} end)
-
-    vote_ids = Map.keys(vote_opinion_id_by_vote_id)
+      |> Enum.map(& &1.id)
 
     if vote_ids == [] do
       %{}
     else
       VoteVerifications.list_verifications(
         vote_id: vote_ids,
+        opinion_id: opinion_id,
         order_by: [desc: :updated_at],
         preload: [user: [:author]]
       )
-      |> Enum.filter(fn verification ->
-        verification.opinion_id == Map.fetch!(vote_opinion_id_by_vote_id, verification.vote_id)
-      end)
       |> Enum.group_by(& &1.vote_id)
     end
+  end
+
+  defp vote_with_quote_status(nil, _opinion_id), do: nil
+
+  defp vote_with_quote_status(vote, opinion_id) do
+    %{vote | verification_status: VoteVerifications.status_for_vote_opinion(vote.id, opinion_id)}
   end
 
   defp load_author_votes_for_opinion(opinion) do

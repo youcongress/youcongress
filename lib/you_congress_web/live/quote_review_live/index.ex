@@ -5,6 +5,7 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements
   alias YouCongress.Verifications
+  alias YouCongress.VoteVerifications
   alias YouCongress.Halls
   import YouCongressWeb.Tools.TimeAgo
 
@@ -222,8 +223,13 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
         # Add votes and the relevance link to each statement
         statements_with_votes =
           Enum.map(quote.statements, fn statement ->
+            author_vote =
+              statement.id
+              |> Map.get(votes_by_statement)
+              |> vote_with_quote_status(quote.id)
+
             statement
-            |> Map.put(:author_vote, Map.get(votes_by_statement, statement.id))
+            |> Map.put(:author_vote, author_vote)
             |> Map.put(
               :opinion_statement,
               Map.get(opinion_statements_by_statement, statement.id)
@@ -250,6 +256,12 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
         quote
       end
     end)
+  end
+
+  defp vote_with_quote_status(nil, _opinion_id), do: nil
+
+  defp vote_with_quote_status(vote, opinion_id) do
+    %{vote | verification_status: VoteVerifications.status_for_vote_opinion(vote.id, opinion_id)}
   end
 
   # Helper function to get styling classes based on vote response

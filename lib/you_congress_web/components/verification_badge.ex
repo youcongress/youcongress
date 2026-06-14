@@ -35,7 +35,7 @@ defmodule YouCongressWeb.Components.VerificationBadge do
      |> assign(:current_user, assigns[:current_user])
      |> assign(:class, assigns[:class] || "ml-2")
      |> assign(:link_to_opinion, assigns[:link_to_opinion] || false)
-     |> assign(:opinion_id, opinion_id(subject_type, subject))
+     |> assign(:opinion_id, assigns[:opinion_id] || opinion_id(subject_type, subject))
      |> assign_new(:show_dropdown, fn -> false end)
      |> assign_new(:selected_status, fn -> nil end)
      |> assign_new(:comment, fn -> "" end)}
@@ -186,6 +186,7 @@ defmodule YouCongressWeb.Components.VerificationBadge do
         current_user: current_user,
         subject_type: subject_type,
         subject: subject,
+        opinion_id: opinion_id,
         selected_status: status,
         comment: comment
       }
@@ -193,7 +194,7 @@ defmodule YouCongressWeb.Components.VerificationBadge do
 
     comment = if comment == "", do: badge_label(status), else: comment
 
-    case create_verification(subject_type, subject, current_user, status, comment) do
+    case create_verification(subject_type, subject, current_user, status, comment, opinion_id) do
       {:ok, _verification} ->
         cached_status = if status == :unverified, do: nil, else: status
         updated_subject = %{subject | verification_status: cached_status}
@@ -213,7 +214,7 @@ defmodule YouCongressWeb.Components.VerificationBadge do
     end
   end
 
-  defp create_verification(:opinion, subject, current_user, status, comment) do
+  defp create_verification(:opinion, subject, current_user, status, comment, _opinion_id) do
     Verifications.create_verification(%{
       opinion_id: subject.id,
       user_id: current_user.id,
@@ -223,7 +224,14 @@ defmodule YouCongressWeb.Components.VerificationBadge do
     })
   end
 
-  defp create_verification(:opinion_statement, subject, current_user, status, comment) do
+  defp create_verification(
+         :opinion_statement,
+         subject,
+         current_user,
+         status,
+         comment,
+         _opinion_id
+       ) do
     OpinionStatementVerifications.create_verification(%{
       opinion_statement_id: subject.id,
       user_id: current_user.id,
@@ -233,9 +241,10 @@ defmodule YouCongressWeb.Components.VerificationBadge do
     })
   end
 
-  defp create_verification(:vote, subject, current_user, status, comment) do
+  defp create_verification(:vote, subject, current_user, status, comment, opinion_id) do
     VoteVerifications.create_verification(%{
       vote_id: subject.id,
+      opinion_id: opinion_id,
       user_id: current_user.id,
       status: status,
       comment: comment,
