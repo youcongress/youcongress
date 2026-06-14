@@ -124,7 +124,8 @@ defmodule YouCongress.Verifications.VerifierAI do
     statement = opinion_statement.statement
 
     prompt = """
-    Verify whether the following quote is exactly about the complete statement.
+    Verify whether the following quote establishes the author's position on the
+    complete statement.
 
     Statement: #{statement.title}
     Quote:
@@ -132,13 +133,23 @@ defmodule YouCongress.Verifications.VerifierAI do
     #{opinion.content}
     \"\"\"
 
-    The quote must address the COMPLETE statement, not merely one word, theme,
-    subtopic, or a nearby issue, and the author's position on the whole statement
-    must be clear from it.
+    A quote qualifies if it either:
+    - is directly about the COMPLETE statement; or
+    - is about something else, but clearly implies that the author supports,
+      opposes, or abstains on the COMPLETE statement.
+
+    The author's position on the COMPLETE statement must be clear from the quote.
+    Do not accept a quote that only relates to one word, theme, subtopic, or a
+    nearby issue unless it also implies the author's position on the COMPLETE
+    statement. Do not infer a position from general sentiment, party membership,
+    job title, or facts outside the quote.
 
     Choose a status:
-    - "ai_verified": the quote is clearly about the whole statement.
-    - "disputed": the quote is off-topic or only about a different/partial issue.
+    - "ai_verified": the quote is directly about the whole statement, or clearly
+      implies the author's support, opposition, or abstention on the whole
+      statement.
+    - "disputed": the quote does not make the author's position on the whole
+      statement clear.
     - "ai_unverifiable": you cannot tell.
     Always include a short comment explaining your decision.
     """
@@ -149,7 +160,7 @@ defmodule YouCongress.Verifications.VerifierAI do
        schema: status_schema(),
        name: "RelevanceVerification",
        system:
-         "You judge whether a quote is exactly about a policy statement as a whole. Be strict: partial or adjacent topics are not relevant."
+         "You judge whether a quote establishes an author's stance on a policy statement as a whole. Accept direct relevance or clear implication; reject partial or adjacent topics unless they imply a stance on the complete statement."
      }}
   end
 
