@@ -622,6 +622,22 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
       opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
 
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Quote authentic"
+        })
+
+      {:ok, _} =
+        OpinionStatementVerifications.create_verification(%{
+          opinion_statement_id: opinion_statement.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Relation exact"
+        })
+
       opinion_id = opinion.id
       opinion_statement_id = opinion_statement.id
       vote_id = vote.id
@@ -666,6 +682,143 @@ defmodule YouCongressWeb.OpinionLiveTest do
       )
 
       assert_received(
+        {:oban_insert,
+         %Ecto.Changeset{changes: %{args: %{"subject" => "vote", "id" => ^vote_id}}}}
+      )
+    end
+
+    test "moderator cannot enqueue AI relation verification before quote is verified", %{
+      conn: conn
+    } do
+      user = user_fixture(%{role: "moderator"})
+      author = author_fixture(%{name: "Quote Author"})
+      conn = log_in_user(conn, user)
+
+      statement = statement_fixture(%{title: "We should deliberate publicly"})
+
+      opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: user.id,
+          content: "A citable quote",
+          source_url: "https://example.com/source",
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+      opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+      opinion_statement_id = opinion_statement.id
+      test_pid = self()
+
+      with_mock Oban,
+        insert: fn job ->
+          send(test_pid, {:oban_insert, job})
+          {:ok, Map.put(job, :id, Ecto.UUID.generate())}
+        end do
+        {:ok, view, _html} = live(conn, ~p"/c/#{opinion.id}")
+        card = ~s|[data-testid="statement-verify-#{statement.id}"]|
+
+        view
+        |> element(
+          ~s|#{card} button[data-testid="statement-relation-verification-enqueue-#{statement.id}"]|
+        )
+        |> render_click()
+
+        assert render(view) =~ "Verify the quote before its relevance or vote."
+      end
+
+      refute_received(
+        {:oban_insert,
+         %Ecto.Changeset{
+           changes: %{args: %{"subject" => "relevance", "id" => ^opinion_statement_id}}
+         }}
+      )
+    end
+
+    test "moderator cannot enqueue AI vote verification before the vote quote relation is verified",
+         %{conn: conn} do
+      user = user_fixture(%{role: "moderator"})
+      author = author_fixture(%{name: "Quote Author"})
+      conn = log_in_user(conn, user)
+
+      statement = statement_fixture(%{title: "We should deliberate publicly"})
+
+      voted_quote =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: user.id,
+          content: "Vote-backed quote",
+          source_url: "https://example.com/voted",
+          twin: false
+        })
+
+      shown_quote =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: user.id,
+          content: "Shown quote",
+          source_url: "https://example.com/shown",
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(voted_quote, statement.id)
+      {:ok, _} = Opinions.add_opinion_to_statement(shown_quote, statement.id)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: voted_quote.id,
+          answer: :for
+        })
+
+      shown_relation = OpinionsStatements.get_opinion_statement(shown_quote.id, statement.id)
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: voted_quote.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Vote-backed quote authentic"
+        })
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: shown_quote.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Shown quote authentic"
+        })
+
+      {:ok, _} =
+        OpinionStatementVerifications.create_verification(%{
+          opinion_statement_id: shown_relation.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Shown relation exact"
+        })
+
+      vote_id = vote.id
+      test_pid = self()
+
+      with_mock Oban,
+        insert: fn job ->
+          send(test_pid, {:oban_insert, job})
+          {:ok, Map.put(job, :id, Ecto.UUID.generate())}
+        end do
+        {:ok, view, _html} = live(conn, ~p"/c/#{shown_quote.id}")
+        card = ~s|[data-testid="statement-verify-#{statement.id}"]|
+
+        view
+        |> element(
+          ~s|#{card} button[data-testid="vote-inference-verification-enqueue-#{statement.id}"]|
+        )
+        |> render_click()
+
+        assert render(view) =~ "Verify the relevance before the vote."
+      end
+
+      refute_received(
         {:oban_insert,
          %Ecto.Changeset{changes: %{args: %{"subject" => "vote", "id" => ^vote_id}}}}
       )

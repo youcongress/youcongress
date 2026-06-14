@@ -7,7 +7,10 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.OpinionStatementVerifications
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.OpinionsStatements.OpinionStatement
+  alias YouCongress.Repo
   alias YouCongress.Verifications
+  alias YouCongress.VerificationStatus
   alias YouCongress.Track
   alias YouCongress.Delegations
   alias YouCongressWeb.OpinionLive.OpinionComponent
@@ -338,9 +341,16 @@ defmodule YouCongressWeb.OpinionLive.Show do
     if Permissions.can_verify_opinion?(current_user) do
       with {:ok, id} <- parse_id(id),
            true <- verification_target_on_page?(subject, id, opinion),
+           :ok <- verification_enqueue_prerequisites(subject, id),
            {:ok, _job} <- enqueue_verification(subject, id) do
         {:noreply, put_flash(socket, :info, "#{verification_subject_label(subject)} queued.")}
       else
+        {:error, :quote_not_verified} ->
+          {:noreply, put_flash(socket, :error, "Verify the quote before its relevance or vote.")}
+
+        {:error, :relevance_not_verified} ->
+          {:noreply, put_flash(socket, :error, "Verify the relevance before the vote.")}
+
         false ->
           {:noreply, put_flash(socket, :error, "Cannot queue verification for that item.")}
 
@@ -601,6 +611,58 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   defp verification_target_on_page?(_subject, _id, _opinion), do: false
+
+  defp verification_enqueue_prerequisites("quote", _id), do: :ok
+
+  defp verification_enqueue_prerequisites("relevance", opinion_statement_id) do
+    opinion_statement = opinion_statement_from_id(opinion_statement_id)
+
+    if VerificationStatus.positive?(
+         opinion_statement && opinion_statement.opinion.verification_status
+       ) do
+      :ok
+    else
+      {:error, :quote_not_verified}
+    end
+  end
+
+  defp verification_enqueue_prerequisites("vote", vote_id) do
+    case Votes.get_vote(vote_id) do
+      nil ->
+        :error
+
+      %{opinion_id: nil} ->
+        :ok
+
+      vote ->
+        vote = Repo.preload(vote, :opinion)
+
+        opinion_statement =
+          OpinionsStatements.get_opinion_statement(vote.opinion_id, vote.statement_id)
+
+        cond do
+          not VerificationStatus.positive?(vote.opinion && vote.opinion.verification_status) ->
+            {:error, :quote_not_verified}
+
+          not VerificationStatus.positive?(
+            opinion_statement && opinion_statement.verification_status
+          ) ->
+            {:error, :relevance_not_verified}
+
+          true ->
+            :ok
+        end
+    end
+  end
+
+  defp verification_enqueue_prerequisites(_subject, _id), do: :error
+
+  defp opinion_statement_from_id(opinion_statement_id) do
+    case Repo.get(OpinionStatement, opinion_statement_id) do
+      nil -> nil
+      opinion_statement -> Repo.preload(opinion_statement, :opinion)
+    end
+  end
 
   defp enqueue_verification(subject, id) when subject in ~w(quote relevance vote) do
     %{"subject" => subject, "id" => id}
