@@ -50,6 +50,10 @@ config :you_congress,
 
 config :you_congress, :quote_verifier_implementation, YouCongress.Verifications.VerifierFake
 
+config :you_congress,
+       :quote_statement_matcher_implementation,
+       YouCongress.Verifications.QuoteStatementMatcherFake
+
 # Disable the MCP session store during tests to avoid runtime warnings.
 config :anubis_mcp, :session_store, enabled: false
 
