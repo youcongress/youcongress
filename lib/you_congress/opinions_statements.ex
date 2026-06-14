@@ -7,6 +7,8 @@ defmodule YouCongress.OpinionsStatements do
   alias YouCongress.Repo
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
+  alias YouCongress.VerificationStatus
+  alias YouCongress.Workers.VerificationWorker
 
   @doc """
   Returns a map of {statement_id, opinion} pairs for the given statement_ids and current_user's author_id.
@@ -71,6 +73,7 @@ defmodule YouCongress.OpinionsStatements do
 
     with {:ok, opinion_statement} <- result do
       sync_opinions_count(opinion_statement.statement_id)
+      maybe_enqueue_relevance_verification(opinion_statement)
       {:ok, opinion_statement}
     end
   end
@@ -79,5 +82,19 @@ defmodule YouCongress.OpinionsStatements do
     %{"statement_id" => statement_id}
     |> YouCongress.Workers.SyncStatementOpinionsCountWorker.new()
     |> Oban.insert()
+  end
+
+  defp maybe_enqueue_relevance_verification(%OpinionStatement{id: id, opinion_id: opinion_id}) do
+    if relevance_verification_ready?(opinion_id) do
+      %{"subject" => "relevance", "id" => id}
+      |> VerificationWorker.new()
+      |> Oban.insert()
+    end
+  end
+
+  defp relevance_verification_ready?(opinion_id) do
+    from(o in Opinion, where: o.id == ^opinion_id, select: o.verification_status)
+    |> Repo.one()
+    |> VerificationStatus.positive?()
   end
 end
