@@ -8,6 +8,8 @@ defmodule YouCongress.Workers.VerificationWorker do
   - id: the subject's id
   - opinion_id: optional quote id for vote jobs, used when verifying a vote from
     a specific quote page even if the vote currently points at another quote.
+  - correction_attempts: optional quote correction loop count. Quote jobs stop
+    asking the verifier for more corrections after the configured cutoff.
   """
 
   use Oban.Worker,
@@ -24,6 +26,7 @@ defmodule YouCongress.Workers.VerificationWorker do
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
+  alias YouCongress.Verifications.QuoteCorrectionLoop
   alias YouCongress.Verifications.Verifier
   alias YouCongress.Workers.VerificationPollingWorker
 
@@ -34,10 +37,11 @@ defmodule YouCongress.Workers.VerificationWorker do
         :ok
 
       record ->
-        case Verifier.submit(subject_type(subject), record) do
+        case Verifier.submit(subject_type(subject), record, verifier_opts(args)) do
           {:ok, job_id} ->
             %{"subject" => subject, "id" => id, "job_id" => job_id}
             |> maybe_put_context(args, "opinion_id")
+            |> maybe_put_context(args, "correction_attempts")
             |> VerificationPollingWorker.new()
             |> Oban.insert()
 
@@ -94,6 +98,15 @@ defmodule YouCongress.Workers.VerificationWorker do
       _ -> target
     end
   end
+
+  defp verifier_opts(%{"subject" => "quote"} = args) do
+    [
+      correction_attempts: QuoteCorrectionLoop.correction_attempts(args),
+      allow_quote_correction?: QuoteCorrectionLoop.allow_correction?(args)
+    ]
+  end
+
+  defp verifier_opts(_args), do: []
 
   defp normalize_id(id) when is_integer(id), do: id
   defp normalize_id(id) when is_binary(id), do: String.to_integer(id)

@@ -8,6 +8,7 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
 
   alias YouCongress.Opinions
   alias YouCongress.OpinionsStatements
+  alias YouCongress.Verifications
   alias YouCongress.VoteVerifications
   alias YouCongress.Votes
   alias YouCongress.Workers.VerificationWorker
@@ -88,6 +89,123 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
 
     def check_job_status(_),
       do: {:ok, :completed, %{"status" => "ai_verified", "comment" => "c", "model" => "m"}}
+  end
+
+  defmodule CorrectingQuoteVerifier do
+    @behaviour YouCongress.Verifications.Verifier
+
+    @correct_content "Correct quote text"
+    @correct_source_url "https://example.com/correct-quote"
+    @correct_author_name "Correct Quote Author"
+
+    def submit(:quote, %{id: id, content: "Wrong quote text"}) do
+      notify({:submitted_quote, :wrong, id})
+      {:ok, "quote:#{id}:wrong"}
+    end
+
+    def submit(:quote, %{id: id}) do
+      notify({:submitted_quote, :corrected, id})
+      {:ok, "quote:#{id}:corrected"}
+    end
+
+    def submit(subject_type, %{id: id}), do: {:ok, "#{subject_type}:#{id}"}
+
+    def check_job_status("quote:" <> rest) do
+      if String.ends_with?(rest, ":wrong") do
+        {:ok, :completed,
+         %{
+           "status" => "disputed",
+           "comment" => "Stored quote metadata was wrong",
+           "model" => "m",
+           "correction" => %{
+             "content" => @correct_content,
+             "source_url" => @correct_source_url,
+             "date" => "2024-05",
+             "date_precision" => "month",
+             "author" => %{
+               "name" => @correct_author_name,
+               "bio" => "AI safety researcher",
+               "wikipedia_url" => "https://en.wikipedia.org/wiki/Correct_Quote_Author",
+               "twitter_username" => "correctquoteauthor"
+             }
+           }
+         }}
+      else
+        {:ok, :completed, %{"status" => "ai_verified", "comment" => "corrected", "model" => "m"}}
+      end
+    end
+
+    def check_job_status("vote:" <> _),
+      do: {:ok, :completed, %{"correct_answer" => "for", "comment" => "c", "model" => "m"}}
+
+    def check_job_status(_),
+      do: {:ok, :completed, %{"status" => "ai_verified", "comment" => "c", "model" => "m"}}
+
+    def correct_content, do: @correct_content
+    def correct_source_url, do: @correct_source_url
+    def correct_author_name, do: @correct_author_name
+
+    defp notify(message) do
+      if pid = Application.get_env(:you_congress, :verification_test_pid) do
+        send(pid, message)
+      end
+    end
+  end
+
+  defmodule LoopingCorrectionVerifier do
+    @behaviour YouCongress.Verifications.Verifier
+
+    def submit(subject_type, subject), do: submit(subject_type, subject, [])
+
+    def submit(:quote, %{id: id, content: content}, opts) do
+      attempts = Keyword.fetch!(opts, :correction_attempts)
+      allow_correction? = Keyword.fetch!(opts, :allow_quote_correction?)
+
+      notify({:loop_quote_submitted, attempts, allow_correction?, content})
+
+      {:ok, "loop_quote:#{id}:#{attempts}:#{allow_correction?}"}
+    end
+
+    def submit(subject_type, %{id: id}, _opts), do: {:ok, "#{subject_type}:#{id}"}
+
+    def check_job_status("loop_quote:" <> rest) do
+      [_id, attempts, allow_correction?] = String.split(rest, ":", parts: 3)
+      attempts = String.to_integer(attempts)
+      correction_number = attempts + 1
+
+      result = %{
+        "status" => if(allow_correction? == "true", do: "disputed", else: "ai_verified"),
+        "comment" => "loop #{correction_number}",
+        "model" => "m",
+        "correction" => correction(correction_number)
+      }
+
+      {:ok, :completed, result}
+    end
+
+    def check_job_status(_),
+      do: {:ok, :completed, %{"status" => "ai_verified", "comment" => "c", "model" => "m"}}
+
+    defp correction(number) do
+      %{
+        "content" => "Corrected quote #{number}",
+        "source_url" => "https://example.com/corrected-quote-#{number}",
+        "date" => "2024",
+        "date_precision" => "year",
+        "author" => %{
+          "name" => "Loop Correction Author",
+          "bio" => "AI policy expert",
+          "wikipedia_url" => "https://en.wikipedia.org/wiki/Loop_Correction_Author",
+          "twitter_username" => "loopcorrection"
+        }
+      }
+    end
+
+    defp notify(message) do
+      if pid = Application.get_env(:you_congress, :verification_test_pid) do
+        send(pid, message)
+      end
+    end
   end
 
   # --- Helpers ----------------------------------------------------------------
@@ -290,12 +408,117 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
     end
   end
 
+  describe "quote corrections" do
+    test "updates corrected quote fields and re-verifies the corrected opinion" do
+      use_verifier(CorrectingQuoteVerifier)
+      put_env_restore(:verification_test_pid, self())
+      set_system_user()
+
+      wrong_author = author_fixture(%{name: "Wrong Quote Author"})
+      user = user_fixture(%{author_id: wrong_author.id})
+      statement = statement_fixture()
+
+      opinion =
+        without_system_user(fn ->
+          {:ok, %{opinion: opinion}} =
+            Opinions.create_opinion(%{
+              content: "Wrong quote text",
+              source_url: "https://example.com/wrong-quote",
+              date: "2020",
+              twin: false,
+              author_id: wrong_author.id,
+              user_id: user.id
+            })
+
+          opinion
+        end)
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement, user.id)
+
+      {:ok, vote} =
+        Votes.create_vote(%{
+          author_id: wrong_author.id,
+          statement_id: statement.id,
+          opinion_id: opinion.id,
+          answer: :against
+        })
+
+      verify_quote(opinion.id)
+
+      assert_received {:submitted_quote, :wrong, _}
+      assert_received {:submitted_quote, :corrected, _}
+
+      reloaded = Opinions.get_opinion!(opinion.id, preload: [:author])
+
+      assert reloaded.content == CorrectingQuoteVerifier.correct_content()
+      assert reloaded.source_url == CorrectingQuoteVerifier.correct_source_url()
+      assert reloaded.date == ~D[2024-05-01]
+      assert reloaded.date_precision == :month
+      assert reloaded.author.name == CorrectingQuoteVerifier.correct_author_name()
+      assert reloaded.verification_status == :ai_verified
+
+      refute Enum.any?(
+               Verifications.list_verifications(opinion_id: opinion.id),
+               &(&1.status == :disputed)
+             )
+
+      reloaded_vote = Votes.get_vote!(vote.id)
+
+      assert reloaded_vote.author_id == reloaded.author_id
+      assert reloaded_vote.answer == :for
+      assert reloaded_vote.verification_status == :ai_verified
+    end
+
+    test "stops applying corrections on the third quote verification" do
+      put_env_restore(:verification_test_pid, self())
+
+      wrong_author = author_fixture(%{name: "Loop Wrong Author"})
+      user = user_fixture(%{author_id: wrong_author.id})
+
+      opinion =
+        without_system_user(fn ->
+          {:ok, %{opinion: opinion}} =
+            Opinions.create_opinion(%{
+              content: "Wrong quote text",
+              source_url: "https://example.com/loop-wrong-quote",
+              date: "2020",
+              twin: false,
+              author_id: wrong_author.id,
+              user_id: user.id
+            })
+
+          opinion
+        end)
+
+      use_verifier(LoopingCorrectionVerifier)
+      set_system_user()
+
+      verify_quote(opinion.id)
+
+      assert_received {:loop_quote_submitted, 0, true, "Wrong quote text"}
+      assert_received {:loop_quote_submitted, 1, true, "Corrected quote 1"}
+      assert_received {:loop_quote_submitted, 2, false, "Corrected quote 2"}
+      refute_received {:loop_quote_submitted, 3, _, _}
+
+      reloaded = Opinions.get_opinion!(opinion.id, preload: [:author])
+
+      assert reloaded.content == "Corrected quote 2"
+      assert reloaded.source_url == "https://example.com/corrected-quote-2"
+      assert reloaded.author.name == "Loop Correction Author"
+      assert reloaded.verification_status == :ai_verified
+
+      [verification] = Verifications.list_verifications(opinion_id: opinion.id)
+      assert verification.status == :ai_verified
+    end
+  end
+
   describe "update hook" do
-    test "re-verifies only when content or source_url change" do
+    test "re-verifies only when quote identity or evidence fields change" do
       use_verifier(MessageVerifier)
       put_env_restore(:verification_test_pid, self())
 
       author = author_fixture()
+      other_author = author_fixture()
       user = user_fixture(%{author_id: author.id})
 
       {:ok, %{opinion: opinion}} =
@@ -313,7 +536,16 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
       {:ok, opinion} = Opinions.update_opinion(opinion, %{likes_count: 3})
       refute_received {:submitted, :quote, _}
 
-      {:ok, _opinion} = Opinions.update_opinion(opinion, %{content: "changed"})
+      {:ok, opinion} = Opinions.update_opinion(opinion, %{source_url: "https://example.com/q2"})
+      assert_received {:submitted, :quote, _}
+
+      {:ok, opinion} = Opinions.update_opinion(opinion, %{content: "changed"})
+      assert_received {:submitted, :quote, _}
+
+      {:ok, opinion} = Opinions.update_opinion(opinion, %{date: "2024-02"})
+      assert_received {:submitted, :quote, _}
+
+      {:ok, _opinion} = Opinions.update_opinion(opinion, %{author_id: other_author.id})
       assert_received {:submitted, :quote, _}
     end
   end

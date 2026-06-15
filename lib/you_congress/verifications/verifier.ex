@@ -14,11 +14,25 @@ defmodule YouCongress.Verifications.Verifier do
   @type result :: %{optional(String.t()) => term()}
 
   @callback submit(subject_type, struct()) :: {:ok, String.t()} | {:error, term()}
+  @callback submit(subject_type, struct(), Keyword.t()) :: {:ok, String.t()} | {:error, term()}
   @callback check_job_status(String.t()) ::
               {:ok, :completed, result()} | {:ok, :in_progress} | {:error, term()}
 
+  @optional_callbacks submit: 3
+
   @spec submit(subject_type, struct()) :: {:ok, String.t()} | {:error, term()}
-  def submit(subject_type, subject), do: implementation().submit(subject_type, subject)
+  def submit(subject_type, subject), do: submit(subject_type, subject, [])
+
+  @spec submit(subject_type, struct(), Keyword.t()) :: {:ok, String.t()} | {:error, term()}
+  def submit(subject_type, subject, opts) when is_list(opts) do
+    implementation = implementation()
+
+    if function_exported?(implementation, :submit, 3) do
+      implementation.submit(subject_type, subject, opts)
+    else
+      implementation.submit(subject_type, subject)
+    end
+  end
 
   @spec check_job_status(String.t()) ::
           {:ok, :completed, result()} | {:ok, :in_progress} | {:error, term()}

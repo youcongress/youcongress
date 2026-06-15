@@ -8,7 +8,8 @@ defmodule YouCongress.Verifications.VerifierAI do
   returns its id; `check_job_status/1` polls it and returns the parsed result.
 
   Result maps (string keys):
-  - `:quote` / `:relevance` -> `%{"status" => ..., "comment" => ..., "model" => ...}`
+  - `:quote` -> `%{"status" => ..., "comment" => ..., "correction" => ..., "model" => ...}`
+  - `:relevance` -> `%{"status" => ..., "comment" => ..., "model" => ...}`
   - `:vote` -> `%{"correct_answer" => ..., "comment" => ..., "model" => ...}`
   """
 
@@ -29,8 +30,13 @@ defmodule YouCongress.Verifications.VerifierAI do
 
   @impl true
   def submit(subject_type, subject) do
+    submit(subject_type, subject, [])
+  end
+
+  @impl true
+  def submit(subject_type, subject, opts) do
     with {:ok, %{prompt: prompt, schema: schema, name: name, system: system} = spec} <-
-           build(subject_type, subject),
+           build(subject_type, subject, opts),
          {:ok, data} <- ask_gpt(prompt, schema, name, system, spec[:web_search] || false),
          {:ok, job_id} <- extract_job_id(data) do
       {:ok, job_id}
@@ -80,9 +86,12 @@ defmodule YouCongress.Verifications.VerifierAI do
 
   # --- Per-subject prompt + schema -------------------------------------------
 
-  defp build(:quote, %Opinion{} = opinion) do
+  defp build(subject_type, subject, opts)
+
+  defp build(:quote, %Opinion{} = opinion, opts) do
     opinion = Repo.preload(opinion, :author)
     author = opinion.author && opinion.author.name
+    allow_correction? = Keyword.get(opts, :allow_quote_correction?, true)
 
     prompt = """
     Verify whether the following quote is authentic.
@@ -97,7 +106,9 @@ defmodule YouCongress.Verifications.VerifierAI do
 
     Using web_search, confirm the quote is real and verbatim (allowing [...] for
     omitted text and faithful translation), that it is correctly attributed to the
-    author, and that the source URL (or another reliable source) contains it.
+    author, and that the source URL contains it.
+
+    #{quote_correction_instructions(allow_correction?)}
 
     Choose a status:
     - "ai_verified": you confirmed the quote is real and correctly attributed.
@@ -110,7 +121,7 @@ defmodule YouCongress.Verifications.VerifierAI do
     {:ok,
      %{
        prompt: prompt,
-       schema: status_schema(),
+       schema: quote_status_schema(allow_correction?),
        name: "QuoteVerification",
        web_search: true,
        system:
@@ -118,7 +129,7 @@ defmodule YouCongress.Verifications.VerifierAI do
      }}
   end
 
-  defp build(:relevance, %OpinionStatement{} = opinion_statement) do
+  defp build(:relevance, %OpinionStatement{} = opinion_statement, _opts) do
     opinion_statement = Repo.preload(opinion_statement, [:opinion, :statement])
     opinion = opinion_statement.opinion
     statement = opinion_statement.statement
@@ -164,7 +175,7 @@ defmodule YouCongress.Verifications.VerifierAI do
      }}
   end
 
-  defp build(:vote, %Vote{} = vote) do
+  defp build(:vote, %Vote{} = vote, _opts) do
     vote = Repo.preload(vote, [:opinion, :statement])
     opinion = vote.opinion
     statement = vote.statement
@@ -199,7 +210,26 @@ defmodule YouCongress.Verifications.VerifierAI do
      }}
   end
 
-  defp build(_subject_type, _subject), do: {:error, :invalid_subject}
+  defp build(_subject_type, _subject, _opts), do: {:error, :invalid_subject}
+
+  defp quote_correction_instructions(true) do
+    """
+    Also check whether the stored content, date, source URL, and author are the
+    right canonical values. If the quote is authentic but any stored field is
+    wrong and you can recover the right values from reliable evidence, return
+    status "disputed" and include a correction object with the proper content,
+    source_url, date, date_precision, and author metadata. Use null correction
+    when no correction should be applied.
+    """
+  end
+
+  defp quote_correction_instructions(false) do
+    """
+    Correction mode is disabled for this verification. Do not return corrected
+    quote fields. Judge only whether the current stored quote is authentic and
+    correctly attributed.
+    """
+  end
 
   defp status_schema do
     %{
@@ -210,6 +240,62 @@ defmodule YouCongress.Verifications.VerifierAI do
         "comment" => %{type: "string", description: "Short justification with evidence."}
       },
       required: ["status", "comment"]
+    }
+  end
+
+  defp quote_status_schema(false), do: status_schema()
+
+  defp quote_status_schema(true) do
+    %{
+      type: "object",
+      additionalProperties: false,
+      properties: %{
+        "status" => %{type: "string", enum: @statuses},
+        "comment" => %{type: "string", description: "Short justification with evidence."},
+        "correction" => %{
+          type: ["object", "null"],
+          description:
+            "Correct values to apply before re-verifying. Use null when the stored quote fields are already right or no reliable correction is available.",
+          additionalProperties: false,
+          properties: %{
+            "content" => %{
+              type: "string",
+              description:
+                "Correct exact quote text, verbatim or faithfully translated. Do not include surrounding quotation marks."
+            },
+            "source_url" => %{
+              type: "string",
+              description: "Reliable source URL that contains the exact quote and attribution."
+            },
+            "date" => %{
+              type: "string",
+              description:
+                "Correct quote/source date. Use YYYY-MM-DD, YYYY-MM, or YYYY to match date_precision."
+            },
+            "date_precision" => %{
+              type: "string",
+              description: "Precision of the date field.",
+              enum: ["day", "month", "year"]
+            },
+            "author" => %{
+              type: "object",
+              additionalProperties: false,
+              properties: %{
+                "name" => %{type: "string", description: "Correct author name."},
+                "bio" => %{type: "string", description: "Author bio, max 7 words."},
+                "wikipedia_url" => %{type: "string", description: "Author Wikipedia page URL."},
+                "twitter_username" => %{
+                  type: "string",
+                  description: "Author Twitter/X handle without @."
+                }
+              },
+              required: ["name", "bio", "wikipedia_url", "twitter_username"]
+            }
+          },
+          required: ["content", "source_url", "date", "date_precision", "author"]
+        }
+      },
+      required: ["status", "comment", "correction"]
     }
   end
 
