@@ -73,6 +73,10 @@ defmodule YouCongress.Verifications.AIVerifications do
         :unchanged ->
           record_quote_verification(opinion_id, status, result, model, user_id)
 
+        {:multiple_individual_authors, author_name} ->
+          result = put_multi_author_comment(result, author_name)
+          record_quote_verification(opinion_id, :disputed, result, model, user_id)
+
         {:error, reason} ->
           Logger.error("Failed to apply quote correction for ##{opinion_id}: #{inspect(reason)}")
 
@@ -237,6 +241,7 @@ defmodule YouCongress.Verifications.AIVerifications do
     else
       nil -> :unchanged
       :no_correction -> :unchanged
+      {:multiple_individual_authors, _author_name} = multi_author -> multi_author
       {:error, _reason} = error -> error
     end
   end
@@ -302,6 +307,9 @@ defmodule YouCongress.Verifications.AIVerifications do
       blank?(normalized["name"]) ->
         {:error, :invalid_author}
 
+      multiple_individual_author_name?(normalized["name"]) ->
+        {:multiple_individual_authors, normalized["name"]}
+
       not blank?(normalized["wikipedia_url"]) ->
         case Authors.find_by_wikipedia_url_or_create(normalized) do
           {:ok, author} -> {:ok, author}
@@ -322,6 +330,71 @@ defmodule YouCongress.Verifications.AIVerifications do
       "twin_origin" => false
     }
   end
+
+  defp multiple_individual_author_name?(nil), do: false
+
+  defp multiple_individual_author_name?(name) when is_binary(name) do
+    not organization_name?(name) and
+      (explicit_multi_person_separator?(name) or comma_separated_people?(name))
+  end
+
+  defp explicit_multi_person_separator?(name) do
+    ~r/\s+(?:and|&)\s+|\s*;\s*|\s+\/\s+/i
+    |> Regex.split(name, parts: 2)
+    |> people_pair?()
+  end
+
+  defp comma_separated_people?(name) do
+    name
+    |> String.split(~r/\s*,\s*/, parts: 2)
+    |> people_pair?()
+  end
+
+  defp people_pair?([first, rest]) do
+    rest_first = Regex.split(~r/\s*,\s*|\s+(?:and|&)\s+/i, rest, parts: 2) |> List.first()
+
+    person_name?(first) and person_name?(rest_first)
+  end
+
+  defp people_pair?(_), do: false
+
+  defp person_name?(name) when is_binary(name) do
+    parts = String.split(name, ~r/\s+/, trim: true)
+
+    length(parts) in 2..4 and Enum.all?(parts, &capitalized_word?/1) and
+      not Enum.any?(parts, &organization_word?/1)
+  end
+
+  defp capitalized_word?(word), do: Regex.match?(~r/^[A-Z][A-Za-z'.-]*$/, word)
+
+  defp organization_name?(name) when is_binary(name) do
+    name
+    |> String.downcase()
+    |> String.split(~r/[^a-z0-9]+/, trim: true)
+    |> Enum.any?(&organization_word?/1)
+  end
+
+  defp organization_word?(word) do
+    word in ~w(
+      agency association bank bureau center centre coalition college commission committee company
+      corporation council department foundation forum government institute laboratory lab ministry
+      office organisation organization parliament partnership press program programme project
+      school society team university union
+    )
+  end
+
+  defp put_multi_author_comment(result, author_name) do
+    comment =
+      "AI verification found multiple individual authors for this quote (#{author_name}), " <>
+        "which is not supported for single-author quote verification."
+
+    Map.put(result, "comment", append_comment(comment, result["comment"]))
+  end
+
+  defp append_comment(comment, existing) when is_binary(existing) and existing != "",
+    do: comment <> " " <> existing
+
+  defp append_comment(comment, _existing), do: comment
 
   defp normalize_wikipedia_url(nil), do: nil
 
