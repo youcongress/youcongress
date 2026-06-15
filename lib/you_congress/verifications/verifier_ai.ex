@@ -220,6 +220,14 @@ defmodule YouCongress.Verifications.VerifierAI do
     status "disputed" and include a correction object with the proper content,
     source_url, date, date_precision, and author metadata. Use null correction
     when no correction should be applied.
+
+    For author corrections, return exactly one author name only when the quote has
+    one individual author, or when an organisation is speaking on its own behalf.
+    If a source lists multiple individual authors/signers and they are not
+    speaking on behalf of an organisation, do not return a correction. Return
+    status "disputed" and explain in the comment that the quote has multiple
+    individual authors, which this platform cannot verify as a single-author
+    quote.
     """
   end
 
@@ -281,7 +289,11 @@ defmodule YouCongress.Verifications.VerifierAI do
               type: "object",
               additionalProperties: false,
               properties: %{
-                "name" => %{type: "string", description: "Correct author name."},
+                "name" => %{
+                  type: "string",
+                  description:
+                    "One corrected author name only: a single individual, or the organisation name when the organisation speaks for itself. Never return a combined list of people."
+                },
                 "bio" => %{type: "string", description: "Author bio, max 7 words."},
                 "wikipedia_url" => %{type: "string", description: "Author Wikipedia page URL."},
                 "twitter_username" => %{

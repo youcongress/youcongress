@@ -6,6 +6,7 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
   """
   use YouCongress.DataCase
 
+  alias YouCongress.Authors
   alias YouCongress.Opinions
   alias YouCongress.OpinionsStatements
   alias YouCongress.Verifications
@@ -205,6 +206,64 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
       if pid = Application.get_env(:you_congress, :verification_test_pid) do
         send(pid, message)
       end
+    end
+  end
+
+  defmodule MultiAuthorCorrectionVerifier do
+    @behaviour YouCongress.Verifications.Verifier
+
+    def submit(:quote, %{id: id, content: "Wrong multi-person quote"}) do
+      {:ok, "multi_author:#{id}:people"}
+    end
+
+    def submit(:quote, %{id: id, content: "Wrong organisation quote"}) do
+      {:ok, "multi_author:#{id}:organisation"}
+    end
+
+    def submit(:quote, %{id: id}), do: {:ok, "multi_author:#{id}:verified"}
+    def submit(subject_type, %{id: id}), do: {:ok, "#{subject_type}:#{id}"}
+
+    def check_job_status("multi_author:" <> rest) do
+      [_id, type] = String.split(rest, ":", parts: 2)
+
+      case type do
+        "people" ->
+          correction("Alice Smith and Bob Jones", "https://en.wikipedia.org/wiki/Alice_Smith")
+
+        "organisation" ->
+          correction(
+            "Research and Development Corporation",
+            "https://en.wikipedia.org/wiki/Research_and_Development_Corporation"
+          )
+
+        "verified" ->
+          {:ok, :completed,
+           %{"status" => "ai_verified", "comment" => "corrected", "model" => "m"}}
+      end
+    end
+
+    def check_job_status(_),
+      do: {:ok, :completed, %{"status" => "ai_verified", "comment" => "c", "model" => "m"}}
+
+    defp correction(author_name, wikipedia_url) do
+      {:ok, :completed,
+       %{
+         "status" => "disputed",
+         "comment" => "author correction",
+         "model" => "m",
+         "correction" => %{
+           "content" => "Corrected author quote",
+           "source_url" => "https://example.com/corrected-author-quote",
+           "date" => "2024",
+           "date_precision" => "year",
+           "author" => %{
+             "name" => author_name,
+             "bio" => "AI policy author",
+             "wikipedia_url" => wikipedia_url,
+             "twitter_username" => "authorcorrection"
+           }
+         }
+       }}
     end
   end
 
@@ -509,6 +568,68 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
 
       [verification] = Verifications.list_verifications(opinion_id: opinion.id)
       assert verification.status == :ai_verified
+    end
+
+    test "disputes a quote when author correction has multiple individual people" do
+      use_verifier(MultiAuthorCorrectionVerifier)
+      set_system_user()
+
+      author = author_fixture(%{name: "Wrong Multi Author"})
+      user = user_fixture(%{author_id: author.id})
+
+      opinion =
+        without_system_user(fn ->
+          {:ok, %{opinion: opinion}} =
+            Opinions.create_opinion(%{
+              content: "Wrong multi-person quote",
+              source_url: "https://example.com/wrong-multi-person",
+              twin: false,
+              author_id: author.id,
+              user_id: user.id
+            })
+
+          opinion
+        end)
+
+      verify_quote(opinion.id)
+
+      reloaded = Opinions.get_opinion!(opinion.id, preload: [:author])
+
+      assert reloaded.author.name == "Wrong Multi Author"
+      assert reloaded.verification_status == :disputed
+      refute Authors.get_author_by(name: "Alice Smith and Bob Jones")
+
+      [verification] = Verifications.list_verifications(opinion_id: opinion.id)
+      assert verification.status == :disputed
+      assert verification.comment =~ "multiple individual authors"
+    end
+
+    test "keeps an organisation author name that contains and" do
+      use_verifier(MultiAuthorCorrectionVerifier)
+      set_system_user()
+
+      author = author_fixture(%{name: "Wrong Organisation Author"})
+      user = user_fixture(%{author_id: author.id})
+
+      opinion =
+        without_system_user(fn ->
+          {:ok, %{opinion: opinion}} =
+            Opinions.create_opinion(%{
+              content: "Wrong organisation quote",
+              source_url: "https://example.com/wrong-organisation",
+              twin: false,
+              author_id: author.id,
+              user_id: user.id
+            })
+
+          opinion
+        end)
+
+      verify_quote(opinion.id)
+
+      reloaded = Opinions.get_opinion!(opinion.id, preload: [:author])
+
+      assert reloaded.author.name == "Research and Development Corporation"
     end
   end
 
