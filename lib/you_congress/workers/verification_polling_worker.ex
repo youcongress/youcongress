@@ -19,7 +19,13 @@ defmodule YouCongress.Workers.VerificationPollingWorker do
       }) do
     case Verifier.check_job_status(job_id) do
       {:ok, :completed, result} ->
-        AIVerifications.record_and_cascade(subject, id, result, Map.take(args, ["opinion_id"]))
+        AIVerifications.record_and_cascade(
+          subject,
+          id,
+          result,
+          Map.take(args, ["opinion_id", "correction_attempts"])
+        )
+
         :ok
 
       {:ok, :in_progress} ->

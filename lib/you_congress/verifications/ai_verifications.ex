@@ -21,12 +21,14 @@ defmodule YouCongress.Verifications.AIVerifications do
   require Logger
 
   alias YouCongress.Repo
+  alias YouCongress.Authors
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Statements
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
+  alias YouCongress.Verifications.QuoteCorrectionLoop
   alias YouCongress.Verifications
   alias YouCongress.OpinionStatementVerifications
   alias YouCongress.VoteVerifications
@@ -56,25 +58,28 @@ defmodule YouCongress.Verifications.AIVerifications do
     end
   end
 
-  defp do_record("quote", opinion_id, result, model, user_id, _opts) do
+  defp do_record("quote", opinion_id, result, model, user_id, opts) do
     status = normalize_status(result["status"])
 
-    attrs = %{
-      opinion_id: opinion_id,
-      status: status,
-      comment: comment(result),
-      model: model,
-      user_id: user_id
-    }
+    if QuoteCorrectionLoop.allow_correction?(opts) do
+      case maybe_apply_quote_correction(
+             opinion_id,
+             result,
+             QuoteCorrectionLoop.next_attempt(opts)
+           ) do
+        :updated ->
+          :ok
 
-    case Verifications.create_verification(attrs) do
-      {:ok, _} ->
-        if VerificationStatus.positive?(status), do: enqueue_relevance(opinion_id)
-        :ok
+        :unchanged ->
+          record_quote_verification(opinion_id, status, result, model, user_id)
 
-      {:error, reason} ->
-        Logger.error("Failed to record quote verification for ##{opinion_id}: #{inspect(reason)}")
-        :ok
+        {:error, reason} ->
+          Logger.error("Failed to apply quote correction for ##{opinion_id}: #{inspect(reason)}")
+
+          record_quote_verification(opinion_id, status, result, model, user_id)
+      end
+    else
+      record_quote_verification(opinion_id, status, result, model, user_id)
     end
   end
 
@@ -148,6 +153,26 @@ defmodule YouCongress.Verifications.AIVerifications do
     end
   end
 
+  defp record_quote_verification(opinion_id, status, result, model, user_id) do
+    attrs = %{
+      opinion_id: opinion_id,
+      status: status,
+      comment: comment(result),
+      model: model,
+      user_id: user_id
+    }
+
+    case Verifications.create_verification(attrs) do
+      {:ok, _} ->
+        if VerificationStatus.positive?(status), do: enqueue_relevance(opinion_id)
+        :ok
+
+      {:error, reason} ->
+        Logger.error("Failed to record quote verification for ##{opinion_id}: #{inspect(reason)}")
+        :ok
+    end
+  end
+
   defp create_vote_verification(attrs, vote_id) do
     case VoteVerifications.create_verification(attrs) do
       {:ok, _} ->
@@ -204,6 +229,155 @@ defmodule YouCongress.Verifications.AIVerifications do
   end
 
   # --- Result parsing ---------------------------------------------------------
+
+  defp maybe_apply_quote_correction(opinion_id, result, next_correction_attempt) do
+    with %Opinion{} = opinion <- Opinions.get_opinion(opinion_id),
+         {:ok, attrs} <- correction_attrs(result) do
+      apply_quote_correction(opinion, attrs, next_correction_attempt)
+    else
+      nil -> :unchanged
+      :no_correction -> :unchanged
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp correction_attrs(result) do
+    correction = quote_correction(result)
+
+    attrs =
+      %{}
+      |> maybe_put_string(:content, first_present(correction, ["content", "quote"]))
+      |> maybe_put_string(:source_url, first_present(correction, ["source_url"]))
+      |> maybe_put_string(:date, first_present(correction, ["date"]))
+      |> maybe_put_string(:date_precision, first_present(correction, ["date_precision"]))
+
+    with {:ok, attrs} <- maybe_put_corrected_author(attrs, correction) do
+      if map_size(attrs) == 0, do: :no_correction, else: {:ok, attrs}
+    end
+  end
+
+  defp quote_correction(%{"correction" => correction}) when is_map(correction), do: correction
+  defp quote_correction(%{"correction" => nil}), do: %{}
+  defp quote_correction(result) when is_map(result), do: result
+  defp quote_correction(_), do: %{}
+
+  defp apply_quote_correction(%Opinion{} = opinion, attrs, next_correction_attempt) do
+    changeset = Opinions.change_opinion(opinion, attrs)
+
+    cond do
+      not changeset.valid? ->
+        {:error, changeset}
+
+      map_size(changeset.changes) == 0 ->
+        :unchanged
+
+      true ->
+        case Opinions.update_opinion(opinion, attrs, correction_attempts: next_correction_attempt) do
+          {:ok, _opinion} ->
+            Logger.info("Applied AI quote correction for opinion #{opinion.id}; re-verifying")
+            :updated
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+    end
+  end
+
+  defp maybe_put_corrected_author(attrs, correction) do
+    case first_present(correction, ["author"]) do
+      %{} = author_attrs ->
+        with {:ok, author} <- upsert_author(author_attrs) do
+          {:ok, Map.put(attrs, :author_id, author.id)}
+        end
+
+      _ ->
+        {:ok, attrs}
+    end
+  end
+
+  defp upsert_author(%{} = attrs) do
+    normalized = normalize_author_attrs(attrs)
+
+    cond do
+      blank?(normalized["name"]) ->
+        {:error, :invalid_author}
+
+      not blank?(normalized["wikipedia_url"]) ->
+        case Authors.find_by_wikipedia_url_or_create(normalized) do
+          {:ok, author} -> {:ok, author}
+          {:error, _} -> Authors.find_by_name_or_create(normalized)
+        end
+
+      true ->
+        Authors.find_by_name_or_create(normalized)
+    end
+  end
+
+  defp normalize_author_attrs(attrs) do
+    %{
+      "name" => clean_string(first_present(attrs, ["name"])),
+      "bio" => clean_string(first_present(attrs, ["bio"])),
+      "wikipedia_url" => normalize_wikipedia_url(first_present(attrs, ["wikipedia_url"])),
+      "twitter_username" => normalize_twitter(first_present(attrs, ["twitter_username"])),
+      "twin_origin" => false
+    }
+  end
+
+  defp normalize_wikipedia_url(nil), do: nil
+
+  defp normalize_wikipedia_url(url) when is_binary(url) do
+    case String.trim(url) do
+      "" -> nil
+      trimmed -> String.replace(trimmed, ~r/https?:\/\/\w+\./, "https://en.")
+    end
+  end
+
+  defp normalize_wikipedia_url(_), do: nil
+
+  defp normalize_twitter(nil), do: nil
+  defp normalize_twitter(""), do: nil
+  defp normalize_twitter("@" <> handle), do: clean_string(handle)
+  defp normalize_twitter("https://x.com/" <> handle), do: clean_string(handle)
+  defp normalize_twitter("https://twitter.com/" <> handle), do: clean_string(handle)
+  defp normalize_twitter(handle) when is_binary(handle), do: clean_string(handle)
+  defp normalize_twitter(_), do: nil
+
+  defp first_present(map, keys) when is_map(map) do
+    Enum.find_value(keys, fn key ->
+      map
+      |> Map.get(key)
+      |> present_value()
+    end)
+  end
+
+  defp first_present(_map, _keys), do: nil
+
+  defp maybe_put_string(attrs, _key, nil), do: attrs
+  defp maybe_put_string(attrs, key, value) when is_binary(value), do: Map.put(attrs, key, value)
+  defp maybe_put_string(attrs, _key, _value), do: attrs
+
+  defp present_value(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp present_value(value) when is_map(value), do: value
+  defp present_value(value), do: value
+
+  defp clean_string(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp clean_string(_), do: nil
+
+  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
+  defp blank?(nil), do: true
+  defp blank?(_), do: false
 
   defp normalize_status(status) when is_binary(status) do
     normalized = Map.get(@status_aliases, status, status)
