@@ -1,0 +1,169 @@
+defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorkerTest do
+  use YouCongress.DataCase
+  use Oban.Testing, repo: YouCongress.Repo
+
+  import YouCongress.AccountsFixtures
+  import YouCongress.AuthorsFixtures
+  import YouCongress.OpinionsFixtures
+
+  alias YouCongress.Opinions
+  alias YouCongress.Workers.FreshQuoteDiscoveryPollingWorker
+  alias YouCongress.Workers.MatchQuoteStatementsWorker
+
+  defp put_env_restore(key, value) do
+    original = Application.fetch_env(:you_congress, key)
+    Application.put_env(:you_congress, key, value)
+
+    on_exit(fn ->
+      case original do
+        {:ok, original_value} -> Application.put_env(:you_congress, key, original_value)
+        :error -> Application.delete_env(:you_congress, key)
+      end
+    end)
+  end
+
+  defp candidate(attrs \\ %{}) do
+    Map.merge(
+      %{
+        "quote" =>
+          "AI is changing jobs quickly, and governments should help workers adapt while holding deployers accountable.",
+        "source_url" => "https://example.com/fresh-ai-jobs",
+        "date" => Date.utc_today() |> Date.to_iso8601(),
+        "date_precision" => "day",
+        "author" => %{
+          "name" => "Fresh AI Author",
+          "bio" => "AI policy expert",
+          "wikipedia_url" => "https://en.wikipedia.org/wiki/Fresh_AI_Author",
+          "twitter_username" => "freshaiauthor"
+        },
+        "validation_note" => "Source contains quote, attribution, and date."
+      },
+      attrs
+    )
+  end
+
+  defp perform_with_quotes(quotes) do
+    user = user_fixture()
+
+    put_env_restore(
+      :fresh_quote_finder_test_status,
+      {:ok, :completed, %{quotes: quotes}}
+    )
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      FreshQuoteDiscoveryPollingWorker.perform(%Oban.Job{
+        args: %{"job_id" => "fresh-job-1", "user_id" => user.id, "limit" => 1}
+      })
+    end)
+  end
+
+  describe "perform/1" do
+    test "saves a valid fresh quote and enqueues statement matching" do
+      assert :ok = perform_with_quotes([candidate()])
+
+      opinion = Opinions.get_by(content: candidate()["quote"], preload: :author)
+      assert opinion.source_url == candidate()["source_url"]
+      assert opinion.twin == false
+      assert opinion.date == Date.utc_today()
+      assert opinion.date_precision == :day
+      assert opinion.author.name == "Fresh AI Author"
+
+      assert_enqueued(
+        worker: MatchQuoteStatementsWorker,
+        args: %{"opinion_id" => opinion.id}
+      )
+    end
+
+    test "keeps a saved quote even before any statement match exists" do
+      assert :ok = perform_with_quotes([candidate()])
+
+      opinion = Opinions.get_by(content: candidate()["quote"], preload: :statements)
+      assert opinion.source_url == candidate()["source_url"]
+      assert opinion.statements == []
+    end
+
+    test "skips duplicate source URLs" do
+      existing = opinion_fixture(%{source_url: "https://example.com/fresh-ai-jobs"})
+
+      assert :ok = perform_with_quotes([candidate()])
+
+      assert Opinions.count(source_url: existing.source_url) == 1
+      refute_enqueued(worker: MatchQuoteStatementsWorker)
+    end
+
+    test "skips duplicate normalized quote content" do
+      opinion_fixture(%{
+        content:
+          "AI is changing jobs quickly, and governments should help workers adapt while holding deployers accountable.",
+        source_url: "https://example.com/original-ai-jobs"
+      })
+
+      duplicate =
+        candidate(%{
+          "quote" =>
+            "  ai is changing jobs quickly, and governments should help workers adapt while holding deployers accountable.  ",
+          "source_url" => "https://example.com/duplicate-ai-jobs"
+        })
+
+      assert :ok = perform_with_quotes([duplicate])
+
+      assert Opinions.count(only_quotes: true) == 1
+      refute_enqueued(worker: MatchQuoteStatementsWorker)
+    end
+
+    test "skips obvious author phrase duplicates" do
+      author =
+        author_fixture(%{
+          name: "Fresh AI Author",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Fresh_AI_Author"
+        })
+
+      opinion_fixture(%{
+        author_id: author.id,
+        content:
+          "AI is changing jobs quickly, and governments should help workers adapt while holding deployers accountable. A second sentence makes it longer.",
+        source_url: "https://example.com/original-ai-jobs"
+      })
+
+      duplicate =
+        candidate(%{
+          "quote" =>
+            "AI is changing jobs quickly, and governments should help workers adapt while holding deployers accountable in this new era.",
+          "source_url" => "https://example.com/near-duplicate-ai-jobs"
+        })
+
+      assert :ok = perform_with_quotes([duplicate])
+
+      assert Opinions.count(only_quotes: true) == 1
+      refute_enqueued(worker: MatchQuoteStatementsWorker)
+    end
+
+    test "skips out-of-window candidates" do
+      old_date = Date.utc_today() |> Date.add(-3) |> Date.to_iso8601()
+
+      assert :ok = perform_with_quotes([candidate(%{"date" => old_date})])
+
+      assert Opinions.count(only_quotes: true) == 0
+      refute_enqueued(worker: MatchQuoteStatementsWorker)
+    end
+
+    test "skips candidates with missing required fields" do
+      assert :ok = perform_with_quotes([candidate(%{"source_url" => ""})])
+      assert Opinions.count(only_quotes: true) == 0
+      refute_enqueued(worker: MatchQuoteStatementsWorker)
+
+      assert :ok = perform_with_quotes([candidate(%{"author" => %{"name" => ""}})])
+      assert Opinions.count(only_quotes: true) == 0
+      refute_enqueued(worker: MatchQuoteStatementsWorker)
+    end
+
+    test "snoozes while the OpenAI job is still in progress" do
+      put_env_restore(:fresh_quote_finder_test_status, {:ok, :in_progress})
+
+      assert {:snooze, 60} =
+               FreshQuoteDiscoveryPollingWorker.perform(%Oban.Job{
+                 args: %{"job_id" => "fresh-job-1", "user_id" => user_fixture().id}
+               })
+    end
+  end
+end

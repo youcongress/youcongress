@@ -17,6 +17,11 @@ end
 if config_env() == :dev and !System.get_env("OPENAI_API_KEY") do
   config :you_congress, :hall_classifier, YouCongress.Halls.ClassificationFake
   config :you_congress, :quotator_implementation, YouCongress.Opinions.Quotes.QuotatorFake
+
+  config :you_congress,
+         :fresh_quote_finder_implementation,
+         YouCongress.Opinions.Quotes.FreshQuoteFinderFake
+
   config :you_congress, :title_rewording_implementation, YouCongress.Statements.TitleRewordingFake
 
   config :you_congress,

@@ -61,13 +61,29 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-config :you_congress, Oban,
-  repo: YouCongress.Repo,
-  plugins: [
+oban_plugins =
+  [
     # 3 days = 259,200 seconds
     {Oban.Plugins.Pruner, max_age: 259_200},
     Oban.Plugins.Lifeline
-  ],
+  ]
+
+oban_plugins =
+  if config_env() == :prod do
+    [
+      {Oban.Plugins.Cron,
+       crontab: [
+         {"0 * * * *", YouCongress.Workers.FreshQuoteDiscoveryWorker}
+       ]}
+      | oban_plugins
+    ]
+  else
+    oban_plugins
+  end
+
+config :you_congress, Oban,
+  repo: YouCongress.Repo,
+  plugins: oban_plugins,
   queues: [
     default: 10,
     amplitude: 5,
