@@ -345,7 +345,15 @@ defmodule YouCongress.Opinions do
       where:
         os.statement_id == ^statement_id and o.author_id in ^author_ids and
           not is_nil(o.source_url),
-      order_by: [fragment("? DESC NULLS LAST", o.date), desc: o.id],
+      order_by: [
+        desc:
+          fragment(
+            "CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END",
+            o.verification_status
+          ),
+        desc_nulls_last: o.date,
+        desc: o.id
+      ],
       preload: [:author]
     )
     |> Repo.all()
@@ -369,6 +377,11 @@ defmodule YouCongress.Opinions do
         order_by: [
           asc: os.statement_id,
           asc: o.author_id,
+          desc:
+            fragment(
+              "CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END",
+              o.verification_status
+            ),
           desc_nulls_last: o.date,
           desc: o.id
         ],

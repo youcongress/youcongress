@@ -282,15 +282,30 @@ defmodule YouCongress.Statements.StatementQueries do
         v.id as vote_id,
         s.id as statement_id,
         o.likes_count as top_opinion_likes_count,
+        CASE
+          WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed')
+           AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
+           AND v.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 2
+          WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
+          ELSE 0
+        END as verification_rank,
         s.inserted_at as statement_inserted_at,
         ROW_NUMBER() OVER (
           PARTITION BY s.id
-          ORDER BY o.likes_count DESC, o.updated_at DESC, v.inserted_at DESC
+          ORDER BY CASE
+                     WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed')
+                      AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
+                      AND v.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 2
+                     WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
+                     ELSE 0
+                   END DESC,
+                   o.likes_count DESC, o.updated_at DESC, v.inserted_at DESC
         ) as vote_rank
       FROM statements s
       JOIN votes v ON v.statement_id = s.id
       JOIN opinions o ON o.id = v.opinion_id
       JOIN authors a ON a.id = v.author_id
+      LEFT JOIN opinions_statements os ON os.opinion_id = o.id AND os.statement_id = s.id
       #{hall_filter}
       WHERE v.opinion_id IS NOT NULL
         AND a.public_figure = TRUE
@@ -299,7 +314,7 @@ defmodule YouCongress.Statements.StatementQueries do
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
     WHERE rv.vote_rank = 1
-    ORDER BY rv.top_opinion_likes_count DESC, rv.statement_inserted_at DESC
+    ORDER BY rv.verification_rank DESC, rv.top_opinion_likes_count DESC, rv.statement_inserted_at DESC
     OFFSET #{offset_param}
     LIMIT #{limit_param}
     """
@@ -364,6 +379,8 @@ defmodule YouCongress.Statements.StatementQueries do
         from v in Vote,
           join: o in assoc(v, :opinion),
           join: a in assoc(v, :author),
+          left_join: os in YouCongress.OpinionsStatements.OpinionStatement,
+          on: os.opinion_id == o.id and os.statement_id == v.statement_id,
           where:
             v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
               a.public_figure == true,
@@ -373,9 +390,13 @@ defmodule YouCongress.Statements.StatementQueries do
             answer: v.answer,
             rank:
               fragment(
-                "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY ? DESC)",
+                "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC)",
                 v.statement_id,
                 v.answer,
+                o.verification_status,
+                os.verification_status,
+                v.verification_status,
+                o.verification_status,
                 o.id
               )
           }
@@ -383,6 +404,8 @@ defmodule YouCongress.Statements.StatementQueries do
         from v in Vote,
           join: o in assoc(v, :opinion),
           join: a in assoc(v, :author),
+          left_join: os in YouCongress.OpinionsStatements.OpinionStatement,
+          on: os.opinion_id == o.id and os.statement_id == v.statement_id,
           where:
             v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
               a.public_figure == true,
@@ -392,9 +415,13 @@ defmodule YouCongress.Statements.StatementQueries do
             answer: v.answer,
             rank:
               fragment(
-                "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY ? DESC, ? DESC, CASE WHEN ? IS NOT NULL THEN 1 WHEN ? IS NOT NULL THEN 2 WHEN ? = FALSE THEN 3 ELSE 4 END, ? DESC)",
+                "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC, ? DESC, CASE WHEN ? IS NOT NULL THEN 1 WHEN ? IS NOT NULL THEN 2 WHEN ? = FALSE THEN 3 ELSE 4 END, ? DESC)",
                 v.statement_id,
                 v.answer,
+                o.verification_status,
+                os.verification_status,
+                v.verification_status,
+                o.verification_status,
                 o.likes_count,
                 o.descendants_count,
                 o.source_url,
@@ -467,14 +494,29 @@ defmodule YouCongress.Statements.StatementQueries do
         v.id as vote_id,
         s.id as statement_id,
         o.id as opinion_id,
+        CASE
+          WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed')
+           AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
+           AND v.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 2
+          WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
+          ELSE 0
+        END as verification_rank,
         ROW_NUMBER() OVER (
           PARTITION BY s.id
-          ORDER BY o.id DESC, v.inserted_at DESC
+          ORDER BY CASE
+                     WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed')
+                      AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
+                      AND v.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 2
+                     WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
+                     ELSE 0
+                   END DESC,
+                   o.id DESC, v.inserted_at DESC
         ) as vote_rank
       FROM statements s
       JOIN votes v ON v.statement_id = s.id
       JOIN opinions o ON o.id = v.opinion_id
       JOIN authors a ON a.id = v.author_id
+      LEFT JOIN opinions_statements os ON os.opinion_id = o.id AND os.statement_id = s.id
       #{hall_filter}
       WHERE v.opinion_id IS NOT NULL
         AND a.public_figure = TRUE
@@ -483,7 +525,7 @@ defmodule YouCongress.Statements.StatementQueries do
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
     WHERE rv.vote_rank = 1
-    ORDER BY rv.opinion_id DESC
+    ORDER BY rv.verification_rank DESC, rv.opinion_id DESC
     OFFSET #{offset_param}
     LIMIT #{limit_param}
     """

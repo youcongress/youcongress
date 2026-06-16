@@ -172,6 +172,85 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert has_element?(view, "[data-testid='quote-position-#{vote.id}']", "2 of 2")
     end
 
+    test "shows aggregate verified quotes before quote-only verified or disputed quotes", %{
+      conn: conn
+    } do
+      statement =
+        statement_fixture(title: "Verified quote feed statement")
+        |> add_statement_to_ai_hall()
+
+      fill_statement_with_quotes(statement.id, 8)
+
+      aggregate_author = author_fixture()
+
+      aggregate_opinion =
+        opinion_fixture(%{
+          author_id: aggregate_author.id,
+          content: "Aggregate verified feed quote",
+          verification_status: :ai_verified,
+          likes_count: 0
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(aggregate_opinion, statement.id)
+
+      aggregate_opinion.id
+      |> YouCongress.OpinionsStatements.get_opinion_statement(statement.id)
+      |> Ecto.Changeset.change(verification_status: :ai_verified)
+      |> YouCongress.Repo.update!()
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: aggregate_author.id,
+        opinion_id: aggregate_opinion.id,
+        answer: :for,
+        verification_status: :ai_verified
+      })
+
+      quote_only_author = author_fixture()
+
+      quote_only_opinion =
+        opinion_fixture(%{
+          author_id: quote_only_author.id,
+          content: "Newer quote-only verified feed quote",
+          verification_status: :verified,
+          likes_count: 10
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(quote_only_opinion, statement.id)
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: quote_only_author.id,
+        opinion_id: quote_only_opinion.id,
+        answer: :for
+      })
+
+      disputed_author = author_fixture()
+
+      disputed_opinion =
+        opinion_fixture(%{
+          author_id: disputed_author.id,
+          content: "Newer disputed feed quote",
+          verification_status: :disputed
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(disputed_opinion, statement.id)
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: disputed_author.id,
+        opinion_id: disputed_opinion.id,
+        answer: :for
+      })
+
+      {:ok, _view, html} = live(conn, ~p"/")
+
+      assert html =~ statement.title
+      assert html =~ "Aggregate verified feed quote"
+      refute html =~ "Newer quote-only verified feed quote"
+      refute html =~ "Newer disputed feed quote"
+    end
+
     test "renders home feed profile images as square non-shrinking circles", %{conn: conn} do
       statement =
         statement_fixture(title: "Avatar Shape Statement")

@@ -7,6 +7,7 @@ defmodule YouCongress.Votes do
 
   alias YouCongress.DelegationVotes
   alias YouCongress.Opinions
+  alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Votes.Vote
   alias YouCongress.Repo
 
@@ -142,8 +143,11 @@ defmodule YouCongress.Votes do
       Vote
       |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
       |> join(:inner, [v, a], o in YouCongress.Opinions.Opinion, on: v.opinion_id == o.id)
+      |> join(:left, [v, a, o], os in OpinionStatement,
+        on: os.opinion_id == o.id and os.statement_id == v.statement_id
+      )
       |> where(
-        [v, a, o],
+        [v, a, o, os],
         v.statement_id == ^statement_id and not is_nil(v.opinion_id) and
           v.id not in ^exclude_ids and
           v.twin in ^twin_options
@@ -151,21 +155,35 @@ defmodule YouCongress.Votes do
 
     query =
       case source_filter do
-        :quotes -> where(base_query, [v, a, o], not is_nil(o.source_url))
-        :users -> where(base_query, [v, a, o], is_nil(o.source_url))
+        :quotes -> where(base_query, [v, a, o, os], not is_nil(o.source_url))
+        :users -> where(base_query, [v, a, o, os], is_nil(o.source_url))
         _ -> base_query
       end
 
     query =
       if answer do
         query
-        |> where([v, a, o], v.answer == ^answer)
+        |> where([v, a, o, os], v.answer == ^answer)
       else
         query
       end
 
     query
-    |> order_by([v, a, o], [
+    |> order_by([v, a, o, os], [
+      {:desc,
+       fragment(
+         "CASE
+            WHEN ? IN ('verified', 'ai_verified', 'endorsed')
+             AND ? IN ('verified', 'ai_verified', 'endorsed')
+             AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2
+            WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1
+            ELSE 0
+          END",
+         o.verification_status,
+         os.verification_status,
+         v.verification_status,
+         o.verification_status
+       )},
       {:desc, o.likes_count},
       fragment("? DESC", o.descendants_count),
       fragment("CASE

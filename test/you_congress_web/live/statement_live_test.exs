@@ -11,6 +11,7 @@ defmodule YouCongressWeb.StatementLiveTest do
   import YouCongress.VotesFixtures
   import YouCongress.AuthorsFixtures
   import YouCongress.CountriesFixtures
+  import YouCongress.DelegationsFixtures
 
   alias YouCongress.Statements
   alias YouCongress.HallsStatements
@@ -876,6 +877,172 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ "1 of 2"
       assert html =~ "Quotes (1)"
       assert html =~ "For (1)"
+    end
+
+    test "keeps delegate opinions first and ranks verified quotes before disputed ones", %{
+      conn: conn,
+      statement: statement
+    } do
+      user = user_fixture()
+
+      delegate_author = author_fixture(%{name: "Delegate With Disputed Quote"})
+      aggregate_author = author_fixture(%{name: "Aggregate Verified Quote Author"})
+      quote_only_author = author_fixture(%{name: "Quote Only Verified Quote Author"})
+      disputed_author = author_fixture(%{name: "Disputed Quote Author"})
+
+      delegation_fixture(%{deleguee_id: user.author_id, delegate_id: delegate_author.id})
+
+      delegate_opinion =
+        opinion_fixture(%{
+          author_id: delegate_author.id,
+          content: "Delegate disputed quote",
+          verification_status: :disputed
+        })
+
+      aggregate_opinion =
+        opinion_fixture(%{
+          author_id: aggregate_author.id,
+          content: "Aggregate verified quote",
+          verification_status: :ai_verified,
+          likes_count: 0
+        })
+
+      quote_only_opinion =
+        opinion_fixture(%{
+          author_id: quote_only_author.id,
+          content: "Newer quote-only verified quote",
+          verification_status: :verified,
+          likes_count: 10
+        })
+
+      disputed_opinion =
+        opinion_fixture(%{
+          author_id: disputed_author.id,
+          content: "Newer disputed quote",
+          verification_status: :disputed
+        })
+
+      for opinion <- [delegate_opinion, aggregate_opinion, quote_only_opinion, disputed_opinion] do
+        {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+      end
+
+      aggregate_opinion.id
+      |> YouCongress.OpinionsStatements.get_opinion_statement(statement.id)
+      |> Ecto.Changeset.change(verification_status: :ai_verified)
+      |> YouCongress.Repo.update!()
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: delegate_author.id,
+        opinion_id: delegate_opinion.id,
+        answer: :for
+      })
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: aggregate_author.id,
+        opinion_id: aggregate_opinion.id,
+        answer: :for,
+        verification_status: :ai_verified
+      })
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: quote_only_author.id,
+        opinion_id: quote_only_opinion.id,
+        answer: :for
+      })
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: disputed_author.id,
+        opinion_id: disputed_opinion.id,
+        answer: :for
+      })
+
+      conn = log_in_user(conn, user)
+      {:ok, _show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+
+      assert [
+               delegate_position,
+               aggregate_position,
+               quote_only_position,
+               disputed_position
+             ] =
+               Enum.map(
+                 [
+                   "Delegate disputed quote",
+                   "Aggregate verified quote",
+                   "Newer quote-only verified quote",
+                   "Newer disputed quote"
+                 ],
+                 fn quote ->
+                   case :binary.match(html, quote) do
+                     {position, _length} -> position
+                     :nomatch -> flunk("Expected #{quote} in statement page")
+                   end
+                 end
+               )
+
+      assert delegate_position < aggregate_position
+      assert aggregate_position < quote_only_position
+      assert quote_only_position < disputed_position
+    end
+
+    test "ranks an author's verified alternate quote before a newer disputed quote", %{
+      conn: conn,
+      statement: statement
+    } do
+      author = author_fixture(%{name: "Alternate Quote Author"})
+
+      disputed_quote =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Newer disputed alternate quote",
+          source_url: "https://example.com/disputed-alternate",
+          date: ~D[2025-01-01],
+          date_precision: :year,
+          verification_status: :disputed,
+          twin: false
+        })
+
+      verified_quote =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Older verified alternate quote",
+          source_url: "https://example.com/verified-alternate",
+          date: ~D[2020-01-01],
+          date_precision: :year,
+          verification_status: :ai_verified,
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(disputed_quote, statement.id)
+      {:ok, _} = Opinions.add_opinion_to_statement(verified_quote, statement.id)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: verified_quote.id,
+          answer: :for,
+          twin: false
+        })
+
+      {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+
+      card_html = show_live |> element("#vote-component-#{vote.id}") |> render()
+      assert card_html =~ "Older verified alternate quote"
+      refute card_html =~ "Newer disputed alternate quote"
+      assert html =~ "1 of 2"
+
+      show_live
+      |> element("#vote-component-#{vote.id} button[aria-label='Next quote']")
+      |> render_click()
+
+      card_html = show_live |> element("#vote-component-#{vote.id}") |> render()
+      assert card_html =~ "Newer disputed alternate quote"
+      refute card_html =~ "Older verified alternate quote"
     end
   end
 end
