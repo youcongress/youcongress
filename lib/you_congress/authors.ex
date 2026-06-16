@@ -11,6 +11,7 @@ defmodule YouCongress.Authors do
   alias YouCongress.Countries
   alias YouCongress.Delegations.Delegation
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Votes.Vote
   alias YouCongress.VoteVerifications.VoteVerification
   alias YouCongress.Workers.SetAuthorProfileImageFromXWorker
@@ -577,21 +578,72 @@ defmodule YouCongress.Authors do
          duplicate_vote_id: duplicate_vote_id,
          survivor_vote_id: survivor_vote_id
        }) do
-    duplicate_vote = Repo.get!(Vote, duplicate_vote_id)
-    survivor_vote = Repo.get!(Vote, survivor_vote_id)
+    duplicate_vote = Repo.get!(Vote, duplicate_vote_id) |> Repo.preload(:opinion)
+    survivor_vote = Repo.get!(Vote, survivor_vote_id) |> Repo.preload(:opinion)
     preferred_vote = preferred_conflicting_vote(survivor_vote, duplicate_vote)
 
     attrs = %{
       answer: merged_vote_answer(survivor_vote, duplicate_vote, preferred_vote),
       direct: survivor_vote.direct || duplicate_vote.direct,
       twin: survivor_vote.twin && duplicate_vote.twin,
-      opinion_id:
-        preferred_vote.opinion_id || survivor_vote.opinion_id || duplicate_vote.opinion_id
+      opinion_id: merged_opinion_id(survivor_vote, duplicate_vote, preferred_vote)
     }
 
     survivor_vote
     |> Vote.changeset(attrs)
     |> Repo.update!()
+
+    # A vote holds a single opinion, but an author may have several sourced
+    # quotes on the same statement. Collapsing two votes into one would orphan
+    # the opinion the surviving vote no longer points at, so keep every sourced
+    # opinion linked to the statement: they resurface as alternate opinions.
+    preserve_sourced_opinions!(survivor_vote.statement_id, [
+      survivor_vote.opinion,
+      duplicate_vote.opinion
+    ])
+  end
+
+  # Keep the surviving vote pointing at a sourced opinion when one is available,
+  # so it counts as a sourced-opinion vote and its alternate quotes are surfaced.
+  defp merged_opinion_id(survivor_vote, duplicate_vote, preferred_vote) do
+    sourced_opinion_id =
+      [preferred_vote, survivor_vote, duplicate_vote]
+      |> Enum.map(& &1.opinion)
+      |> Enum.find(fn opinion -> opinion && not is_nil(opinion.source_url) end)
+      |> case do
+        nil -> nil
+        opinion -> opinion.id
+      end
+
+    sourced_opinion_id || preferred_vote.opinion_id || survivor_vote.opinion_id ||
+      duplicate_vote.opinion_id
+  end
+
+  defp preserve_sourced_opinions!(statement_id, opinions) do
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    rows =
+      opinions
+      |> Enum.reject(&is_nil/1)
+      |> Enum.filter(&(not is_nil(&1.source_url)))
+      |> Enum.uniq_by(& &1.id)
+      |> Enum.map(fn opinion ->
+        %{
+          opinion_id: opinion.id,
+          statement_id: statement_id,
+          user_id: opinion.user_id,
+          verification_status: opinion.verification_status,
+          inserted_at: now,
+          updated_at: now
+        }
+      end)
+
+    if rows != [] do
+      Repo.insert_all(OpinionStatement, rows,
+        on_conflict: :nothing,
+        conflict_target: [:opinion_id, :statement_id]
+      )
+    end
   end
 
   defp preferred_conflicting_vote(_survivor_vote, %Vote{opinion_id: opinion_id} = duplicate_vote)
