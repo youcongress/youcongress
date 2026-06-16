@@ -19,9 +19,11 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryWorker do
   def perform(%Oban.Job{args: args}) do
     with user_id when not is_nil(user_id) <- system_user_id(),
          recent_quotes <- FreshQuoteFinder.recent_quote_inventory(),
+         statements <- FreshQuoteFinder.statement_inventory(),
          {:ok, job_id} <-
            FreshQuoteFinder.find_quote(recent_quotes,
              limit: discovery_limit(args),
+             statements: statements,
              now: DateTime.utc_now()
            ) do
       %{"job_id" => job_id, "user_id" => user_id, "limit" => discovery_limit(args)}

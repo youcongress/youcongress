@@ -36,7 +36,7 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
 
     """
     Select every statement from the list where the quote establishes the author's
-    position.
+    position on the complete statement.
 
     Author: #{author || "Unknown"}
     Date: #{Opinion.display_date(opinion) || "Unknown"}
@@ -49,7 +49,8 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
     Statements:
     #{statements_text}
 
-    A quote qualifies for a statement if it either:
+    Use the same strict standard as relevance verification. A quote qualifies for
+    a statement if it either:
     - is directly about the COMPLETE statement; or
     - is about something else, but clearly implies that the author supports,
       opposes, or abstains on the COMPLETE statement.
@@ -60,8 +61,11 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
     statement. Do not infer a position from general sentiment, party membership,
     job title, or facts outside the quote.
 
-    Return only matches that would probably pass a later strict relevance
-    verification. For each match, choose:
+    Return only matches that should receive "ai_verified" in a later strict
+    relevance verification. Do not return matches that would be "disputed" or
+    "ai_unverifiable"; if uncertain, leave the statement unmatched.
+
+    For each match, choose:
     - "for": the quote clearly supports the statement.
     - "against": the quote clearly opposes the statement.
     - "abstain": the quote is explicitly neutral/undecided on the statement.
@@ -91,7 +95,7 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
           %{
             "role" => "system",
             "content" =>
-              "You classify whether a quote establishes an author's stance on complete policy statements. Be conservative and return only high-confidence matches."
+              "You judge whether a quote establishes an author's stance on policy statements as a whole. Accept direct relevance or clear implication; reject partial or adjacent topics unless they imply a stance on the complete statement."
           },
           %{
             "role" => "user",

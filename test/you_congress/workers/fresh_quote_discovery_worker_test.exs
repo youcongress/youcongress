@@ -4,6 +4,7 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryWorkerTest do
 
   import YouCongress.AccountsFixtures
   import YouCongress.OpinionsFixtures
+  import YouCongress.StatementsFixtures
 
   alias YouCongress.Workers.FreshQuoteDiscoveryPollingWorker
   alias YouCongress.Workers.FreshQuoteDiscoveryWorker
@@ -33,9 +34,11 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryWorkerTest do
   end
 
   describe "perform/1" do
-    test "starts discovery with recent quote inventory and enqueues polling" do
+    test "starts discovery with recent quote and statement inventories and enqueues polling" do
       user = user_fixture()
       existing_quote = opinion_fixture(%{content: "Existing AI safety quote", twin: false})
+      statement_1 = statement_fixture(%{title: "Frontier AI labs should publish safety cases"})
+      statement_2 = statement_fixture(%{title: "Governments should help workers adapt to AI"})
       put_env_restore(:verification_user_id, user.id)
       put_env_restore(:fresh_quote_finder_test_pid, self())
       put_env_restore(:fresh_quote_finder_test_job_id, "fresh-job-1")
@@ -48,6 +51,11 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryWorkerTest do
       assert [%{id: quote_id, quote: "Existing AI safety quote"}] = inventory
       assert quote_id == existing_quote.id
       assert Keyword.fetch!(opts, :limit) == 1
+
+      assert Keyword.fetch!(opts, :statements) == [
+               %{id: statement_1.id, title: "Frontier AI labs should publish safety cases"},
+               %{id: statement_2.id, title: "Governments should help workers adapt to AI"}
+             ]
 
       assert_enqueued(
         worker: FreshQuoteDiscoveryPollingWorker,
