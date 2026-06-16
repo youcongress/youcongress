@@ -117,6 +117,33 @@ defmodule YouCongress.AuthorsTest do
       assert {:error, %Ecto.Changeset{}} = Authors.create_author(@invalid_attrs)
     end
 
+    test "find_by_name_or_create/1 returns a stable existing author when names are duplicated" do
+      first_author = author_fixture(name: "Brad Smith", twitter_username: "brad_smith_one")
+      _second_author = author_fixture(name: "Brad Smith", twitter_username: "brad_smith_two")
+
+      assert {:ok, found_author} =
+               Authors.find_by_name_or_create(%{
+                 "name" => "Brad Smith",
+                 "bio" => "Technology executive",
+                 "twin_origin" => false
+               })
+
+      assert found_author.id == first_author.id
+    end
+
+    test "find_by_twitter_username_or_create/1 is case insensitive" do
+      author = author_fixture(name: "Brad Smith", twitter_username: "BradSmith")
+
+      assert {:ok, found_author} =
+               Authors.find_by_twitter_username_or_create(%{
+                 "name" => "Brad Smith",
+                 "twitter_username" => "bradsmith",
+                 "twin_origin" => false
+               })
+
+      assert found_author.id == author.id
+    end
+
     test "update_author/2 with valid data updates the author" do
       author = author_fixture()
       country = country_fixture(name: "Updated Country")

@@ -82,6 +82,32 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorkerTest do
       assert opinion.statements == []
     end
 
+    test "saves a quote when the author name already has multiple rows" do
+      first_author = author_fixture(name: "Brad Smith", twitter_username: "brad_smith_one")
+      _second_author = author_fixture(name: "Brad Smith", twitter_username: "brad_smith_two")
+
+      quote =
+        candidate(%{
+          "source_url" => "https://example.com/brad-smith-ai",
+          "author" => %{
+            "name" => "Brad Smith",
+            "bio" => "Technology executive",
+            "wikipedia_url" => "",
+            "twitter_username" => ""
+          }
+        })
+
+      assert :ok = perform_with_quotes([quote])
+
+      opinion = Opinions.get_by(content: quote["quote"], preload: :author)
+      assert opinion.author.id == first_author.id
+
+      assert_enqueued(
+        worker: MatchQuoteStatementsWorker,
+        args: %{"opinion_id" => opinion.id}
+      )
+    end
+
     test "skips duplicate source URLs" do
       existing = opinion_fixture(%{source_url: "https://example.com/fresh-ai-jobs"})
 

@@ -230,12 +230,31 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
        when wikipedia_url not in [nil, ""] do
     case Authors.find_by_wikipedia_url_or_create(attrs) do
       {:ok, author} -> {:ok, author}
-      {:error, _} -> Authors.find_by_name_or_create(attrs)
+      {:error, _} -> upsert_author_by_twitter_or_name(attrs)
     end
+  end
+
+  defp upsert_author(%{"twitter_username" => twitter_username} = attrs)
+       when twitter_username not in [nil, ""] do
+    upsert_author_by_twitter_or_name(attrs)
   end
 
   defp upsert_author(%{"name" => _name} = attrs), do: Authors.find_by_name_or_create(attrs)
   defp upsert_author(_attrs), do: {:error, :invalid_author}
+
+  defp upsert_author_by_twitter_or_name(%{"twitter_username" => twitter_username} = attrs)
+       when twitter_username not in [nil, ""] do
+    case Authors.find_by_twitter_username_or_create(attrs) do
+      {:ok, author} -> {:ok, author}
+      {:error, _} -> Authors.find_by_name_or_create(attrs)
+    end
+  end
+
+  defp upsert_author_by_twitter_or_name(%{"name" => _name} = attrs) do
+    Authors.find_by_name_or_create(attrs)
+  end
+
+  defp upsert_author_by_twitter_or_name(_attrs), do: {:error, :invalid_author}
 
   defp enqueue_statement_matching(opinion_id, index) do
     %{"opinion_id" => opinion_id}
