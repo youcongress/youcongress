@@ -7,9 +7,29 @@ defmodule YouCongress.Authors do
   alias YouCongress.Repo
 
   alias YouCongress.Authors.Author
+  alias YouCongress.Accounts.User
   alias YouCongress.Countries
+  alias YouCongress.Delegations.Delegation
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Votes.Vote
+  alias YouCongress.VoteVerifications.VoteVerification
   alias YouCongress.Workers.SetAuthorProfileImageFromXWorker
+
+  @profile_merge_fields [
+    :name,
+    :twitter_id_str,
+    :profile_image_url,
+    :description,
+    :followers_count,
+    :friends_count,
+    :verified,
+    :location,
+    :twitter_username,
+    :google_id,
+    :bio,
+    :wikipedia_url,
+    :country_id
+  ]
 
   @doc """
   Returns the list of authors.
@@ -385,6 +405,346 @@ defmodule YouCongress.Authors do
       |> SetAuthorProfileImageFromXWorker.new()
       |> Oban.insert()
     end
+  end
+
+  @doc """
+  Merges two authors into one author and deletes the detached duplicate.
+
+  The surviving author is selected by the highest opinion count, then the
+  highest vote count, then the first argument. Blank profile fields on the
+  survivor are filled from the merged author.
+  """
+  def merge_authors(first_author_id, second_author_id) do
+    first_author_id = normalize_author_id!(first_author_id)
+    second_author_id = normalize_author_id!(second_author_id)
+
+    if first_author_id == second_author_id do
+      {:error, :same_author}
+    else
+      Repo.transaction(fn ->
+        first_author = Repo.get!(Author, first_author_id)
+        second_author = Repo.get!(Author, second_author_id)
+
+        {survivor, duplicate, survivor_stats, duplicate_stats} =
+          choose_merge_survivor(first_author, second_author)
+
+        profile_attrs = fill_blank_profile_attrs(survivor, duplicate)
+        affected_deleguee_ids = affected_merge_deleguee_ids(duplicate.id, survivor.id)
+        now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+        moved_users = move_author_users(duplicate.id, survivor.id, now)
+        moved_opinions = move_author_opinions(duplicate.id, survivor.id, now)
+        vote_counts = merge_author_votes(duplicate.id, survivor.id, now)
+        delegation_counts = merge_author_delegations(duplicate.id, survivor.id, now)
+
+        ensure_author_detached!(duplicate.id)
+        deleted_author = delete_duplicate_author!(duplicate)
+        updated_survivor = update_survivor_profile!(survivor, profile_attrs)
+        delegated_vote_refreshes = refresh_affected_delegated_votes(affected_deleguee_ids)
+
+        %{
+          author: updated_survivor,
+          deleted_author: deleted_author,
+          survivor_id: survivor.id,
+          merged_author_id: duplicate.id,
+          survivor_stats: survivor_stats,
+          merged_author_stats: duplicate_stats,
+          counts: %{
+            users: moved_users,
+            opinions: moved_opinions,
+            votes: vote_counts,
+            delegations: delegation_counts,
+            delegated_vote_refreshes: delegated_vote_refreshes
+          }
+        }
+      end)
+    end
+  end
+
+  defp normalize_author_id!(id) when is_integer(id), do: id
+  defp normalize_author_id!(id) when is_binary(id), do: String.to_integer(id)
+
+  defp choose_merge_survivor(%Author{} = first_author, %Author{} = second_author) do
+    first_stats = author_merge_stats(first_author.id)
+    second_stats = author_merge_stats(second_author.id)
+
+    cond do
+      first_stats.opinions > second_stats.opinions ->
+        {first_author, second_author, first_stats, second_stats}
+
+      second_stats.opinions > first_stats.opinions ->
+        {second_author, first_author, second_stats, first_stats}
+
+      first_stats.votes > second_stats.votes ->
+        {first_author, second_author, first_stats, second_stats}
+
+      second_stats.votes > first_stats.votes ->
+        {second_author, first_author, second_stats, first_stats}
+
+      true ->
+        {first_author, second_author, first_stats, second_stats}
+    end
+  end
+
+  defp author_merge_stats(author_id) do
+    %{
+      opinions: Repo.aggregate(from(o in Opinion, where: o.author_id == ^author_id), :count, :id),
+      votes: Repo.aggregate(from(v in Vote, where: v.author_id == ^author_id), :count, :id)
+    }
+  end
+
+  defp fill_blank_profile_attrs(%Author{} = survivor, %Author{} = duplicate) do
+    Enum.reduce(@profile_merge_fields, %{}, fn field, attrs ->
+      survivor_value = Map.get(survivor, field)
+      duplicate_value = Map.get(duplicate, field)
+
+      if blank?(survivor_value) and not blank?(duplicate_value) do
+        Map.put(attrs, field, duplicate_value)
+      else
+        attrs
+      end
+    end)
+  end
+
+  defp affected_merge_deleguee_ids(duplicate_author_id, survivor_author_id) do
+    from(d in Delegation,
+      where: d.delegate_id in ^[duplicate_author_id, survivor_author_id],
+      select: d.deleguee_id
+    )
+    |> Repo.all()
+    |> then(&[survivor_author_id | &1])
+    |> Enum.reject(&(&1 == duplicate_author_id))
+    |> Enum.uniq()
+  end
+
+  defp move_author_users(duplicate_author_id, survivor_author_id, now) do
+    {count, _} =
+      from(u in User, where: u.author_id == ^duplicate_author_id)
+      |> Repo.update_all(set: [author_id: survivor_author_id, updated_at: now])
+
+    count
+  end
+
+  defp move_author_opinions(duplicate_author_id, survivor_author_id, now) do
+    {count, _} =
+      from(o in Opinion, where: o.author_id == ^duplicate_author_id)
+      |> Repo.update_all(set: [author_id: survivor_author_id, updated_at: now])
+
+    count
+  end
+
+  defp merge_author_votes(duplicate_author_id, survivor_author_id, now) do
+    conflicts = conflicting_votes(duplicate_author_id, survivor_author_id)
+    duplicate_vote_ids = Enum.map(conflicts, & &1.duplicate_vote_id)
+    survivor_vote_ids = conflicts |> Enum.map(& &1.survivor_vote_id) |> Enum.uniq()
+
+    merged_conflicting_votes =
+      Enum.reduce(conflicts, 0, fn conflict, count ->
+        merge_conflicting_vote!(conflict)
+        count + 1
+      end)
+
+    moved_vote_verifications = move_vote_verifications(conflicts)
+    deleted_duplicate_votes = delete_duplicate_votes(duplicate_vote_ids)
+    moved_votes = move_non_conflicting_votes(duplicate_author_id, survivor_author_id, now)
+
+    Enum.each(survivor_vote_ids, &YouCongress.VoteVerifications.update_vote_verification_status/1)
+
+    %{
+      moved: moved_votes,
+      merged: merged_conflicting_votes,
+      deleted_duplicates: deleted_duplicate_votes,
+      moved_verifications: moved_vote_verifications
+    }
+  end
+
+  defp conflicting_votes(duplicate_author_id, survivor_author_id) do
+    from(duplicate_vote in Vote,
+      join: survivor_vote in Vote,
+      on:
+        survivor_vote.author_id == ^survivor_author_id and
+          survivor_vote.statement_id == duplicate_vote.statement_id,
+      where: duplicate_vote.author_id == ^duplicate_author_id,
+      select: %{
+        duplicate_vote_id: duplicate_vote.id,
+        survivor_vote_id: survivor_vote.id
+      }
+    )
+    |> Repo.all()
+  end
+
+  defp merge_conflicting_vote!(%{
+         duplicate_vote_id: duplicate_vote_id,
+         survivor_vote_id: survivor_vote_id
+       }) do
+    duplicate_vote = Repo.get!(Vote, duplicate_vote_id)
+    survivor_vote = Repo.get!(Vote, survivor_vote_id)
+
+    attrs = %{
+      answer: merged_vote_answer(survivor_vote, duplicate_vote),
+      direct: survivor_vote.direct || duplicate_vote.direct,
+      twin: survivor_vote.twin && duplicate_vote.twin,
+      opinion_id: survivor_vote.opinion_id || duplicate_vote.opinion_id
+    }
+
+    survivor_vote
+    |> Vote.changeset(attrs)
+    |> Repo.update!()
+  end
+
+  defp merged_vote_answer(%Vote{direct: false}, %Vote{direct: true, answer: answer}), do: answer
+  defp merged_vote_answer(%Vote{answer: answer}, _duplicate_vote), do: answer
+
+  defp move_vote_verifications(conflicts) do
+    Enum.reduce(conflicts, 0, fn %{
+                                   duplicate_vote_id: duplicate_vote_id,
+                                   survivor_vote_id: survivor_vote_id
+                                 },
+                                 count ->
+      {moved, _} =
+        from(v in VoteVerification, where: v.vote_id == ^duplicate_vote_id)
+        |> Repo.update_all(set: [vote_id: survivor_vote_id])
+
+      count + moved
+    end)
+  end
+
+  defp delete_duplicate_votes([]), do: 0
+
+  defp delete_duplicate_votes(duplicate_vote_ids) do
+    {count, _} =
+      from(v in Vote, where: v.id in ^duplicate_vote_ids)
+      |> Repo.delete_all()
+
+    count
+  end
+
+  defp move_non_conflicting_votes(duplicate_author_id, survivor_author_id, now) do
+    {count, _} =
+      from(v in Vote, where: v.author_id == ^duplicate_author_id)
+      |> Repo.update_all(set: [author_id: survivor_author_id, updated_at: now])
+
+    count
+  end
+
+  defp merge_author_delegations(duplicate_author_id, survivor_author_id, now) do
+    self_delegations = delete_self_merge_delegations(duplicate_author_id, survivor_author_id)
+
+    duplicate_deleguee_rows =
+      delete_duplicate_deleguee_delegations(duplicate_author_id, survivor_author_id)
+
+    duplicate_delegate_rows =
+      delete_duplicate_delegate_delegations(duplicate_author_id, survivor_author_id)
+
+    moved_deleguee_rows = move_deleguee_delegations(duplicate_author_id, survivor_author_id, now)
+    moved_delegate_rows = move_delegate_delegations(duplicate_author_id, survivor_author_id, now)
+
+    %{
+      moved_deleguee: moved_deleguee_rows,
+      moved_delegate: moved_delegate_rows,
+      deleted_self: self_delegations,
+      deleted_duplicates: duplicate_deleguee_rows + duplicate_delegate_rows
+    }
+  end
+
+  defp delete_self_merge_delegations(duplicate_author_id, survivor_author_id) do
+    {count, _} =
+      from(d in Delegation,
+        where:
+          d.deleguee_id in ^[duplicate_author_id, survivor_author_id] and
+            d.delegate_id in ^[duplicate_author_id, survivor_author_id]
+      )
+      |> Repo.delete_all()
+
+    count
+  end
+
+  defp delete_duplicate_deleguee_delegations(duplicate_author_id, survivor_author_id) do
+    {count, _} =
+      from(d in Delegation,
+        where: d.deleguee_id == ^duplicate_author_id,
+        where:
+          fragment(
+            "EXISTS (SELECT 1 FROM delegations target WHERE target.deleguee_id = ? AND target.delegate_id = ?)",
+            ^survivor_author_id,
+            d.delegate_id
+          )
+      )
+      |> Repo.delete_all()
+
+    count
+  end
+
+  defp delete_duplicate_delegate_delegations(duplicate_author_id, survivor_author_id) do
+    {count, _} =
+      from(d in Delegation,
+        where: d.delegate_id == ^duplicate_author_id,
+        where:
+          fragment(
+            "EXISTS (SELECT 1 FROM delegations target WHERE target.delegate_id = ? AND target.deleguee_id = ?)",
+            ^survivor_author_id,
+            d.deleguee_id
+          )
+      )
+      |> Repo.delete_all()
+
+    count
+  end
+
+  defp move_deleguee_delegations(duplicate_author_id, survivor_author_id, now) do
+    {count, _} =
+      from(d in Delegation, where: d.deleguee_id == ^duplicate_author_id)
+      |> Repo.update_all(set: [deleguee_id: survivor_author_id, updated_at: now])
+
+    count
+  end
+
+  defp move_delegate_delegations(duplicate_author_id, survivor_author_id, now) do
+    {count, _} =
+      from(d in Delegation, where: d.delegate_id == ^duplicate_author_id)
+      |> Repo.update_all(set: [delegate_id: survivor_author_id, updated_at: now])
+
+    count
+  end
+
+  defp ensure_author_detached!(author_id) do
+    if author_linked?(author_id) do
+      Repo.rollback({:author_still_linked, author_id})
+    end
+  end
+
+  defp author_linked?(author_id) do
+    Repo.exists?(from(u in User, where: u.author_id == ^author_id)) ||
+      Repo.exists?(from(o in Opinion, where: o.author_id == ^author_id)) ||
+      Repo.exists?(from(v in Vote, where: v.author_id == ^author_id)) ||
+      Repo.exists?(
+        from(d in Delegation,
+          where: d.deleguee_id == ^author_id or d.delegate_id == ^author_id
+        )
+      )
+  end
+
+  defp delete_duplicate_author!(%Author{} = duplicate) do
+    case Repo.delete(duplicate) do
+      {:ok, deleted_author} -> deleted_author
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
+
+  defp update_survivor_profile!(%Author{} = survivor, attrs) when attrs == %{} do
+    Repo.get!(Author, survivor.id)
+  end
+
+  defp update_survivor_profile!(%Author{} = survivor, attrs) do
+    case update_author(survivor, attrs) do
+      {:ok, %Author{} = updated_author} -> updated_author
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
+
+  defp refresh_affected_delegated_votes(author_ids) do
+    Enum.each(author_ids, &YouCongress.DelegationVotes.update_author_delegated_votes/1)
+    length(author_ids)
   end
 
   @doc """

@@ -7,9 +7,22 @@ defmodule YouCongress.AuthorsTest do
 
   describe "authors" do
     alias YouCongress.Authors.Author
+    alias YouCongress.Accounts.User
+    alias YouCongress.Delegations.Delegation
+    alias YouCongress.Opinions.Opinion
+    alias YouCongress.Repo
+    alias YouCongress.VoteVerifications
+    alias YouCongress.VoteVerifications.VoteVerification
+    alias YouCongress.Votes
+    alias YouCongress.Votes.Vote
 
+    import YouCongress.AccountsFixtures
     import YouCongress.AuthorsFixtures
     import YouCongress.CountriesFixtures
+    import YouCongress.DelegationsFixtures
+    import YouCongress.OpinionsFixtures
+    import YouCongress.StatementsFixtures
+    import YouCongress.VotesFixtures
 
     @invalid_attrs %{
       bio: nil,
@@ -245,6 +258,229 @@ defmodule YouCongress.AuthorsTest do
       assert_raise Ecto.NoResultsError, fn -> Authors.get_author!(author.id) end
     end
 
+    test "merge_authors/2 keeps the author with more opinions, fills blank profile fields, moves links, and deletes the duplicate" do
+      country = country_fixture(name: "Merge Country")
+
+      survivor =
+        author_fixture(%{
+          name: "Survivor",
+          bio: "Survivor bio",
+          twitter_username: nil,
+          twitter_id_str: nil,
+          wikipedia_url: nil,
+          profile_image_url: nil,
+          country_id: nil,
+          description: nil,
+          followers_count: nil,
+          friends_count: nil,
+          verified: nil,
+          location: nil,
+          google_id: nil
+        })
+
+      duplicate =
+        author_fixture(%{
+          name: "Duplicate",
+          bio: "Duplicate bio",
+          twitter_username: "duplicate_author",
+          twitter_id_str: "duplicate-twitter-id",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Duplicate_Author",
+          profile_image_url: "https://example.com/duplicate.jpg",
+          country_id: country.id,
+          description: "Duplicate description",
+          followers_count: 123,
+          friends_count: 45,
+          verified: true,
+          location: "Madrid",
+          google_id: "duplicate-google-id"
+        })
+
+      opinion_fixture(%{author_id: survivor.id, content: "survivor opinion 1"})
+      opinion_fixture(%{author_id: survivor.id, content: "survivor opinion 2"})
+
+      duplicate_opinion =
+        opinion_fixture(%{author_id: duplicate.id, content: "duplicate opinion"})
+
+      statement = statement_fixture()
+      duplicate_vote = vote_fixture(%{author_id: duplicate.id, statement_id: statement.id})
+      linked_user = user_for_author(duplicate)
+
+      delegate = author_fixture()
+      deleguee = author_fixture()
+      delegation_fixture(%{deleguee_id: duplicate.id, delegate_id: delegate.id})
+      delegation_fixture(%{deleguee_id: deleguee.id, delegate_id: duplicate.id})
+
+      assert {:ok, %{author: merged_author, deleted_author: deleted_author}} =
+               Authors.merge_authors(survivor.id, duplicate.id)
+
+      assert merged_author.id == survivor.id
+      assert deleted_author.id == duplicate.id
+      assert merged_author.name == "Survivor"
+      assert merged_author.bio == "Survivor bio"
+      assert merged_author.twitter_username == "duplicate_author"
+      assert merged_author.twitter_id_str == "duplicate-twitter-id"
+      assert merged_author.wikipedia_url == "https://en.wikipedia.org/wiki/Duplicate_Author"
+      assert merged_author.profile_image_url == "https://example.com/duplicate.jpg"
+      assert merged_author.country_id == country.id
+      assert merged_author.description == "Duplicate description"
+      assert merged_author.followers_count == 123
+      assert merged_author.friends_count == 45
+      assert merged_author.verified == true
+      assert merged_author.location == "Madrid"
+      assert merged_author.google_id == "duplicate-google-id"
+
+      assert Repo.get!(Opinion, duplicate_opinion.id).author_id == survivor.id
+      assert Repo.get!(Vote, duplicate_vote.id).author_id == survivor.id
+      assert Repo.get!(User, linked_user.id).author_id == survivor.id
+      assert Repo.get_by(Delegation, deleguee_id: survivor.id, delegate_id: delegate.id)
+      assert Repo.get_by(Delegation, deleguee_id: deleguee.id, delegate_id: survivor.id)
+      refute Repo.get(Author, duplicate.id)
+    end
+
+    test "merge_authors/2 uses vote count as the tie breaker after opinion count" do
+      first_author = author_fixture()
+      second_author = author_fixture()
+
+      vote_fixture(%{author_id: first_author.id})
+      vote_fixture(%{author_id: second_author.id})
+      vote_fixture(%{author_id: second_author.id})
+
+      assert {:ok, %{author: merged_author, deleted_author: deleted_author}} =
+               Authors.merge_authors(first_author.id, second_author.id)
+
+      assert merged_author.id == second_author.id
+      assert deleted_author.id == first_author.id
+      refute Repo.get(Author, first_author.id)
+    end
+
+    test "merge_authors/2 keeps the first author when opinion and vote counts are tied" do
+      first_author = author_fixture()
+      second_author = author_fixture()
+
+      assert {:ok, %{author: merged_author, deleted_author: deleted_author}} =
+               Authors.merge_authors(first_author.id, second_author.id)
+
+      assert merged_author.id == first_author.id
+      assert deleted_author.id == second_author.id
+      refute Repo.get(Author, second_author.id)
+    end
+
+    test "merge_authors/2 collapses duplicate votes and keeps their verifications" do
+      survivor = author_fixture()
+      duplicate = author_fixture()
+      statement = statement_fixture()
+      verifier = user_fixture()
+
+      survivor_vote =
+        vote_fixture(%{
+          author_id: survivor.id,
+          statement_id: statement.id,
+          answer: :for,
+          direct: false
+        })
+
+      duplicate_vote =
+        vote_fixture(%{
+          author_id: duplicate.id,
+          statement_id: statement.id,
+          answer: :against,
+          direct: true
+        })
+
+      assert {:ok, verification} =
+               VoteVerifications.create_verification(%{
+                 vote_id: duplicate_vote.id,
+                 user_id: verifier.id,
+                 status: :verified,
+                 comment: "Correct"
+               })
+
+      assert {:ok, %{author: merged_author}} = Authors.merge_authors(survivor.id, duplicate.id)
+
+      merged_vote = Votes.get_by(%{author_id: merged_author.id, statement_id: statement.id})
+      assert merged_vote.id == survivor_vote.id
+      assert merged_vote.answer == :against
+      assert merged_vote.direct == true
+      assert merged_vote.verification_status == :verified
+
+      refute Repo.get(Vote, duplicate_vote.id)
+      assert Repo.get!(VoteVerification, verification.id).vote_id == survivor_vote.id
+    end
+
+    test "merge_authors/2 removes duplicate delegations instead of violating unique constraints" do
+      survivor = author_fixture()
+      duplicate = author_fixture()
+      delegate = author_fixture()
+      deleguee = author_fixture()
+
+      delegation_fixture(%{deleguee_id: survivor.id, delegate_id: delegate.id})
+      delegation_fixture(%{deleguee_id: duplicate.id, delegate_id: delegate.id})
+      delegation_fixture(%{deleguee_id: deleguee.id, delegate_id: survivor.id})
+      delegation_fixture(%{deleguee_id: deleguee.id, delegate_id: duplicate.id})
+
+      assert {:ok, %{author: merged_author}} = Authors.merge_authors(survivor.id, duplicate.id)
+
+      assert merged_author.id == survivor.id
+
+      assert Repo.aggregate(
+               from(d in Delegation,
+                 where: d.deleguee_id == ^survivor.id and d.delegate_id == ^delegate.id
+               ),
+               :count,
+               :id
+             ) == 1
+
+      assert Repo.aggregate(
+               from(d in Delegation,
+                 where: d.deleguee_id == ^deleguee.id and d.delegate_id == ^survivor.id
+               ),
+               :count,
+               :id
+             ) == 1
+
+      refute Repo.get(Author, duplicate.id)
+    end
+
+    test "merge_authors/2 refreshes delegated votes that pointed at the duplicate author" do
+      survivor = author_fixture()
+      duplicate = author_fixture()
+      deleguee = author_fixture()
+      statement = statement_fixture()
+
+      vote_fixture(%{
+        author_id: survivor.id,
+        statement_id: statement.id,
+        answer: :for,
+        direct: true
+      })
+
+      vote_fixture(%{
+        author_id: duplicate.id,
+        statement_id: statement.id,
+        answer: :against,
+        direct: true
+      })
+
+      delegation_fixture(%{deleguee_id: deleguee.id, delegate_id: duplicate.id})
+      delegated_vote = Votes.get_by(%{author_id: deleguee.id, statement_id: statement.id})
+      assert delegated_vote.answer == :against
+      assert delegated_vote.direct == false
+
+      assert {:ok, %{author: merged_author}} = Authors.merge_authors(survivor.id, duplicate.id)
+
+      refreshed_vote = Votes.get_by(%{author_id: deleguee.id, statement_id: statement.id})
+      assert refreshed_vote.answer == :for
+      assert refreshed_vote.direct == false
+      assert Repo.get_by(Delegation, deleguee_id: deleguee.id, delegate_id: merged_author.id)
+      refute Repo.get(Author, duplicate.id)
+    end
+
+    test "merge_authors/2 rejects the same author id" do
+      author = author_fixture()
+
+      assert Authors.merge_authors(author.id, author.id) == {:error, :same_author}
+    end
+
     test "change_author/1 returns a author changeset" do
       author = author_fixture()
       assert %Ecto.Changeset{} = Authors.change_author(author)
@@ -292,6 +528,15 @@ defmodule YouCongress.AuthorsTest do
       author = author_fixture(twitter_username: nil)
 
       assert Authors.set_profile_image_from_x(author) == {:error, :no_twitter_username}
+    end
+
+    defp user_for_author(author) do
+      %User{}
+      |> User.twitter_registration_changeset(%{
+        "email" => unique_user_email(),
+        "author_id" => author.id
+      })
+      |> Repo.insert!()
     end
   end
 end
