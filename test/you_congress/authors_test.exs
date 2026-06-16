@@ -407,6 +407,82 @@ defmodule YouCongress.AuthorsTest do
       assert Repo.get!(VoteVerification, verification.id).vote_id == survivor_vote.id
     end
 
+    test "merge_authors/2 keeps the merged author's opinion visible when votes conflict on the same statement" do
+      survivor = author_fixture()
+      duplicate = author_fixture()
+      statement = statement_fixture()
+      other_statement = statement_fixture()
+
+      survivor_opinion =
+        opinion_fixture(%{
+          author_id: survivor.id,
+          content: "survivor conflict opinion",
+          source_url: "https://example.com/survivor-conflict"
+        })
+
+      {:ok, _} = YouCongress.Opinions.add_opinion_to_statement(survivor_opinion, statement)
+
+      survivor_other_opinion =
+        opinion_fixture(%{
+          author_id: survivor.id,
+          content: "survivor other opinion",
+          source_url: "https://example.com/survivor-other"
+        })
+
+      {:ok, _} =
+        YouCongress.Opinions.add_opinion_to_statement(survivor_other_opinion, other_statement)
+
+      duplicate_opinion =
+        opinion_fixture(%{
+          author_id: duplicate.id,
+          content: "duplicate conflict opinion",
+          source_url: "https://example.com/duplicate-conflict"
+        })
+
+      {:ok, _} = YouCongress.Opinions.add_opinion_to_statement(duplicate_opinion, statement)
+
+      survivor_vote =
+        vote_fixture(%{
+          author_id: survivor.id,
+          statement_id: statement.id,
+          opinion_id: survivor_opinion.id,
+          answer: :for,
+          direct: true
+        })
+
+      vote_fixture(%{
+        author_id: survivor.id,
+        statement_id: other_statement.id,
+        opinion_id: survivor_other_opinion.id,
+        answer: :for,
+        direct: true
+      })
+
+      duplicate_vote =
+        vote_fixture(%{
+          author_id: duplicate.id,
+          statement_id: statement.id,
+          opinion_id: duplicate_opinion.id,
+          answer: :against,
+          direct: true
+        })
+
+      assert {:ok, %{author: merged_author}} = Authors.merge_authors(survivor.id, duplicate.id)
+
+      merged_conflict_vote =
+        Votes.get_by(%{author_id: merged_author.id, statement_id: statement.id})
+
+      assert merged_conflict_vote.id == survivor_vote.id
+      assert merged_conflict_vote.opinion_id == duplicate_opinion.id
+      assert merged_conflict_vote.answer == :against
+
+      assert Repo.get!(Opinion, duplicate_opinion.id).author_id == merged_author.id
+      assert Repo.get!(Opinion, survivor_opinion.id).author_id == merged_author.id
+      assert Repo.get!(Opinion, survivor_other_opinion.id).author_id == merged_author.id
+      refute Repo.get(Vote, duplicate_vote.id)
+      refute Repo.get(Author, duplicate.id)
+    end
+
     test "merge_authors/2 removes duplicate delegations instead of violating unique constraints" do
       survivor = author_fixture()
       duplicate = author_fixture()

@@ -579,12 +579,14 @@ defmodule YouCongress.Authors do
        }) do
     duplicate_vote = Repo.get!(Vote, duplicate_vote_id)
     survivor_vote = Repo.get!(Vote, survivor_vote_id)
+    preferred_vote = preferred_conflicting_vote(survivor_vote, duplicate_vote)
 
     attrs = %{
-      answer: merged_vote_answer(survivor_vote, duplicate_vote),
+      answer: merged_vote_answer(survivor_vote, duplicate_vote, preferred_vote),
       direct: survivor_vote.direct || duplicate_vote.direct,
       twin: survivor_vote.twin && duplicate_vote.twin,
-      opinion_id: survivor_vote.opinion_id || duplicate_vote.opinion_id
+      opinion_id:
+        preferred_vote.opinion_id || survivor_vote.opinion_id || duplicate_vote.opinion_id
     }
 
     survivor_vote
@@ -592,8 +594,20 @@ defmodule YouCongress.Authors do
     |> Repo.update!()
   end
 
-  defp merged_vote_answer(%Vote{direct: false}, %Vote{direct: true, answer: answer}), do: answer
-  defp merged_vote_answer(%Vote{answer: answer}, _duplicate_vote), do: answer
+  defp preferred_conflicting_vote(_survivor_vote, %Vote{opinion_id: opinion_id} = duplicate_vote)
+       when not is_nil(opinion_id),
+       do: duplicate_vote
+
+  defp preferred_conflicting_vote(%Vote{opinion_id: opinion_id} = survivor_vote, _duplicate_vote)
+       when not is_nil(opinion_id),
+       do: survivor_vote
+
+  defp preferred_conflicting_vote(%Vote{direct: false}, %Vote{direct: true} = duplicate_vote),
+    do: duplicate_vote
+
+  defp preferred_conflicting_vote(survivor_vote, _duplicate_vote), do: survivor_vote
+
+  defp merged_vote_answer(_survivor_vote, _duplicate_vote, %Vote{answer: answer}), do: answer
 
   defp move_vote_verifications(conflicts) do
     Enum.reduce(conflicts, 0, fn %{
