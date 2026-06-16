@@ -8,7 +8,7 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
     </h1>
     <p class="mt-6 text-lg leading-relaxed">
       YouCongress exposes its data and functionality through the <strong>Model Context Protocol (MCP)</strong>, an open standard that lets AI assistants
-      like Claude and ChatGPT interact directly with external services.
+      like ChatGPT and Claude interact directly with external services.
     </p>
   </section>
   
@@ -16,20 +16,20 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
   <section class="mt-6 p-6 bg-indigo-50 rounded-lg border border-indigo-200">
     <h2 class="text-lg font-bold text-indigo-900">New to MCP? Pick your assistant.</h2>
     <p class="mt-2 text-indigo-800">
-      Follow a step-by-step guide to connect YouCongress to Claude or ChatGPT. Any other MCP-capable assistant can use the same endpoint below.
+      Follow a step-by-step guide to connect YouCongress to ChatGPT or Claude. Any other MCP-capable assistant can use the same endpoint below.
     </p>
     <div class="mt-3 flex flex-wrap gap-3">
       <a
-        href="/mcp/claude"
+        href="/mcp/chatgpt"
         class="inline-block bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors duration-200"
       >
-        Set up Claude
+        Set up ChatGPT
       </a>
       <a
-        href="/mcp/chatgpt"
+        href="/mcp/claude"
         class="inline-block bg-white text-indigo-700 border border-indigo-300 font-semibold py-2 px-4 rounded-lg hover:bg-indigo-100 transition-colors duration-200"
       >
-        Set up ChatGPT
+        Set up Claude
       </a>
     </div>
   </section>
@@ -191,7 +191,7 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
       <p class="text-gray-600 mt-1">Policy proposals and claims that people vote on.</p>
       <p class="text-gray-600 mt-2">
         Admins can trigger automatic quote discovery, but anyone can ask their own
-        Claude, ChatGPT, Cursor, or other MCP-connected assistant to find sourced quotes and then
+        ChatGPT, Claude, Cursor, or other MCP-connected assistant to find sourced quotes and then
         add them to YouCongress through the opinions and votes tools.
       </p>
       <dl class="mt-3 space-y-3">
@@ -272,7 +272,7 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
           </dt>
           <dd class="text-gray-700">
             Queue the AI-powered quote discovery job for a statement. Requires <code class="bg-gray-100 px-1 rounded">statement_id</code>. If you are not an admin,
-            simply use your own Claude, ChatGPT, or other assistant to gather sourced quotes and
+            simply use your own ChatGPT, Claude, or other assistant to gather sourced quotes and
             add them via the opinions and votes tools.
           </dd>
         </div>
@@ -668,14 +668,14 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
     <.prompt_examples>
       <:intro>
         Open a new chat in <.link
-          href="/mcp/claude"
-          class="underline text-blue-600 hover:text-blue-800"
-        >Claude</.link>,
-        <.link
           href="/mcp/chatgpt"
           class="underline text-blue-600 hover:text-blue-800"
+        >ChatGPT</.link>,
+        <.link
+          href="/mcp/claude"
+          class="underline text-blue-600 hover:text-blue-800"
         >
-          ChatGPT
+          Claude
         </.link>
         or another MCP-capable assistant and try pasting one of these prompts:
       </:intro>
