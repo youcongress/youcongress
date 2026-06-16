@@ -222,6 +222,16 @@ defmodule YouCongress.Authors do
   end
 
   @doc """
+  Finds a author by X/Twitter username or creates a new one.
+  """
+  def find_by_twitter_username_or_create(%{"twitter_username" => twitter_username} = author_data) do
+    case find_by(:twitter_username, twitter_username) do
+      nil -> create_author(author_data)
+      author -> {:ok, author}
+    end
+  end
+
+  @doc """
   Finds an author by column and name.
 
   ## Examples
@@ -239,9 +249,41 @@ defmodule YouCongress.Authors do
       nil
 
   """
-  def find_by(column, name) when column in [:name, :wikipedia_url] do
-    Repo.get_by(Author, [{column, name}])
+  def find_by(:name, name), do: find_one_exact(:name, name)
+
+  def find_by(:wikipedia_url, wikipedia_url),
+    do: find_one_case_insensitive(:wikipedia_url, wikipedia_url)
+
+  def find_by(:twitter_username, username),
+    do: find_one_case_insensitive(:twitter_username, username)
+
+  defp find_one_exact(_column, value) when value in [nil, ""], do: nil
+
+  defp find_one_exact(column, value) when is_binary(value) do
+    from(a in Author,
+      where: field(a, ^column) == ^value,
+      order_by: [asc: a.id],
+      limit: 1
+    )
+    |> Repo.one()
   end
+
+  defp find_one_exact(_column, _value), do: nil
+
+  defp find_one_case_insensitive(_column, value) when value in [nil, ""], do: nil
+
+  defp find_one_case_insensitive(column, value) when is_binary(value) do
+    value = value |> String.trim() |> String.downcase()
+
+    from(a in Author,
+      where: fragment("lower(?)", field(a, ^column)) == ^value,
+      order_by: [asc: a.id],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  defp find_one_case_insensitive(_column, _value), do: nil
 
   @doc """
   Updates a author.
