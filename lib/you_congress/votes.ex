@@ -184,6 +184,7 @@ defmodule YouCongress.Votes do
          v.verification_status,
          o.verification_status
        )},
+      fragment("? DESC NULLS LAST", o.date),
       {:desc, o.likes_count},
       fragment("? DESC", o.descendants_count),
       fragment("CASE
@@ -192,7 +193,6 @@ defmodule YouCongress.Votes do
             WHEN ? = FALSE THEN 3
             ELSE 4
           END", o.source_url, a.wikipedia_url, o.twin),
-      fragment("? DESC NULLS LAST", o.date),
       {:desc, o.id}
     ])
     |> preload(^include_tables)

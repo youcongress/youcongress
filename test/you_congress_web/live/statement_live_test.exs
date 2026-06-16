@@ -887,7 +887,8 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       delegate_author = author_fixture(%{name: "Delegate With Disputed Quote"})
       aggregate_author = author_fixture(%{name: "Aggregate Verified Quote Author"})
-      quote_only_author = author_fixture(%{name: "Quote Only Verified Quote Author"})
+      newer_quote_only_author = author_fixture(%{name: "Newer Quote Only Verified Author"})
+      older_quote_only_author = author_fixture(%{name: "Older Quote Only Verified Author"})
       disputed_author = author_fixture(%{name: "Disputed Quote Author"})
 
       delegation_fixture(%{deleguee_id: user.author_id, delegate_id: delegate_author.id})
@@ -907,12 +908,24 @@ defmodule YouCongressWeb.StatementLiveTest do
           likes_count: 0
         })
 
-      quote_only_opinion =
+      newer_quote_only_opinion =
         opinion_fixture(%{
-          author_id: quote_only_author.id,
+          author_id: newer_quote_only_author.id,
           content: "Newer quote-only verified quote",
           verification_status: :verified,
-          likes_count: 10
+          likes_count: 0,
+          date: ~D[2025-01-01],
+          date_precision: :year
+        })
+
+      older_quote_only_opinion =
+        opinion_fixture(%{
+          author_id: older_quote_only_author.id,
+          content: "Older high-like quote-only verified quote",
+          verification_status: :verified,
+          likes_count: 25,
+          date: ~D[2020-01-01],
+          date_precision: :year
         })
 
       disputed_opinion =
@@ -922,7 +935,13 @@ defmodule YouCongressWeb.StatementLiveTest do
           verification_status: :disputed
         })
 
-      for opinion <- [delegate_opinion, aggregate_opinion, quote_only_opinion, disputed_opinion] do
+      for opinion <- [
+            delegate_opinion,
+            aggregate_opinion,
+            newer_quote_only_opinion,
+            older_quote_only_opinion,
+            disputed_opinion
+          ] do
         {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
       end
 
@@ -948,8 +967,15 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       vote_fixture(%{
         statement_id: statement.id,
-        author_id: quote_only_author.id,
-        opinion_id: quote_only_opinion.id,
+        author_id: newer_quote_only_author.id,
+        opinion_id: newer_quote_only_opinion.id,
+        answer: :for
+      })
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: older_quote_only_author.id,
+        opinion_id: older_quote_only_opinion.id,
         answer: :for
       })
 
@@ -966,7 +992,8 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert [
                delegate_position,
                aggregate_position,
-               quote_only_position,
+               newer_quote_only_position,
+               older_quote_only_position,
                disputed_position
              ] =
                Enum.map(
@@ -974,6 +1001,7 @@ defmodule YouCongressWeb.StatementLiveTest do
                    "Delegate disputed quote",
                    "Aggregate verified quote",
                    "Newer quote-only verified quote",
+                   "Older high-like quote-only verified quote",
                    "Newer disputed quote"
                  ],
                  fn quote ->
@@ -985,8 +1013,9 @@ defmodule YouCongressWeb.StatementLiveTest do
                )
 
       assert delegate_position < aggregate_position
-      assert aggregate_position < quote_only_position
-      assert quote_only_position < disputed_position
+      assert aggregate_position < newer_quote_only_position
+      assert newer_quote_only_position < older_quote_only_position
+      assert older_quote_only_position < disputed_position
     end
 
     test "ranks an author's verified alternate quote before a newer disputed quote", %{

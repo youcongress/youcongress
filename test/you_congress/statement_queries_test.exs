@@ -158,6 +158,58 @@ defmodule YouCongress.Statements.StatementQueriesTest do
 
       assert card.vote.id == aggregate_vote.id
     end
+
+    test "uses newest quote date before likes among quote-only verified opinions" do
+      statement = statement_fixture()
+      fill_statement_with_quotes(statement.id, 8)
+
+      older_author = author_fixture()
+
+      older_opinion =
+        opinion_fixture(%{
+          author_id: older_author.id,
+          content: "Older high-like verified home quote",
+          verification_status: :verified,
+          likes_count: 25,
+          date: ~D[2020-01-01],
+          date_precision: :year
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(older_opinion, statement.id)
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: older_author.id,
+        opinion_id: older_opinion.id
+      })
+
+      newer_author = author_fixture()
+
+      newer_opinion =
+        opinion_fixture(%{
+          author_id: newer_author.id,
+          content: "Newer low-like verified home quote",
+          verification_status: :ai_verified,
+          likes_count: 0,
+          date: ~D[2025-01-01],
+          date_precision: :year
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(newer_opinion, statement.id)
+
+      newer_vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: newer_author.id,
+          opinion_id: newer_opinion.id
+        })
+
+      [card] =
+        StatementQueries.get_opinion_cards_by_recency(limit: 20)
+        |> Enum.filter(&(&1.statement.id == statement.id))
+
+      assert card.vote.id == newer_vote.id
+    end
   end
 
   describe "get_top_votes_by_answer_for_statements/2" do
@@ -258,6 +310,60 @@ defmodule YouCongress.Statements.StatementQueriesTest do
         )
 
       assert votes_by_answer[statement.id][:for].id == aggregate_vote.id
+    end
+
+    test "uses newest quote date before likes among quote-only verified opinions" do
+      statement = statement_fixture()
+
+      older_author = author_fixture()
+
+      older_opinion =
+        opinion_fixture(%{
+          author_id: older_author.id,
+          content: "Older high-like verified answer quote",
+          verification_status: :verified,
+          likes_count: 25,
+          date: ~D[2020-01-01],
+          date_precision: :year
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(older_opinion, statement.id)
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: older_author.id,
+        opinion_id: older_opinion.id,
+        answer: :for
+      })
+
+      newer_author = author_fixture()
+
+      newer_opinion =
+        opinion_fixture(%{
+          author_id: newer_author.id,
+          content: "Newer low-like verified answer quote",
+          verification_status: :ai_verified,
+          likes_count: 0,
+          date: ~D[2025-01-01],
+          date_precision: :year
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(newer_opinion, statement.id)
+
+      newer_vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: newer_author.id,
+          opinion_id: newer_opinion.id,
+          answer: :for
+        })
+
+      votes_by_answer =
+        StatementQueries.get_top_votes_by_answer_for_statements([statement.id],
+          order_by: :recency
+        )
+
+      assert votes_by_answer[statement.id][:for].id == newer_vote.id
     end
   end
 end
