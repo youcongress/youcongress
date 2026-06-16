@@ -615,4 +615,134 @@ defmodule YouCongress.AuthorsTest do
       |> Repo.insert!()
     end
   end
+
+  describe "merge_authors/2 sourced opinions" do
+    import Ecto.Query
+
+    alias YouCongress.Authors.MergeRepair
+    alias YouCongress.Opinions
+    alias YouCongress.OpinionsStatements.OpinionStatement
+    alias YouCongress.Repo
+    alias YouCongress.Votes
+
+    import YouCongress.AuthorsFixtures
+    import YouCongress.OpinionsFixtures
+    import YouCongress.StatementsFixtures
+
+    test "keeps a sourced quote visible when the merged vote would otherwise be unsourced" do
+      statement = statement_fixture()
+      survivor = author_fixture(name: "Survivor")
+      duplicate = author_fixture(name: "Duplicate")
+
+      # Survivor has the sourced quote; the duplicate only has an unsourced
+      # opinion. Collapsing both votes used to keep the duplicate's unsourced
+      # opinion, orphaning the quote.
+      quote = sourced_opinion(survivor, statement, "the sourced quote")
+      add_vote(survivor, statement, quote)
+
+      comment = unsourced_opinion(duplicate, "an unsourced comment")
+      add_vote(duplicate, statement, comment)
+
+      {:ok, %{survivor_id: survivor_id}} = Authors.merge_authors(survivor.id, duplicate.id)
+
+      assert "the sourced quote" in visible_quotes(survivor_id)
+    end
+
+    test "keeps both authors' sourced quotes on the same statement" do
+      statement = statement_fixture()
+      survivor = author_fixture(name: "Survivor")
+      duplicate = author_fixture(name: "Duplicate")
+
+      survivor_quote = sourced_opinion(survivor, statement, "survivor quote")
+      add_vote(survivor, statement, survivor_quote)
+
+      duplicate_quote = sourced_opinion(duplicate, statement, "duplicate quote")
+      add_vote(duplicate, statement, duplicate_quote)
+
+      {:ok, %{survivor_id: survivor_id}} = Authors.merge_authors(survivor.id, duplicate.id)
+
+      visible = visible_quotes(survivor_id)
+      assert "survivor quote" in visible
+      assert "duplicate quote" in visible
+    end
+
+    test "MergeRepair.repair/0 re-links opinions orphaned by an earlier merge" do
+      statement = statement_fixture()
+      author = author_fixture()
+
+      # Reproduce the broken post-merge state: the vote points at an unsourced
+      # opinion while a sourced quote is attributed to the author and linked to
+      # the statement, but referenced by no vote.
+      comment = unsourced_opinion(author, "an unsourced comment")
+      add_vote(author, statement, comment)
+
+      quote = unsourced_opinion(author, "an orphaned quote")
+      quote = set_source_url(quote, "https://example.com/quote")
+
+      Repo.insert!(%OpinionStatement{
+        opinion_id: quote.id,
+        statement_id: statement.id,
+        user_id: quote.user_id,
+        verification_status: :ai_verified
+      })
+
+      refute "an orphaned quote" in visible_quotes(author.id)
+
+      assert %{repointed: 1} = MergeRepair.repair()
+
+      assert "an orphaned quote" in visible_quotes(author.id)
+    end
+
+    defp sourced_opinion(author, statement, content) do
+      opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: content,
+          source_url: "https://example.com/#{System.unique_integer([:positive])}"
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+      opinion
+    end
+
+    defp unsourced_opinion(author, content) do
+      opinion_fixture(%{author_id: author.id, content: content, source_url: nil})
+    end
+
+    defp set_source_url(opinion, url) do
+      {1, _} =
+        from(o in YouCongress.Opinions.Opinion, where: o.id == ^opinion.id)
+        |> Repo.update_all(set: [source_url: url])
+
+      %{opinion | source_url: url}
+    end
+
+    defp add_vote(author, statement, opinion) do
+      {:ok, vote} =
+        Votes.create_vote(%{
+          author_id: author.id,
+          statement_id: statement.id,
+          opinion_id: opinion.id,
+          answer: :for
+        })
+
+      vote
+    end
+
+    defp visible_quotes(author_id) do
+      [
+        author_ids: [author_id],
+        preload: [:opinion, statement: [:halls]],
+        without_opinion: false
+      ]
+      |> Votes.list_votes()
+      |> Votes.with_alternate_sourced_opinions()
+      |> Enum.flat_map(fn vote ->
+        primary = if vote.opinion, do: [vote.opinion], else: []
+        primary ++ (Map.get(vote, :alternate_opinions) || [])
+      end)
+      |> Enum.map(& &1.content)
+      |> Enum.uniq()
+    end
+  end
 end
