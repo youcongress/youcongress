@@ -16,7 +16,8 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
   def find_quote(recent_quotes, opts \\ []) when is_list(recent_quotes) do
     now = Keyword.get_lazy(opts, :now, &DateTime.utc_now/0)
     limit = Keyword.get(opts, :limit, 1)
-    prompt = get_prompt(recent_quotes, now, limit)
+    statements = Keyword.get(opts, :statements, [])
+    prompt = get_prompt(recent_quotes, statements, now, limit)
 
     with {:ok, data} <- ask_gpt(prompt, @model),
          {:ok, job_id} <- extract_job_id(data) do
@@ -66,14 +67,14 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     end
   end
 
-  defp get_prompt(recent_quotes, now, limit) do
+  defp get_prompt(recent_quotes, statements, now, limit) do
     window_start = DateTime.add(now, -24, :hour)
 
     """
     You are helping populate YouCongress (youcongress.org) with real, sourced quotes from notable public figures and experts.
 
     Objective:
-    Find up to #{limit} fresh quote published in the last 24 hours about AI governance, AI safety, AI's impact on jobs, or AI's broader implications for society.
+    Find up to #{limit} fresh quote published in the last 24 hours about AI governance, AI safety, AI's impact on jobs, or AI's broader implications for society, and only if the quote fully matches at least one provided YouCongress statement.
 
     Current UTC time: #{DateTime.to_iso8601(now)}
     Freshness window starts at UTC: #{DateTime.to_iso8601(window_start)}
@@ -81,11 +82,24 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     Existing recent YouCongress quotes:
     #{Jason.encode!(recent_quotes)}
 
+    Existing YouCongress statements:
+    #{Jason.encode!(statements)}
+
     Research workflow:
     1. Search the web for a real quote published in the freshness window.
     2. Prefer primary sources: speeches, testimony, interviews, official blog posts, reports, transcripts, or accessible official social posts.
     3. Fetch the source page. Do not rely on search snippets.
     4. Check the existing recent YouCongress quotes and do not return duplicates or substantially identical quotes.
+    5. Check the provided YouCongress statements and discard any quote that does not qualify for at least one complete statement.
+
+    Complete-statement relevance standard:
+    A quote qualifies for a statement if it either:
+    - is directly about the COMPLETE statement; or
+    - is about something else, but clearly implies that the author supports, opposes, or abstains on the COMPLETE statement.
+
+    The author's position on the COMPLETE statement must be clear from the quote.
+    Do not accept a quote that only relates to one word, theme, subtopic, or a nearby issue unless it also implies the author's position on the COMPLETE statement.
+    Do not infer a position from general sentiment, party membership, job title, or facts outside the quote.
 
     Validation rules:
     - The source URL must contain the exact quote, allowing only faithful translation or [...] for omitted text.
@@ -94,6 +108,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     - The quote must express a clear policy position, not just a factual observation.
     - The quote must be suitable as a standalone quote.
     - The quote topic must be AI governance, AI safety, AI's impact on jobs, or AI's societal implications.
+    - The quote must clearly establish the author's position on at least one provided complete statement.
     - If a candidate fails any rule, discard it and keep searching.
 
     Quote quality rules:
@@ -112,7 +127,8 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     Final QA before output:
     - Re-check that every source_url includes the quoted text.
     - Re-check that every quote is not already in the existing recent quotes inventory.
-    - Remove any quote that fails verification, attribution, freshness, uniqueness, or relevance.
+    - Re-check that every quote would receive "ai_verified" under the complete-statement relevance standard for at least one provided statement.
+    - Remove any quote that fails verification, attribution, freshness, uniqueness, or complete-statement relevance.
 
     Output: Return ONLY a valid JSON object matching the schema with as many qualifying items as you can find, up to #{limit} item.
     """
@@ -146,7 +162,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
           %{
             "role" => "system",
             "content" =>
-              "You are a meticulous research assistant who only returns validated facts with exact citations. Use web_search to find primary sources containing exact quote text."
+              "You are a meticulous research assistant who only returns validated facts with exact citations. Use web_search to find primary sources containing exact quote text. Reject quotes that do not establish a stance on at least one provided complete statement."
           },
           %{
             "role" => "user",
@@ -275,7 +291,8 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
               },
               "validation_note" => %{
                 type: "string",
-                description: "Brief note explaining source/date/attribution validation."
+                description:
+                  "Brief note explaining source/date/attribution validation and the strongest matching statement."
               }
             },
             required: [

@@ -5,6 +5,8 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinder do
 
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.Statements
+  alias YouCongress.Statements.Statement
 
   @callback find_quote(list(map()), keyword()) :: {:ok, binary()} | {:error, any()}
   @callback check_job_status(binary()) ::
@@ -31,6 +33,11 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinder do
     |> Enum.map(&serialize_inventory_quote/1)
   end
 
+  def statement_inventory do
+    Statements.list_statements(order: :id_asc)
+    |> Enum.map(&serialize_inventory_statement/1)
+  end
+
   defp serialize_inventory_quote(%Opinion{} = opinion) do
     %{
       id: opinion.id,
@@ -38,6 +45,13 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinder do
       author: opinion.author && opinion.author.name,
       source_url: opinion.source_url,
       date: Opinion.display_date(opinion)
+    }
+  end
+
+  defp serialize_inventory_statement(%Statement{} = statement) do
+    %{
+      id: statement.id,
+      title: statement.title
     }
   end
 
