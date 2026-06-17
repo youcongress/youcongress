@@ -73,7 +73,7 @@ oban_plugins =
     [
       {Oban.Plugins.Cron,
        crontab: [
-         {"0 * * * *", YouCongress.Workers.FreshQuoteDiscoveryWorker}
+        #  {"0 * * * *", YouCongress.Workers.FreshQuoteDiscoveryWorker}
        ]}
       | oban_plugins
     ]
