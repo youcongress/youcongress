@@ -1,22 +1,84 @@
 defmodule YouCongress.Opinions.Quotes.Quotator do
   @moduledoc """
-  Persists a batch of sourced quotes for a statement: upserts authors, creates opinions,
-  creates/updates votes, associates opinions with the statement.
+  Coordinates statement-specific quote discovery and persists validated candidates.
   """
+
+  import Ecto.Query
 
   require Logger
 
   alias YouCongress.Authors
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.Repo
   alias YouCongress.Votes
   alias YouCongress.Statements
+  alias YouCongress.Workers.QuotatorWorker
 
   @number_of_quotes 5
   @type quote_item :: map()
 
+  @callback find_quotes(
+              integer(),
+              binary(),
+              list(binary()),
+              integer(),
+              non_neg_integer(),
+              non_neg_integer(),
+              non_neg_integer()
+            ) :: {:ok, :job_started} | {:error, term()}
+
+  @callback check_job_status(binary()) ::
+              {:ok, :completed, %{quotes: list(map())}}
+              | {:ok, :in_progress}
+              | {:error, term()}
+
   @spec number_of_quotes() :: integer()
   def number_of_quotes, do: @number_of_quotes
+
+  @doc """
+  Enqueue quote discovery for a statement.
+
+  The worker is unique per statement while a discovery run is active, so the UI
+  and MCP entry points cannot accidentally start overlapping searches.
+  """
+  def enqueue_find_quotes(statement_id, user_id)
+      when is_integer(statement_id) and is_integer(user_id) do
+    case active_quote_job(statement_id) do
+      nil ->
+        %{statement_id: statement_id, user_id: user_id}
+        |> QuotatorWorker.new()
+        |> Oban.insert()
+
+      %Oban.Job{} = job ->
+        {:ok, %{job | conflict?: true}}
+    end
+  end
+
+  @doc "Returns whether any quote discovery or polling job is active."
+  def find_quotes_in_progress?(statement_id) when is_integer(statement_id) do
+    not is_nil(active_quote_job(statement_id))
+  end
+
+  defp active_quote_job(statement_id) do
+    worker_names = [
+      "YouCongress.Workers.QuotatorWorker",
+      "YouCongress.Workers.QuotatorPollingWorker"
+    ]
+
+    from(j in Oban.Job,
+      where: j.worker in ^worker_names,
+      where: fragment("?->>'statement_id' = ?", j.args, ^to_string(statement_id)),
+      where: j.state in ["scheduled", "available", "executing", "retryable"],
+      order_by: [desc: j.id],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  def check_job_status(job_id) when is_binary(job_id) do
+    implementation().check_job_status(job_id)
+  end
 
   @doc """
   Find and save quotes for the given statement.
@@ -83,28 +145,129 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   end
 
   defp persist_quote(statement_id, quote_data, user_id) do
-    with {:ok, author} <- upsert_author(quote_data["author"] || %{}),
-         %{} = vote_attrs <- build_vote_attrs(statement_id, author, quote_data["agree_rate"]),
-         {:ok, vote} <- create_or_update_vote(vote_attrs),
-         {:ok, %{opinion: opinion}} <-
-           Opinions.create_opinion(%{
-             content: quote_data["quote"],
-             source_url: quote_data["source_url"],
-             date: quote_date(quote_data),
-             date_precision: quote_date_precision(quote_data),
-             author_id: author.id,
-             twin: false,
-             statement_id: statement_id
-           }),
-         {:ok, _} <- Votes.update_vote(vote, %{opinion_id: opinion.id, twin: false}),
-         :ok <- associate_opinion_with_statement(opinion, statement_id, user_id) do
-      Logger.info("Persisted quote: #{quote_data["quote"]}")
-      :ok
+    with {:ok, attrs} <- normalize_quote_attrs(quote_data),
+         :ok <- ensure_not_duplicate(attrs),
+         {:ok, author} <- upsert_author(attrs.author) do
+      Repo.transaction(fn ->
+        with :ok <- ensure_author_has_no_vote(statement_id, author.id),
+             {:ok, %{opinion: opinion}} <- create_opinion(attrs, author.id, user_id),
+             :ok <- associate_opinion_with_statement(opinion, statement_id, user_id),
+             {:ok, _vote} <- create_vote(statement_id, author.id, opinion.id, attrs.answer) do
+          Logger.info("Persisted quote: #{attrs.quote}")
+          :ok
+        else
+          error -> Repo.rollback(error)
+        end
+      end)
+      |> case do
+        {:ok, :ok} -> :ok
+        {:error, reason} -> log_skipped_quote(reason)
+      end
     else
-      error ->
-        Logger.error("Failed to persist sourced quote: #{inspect(error)}")
-        :error
+      {:skip, reason} -> log_skipped_quote(reason)
+      {:error, reason} -> log_failed_quote(reason)
     end
+  end
+
+  defp normalize_quote_attrs(quote_data) when is_map(quote_data) do
+    quote = quote_data["quote"] || quote_data[:quote]
+    source_url = quote_data["source_url"] || quote_data[:source_url]
+    date = quote_data["date"] || quote_data[:date]
+    date_precision = quote_data["date_precision"] || quote_data[:date_precision]
+    author = quote_data["author"] || quote_data[:author]
+    agree_rate = quote_data["agree_rate"] || quote_data[:agree_rate]
+
+    with :ok <- require_string(quote, :missing_quote),
+         :ok <- require_string(source_url, :missing_source_url),
+         :ok <- validate_date(date, date_precision),
+         :ok <- ensure_current_year(date),
+         {:ok, author} <- normalize_candidate_author(author),
+         {:ok, answer} <- map_agree_rate_to_answer(agree_rate) do
+      {:ok,
+       %{
+         quote: String.trim(quote),
+         source_url: String.trim(source_url),
+         date: String.trim(date),
+         date_precision: date_precision,
+         author: author,
+         answer: answer
+       }}
+    end
+  end
+
+  defp normalize_quote_attrs(_quote_data), do: {:skip, :invalid_quote}
+
+  defp normalize_candidate_author(author) when is_map(author) do
+    name = author["name"] || author[:name]
+
+    with :ok <- require_string(name, :missing_author_name) do
+      {:ok,
+       %{
+         "name" => String.trim(name),
+         "bio" => blank_to_nil(author["bio"] || author[:bio]),
+         "wikipedia_url" =>
+           normalize_wikipedia_url(author["wikipedia_url"] || author[:wikipedia_url]),
+         "twitter_username" =>
+           normalize_twitter(author["twitter_username"] || author[:twitter_username]),
+         "twin_origin" => false,
+         "public_figure" => true
+       }}
+    end
+  end
+
+  defp normalize_candidate_author(_author), do: {:skip, :invalid_author}
+
+  defp require_string(value, reason) when is_binary(value) do
+    if String.trim(value) == "", do: {:skip, reason}, else: :ok
+  end
+
+  defp require_string(_value, reason), do: {:skip, reason}
+
+  defp validate_date(date, precision) when precision in ["day", "month", "year"] do
+    valid? =
+      case precision do
+        "day" ->
+          is_binary(date) and match?({:ok, _}, Date.from_iso8601(date))
+
+        "month" ->
+          is_binary(date) and match?({:ok, _}, Date.from_iso8601(date <> "-01"))
+
+        "year" ->
+          is_binary(date) and match?({:ok, _}, Date.from_iso8601(date <> "-01-01"))
+      end
+
+    if valid?, do: :ok, else: {:skip, :invalid_date}
+  end
+
+  defp validate_date(_date, _precision), do: {:skip, :invalid_date_precision}
+
+  defp ensure_current_year(date) do
+    current_year = Date.utc_today().year
+
+    case Integer.parse(String.slice(date, 0, 4)) do
+      {^current_year, ""} -> :ok
+      _ -> {:skip, :quote_not_current}
+    end
+  end
+
+  defp ensure_not_duplicate(attrs) do
+    normalized_quote = normalize_text(attrs.quote)
+
+    duplicate? =
+      Repo.exists?(
+        from(o in Opinion,
+          where: not is_nil(o.source_url),
+          where:
+            o.source_url == ^attrs.source_url or
+              fragment(
+                "trim(lower(regexp_replace(?, '[[:space:]]+', ' ', 'g'))) = ?",
+                o.content,
+                ^normalized_quote
+              )
+        )
+      )
+
+    if duplicate?, do: {:skip, :duplicate_quote}, else: :ok
   end
 
   defp upsert_author(%{"wikipedia_url" => wikipedia_url} = attrs)
@@ -130,7 +293,8 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
       "bio" => attrs["bio"],
       "wikipedia_url" => normalize_wikipedia_url(attrs["wikipedia_url"]),
       "twitter_username" => normalize_twitter(attrs["twitter_username"]),
-      "twin_origin" => false
+      "twin_origin" => false,
+      "public_figure" => true
     }
   end
 
@@ -138,7 +302,9 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   defp normalize_wikipedia_url(""), do: nil
 
   defp normalize_wikipedia_url(url) when is_binary(url) do
-    String.replace(url, ~r/https?:\/\/\w+\./, "https://en.")
+    url
+    |> String.trim()
+    |> String.replace(~r/https?:\/\/\w+\./, "https://en.")
   end
 
   defp normalize_twitter(nil), do: nil
@@ -146,50 +312,43 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   defp normalize_twitter("@" <> handle), do: handle
   defp normalize_twitter("https://x.com/" <> handle), do: handle
   defp normalize_twitter("https://twitter.com/" <> handle), do: handle
-  defp normalize_twitter(handle), do: handle
+  defp normalize_twitter(handle) when is_binary(handle), do: String.trim(handle)
+  defp normalize_twitter(_handle), do: nil
 
-  defp build_vote_attrs(statement_id, author, agree_rate) do
-    answer = map_agree_rate_to_answer(agree_rate)
+  defp map_agree_rate_to_answer("For"), do: {:ok, :for}
+  defp map_agree_rate_to_answer("Against"), do: {:ok, :against}
+  defp map_agree_rate_to_answer("Abstain"), do: {:ok, :abstain}
+  defp map_agree_rate_to_answer(_agree_rate), do: {:skip, :unclear_vote}
 
-    %{
+  defp ensure_author_has_no_vote(statement_id, author_id) do
+    case Votes.get_by(statement_id: statement_id, author_id: author_id) do
+      nil -> :ok
+      _vote -> {:skip, :author_already_has_vote}
+    end
+  end
+
+  defp create_opinion(attrs, author_id, user_id) do
+    Opinions.create_opinion(%{
+      content: attrs.quote,
+      source_url: attrs.source_url,
+      date: attrs.date,
+      date_precision: attrs.date_precision,
+      author_id: author_id,
+      user_id: user_id,
+      twin: false
+    })
+  end
+
+  defp create_vote(statement_id, author_id, opinion_id, answer) do
+    Votes.create_vote(%{
       statement_id: statement_id,
-      author_id: author.id,
+      author_id: author_id,
+      opinion_id: opinion_id,
       answer: answer,
       direct: true,
       twin: false
-    }
+    })
   end
-
-  defp map_agree_rate_to_answer("For"), do: :for
-  defp map_agree_rate_to_answer("Against"), do: :against
-  defp map_agree_rate_to_answer("Abstain"), do: :abstain
-  defp map_agree_rate_to_answer(_), do: :abstain
-
-  defp create_or_update_vote(attrs) do
-    case Votes.get_by(statement_id: attrs.statement_id, author_id: attrs.author_id) do
-      nil -> Votes.create_vote(attrs)
-      vote -> Votes.update_vote(vote, attrs)
-    end
-  end
-
-  defp quote_date(%{"date" => date}) when date not in [nil, ""], do: date
-  defp quote_date(%{"year" => year}) when year not in [nil, ""], do: year
-  defp quote_date(_quote_data), do: nil
-
-  defp quote_date_precision(%{"date_precision" => precision}) when precision not in [nil, ""],
-    do: precision
-
-  defp quote_date_precision(%{"date" => date}) when is_binary(date) do
-    cond do
-      Regex.match?(~r/^\d{4}$/, date) -> "year"
-      Regex.match?(~r/^\d{4}-\d{2}$/, date) -> "month"
-      Regex.match?(~r/^\d{4}-\d{2}-\d{2}$/, date) -> "day"
-      true -> nil
-    end
-  end
-
-  defp quote_date_precision(%{"year" => year}) when year not in [nil, ""], do: "year"
-  defp quote_date_precision(_quote_data), do: nil
 
   defp associate_opinion_with_statement(%Opinion{} = opinion, statement_id, user_id) do
     statement = Statements.get_statement!(statement_id)
@@ -199,6 +358,32 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
       {:error, :already_associated} -> :ok
       {:error, _} = error -> error
     end
+  end
+
+  defp normalize_text(text) do
+    text
+    |> String.downcase()
+    |> String.replace(~r/\s+/, " ")
+    |> String.trim()
+  end
+
+  defp blank_to_nil(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      value -> value
+    end
+  end
+
+  defp blank_to_nil(_value), do: nil
+
+  defp log_skipped_quote(reason) do
+    Logger.info("Skipping sourced quote candidate: #{inspect(reason)}")
+    :error
+  end
+
+  defp log_failed_quote(reason) do
+    Logger.error("Failed to persist sourced quote: #{inspect(reason)}")
+    :error
   end
 
   defp implementation do

@@ -11,12 +11,11 @@ defmodule YouCongressWeb.StatementLive.Show do
   alias YouCongressWeb.StatementLive.VoteComponent
   alias YouCongressWeb.StatementLive.Show.Comments
   alias YouCongress.Track
-  alias YouCongress.Workers.QuotatorWorker
   alias YouCongress.Accounts.Permissions
   alias YouCongressWeb.StatementLive.CastVoteComponent
   alias YouCongressWeb.StatementLive.ResultsComponent
   alias YouCongress.HallsStatements
-  alias YouCongress.Opinions.Quotes.QuotatorAI
+  alias YouCongress.Opinions.Quotes.Quotator
   alias YouCongress.Votes.VoteFrequencies
   alias YouCongressWeb.ReturnTo
   alias YouCongressWeb.SEO
@@ -58,7 +57,7 @@ defmodule YouCongressWeb.StatementLive.Show do
       |> assign(full_width: true)
       |> assign(:show_ai_quote_action, true)
       |> assign(:regenerating_opinion_id, nil)
-      |> assign(:find_quotes_in_progress, QuotatorAI.check_polling_job_status(statement.id))
+      |> assign(:find_quotes_in_progress, Quotator.find_quotes_in_progress?(statement.id))
       |> assign(:source_filter, :quotes)
       |> assign(:answer_filter, nil)
       |> load_statement_and_likes(statement)
@@ -109,18 +108,19 @@ defmodule YouCongressWeb.StatementLive.Show do
          )}
 
       true ->
-        %{statement_id: statement_id, user_id: current_user.id}
-        |> QuotatorWorker.new()
-        |> Oban.insert()
+        case Quotator.enqueue_find_quotes(statement_id, current_user.id) do
+          {:ok, _job} ->
+            Track.event("Find quotes", current_user)
 
-        Track.event("Find quotes", current_user)
+            {:noreply,
+             socket
+             |> assign(:find_quotes_in_progress, true)
+             |> clear_flash()}
 
-        socket =
-          socket
-          |> assign(:find_quotes_in_progress, true)
-          |> clear_flash()
-
-        {:noreply, socket}
+          {:error, reason} ->
+            Logger.error("Failed to enqueue quote discovery: #{inspect(reason)}")
+            {:noreply, put_flash(socket, :error, "Unable to start AI quote search.")}
+        end
     end
   end
 
@@ -147,7 +147,7 @@ defmodule YouCongressWeb.StatementLive.Show do
     socket =
       socket
       |> load_statement_and_likes(statement)
-      |> assign(:find_quotes_in_progress, QuotatorAI.check_polling_job_status(statement.id))
+      |> assign(:find_quotes_in_progress, Quotator.find_quotes_in_progress?(statement.id))
       |> assign(reload: false)
       |> clear_flash()
 

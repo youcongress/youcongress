@@ -9,8 +9,8 @@ defmodule YouCongressWeb.MCPServer.StatementPopulate do
   use Anubis.Server.Component, type: :tool
 
   alias Anubis.Server.Response
+  alias YouCongress.Opinions.Quotes.Quotator
   alias YouCongress.Statements
-  alias YouCongress.Workers.QuotatorWorker
   alias YouCongress.MCP.ToolUsageTracker
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
@@ -68,9 +68,7 @@ defmodule YouCongressWeb.MCPServer.StatementPopulate do
   end
 
   defp enqueue_quote_job(statement_id, user_id) do
-    %{statement_id: statement_id, user_id: user_id}
-    |> QuotatorWorker.new()
-    |> Oban.insert()
+    Quotator.enqueue_find_quotes(statement_id, user_id)
     |> case do
       {:ok, _job} -> :ok
       {:error, _changeset} -> {:error, :job_failed}

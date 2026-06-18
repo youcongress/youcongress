@@ -11,9 +11,8 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
   alias YouCongress.Votes
   alias YouCongress.Opinions
   alias YouCongress.OpinionsStatements
-  alias YouCongress.Opinions.Quotes.QuotatorAI
+  alias YouCongress.Opinions.Quotes.Quotator
   alias YouCongress.Track
-  alias YouCongress.Workers.QuotatorWorker
 
   @impl true
   def mount(_, session, socket) do
@@ -120,18 +119,19 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
          )}
 
       true ->
-        %{statement_id: statement_id, user_id: current_user.id}
-        |> QuotatorWorker.new()
-        |> Oban.insert()
+        case Quotator.enqueue_find_quotes(statement_id, current_user.id) do
+          {:ok, _job} ->
+            Track.event("Find quotes", current_user)
 
-        Track.event("Find quotes", current_user)
+            {:noreply,
+             socket
+             |> assign(:find_quotes_in_progress, true)
+             |> clear_flash()}
 
-        socket =
-          socket
-          |> assign(:find_quotes_in_progress, true)
-          |> clear_flash()
-
-        {:noreply, socket}
+          {:error, reason} ->
+            Logger.error("Failed to enqueue quote discovery: #{inspect(reason)}")
+            {:noreply, put_flash(socket, :error, "Unable to start AI quote search.")}
+        end
     end
   end
 
@@ -404,7 +404,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
     socket
     |> assign(:statement, statement)
     |> assign(:show_ai_quote_action, true)
-    |> assign(:find_quotes_in_progress, QuotatorAI.check_polling_job_status(statement.id))
+    |> assign(:find_quotes_in_progress, Quotator.find_quotes_in_progress?(statement.id))
   end
 
   defp add_quote_url(statement, author) do

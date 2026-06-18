@@ -10,54 +10,20 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
   alias YouCongress.DigitalTwins.OpenAIModel
   alias YouCongress.Opinions.Quotes.Quotator
 
+  @behaviour Quotator
+
   @model :"gpt-5.4"
   @timeout_in_min 120
 
   def number_of_quotes, do: Quotator.number_of_quotes()
 
   @doc """
-  Generate sourced quotes for a statement.
-
-  ## Examples
-
-      iex> YouCongress.Opinions.Quotes.QuotatorAI.find_quotes("Should we build a CERN for AI?")
-      {:ok,
-        %{
-          cost: 0.18691525000000004,
-          quotes: [
-            %{
-              "agree_rate" => "For",
-              "author" => %{
-                "bio" => "EU Commission President",
-                "name" => "Ursula von der Leyen",
-                "twitter_username" => "",
-                "wikipedia_url" => "https://en.wikipedia.org/wiki/Ursula_von_der_Leyen"
-              },
-              "quote" => "We want to replicate the success story of CERN in Geneva. As you all know, CERN holds the largest particle accelerator in the world, and it allows the best and the brightest minds in the world to work together. And we want the same to happen in our AI Gigafactory.",
-              "source_url" => "https://www.reuters.com/technology/artificial-intelligence/quotes-eu-chief-von-der-leyens-ai-speech-paris-summit-2025-02-11/",
-              "date" => "2025-02-11",
-              "date_precision" => "day"
-            },
-            %{
-              "agree_rate" => "For",
-              "author" => %{
-                "bio" => "DeepMind cofounder, CEO",
-                "name" => "Demis Hassabis",
-                "twitter_username" => "",
-                "wikipedia_url" => "https://en.wikipedia.org/wiki/Demis_Hassabis"
-              },
-              "quote" => "I’d love for there to be an International CERN, basically, for AI, where you get the top researchers in the world and you go: Look, let’s focus on the final few years of this project […] and really get it right.",
-              "source_url" => "https://cfg.eu/cern-for-ai/",
-              "date" => "2025",
-              "date_precision" => "year"
-            },
-            ...
-          ]
-        }
+  Start a background OpenAI job that finds sourced quotes for a statement.
   """
 
   alias YouCongress.Workers.QuotatorPollingWorker
 
+  @impl true
   @spec find_quotes(
           integer,
           binary,
@@ -67,7 +33,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
           integer(),
           integer()
         ) ::
-          {:ok, :job_started} | {:error, binary}
+          {:ok, :job_started} | {:error, term()}
   def find_quotes(
         statement_id,
         question_title,
@@ -77,28 +43,28 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
         max_remaining_quotes,
         total_quotes_added \\ 0
       ) do
-    prompt = get_prompt(question_title, exclude_author_names)
+    limit = min(number_of_quotes(), max(max_remaining_quotes, 0))
+    prompt = get_prompt(question_title, exclude_author_names, Date.utc_today(), limit)
 
-    with {:ok, data} <- ask_gpt(prompt, @model),
-         {:ok, job_id} <- extract_job_id(data) do
-      # Enqueue polling worker
-      %{
-        job_id: job_id,
-        statement_id: statement_id,
-        user_id: user_id,
-        max_remaining_llm_calls: max_remaining_llm_calls,
-        max_remaining_quotes: max_remaining_quotes,
-        total_quotes_added: total_quotes_added
-      }
-      |> QuotatorPollingWorker.new()
-      |> Oban.insert()
-
+    with :ok <- ensure_capacity(limit),
+         {:ok, data} <- ask_gpt(prompt, @model, limit),
+         {:ok, job_id} <- extract_job_id(data),
+         {:ok, _job} <-
+           enqueue_polling_job(%{
+             job_id: job_id,
+             statement_id: statement_id,
+             user_id: user_id,
+             max_remaining_llm_calls: max_remaining_llm_calls,
+             max_remaining_quotes: max_remaining_quotes,
+             total_quotes_added: total_quotes_added
+           }) do
       {:ok, :job_started}
     else
       {:error, error} -> {:error, error}
     end
   end
 
+  @impl true
   def check_job_status(job_id) when is_binary(job_id) do
     api_key = System.get_env("OPENAI_API_KEY")
 
@@ -143,63 +109,71 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     end
   end
 
-  def check_polling_job_status(statement_id) do
-    import Ecto.Query
-    alias Oban.Job
-
-    query =
-      from(j in Job,
-        where: j.worker == "YouCongress.Workers.QuotatorPollingWorker",
-        where: fragment("?->>'statement_id' = ?", j.args, ^to_string(statement_id)),
-        where: j.state in ["scheduled", "available", "executing", "retryable"]
-      )
-
-    YouCongress.Repo.exists?(query)
+  defp enqueue_polling_job(args) do
+    args
+    |> QuotatorPollingWorker.new()
+    |> Oban.insert()
   end
 
-  defp extract_job_id(%{"id" => id}), do: {:ok, id}
+  defp extract_job_id(%{"id" => id}) when is_binary(id), do: {:ok, id}
   defp extract_job_id(_), do: {:error, "No Job ID found"}
 
-  @spec get_prompt(binary, list(binary)) :: binary
-  defp get_prompt(question_title, exclude_author_names) do
+  defp ensure_capacity(limit) when limit > 0, do: :ok
+  defp ensure_capacity(_limit), do: {:error, "No remaining quote capacity"}
+
+  @spec get_prompt(binary(), list(binary()), Date.t(), pos_integer()) :: binary()
+  defp get_prompt(statement_title, exclude_author_names, current_date, limit) do
     exclusion_text =
       if Enum.empty?(exclude_author_names) do
         ""
       else
-        excluded_names = Enum.join(exclude_author_names, ", ")
-        "\n    - DO NOT use quotes from these authors: #{excluded_names}"
+        "\n    Authors already represented on this statement (do not return them):\n" <>
+          Jason.encode!(exclude_author_names)
       end
 
     """
-    You are helping populate YouCongress (youcongress.org) with real, sourced quotes from public figures on policy statements.
+    You are helping populate YouCongress (youcongress.org) with real, sourced quotes from notable public figures, experts, and organisations.
 
-    Statement: #{question_title}
+    Statement: #{statement_title}
+    Current UTC date: #{Date.to_iso8601(current_date)}
 
     Objective:
-    Find up to #{number_of_quotes()} real quotes from different notable authors whose position on the statement can be classified as "For", "Against", or "Abstain".
+    Find up to #{limit} real quotes from different notable authors. Every returned quote must pass all three YouCongress AI checks: quote authenticity, relevance to the complete statement, and vote classification.
 
     Research workflow:
-    1. Search for quotes, interviews, speeches, testimony, articles, posts, reports, or transcripts about the exact statement topic.
+    1. Search the web for quotes, interviews, speeches, testimony, articles, posts, reports, or transcripts about the exact statement topic.
     2. Prefer primary sources: official pages, transcripts, testimony, speeches, interviews, author-written articles, company/organisation posts, or direct social posts. Use reliable secondary sources only when they reproduce the exact quote and attribution.
     3. Prefer expert, academic, business, activist, civil-society, or other domain-relevant authors. Politicians are acceptable when they are notable and directly address the statement.
-    4. The quotes must be from 2026 or later.
-    5. Before returning a quote, verify that source_url exists, is accessible, attributes the quote to the author, and contains the exact quote text.
-    6. Check existing exclusions and do not reuse authors that are already excluded.#{exclusion_text}
+    4. Fetch and inspect the source page. Never rely on a search-result snippet.
+    5. Only return quotes published on or after January 1, #{current_date.year}. Prefer the newest strong evidence, but never trade verification quality for recency.
+    6. Discard a candidate unless its quote, source, author, date, relevance, and stance all survive the checks below.#{exclusion_text}
 
-    Relevance rules (all are critical):
-    - Each quote must address the COMPLETE statement, not just one word, theme, subtopic, or nearby issue. For example, for "Should we implement universal basic income?", use quotes about universal basic income as a complete policy, not quotes only about poverty reduction, stimulus, automation, or welfare reform.
-    - The source quote must make the author's For/Against/Abstain position on the whole statement clear. Do not infer a position from general sentiment, party membership, job title, or unrelated comments.
-    - If a quote supports only part of the statement, opposes only part of it, or would require extra assumptions to classify, omit it.
-    - Favor quotes that include the author's reasoning, tradeoffs, evidence, or policy argument.
-
-    Quote quality rules:
+    Quote authenticity check (must receive "ai_verified"):
+    - The source URL itself must be accessible and contain the exact quote text, allowing only faithful English translation and [...] for omitted text.
+    - The source must attribute the words to exactly the returned author and support the returned publication date.
+    - Return the canonical quote text, source URL, date, date precision, and author metadata. If VerifierAI would need to correct any of those fields, discard or fix the candidate before returning it.
     - Only use real, verifiable, verbatim quotes. Never fabricate, paraphrase, or invent attribution.
-    - If not enough qualifying quotes exist, return fewer quotes rather than padding the response with weak, unverifiable, duplicate, or fabricated items.
     - If all quote text is not consecutive, use [...] for omitted text. Do not use more than two [...] in a quote.
     - Quotes should be two or three paragraphs and at least three sentences when the source supports that length, but shorter quotes are acceptable when they clearly answer the statement.
     - If the source quote is not in English, translate it to English and keep the meaning faithful.
     - Do not include quotes from documents, open letters, petitions, or papers with multiple signers unless the named author personally wrote the quoted passage.
-    - The quote must have one clear author: a person or an organisation. Use the media outlet as author only for a signed/official editorial by that outlet.
+    - The quote must have exactly one clear author: one person, or one organisation speaking on its own behalf. Never combine multiple people into one author. Use a media outlet as author only for its signed or official editorial.
+
+    Complete-statement relevance check (must receive "ai_verified"):
+    A quote qualifies if it either:
+    - is directly about the COMPLETE statement; or
+    - is about something else, but clearly implies that the author supports, opposes, or abstains on the COMPLETE statement.
+
+    The author's position on the COMPLETE statement must be clear from the quote itself.
+    Do not accept a quote that only relates to one word, theme, subtopic, or nearby issue unless it also implies the author's position on the COMPLETE statement.
+    Do not infer a position from general sentiment, party membership, job title, or facts outside the quote.
+
+    Vote check (must receive "ai_verified"):
+    - Classify the stance based solely on what the quote says about the whole statement.
+    - Use "For" only when the quote clearly supports the statement.
+    - Use "Against" only when the quote clearly opposes the statement.
+    - Use "Abstain" only when the quote is explicitly neutral or undecided on the statement.
+    - If the quote's stance would be "none" or is ambiguous, discard it. Never turn an unclear stance into "Abstain".
 
     Metadata rules:
     - Fill every JSON field. Use an empty string when unavailable.
@@ -207,20 +181,23 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     - If you provide wikipedia_url or twitter_username, the page/account must exist and belong to the author.
     - Authors must be experts, public figures, relevant organisations, or otherwise notable in the statement's domain.
     - Do not repeat any author across returned quotes. No name that appears in any item's author.name may appear in any other item.
-    - Carefully set agree_rate to exactly one of "For", "Against", or "Abstain".
     - If the statement starts with `🇪🇸 Congreso, [date]`, it is about a vote in the Spanish Congreso de los Diputados. In that case, prioritize quotes about that vote from Spanish politicians and experts, without excluding relevant non-Spanish experts.
 
     Final QA before output:
-    - Re-check that every source_url includes the quoted text.
-    - Re-check that every quote is about the whole statement.
-    - Remove any quote that fails verification, attribution, uniqueness, or relevance.
+    - Re-open every source URL and re-check exact text, attribution, and date.
+    - Re-check that VerifierAI would mark the quote authentic without a correction.
+    - Re-check that VerifierAI would mark its relevance to the complete statement "ai_verified".
+    - Re-check that VerifierAI would derive the same For/Against/Abstain vote from the quote alone.
+    - Remove any candidate that fails authenticity, attribution, freshness, uniqueness, complete-statement relevance, or unambiguous vote classification.
+    - If not enough candidates pass, return fewer quotes. An empty result is better than a weak or unverifiable quote.
 
-    Output: Return ONLY a valid JSON object matching the schema with as many qualifying items as you can find, up to #{number_of_quotes()} items.
+    Output: Return ONLY a valid JSON object matching the schema with as many qualifying items as you can find, up to #{limit} items.
     """
   end
 
-  @spec ask_gpt(binary, OpenAIModel.t()) :: {:ok, map} | {:error, binary}
-  defp ask_gpt(prompt, model) do
+  @spec ask_gpt(binary(), OpenAIModel.t(), pos_integer()) ::
+          {:ok, map()} | {:error, binary()}
+  defp ask_gpt(prompt, model, limit) do
     api_key = System.get_env("OPENAI_API_KEY")
 
     if is_nil(api_key) or api_key == "" do
@@ -240,7 +217,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
           "format" => %{
             "name" => "QuotesResult",
             "type" => "json_schema",
-            "schema" => json_schema()
+            "schema" => json_schema(limit)
           }
         },
         "background" => true,
@@ -248,7 +225,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
           %{
             "role" => "system",
             "content" =>
-              "You are a meticulous research assistant who only returns validated facts with exact citations. You may browse the web using web_search to find primary sources that contain the exact quote text. Prefer official or original sources over aggregators."
+              "You are a meticulous quote researcher. Use web_search to inspect primary sources, and reject any candidate that would fail quote-authenticity, complete-statement relevance, or vote-answer verification."
           },
           %{
             "role" => "user",
@@ -300,8 +277,14 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
         _ -> %{"quotes" => []}
       end
 
+    quotes =
+      case Map.get(decoded, "quotes") do
+        quotes when is_list(quotes) -> quotes
+        _ -> []
+      end
+
     %{
-      quotes: Map.get(decoded, "quotes"),
+      quotes: quotes,
       # TODO: Calculate cost if needed
       cost: 0.0
     }
@@ -337,7 +320,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
 
   defp truncate_body(body), do: body
 
-  defp json_schema do
+  defp json_schema(limit) do
     %{
       type: "object",
       additionalProperties: false,
@@ -345,9 +328,9 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
         "quotes" => %{
           type: "array",
           description:
-            "Up to #{number_of_quotes()} quotes, each relevant to the whole statement and with author metadata. Return fewer items rather than weak, duplicate, unverifiable, or fabricated quotes. Do not repeat any author across items.",
+            "Up to #{limit} quotes that pass authenticity, complete-statement relevance, and vote-answer verification. Return fewer items rather than weak, duplicate, unverifiable, or fabricated quotes. Do not repeat authors.",
           minItems: 0,
-          maxItems: number_of_quotes(),
+          maxItems: limit,
           items: %{
             type: "object",
             additionalProperties: false,
@@ -392,12 +375,18 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
               },
               "agree_rate" => %{
                 type: "string",
-                description: "The author's position on the whole statement",
+                description:
+                  "The unambiguous position expressed by the quote alone. Abstain means explicitly neutral or undecided, never unclear.",
                 enum: [
                   "For",
                   "Against",
                   "Abstain"
                 ]
+              },
+              "validation_note" => %{
+                type: "string",
+                description:
+                  "Brief evidence that the source contains the exact quote, attribution and date, plus why the quote establishes this vote on the complete statement."
               }
             },
             required: [
@@ -406,7 +395,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
               "date",
               "date_precision",
               "author",
-              "agree_rate"
+              "agree_rate",
+              "validation_note"
             ]
           }
         }

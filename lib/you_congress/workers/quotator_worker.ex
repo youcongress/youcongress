@@ -9,7 +9,12 @@ defmodule YouCongress.Workers.QuotatorWorker do
 
   @max_attempts 1
 
-  use Oban.Worker, max_attempts: @max_attempts
+  use Oban.Worker,
+    max_attempts: @max_attempts,
+    unique: [
+      states: [:scheduled, :available, :executing, :retryable],
+      keys: [:statement_id]
+    ]
 
   require Logger
 
