@@ -6,10 +6,13 @@ defmodule YouCongress.Opinions.Quotes.QuotatorFake do
 
   alias YouCongress.Opinions.Quotes.Quotator
 
+  @behaviour Quotator
+
   @doc """
   Generate and persist fake quotes for a given question title.
   Returns `{:ok, :job_started}` to match the real implementation contract.
   """
+  @impl true
   @spec find_quotes(
           integer,
           binary,
@@ -44,8 +47,12 @@ defmodule YouCongress.Opinions.Quotes.QuotatorFake do
     {:ok, :job_started}
   end
 
+  @impl true
+  def check_job_status(_job_id), do: {:error, :unsupported}
+
   defp build_quote(question_title) do
     name = Faker.Person.name()
+    year = Date.utc_today().year
 
     %{
       "quote" =>
@@ -53,7 +60,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorFake do
         |> Enum.join(" ")
         |> Kernel.<>(" (re: #{question_title})"),
       "source_url" => Faker.Internet.url(),
-      "date" => "#{Enum.random(1980..2025)}-01-01",
+      "date" => to_string(year),
       "date_precision" => "year",
       "author" => %{
         "name" => name,

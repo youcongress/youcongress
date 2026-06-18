@@ -3,10 +3,16 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
   Polls OpenAI for the status of a quote generation job.
   Retries every minute for up to 90 minutes.
   """
-  use Oban.Worker, queue: :default, max_attempts: 90
+  use Oban.Worker,
+    queue: :default,
+    max_attempts: 90,
+    unique: [
+      states: [:scheduled, :available, :executing, :retryable],
+      keys: [:job_id]
+    ]
 
   require Logger
-  alias YouCongress.Opinions.Quotes.{Quotator, QuotatorAI}
+  alias YouCongress.Opinions.Quotes.Quotator
   alias YouCongress.Workers.QuotatorWorker
   alias YouCongress.Accounts
   alias YouCongress.Accounts.UserNotifier
@@ -26,14 +32,14 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
     total_quotes_added = args["total_quotes_added"] || 0
     Logger.info("Polling OpenAI job #{job_id} for statement #{statement_id}...")
 
-    case QuotatorAI.check_job_status(job_id) do
+    case Quotator.check_job_status(job_id) do
       {:ok, :completed, %{quotes: quotes}} ->
         Logger.info("Job #{job_id} completed. Saving quotes...")
 
         result =
           Quotator.save_quotes_from_job(%{
             statement_id: statement_id,
-            quotes: quotes,
+            quotes: quotes |> List.wrap() |> Enum.take(max(max_remaining_quotes, 0)),
             user_id: user_id
           })
 
@@ -77,7 +83,7 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
         send_completion_email(user_id, statement_id, total_quotes_added)
         :ok
 
-      max_remaining_quotes == 0 ->
+      max_remaining_quotes <= 0 ->
         Logger.debug("No more quotes left.")
         send_completion_email(user_id, statement_id, total_quotes_added)
         :ok
