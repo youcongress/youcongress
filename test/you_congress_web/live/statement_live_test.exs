@@ -510,8 +510,8 @@ defmodule YouCongressWeb.StatementLiveTest do
           twin: false
         })
 
-      spain_author = author_fixture(%{country_id: spain.id})
-      france_author = author_fixture(%{country_id: france.id})
+      spain_author = author_fixture(%{country_id: spain.id, name: "Spanish Voter"})
+      france_author = author_fixture(%{country_id: france.id, name: "French Voter"})
       france_quote = opinion_fixture(%{author_id: france_author.id})
 
       vote_fixture(%{
