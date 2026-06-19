@@ -400,7 +400,7 @@ defmodule YouCongressWeb.StatementLive.Index do
   end
 
   # For "Top" mode: show the most liked opinion for each statement (one card per statement)
-  # For "New" mode: opinions ordered by most recently updated, statements can repeat
+  # For "New" mode: opinions ordered by most recently added, statements can repeat
   defp assign_cards(socket, page) do
     %{
       assigns: %{
@@ -415,7 +415,7 @@ defmodule YouCongressWeb.StatementLive.Index do
 
     cards =
       if order_by_date do
-        # New mode: opinions ordered by most recently updated
+        # New mode: opinions ordered by most recently added
         StatementQueries.get_opinion_cards_by_recency(
           hall_name: hall_name,
           offset: offset,
