@@ -104,6 +104,32 @@ defmodule YouCongressWeb.SEOTest do
     end
   end
 
+  describe "quotation/2" do
+    test "keeps structured quote dates in ISO format" do
+      opinion = %{
+        id: 1,
+        content: "A sourced quote",
+        source_url: "https://example.com/quote",
+        author: %{id: 1, name: "Jane", twitter_username: nil}
+      }
+
+      assert SEO.quotation(Map.merge(opinion, %{date: ~D[2026-06-17], date_precision: :day}))[
+               "dateCreated"
+             ] ==
+               "2026-06-17"
+
+      assert SEO.quotation(Map.merge(opinion, %{date: ~D[2026-06-01], date_precision: :month}))[
+               "dateCreated"
+             ] ==
+               "2026-06"
+
+      assert SEO.quotation(Map.merge(opinion, %{date: ~D[2026-01-01], date_precision: :year}))[
+               "dateCreated"
+             ] ==
+               "2026"
+    end
+  end
+
   describe "json_ld component" do
     test "escapes </script> in quote content" do
       html =

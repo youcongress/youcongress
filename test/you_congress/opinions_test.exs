@@ -10,6 +10,7 @@ defmodule YouCongress.OpinionsTest do
 
   alias YouCongress.Embeddings
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements
   alias YouCongress.Verifications
   alias YouCongress.Votes
@@ -18,6 +19,17 @@ defmodule YouCongress.OpinionsTest do
   @embedding_dimensions 1536
 
   describe "date metadata" do
+    test "formats dates for display according to their precision" do
+      assert Opinion.display_date(%{date: ~D[2026-06-17], date_precision: :day}) ==
+               "Jun 17, 2026"
+
+      assert Opinion.display_date(%{date: ~D[2026-06-01], date_precision: :month}) ==
+               "Jun 2026"
+
+      assert Opinion.display_date(%{date: ~D[2026-01-01], date_precision: :year}) == "2026"
+      assert Opinion.display_date(%{date: nil, date_precision: nil}) == nil
+    end
+
     test "stores exact dates with day precision by default" do
       {:ok, %{opinion: opinion}} =
         Opinions.create_opinion(%{
