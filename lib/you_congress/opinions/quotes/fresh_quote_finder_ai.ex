@@ -8,6 +8,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
   require Logger
 
   alias YouCongress.DigitalTwins.OpenAIModel
+  alias YouCongress.Opinions.Quotes.FreshQuoteFinder
 
   @model :"gpt-5.4"
   @timeout_in_min 120
@@ -68,13 +69,14 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
   end
 
   defp get_prompt(recent_quotes, statements, now, limit) do
-    window_start = DateTime.add(now, -24, :hour)
+    window_days = FreshQuoteFinder.freshness_window_days()
+    window_start = DateTime.add(now, -(window_days * 24), :hour)
 
     """
     You are helping populate YouCongress (youcongress.org) with real, sourced quotes from notable public figures and experts.
 
     Objective:
-    Find up to #{limit} fresh quote published in the last 24 hours about AI governance, AI safety, AI's impact on jobs, or AI's broader implications for society, and only if the quote fully matches at least one provided YouCongress statement.
+    Find up to #{limit} fresh quote published in the last #{window_days} days (one week) about AI governance, AI safety, AI's impact on jobs, or AI's broader implications for society, and only if the quote fully matches at least one provided YouCongress statement.
 
     Current UTC time: #{DateTime.to_iso8601(now)}
     Freshness window starts at UTC: #{DateTime.to_iso8601(window_start)}
@@ -86,11 +88,12 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     #{Jason.encode!(statements)}
 
     Research workflow:
-    1. Search the web for a real quote published in the freshness window.
+    1. Search broadly for real quotes published in the freshness window. Try multiple query formulations, sources, authors, and statement-specific searches rather than stopping after the first unsuccessful search.
     2. Prefer primary sources: speeches, testimony, interviews, official blog posts, reports, transcripts, or accessible official social posts.
     3. Fetch the source page. Do not rely on search snippets.
     4. Check the existing recent YouCongress quotes and do not return duplicates or substantially identical quotes.
     5. Check the provided YouCongress statements and discard any quote that does not qualify for at least one complete statement.
+    6. Keep searching after invalid or irrelevant candidates. Return no candidates only after making a thorough, persistent effort across multiple searches to find a qualifying quote.
 
     Complete-statement relevance standard:
     A quote qualifies for a statement if it either:
@@ -162,7 +165,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
           %{
             "role" => "system",
             "content" =>
-              "You are a meticulous research assistant who only returns validated facts with exact citations. Use web_search to find primary sources containing exact quote text. Reject quotes that do not establish a stance on at least one provided complete statement."
+              "You are a meticulous and persistent research assistant who only returns validated facts with exact citations. Use web_search extensively, trying multiple search strategies and primary sources containing exact quote text before returning no candidates. Reject quotes that do not establish a stance on at least one provided complete statement."
           },
           %{
             "role" => "user",

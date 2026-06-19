@@ -164,8 +164,23 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorkerTest do
       refute_enqueued(worker: MatchQuoteStatementsWorker)
     end
 
-    test "skips out-of-window candidates" do
-      old_date = Date.utc_today() |> Date.add(-3) |> Date.to_iso8601()
+    test "saves candidates published within the last week" do
+      recent_date = Date.utc_today() |> Date.add(-6) |> Date.to_iso8601()
+
+      assert :ok =
+               perform_with_quotes([
+                 candidate(%{
+                   "date" => recent_date,
+                   "source_url" => "https://example.com/week-old-ai-jobs"
+                 })
+               ])
+
+      assert Opinions.count(only_quotes: true) == 1
+      assert_enqueued(worker: MatchQuoteStatementsWorker)
+    end
+
+    test "skips candidates older than one week" do
+      old_date = Date.utc_today() |> Date.add(-8) |> Date.to_iso8601()
 
       assert :ok = perform_with_quotes([candidate(%{"date" => old_date})])
 
