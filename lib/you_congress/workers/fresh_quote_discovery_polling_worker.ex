@@ -17,6 +17,7 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Opinions.Quotes.FreshQuoteFinder
   alias YouCongress.Repo
+  alias YouCongress.Workers.JobMetadata
   alias YouCongress.Workers.MatchQuoteStatementsWorker
 
   @stagger_interval 2
@@ -38,13 +39,13 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
           end)
 
         result = completion_result(job_id, quotes, candidate_results)
-        save_result_meta(job, result)
+        JobMetadata.put(job, "fresh_quote_discovery", result)
 
         Logger.info("Fresh quote discovery job #{job_id} saved #{result["saved_count"]} quote(s)")
         :ok
 
       {:ok, :in_progress} ->
-        save_result_meta(job, %{
+        JobMetadata.put(job, "fresh_quote_discovery", %{
           "status" => "in_progress",
           "discovery_job_id" => job_id
         })
@@ -53,7 +54,7 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
         {:snooze, 60}
 
       {:error, reason} ->
-        save_result_meta(job, %{
+        JobMetadata.put(job, "fresh_quote_discovery", %{
           "status" => "cancelled",
           "discovery_job_id" => job_id,
           "reason" => format_reason(reason)
@@ -131,29 +132,11 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
   defp completion_outcome(saved_count, saved_count), do: "all_considered_quotes_saved"
   defp completion_outcome(_saved_count, _considered_count), do: "partially_saved"
 
-  defp save_result_meta(%Oban.Job{id: id} = job, result) when is_integer(id) do
-    case Oban.update_job(job, fn persisted_job ->
-           meta = Map.put(persisted_job.meta || %{}, "fresh_quote_discovery", result)
-           %{meta: meta}
-         end) do
-      {:ok, _job} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.error("Failed to save fresh quote discovery result metadata: #{inspect(reason)}")
-        :ok
-    end
-  end
-
-  defp save_result_meta(_job, _result), do: :ok
-
   defp format_reason({:persistence_error, reason}) do
-    "persistence_error: #{inspect(reason, limit: 20, printable_limit: 500)}"
+    "persistence_error: #{JobMetadata.format_reason(reason)}"
   end
 
-  defp format_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
-  defp format_reason(reason) when is_binary(reason), do: reason
-  defp format_reason(reason), do: inspect(reason, limit: 20, printable_limit: 500)
+  defp format_reason(reason), do: JobMetadata.format_reason(reason)
 
   defp normalize_quote_attrs(quote_data, user_id) do
     quote = quote_data["quote"] || quote_data[:quote]
