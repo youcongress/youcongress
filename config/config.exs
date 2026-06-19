@@ -88,7 +88,8 @@ config :you_congress, Oban,
     default: 10,
     amplitude: 5,
     verification: 3,
-    verification_polling: 5
+    verification_polling: 5,
+    wikidata: 3
   ]
 
 # Import environment specific config. This must remain at the bottom
