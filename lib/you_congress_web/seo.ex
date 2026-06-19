@@ -261,8 +261,15 @@ defmodule YouCongressWeb.SEO do
   defp put_if(map, key, value), do: Map.put(map, key, value)
 
   defp schema_date(%{date: nil}), do: nil
-  defp schema_date(%{date_precision: :year} = opinion), do: Opinion.display_date(opinion)
-  defp schema_date(%{date_precision: :month} = opinion), do: Opinion.display_date(opinion)
+
+  defp schema_date(%{date: %Date{} = date, date_precision: :year}) do
+    Calendar.strftime(date, "%Y")
+  end
+
+  defp schema_date(%{date: %Date{} = date, date_precision: :month}) do
+    Calendar.strftime(date, "%Y-%m")
+  end
+
   defp schema_date(opinion), do: Opinion.date_iso(opinion)
 
   defp plural(1, word), do: word

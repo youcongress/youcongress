@@ -281,7 +281,7 @@ defmodule YouCongressWeb.StatementLiveTest do
       card_html = show_live |> element("#vote-component-#{vote.id}") |> render()
 
       assert card_html =~
-               ~r/<a[^>]+href="https:\/\/example\.com\/source-whitespace"[^>]*>source<\/a>\s*<\/span>\s*<span[^>]*>\(2026-01\)<\/span>/
+               ~r/<a[^>]+href="https:\/\/example\.com\/source-whitespace"[^>]*>source<\/a>\s*<\/span>\s*<span[^>]*>\(Jan 2026\)<\/span>/
     end
 
     test "shows vote results to non-logged visitors without voting", %{

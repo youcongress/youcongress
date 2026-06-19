@@ -76,10 +76,12 @@ defmodule YouCongress.Opinions.Opinion do
   def display_date(%{date: %Date{} = date, date_precision: :year}), do: pad_year(date.year)
 
   def display_date(%{date: %Date{} = date, date_precision: :month}) do
-    "#{pad_year(date.year)}-#{pad2(date.month)}"
+    Calendar.strftime(date, "%b %Y")
   end
 
-  def display_date(%{date: %Date{} = date}), do: Date.to_iso8601(date)
+  def display_date(%{date: %Date{} = date}) do
+    Calendar.strftime(date, "%b #{date.day}, %Y")
+  end
 
   def date_iso(%{date: %Date{} = date}), do: Date.to_iso8601(date)
   def date_iso(_), do: nil
@@ -213,7 +215,6 @@ defmodule YouCongress.Opinions.Opinion do
   end
 
   defp pad_year(year), do: year |> Integer.to_string() |> String.pad_leading(4, "0")
-  defp pad2(value), do: value |> Integer.to_string() |> String.pad_leading(2, "0")
 
   defp validate_source_url_if_present(changeset) do
     case get_field(changeset, :source_url) do
