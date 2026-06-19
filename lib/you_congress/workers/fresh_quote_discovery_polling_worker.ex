@@ -22,29 +22,43 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
   @stagger_interval 2
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"job_id" => job_id, "user_id" => user_id} = args}) do
+  def perform(%Oban.Job{args: %{"job_id" => job_id, "user_id" => user_id} = args} = job) do
     case FreshQuoteFinder.check_job_status(job_id) do
       {:ok, :completed, %{quotes: quotes}} ->
-        saved_count =
+        quotes = List.wrap(quotes)
+
+        candidate_results =
           quotes
-          |> List.wrap()
           |> Enum.take(discovery_limit(args))
           |> Enum.with_index()
-          |> Enum.count(fn {quote_data, index} ->
-            case persist_quote(quote_data, user_id, index) do
-              {:ok, _opinion} -> true
-              :skip -> false
-            end
+          |> Enum.map(fn {quote_data, index} ->
+            quote_data
+            |> persist_quote(user_id, index)
+            |> candidate_result(index)
           end)
 
-        Logger.info("Fresh quote discovery job #{job_id} saved #{saved_count} quote(s)")
+        result = completion_result(job_id, quotes, candidate_results)
+        save_result_meta(job, result)
+
+        Logger.info("Fresh quote discovery job #{job_id} saved #{result["saved_count"]} quote(s)")
         :ok
 
       {:ok, :in_progress} ->
+        save_result_meta(job, %{
+          "status" => "in_progress",
+          "discovery_job_id" => job_id
+        })
+
         Logger.info("Fresh quote discovery job #{job_id} still in progress")
         {:snooze, 60}
 
       {:error, reason} ->
+        save_result_meta(job, %{
+          "status" => "cancelled",
+          "discovery_job_id" => job_id,
+          "reason" => format_reason(reason)
+        })
+
         Logger.error("Fresh quote discovery job #{job_id} failed: #{inspect(reason)}")
         {:cancel, reason}
     end
@@ -70,15 +84,76 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
     else
       {:skip, reason} ->
         Logger.info("Skipping fresh quote candidate: #{inspect(reason)}")
-        :skip
+        {:skip, reason}
 
       {:error, reason} ->
         Logger.error("Failed to persist fresh quote candidate: #{inspect(reason)}")
-        :skip
+        {:skip, {:persistence_error, reason}}
     end
   end
 
-  defp persist_quote(_quote_data, _user_id, _index), do: :skip
+  defp persist_quote(_quote_data, _user_id, _index), do: {:skip, :invalid_candidate}
+
+  defp candidate_result({:ok, opinion}, index) do
+    %{"candidate_index" => index, "outcome" => "saved", "opinion_id" => opinion.id}
+  end
+
+  defp candidate_result({:skip, reason}, index) do
+    %{
+      "candidate_index" => index,
+      "outcome" => "skipped",
+      "reason" => format_reason(reason)
+    }
+  end
+
+  defp completion_result(job_id, quotes, candidate_results) do
+    saved_results = Enum.filter(candidate_results, &(&1["outcome"] == "saved"))
+    skipped_results = Enum.filter(candidate_results, &(&1["outcome"] == "skipped"))
+    saved_count = length(saved_results)
+    considered_count = length(candidate_results)
+
+    %{
+      "status" => "completed",
+      "outcome" => completion_outcome(saved_count, considered_count),
+      "discovery_job_id" => job_id,
+      "discovered_count" => length(quotes),
+      "considered_count" => considered_count,
+      "not_considered_count" => max(length(quotes) - considered_count, 0),
+      "saved_count" => saved_count,
+      "saved_opinion_ids" => Enum.map(saved_results, & &1["opinion_id"]),
+      "skipped_count" => length(skipped_results),
+      "skipped_candidates" => skipped_results
+    }
+  end
+
+  defp completion_outcome(_saved_count, 0), do: "no_candidates"
+  defp completion_outcome(0, _considered_count), do: "no_quote_saved"
+  defp completion_outcome(saved_count, saved_count), do: "all_considered_quotes_saved"
+  defp completion_outcome(_saved_count, _considered_count), do: "partially_saved"
+
+  defp save_result_meta(%Oban.Job{id: id} = job, result) when is_integer(id) do
+    case Oban.update_job(job, fn persisted_job ->
+           meta = Map.put(persisted_job.meta || %{}, "fresh_quote_discovery", result)
+           %{meta: meta}
+         end) do
+      {:ok, _job} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error("Failed to save fresh quote discovery result metadata: #{inspect(reason)}")
+        :ok
+    end
+  end
+
+  defp save_result_meta(_job, _result), do: :ok
+
+  defp format_reason({:persistence_error, reason}) do
+    "persistence_error: #{inspect(reason, limit: 20, printable_limit: 500)}"
+  end
+
+  defp format_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
+  defp format_reason(reason) when is_binary(reason), do: reason
+  defp format_reason(reason), do: inspect(reason, limit: 20, printable_limit: 500)
 
   defp normalize_quote_attrs(quote_data, user_id) do
     quote = quote_data["quote"] || quote_data[:quote]
