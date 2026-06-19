@@ -392,14 +392,13 @@ defmodule YouCongress.Statements.StatementQueries do
             answer: v.answer,
             rank:
               fragment(
-                "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC NULLS LAST, ? DESC)",
+                "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC)",
                 v.statement_id,
                 v.answer,
                 o.verification_status,
                 os.verification_status,
                 v.verification_status,
                 o.verification_status,
-                o.date,
                 o.id
               )
           }
@@ -462,7 +461,7 @@ defmodule YouCongress.Statements.StatementQueries do
   end
 
   @doc """
-  Returns opinion cards ordered by most recently updated opinions first.
+  Returns opinion cards ordered by most recently added opinions first.
 
   Unlike round-robin, statements can appear consecutively if they have
   the most recent opinions.
@@ -505,7 +504,6 @@ defmodule YouCongress.Statements.StatementQueries do
           WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
           ELSE 0
         END as verification_rank,
-        o.date as opinion_date,
         ROW_NUMBER() OVER (
           PARTITION BY s.id
           ORDER BY CASE
@@ -515,7 +513,6 @@ defmodule YouCongress.Statements.StatementQueries do
                      WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
                      ELSE 0
                    END DESC,
-                   o.date DESC NULLS LAST,
                    o.id DESC, v.inserted_at DESC
         ) as vote_rank
       FROM statements s
@@ -531,7 +528,7 @@ defmodule YouCongress.Statements.StatementQueries do
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
     WHERE rv.vote_rank = 1
-    ORDER BY rv.verification_rank DESC, rv.opinion_date DESC NULLS LAST, rv.opinion_id DESC
+    ORDER BY rv.verification_rank DESC, rv.opinion_id DESC
     OFFSET #{offset_param}
     LIMIT #{limit_param}
     """

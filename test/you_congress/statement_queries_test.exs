@@ -159,7 +159,7 @@ defmodule YouCongress.Statements.StatementQueriesTest do
       assert card.vote.id == aggregate_vote.id
     end
 
-    test "uses newest quote date before likes among quote-only verified opinions" do
+    test "uses the most recently added quote regardless of quote date" do
       statement = statement_fixture()
       fill_statement_with_quotes(statement.id, 8)
 
@@ -171,7 +171,7 @@ defmodule YouCongress.Statements.StatementQueriesTest do
           content: "Older high-like verified home quote",
           verification_status: :verified,
           likes_count: 25,
-          date: ~D[2020-01-01],
+          date: ~D[2025-01-01],
           date_precision: :year
         })
 
@@ -191,7 +191,7 @@ defmodule YouCongress.Statements.StatementQueriesTest do
           content: "Newer low-like verified home quote",
           verification_status: :ai_verified,
           likes_count: 0,
-          date: ~D[2025-01-01],
+          date: ~D[2020-01-01],
           date_precision: :year
         })
 
@@ -209,6 +209,58 @@ defmodule YouCongress.Statements.StatementQueriesTest do
         |> Enum.filter(&(&1.statement.id == statement.id))
 
       assert card.vote.id == newer_vote.id
+    end
+
+    test "orders statements by newest opinion id regardless of quote date" do
+      older_statement = statement_fixture()
+      fill_statement_with_quotes(older_statement.id, 9)
+      older_author = author_fixture()
+
+      older_opinion =
+        opinion_fixture(%{
+          author_id: older_author.id,
+          verification_status: :ai_verified,
+          date: ~D[2026-06-18],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(older_opinion, older_statement.id)
+      verify_relevance(older_opinion, older_statement)
+
+      vote_fixture(%{
+        statement_id: older_statement.id,
+        author_id: older_author.id,
+        opinion_id: older_opinion.id,
+        verification_status: :ai_verified
+      })
+
+      newer_statement = statement_fixture()
+      fill_statement_with_quotes(newer_statement.id, 9)
+      newer_author = author_fixture()
+
+      newer_opinion =
+        opinion_fixture(%{
+          author_id: newer_author.id,
+          verification_status: :ai_verified,
+          date: ~D[2020-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(newer_opinion, newer_statement.id)
+      verify_relevance(newer_opinion, newer_statement)
+
+      vote_fixture(%{
+        statement_id: newer_statement.id,
+        author_id: newer_author.id,
+        opinion_id: newer_opinion.id,
+        verification_status: :ai_verified
+      })
+
+      statement_ids =
+        StatementQueries.get_opinion_cards_by_recency(limit: 20)
+        |> Enum.map(& &1.statement.id)
+
+      assert statement_ids == [newer_statement.id, older_statement.id]
     end
   end
 
@@ -312,7 +364,7 @@ defmodule YouCongress.Statements.StatementQueriesTest do
       assert votes_by_answer[statement.id][:for].id == aggregate_vote.id
     end
 
-    test "uses newest quote date before likes among quote-only verified opinions" do
+    test "uses the most recently added quote regardless of quote date" do
       statement = statement_fixture()
 
       older_author = author_fixture()
@@ -323,7 +375,7 @@ defmodule YouCongress.Statements.StatementQueriesTest do
           content: "Older high-like verified answer quote",
           verification_status: :verified,
           likes_count: 25,
-          date: ~D[2020-01-01],
+          date: ~D[2025-01-01],
           date_precision: :year
         })
 
@@ -344,7 +396,7 @@ defmodule YouCongress.Statements.StatementQueriesTest do
           content: "Newer low-like verified answer quote",
           verification_status: :ai_verified,
           likes_count: 0,
-          date: ~D[2025-01-01],
+          date: ~D[2020-01-01],
           date_precision: :year
         })
 
