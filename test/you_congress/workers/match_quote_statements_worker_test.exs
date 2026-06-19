@@ -2,6 +2,7 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
   use YouCongress.DataCase
   use Oban.Testing, repo: YouCongress.Repo
 
+  import ExUnit.CaptureLog
   import YouCongress.AccountsFixtures
   import YouCongress.AuthorsFixtures
   import YouCongress.OpinionsFixtures
@@ -202,10 +203,15 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
       set_system_user()
       put_env_restore(:quote_statement_matcher_implementation, ErrorMatcher)
 
-      assert {:error, :llm_failed} =
-               MatchQuoteStatementsWorker.perform(%Oban.Job{
-                 args: %{"opinion_id" => quote.id}
-               })
+      log =
+        capture_log(fn ->
+          assert {:error, :llm_failed} =
+                   MatchQuoteStatementsWorker.perform(%Oban.Job{
+                     args: %{"opinion_id" => quote.id}
+                   })
+        end)
+
+      assert log =~ "Failed to match statements"
     end
 
     test "enqueues relevance verification when linking an already verified quote" do

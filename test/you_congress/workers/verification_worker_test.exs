@@ -2,6 +2,7 @@ defmodule YouCongress.Workers.VerificationWorkerTest do
   use YouCongress.DataCase
   use Oban.Testing, repo: YouCongress.Repo
 
+  import ExUnit.CaptureLog
   import YouCongress.AccountsFixtures
   import YouCongress.OpinionsFixtures
 
@@ -127,7 +128,12 @@ defmodule YouCongress.Workers.VerificationWorkerTest do
     {:ok, submission_job} =
       insert_job(VerificationWorker, %{"subject" => "quote", "id" => opinion.id})
 
-    assert {:error, :submission_failed} = run_worker(VerificationWorker, submission_job)
+    submission_log =
+      capture_log(fn ->
+        assert {:error, :submission_failed} = run_worker(VerificationWorker, submission_job)
+      end)
+
+    assert submission_log =~ "Failed to submit quote verification"
 
     assert %{
              "status" => "failed",
@@ -142,7 +148,12 @@ defmodule YouCongress.Workers.VerificationWorkerTest do
         "job_id" => "failed-job"
       })
 
-    assert {:cancel, :polling_failed} = run_worker(VerificationPollingWorker, polling_job)
+    polling_log =
+      capture_log(fn ->
+        assert {:cancel, :polling_failed} = run_worker(VerificationPollingWorker, polling_job)
+      end)
+
+    assert polling_log =~ "Verification job failed-job"
 
     assert %{
              "status" => "cancelled",
