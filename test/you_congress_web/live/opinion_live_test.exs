@@ -943,6 +943,9 @@ defmodule YouCongressWeb.OpinionLiveTest do
       pick_and_save(view, card, "relevance", "verified", "")
       pick_and_save(view, card, "vote", "verified", "")
 
+      # Drain the parent reload queued by the component before sandbox teardown.
+      render(view)
+
       [quote_verification] = Verifications.list_verifications(opinion_id: opinion.id)
       opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
 
