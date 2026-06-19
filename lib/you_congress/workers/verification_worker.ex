@@ -28,26 +28,66 @@ defmodule YouCongress.Workers.VerificationWorker do
   alias YouCongress.Votes.Vote
   alias YouCongress.Verifications.QuoteCorrectionLoop
   alias YouCongress.Verifications.Verifier
+  alias YouCongress.Workers.JobMetadata
   alias YouCongress.Workers.VerificationPollingWorker
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"subject" => subject, "id" => id} = args}) do
+  def perform(%Oban.Job{args: %{"subject" => subject, "id" => id} = args} = job) do
     case load(subject, id, args) do
-      nil ->
+      {:skip, reason} ->
+        JobMetadata.put(job, "verification", %{
+          "status" => "skipped",
+          "subject" => subject,
+          "subject_id" => id,
+          "reason" => JobMetadata.format_reason(reason)
+        })
+
         :ok
 
-      record ->
+      {:ok, record} ->
         case Verifier.submit(subject_type(subject), record, verifier_opts(args)) do
           {:ok, job_id} ->
-            %{"subject" => subject, "id" => id, "job_id" => job_id}
-            |> maybe_put_context(args, "opinion_id")
-            |> maybe_put_context(args, "correction_attempts")
-            |> VerificationPollingWorker.new()
-            |> Oban.insert()
+            JobMetadata.put(job, "verification", %{
+              "status" => "submitted",
+              "subject" => subject,
+              "subject_id" => id,
+              "verification_job_id" => job_id
+            })
 
-            :ok
+            polling_result =
+              %{"subject" => subject, "id" => id, "job_id" => job_id}
+              |> maybe_put_context(args, "opinion_id")
+              |> maybe_put_context(args, "correction_attempts")
+              |> maybe_put_verification_worker_job_id(job)
+              |> VerificationPollingWorker.new()
+              |> Oban.insert()
+
+            case polling_result do
+              {:ok, _polling_job} ->
+                :ok
+
+              {:error, reason} ->
+                JobMetadata.put(job, "verification", %{
+                  "status" => "failed",
+                  "stage" => "enqueue_polling",
+                  "subject" => subject,
+                  "subject_id" => id,
+                  "verification_job_id" => job_id,
+                  "reason" => JobMetadata.format_reason(reason)
+                })
+
+                {:error, reason}
+            end
 
           {:error, reason} ->
+            JobMetadata.put(job, "verification", %{
+              "status" => "failed",
+              "stage" => "submit",
+              "subject" => subject,
+              "subject_id" => id,
+              "reason" => JobMetadata.format_reason(reason)
+            })
+
             Logger.error(
               "Failed to submit #{subject} verification for ##{id}: #{inspect(reason)}"
             )
@@ -61,28 +101,48 @@ defmodule YouCongress.Workers.VerificationWorker do
   defp subject_type("relevance"), do: :relevance
   defp subject_type("vote"), do: :vote
 
-  defp load("quote", id, _args), do: load_quote(Opinions.get_opinion(id))
-  defp load("relevance", id, _args), do: Repo.get(OpinionStatement, id)
+  defp load("quote", id, _args) do
+    case Opinions.get_opinion(id) do
+      nil -> {:skip, :quote_not_found}
+      %Opinion{source_url: nil} -> {:skip, :quote_has_no_source_url}
+      %Opinion{} = opinion -> {:ok, opinion}
+    end
+  end
+
+  defp load("relevance", id, _args) do
+    case Repo.get(OpinionStatement, id) do
+      nil -> {:skip, :relevance_not_found}
+      %OpinionStatement{} = opinion_statement -> {:ok, opinion_statement}
+    end
+  end
 
   defp load("vote", id, %{"opinion_id" => opinion_id}) when not is_nil(opinion_id) do
     load_vote_with_opinion(id, opinion_id)
   end
 
-  defp load("vote", id, _args), do: Votes.get_vote(id)
-  defp load(_subject, _id, _args), do: nil
+  defp load("vote", id, _args) do
+    case Votes.get_vote(id) do
+      nil -> {:skip, :vote_not_found}
+      %Vote{} = vote -> {:ok, vote}
+    end
+  end
 
-  # Quietly skip plain opinions: only sourced quotes are verified.
-  defp load_quote(%Opinion{source_url: nil}), do: nil
-  defp load_quote(opinion), do: opinion
+  defp load(_subject, _id, _args), do: {:skip, :unsupported_subject}
 
   defp load_vote_with_opinion(vote_id, opinion_id) do
-    with %Vote{} = vote <- Votes.get_vote(vote_id),
-         opinion_id <- normalize_id(opinion_id),
-         %Opinion{} = opinion <- Opinions.get_opinion(opinion_id),
-         true <- valid_vote_opinion?(vote, opinion) do
-      %{vote | opinion_id: opinion.id, opinion: opinion}
-    else
-      _ -> nil
+    case {Votes.get_vote(vote_id), Opinions.get_opinion(normalize_id(opinion_id))} do
+      {nil, _opinion} ->
+        {:skip, :vote_not_found}
+
+      {%Vote{}, nil} ->
+        {:skip, :opinion_not_found}
+
+      {%Vote{} = vote, %Opinion{} = opinion} ->
+        if valid_vote_opinion?(vote, opinion) do
+          {:ok, %{vote | opinion_id: opinion.id, opinion: opinion}}
+        else
+          {:skip, :vote_opinion_context_invalid}
+        end
     end
   end
 
@@ -98,6 +158,12 @@ defmodule YouCongress.Workers.VerificationWorker do
       _ -> target
     end
   end
+
+  defp maybe_put_verification_worker_job_id(args, %Oban.Job{id: id}) when is_integer(id) do
+    Map.put(args, "verification_worker_job_id", id)
+  end
+
+  defp maybe_put_verification_worker_job_id(args, _job), do: args
 
   defp verifier_opts(%{"subject" => "quote"} = args) do
     [
