@@ -2,7 +2,10 @@
   <span
     :if={@page == :statements_index && @visible_opinion && @show_opinion}
     data-testid={"added-at-badge-#{@vote.id}"}
-    class="mb-3 inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700"
+    class={[
+      "mb-3 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
+      added_at_badge_color(@visible_opinion, @vote)
+    ]}
   >
     Added {TimeAgo.short_time(added_at(@visible_opinion, @vote))}
   </span>

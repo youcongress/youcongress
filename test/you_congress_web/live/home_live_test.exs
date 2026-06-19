@@ -117,13 +117,48 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       assert has_element?(
                view,
-               "[data-testid='added-at-badge-#{vote.id}']",
+               "[data-testid='added-at-badge-#{vote.id}'].bg-indigo-50.text-indigo-700",
                "Added 1h ago"
              )
 
       card_html = view |> element("[data-testid='vote-card-#{vote.id}']") |> render()
       assert length(Regex.scan(~r/[Aa]dded 1h ago/, card_html)) == 1
       refute html =~ "13d ago"
+    end
+
+    test "uses a gray added badge for opinions older than one week", %{conn: conn} do
+      statement =
+        statement_fixture(title: "Older Timestamp Statement")
+        |> add_statement_to_ai_hall()
+
+      fill_statement_with_quotes(statement.id)
+
+      author = author_fixture()
+      opinion = opinion_fixture(%{author_id: author.id, content: "Older timestamped opinion"})
+
+      vote =
+        vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
+
+      opinion_inserted_at =
+        NaiveDateTime.utc_now()
+        |> NaiveDateTime.add(-8 * 86_400, :second)
+        |> NaiveDateTime.truncate(:second)
+
+      from(o in Opinion, where: o.id == ^opinion.id)
+      |> Repo.update_all(set: [inserted_at: opinion_inserted_at, updated_at: opinion_inserted_at])
+
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      assert has_element?(
+               view,
+               "[data-testid='added-at-badge-#{vote.id}'].bg-gray-100.text-gray-600",
+               "Added 8d ago"
+             )
+
+      refute has_element?(
+               view,
+               "[data-testid='added-at-badge-#{vote.id}'].bg-indigo-50"
+             )
     end
 
     test "lets visitors switch between an author's sourced quotes on the feed", %{conn: conn} do
