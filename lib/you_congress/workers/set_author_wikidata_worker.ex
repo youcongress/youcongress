@@ -6,7 +6,7 @@ defmodule YouCongress.Workers.SetAuthorWikidataWorker do
   Enqueue with `%{author_id: author.id}`.
   """
 
-  use Oban.Worker, unique: [states: [:scheduled, :available]]
+  use Oban.Worker, queue: :wikidata, unique: [states: [:scheduled, :available]]
 
   require Logger
 
