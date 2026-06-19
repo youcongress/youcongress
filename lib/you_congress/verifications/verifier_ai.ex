@@ -191,13 +191,30 @@ defmodule YouCongress.Verifications.VerifierAI do
 
     Current recorded answer: #{vote.answer}
 
-    Based only on what the quote actually says, what is the author's position on
-    the whole statement? Answer with exactly one of:
-    - "for": the quote clearly supports the statement.
-    - "against": the quote clearly opposes the statement.
+    Based only on what the quote actually says, what is the author's most likely
+    position on the whole statement? A position may be explicit or strongly
+    implied by the quote's ordinary meaning. Do not require the quote to restate
+    every part of the statement or amount to strict logical proof. When one
+    position is substantially more likely than the alternatives, classify it as
+    that position and explain the inference in the comment.
+
+    For example, a prediction that AI will create a labor shortage strongly
+    implies support for the statement "AI will create more jobs than it
+    destroys", even though it does not explicitly compare jobs created and
+    destroyed.
+
+    Answer with exactly one of:
+    - "for": the quote explicitly or strongly implies support for the statement.
+    - "against": the quote explicitly or strongly implies opposition to the
+      statement.
     - "abstain": the quote is explicitly neutral/undecided on the statement.
-    - "none": the quote does not make the author's position on the statement clear.
+    - "none": no position is substantially more likely because the quote is
+      genuinely ambiguous, merely adjacent to the issue, or missing a necessary
+      connection to the statement. Do not choose "none" merely because some
+      reasonable inference is required.
     Always include a short comment justifying the answer with the quote's wording.
+    If the position is implied rather than explicit, identify that inference and
+    any limitation in the evidence.
     """
 
     {:ok,
@@ -206,7 +223,7 @@ defmodule YouCongress.Verifications.VerifierAI do
        schema: answer_schema(),
        name: "VoteVerification",
        system:
-         "You classify an author's stance on a statement strictly from a quote. Choose \"none\" unless the quote makes the stance unambiguous."
+         "You classify an author's most likely stance on a statement from a quote. Accept explicit positions and strong ordinary-language implications. Choose \"none\" only when no stance is substantially more likely, and explain inferential limitations in the comment."
      }}
   end
 

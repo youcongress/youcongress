@@ -49,27 +49,37 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
     Statements:
     #{statements_text}
 
-    Use the same strict standard as relevance verification. A quote qualifies for
-    a statement if it either:
+    Use the same standard as relevance and vote verification. A quote qualifies
+    for a statement if it either:
     - is directly about the COMPLETE statement; or
-    - is about something else, but clearly implies that the author supports,
+    - strongly implies through its ordinary meaning that the author supports,
       opposes, or abstains on the COMPLETE statement.
 
-    The author's position on the COMPLETE statement must be clear from the quote.
-    Do not accept a quote that only relates to one word, theme, subtopic, or a
-    nearby issue unless it also implies the author's position on the COMPLETE
-    statement. Do not infer a position from general sentiment, party membership,
-    job title, or facts outside the quote.
+    The quote need not restate every part of the statement or amount to strict
+    logical proof. Match it when one position is substantially more likely than
+    the alternatives based on the quote itself. For example, a prediction that AI
+    will create a labor shortage strongly implies support for "AI will create more
+    jobs than it destroys".
 
-    Return only matches that should receive "ai_verified" in a later strict
-    relevance verification. Do not return matches that would be "disputed" or
-    "ai_unverifiable"; if uncertain, leave the statement unmatched.
+    Do not accept a quote that only relates to one word, theme, subtopic, or a
+    nearby issue unless the quote supplies a necessary connection that strongly
+    implies the author's position on the COMPLETE statement. Do not infer a
+    position from general sentiment, party membership, job title, or facts
+    outside the quote.
+
+    Return only matches that should receive "ai_verified" in later relevance and
+    vote verification. Leave a statement unmatched when no position is
+    substantially more likely, not merely because reasonable inference is
+    required.
 
     For each match, choose:
-    - "for": the quote clearly supports the statement.
-    - "against": the quote clearly opposes the statement.
+    - "for": the quote explicitly or strongly implies support for the statement.
+    - "against": the quote explicitly or strongly implies opposition to the
+      statement.
     - "abstain": the quote is explicitly neutral/undecided on the statement.
-    If there are no strong matches, return an empty matches array.
+    If the position is implied rather than explicit, explain the inference and
+    any limitation in the comment. If there are no strong matches, return an empty
+    matches array.
     """
   end
 
@@ -95,7 +105,7 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
           %{
             "role" => "system",
             "content" =>
-              "You judge whether a quote establishes an author's stance on policy statements as a whole. Accept direct relevance or clear implication; reject partial or adjacent topics unless they imply a stance on the complete statement."
+              "You judge an author's most likely stance on complete statements from a quote. Accept explicit stances and strong ordinary-language implications. Reject merely adjacent topics, but do not require strict logical proof; explain inferential limitations in the comment."
           },
           %{
             "role" => "user",
@@ -186,7 +196,8 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
               },
               "comment" => %{
                 type: "string",
-                description: "Short justification using the quote's wording"
+                description:
+                  "Short justification using the quote's wording, including any inference and its limitations"
               }
             },
             required: ["statement_id", "answer", "comment"]
