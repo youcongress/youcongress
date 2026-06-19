@@ -13,6 +13,9 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinder do
               {:ok, :completed, %{quotes: list(map())}} | {:ok, :in_progress} | {:error, any()}
 
   @recent_quote_limit 100
+  @freshness_window_days 7
+
+  def freshness_window_days, do: @freshness_window_days
 
   def find_quote(recent_quotes, opts \\ []) when is_list(recent_quotes) do
     implementation().find_quote(recent_quotes, opts)

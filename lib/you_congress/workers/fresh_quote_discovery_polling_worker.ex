@@ -202,7 +202,7 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
     today = Date.utc_today()
     age_days = Date.diff(today, date)
 
-    if age_days in 0..1 do
+    if age_days in 0..FreshQuoteFinder.freshness_window_days() do
       :ok
     else
       {:skip, :outside_freshness_window}
