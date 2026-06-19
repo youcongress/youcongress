@@ -111,11 +111,19 @@ defmodule YouCongressWeb.HomeLiveTest do
       from(v in Vote, where: v.id == ^vote.id)
       |> Repo.update_all(set: [inserted_at: vote_inserted_at, updated_at: vote_inserted_at])
 
-      {:ok, _view, html} = live(conn, ~p"/")
+      {:ok, view, html} = live(conn, ~p"/")
 
       assert html =~ "Timestamped opinion content"
-      assert html =~ "added 1h ago"
-      refute html =~ "added 13d ago"
+
+      assert has_element?(
+               view,
+               "[data-testid='added-at-badge-#{vote.id}']",
+               "Added 1h ago"
+             )
+
+      card_html = view |> element("[data-testid='vote-card-#{vote.id}']") |> render()
+      assert length(Regex.scan(~r/[Aa]dded 1h ago/, card_html)) == 1
+      refute html =~ "13d ago"
     end
 
     test "lets visitors switch between an author's sourced quotes on the feed", %{conn: conn} do

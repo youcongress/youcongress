@@ -1,4 +1,11 @@
 <div id={"vote-component-#{@id}"} data-testid={"vote-card-#{@vote.id}"}>
+  <span
+    :if={@page == :statements_index && @visible_opinion && @show_opinion}
+    data-testid={"added-at-badge-#{@vote.id}"}
+    class="mb-3 inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700"
+  >
+    Added {TimeAgo.short_time(added_at(@visible_opinion, @vote))}
+  </span>
   <%= if @page != :author_show do %>
     <div>
       <div class="flex justify-between">
@@ -179,7 +186,7 @@
           opinion={@visible_opinion}
           current_user={@current_user}
         />
-        <span class="text-xs text-gray-500 pl-3">
+        <span :if={@page != :statements_index} class="text-xs text-gray-500 pl-3">
           added {TimeAgo.short_time(added_at(@visible_opinion, @vote))}
         </span>
       </div>
