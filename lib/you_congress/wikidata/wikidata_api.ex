@@ -12,6 +12,11 @@ defmodule YouCongress.Wikidata.WikidataApi do
 
   @receive_timeout 30_000
 
+  # Wikimedia's User-Agent policy requires a descriptive UA with contact info;
+  # requests without one get throttled/blocked.
+  # https://meta.wikimedia.org/wiki/User-Agent_policy
+  @user_agent "YouCongress/1.0 (https://youcongress.org; contact@youcongress.org)"
+
   @doc """
   Returns the Wikidata id for a given Wikipedia URL.
 
@@ -67,7 +72,7 @@ defmodule YouCongress.Wikidata.WikidataApi do
   defp fetch_entity(wikidata_id) do
     url = "https://www.wikidata.org/wiki/Special:EntityData/#{wikidata_id}.json"
 
-    case Req.get(url, receive_timeout: @receive_timeout) do
+    case Req.get(url, req_opts([])) do
       {:ok, %Req.Response{status: status, body: body}} when status in 200..299 ->
         {:ok, body}
 
@@ -119,7 +124,7 @@ defmodule YouCongress.Wikidata.WikidataApi do
       titles: title
     ]
 
-    case Req.get(url, params: params, receive_timeout: @receive_timeout) do
+    case Req.get(url, req_opts(params: params)) do
       {:ok, %Req.Response{status: status, body: body}} when status in 200..299 ->
         {:ok, body}
 
@@ -142,4 +147,15 @@ defmodule YouCongress.Wikidata.WikidataApi do
   end
 
   defp extract_wikibase_item(_), do: nil
+
+  # Identify ourselves per Wikimedia policy and cap retries so a throttled
+  # request can't block the worker for minutes waiting on Retry-After. On a
+  # 429/5xx we return {:error, _} and let Oban reschedule with the worker free.
+  defp req_opts(extra) do
+    [
+      headers: [{"user-agent", @user_agent}],
+      receive_timeout: @receive_timeout,
+      max_retries: 1
+    ] ++ extra
+  end
 end
