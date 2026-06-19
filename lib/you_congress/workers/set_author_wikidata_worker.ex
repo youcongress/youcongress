@@ -14,6 +14,7 @@ defmodule YouCongress.Workers.SetAuthorWikidataWorker do
   alias YouCongress.Authors.Author
   alias YouCongress.Repo
   alias YouCongress.Wikidata
+  alias YouCongress.Workers.SetAuthorTwitterFromWikidataWorker
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"author_id" => author_id}}) do
@@ -48,11 +49,22 @@ defmodule YouCongress.Workers.SetAuthorWikidataWorker do
 
   defp update_wikidata(%Author{} = author, wikidata) do
     case Authors.update_author(author, %{wikidata: wikidata}) do
-      {:ok, _author} ->
+      {:ok, author} ->
+        maybe_enqueue_twitter(author)
         :ok
 
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  defp maybe_enqueue_twitter(%Author{twitter_username: username})
+       when is_binary(username) and username != "",
+       do: :ok
+
+  defp maybe_enqueue_twitter(%Author{id: author_id}) do
+    %{author_id: author_id}
+    |> SetAuthorTwitterFromWikidataWorker.new()
+    |> Oban.insert()
   end
 end

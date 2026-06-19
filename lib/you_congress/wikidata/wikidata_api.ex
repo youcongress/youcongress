@@ -36,6 +36,65 @@ defmodule YouCongress.Wikidata.WikidataApi do
 
   def get_wikidata_id(_), do: {:error, :invalid_url}
 
+  @doc """
+  Returns the X (Twitter) username (P2002) and numeric user id (P6552) for a
+  Wikidata entity id.
+
+  ## Examples
+
+      iex> get_twitter("Q42")
+      {:ok, %{username: "...", id_str: "..."}}
+
+  """
+  @impl YouCongress.Wikidata
+  @spec get_twitter(String.t()) :: {:ok, YouCongress.Wikidata.twitter()} | {:error, term()}
+  def get_twitter(wikidata_id) when is_binary(wikidata_id) and wikidata_id != "" do
+    case fetch_entity(wikidata_id) do
+      {:ok, body} ->
+        {:ok,
+         %{
+           username: extract_claim(body, wikidata_id, "P2002"),
+           id_str: extract_claim(body, wikidata_id, "P6552")
+         }}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def get_twitter(_), do: {:error, :invalid_wikidata_id}
+
+  defp fetch_entity(wikidata_id) do
+    url = "https://www.wikidata.org/wiki/Special:EntityData/#{wikidata_id}.json"
+
+    case Req.get(url, receive_timeout: @receive_timeout) do
+      {:ok, %Req.Response{status: status, body: body}} when status in 200..299 ->
+        {:ok, body}
+
+      {:ok, %Req.Response{status: status}} ->
+        Logger.error("Wikidata entity call failed: status=#{status} url=#{url}")
+        {:error, {:http_error, status}}
+
+      {:error, reason} ->
+        Logger.error("Wikidata entity request failed: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  defp extract_claim(%{"entities" => entities}, wikidata_id, property) do
+    entities
+    |> get_in([wikidata_id, "claims", property])
+    |> case do
+      [statement | _] ->
+        get_in(statement, ["mainsnak", "datavalue", "value"])
+
+      _ ->
+        nil
+    end
+  end
+
+  defp extract_claim(_, _, _), do: nil
+
   defp parse_url(wikipedia_url) do
     uri = URI.parse(wikipedia_url)
 
