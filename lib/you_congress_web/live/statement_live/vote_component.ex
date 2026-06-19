@@ -10,6 +10,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
   alias YouCongressWeb.Tools.TimeAgo
 
   @max_length 250
+  @recent_badge_max_age_seconds 7 * 24 * 60 * 60
 
   def update(assigns, socket) do
     socket =
@@ -337,6 +338,25 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
   end
 
   defp added_at(_opinion, vote), do: vote.inserted_at
+
+  defp added_at_badge_color(opinion, vote) do
+    if recently_added?(added_at(opinion, vote)) do
+      "bg-indigo-50 text-indigo-700"
+    else
+      "bg-gray-100 text-gray-600"
+    end
+  end
+
+  defp recently_added?(%DateTime{} = datetime) do
+    DateTime.diff(DateTime.utc_now(), datetime, :second) <= @recent_badge_max_age_seconds
+  end
+
+  defp recently_added?(%NaiveDateTime{} = datetime) do
+    NaiveDateTime.diff(NaiveDateTime.utc_now(), datetime, :second) <=
+      @recent_badge_max_age_seconds
+  end
+
+  defp recently_added?(_datetime), do: false
 
   defdelegate author_path(path), to: YouCongressWeb.AuthorLive.Show, as: :author_path
 
