@@ -191,5 +191,80 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorkerTest do
                  args: %{"job_id" => "fresh-job-1", "user_id" => user_fixture().id}
                })
     end
+
+    test "stores saved quote details in the Oban job metadata" do
+      user = user_fixture()
+
+      put_env_restore(
+        :fresh_quote_finder_test_status,
+        {:ok, :completed, %{quotes: [candidate()]}}
+      )
+
+      {:ok, job} =
+        Oban.Testing.with_testing_mode(:manual, fn ->
+          %{"job_id" => "fresh-job-1", "user_id" => user.id, "limit" => 1}
+          |> FreshQuoteDiscoveryPollingWorker.new()
+          |> Oban.insert()
+        end)
+
+      assert :ok =
+               Oban.Testing.with_testing_mode(:manual, fn ->
+                 FreshQuoteDiscoveryPollingWorker.perform(job)
+               end)
+
+      result = YouCongress.Repo.reload!(job).meta["fresh_quote_discovery"]
+
+      assert %{
+               "status" => "completed",
+               "outcome" => "all_considered_quotes_saved",
+               "discovered_count" => 1,
+               "considered_count" => 1,
+               "saved_count" => 1,
+               "skipped_count" => 0,
+               "skipped_candidates" => []
+             } = result
+
+      assert [opinion_id] = result["saved_opinion_ids"]
+      assert Opinions.get_opinion!(opinion_id)
+    end
+
+    test "stores why a quote wasn't saved in the Oban job metadata" do
+      existing = opinion_fixture(%{source_url: candidate()["source_url"]})
+      user = user_fixture()
+
+      put_env_restore(
+        :fresh_quote_finder_test_status,
+        {:ok, :completed, %{quotes: [candidate()]}}
+      )
+
+      {:ok, job} =
+        Oban.Testing.with_testing_mode(:manual, fn ->
+          %{"job_id" => "fresh-job-1", "user_id" => user.id, "limit" => 1}
+          |> FreshQuoteDiscoveryPollingWorker.new()
+          |> Oban.insert()
+        end)
+
+      assert :ok =
+               Oban.Testing.with_testing_mode(:manual, fn ->
+                 FreshQuoteDiscoveryPollingWorker.perform(job)
+               end)
+
+      assert %{
+               "status" => "completed",
+               "outcome" => "no_quote_saved",
+               "saved_count" => 0,
+               "saved_opinion_ids" => [],
+               "skipped_count" => 1,
+               "skipped_candidates" => [
+                 %{
+                   "candidate_index" => 0,
+                   "outcome" => "skipped",
+                   "reason" => "duplicate_source_url"
+                 }
+               ]
+             } = YouCongress.Repo.reload!(job).meta["fresh_quote_discovery"]
+
+      assert Opinions.count(source_url: existing.source_url) == 1
+    end
   end
 end
