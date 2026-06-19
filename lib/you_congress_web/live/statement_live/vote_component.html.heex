@@ -130,7 +130,7 @@
           opinion_statement={@opinion_statement}
           vote={@vote}
           current_user={@current_user}
-          link_to_opinion={true}
+          link_to_opinion={@page != :statement_show}
         />
       <% end %>
       <%= if @visible_opinion.source_url do %>
