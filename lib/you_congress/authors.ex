@@ -15,6 +15,7 @@ defmodule YouCongress.Authors do
   alias YouCongress.Votes.Vote
   alias YouCongress.VoteVerifications.VoteVerification
   alias YouCongress.Workers.SetAuthorProfileImageFromXWorker
+  alias YouCongress.Workers.SetAuthorWikidataWorker
 
   @profile_merge_fields [
     :name,
@@ -29,6 +30,7 @@ defmodule YouCongress.Authors do
     :google_id,
     :bio,
     :wikipedia_url,
+    :wikidata,
     :country_id
   ]
 
@@ -194,10 +196,12 @@ defmodule YouCongress.Authors do
     author = %Author{}
 
     with {:ok, attrs} <- resolve_country_attrs(attrs) do
-      author
-      |> Author.changeset(attrs)
+      changeset = reset_wikidata_if_url_changed(Author.changeset(author, attrs))
+
+      changeset
       |> Repo.insert()
       |> maybe_enqueue_profile_image_fetch()
+      |> maybe_enqueue_wikidata_fetch(wikipedia_url_changed?(changeset))
     else
       {:error, :unknown_country, country, attrs} ->
         {:error, unknown_country_changeset(author, attrs, country)}
@@ -341,10 +345,12 @@ defmodule YouCongress.Authors do
 
   def update_author(%Author{} = author_before, attrs) do
     with {:ok, attrs} <- resolve_country_attrs(attrs) do
-      author_before
-      |> Author.changeset(attrs)
+      changeset = reset_wikidata_if_url_changed(Author.changeset(author_before, attrs))
+
+      changeset
       |> Repo.update()
       |> maybe_enqueue_profile_image_fetch()
+      |> maybe_enqueue_wikidata_fetch(wikipedia_url_changed?(changeset))
     else
       {:error, :unknown_country, country, attrs} ->
         {:error, unknown_country_changeset(author_before, attrs, country)}
@@ -378,14 +384,17 @@ defmodule YouCongress.Authors do
   end
 
   defp update_author_and_delete_twin_options(author_before, attrs) do
+    changeset = reset_wikidata_if_url_changed(Author.changeset(author_before, attrs))
+
     Ecto.Multi.new()
-    |> Ecto.Multi.update(:update_author, Author.changeset(author_before, attrs))
+    |> Ecto.Multi.update(:update_author, changeset)
     |> Ecto.Multi.delete_all(
       :delete_votes,
       from(v in Vote, where: v.author_id == ^author_before.id and v.twin)
     )
     |> Repo.transaction()
     |> maybe_enqueue_profile_image_fetch()
+    |> maybe_enqueue_wikidata_fetch(wikipedia_url_changed?(changeset))
   end
 
   defp maybe_enqueue_profile_image_fetch({:ok, %Author{} = author} = result) do
@@ -407,6 +416,41 @@ defmodule YouCongress.Authors do
       |> Oban.insert()
     end
   end
+
+  # When the wikipedia_url changes the stored wikidata id is stale, so we clear
+  # it (unless the caller set one explicitly) and let the worker resolve it again.
+  defp reset_wikidata_if_url_changed(%Ecto.Changeset{} = changeset) do
+    if wikipedia_url_changed?(changeset) and not Map.has_key?(changeset.changes, :wikidata) do
+      Ecto.Changeset.put_change(changeset, :wikidata, nil)
+    else
+      changeset
+    end
+  end
+
+  defp wikipedia_url_changed?(%Ecto.Changeset{changes: changes}) do
+    Map.has_key?(changes, :wikipedia_url)
+  end
+
+  defp maybe_enqueue_wikidata_fetch({:ok, %Author{} = author} = result, true) do
+    enqueue_wikidata_fetch_if_needed(author)
+    result
+  end
+
+  defp maybe_enqueue_wikidata_fetch({:ok, %{update_author: %Author{} = author}} = result, true) do
+    enqueue_wikidata_fetch_if_needed(author)
+    result
+  end
+
+  defp maybe_enqueue_wikidata_fetch(result, _wikipedia_url_changed?), do: result
+
+  defp enqueue_wikidata_fetch_if_needed(%Author{id: id, wikipedia_url: url})
+       when is_binary(url) and url != "" do
+    %{author_id: id}
+    |> SetAuthorWikidataWorker.new()
+    |> Oban.insert()
+  end
+
+  defp enqueue_wikidata_fetch_if_needed(_author), do: :ok
 
   @doc """
   Merges two authors into one author and deletes the detached duplicate.

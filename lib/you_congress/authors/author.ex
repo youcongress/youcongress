@@ -20,6 +20,8 @@ defmodule YouCongress.Authors.Author do
     # bio is AI-generated for twins and is displayed instead of description if present
     field :bio, :string
     field :wikipedia_url, :string
+    # Wikidata entity id (e.g. "Q42") derived from the wikipedia_url
+    field :wikidata, :string
     # twin_origin indicates if the author started as a digital twin
     # or if GPT returned an opinion while being disabled (see digital_twins.ex)
     field :twin_origin, :boolean, default: true
@@ -39,6 +41,7 @@ defmodule YouCongress.Authors.Author do
       :name,
       :bio,
       :wikipedia_url,
+      :wikidata,
       :twitter_username,
       :google_id,
       :country_id,
