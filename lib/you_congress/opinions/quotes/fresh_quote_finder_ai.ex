@@ -98,17 +98,27 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     Complete-statement relevance standard:
     A quote qualifies for a statement if it either:
     - is directly about the COMPLETE statement; or
-    - is about something else, but clearly implies that the author supports, opposes, or abstains on the COMPLETE statement.
+    - strongly implies through its ordinary meaning that the author supports,
+      opposes, or abstains on the COMPLETE statement.
 
-    The author's position on the COMPLETE statement must be clear from the quote.
-    Do not accept a quote that only relates to one word, theme, subtopic, or a nearby issue unless it also implies the author's position on the COMPLETE statement.
+    A quote need not restate every part of the statement or amount to strict
+    logical proof. It qualifies when one position is substantially more likely
+    than the alternatives based on the quote itself. For example, a prediction
+    that AI will create a labor shortage strongly implies support for "AI will
+    create more jobs than it destroys".
+
+    Do not accept a quote that only relates to one word, theme, subtopic, or a
+    nearby issue unless the quote supplies a necessary connection that strongly
+    implies the author's position on the COMPLETE statement.
     Do not infer a position from general sentiment, party membership, job title, or facts outside the quote.
 
     Validation rules:
     - The source URL must contain the exact quote, allowing only faithful translation or [...] for omitted text.
     - The quote must be attributed to the returned author.
     - The publication date must be within the freshness window.
-    - The quote must express a clear policy position, not just a factual observation.
+    - The quote must establish a position on a provided proposal or claim. A
+      prediction can establish a position on a factual claim; a merely related
+      observation cannot.
     - The quote must be suitable as a standalone quote.
     - The quote topic must be AI governance, AI safety, AI's impact on jobs, or AI's societal implications.
     - The quote must clearly establish the author's position on at least one provided complete statement.
@@ -165,7 +175,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
           %{
             "role" => "system",
             "content" =>
-              "You are a meticulous and persistent research assistant who only returns validated facts with exact citations. Use web_search extensively, trying multiple search strategies and primary sources containing exact quote text before returning no candidates. Reject quotes that do not establish a stance on at least one provided complete statement."
+              "You are a meticulous and persistent research assistant who only returns validated facts with exact citations. Use web_search extensively, trying multiple search strategies and primary sources containing exact quote text before returning no candidates. Accept explicit stances and strong ordinary-language implications on complete statements, including factual claims; reject merely adjacent quotes."
           },
           %{
             "role" => "user",
