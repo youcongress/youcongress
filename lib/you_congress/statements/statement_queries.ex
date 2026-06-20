@@ -11,6 +11,8 @@ defmodule YouCongress.Statements.StatementQueries do
   alias YouCongress.Statements.Statement
   alias YouCongress.Statements.OpinionCard
 
+  @home_minimum_opinions 20
+
   @doc """
   Returns one vote per statement, prioritizing:
   1. Current user's vote (if logged in)
@@ -311,7 +313,7 @@ defmodule YouCongress.Statements.StatementQueries do
       #{hall_filter}
       WHERE v.opinion_id IS NOT NULL
         AND a.public_figure = TRUE
-        AND (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= 10
+        AND (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= #{@home_minimum_opinions}
     )
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
@@ -523,7 +525,7 @@ defmodule YouCongress.Statements.StatementQueries do
       #{hall_filter}
       WHERE v.opinion_id IS NOT NULL
         AND a.public_figure = TRUE
-        AND (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= 10
+        AND (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= #{@home_minimum_opinions}
     )
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv

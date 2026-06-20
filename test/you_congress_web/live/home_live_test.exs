@@ -166,7 +166,7 @@ defmodule YouCongressWeb.HomeLiveTest do
         statement_fixture(title: "Multi quote feed statement")
         |> add_statement_to_ai_hall()
 
-      fill_statement_with_quotes(statement.id, 9)
+      fill_statement_with_quotes(statement.id, 19)
 
       author = author_fixture()
 
@@ -222,7 +222,7 @@ defmodule YouCongressWeb.HomeLiveTest do
         statement_fixture(title: "Verified quote feed statement")
         |> add_statement_to_ai_hall()
 
-      fill_statement_with_quotes(statement.id, 8)
+      fill_statement_with_quotes(statement.id, 18)
 
       aggregate_author = author_fixture()
 
