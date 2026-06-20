@@ -133,6 +133,15 @@ defmodule YouCongressWeb.SEOMetaTest do
       assert html =~ ~r{<h1[^>]*>\s*Expert opinions on Some Unknown Hall\s*</h1>}
       refute html =~ ~s("@type":"CollectionPage")
     end
+
+    test "Spanish Congress hall uses its search-friendly name", %{conn: conn} do
+      conn = get(conn, ~p"/h/congreso-es")
+      html = html_response(conn, 200)
+
+      assert html =~ "Expert opinions on the Spanish Congress | YouCongress"
+      assert html =~ ~r{<h1[^>]*>\s*Expert opinions on the Spanish Congress\s*</h1>}
+      refute html =~ "Expert opinions on Congreso Es"
+    end
   end
 
   describe "home page" do
