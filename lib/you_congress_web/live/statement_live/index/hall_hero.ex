@@ -50,10 +50,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallHero do
   def summary(assigns) do
     ~H"""
     <p id="site-intro-stats" class="text-sm text-gray-500">
-      {@stats.quote_count} sourced {plural(@stats.quote_count, "quote")} · {@stats.statement_count} {plural(
-        @stats.statement_count,
-        "statement"
-      )}
+      {@stats.quote_count} sourced {plural(@stats.quote_count, "quote")} · {@stats.statement_count} policy proposals and claims
     </p>
     <p
       :if={@stats.top_authors != []}
