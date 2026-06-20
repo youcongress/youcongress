@@ -81,18 +81,38 @@ defmodule YouCongressWeb.StatementLiveTest do
       {:ok, _} = HallsStatements.sync!(other_statement.id, %{main_tag: "health", other_tags: []})
       fill_statement_with_quotes(other_statement.id)
 
+      governance_author = author_fixture(%{name: "Governance Expert"})
+      all_author = author_fixture(%{name: "All Dataset Expert"})
+
+      add_sourced_quotes = fn statement, author, count ->
+        Enum.each(1..count, fn _ ->
+          opinion = opinion_fixture(%{author_id: author.id})
+          {:ok, opinion} = Opinions.update_opinion(opinion, %{twin: false})
+          {:ok, _opinion} = Opinions.add_opinion_to_statement(opinion, statement.id)
+        end)
+      end
+
+      add_sourced_quotes.(governance_statement, governance_author, 2)
+      add_sourced_quotes.(other_statement, all_author, 3)
+
       {:ok, home_view, home_html} = live(conn, ~p"/")
 
       assert home_html =~ governance_statement.title
       refute home_html =~ other_statement.title
       assert has_element?(home_view, "a[href='/'][class*='bg-indigo-600']", "AI governance")
       assert has_element?(home_view, "a[href='/all']", "All")
+      assert has_element?(home_view, "#site-intro-stats", "2 sourced quotes · 2 statements")
+      assert has_element?(home_view, "#site-intro-featured-authors a", governance_author.name)
+      refute has_element?(home_view, "#site-intro-featured-authors a", all_author.name)
 
       {:ok, all_view, all_html} = live(conn, ~p"/all")
 
       assert all_html =~ governance_statement.title
       assert all_html =~ other_statement.title
       assert has_element?(all_view, "a[href='/all'][class*='bg-indigo-600']", "All")
+      assert has_element?(all_view, "#site-intro-stats", "5 sourced quotes · 3 statements")
+      assert has_element?(all_view, "#site-intro-featured-authors a", governance_author.name)
+      assert has_element?(all_view, "#site-intro-featured-authors a", all_author.name)
     end
 
     test "vote and create opinion", %{conn: conn, statement: statement} do

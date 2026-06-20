@@ -214,7 +214,7 @@ defmodule YouCongress.Halls do
 
   @doc """
   Stats for a hall's topic-hub page: statement and sourced-quote counts,
-  top authors by quote count, and overall for/against vote totals.
+  plus top authors by quote count.
 
   Returns nil if the hall doesn't exist.
   """
@@ -223,6 +223,19 @@ defmodule YouCongress.Halls do
       nil -> nil
       hall -> build_hall_stats(hall)
     end
+  end
+
+  @doc """
+  Stats across all statements, without filtering through a hall.
+  """
+  def all_stats do
+    statements =
+      Repo.all(
+        from s in YouCongress.Statements.Statement,
+          select: %{id: s.id, slug: s.slug, title: s.title}
+      )
+
+    build_stats(%Hall{name: "all"}, statements)
   end
 
   defp build_hall_stats(hall) do
@@ -235,6 +248,10 @@ defmodule YouCongress.Halls do
           select: %{id: s.id, slug: s.slug, title: s.title}
       )
 
+    build_stats(hall, statements)
+  end
+
+  defp build_stats(hall, statements) do
     statement_ids = Enum.map(statements, & &1.id)
 
     quotes_query =
@@ -253,26 +270,17 @@ defmodule YouCongress.Halls do
           on: a.id == o.author_id,
           where: not is_nil(a.name),
           group_by: a.id,
-          order_by: [desc: count(o.id, :distinct)],
+          order_by: [desc: count(o.id, :distinct), asc: a.name],
           limit: 6,
           select: a
       )
-
-    vote_totals =
-      statement_ids
-      |> YouCongress.Votes.count_by_response_map_for_statements()
-      |> Map.values()
-      |> Enum.reduce(%{}, fn counts, acc ->
-        Map.merge(acc, counts, fn _answer, a, b -> a + b end)
-      end)
 
     %{
       hall: hall,
       statements: statements,
       statement_count: length(statement_ids),
       quote_count: quote_count,
-      top_authors: top_authors,
-      vote_totals: vote_totals
+      top_authors: top_authors
     }
   end
 

@@ -34,27 +34,41 @@ defmodule YouCongressWeb.StatementLive.Index.HallHero do
           Expert opinions on {StringUtils.titleize_hall(@hall_name)}
         </h1>
         <p class="text-lg">{intro(@hall_name, @stats)}</p>
-        <p class="text-sm text-gray-500">
-          {@stats.quote_count} sourced {plural(@stats.quote_count, "quote")} · {@stats.statement_count} {plural(
-            @stats.statement_count,
-            "statement"
-          )}{vote_split(@stats.vote_totals)}
-        </p>
-        <p
-          :if={@stats.top_authors != []}
-          class="pt-1 text-sm flex flex-wrap gap-x-3 gap-y-1 justify-center"
-        >
-          <span class="text-gray-500">Featuring:</span>
-          <.link
-            :for={author <- @stats.top_authors}
-            href={SEO.author_path(author)}
-            class="hover:text-indigo-600 hover:underline"
-          >
-            {author.name}
-          </.link>
-        </p>
+        <.summary stats={@stats} />
       </div>
     </div>
+    """
+  end
+
+  attr :stats, :map, required: true
+
+  def summary(%{stats: nil} = assigns) do
+    ~H"""
+    """
+  end
+
+  def summary(assigns) do
+    ~H"""
+    <p id="site-intro-stats" class="text-sm text-gray-500">
+      {@stats.quote_count} sourced {plural(@stats.quote_count, "quote")} · {@stats.statement_count} {plural(
+        @stats.statement_count,
+        "statement"
+      )}
+    </p>
+    <p
+      :if={@stats.top_authors != []}
+      id="site-intro-featured-authors"
+      class="pt-1 text-sm flex flex-wrap gap-x-3 gap-y-1 justify-center"
+    >
+      <span class="text-gray-500">Featuring:</span>
+      <.link
+        :for={author <- @stats.top_authors}
+        href={SEO.author_path(author)}
+        class="hover:text-indigo-600 hover:underline"
+      >
+        {author.name}
+      </.link>
+    </p>
     """
   end
 
@@ -67,16 +81,6 @@ defmodule YouCongressWeb.StatementLive.Index.HallHero do
     stats.hall.description ||
       "Quotes, votes and policy statements on #{StringUtils.titleize_hall(hall_name)} " <>
         "from AI researchers, executives and policymakers."
-  end
-
-  defp vote_split(vote_totals) do
-    total = vote_totals |> Map.values() |> Enum.sum()
-
-    if total > 0 do
-      for_pct = round(Map.get(vote_totals, :for, 0) / total * 100)
-      against_pct = round(Map.get(vote_totals, :against, 0) / total * 100)
-      " · #{for_pct}% for / #{against_pct}% against overall"
-    end
   end
 
   defp plural(1, word), do: word
