@@ -9,7 +9,8 @@ defmodule YouCongressWeb.MCPServer do
   # AI-facing tool list in build_llms_txt/0 (page_controller.ex, served at /llms.txt).
   # component(YouCongressWeb.MCPServer.StatementsSearch)
   component(YouCongressWeb.MCPServer.StatementsCreate)
-  component(YouCongressWeb.MCPServer.StatementPopulate)
+  # Disabled statement populate as it's not working as well as the fresh quote discovery
+  # component(YouCongressWeb.MCPServer.StatementPopulate)
   component(YouCongressWeb.MCPServer.StatementsList)
   component(YouCongressWeb.MCPServer.StatementHalls)
   component(YouCongressWeb.MCPServer.StatementAuthors)
