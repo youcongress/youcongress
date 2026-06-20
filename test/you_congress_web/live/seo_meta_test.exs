@@ -119,7 +119,7 @@ defmodule YouCongressWeb.SEOMetaTest do
 
       assert html =~ "Expert opinions on AI Safety | YouCongress"
       assert html =~ ~r{<h1[^>]*>\s*Expert opinions on AI Safety\s*</h1>}
-      assert html =~ "1 statement"
+      assert html =~ "1 policy proposals and claims"
       assert html =~ ~s("@type":"CollectionPage")
 
       assert html =~
