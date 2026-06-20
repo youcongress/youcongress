@@ -4,7 +4,8 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
 
   It applies the same relevance standard as `VerifierAI`: a quote should match a
   statement only when it is about the complete statement or clearly implies the
-  author's stance on the complete statement.
+  author's stance on the complete statement. `submit/2` starts a background
+  Responses API job and `check_job_status/1` polls for the parsed matches.
   """
 
   @behaviour YouCongress.Verifications.QuoteStatementMatcher
@@ -16,14 +17,53 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
   @answers ["for", "against", "abstain"]
 
   @impl true
-  def match_statements(%Opinion{} = _opinion, []), do: {:ok, []}
-
-  def match_statements(%Opinion{} = opinion, statements) when is_list(statements) do
+  def submit(%Opinion{} = opinion, statements) when is_list(statements) do
     opinion = YouCongress.Repo.preload(opinion, :author)
 
     with {:ok, data} <- ask_gpt(prompt(opinion, statements)),
-         {:ok, matches} <- process_response(data) do
-      {:ok, matches}
+         {:ok, job_id} <- extract_job_id(data) do
+      {:ok, job_id}
+    end
+  end
+
+  @impl true
+  def check_job_status(job_id) when is_binary(job_id) do
+    api_key = System.get_env("OPENAI_API_KEY")
+
+    if is_nil(api_key) or api_key == "" do
+      {:error, "Missing OPENAI_API_KEY"}
+    else
+      url = "https://api.openai.com/v1/responses/#{job_id}"
+
+      headers = [
+        {"content-type", "application/json"},
+        {"authorization", "Bearer " <> api_key}
+      ]
+
+      req = Finch.build(:get, url, headers)
+
+      case Finch.request(req, Swoosh.Finch, receive_timeout: 30_000) do
+        {:ok, %Finch.Response{status: 200, body: resp_body}} ->
+          case Jason.decode(resp_body) do
+            {:ok, %{"status" => "completed"} = resp} ->
+              process_completed_job(resp)
+
+            {:ok, %{"status" => "failed", "error" => error}} ->
+              {:error, "Job failed: #{inspect(error)}"}
+
+            {:ok, %{"status" => _status}} ->
+              {:ok, :in_progress}
+
+            error ->
+              {:error, "Failed to parse polling response: #{inspect(error)}"}
+          end
+
+        {:ok, %Finch.Response{status: status, body: body}} ->
+          {:error, "Polling failed (#{status}): #{truncate_body(body)}"}
+
+        {:error, reason} ->
+          {:error, "Polling connection failed: #{inspect(reason)}"}
+      end
     end
   end
 
@@ -101,6 +141,7 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
             "schema" => json_schema()
           }
         },
+        "background" => true,
         "input" => [
           %{
             "role" => "system",
@@ -138,12 +179,15 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
     end
   end
 
-  defp process_response(resp) do
+  defp extract_job_id(%{"id" => id}) when is_binary(id), do: {:ok, id}
+  defp extract_job_id(_), do: {:error, "No Job ID found"}
+
+  defp process_completed_job(resp) do
     content = Map.get(resp, "output_text") || extract_output_text(resp)
 
     with content when is_binary(content) <- content,
          {:ok, %{"matches" => matches}} when is_list(matches) <- Jason.decode(content) do
-      {:ok, matches}
+      {:ok, :completed, matches}
     else
       _ -> {:error, "Failed to parse quote-statement matches"}
     end

@@ -1,6 +1,7 @@
 defmodule YouCongress.Verifications.QuoteStatementMatcher do
   @moduledoc """
-  Finds statements that a sourced quote can support, oppose, or abstain on.
+  Submits a sourced quote and candidate statements for matching, then polls for
+  the result.
 
   The implementation is swappable via the
   `:quote_statement_matcher_implementation` config key. It defaults to the
@@ -18,13 +19,19 @@ defmodule YouCongress.Verifications.QuoteStatementMatcher do
           optional(:comment) => String.t()
         }
 
-  @callback match_statements(Opinion.t(), [Statement.t()]) ::
-              {:ok, [match_result()]} | {:error, term()}
+  @callback submit(Opinion.t(), [Statement.t()]) :: {:ok, String.t()} | {:error, term()}
+  @callback check_job_status(String.t()) ::
+              {:ok, :completed, [match_result()]} | {:ok, :in_progress} | {:error, term()}
 
-  @spec match_statements(Opinion.t(), [Statement.t()]) ::
-          {:ok, [match_result()]} | {:error, term()}
-  def match_statements(%Opinion{} = opinion, statements) when is_list(statements) do
-    implementation().match_statements(opinion, statements)
+  @spec submit(Opinion.t(), [Statement.t()]) :: {:ok, String.t()} | {:error, term()}
+  def submit(%Opinion{} = opinion, statements) when is_list(statements) do
+    implementation().submit(opinion, statements)
+  end
+
+  @spec check_job_status(String.t()) ::
+          {:ok, :completed, [match_result()]} | {:ok, :in_progress} | {:error, term()}
+  def check_job_status(job_id) when is_binary(job_id) do
+    implementation().check_job_status(job_id)
   end
 
   defp implementation do

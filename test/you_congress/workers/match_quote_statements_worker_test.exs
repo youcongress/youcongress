@@ -12,6 +12,7 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
   alias YouCongress.OpinionsStatements
   alias YouCongress.Verifications
   alias YouCongress.Votes
+  alias YouCongress.Workers.MatchQuoteStatementsPollingWorker
   alias YouCongress.Workers.MatchQuoteStatementsWorker
   alias YouCongress.Workers.VerificationWorker
 
@@ -19,13 +20,23 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
     @behaviour YouCongress.Verifications.QuoteStatementMatcher
 
     @impl true
-    def match_statements(opinion, statements) do
+    def submit(opinion, statements) do
       send(
         Application.get_env(:you_congress, :quote_statement_matcher_test_pid),
         {:matched, opinion.id, Enum.map(statements, & &1.id)}
       )
 
-      {:ok, Application.get_env(:you_congress, :quote_statement_matcher_test_matches, [])}
+      {:ok, "match-job-#{opinion.id}"}
+    end
+
+    @impl true
+    def check_job_status(_job_id) do
+      Application.get_env(
+        :you_congress,
+        :quote_statement_matcher_test_status,
+        {:ok, :completed,
+         Application.get_env(:you_congress, :quote_statement_matcher_test_matches, [])}
+      )
     end
   end
 
@@ -33,7 +44,10 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
     @behaviour YouCongress.Verifications.QuoteStatementMatcher
 
     @impl true
-    def match_statements(_opinion, _statements), do: {:error, :llm_failed}
+    def submit(_opinion, _statements), do: {:error, :llm_failed}
+
+    @impl true
+    def check_job_status(_job_id), do: {:error, :polling_failed}
   end
 
   defp put_env_restore(key, value) do
@@ -90,6 +104,29 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
   end
 
   describe "perform/1" do
+    test "submits matching in the background and enqueues its polling worker" do
+      quote = sourced_quote()
+      statement = statement_fixture()
+      set_system_user()
+      use_static_matcher([])
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        assert :ok =
+                 MatchQuoteStatementsWorker.perform(%Oban.Job{
+                   args: %{"opinion_id" => quote.id}
+                 })
+
+        assert_enqueued(
+          worker: MatchQuoteStatementsPollingWorker,
+          args: %{
+            "opinion_id" => quote.id,
+            "job_id" => "match-job-#{quote.id}",
+            "statement_ids" => [statement.id]
+          }
+        )
+      end)
+    end
+
     test "links matched statements and creates or updates votes with returned answers" do
       author = author_fixture()
       quote = sourced_quote(author: author)
@@ -211,7 +248,34 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
                    })
         end)
 
-      assert log =~ "Failed to match statements"
+      assert log =~ "Failed to submit statement matching"
+    end
+
+    test "polling snoozes in-progress jobs and cancels failed jobs" do
+      quote = sourced_quote()
+      statement = statement_fixture()
+      set_system_user()
+      use_static_matcher([])
+
+      job = %Oban.Job{
+        args: %{
+          "opinion_id" => quote.id,
+          "job_id" => "match-job-#{quote.id}",
+          "statement_ids" => [statement.id]
+        }
+      }
+
+      put_env_restore(:quote_statement_matcher_test_status, {:ok, :in_progress})
+      assert {:snooze, 60} = MatchQuoteStatementsPollingWorker.perform(job)
+
+      put_env_restore(:quote_statement_matcher_test_status, {:error, :polling_failed})
+
+      log =
+        capture_log(fn ->
+          assert {:cancel, :polling_failed} = MatchQuoteStatementsPollingWorker.perform(job)
+        end)
+
+      assert log =~ "Statement matching job"
     end
 
     test "enqueues relevance verification when linking an already verified quote" do
@@ -237,6 +301,9 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
                  MatchQuoteStatementsWorker.perform(%Oban.Job{
                    args: %{"opinion_id" => quote.id}
                  })
+
+        assert [polling_job] = all_enqueued(worker: MatchQuoteStatementsPollingWorker)
+        assert :ok = MatchQuoteStatementsPollingWorker.perform(polling_job)
 
         opinion_statement = OpinionsStatements.get_opinion_statement(quote.id, statement.id)
 
