@@ -21,7 +21,11 @@ defmodule YouCongressWeb.PageControllerTest do
 
   test "GET /about loads as a non-logged visitor", %{conn: conn} do
     conn = get(conn, ~p"/about")
-    assert html_response(conn, 200) =~ "About YouCongress"
+    html = html_response(conn, 200)
+
+    assert html =~ "About YouCongress"
+    assert html =~ ~s(href="/contact")
+    assert html =~ "contact us"
   end
 
   test "GET /about loads as a user", %{conn: conn} do
