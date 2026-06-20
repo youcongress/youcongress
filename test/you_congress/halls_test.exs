@@ -4,6 +4,7 @@ defmodule YouCongress.HallsTest do
   alias YouCongress.{Halls, HallsStatements, Opinions}
 
   import YouCongress.AuthorsFixtures
+  import YouCongress.CountriesFixtures
   import YouCongress.HallsFixtures
   import YouCongress.OpinionsFixtures
   import YouCongress.StatementsFixtures
@@ -101,10 +102,31 @@ defmodule YouCongress.HallsTest do
       assert stats.quote_count == 6
       assert top_author_ids == authors |> Enum.map(& &1.id) |> MapSet.new()
     end
+
+    test "limits congreso-es top authors to authors from Spain" do
+      hall = hall_fixture(%{name: "congreso-es"})
+      statement = statement_fixture()
+      spain = country_fixture(%{name: "Spain"})
+      france = country_fixture(%{name: "France"})
+
+      assert {:ok, _statement} =
+               HallsStatements.sync!(statement.id, %{
+                 main_tag: hall.name,
+                 other_tags: []
+               })
+
+      spanish_author = add_quote(statement, "Spanish Author", nil, %{country_id: spain.id})
+      _french_author = add_quote(statement, "French Author", nil, %{country_id: france.id})
+
+      stats = Halls.hall_stats(hall.name)
+
+      assert stats.quote_count == 2
+      assert Enum.map(stats.top_authors, & &1.id) == [spanish_author.id]
+    end
   end
 
-  defp add_quote(statement, author_name, verification_status) do
-    author = author_fixture(%{name: author_name})
+  defp add_quote(statement, author_name, verification_status, author_attrs \\ %{}) do
+    author = author_fixture(Map.put(author_attrs, :name, author_name))
 
     quote =
       opinion_fixture(%{
