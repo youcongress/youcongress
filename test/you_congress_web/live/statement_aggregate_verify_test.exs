@@ -8,6 +8,7 @@ defmodule YouCongressWeb.StatementAggregateVerifyTest do
   import YouCongress.VotesFixtures
 
   alias YouCongress.Votes
+  alias YouCongress.VoteVerifications
   alias YouCongress.OpinionsStatements
 
   defp setup_quote(_) do
@@ -81,7 +82,7 @@ defmodule YouCongressWeb.StatementAggregateVerifyTest do
              :verified
   end
 
-  test "answer is verifiable even when an alternate quote is displayed", %{conn: conn} do
+  test "answer verification follows the displayed alternate quote", %{conn: conn} do
     statement = statement_fixture()
     author = author_fixture()
 
@@ -119,14 +120,18 @@ defmodule YouCongressWeb.StatementAggregateVerifyTest do
     card = ~s|[data-testid="vote-card-#{vote.id}"]|
     btn = fn s, st -> ~s|#{card} button[phx-value-subject="#{s}"][phx-value-status="#{st}"]| end
 
-    # The displayed quote is the newer alternate, but the answer (bound to
-    # the vote's own quote) is still verifiable from here.
+    # The displayed quote is the newer alternate, so all three verification
+    # dimensions are recorded in that quote's context.
     view |> element(~s|#{card} button[phx-click="toggle-dropdown"]|) |> render_click()
     pick_and_save(view, card, "quote", "verified", "Quote is authentic")
     pick_and_save(view, card, "relevance", "verified", "Quote matches statement")
     assert has_element?(view, btn.("vote", "verified"))
     pick_and_save(view, card, "vote", "verified", "Vote answer is correct")
 
-    assert Votes.get_vote!(vote.id).verification_status == :verified
+    assert VoteVerifications.status_for_vote_opinion(vote.id, shown.id) == :verified
+
+    # The vote cache only reflects verification of the quote it currently
+    # references, so verifying an alternate must not update it.
+    assert Votes.get_vote!(vote.id).verification_status == nil
   end
 end
