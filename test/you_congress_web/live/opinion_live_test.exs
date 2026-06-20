@@ -968,40 +968,43 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
       statement = statement_fixture(%{title: "We should deliberate publicly"})
 
-      # The author's vote on the statement is backed by a primary quote...
-      primary_quote =
+      older_quote =
         opinion_fixture(%{
           author_id: author.id,
           user_id: user.id,
-          content: "Primary quote",
-          source_url: "https://example.com/primary",
+          content: "Older quote",
+          source_url: "https://example.com/older",
           twin: false
         })
 
-      {:ok, _} = Opinions.add_opinion_to_statement(primary_quote, statement.id)
+      {:ok, _} = Opinions.add_opinion_to_statement(older_quote, statement.id)
 
       vote_fixture(%{
         statement_id: statement.id,
         author_id: author.id,
-        opinion_id: primary_quote.id,
+        opinion_id: older_quote.id,
         answer: :for
       })
 
-      # ...but we're viewing a secondary quote also linked to the statement.
-      secondary_quote =
+      # Linking a newer quote moves the author's vote to that quote.
+      latest_quote =
         opinion_fixture(%{
           author_id: author.id,
           user_id: user.id,
-          content: "Secondary quote",
-          source_url: "https://example.com/secondary",
+          content: "Latest quote",
+          source_url: "https://example.com/latest",
           twin: false
         })
 
-      {:ok, _} = Opinions.add_opinion_to_statement(secondary_quote, statement.id)
+      {:ok, _} = Opinions.add_opinion_to_statement(latest_quote, statement.id)
 
-      {:ok, view, _html} = live(conn, ~p"/c/#{secondary_quote.id}")
+      {:ok, view, _html} = live(conn, ~p"/c/#{older_quote.id}")
 
       card = ~s|[data-testid="statement-verify-#{statement.id}"]|
+      latest_opinion_link = ~s|#{card} a[data-testid="latest-vote-opinion-#{statement.id}"]|
+
+      assert has_element?(view, latest_opinion_link, "Latest opinion")
+      assert element(view, latest_opinion_link) |> render() =~ ~s|href="/c/#{latest_quote.id}"|
 
       btn = fn subject, status ->
         ~s|#{card} button[phx-value-subject="#{subject}"][phx-value-status="#{status}"]|
@@ -1017,6 +1020,13 @@ defmodule YouCongressWeb.OpinionLiveTest do
       # The vote row is actionable (no longer "n/a for this quote").
       assert has_element?(view, btn.("vote", "verified"))
       refute render(view) =~ "n/a for this quote"
+
+      {:ok, latest_view, _html} = live(conn, ~p"/c/#{latest_quote.id}")
+
+      refute has_element?(
+               latest_view,
+               ~s|[data-testid="latest-vote-opinion-#{statement.id}"]|
+             )
     end
 
     test "non-owner cannot edit opinion", %{conn: conn} do
