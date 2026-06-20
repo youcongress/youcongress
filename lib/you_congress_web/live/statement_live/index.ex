@@ -22,18 +22,10 @@ defmodule YouCongressWeb.StatementLive.Index do
   alias YouCongressWeb.Components.SwitchComponent
   alias YouCongress.Statements.StatementQueries
   alias YouCongress.Halls
-  alias YouCongressWeb.AuthorLive.Show, as: AuthorShow
   alias YouCongressWeb.StatementLive.VoteComponent
   alias YouCongressWeb.ReturnTo
   alias YouCongressWeb.SEO
 
-  @featured_author_names [
-    "Geoffrey Hinton",
-    "Demis Hassabis",
-    "Dario Amodei",
-    "Yoshua Bengio",
-    "Yann LeCun"
-  ]
   @search_page_size 20
   @search_tabs [:quotes, :delegates, :statements, :halls]
 
@@ -42,10 +34,6 @@ defmodule YouCongressWeb.StatementLive.Index do
     socket = assign_current_user(socket, session["user_token"])
     current_user = socket.assigns.current_user
     hall_name = selected_hall(socket.assigns.live_action, params)
-
-    featured_authors =
-      Authors.list_authors(names: @featured_author_names)
-      |> order_featured_authors()
 
     socket =
       socket
@@ -69,7 +57,6 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:has_more_statements, true)
       |> assign(:editing_opinion_id, nil)
       |> assign(:can_create_statement?, Permissions.can_create_statement?(current_user))
-      |> assign(:featured_authors, featured_authors)
       |> stream(:opinion_cards, [], reset: true)
       |> assign_cards(1)
       |> assign(:pending_guest_votes, %{})
@@ -322,6 +309,8 @@ defmodule YouCongressWeb.StatementLive.Index do
   end
 
   defp apply_action(socket, :all, _params) do
+    hall_stats = Halls.all_stats()
+
     socket
     |> assign(
       page_title: "All AI liquid democracy polls with verifiable quotes | YouCongress",
@@ -330,6 +319,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       canonical_url: url(~p"/all"),
       statement: %Statement{}
     )
+    |> assign_stats(hall_stats)
     |> assign(:full_width, true)
     |> assign(:main_padding_classes, "px-2 pb-6 sm:px-4 lg:px-6")
   end
@@ -345,14 +335,16 @@ defmodule YouCongressWeb.StatementLive.Index do
       skip_page_suffix: true,
       page_description: SEO.hall_description(hall_name, hall_stats),
       canonical_url: url(~p"/h/#{hall_name}"),
-      hall_stats: hall_stats,
       statement: %Statement{}
     )
+    |> assign_stats(hall_stats)
     |> assign(:full_width, true)
     |> assign(:main_padding_classes, "px-2 pb-6 sm:px-4 lg:px-6")
   end
 
   defp apply_action(socket, :index, _params) do
+    hall_stats = Halls.hall_stats(HallNav.default_hall())
+
     socket
     |> assign(
       page_title: "AI liquid democracy polls with verifiable quotes | YouCongress",
@@ -362,6 +354,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       canonical_url: url(~p"/"),
       statement: %Statement{}
     )
+    |> assign_stats(hall_stats)
     |> assign(:full_width, true)
     |> assign(:main_padding_classes, "px-2 pb-6 sm:px-4 lg:px-6")
   end
@@ -510,11 +503,8 @@ defmodule YouCongressWeb.StatementLive.Index do
     Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
   end
 
-  defp order_featured_authors(authors) do
-    Enum.sort_by(authors, fn author ->
-      Enum.find_index(@featured_author_names, &(&1 == author.name)) ||
-        length(@featured_author_names)
-    end)
+  defp assign_stats(socket, stats) do
+    assign(socket, :hall_stats, stats)
   end
 
   defp perform_search(socket, search) do
