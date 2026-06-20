@@ -200,7 +200,7 @@
   </div>
   
 <!-- Call to Action Section -->
-  <div class="text-center">
+  <div class="flex flex-wrap items-center justify-center gap-3 text-center">
     <%= if @current_user do %>
       <a
         href={~p"/"}
@@ -217,5 +217,8 @@
         Get Started - Log In
       </.link>
     <% end %>
+    <span class="text-sm text-gray-600">
+      or <.link href={~p"/contact"} class="underline hover:text-indigo-600">contact us</.link>
+    </span>
   </div>
 </div>
