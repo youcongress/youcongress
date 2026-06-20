@@ -1,6 +1,7 @@
 defmodule YouCongress.Workers.MatchQuoteStatementsWorker do
   @moduledoc """
-  Uses AI to discover statements related to a sourced quote and link them.
+  Starts a background AI job to discover statements related to a sourced quote
+  and enqueues a polling worker to collect the result.
 
   Args:
   - opinion_id: the sourced quote id.
@@ -18,36 +19,96 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorker do
   alias YouCongress.OpinionsStatements
   alias YouCongress.Statements
   alias YouCongress.Verifications.QuoteStatementMatcher
-  alias YouCongress.Votes
-
-  @answers ~w(for against abstain)
+  alias YouCongress.Workers.JobMetadata
+  alias YouCongress.Workers.MatchQuoteStatementsPollingWorker
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"opinion_id" => opinion_id}}) do
-    with user_id when not is_nil(user_id) <- system_user_id(),
-         %Opinion{} = opinion <- load_quote(opinion_id),
-         statements <- candidate_statements(opinion),
-         {:ok, matches} <- QuoteStatementMatcher.match_statements(opinion, statements) do
-      Logger.info(
-        "MatchQuoteStatementsWorker found #{length(matches)} for opinion_id #{opinion_id}"
-      )
+  def perform(%Oban.Job{args: %{"opinion_id" => opinion_id}} = job) do
+    case load_submission(opinion_id) do
+      {:skip, reason} ->
+        store_metadata(job, %{
+          "status" => "skipped",
+          "opinion_id" => opinion_id,
+          "reason" => JobMetadata.format_reason(reason)
+        })
 
-      persist_matches(opinion, statements, matches, user_id)
-      :ok
-    else
-      nil ->
-        Logger.info(
-          "MatchQuoteStatementsWorker did not find any statements for quote #{inspect(opinion_id)}"
-        )
-
+        Logger.info("Skipping statement matching for quote #{inspect(opinion_id)}: #{reason}")
         :ok
 
+      {:ok, opinion, statements} ->
+        submit(job, opinion, statements)
+    end
+  end
+
+  defp submit(job, opinion, statements) do
+    opinion_id = opinion.id
+
+    case QuoteStatementMatcher.submit(opinion, statements) do
+      {:ok, llm_job_id} ->
+        store_metadata(job, %{
+          "status" => "submitted",
+          "opinion_id" => opinion_id,
+          "matching_job_id" => llm_job_id,
+          "candidate_count" => length(statements)
+        })
+
+        polling_result =
+          %{
+            "opinion_id" => opinion_id,
+            "job_id" => llm_job_id,
+            "statement_ids" => Enum.map(statements, & &1.id)
+          }
+          |> maybe_put_matching_worker_job_id(job)
+          |> MatchQuoteStatementsPollingWorker.new()
+          |> Oban.insert()
+
+        case polling_result do
+          {:ok, _polling_job} ->
+            :ok
+
+          {:error, reason} ->
+            store_metadata(job, %{
+              "status" => "failed",
+              "stage" => "enqueue_polling",
+              "opinion_id" => opinion_id,
+              "matching_job_id" => llm_job_id,
+              "reason" => JobMetadata.format_reason(reason)
+            })
+
+            {:error, reason}
+        end
+
       {:error, reason} ->
+        store_metadata(job, %{
+          "status" => "failed",
+          "stage" => "submit",
+          "opinion_id" => opinion_id,
+          "reason" => JobMetadata.format_reason(reason)
+        })
+
         Logger.error(
-          "MatchQuoteStatementsWorker Failed to match statements for quote ##{inspect(opinion_id)}: #{inspect(reason)}"
+          "Failed to submit statement matching for quote ##{inspect(opinion_id)}: #{inspect(reason)}"
         )
 
         {:error, reason}
+    end
+  end
+
+  defp load_submission(opinion_id) do
+    with user_id when not is_nil(user_id) <- system_user_id(),
+         %Opinion{} = opinion <- load_quote(opinion_id) do
+      case candidate_statements(opinion) do
+        [] ->
+          {:skip, :no_candidate_statements}
+
+        statements ->
+          {:ok, opinion, statements}
+      end
+    else
+      nil ->
+        if is_nil(system_user_id()),
+          do: {:skip, :verification_user_not_configured},
+          else: {:skip, :quote_not_found_or_ineligible}
     end
   end
 
@@ -73,79 +134,6 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorker do
     Enum.reject(statements, &MapSet.member?(linked_statement_ids, &1.id))
   end
 
-  defp persist_matches(%Opinion{} = opinion, statements, matches, user_id)
-       when is_list(matches) do
-    statements_by_id = Map.new(statements, &{&1.id, &1})
-
-    matches
-    |> Enum.map(&normalize_match/1)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.uniq_by(fn {statement_id, _answer} -> statement_id end)
-    |> Enum.each(fn {statement_id, answer} ->
-      case Map.fetch(statements_by_id, statement_id) do
-        {:ok, statement} -> persist_match(opinion, statement, answer, user_id)
-        :error -> :ok
-      end
-    end)
-  end
-
-  defp persist_matches(_opinion, _statements, _matches, _user_id), do: :ok
-
-  defp persist_match(%Opinion{} = opinion, statement, answer, user_id) do
-    with :ok <- link_opinion_statement(opinion, statement, user_id),
-         {:ok, _vote} <- create_or_update_vote(opinion, statement, answer) do
-      :ok
-    else
-      {:error, reason} ->
-        Logger.error(
-          "Failed to persist statement match for quote #{opinion.id} and statement #{statement.id}: #{inspect(reason)}"
-        )
-
-        :ok
-    end
-  end
-
-  defp link_opinion_statement(%Opinion{} = opinion, statement, user_id) do
-    case Opinions.add_opinion_to_statement(opinion, statement, user_id) do
-      {:ok, _opinion} -> :ok
-      {:error, :already_associated} -> :ok
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp create_or_update_vote(%Opinion{author_id: author_id} = opinion, statement, answer) do
-    attrs = %{
-      statement_id: statement.id,
-      author_id: author_id,
-      answer: answer,
-      opinion_id: opinion.id,
-      direct: true,
-      twin: false
-    }
-
-    case Votes.get_by(statement_id: statement.id, author_id: author_id) do
-      nil -> Votes.create_vote(attrs)
-      vote -> Votes.update_vote(vote, attrs)
-    end
-  end
-
-  defp normalize_match(match) when is_map(match) do
-    statement_id = normalize_id(match["statement_id"] || match[:statement_id])
-    answer = normalize_answer(match["answer"] || match[:answer])
-
-    if statement_id && answer, do: {statement_id, answer}, else: nil
-  end
-
-  defp normalize_match(_), do: nil
-
-  defp normalize_answer(answer) when is_binary(answer) do
-    downcased = String.downcase(answer)
-    if downcased in @answers, do: String.to_existing_atom(downcased), else: nil
-  end
-
-  defp normalize_answer(answer) when answer in [:for, :against, :abstain], do: answer
-  defp normalize_answer(_), do: nil
-
   defp normalize_id(id) when is_integer(id), do: id
 
   defp normalize_id(id) when is_binary(id) do
@@ -164,5 +152,15 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorker do
       id when is_integer(id) -> id
       id when is_binary(id) -> normalize_id(id)
     end
+  end
+
+  defp maybe_put_matching_worker_job_id(args, %Oban.Job{id: id}) when is_integer(id) do
+    Map.put(args, "matching_worker_job_id", id)
+  end
+
+  defp maybe_put_matching_worker_job_id(args, _job), do: args
+
+  defp store_metadata(job, metadata) do
+    JobMetadata.put(job, "quote_statement_matching", metadata)
   end
 end
