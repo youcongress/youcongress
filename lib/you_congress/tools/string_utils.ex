@@ -22,6 +22,7 @@ defmodule YouCongress.Tools.StringUtils do
   def titleize_hall("ai"), do: "AI"
   def titleize_hall("eu"), do: "EU"
   def titleize_hall("agi"), do: "AGI"
+  def titleize_hall("us-congress"), do: "the US Congress"
   def titleize_hall("congreso-es"), do: "the Spanish Congress"
   def titleize_hall(hall_name), do: titleize(hall_name)
 end
