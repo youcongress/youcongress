@@ -4,7 +4,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent.QuoteMenu do
   - I am this person!
   - Add a sourced quote
   """
-  use Phoenix.Component
+  use YouCongressWeb, :html
 
   alias YouCongress.Accounts.Permissions
 
@@ -49,8 +49,8 @@ defmodule YouCongressWeb.StatementLive.VoteComponent.QuoteMenu do
           <% end %>
 
           <.link
-            href="mailto:hi@youcongress.org"
-            target="_blank"
+            :if={@opinion}
+            href={report_contact_path(@opinion.id)}
             class="block py-1 px-2 hover:text-indigo-600"
           >
             Report comment
@@ -75,5 +75,9 @@ defmodule YouCongressWeb.StatementLive.VoteComponent.QuoteMenu do
       </div>
     </div>
     """
+  end
+
+  defp report_contact_path(opinion_id) do
+    ~p"/contact?#{%{subject: "Report comment", body: url(~p"/c/#{opinion_id}")}}"
   end
 end
