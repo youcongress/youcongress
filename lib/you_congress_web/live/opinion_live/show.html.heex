@@ -142,6 +142,17 @@
                 label="Run AI vote inference verification"
                 testid={"vote-inference-verification-enqueue-#{statement.id}"}
               />
+              <.link
+                :if={
+                  statement.author_vote && statement.author_vote.opinion_id &&
+                    statement.author_vote.opinion_id != @opinion.id
+                }
+                href={~p"/c/#{statement.author_vote.opinion_id}"}
+                class="underline"
+                data-testid={"latest-vote-opinion-#{statement.id}"}
+              >
+                Latest opinion
+              </.link>
               <%= if Permissions.can_verify_opinion?(@current_user) do %>
                 <button
                   type="button"
