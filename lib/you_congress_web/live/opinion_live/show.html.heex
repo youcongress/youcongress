@@ -116,6 +116,12 @@
                   {verification_status_label(relation_verification_status(statement))}
                 </span>
               <% end %>
+              <.verification_report_link
+                opinion_id={@opinion.id}
+                subject="relevance"
+                statement_title={statement.title}
+                testid={"statement-relation-report-#{statement.id}"}
+              />
             </div>
             <.verification_history
               :if={statement.relation_verifications != []}
@@ -175,6 +181,12 @@
                   {verification_status_label(vote_verification_status(statement))}
                 </span>
               <% end %>
+              <.verification_report_link
+                opinion_id={@opinion.id}
+                subject="vote"
+                statement_title={statement.title}
+                testid={"vote-inference-report-#{statement.id}"}
+              />
             </div>
             <.verification_history
               :if={statement.vote_verifications != []}
@@ -316,6 +328,11 @@
         id={@opinion.id}
         label="Run AI quote authenticity verification"
         testid="quote-authenticity-verification-enqueue"
+      />
+      <.verification_report_link
+        opinion_id={@opinion.id}
+        subject="quote"
+        testid="quote-authenticity-report"
       />
     </div>
     <.verification_history
