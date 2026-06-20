@@ -32,10 +32,10 @@ defmodule YouCongress.VotesFixtures do
   end
 
   @doc """
-  Create enough opinion-votes for a statement to meet the 10+ quotes threshold
+  Create enough opinion-votes for a statement to meet the 20+ quotes threshold
   required by the home page feed queries.
   """
-  def fill_statement_with_quotes(statement_id, count \\ 10) do
+  def fill_statement_with_quotes(statement_id, count \\ 20) do
     Enum.each(1..count, fn _ ->
       author = author_fixture()
       opinion = YouCongress.OpinionsFixtures.opinion_fixture(%{author_id: author.id})

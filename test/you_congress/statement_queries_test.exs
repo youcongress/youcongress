@@ -19,6 +19,33 @@ defmodule YouCongress.Statements.StatementQueriesTest do
   end
 
   describe "get_opinion_cards_by_recency/1" do
+    test "only returns statements with at least 20 opinions" do
+      statement = statement_fixture()
+      fill_statement_with_quotes(statement.id, 19)
+
+      refute Enum.any?(
+               StatementQueries.get_opinion_cards_by_recency(limit: 20),
+               &(&1.statement.id == statement.id)
+             )
+
+      refute Enum.any?(
+               StatementQueries.get_opinion_cards_by_top_likes(limit: 20),
+               &(&1.statement.id == statement.id)
+             )
+
+      fill_statement_with_quotes(statement.id, 1)
+
+      assert Enum.any?(
+               StatementQueries.get_opinion_cards_by_recency(limit: 20),
+               &(&1.statement.id == statement.id)
+             )
+
+      assert Enum.any?(
+               StatementQueries.get_opinion_cards_by_top_likes(limit: 20),
+               &(&1.statement.id == statement.id)
+             )
+    end
+
     test "returns each quote only once even if multiple votes point to it" do
       statement = statement_fixture()
       opinion_author = author_fixture()
@@ -66,7 +93,7 @@ defmodule YouCongress.Statements.StatementQueriesTest do
 
     test "uses the newest positive verified opinion before newer disputed opinions" do
       statement = statement_fixture()
-      fill_statement_with_quotes(statement.id, 8)
+      fill_statement_with_quotes(statement.id, 18)
 
       verified_author = author_fixture()
 
@@ -111,7 +138,7 @@ defmodule YouCongress.Statements.StatementQueriesTest do
 
     test "uses aggregate verified opinions before quote-only verified opinions" do
       statement = statement_fixture()
-      fill_statement_with_quotes(statement.id, 8)
+      fill_statement_with_quotes(statement.id, 18)
 
       aggregate_author = author_fixture()
 
@@ -161,7 +188,7 @@ defmodule YouCongress.Statements.StatementQueriesTest do
 
     test "uses the most recently added quote regardless of quote date" do
       statement = statement_fixture()
-      fill_statement_with_quotes(statement.id, 8)
+      fill_statement_with_quotes(statement.id, 18)
 
       older_author = author_fixture()
 
@@ -213,7 +240,7 @@ defmodule YouCongress.Statements.StatementQueriesTest do
 
     test "orders statements by newest opinion id regardless of quote date" do
       older_statement = statement_fixture()
-      fill_statement_with_quotes(older_statement.id, 9)
+      fill_statement_with_quotes(older_statement.id, 19)
       older_author = author_fixture()
 
       older_opinion =
@@ -235,7 +262,7 @@ defmodule YouCongress.Statements.StatementQueriesTest do
       })
 
       newer_statement = statement_fixture()
-      fill_statement_with_quotes(newer_statement.id, 9)
+      fill_statement_with_quotes(newer_statement.id, 19)
       newer_author = author_fixture()
 
       newer_opinion =
