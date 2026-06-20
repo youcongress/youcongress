@@ -32,13 +32,14 @@ defmodule YouCongress.Workers.MatchQuoteStatementsPollingWorker do
       ) do
     case QuoteStatementMatcher.check_job_status(llm_job_id) do
       {:ok, :completed, matches} ->
-        matched_count = persist_matches(opinion_id, statement_ids, matches)
+        matched_statement_ids = persist_matches(opinion_id, statement_ids, matches)
 
         store_metadata(job, args, %{
           "status" => "completed",
           "opinion_id" => opinion_id,
           "matching_job_id" => llm_job_id,
-          "matched_count" => matched_count
+          "matched_count" => length(matched_statement_ids),
+          "statement_ids" => matched_statement_ids
         })
 
         :ok
@@ -77,18 +78,26 @@ defmodule YouCongress.Workers.MatchQuoteStatementsPollingWorker do
       |> Enum.map(&normalize_match/1)
       |> Enum.reject(&is_nil/1)
       |> Enum.uniq_by(fn {statement_id, _answer} -> statement_id end)
-      |> Enum.count(fn {statement_id, answer} ->
+      |> Enum.reduce([], fn {statement_id, answer}, matched_statement_ids ->
         case Map.fetch(statements_by_id, statement_id) do
-          {:ok, statement} -> persist_match(opinion, statement, answer, user_id)
-          :error -> false
+          {:ok, statement} ->
+            if persist_match(opinion, statement, answer, user_id) do
+              [statement_id | matched_statement_ids]
+            else
+              matched_statement_ids
+            end
+
+          :error ->
+            matched_statement_ids
         end
       end)
+      |> Enum.reverse()
     else
-      nil -> 0
+      nil -> []
     end
   end
 
-  defp persist_matches(_opinion_id, _statement_ids, _matches), do: 0
+  defp persist_matches(_opinion_id, _statement_ids, _matches), do: []
 
   defp load_quote(opinion_id) do
     case Opinions.get_opinion(normalize_id(opinion_id)) do
