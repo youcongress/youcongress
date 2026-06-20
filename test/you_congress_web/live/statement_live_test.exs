@@ -38,9 +38,7 @@ defmodule YouCongressWeb.StatementLiveTest do
 
   defp create_statement(_) do
     statement = statement_fixture()
-
-    {:ok, _} =
-      HallsStatements.sync!(statement.id, %{main_tag: "ai-governance", other_tags: []})
+    {:ok, _} = HallsStatements.sync!(statement.id, %{main_tag: "ai", other_tags: []})
 
     %{statement: statement}
   end
@@ -49,9 +47,7 @@ defmodule YouCongressWeb.StatementLiveTest do
 
   defp create_statement_with_top_opinion(title, likes_count) do
     statement = statement_fixture(%{title: title})
-
-    {:ok, _} =
-      HallsStatements.sync!(statement.id, %{main_tag: "ai-governance", other_tags: []})
+    {:ok, _} = HallsStatements.sync!(statement.id, %{main_tag: "ai", other_tags: []})
 
     author = author_fixture()
     opinion = opinion_fixture(%{author_id: author.id})
@@ -66,23 +62,23 @@ defmodule YouCongressWeb.StatementLiveTest do
   describe "Index" do
     setup [:create_statement]
 
-    test "defaults to AI governance and links All to an unrestricted feed", %{conn: conn} do
-      governance_statement = statement_fixture(%{title: "AI governance default card"})
+    test "defaults to an unrestricted feed and shows aggregate stats", %{conn: conn} do
+      ai_statement = statement_fixture(%{title: "AI default card"})
 
       {:ok, _} =
-        HallsStatements.sync!(governance_statement.id, %{
-          main_tag: "ai-governance",
+        HallsStatements.sync!(ai_statement.id, %{
+          main_tag: "ai",
           other_tags: []
         })
 
-      fill_statement_with_quotes(governance_statement.id)
+      fill_statement_with_quotes(ai_statement.id)
 
-      other_statement = statement_fixture(%{title: "Unrestricted other hall card"})
+      other_statement = statement_fixture(%{title: "Other hall card"})
       {:ok, _} = HallsStatements.sync!(other_statement.id, %{main_tag: "health", other_tags: []})
       fill_statement_with_quotes(other_statement.id)
 
-      governance_author = author_fixture(%{name: "Governance Expert"})
-      all_author = author_fixture(%{name: "All Dataset Expert"})
+      ai_author = author_fixture(%{name: "AI Expert"})
+      health_author = author_fixture(%{name: "Health Expert"})
 
       add_sourced_quotes = fn statement, author, count ->
         Enum.each(1..count, fn _ ->
@@ -92,27 +88,17 @@ defmodule YouCongressWeb.StatementLiveTest do
         end)
       end
 
-      add_sourced_quotes.(governance_statement, governance_author, 2)
-      add_sourced_quotes.(other_statement, all_author, 3)
+      add_sourced_quotes.(ai_statement, ai_author, 2)
+      add_sourced_quotes.(other_statement, health_author, 3)
 
       {:ok, home_view, home_html} = live(conn, ~p"/")
 
-      assert home_html =~ governance_statement.title
-      refute home_html =~ other_statement.title
-      assert has_element?(home_view, "a[href='/'][class*='bg-indigo-600']", "AI governance")
-      assert has_element?(home_view, "a[href='/all']", "All")
-      assert has_element?(home_view, "#site-intro-stats", "2 sourced quotes · 2 statements")
-      assert has_element?(home_view, "#site-intro-featured-authors a", governance_author.name)
-      refute has_element?(home_view, "#site-intro-featured-authors a", all_author.name)
-
-      {:ok, all_view, all_html} = live(conn, ~p"/all")
-
-      assert all_html =~ governance_statement.title
-      assert all_html =~ other_statement.title
-      assert has_element?(all_view, "a[href='/all'][class*='bg-indigo-600']", "All")
-      assert has_element?(all_view, "#site-intro-stats", "5 sourced quotes · 3 statements")
-      assert has_element?(all_view, "#site-intro-featured-authors a", governance_author.name)
-      assert has_element?(all_view, "#site-intro-featured-authors a", all_author.name)
+      assert home_html =~ ai_statement.title
+      assert home_html =~ other_statement.title
+      assert has_element?(home_view, "a[href='/'][class*='bg-indigo-600']", "All")
+      assert has_element?(home_view, "#site-intro-stats", "5 sourced quotes · 3 statements")
+      assert has_element?(home_view, "#site-intro-featured-authors a", ai_author.name)
+      assert has_element?(home_view, "#site-intro-featured-authors a", health_author.name)
     end
 
     test "vote and create opinion", %{conn: conn, statement: statement} do

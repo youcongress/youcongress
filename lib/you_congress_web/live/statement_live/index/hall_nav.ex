@@ -9,7 +9,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
   alias YouCongressWeb.StatementLive.Index.HallNav
   alias YouCongress.Tools.StringUtils
 
-  @default_hall "ai-governance"
+  @default_hall "all"
 
   @featured_halls [
     {"all", "All"},
@@ -22,7 +22,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     {"congreso-es", "🇪🇸 Congreso"}
   ]
 
-  def default_hall, do: @default_hall
+  def default_hall, do: "all"
 
   attr :hall_name, :string, required: true
 
@@ -47,7 +47,6 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     """
   end
 
-  defp hall_link("all"), do: ~p"/all"
   defp hall_link(@default_hall), do: ~p"/"
   defp hall_link(hall_name), do: ~p"/h/#{hall_name}"
 

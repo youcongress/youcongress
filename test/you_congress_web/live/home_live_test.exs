@@ -17,7 +17,7 @@ defmodule YouCongressWeb.HomeLiveTest do
   alias YouCongress.Votes.Vote
 
   defp add_statement_to_ai_hall(statement) do
-    {:ok, hall} = Halls.get_or_create_by_name("ai-governance")
+    {:ok, hall} = Halls.get_or_create_by_name("ai")
 
     %HallStatement{}
     |> HallStatement.changeset(%{

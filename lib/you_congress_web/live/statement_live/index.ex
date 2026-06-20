@@ -33,7 +33,6 @@ defmodule YouCongressWeb.StatementLive.Index do
   def mount(params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
     current_user = socket.assigns.current_user
-    hall_name = selected_hall(socket.assigns.live_action, params)
 
     socket =
       socket
@@ -46,8 +45,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:search_has_more, empty_search_has_more())
       |> assign(:search_totals, empty_search_totals())
       |> assign(:order_by_date, true)
-      |> assign(:hall_name, hall_name)
-      |> assign(:show_site_intro?, is_nil(params["hall"]))
+      |> assign(:hall_name, params["hall"] || HallNav.default_hall())
       |> assign(:hall_stats, nil)
       |> assign(:new_poll_visible?, false)
       |> assign(:current_user_delegation_ids, get_current_user_delegation_ids(current_user))
@@ -308,22 +306,6 @@ defmodule YouCongressWeb.StatementLive.Index do
     |> assign(:statement, %Statement{})
   end
 
-  defp apply_action(socket, :all, _params) do
-    hall_stats = Halls.all_stats()
-
-    socket
-    |> assign(
-      page_title: "All AI liquid democracy polls with verifiable quotes | YouCongress",
-      skip_page_suffix: true,
-      page_description: "Browse all policy and claim cards without a hall filter.",
-      canonical_url: url(~p"/all"),
-      statement: %Statement{}
-    )
-    |> assign_stats(hall_stats)
-    |> assign(:full_width, true)
-    |> assign(:main_padding_classes, "px-2 pb-6 sm:px-4 lg:px-6")
-  end
-
   defp apply_action(socket, :index, %{"hall" => hall_name}) when hall_name != "all" do
     # Computed here (handle_params) so the stats are part of the dead
     # render that crawlers see.
@@ -343,7 +325,7 @@ defmodule YouCongressWeb.StatementLive.Index do
   end
 
   defp apply_action(socket, :index, _params) do
-    hall_stats = Halls.hall_stats(HallNav.default_hall())
+    hall_stats = Halls.all_stats()
 
     socket
     |> assign(
@@ -358,9 +340,6 @@ defmodule YouCongressWeb.StatementLive.Index do
     |> assign(:full_width, true)
     |> assign(:main_padding_classes, "px-2 pb-6 sm:px-4 lg:px-6")
   end
-
-  defp selected_hall(:all, _params), do: "all"
-  defp selected_hall(_live_action, params), do: params["hall"] || HallNav.default_hall()
 
   defp maybe_apply_search_params(socket, %{"search" => search} = params) when is_binary(search) do
     case normalize_search(search) do

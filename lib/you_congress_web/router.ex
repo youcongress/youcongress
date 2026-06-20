@@ -133,7 +133,6 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through([:browser])
 
-    live("/all", StatementLive.Index, :all)
     live("/", StatementLive.Index, :index)
   end
 
