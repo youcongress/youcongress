@@ -12,7 +12,7 @@ defmodule YouCongressWeb.ContactLiveTest do
       assert html =~ "Contact us"
       assert html =~ "Name"
       assert html =~ "Email"
-      assert html =~ "Your website or social media link"
+      assert html =~ "Your website or social media link (optional)"
       assert html =~ "Message"
       assert html =~ ~s(value="Report comment")
       assert html =~ "http://example.com/c/42"
