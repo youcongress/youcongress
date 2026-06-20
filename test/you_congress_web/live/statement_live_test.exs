@@ -879,6 +879,76 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ "For (1)"
     end
 
+    test "shows the aggregate verification status for the visible alternate quote", %{
+      conn: conn,
+      statement: statement
+    } do
+      verifier = user_fixture()
+      author = author_fixture(%{name: "Quote Status Carousel Author"})
+
+      disputed_primary =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Disputed primary quote",
+          source_url: "https://example.com/disputed-primary",
+          verification_status: :disputed,
+          twin: false
+        })
+
+      verified_alternate =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Verified alternate quote",
+          source_url: "https://example.com/verified-alternate",
+          verification_status: :ai_verified,
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(disputed_primary, statement)
+      {:ok, _} = Opinions.add_opinion_to_statement(verified_alternate, statement)
+
+      verified_alternate.id
+      |> YouCongress.OpinionsStatements.get_opinion_statement(statement.id)
+      |> Ecto.Changeset.change(verification_status: :ai_verified)
+      |> YouCongress.Repo.update!()
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: disputed_primary.id,
+          answer: :for,
+          twin: false
+        })
+
+      {:ok, _} =
+        YouCongress.VoteVerifications.create_verification(%{
+          vote_id: vote.id,
+          opinion_id: verified_alternate.id,
+          user_id: verifier.id,
+          status: :ai_verified,
+          model: "test-ai"
+        })
+
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}")
+
+      card = element(show_live, "#vote-component-#{vote.id}")
+      card_html = render(card)
+      assert card_html =~ "Verified alternate quote"
+      assert card_html =~ "AI Verified"
+      assert card_html =~ "bg-gray-100 text-gray-600"
+      refute card_html =~ "bg-orange-100 text-orange-800"
+
+      show_live
+      |> element("#vote-component-#{vote.id} button[aria-label='Next quote']")
+      |> render_click()
+
+      card_html = render(card)
+      assert card_html =~ "Disputed primary quote"
+      assert card_html =~ "bg-orange-100 text-orange-800"
+      refute card_html =~ "AI Verified"
+    end
+
     test "keeps delegate opinions first and ranks verified quotes before disputed ones", %{
       conn: conn,
       statement: statement

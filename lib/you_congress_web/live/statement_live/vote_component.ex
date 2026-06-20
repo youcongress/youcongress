@@ -4,6 +4,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
   alias YouCongress.Delegations
   alias YouCongress.Likes
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.VoteVerifications
   alias YouCongressWeb.Tools.Tooltip
   alias YouCongressWeb.StatementLive.VoteComponent.QuoteMenu
   alias YouCongressWeb.OpinionLive.OpinionComponent
@@ -19,29 +20,36 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
       |> assign_new(:expanded, fn -> false end)
       |> assign_new(:visible_opinion_id, fn -> nil end)
       |> assign_visible_opinion()
-      |> assign_opinion_statement()
+      |> assign_verification_context()
       |> assign_content_variables()
 
     {:ok, socket}
   end
 
-  # The relevance link for the vote's own quote on this statement, used by the
-  # aggregate verification badge. The badge is about the vote's quote (the one the
-  # answer is bound to), not whichever alternate is currently being read.
-  defp assign_opinion_statement(socket) do
-    %{vote: vote, statement: statement} = socket.assigns
-    opinion = vote_opinion(vote)
+  # Keep the badge aligned with the quote currently shown in the carousel.
+  defp assign_verification_context(socket) do
+    %{vote: vote, statement: statement, visible_opinion: opinion} = socket.assigns
 
     opinion_statement =
       if opinion && opinion.source_url && statement do
         YouCongress.OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
       end
 
-    assign(socket, :opinion_statement, opinion_statement)
+    verification_vote = vote_with_opinion_status(vote, opinion)
+
+    socket
+    |> assign(:opinion_statement, opinion_statement)
+    |> assign(:verification_vote, verification_vote)
   end
 
-  defp vote_opinion(%{opinion: %YouCongress.Opinions.Opinion{} = opinion}), do: opinion
-  defp vote_opinion(_), do: nil
+  defp vote_with_opinion_status(nil, _opinion), do: nil
+  defp vote_with_opinion_status(vote, nil), do: vote
+
+  defp vote_with_opinion_status(%{opinion_id: opinion_id} = vote, %{id: opinion_id}), do: vote
+
+  defp vote_with_opinion_status(vote, opinion) do
+    %{vote | verification_status: VoteVerifications.status_for_vote_opinion(vote.id, opinion.id)}
+  end
 
   def handle_event("like", _, %{assigns: %{current_user: nil}} = socket) do
     send(self(), {:put_flash, :warning, "Log in to like."})
@@ -240,6 +248,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
     |> assign(:visible_opinion_id, Enum.at(socket.assigns.opinion_options, index).id)
     |> assign(:expanded, false)
     |> assign_visible_opinion()
+    |> assign_verification_context()
     |> assign_content_variables()
   end
 

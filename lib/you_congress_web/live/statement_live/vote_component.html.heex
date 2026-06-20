@@ -125,13 +125,13 @@
       <%= if @regenerating_opinion_id == @visible_opinion.id do %>
         <img src="/images/loading.gif" alt="Loading" />
       <% end %>
-      <%= if @vote.opinion && @vote.opinion.source_url do %>
+      <%= if @visible_opinion.source_url do %>
         <.live_component
           module={YouCongressWeb.Components.VerificationAggregate}
-          id={"agg-#{@id}-#{@vote.opinion.id}-#{@statement.id}"}
-          opinion={@vote.opinion}
+          id={"agg-#{@id}-#{@visible_opinion.id}-#{@statement.id}"}
+          opinion={@visible_opinion}
           opinion_statement={@opinion_statement}
-          vote={@vote}
+          vote={@verification_vote}
           current_user={@current_user}
           link_to_opinion={@page != :statement_show}
         />
