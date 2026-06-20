@@ -263,17 +263,26 @@ defmodule YouCongress.Halls do
 
     quote_count = Repo.one(from o in quotes_query, select: count(o.id, :distinct))
 
-    top_authors =
-      Repo.all(
-        from o in quotes_query,
-          join: a in YouCongress.Authors.Author,
-          on: a.id == o.author_id,
-          where: not is_nil(a.name),
-          group_by: a.id,
-          order_by: [desc: count(o.id, :distinct), asc: a.name],
-          limit: 6,
-          select: a
-      )
+    top_authors_query =
+      from o in quotes_query,
+        join: a in YouCongress.Authors.Author,
+        on: a.id == o.author_id,
+        where: not is_nil(a.name),
+        group_by: a.id,
+        order_by: [desc: count(o.id, :distinct), asc: a.name],
+        limit: 6,
+        select: a
+
+    top_authors_query =
+      if hall.name == "congreso-es" do
+        from [_o, _opinion_statement, a] in top_authors_query,
+          join: country in assoc(a, :country),
+          where: country.name == "Spain"
+      else
+        top_authors_query
+      end
+
+    top_authors = Repo.all(top_authors_query)
 
     %{
       hall: hall,
