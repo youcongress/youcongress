@@ -278,6 +278,41 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
       assert log =~ "Statement matching job"
     end
 
+    test "stores matched statement ids in the polling job metadata" do
+      quote = sourced_quote()
+      statement = statement_fixture()
+      set_system_user()
+
+      use_static_matcher([
+        %{"statement_id" => "#{statement.id}", "answer" => "for", "comment" => "supports it"},
+        %{"statement_id" => -1, "answer" => "for", "comment" => "not a candidate"}
+      ])
+
+      {:ok, job} =
+        Oban.Testing.with_testing_mode(:manual, fn ->
+          %{
+            "opinion_id" => quote.id,
+            "job_id" => "match-job-#{quote.id}",
+            "statement_ids" => [statement.id]
+          }
+          |> MatchQuoteStatementsPollingWorker.new()
+          |> Oban.insert()
+        end)
+
+      assert :ok =
+               Oban.Testing.with_testing_mode(:manual, fn ->
+                 MatchQuoteStatementsPollingWorker.perform(job)
+               end)
+
+      assert %{
+               "status" => "completed",
+               "matched_count" => 1,
+               "statement_ids" => [statement_id]
+             } = YouCongress.Repo.reload!(job).meta["quote_statement_matching"]
+
+      assert statement_id == statement.id
+    end
+
     test "enqueues relevance verification when linking an already verified quote" do
       system_user = set_system_user()
       quote = sourced_quote()
