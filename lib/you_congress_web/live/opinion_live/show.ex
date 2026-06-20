@@ -706,6 +706,48 @@ defmodule YouCongressWeb.OpinionLive.Show do
     """
   end
 
+  attr :opinion_id, :integer, required: true
+  attr :subject, :string, required: true
+  attr :statement_title, :string, default: nil
+  attr :testid, :string, required: true
+
+  defp verification_report_link(assigns) do
+    href =
+      verification_report_path(
+        assigns.opinion_id,
+        assigns.subject,
+        assigns.statement_title
+      )
+
+    assigns = assign(assigns, :href, href)
+
+    ~H"""
+    <.link
+      href={@href}
+      class="text-xs font-normal text-gray-500 underline hover:text-indigo-600"
+      data-testid={@testid}
+    >
+      Report this
+    </.link>
+    """
+  end
+
+  defp verification_report_path(opinion_id, subject, statement_title) do
+    label = verification_subject_label(subject)
+
+    statement_context =
+      if statement_title do
+        "\nStatement: #{statement_title}"
+      else
+        ""
+      end
+
+    body =
+      "I would like to report an issue with the #{String.downcase(label)} history.#{statement_context}\nOpinion: #{url(~p"/c/#{opinion_id}")}\n\nDetails:\n"
+
+    ~p"/contact?#{%{subject: "Report #{String.downcase(label)}", body: body}}"
+  end
+
   # Verified quotes get a search-friendly title; plain comments and
   # replies are thin pages and get noindex.
   defp assign_page_meta(socket, opinion) do

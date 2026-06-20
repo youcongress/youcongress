@@ -458,7 +458,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
           comment: "Vote answer needs review"
         })
 
-      {:ok, _view, html} = live(conn, ~p"/c/#{opinion.id}")
+      {:ok, view, html} = live(conn, ~p"/c/#{opinion.id}")
 
       assert html =~ "Quote authenticity verification history"
       assert html =~ "Quote authentic"
@@ -466,6 +466,37 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert html =~ "Relation is exact"
       assert html =~ "Vote answer"
       assert html =~ "Vote answer needs review"
+
+      reports = [
+        {"quote-authenticity-report", "Report quote authenticity verification"},
+        {"statement-relation-report-#{statement.id}", "Report statement relation verification"},
+        {"vote-inference-report-#{statement.id}", "Report vote inference verification"}
+      ]
+
+      for {testid, expected_subject} <- reports do
+        assert has_element?(view, ~s|a[data-testid="#{testid}"]|, "Report this")
+
+        [href] =
+          html
+          |> Floki.parse_document!()
+          |> Floki.find(~s|a[data-testid="#{testid}"]|)
+          |> Floki.attribute("href")
+
+        query = href |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
+
+        assert query["subject"] == expected_subject
+        assert query["body"] =~ "/c/#{opinion.id}"
+      end
+
+      relation_href =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find(~s|a[data-testid="statement-relation-report-#{statement.id}"]|)
+        |> Floki.attribute("href")
+        |> List.first()
+
+      relation_query = relation_href |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
+      assert relation_query["body"] =~ statement.title
     end
 
     test "shows quote-specific vote history when the vote is backed by another quote",
