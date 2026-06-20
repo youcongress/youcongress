@@ -25,7 +25,7 @@ defmodule YouCongressWeb.ContactLive do
         <.input
           field={@form[:website]}
           type="url"
-          label="Your website or social media link"
+          label="Your website or social media link (optional)"
           placeholder="https://"
         />
         <.input field={@form[:subject]} type="text" label="Subject" required />
