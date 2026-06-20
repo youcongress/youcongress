@@ -82,7 +82,7 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       add_sourced_quotes = fn statement, author, count ->
         Enum.each(1..count, fn _ ->
-          opinion = opinion_fixture(%{author_id: author.id})
+          opinion = opinion_fixture(%{author_id: author.id, verification_status: :ai_verified})
           {:ok, opinion} = Opinions.update_opinion(opinion, %{twin: false})
           {:ok, _opinion} = Opinions.add_opinion_to_statement(opinion, statement.id)
         end)

@@ -8,8 +8,6 @@ defmodule YouCongress.Halls do
 
   alias YouCongress.Halls.Hall
 
-  @verified_quote_statuses [:ai_verified, :verified, :endorsed]
-
   @doc """
   Returns the list of halls.
 
@@ -261,9 +259,7 @@ defmodule YouCongress.Halls do
         join: os in "opinions_statements",
         on: os.opinion_id == o.id,
         where: os.statement_id in ^statement_ids,
-        where:
-          not is_nil(o.source_url) and o.twin == false and
-            o.verification_status in ^@verified_quote_statuses
+        where: not is_nil(o.source_url) and o.twin == false
 
     quote_count = Repo.one(from o in quotes_query, select: count(o.id, :distinct))
 

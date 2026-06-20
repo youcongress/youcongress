@@ -76,8 +76,8 @@ defmodule YouCongress.HallsTest do
   end
 
   describe "hall_stats/1" do
-    test "counts and features only positively verified quotes" do
-      hall = hall_fixture(%{name: "verified-quotes"})
+    test "counts sourced quotes regardless of verification status" do
+      hall = hall_fixture(%{name: "all-sourced-quotes"})
       statement = statement_fixture()
 
       assert {:ok, _statement} =
@@ -86,13 +86,9 @@ defmodule YouCongress.HallsTest do
                  other_tags: []
                })
 
-      included_authors = [
+      authors = [
         add_quote(statement, "AI Verified Author", :ai_verified),
         add_quote(statement, "Verified Author", :verified),
-        add_quote(statement, "Endorsed Author", :endorsed)
-      ]
-
-      excluded_authors = [
         add_quote(statement, "Unverified Author", nil),
         add_quote(statement, "Disputed Author", :disputed),
         add_quote(statement, "Unverifiable Author", :unverifiable),
@@ -102,10 +98,8 @@ defmodule YouCongress.HallsTest do
       stats = Halls.hall_stats(hall.name)
       top_author_ids = stats.top_authors |> Enum.map(& &1.id) |> MapSet.new()
 
-      assert stats.quote_count == 3
-      assert top_author_ids == included_authors |> Enum.map(& &1.id) |> MapSet.new()
-
-      refute Enum.any?(excluded_authors, &MapSet.member?(top_author_ids, &1.id))
+      assert stats.quote_count == 6
+      assert top_author_ids == authors |> Enum.map(& &1.id) |> MapSet.new()
     end
   end
 
