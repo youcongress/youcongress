@@ -38,7 +38,9 @@ defmodule YouCongressWeb.StatementLiveTest do
 
   defp create_statement(_) do
     statement = statement_fixture()
-    {:ok, _} = HallsStatements.sync!(statement.id, %{main_tag: "ai", other_tags: []})
+
+    {:ok, _} =
+      HallsStatements.sync!(statement.id, %{main_tag: "ai-governance", other_tags: []})
 
     %{statement: statement}
   end
@@ -47,7 +49,9 @@ defmodule YouCongressWeb.StatementLiveTest do
 
   defp create_statement_with_top_opinion(title, likes_count) do
     statement = statement_fixture(%{title: title})
-    {:ok, _} = HallsStatements.sync!(statement.id, %{main_tag: "ai", other_tags: []})
+
+    {:ok, _} =
+      HallsStatements.sync!(statement.id, %{main_tag: "ai-governance", other_tags: []})
 
     author = author_fixture()
     opinion = opinion_fixture(%{author_id: author.id})
@@ -61,6 +65,35 @@ defmodule YouCongressWeb.StatementLiveTest do
 
   describe "Index" do
     setup [:create_statement]
+
+    test "defaults to AI governance and links All to an unrestricted feed", %{conn: conn} do
+      governance_statement = statement_fixture(%{title: "AI governance default card"})
+
+      {:ok, _} =
+        HallsStatements.sync!(governance_statement.id, %{
+          main_tag: "ai-governance",
+          other_tags: []
+        })
+
+      fill_statement_with_quotes(governance_statement.id)
+
+      other_statement = statement_fixture(%{title: "Unrestricted other hall card"})
+      {:ok, _} = HallsStatements.sync!(other_statement.id, %{main_tag: "health", other_tags: []})
+      fill_statement_with_quotes(other_statement.id)
+
+      {:ok, home_view, home_html} = live(conn, ~p"/")
+
+      assert home_html =~ governance_statement.title
+      refute home_html =~ other_statement.title
+      assert has_element?(home_view, "a[href='/'][class*='bg-indigo-600']", "AI governance")
+      assert has_element?(home_view, "a[href='/all']", "All")
+
+      {:ok, all_view, all_html} = live(conn, ~p"/all")
+
+      assert all_html =~ governance_statement.title
+      assert all_html =~ other_statement.title
+      assert has_element?(all_view, "a[href='/all'][class*='bg-indigo-600']", "All")
+    end
 
     test "vote and create opinion", %{conn: conn, statement: statement} do
       # Create an opinion so the statement appears in "New" mode
