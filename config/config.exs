@@ -63,8 +63,8 @@ config :phoenix, :json_library, Jason
 
 oban_plugins =
   [
-    # 3 days = 259,200 seconds
-    {Oban.Plugins.Pruner, max_age: 259_200},
+    # 7 days = 604,800 seconds
+    {Oban.Plugins.Pruner, max_age: 604_800},
     Oban.Plugins.Lifeline
   ]
 
