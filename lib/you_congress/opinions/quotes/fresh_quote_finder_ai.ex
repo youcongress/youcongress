@@ -76,7 +76,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     You are helping populate YouCongress (youcongress.org) with real, sourced quotes from notable public figures and experts.
 
     Objective:
-    Find up to #{limit} fresh quote published in the last #{window_days} days (one week) about AI governance, AI safety, AI's impact on jobs, or AI's broader implications for society, and only if the quote fully matches at least one provided YouCongress statement.
+    Find up to #{limit} fresh quote published in the last #{window_days} days about AI governance, AI safety, AI's impact on jobs, or AI's broader implications for society, and only if the quote fully matches at least one provided YouCongress statement.
 
     Current UTC time: #{DateTime.to_iso8601(now)}
     Freshness window starts at UTC: #{DateTime.to_iso8601(window_start)}

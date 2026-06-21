@@ -13,7 +13,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinder do
               {:ok, :completed, %{quotes: list(map())}} | {:ok, :in_progress} | {:error, any()}
 
   @recent_quote_limit 100
-  @freshness_window_days 7
+  @freshness_window_days 14
 
   def freshness_window_days, do: @freshness_window_days
 
