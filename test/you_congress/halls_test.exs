@@ -125,6 +125,26 @@ defmodule YouCongress.HallsTest do
     end
   end
 
+  describe "all_stats/0" do
+    test "counts sourced quotes that are not attached to a statement" do
+      statement = statement_fixture()
+      linked_author = add_quote(statement, "Linked Author", nil)
+      unlinked_author = author_fixture(%{name: "Unlinked Author"})
+
+      unlinked_quote = opinion_fixture(%{author_id: unlinked_author.id})
+      assert {:ok, _quote} = Opinions.update_opinion(unlinked_quote, %{twin: false})
+
+      stats = Halls.all_stats()
+
+      assert stats.quote_count == 2
+      assert stats.statement_count == 1
+
+      assert stats.top_authors
+             |> Enum.map(& &1.id)
+             |> MapSet.new() == MapSet.new([linked_author.id, unlinked_author.id])
+    end
+  end
+
   defp add_quote(statement, author_name, verification_status, author_attrs \\ %{}) do
     author = author_fixture(Map.put(author_attrs, :name, author_name))
 
