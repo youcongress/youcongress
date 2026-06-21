@@ -235,7 +235,11 @@ defmodule YouCongress.Halls do
           select: %{id: s.id, slug: s.slug, title: s.title}
       )
 
-    build_stats(%Hall{name: "all"}, statements)
+    quotes_query =
+      from o in YouCongress.Opinions.Opinion,
+        where: not is_nil(o.source_url) and o.twin == false
+
+    build_stats(%Hall{name: "all"}, statements, quotes_query)
   end
 
   defp build_hall_stats(hall) do
@@ -248,10 +252,6 @@ defmodule YouCongress.Halls do
           select: %{id: s.id, slug: s.slug, title: s.title}
       )
 
-    build_stats(hall, statements)
-  end
-
-  defp build_stats(hall, statements) do
     statement_ids = Enum.map(statements, & &1.id)
 
     quotes_query =
@@ -260,6 +260,12 @@ defmodule YouCongress.Halls do
         on: os.opinion_id == o.id,
         where: os.statement_id in ^statement_ids,
         where: not is_nil(o.source_url) and o.twin == false
+
+    build_stats(hall, statements, quotes_query)
+  end
+
+  defp build_stats(hall, statements, quotes_query) do
+    statement_ids = Enum.map(statements, & &1.id)
 
     quote_count = Repo.one(from o in quotes_query, select: count(o.id, :distinct))
 
