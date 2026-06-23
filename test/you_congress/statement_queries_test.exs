@@ -19,9 +19,9 @@ defmodule YouCongress.Statements.StatementQueriesTest do
   end
 
   describe "get_opinion_cards_by_recency/1" do
-    test "only returns statements with at least 20 opinions" do
+    test "only returns statements with at least 15 opinions" do
       statement = statement_fixture()
-      fill_statement_with_quotes(statement.id, 19)
+      fill_statement_with_quotes(statement.id, 14)
 
       refute Enum.any?(
                StatementQueries.get_opinion_cards_by_recency(limit: 20),

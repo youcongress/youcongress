@@ -179,8 +179,8 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorkerTest do
       assert_enqueued(worker: MatchQuoteStatementsWorker)
     end
 
-    test "skips candidates older than one week" do
-      old_date = Date.utc_today() |> Date.add(-8) |> Date.to_iso8601()
+    test "skips candidates older than the freshness window" do
+      old_date = Date.utc_today() |> Date.add(-15) |> Date.to_iso8601()
 
       assert :ok = perform_with_quotes([candidate(%{"date" => old_date})])
 
