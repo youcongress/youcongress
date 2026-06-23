@@ -6,6 +6,7 @@ defmodule YouCongress.Verifications do
   import Ecto.Query, warn: false
   alias YouCongress.Repo
 
+  alias YouCongress.Accounts.Permissions
   alias YouCongress.Verifications.Verification
   alias YouCongress.Opinions.Opinion
   alias YouCongress.VerificationStatus
@@ -20,7 +21,7 @@ defmodule YouCongress.Verifications do
   @doc """
   Creates a verification for an opinion by a user.
   Always inserts a new record to preserve the full history.
-  Enforces that only the opinion author can set "endorsed" status.
+  Enforces that only the opinion author or a verifier can set "endorsed" status.
   """
   def create_verification(attrs) do
     opinion_id = attrs[:opinion_id] || attrs["opinion_id"]
@@ -49,7 +50,7 @@ defmodule YouCongress.Verifications do
     opinion = Repo.get!(Opinion, opinion_id) |> Repo.preload(:author)
     user = Repo.get!(YouCongress.Accounts.User, user_id)
 
-    if opinion.author_id && user.author_id && opinion.author_id == user.author_id do
+    if author_endorsing?(opinion, user) || Permissions.can_verify_opinion?(user) do
       :ok
     else
       {:error, :only_author_can_endorse}
@@ -57,6 +58,10 @@ defmodule YouCongress.Verifications do
   end
 
   defp validate_endorsed(_status, _opinion_id, _user_id), do: :ok
+
+  defp author_endorsing?(opinion, user) do
+    opinion.author_id && user.author_id && opinion.author_id == user.author_id
+  end
 
   defp tap_ok({:ok, result}, fun) do
     fun.(result)

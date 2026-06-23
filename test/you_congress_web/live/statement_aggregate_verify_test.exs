@@ -82,6 +82,24 @@ defmodule YouCongressWeb.StatementAggregateVerifyTest do
              :verified
   end
 
+  test "the statement page aggregate badge says endorsed when all three rows are endorsed",
+       %{conn: conn, statement: statement, vote: vote} do
+    conn = log_in_as_admin(conn)
+    {:ok, view, _html} = live(conn, ~p"/p/#{statement.slug}")
+
+    card = ~s|[data-testid="vote-card-#{vote.id}"]|
+
+    view |> element(~s|#{card} button[phx-click="toggle-dropdown"]|) |> render_click()
+
+    pick_and_save(view, card, "quote", "endorsed", "Author endorsed quote")
+    pick_and_save(view, card, "relevance", "endorsed", "Author endorsed relevance")
+    pick_and_save(view, card, "vote", "endorsed", "Author endorsed vote")
+
+    assert view
+           |> element(~s|#{card} button[phx-click="toggle-dropdown"]|)
+           |> render() =~ "Endorsed"
+  end
+
   test "answer verification follows the displayed alternate quote", %{conn: conn} do
     statement = statement_fixture()
     author = author_fixture()

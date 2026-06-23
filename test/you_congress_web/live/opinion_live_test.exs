@@ -992,6 +992,66 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert vote_verification.comment == nil
     end
 
+    test "admin can mark quote, relation and vote verifications as endorsed from opinion page",
+         %{conn: conn} do
+      admin = admin_fixture()
+      author = author_fixture(%{name: "Quote Author"})
+      conn = log_in_user(conn, admin)
+
+      statement = statement_fixture(%{title: "We should deliberate publicly"})
+
+      opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          user_id: admin.id,
+          content: "A citable quote",
+          source_url: "https://example.com/source",
+          twin: false
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: opinion.id,
+          answer: :for
+        })
+
+      {:ok, view, _html} = live(conn, ~p"/c/#{opinion.id}")
+      card = ~s|[data-testid="statement-verify-#{statement.id}"]|
+
+      btn = fn subject ->
+        ~s|#{card} button[phx-value-subject="#{subject}"][phx-value-status="endorsed"]|
+      end
+
+      view
+      |> element(
+        ~s|#{card} button[data-testid="statement-relation-verification-badge-#{statement.id}"]|
+      )
+      |> render_click()
+
+      assert has_element?(view, btn.("quote"))
+
+      pick_and_save(view, card, "quote", "endorsed", "Author endorsed by email")
+      assert has_element?(view, btn.("relevance"))
+
+      pick_and_save(view, card, "relevance", "endorsed", "Author endorsed relation")
+      assert has_element?(view, btn.("vote"))
+
+      pick_and_save(view, card, "vote", "endorsed", "Author endorsed vote")
+
+      # Drain the parent reload queued by the component before reading cached state.
+      render(view)
+
+      opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+
+      assert Opinions.get_opinion!(opinion.id).verification_status == :endorsed
+      assert opinion_statement.verification_status == :endorsed
+      assert Votes.get_vote!(vote.id).verification_status == :endorsed
+    end
+
     test "can verify the vote even when it is backed by a different quote", %{conn: conn} do
       user = user_fixture(%{role: "moderator"})
       author = author_fixture(%{name: "Quote Author"})

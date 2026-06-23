@@ -37,6 +37,10 @@ defmodule YouCongress.VerificationStatusTest do
       assert VS.aggregate(:endorsed, :verified, :verified) == :verified
     end
 
+    test "all endorsed statuses aggregate to endorsed" do
+      assert VS.aggregate(:endorsed, :endorsed, :endorsed) == :endorsed
+    end
+
     test "any ai_verified step downgrades the aggregate to ai_verified" do
       assert VS.aggregate(:ai_verified, :verified, :verified) == :ai_verified
       assert VS.aggregate(:verified, :ai_verified, :verified) == :ai_verified

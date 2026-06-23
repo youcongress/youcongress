@@ -65,8 +65,8 @@ defmodule YouCongress.VerificationStatus do
   step is positive. A `:disputed` anywhere always wins, so a flagged problem is
   never hidden behind a green badge.
 
-  Returns one of `:disputed`, `:verified`, `:ai_verified`, `:unverifiable` or
-  `:unverified`.
+  Returns one of `:disputed`, `:endorsed`, `:verified`, `:ai_verified`,
+  `:unverifiable` or `:unverified`.
   """
   def aggregate(authenticity, relevance, vote) do
     authenticity = to_atom(authenticity)
@@ -78,6 +78,7 @@ defmodule YouCongress.VerificationStatus do
       not positive?(authenticity) -> pending_label(authenticity)
       not positive?(relevance) -> pending_label(relevance)
       not positive?(vote) -> pending_label(vote)
+      Enum.all?([authenticity, relevance, vote], &(&1 == :endorsed)) -> :endorsed
       Enum.any?([authenticity, relevance, vote], &(&1 == :ai_verified)) -> :ai_verified
       true -> :verified
     end
