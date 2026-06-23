@@ -11,7 +11,7 @@ defmodule YouCongress.Statements.StatementQueries do
   alias YouCongress.Statements.Statement
   alias YouCongress.Statements.OpinionCard
 
-  @home_minimum_opinions 20
+  @home_minimum_opinions 15
 
   @doc """
   Returns one vote per statement, prioritizing:
