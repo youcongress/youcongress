@@ -23,7 +23,7 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
   alias YouCongress.OpinionStatementVerifications
   alias YouCongress.VoteVerifications
 
-  @row_statuses ~w(verified disputed unverifiable unverified)a
+  @row_statuses ~w(verified endorsed disputed unverifiable unverified)a
 
   def update(assigns, socket) do
     socket =
@@ -316,7 +316,7 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
   end
 
   defp flash_error(:only_author_can_endorse),
-    do: send(self(), {:put_flash, :error, "Only the opinion author can endorse."})
+    do: send(self(), {:put_flash, :error, "Only the opinion author or a verifier can endorse."})
 
   defp flash_error(:quote_not_verified),
     do: send(self(), {:put_flash, :error, "Verify the quote before its relevance or vote."})
@@ -384,12 +384,6 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
     end
   end
 
-  # The author may endorse their own quote (authenticity row only).
-  defp row_options(:quote, %{opinion: opinion, current_user: %{author_id: author_id}})
-       when not is_nil(author_id) do
-    if opinion.author_id == author_id, do: [:endorsed | @row_statuses], else: @row_statuses
-  end
-
   defp row_options(_row, _assigns), do: @row_statuses
 
   defp row_label(:quote), do: "Quote authenticity"
@@ -399,7 +393,7 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
   # --- labels & colors -------------------------------------------------------
 
   defp short_label(:verified), do: "Verify"
-  defp short_label(:endorsed), do: "Endorse"
+  defp short_label(:endorsed), do: "Endorsed"
   defp short_label(:disputed), do: "Dispute"
   defp short_label(:unverifiable), do: "Unverifiable"
   defp short_label(:unverified), do: "Clear"

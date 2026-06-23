@@ -87,7 +87,7 @@ defmodule YouCongress.VerificationsTest do
       assert Opinions.get_opinion!(opinion.id).verification_status == nil
     end
 
-    test "rejects endorsed status when user is not the opinion author" do
+    test "rejects endorsed status when user is neither the opinion author nor a verifier" do
       opinion = opinion_fixture()
       other_user = user_fixture()
 
@@ -98,6 +98,21 @@ defmodule YouCongress.VerificationsTest do
                  status: :endorsed,
                  comment: "Endorsed"
                })
+    end
+
+    test "allows endorsed status when user can verify opinions" do
+      opinion = opinion_fixture()
+      admin = admin_fixture()
+
+      assert {:ok, %Verification{status: :endorsed}} =
+               Verifications.create_verification(%{
+                 opinion_id: opinion.id,
+                 user_id: admin.id,
+                 status: :endorsed,
+                 comment: "Author endorsed by email"
+               })
+
+      assert Opinions.get_opinion!(opinion.id).verification_status == :endorsed
     end
 
     test "allows endorsed status when user is the opinion author" do

@@ -23,7 +23,7 @@ defmodule YouCongressWeb.Components.VerificationBadge do
   alias YouCongress.OpinionStatementVerifications
   alias YouCongress.VoteVerifications
 
-  @statuses ~w(verified disputed unverifiable unverified)a
+  @statuses ~w(verified endorsed disputed unverifiable unverified)a
 
   def update(assigns, socket) do
     {subject_type, subject} = resolve_subject(assigns)
@@ -205,7 +205,7 @@ defmodule YouCongressWeb.Components.VerificationBadge do
         |> close_dropdown()
 
       {:error, :only_author_can_endorse} ->
-        send(self(), {:put_flash, :error, "Only the opinion author can endorse."})
+        send(self(), {:put_flash, :error, "Only the opinion author or a verifier can endorse."})
         close_dropdown(socket)
 
       {:error, _} ->
@@ -257,12 +257,6 @@ defmodule YouCongressWeb.Components.VerificationBadge do
     |> assign(:show_dropdown, false)
     |> assign(:selected_status, nil)
     |> assign(:comment, "")
-  end
-
-  # Only an opinion's own author may endorse it; relevance/vote have no endorse.
-  defp statuses_for(:opinion, %{author_id: author_id}, %{author_id: author_id})
-       when not is_nil(author_id) do
-    [:endorsed | @statuses]
   end
 
   defp statuses_for(_subject_type, _subject, _current_user), do: @statuses

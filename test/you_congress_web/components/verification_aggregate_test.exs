@@ -65,6 +65,20 @@ defmodule YouCongressWeb.Components.VerificationAggregateTest do
     refute html =~ "verify relevance first"
   end
 
+  test "shows endorsed as an admin action for quote, relevance and vote rows" do
+    html =
+      render_badge(%{
+        opinion: %Opinion{id: 1, author_id: 2, verification_status: :verified},
+        opinion_statement: %OpinionStatement{id: 5, verification_status: :verified},
+        vote: %Vote{id: 9, opinion_id: 1, verification_status: :verified}
+      })
+
+    assert html =~ ~s|phx-value-subject="quote" phx-value-status="endorsed"|
+    assert html =~ ~s|phx-value-subject="relevance" phx-value-status="endorsed"|
+    assert html =~ ~s|phx-value-subject="vote" phx-value-status="endorsed"|
+    assert html =~ "Endorsed"
+  end
+
   test "shows Verified only when all three are positive" do
     html =
       render_badge(%{
@@ -74,6 +88,17 @@ defmodule YouCongressWeb.Components.VerificationAggregateTest do
       })
 
     assert html =~ "Verified"
+  end
+
+  test "shows Endorsed when all three dimensions are endorsed" do
+    html =
+      render_badge(%{
+        opinion: %Opinion{id: 1, author_id: 2, verification_status: :endorsed},
+        opinion_statement: %OpinionStatement{id: 5, verification_status: :endorsed},
+        vote: %Vote{id: 9, opinion_id: 1, verification_status: :endorsed}
+      })
+
+    assert html =~ "Endorsed"
   end
 
   test "disputed anywhere shows Disputed" do
