@@ -3,6 +3,7 @@ defmodule YouCongress.OpinionsTest do
   use Oban.Testing, repo: YouCongress.Repo
 
   import YouCongress.AccountsFixtures
+  import YouCongress.AuthorsFixtures
   import YouCongress.OpinionsFixtures
   import YouCongress.StatementsFixtures
   import YouCongress.VotesFixtures
@@ -17,6 +18,83 @@ defmodule YouCongress.OpinionsTest do
   alias YouCongress.Workers.VerificationWorker
 
   @embedding_dimensions 1536
+
+  describe "author endorsements" do
+    test "creating a human-authored opinion marks it as endorsed" do
+      user = user_fixture()
+
+      assert {:ok, %{opinion: opinion}} =
+               Opinions.create_opinion(%{
+                 content: "I endorse this comment",
+                 author_id: user.author_id,
+                 user_id: user.id,
+                 twin: false
+               })
+
+      assert opinion.verification_status == :endorsed
+
+      assert [%{status: :endorsed, user_id: user_id}] =
+               Verifications.list_verifications(opinion_id: opinion.id)
+
+      assert user_id == user.id
+    end
+
+    test "creating an opinion for another author does not auto-endorse it" do
+      creator = user_fixture()
+      author = author_fixture()
+
+      assert {:ok, %{opinion: opinion}} =
+               Opinions.create_opinion(%{
+                 content: "A quote added by someone else",
+                 author_id: author.id,
+                 user_id: creator.id,
+                 twin: false
+               })
+
+      assert opinion.verification_status == nil
+      assert Verifications.list_verifications(opinion_id: opinion.id) == []
+    end
+
+    test "modifying an opinion as its author marks it as endorsed" do
+      author_user = user_fixture()
+      creator = user_fixture()
+
+      {:ok, %{opinion: opinion}} =
+        Opinions.create_opinion(%{
+          content: "Original wording",
+          author_id: author_user.author_id,
+          user_id: creator.id,
+          twin: true
+        })
+
+      assert {:ok, updated} =
+               Opinions.update_opinion(
+                 opinion,
+                 %{content: "I stand by this wording"},
+                 actor_user: author_user
+               )
+
+      assert updated.verification_status == :endorsed
+    end
+
+    test "adding a human-authored opinion to a statement endorses the relation" do
+      user = user_fixture()
+      statement = statement_fixture()
+
+      {:ok, %{opinion: opinion}} =
+        Opinions.create_opinion(%{
+          content: "This is my statement-specific comment",
+          author_id: user.author_id,
+          user_id: user.id,
+          twin: false
+        })
+
+      assert {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement, user.id)
+      opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+
+      assert opinion_statement.verification_status == :endorsed
+    end
+  end
 
   describe "date metadata" do
     test "formats dates for display according to their precision" do

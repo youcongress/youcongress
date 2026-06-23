@@ -4,6 +4,7 @@ defmodule YouCongress.OpinionsStatements do
   """
 
   import Ecto.Query, warn: false
+  alias YouCongress.Endorsements
   alias YouCongress.Repo
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
@@ -73,6 +74,7 @@ defmodule YouCongress.OpinionsStatements do
 
     with {:ok, opinion_statement} <- result do
       sync_opinions_count(opinion_statement.statement_id)
+      Endorsements.endorse_opinion_statement(opinion_statement, opinion_statement.user_id)
       maybe_enqueue_relevance_verification(opinion_statement)
       {:ok, opinion_statement}
     end

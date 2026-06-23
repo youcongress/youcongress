@@ -6,6 +6,7 @@ defmodule YouCongress.Votes do
   import Ecto.Query, warn: false
 
   alias YouCongress.DelegationVotes
+  alias YouCongress.Endorsements
   alias YouCongress.Opinions
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Votes.Vote
@@ -398,9 +399,12 @@ defmodule YouCongress.Votes do
 
   """
   def create_vote(attrs \\ %{}) do
+    user_id = endorsement_user_id(attrs)
+
     %Vote{}
     |> Vote.changeset(attrs)
     |> Repo.insert()
+    |> maybe_endorse_vote(user_id)
     |> maybe_refresh_vote_side_effects_after_create()
   end
 
@@ -417,9 +421,12 @@ defmodule YouCongress.Votes do
 
   """
   def update_vote(%Vote{} = vote, attrs) do
+    user_id = endorsement_user_id(attrs)
+
     vote
     |> Vote.changeset(attrs)
     |> Repo.update()
+    |> maybe_endorse_vote(user_id)
     |> maybe_refresh_vote_side_effects_after_update(vote)
   end
 
@@ -782,6 +789,17 @@ defmodule YouCongress.Votes do
   end
 
   defp maybe_refresh_vote_side_effects_after_update(result, _vote), do: result
+
+  defp maybe_endorse_vote({:ok, %Vote{} = vote} = result, user_id) do
+    Endorsements.endorse_vote(vote, user_id)
+    result
+  end
+
+  defp maybe_endorse_vote(result, _user_id), do: result
+
+  defp endorsement_user_id(attrs) when is_map(attrs) do
+    Map.get(attrs, :user_id) || Map.get(attrs, "user_id")
+  end
 
   # When a vote starts pointing at a different opinion, its prior verifications
   # no longer apply. Recomputing scopes the cached status to the new opinion.

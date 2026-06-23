@@ -76,6 +76,9 @@ defmodule YouCongress.VoteVerifications do
       opinion.author_id != vote.author_id ->
         {:error, :quote_author_mismatch}
 
+      is_nil(opinion.source_url) ->
+        :ok
+
       !VerificationStatus.positive?(opinion && opinion.verification_status) ->
         {:error, :quote_not_verified}
 

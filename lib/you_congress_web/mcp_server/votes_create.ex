@@ -34,7 +34,7 @@ defmodule YouCongressWeb.MCPServer.VotesCreate do
     with {:ok, user} <- user_result,
          :ok <- ensure_permission(author_id, user),
          :ok <- ensure_vote_absent(statement_id, author_id),
-         {:ok, vote} <- Votes.create_vote(attrs) do
+         {:ok, vote} <- Votes.create_vote(Map.put(attrs, :user_id, user.id)) do
       data = %{vote: take_fields(vote)}
       {:reply, Response.json(Response.tool(), data), frame}
     else

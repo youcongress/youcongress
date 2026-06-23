@@ -316,6 +316,7 @@ defmodule YouCongressWeb.XAuthController do
       statement_id: vote_data["statement_id"],
       answer: String.to_existing_atom(vote_data["answer"]),
       author_id: user.author_id,
+      user_id: user.id,
       direct: true
     })
   rescue

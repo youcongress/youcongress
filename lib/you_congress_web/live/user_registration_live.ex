@@ -422,6 +422,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
             statement_id: pending_vote_statement_id(vote_data),
             answer: pending_vote_answer(vote_data),
             author_id: author.id,
+            user_id: user.id,
             direct: true
           })
         end)
