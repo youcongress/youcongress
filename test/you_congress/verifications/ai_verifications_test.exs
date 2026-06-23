@@ -669,5 +669,34 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
       {:ok, _opinion} = Opinions.update_opinion(opinion, %{author_id: other_author.id})
       assert_received {:submitted, :quote, _}
     end
+
+    test "does not re-verify when the author edits and endorses their own quote" do
+      use_verifier(MessageVerifier)
+      put_env_restore(:verification_test_pid, self())
+
+      user = user_fixture()
+
+      {:ok, %{opinion: opinion}} =
+        Opinions.create_opinion(%{
+          content: "original",
+          source_url: "https://example.com/q",
+          twin: false,
+          author_id: user.author_id,
+          user_id: user.id
+        })
+
+      # The create itself still submits a quote verification.
+      assert_received {:submitted, :quote, _}
+
+      assert {:ok, updated} =
+               Opinions.update_opinion(
+                 opinion,
+                 %{content: "author corrected wording"},
+                 actor_user: user
+               )
+
+      assert updated.verification_status == :endorsed
+      refute_received {:submitted, :quote, _}
+    end
   end
 end

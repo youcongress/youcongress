@@ -247,12 +247,13 @@ defmodule YouCongress.Opinions do
 
   # Re-verify a quote only when quote identity/evidence fields changed (not on count-only updates).
   defp maybe_reverify_quote_on_update(
-         {:ok, %Opinion{source_url: source_url, id: id}},
+         {:ok, %Opinion{source_url: source_url, id: id} = opinion},
          changeset,
          opts
        )
        when not is_nil(source_url) do
-    if Enum.any?(@quote_reverification_fields, &Map.has_key?(changeset.changes, &1)) do
+    if quote_reverification_field_changed?(changeset) &&
+         not author_endorsed_update?(opinion, changeset, opts) do
       enqueue_quote_verification(id, opts)
     end
 
@@ -719,6 +720,17 @@ defmodule YouCongress.Opinions do
 
   defp endorsement_field_changed?(changeset) do
     Enum.any?(@quote_reverification_fields ++ [:twin], &Map.has_key?(changeset.changes, &1))
+  end
+
+  defp quote_reverification_field_changed?(changeset) do
+    Enum.any?(@quote_reverification_fields, &Map.has_key?(changeset.changes, &1))
+  end
+
+  defp author_endorsed_update?(opinion, changeset, opts) do
+    actor_user = opts[:actor_user] || value_from_attrs(changeset.params || %{}, :user_id)
+    user = Endorsements.get_user(actor_user)
+
+    Endorsements.author_user?(user, opinion)
   end
 
   defp value_from_attrs(attrs, key) when is_map(attrs) do
