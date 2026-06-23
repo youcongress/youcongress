@@ -143,6 +143,7 @@ defmodule YouCongressWeb.HomeLive.Index do
            statement_id: String.to_integer(statement_id),
            answer: answer,
            author_id: current_user.author_id,
+           user_id: current_user.id,
            direct: true
          }) do
       {:ok, _vote} ->

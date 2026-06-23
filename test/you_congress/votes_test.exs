@@ -42,6 +42,53 @@ defmodule YouCongress.VotesTest do
       assert {:ok, %Vote{}} = Votes.create_vote(valid_attrs)
     end
 
+    test "create_vote/1 by the author marks the vote answer as endorsed" do
+      user = user_fixture()
+      statement = statement_fixture()
+
+      assert {:ok, %Vote{} = vote} =
+               Votes.create_vote(%{
+                 author_id: user.author_id,
+                 user_id: user.id,
+                 statement_id: statement.id,
+                 answer: :for,
+                 direct: true
+               })
+
+      assert Votes.get_vote!(vote.id).verification_status == :endorsed
+    end
+
+    test "update_vote/2 by the author marks an unsourced comment vote as endorsed" do
+      user = user_fixture()
+      statement = statement_fixture()
+
+      opinion =
+        opinion_fixture(%{
+          author_id: user.author_id,
+          user_id: user.id,
+          source_url: nil,
+          twin: false
+        })
+
+      vote =
+        vote_fixture(%{
+          author_id: user.author_id,
+          statement_id: statement.id,
+          answer: :abstain,
+          direct: true
+        })
+
+      assert {:ok, %Vote{} = vote} =
+               Votes.update_vote(vote, %{
+                 opinion_id: opinion.id,
+                 user_id: user.id,
+                 answer: :for,
+                 twin: false
+               })
+
+      assert Votes.get_vote!(vote.id).verification_status == :endorsed
+    end
+
     test "create_vote/1 enqueues delegated vote refresh jobs for direct votes" do
       delegate = author_fixture()
       deleguee = author_fixture()

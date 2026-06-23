@@ -146,13 +146,14 @@ defmodule YouCongressWeb.StatementLive.Index.OpinateComponent do
       "statement_id" => statement.id,
       "author_id" => current_user.author_id,
       "user_id" => current_user.id,
-      "verification_status" => :verified,
+      "verification_status" => :endorsed,
       "twin" => false
     }
 
     opinion = Opinions.get_opinion!(opinion.id, preload: [:statements])
 
-    with {:ok, opinion} <- Opinions.update_opinion(opinion, opinion_params),
+    with {:ok, opinion} <-
+           Opinions.update_opinion(opinion, opinion_params, actor_user: current_user),
          {:ok, vote} <-
            create_or_update_vote(vote, %{
              current_user: current_user,
@@ -249,6 +250,7 @@ defmodule YouCongressWeb.StatementLive.Index.OpinateComponent do
       "author_id" => current_user.author_id,
       "statement_id" => statement.id,
       "opinion_id" => opinion_id,
+      "user_id" => current_user.id,
       "twin" => false
     }
   end

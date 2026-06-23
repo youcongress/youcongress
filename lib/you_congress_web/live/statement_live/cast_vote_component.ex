@@ -195,6 +195,7 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
            statement_id: statement.id,
            answer: response,
            author_id: current_user.author_id,
+           user_id: current_user.id,
            direct: true
          }) do
       {:ok, vote} ->

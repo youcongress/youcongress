@@ -85,7 +85,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
       "content" => content,
       "author_id" => current_user.author_id,
       "user_id" => current_user.id,
-      "verification_status" => :verified,
+      "verification_status" => :endorsed,
       "ancestry" => ancestry
     }
 
@@ -394,7 +394,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
     {:noreply, load_opinion!(socket, socket.assigns.opinion.id)}
   end
 
-  defp create_or_update_vote(_current_user, opinion, statement_id, answer) do
+  defp create_or_update_vote(current_user, opinion, statement_id, answer) do
     alias YouCongress.Votes
 
     answer_atom = String.downcase(answer) |> String.to_existing_atom()
@@ -404,6 +404,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
       statement_id: statement_id,
       answer: answer_atom,
       opinion_id: opinion.id,
+      user_id: current_user.id,
       direct: true,
       twin: false
     }

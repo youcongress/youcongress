@@ -49,7 +49,7 @@ defmodule YouCongressWeb.StatementLive.Show.Comments do
       author_id: current_user.author_id,
       user_id: current_user.id,
       statement_id: statement.id,
-      verification_status: :verified,
+      verification_status: :endorsed,
       twin: false
     }
 
@@ -59,6 +59,7 @@ defmodule YouCongressWeb.StatementLive.Show.Comments do
              statement_id: statement.id,
              author_id: current_user.author_id,
              opinion_id: opinion.id,
+             user_id: current_user.id,
              answer: :abstain
            }) do
       socket =
@@ -99,13 +100,18 @@ defmodule YouCongressWeb.StatementLive.Show.Comments do
       content: opinion_content,
       author_id: current_user_vote.author_id,
       user_id: socket.assigns.current_user.id,
-      verification_status: :verified,
+      verification_status: :endorsed,
       twin: false,
       statement_id: statement.id
     }
 
     with {:ok, %{opinion: opinion}} <- Opinions.create_opinion(args),
-         {:ok, _} <- Votes.update_vote(current_user_vote, %{opinion_id: opinion.id, twin: false}) do
+         {:ok, _} <-
+           Votes.update_vote(current_user_vote, %{
+             opinion_id: opinion.id,
+             user_id: socket.assigns.current_user.id,
+             twin: false
+           }) do
       current_user_vote =
         Votes.get_current_user_vote(statement.id, socket.assigns.current_user.author_id)
 
@@ -124,9 +130,16 @@ defmodule YouCongressWeb.StatementLive.Show.Comments do
   defp update_comment(statement, current_user_vote, opinion, socket) do
     update_twin = !!current_user_vote.twin
 
-    case Opinions.update_opinion(current_user_vote.opinion, %{content: opinion, twin: false}) do
+    case Opinions.update_opinion(current_user_vote.opinion, %{content: opinion, twin: false},
+           actor_user: socket.assigns.current_user
+         ) do
       {:ok, opinion} ->
-        if update_twin, do: Votes.update_vote(current_user_vote, %{twin: false})
+        if update_twin,
+          do:
+            Votes.update_vote(current_user_vote, %{
+              twin: false,
+              user_id: socket.assigns.current_user.id
+            })
 
         current_user_vote =
           Votes.get_current_user_vote(statement.id, socket.assigns.current_user.author_id)

@@ -45,7 +45,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
          {:ok, opinion} <- fetch_opinion(opinion_id),
          {:ok, statement} <- fetch_statement(statement_id),
          {:ok, _} <- Opinions.add_opinion_to_statement(opinion, statement, user.id),
-         {:ok, vote} <- upsert_vote(opinion, statement, normalized_vote_answer) do
+         {:ok, vote} <- upsert_vote(opinion, statement, normalized_vote_answer, user) do
       data = %{
         opinion_id: opinion.id,
         statement_id: statement.id,
@@ -147,12 +147,13 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
 
   defp normalize_vote_answer(_), do: {:error, :invalid_vote_answer}
 
-  defp upsert_vote(opinion, statement, vote_answer) do
+  defp upsert_vote(opinion, statement, vote_answer, user) do
     attrs = %{
       author_id: opinion.author_id,
       statement_id: statement.id,
       opinion_id: opinion.id,
       answer: vote_answer,
+      user_id: user.id,
       direct: true
     }
 
@@ -161,7 +162,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
         Votes.create_vote(attrs)
 
       vote ->
-        update_attrs = Map.take(attrs, [:answer, :direct, :opinion_id])
+        update_attrs = Map.take(attrs, [:answer, :direct, :opinion_id, :user_id])
         Votes.update_vote(vote, update_attrs)
     end
   end

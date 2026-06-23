@@ -208,7 +208,9 @@ defmodule YouCongressWeb.StatementLive.Index do
 
     if socket.assigns.current_user &&
          socket.assigns.current_user.author_id == opinion.author_id do
-      case Opinions.update_opinion(opinion, %{content: content, twin: false}) do
+      case Opinions.update_opinion(opinion, %{content: content, twin: false},
+             actor_user: socket.assigns.current_user
+           ) do
         {:ok, _opinion} ->
           socket =
             socket

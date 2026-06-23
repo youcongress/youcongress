@@ -38,7 +38,7 @@ defmodule YouCongressWeb.MCPServer.VotesEdit do
            Votes.get_by(%{statement_id: statement_id, author_id: author_id}, preload: [:opinion]),
          :ok <- ensure_permission(vote, user),
          :ok <- ensure_vote_editable_by_user(vote, user),
-         {:ok, updated_vote} <- Votes.update_vote(vote, attrs) do
+         {:ok, updated_vote} <- Votes.update_vote(vote, Map.put(attrs, :user_id, user.id)) do
       data = %{vote: take_fields(updated_vote)}
       {:reply, Response.json(Response.tool(), data), frame}
     else

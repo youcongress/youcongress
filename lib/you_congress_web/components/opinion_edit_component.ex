@@ -94,11 +94,13 @@ defmodule YouCongressWeb.OpinionEditComponent do
     opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :statements])
 
     if Permissions.can_edit_opinion?(opinion, socket.assigns[:current_user]) do
-      case Opinions.update_opinion(opinion, opinion_params) do
+      case Opinions.update_opinion(opinion, opinion_params,
+             actor_user: socket.assigns[:current_user]
+           ) do
         {:ok, updated_opinion} ->
           # Update votes if they were changed (only for full form mode)
           if socket.assigns[:show_statement_positions] do
-            update_author_votes(params, opinion)
+            update_author_votes(params, opinion, socket.assigns[:current_user])
           end
 
           # If author was changed, update the associated votes' author_id
@@ -197,7 +199,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
         class="space-y-4"
       >
         <input type="hidden" name="opinion_id" value={@opinion.id} />
-        
+
     <!-- Opinion Content -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -363,33 +365,34 @@ defmodule YouCongressWeb.OpinionEditComponent do
   end
 
   # Private helper functions
-  defp update_author_votes(params, %{author: author, statements: statements})
+  defp update_author_votes(params, %{author: author, statements: statements}, current_user)
        when not is_nil(author) do
-    Enum.each(statements, &process_statement_vote(&1, author, params))
+    Enum.each(statements, &process_statement_vote(&1, author, params, current_user))
   end
 
-  defp update_author_votes(_params, _opinion), do: :ok
+  defp update_author_votes(_params, _opinion, _current_user), do: :ok
 
-  defp process_statement_vote(statement, author, params) do
+  defp process_statement_vote(statement, author, params, current_user) do
     vote_param_key = "vote_#{statement.id}"
 
     if Map.has_key?(params, vote_param_key) do
-      handle_vote_response(params[vote_param_key], statement, author)
+      handle_vote_response(params[vote_param_key], statement, author, current_user)
     end
   end
 
-  defp handle_vote_response("", statement, author) do
+  defp handle_vote_response("", statement, author, _current_user) do
     case Votes.get_by(%{statement_id: statement.id, author_id: author.id}) do
       nil -> :ok
       vote -> Votes.delete_vote(vote)
     end
   end
 
-  defp handle_vote_response(response, statement, author) do
+  defp handle_vote_response(response, statement, author, current_user) do
     Votes.create_or_update(%{
       statement_id: statement.id,
       author_id: author.id,
       answer: response,
+      user_id: current_user && current_user.id,
       direct: true
     })
   end

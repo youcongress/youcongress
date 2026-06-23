@@ -8,6 +8,7 @@ defmodule YouCongress.Opinions do
   alias YouCongress.Repo
 
   alias YouCongress.Embeddings
+  alias YouCongress.Endorsements
   alias YouCongress.Likes
   alias YouCongress.Opinions.ContentEmbedding
   alias YouCongress.Opinions.Opinion
@@ -135,6 +136,7 @@ defmodule YouCongress.Opinions do
   """
   def create_opinion(attrs \\ %{}) do
     attrs = ContentEmbedding.put(attrs, %Opinion{})
+    user_id = value_from_attrs(attrs, :user_id)
 
     result =
       Ecto.Multi.new()
@@ -142,6 +144,7 @@ defmodule YouCongress.Opinions do
       |> enqueue_update_ancestor_counts(attrs["ancestry"])
       |> maybe_enqueue_update_author_public_figure(attrs)
       |> Repo.transaction()
+      |> maybe_endorse_created_opinion(user_id)
 
     maybe_enqueue_quote_verification(result)
     result
@@ -229,7 +232,7 @@ defmodule YouCongress.Opinions do
     result = Repo.update(changeset)
     maybe_update_vote_author_on_opinion_update(result, opinion, changeset)
     maybe_reverify_quote_on_update(result, changeset, opts)
-    result
+    maybe_endorse_updated_opinion(result, changeset, opts)
   end
 
   defp maybe_update_vote_author_on_opinion_update({:ok, %Opinion{} = updated}, opinion, changeset) do
@@ -647,7 +650,10 @@ defmodule YouCongress.Opinions do
         |> Repo.transaction()
 
       case result do
-        {:ok, _} ->
+        {:ok, %{opinion_statement: opinion_statement}} ->
+          Endorsements.endorse_opinion(opinion, user_id, include_existing_context: false)
+          Endorsements.endorse_opinion_statement(opinion_statement, user_id)
+
           {:ok, Repo.preload(opinion, :statements)}
 
         {:error, :opinion_statement, changeset, _} ->
@@ -688,6 +694,35 @@ defmodule YouCongress.Opinions do
     from(o in Opinion, where: o.id == ^opinion_id, select: o.verification_status)
     |> Repo.one()
     |> VerificationStatus.positive?()
+  end
+
+  defp maybe_endorse_created_opinion({:ok, %{opinion: opinion} = changes}, user_id) do
+    Endorsements.endorse_opinion(opinion, user_id, include_existing_context: false)
+
+    {:ok, %{changes | opinion: get_opinion!(opinion.id)}}
+  end
+
+  defp maybe_endorse_created_opinion(result, _user_id), do: result
+
+  defp maybe_endorse_updated_opinion({:ok, %Opinion{} = opinion}, changeset, opts) do
+    actor_user = opts[:actor_user] || value_from_attrs(changeset.params || %{}, :user_id)
+
+    if endorsement_field_changed?(changeset) do
+      Endorsements.endorse_opinion(opinion, actor_user, allow_twin: true)
+      {:ok, get_opinion!(opinion.id)}
+    else
+      {:ok, opinion}
+    end
+  end
+
+  defp maybe_endorse_updated_opinion(result, _changeset, _opts), do: result
+
+  defp endorsement_field_changed?(changeset) do
+    Enum.any?(@quote_reverification_fields ++ [:twin], &Map.has_key?(changeset.changes, &1))
+  end
+
+  defp value_from_attrs(attrs, key) when is_map(attrs) do
+    Map.get(attrs, key) || Map.get(attrs, Atom.to_string(key))
   end
 
   def remove_opinion_from_statement(%Opinion{} = opinion, statement_id)

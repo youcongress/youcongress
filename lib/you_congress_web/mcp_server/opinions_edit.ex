@@ -40,7 +40,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsEdit do
          {:ok, user} <- user_result,
          opinion when not is_nil(opinion) <- Opinions.get_opinion(opinion_id),
          :ok <- ensure_permission(opinion, user),
-         {:ok, _updated_opinion} <- Opinions.update_opinion(opinion, attrs),
+         {:ok, _updated_opinion} <- Opinions.update_opinion(opinion, attrs, actor_user: user),
          :ok <- maybe_update_vote_author(opinion, attrs),
          reloaded <- Opinions.get_opinion!(opinion.id) do
       data = %{opinion: take_fields(reloaded)}

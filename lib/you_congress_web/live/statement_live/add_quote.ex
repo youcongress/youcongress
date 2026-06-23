@@ -317,7 +317,8 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
              statement_id: statement.id,
              author_id: author.id,
              answer: answer,
-             opinion_id: opinion.id
+             opinion_id: opinion.id,
+             user_id: current_user.id
            }) do
       Track.event("Add Quote", current_user)
 
@@ -376,6 +377,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
            Votes.update_vote(vote, %{
              opinion_id: opinion.id,
              answer: answer,
+             user_id: current_user.id,
              twin: false
            }) do
       Track.event("Add Quote", current_user)
