@@ -96,6 +96,8 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert home_html =~ ai_statement.title
       assert home_html =~ other_statement.title
       assert has_element?(home_view, "a[href='/'][class*='bg-indigo-600']", "All")
+      assert has_element?(home_view, "a[href='/h/us-congress']", "🇺🇸 Congress")
+      refute has_element?(home_view, "a[href='/h/congreso-es']")
 
       assert has_element?(
                home_view,

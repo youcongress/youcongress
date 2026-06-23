@@ -18,8 +18,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     {"impact-on-labor", "Impact on labor"},
     {"cern-for-ai", "CERN for AI"},
     {"open-source", "Open Source"},
-    {"us-congress", "🇺🇸 Congress"},
-    {"congreso-es", "🇪🇸 Congreso"}
+    {"us-congress", "🇺🇸 Congress"}
   ]
 
   def default_hall, do: "all"
