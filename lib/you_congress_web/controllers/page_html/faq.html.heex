@@ -98,7 +98,36 @@
         </dt>
         <dd class="mt-4 lg:col-span-7 lg:mt-0">
           <p class="text-base leading-7 text-gray-600">
-            Quotes on YouCongress can be marked as verified once a human reviewer confirms that the quote matches the cited source and is relevant to the policy or claim. Until then, quotes appear as unverified or AI verified.
+            Sourced quotes on YouCongress can be checked across three layers: whether the quote is authentic, whether it is relevant to the policy or claim where it appears, and whether the vote inferred from it is correct. On statement pages, the badge summarizes those checks together.
+          </p>
+          <p class="text-base leading-7 text-gray-600 pt-4">
+            Verification badges can be:
+          </p>
+          <ul class="list-disc pl-5 text-base leading-7 text-gray-600">
+            <li>
+              <strong>Endorsed</strong>: the author personally confirmed the quote, relation, or vote, for example by signing in or by contacting an admin.
+            </li>
+            <li>
+              <strong>Verified</strong>: a human reviewer checked the source and marked the item as correct.
+            </li>
+            <li>
+              <strong>AI Verified</strong>: the automated verifier checked the source and found support for the item.
+            </li>
+            <li>
+              <strong>Disputed</strong>: a reviewer or automated check found a problem, such as a mismatched quote, statement relation, or vote answer.
+            </li>
+            <li>
+              <strong>Unverifiable</strong>: the available source is not enough to confirm or reject the item.
+            </li>
+            <li>
+              <strong>AI Unverifiable</strong>: the automated verifier could not confirm the item, usually because the source was inaccessible or inconclusive.
+            </li>
+            <li>
+              <strong>Unverified</strong>: no current positive, disputed, or unverifiable verification is recorded yet, or a reviewer cleared the status.
+            </li>
+          </ul>
+          <p class="text-base leading-7 text-gray-600 pt-4">
+            A quote can still appear while some checks are pending. Downstream checks, such as relation and vote-answer verification, depend on the quote itself first being confirmed by a positive status like Endorsed, Verified, or AI Verified.
           </p>
           <p class="text-base leading-7 text-gray-600 pt-4">
             Want to help verify quotes? Email us at
