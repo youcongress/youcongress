@@ -39,6 +39,19 @@ defmodule YouCongressWeb.PageControllerTest do
     assert html_response(conn, 200) =~ "Frequently asked questions"
   end
 
+  test "GET /faq explains verification badge states", %{conn: conn} do
+    conn = get(conn, ~p"/faq")
+    html = html_response(conn, 200)
+
+    assert html =~ "Endorsed"
+    assert html =~ "Verified"
+    assert html =~ "AI Verified"
+    assert html =~ "Disputed"
+    assert html =~ "Unverifiable"
+    assert html =~ "AI Unverifiable"
+    assert html =~ "Unverified"
+  end
+
   test "GET /email-login-waiting-list", %{conn: conn} do
     conn = get(conn, ~p"/email-login-waiting-list")
     assert html_response(conn, 200) =~ "Waiting list for email/password login – YouCongress"
