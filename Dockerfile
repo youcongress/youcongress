@@ -102,4 +102,4 @@ USER nobody
 # above and adding an entrypoint. See https://github.com/krallin/tini for details
 # ENTRYPOINT ["/tini", "--"]
 
-CMD ["sh", "-c", "/app/bin/you_congress eval YouCongress.Release.migrate && exec /app/bin/server"]
+CMD ["/app/bin/server"]
