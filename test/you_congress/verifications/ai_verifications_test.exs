@@ -220,6 +220,10 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
       {:ok, "multi_author:#{id}:organisation"}
     end
 
+    def submit(:quote, %{id: id, content: "Wrong declaration quote"}) do
+      {:ok, "multi_author:#{id}:declaration"}
+    end
+
     def submit(:quote, %{id: id}), do: {:ok, "multi_author:#{id}:verified"}
     def submit(subject_type, %{id: id}), do: {:ok, "#{subject_type}:#{id}"}
 
@@ -235,6 +239,9 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
             "Research and Development Corporation",
             "https://en.wikipedia.org/wiki/Research_and_Development_Corporation"
           )
+
+        "declaration" ->
+          correction("AI Safety and Human Values Declaration", "")
 
         "verified" ->
           {:ok, :completed,
@@ -630,6 +637,35 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
       reloaded = Opinions.get_opinion!(opinion.id, preload: [:author])
 
       assert reloaded.author.name == "Research and Development Corporation"
+    end
+
+    test "keeps a declaration title author name that contains and" do
+      use_verifier(MultiAuthorCorrectionVerifier)
+      set_system_user()
+
+      author = author_fixture(%{name: "Wrong Declaration Author"})
+      user = user_fixture(%{author_id: author.id})
+
+      opinion =
+        without_system_user(fn ->
+          {:ok, %{opinion: opinion}} =
+            Opinions.create_opinion(%{
+              content: "Wrong declaration quote",
+              source_url: "https://example.com/wrong-declaration",
+              twin: false,
+              author_id: author.id,
+              user_id: user.id
+            })
+
+          opinion
+        end)
+
+      verify_quote(opinion.id)
+
+      reloaded = Opinions.get_opinion!(opinion.id, preload: [:author])
+
+      assert reloaded.author.name == "AI Safety and Human Values Declaration"
+      assert reloaded.verification_status == :ai_verified
     end
   end
 

@@ -106,7 +106,12 @@ defmodule YouCongress.Verifications.VerifierAI do
 
     Using web_search, confirm the quote is real and verbatim (allowing [...] for
     omitted text and faithful translation), that it is correctly attributed to the
-    author, and that the source URL contains it.
+    author, and that the source URL contains it. Treat named declarations,
+    manifestos, open letters, petitions, collective statements, and similar
+    documents as valid quote authors when the source presents the quoted text as
+    the wording of that document, even if the document has many signers or a
+    broad coalition behind it. Do not dispute a quote merely because the author
+    is a document title rather than a single person or organisation.
 
     #{quote_correction_instructions(allow_correction?)}
 
@@ -275,12 +280,18 @@ defmodule YouCongress.Verifications.VerifierAI do
     when no correction should be applied.
 
     For author corrections, return exactly one author name only when the quote has
-    one individual author, or when an organisation is speaking on its own behalf.
-    If a source lists multiple individual authors/signers and they are not
-    speaking on behalf of an organisation, do not return a correction. Return
-    status "disputed" and explain in the comment that the quote has multiple
-    individual authors, which this platform cannot verify as a single-author
-    quote.
+    one individual author, when an organisation is speaking on its own behalf, or
+    when the source presents the quote as the text of one named document such as a
+    declaration, manifesto, open letter, petition, joint statement, report, or
+    similar collective text. In the document case, use the document title (or the
+    named issuing coalition if that is the canonical attribution) as the author,
+    and use month/year date precision if exact dates conflict.
+
+    If a source merely lists multiple individual authors/signers and does not
+    present a single organisation, coalition, or named document as the quoted
+    author, do not return a correction. Return status "disputed" and explain in
+    the comment that the quote has multiple individual authors, which this
+    platform cannot verify as a single-author quote.
     """
   end
 
@@ -345,7 +356,7 @@ defmodule YouCongress.Verifications.VerifierAI do
                 "name" => %{
                   type: "string",
                   description:
-                    "One corrected author name only: a single individual, or the organisation name when the organisation speaks for itself. Never return a combined list of people."
+                    "One corrected author name only: a single individual, the organisation name when the organisation speaks for itself, or a named declaration/manifesto/open letter/petition/joint statement/report title when the source presents the quote as that document's text. Never return a combined list of people."
                 },
                 "bio" => %{type: "string", description: "Author bio, max 7 words."},
                 "wikipedia_url" => %{type: "string", description: "Author Wikipedia page URL."},
