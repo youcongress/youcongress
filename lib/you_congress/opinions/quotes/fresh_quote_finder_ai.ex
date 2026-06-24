@@ -128,8 +128,8 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     - Only use real, verifiable, verbatim quotes. Never fabricate, paraphrase, or invent attribution.
     - If all quote text is not consecutive, use [...] for omitted text. Do not use more than two [...] in a quote.
     - If the source quote is not in English, translate it to English and keep the meaning faithful.
-    - Do not include quotes from documents, open letters, petitions, or papers with multiple signers unless the named author personally wrote the quoted passage.
-    - The quote must have one clear author: a person or an organisation. Use the media outlet as author only for a signed/official editorial by that outlet.
+    - Documents, open letters, petitions, declarations, manifestos, reports, and similar collective texts are acceptable when the source presents the quote as the wording of one named document or issuing coalition. In that case, use the document title or coalition as the author.
+    - The quote must have one clear author: a person, an organisation, or one named document/issuing coalition. Use the media outlet as author only for a signed/official editorial by that outlet.
 
     Metadata rules:
     - Fill every JSON field. Use an empty string when unavailable.

@@ -156,8 +156,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     - If all quote text is not consecutive, use [...] for omitted text. Do not use more than two [...] in a quote.
     - Quotes should be two or three paragraphs and at least three sentences when the source supports that length, but shorter quotes are acceptable when they clearly answer the statement.
     - If the source quote is not in English, translate it to English and keep the meaning faithful.
-    - Do not include quotes from documents, open letters, petitions, or papers with multiple signers unless the named author personally wrote the quoted passage.
-    - The quote must have exactly one clear author: one person, or one organisation speaking on its own behalf. Never combine multiple people into one author. Use a media outlet as author only for its signed or official editorial.
+    - Documents, open letters, petitions, declarations, manifestos, reports, and similar collective texts are acceptable when the source presents the quote as the wording of one named document or issuing coalition. In that case, use the document title or coalition as the author.
+    - The quote must have exactly one clear author: one person, one organisation speaking on its own behalf, or one named document/issuing coalition. Never combine multiple people into one author. Use a media outlet as author only for its signed or official editorial.
 
     Complete-statement relevance check (must receive "ai_verified"):
     A quote qualifies if it either:

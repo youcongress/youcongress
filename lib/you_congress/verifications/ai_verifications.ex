@@ -377,9 +377,9 @@ defmodule YouCongress.Verifications.AIVerifications do
   defp organization_word?(word) do
     word in ~w(
       agency association bank bureau center centre coalition college commission committee company
-      corporation council department foundation forum government institute laboratory lab ministry
-      office organisation organization parliament partnership press program programme project
-      school society team university union
+      corporation council declaration department foundation forum government institute laboratory lab
+      letter manifesto ministry office organisation organization parliament partnership petition press
+      program programme project report school society statement team university union
     )
   end
 
