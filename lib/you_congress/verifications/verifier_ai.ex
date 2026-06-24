@@ -139,6 +139,7 @@ defmodule YouCongress.Verifications.VerifierAI do
     complete statement.
 
     Statement: #{statement.title}
+    Source URL: #{opinion.source_url || "None provided"}
     Quote:
     \"\"\"
     #{opinion.content}
@@ -149,11 +150,24 @@ defmodule YouCongress.Verifications.VerifierAI do
     - is about something else, but clearly implies that the author supports,
       opposes, or abstains on the COMPLETE statement.
 
-    The author's position on the COMPLETE statement must be clear from the quote.
+    The author's position on the COMPLETE statement must be clear from the quote
+    plus, when a Source URL is provided, the source article's context around the
+    quote. Use web_search to inspect the source page when the quote is abstract,
+    uses shorthand, or refers to "the proposal", "this", "these ideas", or
+    similar context-dependent language.
+
+    Source context may establish what the quote is responding to. For example,
+    if a source article is about a proposal to create AI-run non-human
+    corporations, and the quote criticizes that idea as "programmed impunity" or
+    responsibility shifted onto machines, treat the quote as relevant to a
+    statement about granting AI agents legal personhood as non-human
+    corporations.
+
     Do not accept a quote that only relates to one word, theme, subtopic, or a
-    nearby issue unless it also implies the author's position on the COMPLETE
-    statement. Do not infer a position from general sentiment, party membership,
-    job title, or facts outside the quote.
+    nearby issue unless the quote plus its source context also implies the
+    author's position on the COMPLETE statement. Do not infer a position from
+    general sentiment, party membership, job title, or facts outside the quote
+    and its cited source context.
 
     Choose a status:
     - "ai_verified": the quote is directly about the whole statement, or clearly
@@ -170,8 +184,9 @@ defmodule YouCongress.Verifications.VerifierAI do
        prompt: prompt,
        schema: status_schema(),
        name: "RelevanceVerification",
+       web_search: true,
        system:
-         "You judge whether a quote establishes an author's stance on a policy statement as a whole. Accept direct relevance or clear implication; reject partial or adjacent topics unless they imply a stance on the complete statement."
+         "You judge whether a quote establishes an author's stance on a policy statement as a whole. Use the cited source context to resolve what an abstract or context-dependent quote is about, but do not use unrelated outside facts. Accept direct relevance or clear implication; reject partial or adjacent topics unless they imply a stance on the complete statement."
      }}
   end
 
@@ -400,8 +415,10 @@ defmodule YouCongress.Verifications.VerifierAI do
     end
   end
 
-  # Only quote-authenticity checks need to browse for primary sources; relevance
-  # and vote-answer checks are judged from the quote text and statement alone.
+  # Quote authenticity needs primary-source browsing. Relevance also uses
+  # browsing so the verifier can inspect the cited source context around abstract
+  # or shorthand quotes. Vote-answer checks are judged from the quote text and
+  # statement alone.
   defp maybe_put_web_search(body, true) do
     body
     |> Map.put("tools", [%{"type" => "web_search"}])
