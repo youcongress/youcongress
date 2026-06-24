@@ -10,7 +10,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
   alias YouCongress.Opinions.Quotes.Quotator
   alias YouCongress.Workers.QuotatorWorker
   alias YouCongress.Workers.VerificationWorker
-  alias YouCongress.{Votes, Opinions}
+  alias YouCongress.{Authors, Votes, Opinions}
 
   defp candidate(attrs \\ %{}) do
     Map.merge(
@@ -84,6 +84,68 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
       assert opinion.user_id == user.id
       assert vote.opinion_id == opinion.id
       assert vote.answer == :for
+    end
+
+    test "fills missing metadata on an existing author matched by name" do
+      statement = statement_fixture()
+      user = user_fixture()
+
+      author =
+        author_fixture(%{
+          name: "Verified Policy Expert",
+          bio: nil,
+          twitter_username: nil,
+          wikipedia_url: nil,
+          twin_origin: false
+        })
+
+      assert {:ok, 1} =
+               Quotator.save_quotes_from_job(%{
+                 statement_id: statement.id,
+                 quotes: [candidate()],
+                 user_id: user.id
+               })
+
+      opinion = Opinions.get_by(content: candidate()["quote"])
+      reloaded_author = Authors.get_author!(author.id)
+
+      assert opinion.author_id == author.id
+      assert reloaded_author.bio == "Policy expert"
+      assert reloaded_author.twitter_username == "verifiedexpert"
+
+      assert reloaded_author.wikipedia_url ==
+               "https://en.wikipedia.org/wiki/Verified_Policy_Expert"
+    end
+
+    test "does not overwrite existing author metadata" do
+      statement = statement_fixture()
+      user = user_fixture()
+
+      author =
+        author_fixture(%{
+          name: "Verified Policy Expert",
+          bio: "Existing bio",
+          twitter_username: "existingexpert",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Verified_Policy_Expert",
+          twin_origin: false
+        })
+
+      assert {:ok, 1} =
+               Quotator.save_quotes_from_job(%{
+                 statement_id: statement.id,
+                 quotes: [candidate()],
+                 user_id: user.id
+               })
+
+      opinion = Opinions.get_by(content: candidate()["quote"])
+      reloaded_author = Authors.get_author!(author.id)
+
+      assert opinion.author_id == author.id
+      assert reloaded_author.bio == "Existing bio"
+      assert reloaded_author.twitter_username == "existingexpert"
+
+      assert reloaded_author.wikipedia_url ==
+               "https://en.wikipedia.org/wiki/Verified_Policy_Expert"
     end
 
     test "rejects an unclear vote instead of silently storing it as abstain" do

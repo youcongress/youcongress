@@ -16,6 +16,11 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   alias YouCongress.Workers.QuotatorWorker
 
   @number_of_quotes 5
+  @author_metadata_fields [
+    {"bio", :bio},
+    {"wikipedia_url", :wikipedia_url},
+    {"twitter_username", :twitter_username}
+  ]
   @type quote_item :: map()
 
   @callback find_quotes(
@@ -274,18 +279,80 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
        when wikipedia_url not in [nil, ""] do
     normalized = normalize_author_attrs(attrs)
 
-    case Authors.find_by_wikipedia_url_or_create(normalized) do
-      {:ok, author} -> {:ok, author}
-      {:error, _} -> Authors.find_by_name_or_create(normalized)
-    end
+    find_or_create_author(normalized)
   end
 
   defp upsert_author(%{"name" => _} = attrs) do
     normalized = normalize_author_attrs(attrs)
-    Authors.find_by_name_or_create(normalized)
+    find_or_create_author(normalized)
   end
 
   defp upsert_author(_), do: {:error, :invalid_author}
+
+  defp find_or_create_author(attrs) do
+    case find_existing_author(attrs) do
+      nil -> Authors.create_author(attrs)
+      author -> fill_missing_author_metadata(author, attrs)
+    end
+  end
+
+  defp find_existing_author(attrs) do
+    find_author_by_present(:wikipedia_url, attrs["wikipedia_url"]) ||
+      find_author_by_present(:twitter_username, attrs["twitter_username"]) ||
+      Authors.find_by(:name, attrs["name"])
+  end
+
+  defp find_author_by_present(_field, value) when value in [nil, ""], do: nil
+  defp find_author_by_present(field, value), do: Authors.find_by(field, value)
+
+  defp fill_missing_author_metadata(author, attrs) do
+    updates =
+      @author_metadata_fields
+      |> Enum.reduce(%{}, fn {attr_key, field}, updates ->
+        value = attrs[attr_key]
+
+        if blank?(Map.get(author, field)) and present?(value) and
+             author_metadata_available?(field, value, author.id) do
+          Map.put(updates, attr_key, value)
+        else
+          updates
+        end
+      end)
+
+    if updates == %{} do
+      {:ok, author}
+    else
+      case Authors.update_author(author, updates) do
+        {:ok, author} ->
+          {:ok, author}
+
+        {:error, changeset} ->
+          Logger.warning(
+            "Unable to enrich author #{author.id} from sourced quote metadata: #{inspect(changeset.errors)}"
+          )
+
+          {:ok, author}
+      end
+    end
+  end
+
+  defp author_metadata_available?(:wikipedia_url, value, author_id) do
+    unique_author_metadata_available?(:wikipedia_url, value, author_id)
+  end
+
+  defp author_metadata_available?(:twitter_username, value, author_id) do
+    unique_author_metadata_available?(:twitter_username, value, author_id)
+  end
+
+  defp author_metadata_available?(_field, _value, _author_id), do: true
+
+  defp unique_author_metadata_available?(field, value, author_id) do
+    case Authors.find_by(field, value) do
+      nil -> true
+      %{id: ^author_id} -> true
+      _author -> false
+    end
+  end
 
   defp normalize_author_attrs(attrs) do
     %{
@@ -375,6 +442,12 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   end
 
   defp blank_to_nil(_value), do: nil
+
+  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
+  defp blank?(nil), do: true
+  defp blank?(_value), do: false
+
+  defp present?(value), do: not blank?(value)
 
   defp log_skipped_quote(reason) do
     Logger.info("Skipping sourced quote candidate: #{inspect(reason)}")
