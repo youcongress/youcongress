@@ -1,5 +1,6 @@
 defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
   use YouCongress.DataCase, async: false
+  use Oban.Testing, repo: YouCongress.Repo
 
   import Mock
   import YouCongress.AccountsFixtures
@@ -12,7 +13,10 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
 
   alias YouCongress.Accounts
   alias YouCongress.Opinions
+  alias YouCongress.OpinionsStatements
+  alias YouCongress.Verifications
   alias YouCongress.Votes
+  alias YouCongress.Workers.VerificationWorker
   alias YouCongressWeb.MCPServer.OpinionsCreate
   alias YouCongressWeb.MCPServer.OpinionsDelete
   alias YouCongressWeb.MCPServer.OpinionsEdit
@@ -314,6 +318,79 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       assert vote
       assert vote.answer == :for
       assert vote.opinion_id == opinion.id
+    end
+
+    test "triggers relevance verification by default for verified quotes" do
+      admin = admin_fixture()
+      api_key = api_key_fixture(admin)
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: admin.id,
+          status: :verified,
+          comment: "Authentic"
+        })
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        with_mocked_response_and_key(api_key.token, fn frame ->
+          assert {:reply, {:json, payload}, ^frame} =
+                   OpinionsStatementsAdd.execute(
+                     %{opinion_id: opinion.id, statement_id: statement.id, vote_answer: "For"},
+                     frame
+                   )
+
+          assert payload.attached
+        end)
+
+        opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+
+        assert_enqueued(
+          worker: VerificationWorker,
+          args: %{"subject" => "relevance", "id" => opinion_statement.id}
+        )
+      end)
+    end
+
+    test "skips relevance verification when trigger_relevance_verification is false" do
+      admin = admin_fixture()
+      api_key = api_key_fixture(admin)
+      opinion = opinion_fixture()
+      statement = statement_fixture()
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: admin.id,
+          status: :verified,
+          comment: "Authentic"
+        })
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        with_mocked_response_and_key(api_key.token, fn frame ->
+          assert {:reply, {:json, payload}, ^frame} =
+                   OpinionsStatementsAdd.execute(
+                     %{
+                       opinion_id: opinion.id,
+                       statement_id: statement.id,
+                       vote_answer: "For",
+                       trigger_relevance_verification: false
+                     },
+                     frame
+                   )
+
+          assert payload.attached
+        end)
+
+        opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+
+        refute_enqueued(
+          worker: VerificationWorker,
+          args: %{"subject" => "relevance", "id" => opinion_statement.id}
+        )
+      end)
     end
 
     test "recalculates delegated votes for authors delegating to the opinion author" do

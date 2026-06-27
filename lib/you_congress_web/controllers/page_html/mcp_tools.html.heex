@@ -476,7 +476,9 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
             Link an opinion to a statement and set the author's vote for that statement. Requires: <code class="bg-gray-100 px-1 rounded">opinion_id</code>, <code class="bg-gray-100 px-1 rounded">statement_id</code>,
             <code class="bg-gray-100 px-1 rounded">vote_answer</code>
             ("For", "Against", or "Abstain"). If a vote already exists, it will be updated with the
-            new answer.
+            new answer. Optional:
+            <code class="bg-gray-100 px-1 rounded">trigger_relevance_verification</code>
+            (defaults to <code class="bg-gray-100 px-1 rounded">true</code>).
           </dd>
         </div>
         <div class="pl-4">

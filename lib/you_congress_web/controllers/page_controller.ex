@@ -237,7 +237,7 @@ defmodule YouCongressWeb.PageController do
     - opinions_create — create an opinion; include source_url to make it a quote
     - opinions_edit — edit an opinion
     - opinions_delete — delete an opinion
-    - opinions_statements_add — link an opinion to a statement and set the vote
+    - opinions_statements_add — link an opinion to a statement, set the vote, and optionally trigger relevance verification
     - opinions_statements_remove — unlink an opinion from a statement
 
     Quotes & verification (sourced opinions):
