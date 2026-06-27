@@ -4,6 +4,8 @@ defmodule YouCongress.Authors do
   """
 
   import Ecto.Query, warn: false
+  require Logger
+
   alias YouCongress.Repo
 
   alias YouCongress.Authors.Author
@@ -493,6 +495,86 @@ defmodule YouCongress.Authors do
   end
 
   defp update_author_from_x_profile(%Author{} = author, attrs) do
+    case duplicate_x_identity_author(author, attrs) do
+      nil ->
+        update_author_x_profile(author, attrs)
+
+      %Author{} = old_author ->
+        handle_duplicate_x_identity(author, old_author, attrs)
+    end
+  end
+
+  defp duplicate_x_identity_author(%Author{id: current_author_id}, %{
+         twitter_id_str: twitter_id_str
+       })
+       when is_binary(twitter_id_str) and twitter_id_str != "" do
+    case Repo.get_by(Author, twitter_id_str: twitter_id_str) do
+      %Author{id: ^current_author_id} -> nil
+      %Author{} = author -> author
+      nil -> nil
+    end
+  end
+
+  defp duplicate_x_identity_author(_author, _attrs), do: nil
+
+  defp handle_duplicate_x_identity(
+         %Author{} = current_author,
+         %Author{} = old_author,
+         attrs
+       ) do
+    if author_has_linked_user?(old_author.id) do
+      log_duplicate_x_identity_skip(current_author, old_author)
+      {:ok, current_author}
+    else
+      log_duplicate_x_identity_transfer(current_author, old_author)
+      transfer_x_identity(current_author, old_author, attrs)
+    end
+  end
+
+  defp author_has_linked_user?(author_id) do
+    Repo.exists?(from(u in User, where: u.author_id == ^author_id))
+  end
+
+  defp log_duplicate_x_identity_transfer(%Author{} = current_author, %Author{} = old_author) do
+    Logger.warning(
+      "Reassigning duplicate X identity twitter_id_str=#{inspect(old_author.twitter_id_str)} " <>
+        "from old_author_id=#{old_author.id} " <>
+        "old_twitter_username=#{inspect(old_author.twitter_username)} " <>
+        "to current_author_id=#{current_author.id} " <>
+        "current_twitter_username=#{inspect(current_author.twitter_username)}"
+    )
+  end
+
+  defp log_duplicate_x_identity_skip(%Author{} = current_author, %Author{} = old_author) do
+    Logger.warning(
+      "Skipped duplicate X identity reassignment twitter_id_str=#{inspect(old_author.twitter_id_str)} " <>
+        "from old_author_id=#{old_author.id} " <>
+        "old_twitter_username=#{inspect(old_author.twitter_username)} " <>
+        "to current_author_id=#{current_author.id} " <>
+        "current_twitter_username=#{inspect(current_author.twitter_username)} " <>
+        "to avoid changing X login ownership"
+    )
+  end
+
+  defp transfer_x_identity(%Author{} = current_author, %Author{} = old_author, attrs) do
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update_all(
+      :clear_old_author_x_identity,
+      from(a in Author, where: a.id == ^old_author.id),
+      set: [twitter_id_str: nil, twitter_username: nil, updated_at: now]
+    )
+    |> Ecto.Multi.update(:current_author, Author.changeset(current_author, attrs))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{current_author: updated_author}} -> {:ok, updated_author}
+      {:error, :current_author, changeset, _changes} -> {:error, changeset}
+      {:error, _step, reason, _changes} -> {:error, reason}
+    end
+  end
+
+  defp update_author_x_profile(%Author{} = author, attrs) do
     author
     |> Author.changeset(attrs)
     |> Repo.update()

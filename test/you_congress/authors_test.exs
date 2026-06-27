@@ -2,8 +2,12 @@ defmodule YouCongress.AuthorsTest do
   use YouCongress.DataCase
   use Oban.Testing, repo: YouCongress.Repo
 
+  import ExUnit.CaptureLog
+  import Mock
+
   alias YouCongress.Authors
   alias YouCongress.Workers.SetAuthorXProfileDataWorker
+  alias YouCongress.X.XAPI
 
   describe "authors" do
     alias YouCongress.Authors.Author
@@ -623,6 +627,121 @@ defmodule YouCongress.AuthorsTest do
       assert Authors.set_x_profile_data(author) == {:error, :no_twitter_username}
     end
 
+    test "set_x_profile_data/1 reassigns a duplicate X id from an unlinked stale author" do
+      old_author =
+        author_fixture(
+          twitter_username: "stale_username",
+          twitter_id_str: "stable-x-id"
+        )
+
+      current_author =
+        author_fixture(
+          twitter_username: "current_username",
+          twitter_id_str: nil,
+          profile_image_url: nil,
+          description: nil,
+          followers_count: nil,
+          friends_count: nil,
+          verified: nil,
+          location: nil,
+          google_id: nil
+        )
+
+      image_url = "https://pbs.twimg.com/profile_images/123/current_400x400.jpg"
+
+      with_mock XAPI,
+        fetch_user_by_username: fn "current_username" ->
+          {:ok,
+           %{
+             twitter_id_str: "stable-x-id",
+             profile_image_url: image_url,
+             description: "Current X bio",
+             followers_count: 120,
+             friends_count: 12,
+             verified: true,
+             location: "Madrid",
+             google_id: "google-current"
+           }}
+        end do
+        log =
+          capture_warning_log(fn ->
+            assert {:ok, updated_author} = Authors.set_x_profile_data(current_author)
+            assert updated_author.id == current_author.id
+          end)
+
+        assert log =~ "Reassigning duplicate X identity"
+        assert log =~ "stable-x-id"
+        assert log =~ "old_author_id=#{old_author.id}"
+        assert log =~ "current_author_id=#{current_author.id}"
+
+        old_author = Authors.get_author!(old_author.id)
+        current_author = Authors.get_author!(current_author.id)
+
+        assert old_author.twitter_id_str == nil
+        assert old_author.twitter_username == nil
+
+        assert current_author.twitter_username == "current_username"
+        assert current_author.twitter_id_str == "stable-x-id"
+        assert current_author.profile_image_url == image_url
+        assert current_author.description == "Current X bio"
+        assert current_author.followers_count == 120
+        assert current_author.friends_count == 12
+        assert current_author.verified == true
+        assert current_author.location == "Madrid"
+        assert current_author.google_id == "google-current"
+      end
+    end
+
+    test "set_x_profile_data/1 skips duplicate X id transfer when old author has a linked user" do
+      old_author =
+        author_fixture(
+          twitter_username: "linked_old_username",
+          twitter_id_str: "linked-x-id"
+        )
+
+      user_for_author(old_author)
+
+      current_author =
+        author_fixture(
+          twitter_username: "linked_current_username",
+          twitter_id_str: nil,
+          profile_image_url: nil,
+          description: nil
+        )
+
+      with_mock XAPI,
+        fetch_user_by_username: fn "linked_current_username" ->
+          {:ok,
+           %{
+             twitter_id_str: "linked-x-id",
+             profile_image_url: "https://pbs.twimg.com/profile_images/123/linked_400x400.jpg",
+             description: "Should not be saved"
+           }}
+        end do
+        log =
+          capture_warning_log(fn ->
+            assert {:ok, returned_author} = Authors.set_x_profile_data(current_author)
+            assert returned_author.id == current_author.id
+          end)
+
+        assert log =~ "Skipped duplicate X identity reassignment"
+        assert log =~ "linked-x-id"
+        assert log =~ "old_author_id=#{old_author.id}"
+        assert log =~ "current_author_id=#{current_author.id}"
+
+        old_author = Authors.get_author!(old_author.id)
+        current_author = Authors.get_author!(current_author.id)
+
+        assert old_author.twitter_id_str == "linked-x-id"
+        assert old_author.twitter_username == "linked_old_username"
+
+        assert current_author.twitter_id_str == nil
+        assert current_author.twitter_username == "linked_current_username"
+        assert current_author.profile_image_url == nil
+        assert current_author.description == nil
+      end
+    end
+
     defp user_for_author(author) do
       %User{}
       |> User.twitter_registration_changeset(%{
@@ -630,6 +749,17 @@ defmodule YouCongress.AuthorsTest do
         "author_id" => author.id
       })
       |> Repo.insert!()
+    end
+
+    defp capture_warning_log(fun) do
+      previous_level = Logger.level()
+      Logger.configure(level: :warning)
+
+      try do
+        capture_log(fun)
+      after
+        Logger.configure(level: previous_level)
+      end
     end
   end
 
