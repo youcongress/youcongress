@@ -179,40 +179,27 @@
     !@current_user || (@current_user.author_id != @vote.author_id && "pb-4")
   ]}>
     <%= if @visible_opinion && @show_opinion do %>
-      <%= if @page == :author_show do %>
-        <div>
-          <.link
-            href={"/p/#{@statement.slug}"}
-            class="text-xs text-gray-500 hover:text-indigo-600"
-          >
-            {@statement.opinions_count} {if @statement.opinions_count == 1,
-              do: "opinion",
-              else: "opinions"}
-          </.link>
-        </div>
-      <% else %>
-        <div>
-          <span class="pr-2">
-            <OpinionComponent.like_icon opinion={@visible_opinion} liked={@liked} target={@myself} />
-          </span>
-          <span class="pr-2">
-            <OpinionComponent.comment_icon opinion={@visible_opinion} />
-          </span>
-          <OpinionComponent.x_icon
-            author={@author}
-            statement={@statement}
-            opinion={@visible_opinion}
-            current_user={@current_user}
-          />
-          <span
-            :if={@page != :statements_index || @added_at_position == :actions}
-            data-testid={"added-at-inline-#{@vote.id}"}
-            class="text-xs text-gray-500 pl-3"
-          >
-            added {TimeAgo.short_time(added_at(@visible_opinion, @vote))}
-          </span>
-        </div>
-      <% end %>
+      <div>
+        <span class="pr-2">
+          <OpinionComponent.like_icon opinion={@visible_opinion} liked={@liked} target={@myself} />
+        </span>
+        <span class="pr-2">
+          <OpinionComponent.comment_icon opinion={@visible_opinion} />
+        </span>
+        <OpinionComponent.x_icon
+          author={@author}
+          statement={@statement}
+          opinion={@visible_opinion}
+          current_user={@current_user}
+        />
+        <span
+          :if={@page != :statements_index || @added_at_position == :actions}
+          data-testid={"added-at-inline-#{@vote.id}"}
+          class="text-xs text-gray-500 pl-3"
+        >
+          added {TimeAgo.short_time(added_at(@visible_opinion, @vote))}
+        </span>
+      </div>
     <% end %>
     <div>
       <%= if @delegable && (!@current_user || (@author.id != @current_user.author_id)) do %>

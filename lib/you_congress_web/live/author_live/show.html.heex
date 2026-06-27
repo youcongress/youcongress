@@ -145,6 +145,14 @@
                 {vote.statement.title}
               </.link>
             </h2>
+            <.link
+              href={~p"/p/#{vote.statement.slug}"}
+              class="text-xs text-gray-500 hover:text-indigo-600"
+            >
+              {vote.statement.opinions_count} {if vote.statement.opinions_count == 1,
+                do: "opinion",
+                else: "opinions"}
+            </.link>
           </div>
 
           <div class="mb-4">
