@@ -72,7 +72,7 @@ defmodule YouCongress.X.XAPI do
   """
   def fetch_user_info(access_token) do
     url =
-      "https://api.twitter.com/2/users/me?user.fields=id,username,name,profile_image_url,description,public_metrics,verified"
+      "https://api.twitter.com/2/users/me?user.fields=id,username,name,profile_image_url,description,public_metrics,verified,location"
 
     case Req.get(
            url,
@@ -100,7 +100,7 @@ defmodule YouCongress.X.XAPI do
   def fetch_user_by_username(username) do
     with {:ok, token} <- app_bearer_token() do
       url =
-        "https://api.twitter.com/2/users/by/username/#{username}?user.fields=id,username,name,profile_image_url,description,public_metrics,verified"
+        "https://api.twitter.com/2/users/by/username/#{username}?user.fields=id,username,name,profile_image_url,description,public_metrics,verified,location"
 
       case Req.get(
              url,
@@ -146,7 +146,9 @@ defmodule YouCongress.X.XAPI do
       description: data["description"],
       followers_count: get_in(data, ["public_metrics", "followers_count"]),
       friends_count: get_in(data, ["public_metrics", "following_count"]),
-      verified: data["verified"] || false
+      verified: data["verified"] || false,
+      location: data["location"],
+      google_id: data["google_id"]
     }
   end
 

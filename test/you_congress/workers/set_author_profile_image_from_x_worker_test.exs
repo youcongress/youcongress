@@ -10,20 +10,66 @@ defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorkerTest do
   alias YouCongress.X.XAPI
 
   describe "perform/1" do
-    test "sets the author's profile_image_url from the X API" do
+    test "sets the author's X profile fields from the X API" do
       author = author_fixture(twitter_username: "some_username")
       image_url = "https://pbs.twimg.com/profile_images/123/abc_400x400.jpg"
 
       with_mock XAPI,
         fetch_user_by_username: fn "some_username" ->
-          {:ok, %{profile_image_url: image_url}}
+          {:ok,
+           %{
+             twitter_id_str: "123456",
+             profile_image_url: image_url,
+             description: "X bio",
+             followers_count: 42,
+             friends_count: 24,
+             verified: true,
+             location: "Madrid",
+             google_id: "google-123"
+           }}
         end do
         assert :ok =
                  SetAuthorProfileImageFromXWorker.perform(%Oban.Job{
                    args: %{"author_id" => author.id}
                  })
 
-        assert Authors.get_author!(author.id).profile_image_url == image_url
+        author = Authors.get_author!(author.id)
+        assert author.twitter_id_str == "123456"
+        assert author.profile_image_url == image_url
+        assert author.description == "X bio"
+        assert author.followers_count == 42
+        assert author.friends_count == 24
+        assert author.verified == true
+        assert author.location == "Madrid"
+        assert author.google_id == "google-123"
+      end
+    end
+
+    test "does not overwrite an existing profile_image_url when saving X metadata" do
+      existing_image_url = "https://example.com/existing.jpg"
+
+      author =
+        author_fixture(
+          twitter_username: "some_username",
+          profile_image_url: existing_image_url
+        )
+
+      with_mock XAPI,
+        fetch_user_by_username: fn "some_username" ->
+          {:ok,
+           %{
+             profile_image_url: "https://pbs.twimg.com/profile_images/123/new_400x400.jpg",
+             description: "Updated X bio"
+           }}
+        end do
+        assert :ok =
+                 SetAuthorProfileImageFromXWorker.perform(%Oban.Job{
+                   args: %{"author_id" => author.id}
+                 })
+
+        author = Authors.get_author!(author.id)
+        assert author.profile_image_url == existing_image_url
+        assert author.description == "Updated X bio"
       end
     end
 
