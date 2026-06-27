@@ -45,18 +45,25 @@ defmodule YouCongressWeb.StatementLiveTest do
 
   defp occurrences(string, substring), do: length(:binary.matches(string, substring))
 
-  defp create_statement_with_top_opinion(title, likes_count) do
+  defp create_statement_with_feed_quote(title, quote_date) do
     statement = statement_fixture(%{title: title})
     {:ok, _} = HallsStatements.sync!(statement.id, %{main_tag: "ai", other_tags: []})
 
+    fill_statement_with_quotes(statement.id, 19)
     author = author_fixture()
-    opinion = opinion_fixture(%{author_id: author.id})
+
+    opinion =
+      opinion_fixture(%{
+        author_id: author.id,
+        verification_status: :ai_verified,
+        date: quote_date,
+        date_precision: :day
+      })
+
     {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
     vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
-    fill_statement_with_quotes(statement.id)
-    {:ok, _} = Opinions.update_opinion(opinion, %{likes_count: likes_count})
 
-    %{statement: statement, likes: likes_count}
+    %{statement: statement, quote_date: quote_date}
   end
 
   describe "Index" do
@@ -110,7 +117,7 @@ defmodule YouCongressWeb.StatementLiveTest do
     end
 
     test "vote and create opinion", %{conn: conn, statement: statement} do
-      # Create an opinion so the statement appears in "New" mode
+      # Create an opinion so the statement appears in the home feed.
       author = author_fixture()
       opinion = opinion_fixture(%{author_id: author.id, content: "Test opinion"})
 
@@ -219,31 +226,46 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ quote_country.name
     end
 
-    test "Top mode orders cards by most liked opinions", %{conn: conn} do
+    test "home feed defaults to quote date order and toggles to added order", %{conn: conn} do
       data =
         [
-          {"Most liked opinion", 30},
-          {"Second place opinion", 20},
-          {"Third place opinion", 10}
+          {"Newest quote date", ~D[2026-01-01]},
+          {"Middle quote date", ~D[2024-01-01]},
+          {"Oldest quote date but most recently added", ~D[2020-01-01]}
         ]
-        |> Enum.map(fn {title, likes} -> create_statement_with_top_opinion(title, likes) end)
+        |> Enum.map(fn {title, quote_date} ->
+          create_statement_with_feed_quote(title, quote_date)
+        end)
 
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, quote_date_html} = live(conn, ~p"/")
 
-      view |> element("button[phx-click='toggle-switch']") |> render_click()
-      top_html = render(view)
-
-      expected_order = Enum.sort_by(data, & &1.likes, :desc)
+      assert quote_date_html =~ "Quote date"
+      assert quote_date_html =~ "Added"
 
       indexes =
-        Enum.map(expected_order, fn %{statement: statement} ->
-          case :binary.match(top_html, statement.title) do
+        Enum.map(data, fn %{statement: statement} ->
+          case :binary.match(quote_date_html, statement.title) do
             {pos, _length} -> pos
-            :nomatch -> flunk("Expected to find #{statement.title} on Top mode feed")
+            :nomatch -> flunk("Expected to find #{statement.title} on quote-date feed")
           end
         end)
 
       assert indexes == Enum.sort(indexes)
+
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
+      added_html = render(view)
+
+      added_indexes =
+        data
+        |> Enum.reverse()
+        |> Enum.map(fn %{statement: statement} ->
+          case :binary.match(added_html, statement.title) do
+            {pos, _length} -> pos
+            :nomatch -> flunk("Expected to find #{statement.title} on added feed")
+          end
+        end)
+
+      assert added_indexes == Enum.sort(added_indexes)
     end
 
     test "saves new statement and redirect to show", %{conn: conn} do

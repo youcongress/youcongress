@@ -379,62 +379,92 @@ defmodule YouCongress.Statements.StatementQueries do
     order_by = Keyword.get(opts, :order_by, :likes)
 
     ranking_query =
-      if order_by == :recency do
-        from v in Vote,
-          join: o in assoc(v, :opinion),
-          join: a in assoc(v, :author),
-          left_join: os in YouCongress.OpinionsStatements.OpinionStatement,
-          on: os.opinion_id == o.id and os.statement_id == v.statement_id,
-          where:
-            v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
-              a.public_figure == true,
-          select: %{
-            vote_id: v.id,
-            statement_id: v.statement_id,
-            answer: v.answer,
-            rank:
-              fragment(
-                "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC)",
-                v.statement_id,
-                v.answer,
-                o.verification_status,
-                os.verification_status,
-                v.verification_status,
-                o.verification_status,
-                o.id
-              )
-          }
-      else
-        from v in Vote,
-          join: o in assoc(v, :opinion),
-          join: a in assoc(v, :author),
-          left_join: os in YouCongress.OpinionsStatements.OpinionStatement,
-          on: os.opinion_id == o.id and os.statement_id == v.statement_id,
-          where:
-            v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
-              a.public_figure == true,
-          select: %{
-            vote_id: v.id,
-            statement_id: v.statement_id,
-            answer: v.answer,
-            rank:
-              fragment(
-                "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC NULLS LAST, ? DESC, ? DESC, CASE WHEN ? IS NOT NULL THEN 1 WHEN ? IS NOT NULL THEN 2 WHEN ? = FALSE THEN 3 ELSE 4 END, ? DESC)",
-                v.statement_id,
-                v.answer,
-                o.verification_status,
-                os.verification_status,
-                v.verification_status,
-                o.verification_status,
-                o.date,
-                o.likes_count,
-                o.descendants_count,
-                o.source_url,
-                a.wikipedia_url,
-                v.twin,
-                o.id
-              )
-          }
+      case order_by do
+        :quote_date ->
+          from v in Vote,
+            join: o in assoc(v, :opinion),
+            join: a in assoc(v, :author),
+            left_join: os in YouCongress.OpinionsStatements.OpinionStatement,
+            on: os.opinion_id == o.id and os.statement_id == v.statement_id,
+            where:
+              v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
+                a.public_figure == true,
+            select: %{
+              vote_id: v.id,
+              statement_id: v.statement_id,
+              answer: v.answer,
+              rank:
+                fragment(
+                  "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY ? DESC NULLS LAST, CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC, ? DESC)",
+                  v.statement_id,
+                  v.answer,
+                  o.date,
+                  o.verification_status,
+                  os.verification_status,
+                  v.verification_status,
+                  o.verification_status,
+                  o.id,
+                  v.id
+                )
+            }
+
+        :recency ->
+          from v in Vote,
+            join: o in assoc(v, :opinion),
+            join: a in assoc(v, :author),
+            left_join: os in YouCongress.OpinionsStatements.OpinionStatement,
+            on: os.opinion_id == o.id and os.statement_id == v.statement_id,
+            where:
+              v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
+                a.public_figure == true,
+            select: %{
+              vote_id: v.id,
+              statement_id: v.statement_id,
+              answer: v.answer,
+              rank:
+                fragment(
+                  "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC)",
+                  v.statement_id,
+                  v.answer,
+                  o.verification_status,
+                  os.verification_status,
+                  v.verification_status,
+                  o.verification_status,
+                  o.id
+                )
+            }
+
+        _ ->
+          from v in Vote,
+            join: o in assoc(v, :opinion),
+            join: a in assoc(v, :author),
+            left_join: os in YouCongress.OpinionsStatements.OpinionStatement,
+            on: os.opinion_id == o.id and os.statement_id == v.statement_id,
+            where:
+              v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
+                a.public_figure == true,
+            select: %{
+              vote_id: v.id,
+              statement_id: v.statement_id,
+              answer: v.answer,
+              rank:
+                fragment(
+                  "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC NULLS LAST, ? DESC, ? DESC, CASE WHEN ? IS NOT NULL THEN 1 WHEN ? IS NOT NULL THEN 2 WHEN ? = FALSE THEN 3 ELSE 4 END, ? DESC)",
+                  v.statement_id,
+                  v.answer,
+                  o.verification_status,
+                  os.verification_status,
+                  v.verification_status,
+                  o.verification_status,
+                  o.date,
+                  o.likes_count,
+                  o.descendants_count,
+                  o.source_url,
+                  a.wikipedia_url,
+                  v.twin,
+                  o.id
+                )
+            }
       end
 
     ranked_votes_query =
@@ -460,6 +490,83 @@ defmodule YouCongress.Statements.StatementQueries do
         vote -> Map.update(acc, statement_id, %{answer => vote}, &Map.put(&1, answer, vote))
       end
     end)
+  end
+
+  @doc """
+  Returns opinion cards ordered by newest quote date first.
+
+  Quotes without a date remain eligible, but sort after dated quotes. When dates
+  are equal or missing, verified quotes and newer opinion ids break ties.
+
+  Options:
+  - :hall_name - filter by hall (default "all")
+  - :offset - number of cards to skip
+  - :limit - max cards to return
+  """
+  def get_opinion_cards_by_quote_date(opts \\ []) do
+    hall_name = Keyword.get(opts, :hall_name, "all")
+    offset = Keyword.get(opts, :offset, 0)
+    limit = Keyword.get(opts, :limit, 15)
+
+    has_hall = hall_name != "all"
+
+    {hall_filter, params, param_idx} =
+      if has_hall do
+        {"JOIN halls_statements hs ON hs.statement_id = s.id
+         JOIN halls h ON h.id = hs.hall_id AND h.name = $1", [hall_name], 2}
+      else
+        {"", [], 1}
+      end
+
+    offset_param = "$#{param_idx}"
+    limit_param = "$#{param_idx + 1}"
+    params = params ++ [offset, limit]
+
+    sql = """
+    WITH ranked_votes AS (
+      SELECT
+        v.id as vote_id,
+        s.id as statement_id,
+        o.date as opinion_date,
+        o.id as opinion_id,
+        CASE
+          WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed')
+           AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
+           AND v.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 2
+          WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
+          ELSE 0
+        END as verification_rank,
+        ROW_NUMBER() OVER (
+          PARTITION BY s.id
+          ORDER BY o.date DESC NULLS LAST,
+                   CASE
+                     WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed')
+                      AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
+                      AND v.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 2
+                     WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
+                     ELSE 0
+                   END DESC,
+                   o.id DESC, v.id DESC
+        ) as vote_rank
+      FROM statements s
+      JOIN votes v ON v.statement_id = s.id
+      JOIN opinions o ON o.id = v.opinion_id
+      JOIN authors a ON a.id = v.author_id
+      LEFT JOIN opinions_statements os ON os.opinion_id = o.id AND os.statement_id = s.id
+      #{hall_filter}
+      WHERE v.opinion_id IS NOT NULL
+        AND a.public_figure = TRUE
+        AND (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= #{@home_minimum_opinions}
+    )
+    SELECT rv.vote_id, rv.statement_id
+    FROM ranked_votes rv
+    WHERE rv.vote_rank = 1
+    ORDER BY rv.opinion_date DESC NULLS LAST, rv.verification_rank DESC, rv.opinion_id DESC
+    OFFSET #{offset_param}
+    LIMIT #{limit_param}
+    """
+
+    run_opinion_cards_query(sql, params)
   end
 
   @doc """
@@ -535,6 +642,10 @@ defmodule YouCongress.Statements.StatementQueries do
     LIMIT #{limit_param}
     """
 
+    run_opinion_cards_query(sql, params)
+  end
+
+  defp run_opinion_cards_query(sql, params) do
     result = Repo.query!(sql, params)
 
     if result.rows == [] do
@@ -548,7 +659,6 @@ defmodule YouCongress.Statements.StatementQueries do
       vote_ids = Enum.map(results, & &1.vote_id)
       statement_ids = results |> Enum.map(& &1.statement_id) |> Enum.uniq()
 
-      # Load votes with preloads
       votes =
         from(v in Vote,
           where: v.id in ^vote_ids,
@@ -557,7 +667,6 @@ defmodule YouCongress.Statements.StatementQueries do
         |> Repo.all()
         |> Map.new(&{&1.id, &1})
 
-      # Load statements
       statements =
         from(s in Statement,
           where: s.id in ^statement_ids
@@ -565,7 +674,6 @@ defmodule YouCongress.Statements.StatementQueries do
         |> Repo.all()
         |> Map.new(&{&1.id, &1})
 
-      # Build opinion cards in the correct order (by recency)
       Enum.map(results, fn %{vote_id: vote_id, statement_id: statement_id} ->
         vote = Map.get(votes, vote_id)
         statement = Map.get(statements, statement_id)

@@ -33,7 +33,11 @@
 
   <%= if is_nil(@search) do %>
     <div class="flex-1 min-w-[200px] flex justify-center w-full md:w-auto flex items-center gap-3 justify-center md:justify-end flex-shrink-0">
-      <SwitchComponent.render is_active={@order_by_date} label1="Top" label2="New" />
+      <SwitchComponent.render
+        is_active={@feed_order == :added}
+        label1="Quote date"
+        label2="Added"
+      />
       <div>
         <.link
           href={~p"/mcp-tools"}
