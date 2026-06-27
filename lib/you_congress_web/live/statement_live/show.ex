@@ -38,7 +38,10 @@ defmodule YouCongressWeb.StatementLive.Show do
      |> assign(:show_vote_auth_modal, false)
      |> assign(:show_country_results, false)
      |> assign(:country_vote_frequencies, nil)
-     |> assign(:country_results_filters, VoteFrequencies.default_country_filters())}
+     |> assign(:country_results_filters, VoteFrequencies.default_country_filters())
+     |> assign(:show_year_results, false)
+     |> assign(:year_vote_frequencies, nil)
+     |> assign(:year_results_filters, VoteFrequencies.default_year_filters())}
   end
 
   @impl true
@@ -223,6 +226,7 @@ defmodule YouCongressWeb.StatementLive.Show do
       else
         socket
         |> assign(:show_country_results, true)
+        |> assign(:show_year_results, false)
         |> assign(
           :country_vote_frequencies,
           VoteFrequencies.get_by_country(statement_id, socket.assigns.country_results_filters)
@@ -245,8 +249,48 @@ defmodule YouCongressWeb.StatementLive.Show do
     socket =
       socket
       |> assign(:show_country_results, true)
+      |> assign(:show_year_results, false)
       |> assign(:country_results_filters, filters)
       |> assign(:country_vote_frequencies, VoteFrequencies.get_by_country(statement_id, filters))
+
+    {:noreply, socket}
+  end
+
+  def handle_event("toggle-year-results", %{"statement_id" => statement_id}, socket) do
+    statement_id = String.to_integer(statement_id)
+
+    socket =
+      if socket.assigns.show_year_results do
+        assign(socket, :show_year_results, false)
+      else
+        socket
+        |> assign(:show_year_results, true)
+        |> assign(:show_country_results, false)
+        |> assign(
+          :year_vote_frequencies,
+          VoteFrequencies.get_by_year(statement_id, socket.assigns.year_results_filters)
+        )
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "toggle-year-results-filter",
+        %{"filter" => filter, "statement_id" => statement_id},
+        socket
+      ) do
+    filters =
+      VoteFrequencies.toggle_year_filter(socket.assigns.year_results_filters, filter)
+
+    statement_id = String.to_integer(statement_id)
+
+    socket =
+      socket
+      |> assign(:show_year_results, true)
+      |> assign(:show_country_results, false)
+      |> assign(:year_results_filters, filters)
+      |> assign(:year_vote_frequencies, VoteFrequencies.get_by_year(statement_id, filters))
 
     {:noreply, socket}
   end
@@ -290,6 +334,7 @@ defmodule YouCongressWeb.StatementLive.Show do
       socket
       |> load_statement_and_likes(statement)
       |> maybe_reload_country_vote_frequencies()
+      |> maybe_reload_year_vote_frequencies()
 
     vote = socket.assigns.current_user_vote
     socket = assign(socket, editing: !vote || !vote.opinion_id)
@@ -361,6 +406,19 @@ defmodule YouCongressWeb.StatementLive.Show do
   end
 
   defp maybe_reload_country_vote_frequencies(socket), do: socket
+
+  defp maybe_reload_year_vote_frequencies(%{assigns: %{show_year_results: true}} = socket) do
+    assign(
+      socket,
+      :year_vote_frequencies,
+      VoteFrequencies.get_by_year(
+        socket.assigns.statement.id,
+        socket.assigns.year_results_filters
+      )
+    )
+  end
+
+  defp maybe_reload_year_vote_frequencies(socket), do: socket
 
   defp load_statement_and_likes(socket, statement) do
     socket

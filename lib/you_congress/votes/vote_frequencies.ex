@@ -72,7 +72,40 @@ defmodule YouCongress.Votes.VoteFrequencies do
     |> sort_country_results()
   end
 
+  @spec get_by_year(number, map) :: [
+          %{
+            year: integer(),
+            total_votes: non_neg_integer(),
+            vote_frequencies: %{atom => {non_neg_integer(), non_neg_integer()}}
+          }
+        ]
+  def get_by_year(statement_id, filters) do
+    filters = normalize_country_filters(filters)
+
+    statement_id
+    |> Votes.country_result_vote_rows()
+    |> Enum.filter(&include_vote?(&1, filters))
+    |> Enum.filter(&dated?/1)
+    |> Enum.group_by(&year_key/1)
+    |> Enum.map(fn {year, rows} ->
+      counts = Enum.frequencies_by(rows, & &1.answer)
+
+      %{
+        year: year,
+        total_votes: Enum.sum(Map.values(counts)),
+        vote_frequencies: frequencies(counts)
+      }
+    end)
+    |> Enum.sort_by(& &1.year, :desc)
+  end
+
   def default_country_filters, do: @default_country_filters
+
+  def default_year_filters, do: @default_country_filters
+
+  def normalize_year_filters(filters), do: normalize_country_filters(filters)
+
+  def toggle_year_filter(filters, filter), do: toggle_country_filter(filters, filter)
 
   def normalize_country_filters(filters) when is_map(filters) do
     Map.new(@country_filter_keys, fn key ->
@@ -144,6 +177,11 @@ defmodule YouCongress.Votes.VoteFrequencies do
        do: true
 
   defp quote_sourced?(_), do: false
+
+  defp dated?(%{opinion_date: %Date{}}), do: true
+  defp dated?(_), do: false
+
+  defp year_key(%{opinion_date: %Date{year: year}}), do: year
 
   defp country_key(row, %{phone_verified: true}, countries) do
     if phone_verified?(row) do
