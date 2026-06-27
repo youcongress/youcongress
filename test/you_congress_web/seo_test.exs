@@ -36,24 +36,100 @@ defmodule YouCongressWeb.SEOTest do
     end
 
     test "has a hall-less fallback" do
-      assert SEO.author_description("Jane", []) =~ "Verified quotes and votes from Jane"
+      assert SEO.author_description("Jane", []) =~ "Sourced quotes and votes from Jane"
     end
   end
 
-  describe "statement_description/3" do
-    test "includes quote count and vote split" do
+  describe "statement_description/3 and /4" do
+    test "includes quote count and top wikipedia-linked authors when there are at least 15 quotes" do
       description =
-        SEO.statement_description("Should AI be regulated?", %{for: {2, 67}, against: {1, 33}}, 3)
+        SEO.statement_description(
+          "Should AI be regulated?",
+          %{for: {2, 67}, against: {1, 33}},
+          38,
+          [
+            %{
+              id: 1,
+              name: "Low Reach",
+              wikipedia_url: "https://en.wikipedia.org/wiki/Low",
+              followers_count: 10
+            },
+            %{
+              id: 2,
+              name: "Tim Berners-Lee",
+              wikipedia_url: "https://en.wikipedia.org/wiki/Tim_Berners-Lee",
+              followers_count: 1000
+            },
+            %{
+              id: 3,
+              name: "Cory Doctorow",
+              wikipedia_url: "https://en.wikipedia.org/wiki/Cory_Doctorow",
+              followers_count: 300
+            },
+            %{id: 4, name: "No Wiki", wikipedia_url: nil, followers_count: 2000},
+            %{
+              id: 5,
+              name: "Scott Alexander",
+              wikipedia_url: "https://en.wikipedia.org/wiki/Scott_Alexander",
+              followers_count: 500
+            }
+          ]
+        )
 
-      assert description =~ "3 verified expert quotes — 67% for, 33% against"
-      assert description =~ "Should AI be regulated?"
+      assert description ==
+               "Who's for and against \"Should AI be regulated?\"? 38 sourced quotes including Tim Berners-Lee, Scott Alexander and Cory Doctorow."
+
+      refute description =~ "%"
     end
 
-    test "falls back without quotes" do
+    test "omits the quote count below 15" do
+      description =
+        SEO.statement_description(
+          "Should AI be regulated?",
+          %{for: {2, 67}, against: {1, 33}},
+          3,
+          [
+            %{
+              id: 1,
+              name: "Tim Berners-Lee",
+              wikipedia_url: "https://en.wikipedia.org/wiki/Tim_Berners-Lee",
+              followers_count: 1000
+            },
+            %{
+              id: 2,
+              name: "Scott Alexander",
+              wikipedia_url: "https://en.wikipedia.org/wiki/Scott_Alexander",
+              followers_count: 500
+            },
+            %{
+              id: 3,
+              name: "Cory Doctorow",
+              wikipedia_url: "https://en.wikipedia.org/wiki/Cory_Doctorow",
+              followers_count: 300
+            }
+          ]
+        )
+
+      assert description ==
+               "Who's for and against \"Should AI be regulated?\"? Sourced quotes including Tim Berners-Lee, Scott Alexander and Cory Doctorow."
+
+      refute description =~ "3 sourced"
+      refute description =~ "%"
+    end
+
+    test "uses the count fallback only from 15 quotes" do
+      description = SEO.statement_description("Should AI be regulated?", %{}, 15, [])
+
+      assert description ==
+               "Who's for and against \"Should AI be regulated?\"? 15 sourced quotes from experts and public figures."
+    end
+
+    test "falls back without enough quotes or named authors" do
       description = SEO.statement_description("Should AI be regulated?", %{}, 0)
 
-      assert description =~ "See expert quotes, votes and sources"
+      assert description =~ "See sourced quotes, votes and sources"
       refute description =~ "% for"
+      refute description =~ "0 sourced"
     end
   end
 

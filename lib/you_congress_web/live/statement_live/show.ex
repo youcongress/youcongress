@@ -310,16 +310,26 @@ defmodule YouCongressWeb.StatementLive.Show do
   defp page_title(:show, statement_title), do: statement_title
   defp page_title(:edit, _), do: "Edit Poll"
 
-  # Depends on vote_frequencies and quotes_votes_count, so it must run
+  # Depends on vote_frequencies, quotes_votes_count and seo_quote_authors, so it must run
   # after VotesLoader has populated the assigns.
   defp assign_page_description(socket) do
-    %{statement: statement, vote_frequencies: vote_frequencies, quotes_votes_count: quotes_count} =
+    %{
+      statement: statement,
+      vote_frequencies: vote_frequencies,
+      quotes_votes_count: quotes_count,
+      seo_quote_authors: seo_quote_authors
+    } =
       socket.assigns
 
     assign(
       socket,
       :page_description,
-      SEO.statement_description(statement.title, vote_frequencies, quotes_count)
+      SEO.statement_description(
+        statement.title,
+        vote_frequencies,
+        quotes_count,
+        seo_quote_authors
+      )
     )
   end
 

@@ -23,28 +23,40 @@ defmodule YouCongressWeb.SEO do
   def author_description(name, halls) do
     case top_hall_topics(halls, 3) do
       [] ->
-        "Verified quotes and votes from #{name} on AI policy statements. " <>
+        "Sourced quotes and votes from #{name} on AI policy statements. " <>
           "See where they stand — for or against — with sources."
 
       topics ->
-        "Verified quotes and votes from #{name} on #{join_topics(topics)}. " <>
+        "Sourced quotes and votes from #{name} on #{join_topics(topics)}. " <>
           "See where they stand — for or against — on AI policy statements."
     end
   end
 
-  def statement_description(title, vote_frequencies, quotes_votes_count)
-      when is_integer(quotes_votes_count) and quotes_votes_count > 0 do
-    {_, for_pct} = vote_frequencies[:for] || {0, 0}
-    {_, against_pct} = vote_frequencies[:against] || {0, 0}
-
-    "Who's for and against \"#{truncate(title, 70)}\"? " <>
-      "#{quotes_votes_count} verified expert #{plural(quotes_votes_count, "quote")} — " <>
-      "#{for_pct}% for, #{against_pct}% against. Sources included."
+  def statement_description(title, vote_frequencies, quotes_votes_count) do
+    statement_description(title, vote_frequencies, quotes_votes_count, [])
   end
 
-  def statement_description(title, _vote_frequencies, _quotes_votes_count) do
+  def statement_description(title, _vote_frequencies, quotes_votes_count, authors)
+      when is_integer(quotes_votes_count) and quotes_votes_count > 0 do
+    author_names = top_statement_author_names(authors)
+    quote_summary = statement_quote_summary(quotes_votes_count)
+    title = truncate(title, 70)
+
+    cond do
+      length(author_names) == 3 ->
+        "Who's for and against \"#{title}\"? #{quote_summary} including #{join_names(author_names)}."
+
+      quotes_votes_count >= 15 ->
+        "Who's for and against \"#{title}\"? #{quote_summary} from experts and public figures."
+
+      true ->
+        statement_description(title, nil, 0, [])
+    end
+  end
+
+  def statement_description(title, _vote_frequencies, _quotes_votes_count, _authors) do
     "Who's for and against \"#{truncate(title, 90)}\"? " <>
-      "See expert quotes, votes and sources on YouCongress."
+      "See sourced quotes, votes and sources on YouCongress."
   end
 
   def hall_title(hall_name) do
@@ -57,7 +69,7 @@ defmodule YouCongressWeb.SEO do
       when quotes > 0 do
     topic = StringUtils.titleize_hall(hall_name)
 
-    "What do experts say about #{topic}? #{quotes} verified #{plural(quotes, "quote")} " <>
+    "What do experts say about #{topic}? #{quotes} sourced #{plural(quotes, "quote")} " <>
       "for and against, with votes and sources, across #{statements} " <>
       "#{plural(statements, "statement")}."
   end
@@ -65,7 +77,7 @@ defmodule YouCongressWeb.SEO do
   def hall_description(hall_name, _stats) do
     topic = StringUtils.titleize_hall(hall_name)
 
-    "What do experts say about #{topic}? Verified quotes for and against, " <>
+    "What do experts say about #{topic}? Sourced quotes for and against, " <>
       "with votes and sources, from AI researchers and policymakers."
   end
 
@@ -81,7 +93,7 @@ defmodule YouCongressWeb.SEO do
   def opinion_description(opinion) do
     name = opinion.author.name || opinion.author.twitter_username || "Anonymous"
     date = if Opinion.display_date(opinion), do: ", #{Opinion.display_date(opinion)}"
-    "\"#{truncate(opinion.content, 110)}\" — #{name}#{date}. Verified quote with source."
+    "\"#{truncate(opinion.content, 110)}\" — #{name}#{date}. Sourced quote with source."
   end
 
   # --- JSON-LD builders (schema.org) ---
@@ -159,7 +171,7 @@ defmodule YouCongressWeb.SEO do
 
     item_list = %{
       "@type" => "ItemList",
-      "name" => "Verified quotes on: #{statement.title}",
+      "name" => "Sourced quotes on: #{statement.title}",
       "itemListElement" => quotations,
       "numberOfItems" => length(quotations)
     }
@@ -249,6 +261,42 @@ defmodule YouCongressWeb.SEO do
     {rest, [last]} = Enum.split(topics, -1)
     Enum.join(rest, ", ") <> " and " <> last
   end
+
+  defp join_names(names), do: join_topics(names)
+
+  defp statement_quote_summary(quotes_votes_count) when quotes_votes_count >= 15 do
+    "#{quotes_votes_count} sourced #{plural(quotes_votes_count, "quote")}"
+  end
+
+  defp statement_quote_summary(quotes_votes_count) do
+    "Sourced #{plural(quotes_votes_count, "quote")}"
+  end
+
+  defp top_statement_author_names(authors) do
+    authors
+    |> List.wrap()
+    |> Enum.reject(&is_nil/1)
+    |> Enum.filter(&present?(Map.get(&1, :wikipedia_url)))
+    |> Enum.uniq_by(&author_identity/1)
+    |> Enum.sort_by(&author_followers_count/1, :desc)
+    |> Enum.map(&author_name/1)
+    |> Enum.filter(&present?/1)
+    |> Enum.take(3)
+  end
+
+  defp author_identity(author) do
+    Map.get(author, :id) || Map.get(author, :wikipedia_url) || author_name(author)
+  end
+
+  defp author_followers_count(%{followers_count: count}) when is_integer(count), do: count
+  defp author_followers_count(_author), do: -1
+
+  defp author_name(author) do
+    Map.get(author, :name) || Map.get(author, :twitter_username)
+  end
+
+  defp present?(value) when is_binary(value), do: String.trim(value) != ""
+  defp present?(_value), do: false
 
   defp opinion_topic(opinion) do
     case opinion.statements do

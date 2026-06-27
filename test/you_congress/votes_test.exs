@@ -42,6 +42,73 @@ defmodule YouCongress.VotesTest do
       assert {:ok, %Vote{}} = Votes.create_vote(valid_attrs)
     end
 
+    test "list_top_sourced_statement_authors/2 returns wikipedia authors ordered by followers count" do
+      unique = System.unique_integer([:positive])
+      statement = statement_fixture()
+      other_statement = statement_fixture()
+
+      low =
+        author_fixture(%{
+          name: "Low Reach",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Low_Reach_#{unique}",
+          followers_count: 10
+        })
+
+      top =
+        author_fixture(%{
+          name: "Top Reach",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Top_Reach_#{unique}",
+          followers_count: 1_000
+        })
+
+      middle =
+        author_fixture(%{
+          name: "Middle Reach",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Middle_Reach_#{unique}",
+          followers_count: 500
+        })
+
+      no_wiki =
+        author_fixture(%{
+          name: "No Wiki",
+          wikipedia_url: nil,
+          followers_count: 2_000
+        })
+
+      unsourced =
+        author_fixture(%{
+          name: "Unsourced",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Unsourced_#{unique}",
+          followers_count: 3_000
+        })
+
+      twin =
+        author_fixture(%{
+          name: "Twin Quote",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Twin_Quote_#{unique}",
+          followers_count: 5_000
+        })
+
+      other_statement_author =
+        author_fixture(%{
+          name: "Other Statement",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Other_Statement_#{unique}",
+          followers_count: 4_000
+        })
+
+      create_vote_with_opinion(statement, low)
+      create_vote_with_opinion(statement, top)
+      create_vote_with_opinion(statement, middle)
+      create_vote_with_opinion(statement, no_wiki)
+      create_vote_with_opinion(statement, unsourced, source_url: nil)
+      create_vote_with_opinion(statement, twin, twin: true)
+      create_vote_with_opinion(other_statement, other_statement_author)
+
+      assert statement.id
+             |> Votes.list_top_sourced_statement_authors(3)
+             |> Enum.map(& &1.name) == ["Top Reach", "Middle Reach", "Low Reach"]
+    end
+
     test "create_vote/1 by the author marks the vote answer as endorsed" do
       user = user_fixture()
       statement = statement_fixture()
@@ -376,5 +443,34 @@ defmodule YouCongress.VotesTest do
 
       assert quote_country_id == quote_country.id
     end
+  end
+
+  defp create_vote_with_opinion(statement, author, opts \\ []) do
+    source_url =
+      if Keyword.has_key?(opts, :source_url) do
+        Keyword.fetch!(opts, :source_url)
+      else
+        "https://example.com/source/#{author.id}"
+      end
+
+    twin = Keyword.get(opts, :twin, false)
+
+    opinion =
+      opinion_fixture(%{
+        author_id: author.id,
+        source_url: source_url,
+        twin: twin
+      })
+
+    {:ok, vote} =
+      Votes.create_vote(%{
+        author_id: author.id,
+        statement_id: statement.id,
+        opinion_id: opinion.id,
+        answer: :for,
+        twin: twin
+      })
+
+    vote
   end
 end

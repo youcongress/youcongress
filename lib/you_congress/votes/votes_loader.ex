@@ -67,6 +67,7 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
       current_user_vote: current_user_vote,
       share_to_x_text: share_to_x_text,
       quotes_votes_count: quotes_votes_count,
+      seo_quote_authors: Votes.list_top_sourced_statement_authors(statement_id, 3),
       users_votes_count: users_votes_count,
       total_opinions: Votes.count_by(statement_id: statement_id),
       opinions_by_response: get_opinions_by_response(statement.id, source_filter),
