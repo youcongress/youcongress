@@ -257,7 +257,7 @@ defmodule YouCongressWeb.XAuthController do
   end
 
   defp build_author_attrs(x_user_data) do
-    %{
+    attrs = %{
       twitter_id_str: x_user_data.twitter_id_str,
       twitter_username: x_user_data.twitter_username,
       name: x_user_data.name,
@@ -265,9 +265,15 @@ defmodule YouCongressWeb.XAuthController do
       description: x_user_data.description,
       followers_count: x_user_data.followers_count,
       friends_count: x_user_data.friends_count,
-      verified: x_user_data.verified
+      verified: x_user_data.verified,
+      location: Map.get(x_user_data, :location)
     }
+
+    put_optional_author_attr(attrs, :google_id, Map.get(x_user_data, :google_id))
   end
+
+  defp put_optional_author_attr(attrs, _field, nil), do: attrs
+  defp put_optional_author_attr(attrs, field, value), do: Map.put(attrs, field, value)
 
   defp process_pending_actions(conn, user) do
     pending_json = get_session(conn, :oauth_pending_actions)

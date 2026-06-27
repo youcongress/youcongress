@@ -252,6 +252,23 @@ defmodule YouCongress.AuthorsTest do
       end)
     end
 
+    test "update_author/2 enqueues an X profile fetch when the X username changes with an existing picture" do
+      author =
+        author_fixture(
+          twitter_username: "old_username",
+          profile_image_url: "https://pbs.twimg.com/profile_images/123/abc.jpg"
+        )
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        assert {:ok, author} = Authors.update_author(author, %{twitter_username: "new_username"})
+
+        assert_enqueued(
+          worker: SetAuthorProfileImageFromXWorker,
+          args: %{author_id: author.id}
+        )
+      end)
+    end
+
     test "delete_author/1 deletes the author" do
       author = author_fixture()
       assert {:ok, %Author{}} = Authors.delete_author(author)

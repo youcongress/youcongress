@@ -34,6 +34,16 @@ defmodule YouCongress.Authors do
     :country_id
   ]
 
+  @x_profile_fields [
+    :twitter_id_str,
+    :description,
+    :followers_count,
+    :friends_count,
+    :verified,
+    :location,
+    :google_id
+  ]
+
   @doc """
   Returns the list of authors.
 
@@ -346,10 +356,11 @@ defmodule YouCongress.Authors do
   def update_author(%Author{} = author_before, attrs) do
     with {:ok, attrs} <- resolve_country_attrs(attrs) do
       changeset = reset_wikidata_if_url_changed(Author.changeset(author_before, attrs))
+      twitter_username_changed? = twitter_username_changed?(changeset)
 
       changeset
       |> Repo.update()
-      |> maybe_enqueue_profile_image_fetch()
+      |> maybe_enqueue_profile_image_fetch(twitter_username_changed?)
       |> maybe_enqueue_wikidata_fetch(wikipedia_url_changed?(changeset))
     else
       {:error, :unknown_country, country, attrs} ->
@@ -358,8 +369,9 @@ defmodule YouCongress.Authors do
   end
 
   @doc """
-  Fetches the author's profile picture from the X API using their X username
-  and updates the author's profile_image_url.
+  Fetches the author's profile from the X API using their X username and
+  updates X-sourced author fields. The profile image is only updated when the
+  author does not already have one.
 
   ## Examples
 
@@ -374,17 +386,22 @@ defmodule YouCongress.Authors do
     do: {:error, :no_twitter_username}
 
   def set_profile_image_from_x(%Author{twitter_username: twitter_username} = author) do
-    with {:ok, %{profile_image_url: profile_image_url}} when is_binary(profile_image_url) <-
-           YouCongress.X.XAPI.fetch_user_by_username(twitter_username) do
-      update_author(author, %{profile_image_url: profile_image_url})
+    with {:ok, x_user_data} <- YouCongress.X.XAPI.fetch_user_by_username(twitter_username) do
+      attrs = x_profile_attrs(author, x_user_data)
+
+      if map_size(attrs) > 0 do
+        update_author_from_x_profile(author, attrs)
+      else
+        {:error, :no_profile_image}
+      end
     else
-      {:ok, _} -> {:error, :no_profile_image}
       {:error, reason} -> {:error, reason}
     end
   end
 
   defp update_author_and_delete_twin_options(author_before, attrs) do
     changeset = reset_wikidata_if_url_changed(Author.changeset(author_before, attrs))
+    twitter_username_changed? = twitter_username_changed?(changeset)
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:update_author, changeset)
@@ -393,24 +410,33 @@ defmodule YouCongress.Authors do
       from(v in Vote, where: v.author_id == ^author_before.id and v.twin)
     )
     |> Repo.transaction()
-    |> maybe_enqueue_profile_image_fetch()
+    |> maybe_enqueue_profile_image_fetch(twitter_username_changed?)
     |> maybe_enqueue_wikidata_fetch(wikipedia_url_changed?(changeset))
   end
 
-  defp maybe_enqueue_profile_image_fetch({:ok, %Author{} = author} = result) do
-    enqueue_profile_image_fetch_if_needed(author)
+  defp maybe_enqueue_profile_image_fetch(result, force? \\ false)
+
+  defp maybe_enqueue_profile_image_fetch({:ok, %Author{} = author} = result, force?) do
+    enqueue_profile_image_fetch_if_needed(author, force?)
     result
   end
 
-  defp maybe_enqueue_profile_image_fetch({:ok, %{update_author: %Author{} = author}} = result) do
-    enqueue_profile_image_fetch_if_needed(author)
+  defp maybe_enqueue_profile_image_fetch(
+         {:ok, %{update_author: %Author{} = author}} = result,
+         force?
+       ) do
+    enqueue_profile_image_fetch_if_needed(author, force?)
     result
   end
 
-  defp maybe_enqueue_profile_image_fetch(result), do: result
+  defp maybe_enqueue_profile_image_fetch(result, _force?), do: result
 
-  defp enqueue_profile_image_fetch_if_needed(%Author{} = author) do
-    if author.profile_image_url in [nil, ""] and author.twitter_username not in [nil, ""] do
+  defp enqueue_profile_image_fetch_if_needed(%Author{} = author, force?) do
+    should_fetch? =
+      author.twitter_username not in [nil, ""] and
+        (force? or author.profile_image_url in [nil, ""])
+
+    if should_fetch? do
       %{author_id: author.id}
       |> SetAuthorProfileImageFromXWorker.new()
       |> Oban.insert()
@@ -429,6 +455,47 @@ defmodule YouCongress.Authors do
 
   defp wikipedia_url_changed?(%Ecto.Changeset{changes: changes}) do
     Map.has_key?(changes, :wikipedia_url)
+  end
+
+  defp twitter_username_changed?(%Ecto.Changeset{changes: changes}) do
+    Map.has_key?(changes, :twitter_username)
+  end
+
+  defp x_profile_attrs(%Author{} = author, x_user_data) do
+    @x_profile_fields
+    |> Enum.reduce(%{}, fn field, attrs ->
+      put_present_x_attr(attrs, x_user_data, field)
+    end)
+    |> maybe_put_profile_image(author, x_user_data)
+  end
+
+  defp put_present_x_attr(attrs, x_user_data, field) do
+    case Map.fetch(x_user_data, field) do
+      {:ok, nil} -> attrs
+      {:ok, value} -> Map.put(attrs, field, value)
+      :error -> attrs
+    end
+  end
+
+  defp maybe_put_profile_image(attrs, %Author{profile_image_url: image_url}, _x_user_data)
+       when image_url not in [nil, ""] do
+    attrs
+  end
+
+  defp maybe_put_profile_image(attrs, %Author{}, x_user_data) do
+    case Map.fetch(x_user_data, :profile_image_url) do
+      {:ok, profile_image_url} when is_binary(profile_image_url) and profile_image_url != "" ->
+        Map.put(attrs, :profile_image_url, profile_image_url)
+
+      _ ->
+        attrs
+    end
+  end
+
+  defp update_author_from_x_profile(%Author{} = author, attrs) do
+    author
+    |> Author.changeset(attrs)
+    |> Repo.update()
   end
 
   defp maybe_enqueue_wikidata_fetch({:ok, %Author{} = author} = result, true) do

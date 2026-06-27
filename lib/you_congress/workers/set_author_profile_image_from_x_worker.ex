@@ -1,7 +1,7 @@
 defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorker do
   @moduledoc """
-  Fetches an author's profile picture from the X API using their X username
-  and updates the author's profile_image_url.
+  Fetches an author's profile from the X API using their X username and updates
+  X-sourced profile fields.
   """
 
   use Oban.Worker, unique: [states: [:scheduled, :available]]
