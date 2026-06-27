@@ -44,7 +44,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:quotes, [])
       |> assign(:search_has_more, empty_search_has_more())
       |> assign(:search_totals, empty_search_totals())
-      |> assign(:order_by_date, true)
+      |> assign(:feed_order, :quote_date)
       |> assign(:hall_name, params["hall"] || HallNav.default_hall())
       |> assign(:hall_stats, nil)
       |> assign(:new_poll_visible?, false)
@@ -160,11 +160,15 @@ defmodule YouCongressWeb.StatementLive.Index do
   end
 
   def handle_event("toggle-switch", _, socket) do
-    order_by_date = !socket.assigns.order_by_date
+    feed_order =
+      case socket.assigns.feed_order do
+        :quote_date -> :added
+        :added -> :quote_date
+      end
 
     socket =
       socket
-      |> assign(:order_by_date, order_by_date)
+      |> assign(:feed_order, feed_order)
       |> assign_cards(1)
 
     {:noreply, socket}
@@ -391,14 +395,14 @@ defmodule YouCongressWeb.StatementLive.Index do
     Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
   end
 
-  # For "Top" mode: show the most liked opinion for each statement (one card per statement)
-  # For "New" mode: opinions ordered by most recently added, statements can repeat
+  # Quote-date mode uses the quote's stated date. Added mode preserves the
+  # previous home feed ordering by most recently added opinion.
   defp assign_cards(socket, page) do
     %{
       assigns: %{
         current_user: current_user,
         hall_name: hall_name,
-        order_by_date: order_by_date,
+        feed_order: feed_order,
         per_page: per_page
       }
     } = socket
@@ -406,20 +410,27 @@ defmodule YouCongressWeb.StatementLive.Index do
     offset = (page - 1) * per_page
 
     cards =
-      if order_by_date do
-        # New mode: opinions ordered by most recently added
-        StatementQueries.get_opinion_cards_by_recency(
-          hall_name: hall_name,
-          offset: offset,
-          limit: per_page
-        )
-      else
-        # Top mode: use the most liked opinion for each statement
-        StatementQueries.get_opinion_cards_by_top_likes(
-          hall_name: hall_name,
-          offset: offset,
-          limit: per_page
-        )
+      case feed_order do
+        :quote_date ->
+          StatementQueries.get_opinion_cards_by_quote_date(
+            hall_name: hall_name,
+            offset: offset,
+            limit: per_page
+          )
+
+        :added ->
+          StatementQueries.get_opinion_cards_by_recency(
+            hall_name: hall_name,
+            offset: offset,
+            limit: per_page
+          )
+
+        _ ->
+          StatementQueries.get_opinion_cards_by_quote_date(
+            hall_name: hall_name,
+            offset: offset,
+            limit: per_page
+          )
       end
 
     if cards == [] do
@@ -428,7 +439,12 @@ defmodule YouCongressWeb.StatementLive.Index do
       # Extract statement IDs for loading current user's data
       statement_ids = cards |> Enum.map(& &1.statement.id) |> Enum.uniq()
 
-      votes_by_answer_opts = if order_by_date, do: [order_by: :recency], else: []
+      votes_by_answer_opts =
+        case feed_order do
+          :quote_date -> [order_by: :quote_date]
+          :added -> [order_by: :recency]
+          _ -> [order_by: :quote_date]
+        end
 
       votes_by_answer =
         StatementQueries.get_top_votes_by_answer_for_statements(

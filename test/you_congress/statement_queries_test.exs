@@ -33,6 +33,11 @@ defmodule YouCongress.Statements.StatementQueriesTest do
                &(&1.statement.id == statement.id)
              )
 
+      refute Enum.any?(
+               StatementQueries.get_opinion_cards_by_quote_date(limit: 20),
+               &(&1.statement.id == statement.id)
+             )
+
       fill_statement_with_quotes(statement.id, 1)
 
       assert Enum.any?(
@@ -42,6 +47,11 @@ defmodule YouCongress.Statements.StatementQueriesTest do
 
       assert Enum.any?(
                StatementQueries.get_opinion_cards_by_top_likes(limit: 20),
+               &(&1.statement.id == statement.id)
+             )
+
+      assert Enum.any?(
+               StatementQueries.get_opinion_cards_by_quote_date(limit: 20),
                &(&1.statement.id == statement.id)
              )
     end
@@ -291,7 +301,163 @@ defmodule YouCongress.Statements.StatementQueriesTest do
     end
   end
 
+  describe "get_opinion_cards_by_quote_date/1" do
+    test "orders statements by newest quote date instead of newest opinion id" do
+      newer_date_statement = statement_fixture()
+      fill_statement_with_quotes(newer_date_statement.id, 19)
+      newer_date_author = author_fixture()
+
+      newer_date_opinion =
+        opinion_fixture(%{
+          author_id: newer_date_author.id,
+          verification_status: :ai_verified,
+          date: ~D[2026-06-18],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(newer_date_opinion, newer_date_statement.id)
+      verify_relevance(newer_date_opinion, newer_date_statement)
+
+      vote_fixture(%{
+        statement_id: newer_date_statement.id,
+        author_id: newer_date_author.id,
+        opinion_id: newer_date_opinion.id,
+        verification_status: :ai_verified
+      })
+
+      older_date_statement = statement_fixture()
+      fill_statement_with_quotes(older_date_statement.id, 19)
+      older_date_author = author_fixture()
+
+      older_date_opinion =
+        opinion_fixture(%{
+          author_id: older_date_author.id,
+          verification_status: :ai_verified,
+          date: ~D[2020-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(older_date_opinion, older_date_statement.id)
+      verify_relevance(older_date_opinion, older_date_statement)
+
+      vote_fixture(%{
+        statement_id: older_date_statement.id,
+        author_id: older_date_author.id,
+        opinion_id: older_date_opinion.id,
+        verification_status: :ai_verified
+      })
+
+      statement_ids =
+        StatementQueries.get_opinion_cards_by_quote_date(limit: 20)
+        |> Enum.map(& &1.statement.id)
+
+      assert statement_ids == [newer_date_statement.id, older_date_statement.id]
+    end
+
+    test "places undated quotes after dated quotes" do
+      dated_statement = statement_fixture()
+      fill_statement_with_quotes(dated_statement.id, 19)
+      dated_author = author_fixture()
+
+      dated_opinion =
+        opinion_fixture(%{
+          author_id: dated_author.id,
+          verification_status: :ai_verified,
+          date: ~D[2020-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(dated_opinion, dated_statement.id)
+      verify_relevance(dated_opinion, dated_statement)
+
+      vote_fixture(%{
+        statement_id: dated_statement.id,
+        author_id: dated_author.id,
+        opinion_id: dated_opinion.id,
+        verification_status: :ai_verified
+      })
+
+      undated_statement = statement_fixture()
+      fill_statement_with_quotes(undated_statement.id, 19)
+      undated_author = author_fixture()
+
+      undated_opinion =
+        opinion_fixture(%{
+          author_id: undated_author.id,
+          verification_status: :ai_verified
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(undated_opinion, undated_statement.id)
+      verify_relevance(undated_opinion, undated_statement)
+
+      vote_fixture(%{
+        statement_id: undated_statement.id,
+        author_id: undated_author.id,
+        opinion_id: undated_opinion.id,
+        verification_status: :ai_verified
+      })
+
+      statement_ids =
+        StatementQueries.get_opinion_cards_by_quote_date(limit: 20)
+        |> Enum.map(& &1.statement.id)
+
+      assert statement_ids == [dated_statement.id, undated_statement.id]
+    end
+  end
+
   describe "get_top_votes_by_answer_for_statements/2" do
+    test "uses quote dates in quote date mode" do
+      statement = statement_fixture()
+
+      newer_date_author = author_fixture()
+
+      newer_date_opinion =
+        opinion_fixture(%{
+          author_id: newer_date_author.id,
+          content: "Newer dated answer quote",
+          verification_status: :verified,
+          date: ~D[2026-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(newer_date_opinion, statement.id)
+
+      newer_date_vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: newer_date_author.id,
+          opinion_id: newer_date_opinion.id,
+          answer: :for
+        })
+
+      older_date_author = author_fixture()
+
+      older_date_opinion =
+        opinion_fixture(%{
+          author_id: older_date_author.id,
+          content: "Older but later added answer quote",
+          verification_status: :verified,
+          date: ~D[2020-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(older_date_opinion, statement.id)
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: older_date_author.id,
+        opinion_id: older_date_opinion.id,
+        answer: :for
+      })
+
+      votes_by_answer =
+        StatementQueries.get_top_votes_by_answer_for_statements([statement.id],
+          order_by: :quote_date
+        )
+
+      assert votes_by_answer[statement.id][:for].id == newer_date_vote.id
+    end
+
     test "uses positive verified opinions before newer disputed opinions in recency mode" do
       statement = statement_fixture()
 

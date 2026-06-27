@@ -64,12 +64,12 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/")
 
-      # Default "New" mode shows both statements
+      # Default quote-date mode shows both statements
       assert html =~ wikipedia_statement.title
       assert html =~ non_wikipedia_statement.title
     end
 
-    test "shows statements feed in New mode", %{conn: conn} do
+    test "shows statements feed in default quote-date mode", %{conn: conn} do
       statement =
         statement_fixture(title: "AI Safety Statement")
         |> add_statement_to_ai_hall()
@@ -80,6 +80,76 @@ defmodule YouCongressWeb.HomeLiveTest do
       {:ok, _view, html} = live(conn, ~p"/")
 
       assert html =~ statement.title
+    end
+
+    test "defaults to quote date order and toggles to added order", %{conn: conn} do
+      newer_date_statement =
+        statement_fixture(title: "Newest quote date statement")
+        |> add_statement_to_ai_hall()
+
+      fill_statement_with_quotes(newer_date_statement.id, 19)
+      newer_date_author = author_fixture()
+
+      newer_date_opinion =
+        opinion_fixture(%{
+          author_id: newer_date_author.id,
+          content: "Newest quote date content",
+          verification_status: :ai_verified,
+          date: ~D[2026-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(newer_date_opinion, newer_date_statement.id)
+
+      vote_fixture(%{
+        statement_id: newer_date_statement.id,
+        author_id: newer_date_author.id,
+        opinion_id: newer_date_opinion.id,
+        answer: :for
+      })
+
+      older_date_statement =
+        statement_fixture(title: "Most recently added statement")
+        |> add_statement_to_ai_hall()
+
+      fill_statement_with_quotes(older_date_statement.id, 19)
+      older_date_author = author_fixture()
+
+      older_date_opinion =
+        opinion_fixture(%{
+          author_id: older_date_author.id,
+          content: "Most recently added content",
+          verification_status: :ai_verified,
+          date: ~D[2020-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(older_date_opinion, older_date_statement.id)
+
+      vote_fixture(%{
+        statement_id: older_date_statement.id,
+        author_id: older_date_author.id,
+        opinion_id: older_date_opinion.id,
+        answer: :for
+      })
+
+      {:ok, view, html} = live(conn, ~p"/")
+
+      assert html =~ "Quote date"
+      assert html =~ "Added"
+      assert html =~ "Newest quote date content"
+      assert html =~ "Most recently added content"
+
+      newer_date_position = html |> :binary.match(newer_date_statement.title) |> elem(0)
+      older_date_position = html |> :binary.match(older_date_statement.title) |> elem(0)
+      assert newer_date_position < older_date_position
+
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
+      added_html = render(view)
+
+      older_added_position = added_html |> :binary.match(older_date_statement.title) |> elem(0)
+      newer_added_position = added_html |> :binary.match(newer_date_statement.title) |> elem(0)
+      assert older_added_position < newer_added_position
     end
 
     test "uses the opinion creation time for opinion card added labels", %{conn: conn} do
