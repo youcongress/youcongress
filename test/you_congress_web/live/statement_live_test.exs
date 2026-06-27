@@ -226,7 +226,7 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ quote_country.name
     end
 
-    test "home feed defaults to quote date order and toggles to added order", %{conn: conn} do
+    test "home feed defaults to added order and toggles to quote date order", %{conn: conn} do
       data =
         [
           {"Newest quote date", ~D[2026-01-01]},
@@ -237,23 +237,10 @@ defmodule YouCongressWeb.StatementLiveTest do
           create_statement_with_feed_quote(title, quote_date)
         end)
 
-      {:ok, view, quote_date_html} = live(conn, ~p"/")
+      {:ok, view, added_html} = live(conn, ~p"/")
 
-      assert quote_date_html =~ "Quote date"
-      assert quote_date_html =~ "Added"
-
-      indexes =
-        Enum.map(data, fn %{statement: statement} ->
-          case :binary.match(quote_date_html, statement.title) do
-            {pos, _length} -> pos
-            :nomatch -> flunk("Expected to find #{statement.title} on quote-date feed")
-          end
-        end)
-
-      assert indexes == Enum.sort(indexes)
-
-      view |> element("button[phx-click='toggle-switch']") |> render_click()
-      added_html = render(view)
+      assert added_html =~ "Quote date"
+      assert added_html =~ "Added"
 
       added_indexes =
         data
@@ -266,6 +253,19 @@ defmodule YouCongressWeb.StatementLiveTest do
         end)
 
       assert added_indexes == Enum.sort(added_indexes)
+
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
+      quote_date_html = render(view)
+
+      indexes =
+        Enum.map(data, fn %{statement: statement} ->
+          case :binary.match(quote_date_html, statement.title) do
+            {pos, _length} -> pos
+            :nomatch -> flunk("Expected to find #{statement.title} on quote-date feed")
+          end
+        end)
+
+      assert indexes == Enum.sort(indexes)
     end
 
     test "saves new statement and redirect to show", %{conn: conn} do
