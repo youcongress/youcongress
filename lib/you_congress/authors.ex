@@ -14,7 +14,7 @@ defmodule YouCongress.Authors do
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Votes.Vote
   alias YouCongress.VoteVerifications.VoteVerification
-  alias YouCongress.Workers.SetAuthorProfileImageFromXWorker
+  alias YouCongress.Workers.SetAuthorXProfileDataWorker
   alias YouCongress.Workers.SetAuthorWikidataWorker
 
   @profile_merge_fields [
@@ -210,7 +210,7 @@ defmodule YouCongress.Authors do
 
       changeset
       |> Repo.insert()
-      |> maybe_enqueue_profile_image_fetch()
+      |> maybe_enqueue_x_profile_data_fetch()
       |> maybe_enqueue_wikidata_fetch(wikipedia_url_changed?(changeset))
     else
       {:error, :unknown_country, country, attrs} ->
@@ -360,7 +360,7 @@ defmodule YouCongress.Authors do
 
       changeset
       |> Repo.update()
-      |> maybe_enqueue_profile_image_fetch(twitter_username_changed?)
+      |> maybe_enqueue_x_profile_data_fetch(twitter_username_changed?)
       |> maybe_enqueue_wikidata_fetch(wikipedia_url_changed?(changeset))
     else
       {:error, :unknown_country, country, attrs} ->
@@ -375,17 +375,17 @@ defmodule YouCongress.Authors do
 
   ## Examples
 
-      iex> set_profile_image_from_x(author)
+      iex> set_x_profile_data(author)
       {:ok, %Author{}}
 
-      iex> set_profile_image_from_x(author_without_twitter_username)
+      iex> set_x_profile_data(author_without_twitter_username)
       {:error, :no_twitter_username}
 
   """
-  def set_profile_image_from_x(%Author{twitter_username: nil}),
+  def set_x_profile_data(%Author{twitter_username: nil}),
     do: {:error, :no_twitter_username}
 
-  def set_profile_image_from_x(%Author{twitter_username: twitter_username} = author) do
+  def set_x_profile_data(%Author{twitter_username: twitter_username} = author) do
     with {:ok, x_user_data} <- YouCongress.X.XAPI.fetch_user_by_username(twitter_username) do
       attrs = x_profile_attrs(author, x_user_data)
 
@@ -410,35 +410,35 @@ defmodule YouCongress.Authors do
       from(v in Vote, where: v.author_id == ^author_before.id and v.twin)
     )
     |> Repo.transaction()
-    |> maybe_enqueue_profile_image_fetch(twitter_username_changed?)
+    |> maybe_enqueue_x_profile_data_fetch(twitter_username_changed?)
     |> maybe_enqueue_wikidata_fetch(wikipedia_url_changed?(changeset))
   end
 
-  defp maybe_enqueue_profile_image_fetch(result, force? \\ false)
+  defp maybe_enqueue_x_profile_data_fetch(result, force? \\ false)
 
-  defp maybe_enqueue_profile_image_fetch({:ok, %Author{} = author} = result, force?) do
-    enqueue_profile_image_fetch_if_needed(author, force?)
+  defp maybe_enqueue_x_profile_data_fetch({:ok, %Author{} = author} = result, force?) do
+    enqueue_x_profile_data_fetch_if_needed(author, force?)
     result
   end
 
-  defp maybe_enqueue_profile_image_fetch(
+  defp maybe_enqueue_x_profile_data_fetch(
          {:ok, %{update_author: %Author{} = author}} = result,
          force?
        ) do
-    enqueue_profile_image_fetch_if_needed(author, force?)
+    enqueue_x_profile_data_fetch_if_needed(author, force?)
     result
   end
 
-  defp maybe_enqueue_profile_image_fetch(result, _force?), do: result
+  defp maybe_enqueue_x_profile_data_fetch(result, _force?), do: result
 
-  defp enqueue_profile_image_fetch_if_needed(%Author{} = author, force?) do
+  defp enqueue_x_profile_data_fetch_if_needed(%Author{} = author, force?) do
     should_fetch? =
       author.twitter_username not in [nil, ""] and
         (force? or author.profile_image_url in [nil, ""])
 
     if should_fetch? do
       %{author_id: author.id}
-      |> SetAuthorProfileImageFromXWorker.new()
+      |> SetAuthorXProfileDataWorker.new()
       |> Oban.insert()
     end
   end

@@ -1,4 +1,4 @@
-defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorkerTest do
+defmodule YouCongress.Workers.SetAuthorXProfileDataWorkerTest do
   use YouCongress.DataCase
   use Oban.Testing, repo: YouCongress.Repo
 
@@ -6,7 +6,7 @@ defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorkerTest do
   import YouCongress.AuthorsFixtures
 
   alias YouCongress.Authors
-  alias YouCongress.Workers.SetAuthorProfileImageFromXWorker
+  alias YouCongress.Workers.SetAuthorXProfileDataWorker
   alias YouCongress.X.XAPI
 
   describe "perform/1" do
@@ -29,7 +29,7 @@ defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorkerTest do
            }}
         end do
         assert :ok =
-                 SetAuthorProfileImageFromXWorker.perform(%Oban.Job{
+                 SetAuthorXProfileDataWorker.perform(%Oban.Job{
                    args: %{"author_id" => author.id}
                  })
 
@@ -63,7 +63,7 @@ defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorkerTest do
            }}
         end do
         assert :ok =
-                 SetAuthorProfileImageFromXWorker.perform(%Oban.Job{
+                 SetAuthorXProfileDataWorker.perform(%Oban.Job{
                    args: %{"author_id" => author.id}
                  })
 
@@ -79,7 +79,7 @@ defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorkerTest do
       with_mock XAPI,
         fetch_user_by_username: fn "missing_user" -> {:error, "User not found"} end do
         assert :ok =
-                 SetAuthorProfileImageFromXWorker.perform(%Oban.Job{
+                 SetAuthorXProfileDataWorker.perform(%Oban.Job{
                    args: %{"author_id" => author.id}
                  })
 
@@ -93,14 +93,14 @@ defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorkerTest do
       author = author_fixture(twitter_username: nil)
 
       assert :ok =
-               SetAuthorProfileImageFromXWorker.perform(%Oban.Job{
+               SetAuthorXProfileDataWorker.perform(%Oban.Job{
                  args: %{"author_id" => author.id}
                })
     end
 
     test "returns :ok when the author does not exist" do
       assert :ok =
-               SetAuthorProfileImageFromXWorker.perform(%Oban.Job{
+               SetAuthorXProfileDataWorker.perform(%Oban.Job{
                  args: %{"author_id" => -1}
                })
     end
@@ -111,7 +111,7 @@ defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorkerTest do
       with_mock XAPI,
         fetch_user_by_username: fn "some_username" -> {:error, "Request failed"} end do
         assert {:error, "Request failed"} =
-                 SetAuthorProfileImageFromXWorker.perform(%Oban.Job{
+                 SetAuthorXProfileDataWorker.perform(%Oban.Job{
                    args: %{"author_id" => author.id}
                  })
       end
