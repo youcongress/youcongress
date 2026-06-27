@@ -2,10 +2,14 @@ defmodule YouCongress.Workers.SetAuthorXProfileDataWorkerTest do
   use YouCongress.DataCase
   use Oban.Testing, repo: YouCongress.Repo
 
+  import ExUnit.CaptureLog
   import Mock
+  import YouCongress.AccountsFixtures
   import YouCongress.AuthorsFixtures
 
   alias YouCongress.Authors
+  alias YouCongress.Accounts.User
+  alias YouCongress.Repo
   alias YouCongress.Workers.SetAuthorXProfileDataWorker
   alias YouCongress.X.XAPI
 
@@ -73,6 +77,97 @@ defmodule YouCongress.Workers.SetAuthorXProfileDataWorkerTest do
       end
     end
 
+    test "returns :ok when a duplicate X id is reassigned from an unlinked stale author" do
+      old_author =
+        author_fixture(
+          twitter_username: "worker_stale_username",
+          twitter_id_str: "worker-stable-x-id"
+        )
+
+      current_author =
+        author_fixture(
+          twitter_username: "worker_current_username",
+          twitter_id_str: nil,
+          profile_image_url: nil
+        )
+
+      with_mock XAPI,
+        fetch_user_by_username: fn "worker_current_username" ->
+          {:ok,
+           %{
+             twitter_id_str: "worker-stable-x-id",
+             profile_image_url: "https://pbs.twimg.com/profile_images/123/worker_400x400.jpg",
+             description: "Worker X bio"
+           }}
+        end do
+        log =
+          capture_warning_log(fn ->
+            assert :ok =
+                     SetAuthorXProfileDataWorker.perform(%Oban.Job{
+                       args: %{"author_id" => current_author.id}
+                     })
+          end)
+
+        assert log =~ "Reassigning duplicate X identity"
+
+        old_author = Authors.get_author!(old_author.id)
+        current_author = Authors.get_author!(current_author.id)
+
+        assert old_author.twitter_id_str == nil
+        assert old_author.twitter_username == nil
+        assert current_author.twitter_id_str == "worker-stable-x-id"
+        assert current_author.description == "Worker X bio"
+      end
+    end
+
+    test "returns :ok when a duplicate X id transfer is skipped for a linked old author" do
+      old_author =
+        author_fixture(
+          twitter_username: "worker_linked_old_username",
+          twitter_id_str: "worker-linked-x-id"
+        )
+
+      user_for_author(old_author)
+
+      current_author =
+        author_fixture(
+          twitter_username: "worker_linked_current_username",
+          twitter_id_str: nil,
+          profile_image_url: nil,
+          description: nil
+        )
+
+      with_mock XAPI,
+        fetch_user_by_username: fn "worker_linked_current_username" ->
+          {:ok,
+           %{
+             twitter_id_str: "worker-linked-x-id",
+             profile_image_url: "https://pbs.twimg.com/profile_images/123/linked_400x400.jpg",
+             description: "Should not be saved"
+           }}
+        end do
+        log =
+          capture_warning_log(fn ->
+            assert :ok =
+                     SetAuthorXProfileDataWorker.perform(%Oban.Job{
+                       args: %{"author_id" => current_author.id}
+                     })
+          end)
+
+        assert log =~ "Skipped duplicate X identity reassignment"
+
+        old_author = Authors.get_author!(old_author.id)
+        current_author = Authors.get_author!(current_author.id)
+
+        assert old_author.twitter_id_str == "worker-linked-x-id"
+        assert old_author.twitter_username == "worker_linked_old_username"
+        assert current_author.twitter_id_str == nil
+        assert current_author.twitter_username == "worker_linked_current_username"
+        assert current_author.profile_image_url == nil
+        assert current_author.description == nil
+      end
+    end
+
     test "deletes the twitter_username without retrying when the X user is not found" do
       author = author_fixture(twitter_username: "missing_user")
 
@@ -115,6 +210,26 @@ defmodule YouCongress.Workers.SetAuthorXProfileDataWorkerTest do
                    args: %{"author_id" => author.id}
                  })
       end
+    end
+  end
+
+  defp user_for_author(author) do
+    %User{}
+    |> User.twitter_registration_changeset(%{
+      "email" => unique_user_email(),
+      "author_id" => author.id
+    })
+    |> Repo.insert!()
+  end
+
+  defp capture_warning_log(fun) do
+    previous_level = Logger.level()
+    Logger.configure(level: :warning)
+
+    try do
+      capture_log(fun)
+    after
+      Logger.configure(level: previous_level)
     end
   end
 end
