@@ -246,7 +246,7 @@ defmodule YouCongressWeb.PageController do
     - quotes_random_unverified — a random unverified quote to review
     - quotes_recent_unverified — the most recent unverified quote to review
     - quotes_verify — verify a quote is authentic (really said, accurately transcribed)
-    - opinion_statements_verify — verify a quote is exactly about a statement (relevance)
+    - opinion_statements_verify — verify a quote is relevant to a statement
 
     Votes (how authors vote on statements):
     - votes_create — create a vote (for / against / abstain)
