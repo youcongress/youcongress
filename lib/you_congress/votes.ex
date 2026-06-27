@@ -7,7 +7,9 @@ defmodule YouCongress.Votes do
 
   alias YouCongress.DelegationVotes
   alias YouCongress.Endorsements
+  alias YouCongress.Authors.Author
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Votes.Vote
   alias YouCongress.Repo
@@ -686,6 +688,22 @@ defmodule YouCongress.Votes do
       end
 
     Repo.one(query)
+  end
+
+  def list_top_sourced_statement_authors(statement_id, limit \\ 3) do
+    from(a in Author,
+      join: v in Vote,
+      on: v.author_id == a.id,
+      join: o in Opinion,
+      on: v.opinion_id == o.id,
+      where:
+        v.statement_id == ^statement_id and not is_nil(o.source_url) and
+          v.twin == false and o.twin == false and
+          not is_nil(a.wikipedia_url) and a.wikipedia_url != "",
+      order_by: [desc_nulls_last: a.followers_count, asc: a.name],
+      limit: ^limit
+    )
+    |> Repo.all()
   end
 
   def count_by_response_map_by_source(statement_id, opts \\ []) do

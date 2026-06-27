@@ -43,7 +43,7 @@ defmodule YouCongressWeb.SEOMetaTest do
   end
 
   describe "statement page" do
-    test "vote-aware description, Quotation JSON-LD without twins, blockquote markup", %{
+    test "statement description, Quotation JSON-LD without twins, blockquote markup", %{
       conn: conn
     } do
       statement = statement_fixture(%{title: "AI labs should publish safety frameworks"})
@@ -91,8 +91,9 @@ defmodule YouCongressWeb.SEOMetaTest do
       conn = get(conn, ~p"/p/#{statement.slug}")
       html = html_response(conn, 200)
 
-      assert html =~ "verified expert quote"
-      assert html =~ "% for,"
+      assert html =~ "See sourced quotes, votes and sources"
+      refute html =~ "% for,"
+      refute html =~ "2 sourced quotes"
 
       assert html =~
                ~s(<link rel="canonical" href="#{YouCongressWeb.Endpoint.url()}/p/#{statement.slug}">)
