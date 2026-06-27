@@ -631,6 +631,24 @@ defmodule YouCongress.Opinions do
         user_id
       )
       when not is_nil(user_id) do
+    add_opinion_to_statement(opinion, statement, user_id, [])
+  end
+
+  def add_opinion_to_statement(
+        %Opinion{} = _opinion,
+        %YouCongress.Statements.Statement{} = _statement,
+        _user_id
+      ) do
+    {:error, :user_id_required}
+  end
+
+  def add_opinion_to_statement(
+        %Opinion{} = opinion,
+        %YouCongress.Statements.Statement{} = statement,
+        user_id,
+        opts
+      )
+      when not is_nil(user_id) and is_list(opts) do
     with :ok <- ensure_not_already_associated(opinion.id, statement.id) do
       opinion_statement_changeset =
         OpinionStatement.changeset(%OpinionStatement{}, %{
@@ -646,7 +664,7 @@ defmodule YouCongress.Opinions do
           :sync_opinions_count,
           SyncStatementOpinionsCountWorker.new(%{"statement_id" => statement.id})
         )
-        |> maybe_enqueue_relevance_verification(opinion)
+        |> maybe_enqueue_relevance_verification(opinion, opts)
         |> maybe_update_current_quote_vote(opinion, statement)
         |> Repo.transaction()
 
@@ -669,7 +687,8 @@ defmodule YouCongress.Opinions do
   def add_opinion_to_statement(
         %Opinion{} = _opinion,
         %YouCongress.Statements.Statement{} = _statement,
-        _user_id
+        _user_id,
+        _opts
       ) do
     {:error, :user_id_required}
   end
@@ -681,8 +700,9 @@ defmodule YouCongress.Opinions do
     end
   end
 
-  defp maybe_enqueue_relevance_verification(multi, %Opinion{id: opinion_id}) do
-    if relevance_verification_ready?(opinion_id) do
+  defp maybe_enqueue_relevance_verification(multi, %Opinion{id: opinion_id}, opts) do
+    if Keyword.get(opts, :trigger_relevance_verification, true) &&
+         relevance_verification_ready?(opinion_id) do
       Oban.insert(multi, :relevance_verification, fn %{opinion_statement: opinion_statement} ->
         VerificationWorker.new(%{"subject" => "relevance", "id" => opinion_statement.id})
       end)

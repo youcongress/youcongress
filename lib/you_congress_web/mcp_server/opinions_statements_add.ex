@@ -30,13 +30,15 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
     field :opinion_id, :integer, required: true
     field :statement_id, :integer, required: true
     field :vote_answer, :string, required: true
+    field :trigger_relevance_verification, :boolean, default: true
   end
 
   @impl true
   def execute(
-        %{opinion_id: opinion_id, statement_id: statement_id, vote_answer: vote_answer},
+        %{opinion_id: opinion_id, statement_id: statement_id, vote_answer: vote_answer} = params,
         frame
       ) do
+    trigger_relevance_verification = Map.get(params, :trigger_relevance_verification, true)
     user_result = ToolUsageTracker.track(__MODULE__, frame, required_scope: :write)
 
     with {:ok, normalized_vote_answer} <- normalize_vote_answer(vote_answer),
@@ -44,7 +46,10 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
          :ok <- ensure_permission(user),
          {:ok, opinion} <- fetch_opinion(opinion_id),
          {:ok, statement} <- fetch_statement(statement_id),
-         {:ok, _} <- Opinions.add_opinion_to_statement(opinion, statement, user.id),
+         {:ok, _} <-
+           Opinions.add_opinion_to_statement(opinion, statement, user.id,
+             trigger_relevance_verification: trigger_relevance_verification
+           ),
          {:ok, vote} <- upsert_vote(opinion, statement, normalized_vote_answer, user) do
       data = %{
         opinion_id: opinion.id,
