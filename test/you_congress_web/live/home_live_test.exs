@@ -152,7 +152,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert older_added_position < newer_added_position
     end
 
-    test "uses the opinion creation time for opinion card added labels", %{conn: conn} do
+    test "shows added time inline in default quote-date mode", %{conn: conn} do
       statement =
         statement_fixture(title: "Timestamp Statement")
         |> add_statement_to_ai_hall()
@@ -185,18 +185,20 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       assert html =~ "Timestamped opinion content"
 
+      refute has_element?(view, "[data-testid='added-at-badge-#{vote.id}']")
+
       assert has_element?(
                view,
-               "[data-testid='added-at-badge-#{vote.id}'].bg-indigo-50.text-indigo-700",
-               "Added 1h ago"
+               "[data-testid='added-at-inline-#{vote.id}']",
+               "added 1h ago"
              )
 
       card_html = view |> element("[data-testid='vote-card-#{vote.id}']") |> render()
-      assert length(Regex.scan(~r/[Aa]dded 1h ago/, card_html)) == 1
+      assert length(Regex.scan(~r/added 1h ago/, card_html)) == 1
       refute html =~ "13d ago"
     end
 
-    test "uses a gray added badge for opinions older than one week", %{conn: conn} do
+    test "uses a gray added badge in added mode for opinions older than one week", %{conn: conn} do
       statement =
         statement_fixture(title: "Older Timestamp Statement")
         |> add_statement_to_ai_hall()
@@ -219,6 +221,8 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/")
 
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
+
       assert has_element?(
                view,
                "[data-testid='added-at-badge-#{vote.id}'].bg-gray-100.text-gray-600",
@@ -229,6 +233,8 @@ defmodule YouCongressWeb.HomeLiveTest do
                view,
                "[data-testid='added-at-badge-#{vote.id}'].bg-indigo-50"
              )
+
+      refute has_element?(view, "[data-testid='added-at-inline-#{vote.id}']")
     end
 
     test "lets visitors switch between an author's sourced quotes on the feed", %{conn: conn} do

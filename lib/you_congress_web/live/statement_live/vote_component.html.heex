@@ -1,6 +1,9 @@
 <div id={"vote-component-#{@id}"} data-testid={"vote-card-#{@vote.id}"}>
   <span
-    :if={@page == :statements_index && @visible_opinion && @show_opinion}
+    :if={
+      @page == :statements_index && @added_at_position == :badge && @visible_opinion &&
+        @show_opinion
+    }
     data-testid={"added-at-badge-#{@vote.id}"}
     class={[
       "mb-3 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
@@ -189,7 +192,11 @@
           opinion={@visible_opinion}
           current_user={@current_user}
         />
-        <span :if={@page != :statements_index} class="text-xs text-gray-500 pl-3">
+        <span
+          :if={@page != :statements_index || @added_at_position == :actions}
+          data-testid={"added-at-inline-#{@vote.id}"}
+          class="text-xs text-gray-500 pl-3"
+        >
           added {TimeAgo.short_time(added_at(@visible_opinion, @vote))}
         </span>
       </div>
