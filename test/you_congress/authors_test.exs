@@ -3,7 +3,7 @@ defmodule YouCongress.AuthorsTest do
   use Oban.Testing, repo: YouCongress.Repo
 
   alias YouCongress.Authors
-  alias YouCongress.Workers.SetAuthorProfileImageFromXWorker
+  alias YouCongress.Workers.SetAuthorXProfileDataWorker
 
   describe "authors" do
     alias YouCongress.Authors.Author
@@ -185,18 +185,18 @@ defmodule YouCongress.AuthorsTest do
       assert author == Authors.get_author!(author.id)
     end
 
-    test "create_author/1 enqueues a profile image fetch when there is an X username but no picture" do
+    test "create_author/1 enqueues an X profile data fetch when there is an X username but no picture" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         author = author_fixture(twitter_username: "some_username")
 
         assert_enqueued(
-          worker: SetAuthorProfileImageFromXWorker,
+          worker: SetAuthorXProfileDataWorker,
           args: %{author_id: author.id}
         )
       end)
     end
 
-    test "create_author/1 does not enqueue a profile image fetch when the author already has a picture" do
+    test "create_author/1 does not enqueue an X profile data fetch when the author already has a picture" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         author =
           author_fixture(
@@ -205,37 +205,37 @@ defmodule YouCongress.AuthorsTest do
           )
 
         refute_enqueued(
-          worker: SetAuthorProfileImageFromXWorker,
+          worker: SetAuthorXProfileDataWorker,
           args: %{author_id: author.id}
         )
       end)
     end
 
-    test "create_author/1 does not enqueue a profile image fetch without an X username" do
+    test "create_author/1 does not enqueue an X profile data fetch without an X username" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         author = author_fixture(twitter_username: nil)
 
         refute_enqueued(
-          worker: SetAuthorProfileImageFromXWorker,
+          worker: SetAuthorXProfileDataWorker,
           args: %{author_id: author.id}
         )
       end)
     end
 
-    test "update_author/2 enqueues a profile image fetch when there is an X username but no picture" do
+    test "update_author/2 enqueues an X profile data fetch when there is an X username but no picture" do
       author = author_fixture(twitter_username: nil)
 
       Oban.Testing.with_testing_mode(:manual, fn ->
         assert {:ok, author} = Authors.update_author(author, %{twitter_username: "some_username"})
 
         assert_enqueued(
-          worker: SetAuthorProfileImageFromXWorker,
+          worker: SetAuthorXProfileDataWorker,
           args: %{author_id: author.id}
         )
       end)
     end
 
-    test "update_author/2 does not enqueue a profile image fetch when the author already has a picture" do
+    test "update_author/2 does not enqueue an X profile data fetch when the author already has a picture" do
       author =
         author_fixture(
           twitter_username: "some_username",
@@ -246,7 +246,7 @@ defmodule YouCongress.AuthorsTest do
         assert {:ok, author} = Authors.update_author(author, %{bio: "updated bio"})
 
         refute_enqueued(
-          worker: SetAuthorProfileImageFromXWorker,
+          worker: SetAuthorXProfileDataWorker,
           args: %{author_id: author.id}
         )
       end)
@@ -263,7 +263,7 @@ defmodule YouCongress.AuthorsTest do
         assert {:ok, author} = Authors.update_author(author, %{twitter_username: "new_username"})
 
         assert_enqueued(
-          worker: SetAuthorProfileImageFromXWorker,
+          worker: SetAuthorXProfileDataWorker,
           args: %{author_id: author.id}
         )
       end)
@@ -617,10 +617,10 @@ defmodule YouCongress.AuthorsTest do
       assert found.id == author.id
     end
 
-    test "set_profile_image_from_x/1 returns error when author has no twitter_username" do
+    test "set_x_profile_data/1 returns error when author has no twitter_username" do
       author = author_fixture(twitter_username: nil)
 
-      assert Authors.set_profile_image_from_x(author) == {:error, :no_twitter_username}
+      assert Authors.set_x_profile_data(author) == {:error, :no_twitter_username}
     end
 
     defp user_for_author(author) do

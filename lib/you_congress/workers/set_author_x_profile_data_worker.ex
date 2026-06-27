@@ -1,4 +1,4 @@
-defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorker do
+defmodule YouCongress.Workers.SetAuthorXProfileDataWorker do
   @moduledoc """
   Fetches an author's profile from the X API using their X username and updates
   X-sourced profile fields.
@@ -17,16 +17,16 @@ defmodule YouCongress.Workers.SetAuthorProfileImageFromXWorker do
         :ok
 
       %Author{} = author ->
-        set_profile_image(author)
+        set_x_profile_data(author)
     end
   end
 
-  defp set_profile_image(author) do
-    case Authors.set_profile_image_from_x(author) do
+  defp set_x_profile_data(author) do
+    case Authors.set_x_profile_data(author) do
       {:ok, _author} ->
         :ok
 
-      # Don't retry when the author can't have an image fetched
+      # Don't retry when the author can't have X profile data fetched.
       {:error, :no_twitter_username} ->
         :ok
 
