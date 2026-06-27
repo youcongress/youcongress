@@ -1,6 +1,6 @@
 defmodule YouCongressWeb.MCPServer.OpinionStatementsVerify do
   @moduledoc """
-  Verify that a quote (opinion) is exactly about a statement through the MCP server.
+  Verify that a quote (opinion) is relevant to a statement through the MCP server.
 
   This checks the relevance of the opinion-statement link, separately from whether
   the quote itself is authentic. The caller must provide a valid API key via the

@@ -138,7 +138,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     Current UTC date: #{Date.to_iso8601(current_date)}
 
     Objective:
-    Find up to #{limit} real quotes from different notable authors. Every returned quote must pass all three YouCongress AI checks: quote authenticity, relevance to the complete statement, and vote classification.
+    Find up to #{limit} real quotes from different notable authors. Every returned quote must pass all three YouCongress AI checks: quote authenticity, relevance to the COMPLETE statement, and vote classification.
 
     Research workflow:
     1. Search the web for quotes, interviews, speeches, testimony, articles, posts, reports, or transcripts about the exact statement topic.
@@ -154,26 +154,27 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     - Return the canonical quote text, source URL, date, date precision, and author metadata. If VerifierAI would need to correct any of those fields, discard or fix the candidate before returning it.
     - Only use real, verifiable, verbatim quotes. Never fabricate, paraphrase, or invent attribution.
     - If all quote text is not consecutive, use [...] for omitted text. Do not use more than two [...] in a quote.
-    - Quotes should be two or three paragraphs and at least three sentences when the source supports that length, but shorter quotes are acceptable when they clearly answer the statement.
+    - Quotes should be two or three paragraphs and at least three sentences when the source supports that length, but shorter quotes are acceptable when they provide a determinable stance signal.
     - If the source quote is not in English, translate it to English and keep the meaning faithful.
     - Documents, open letters, petitions, declarations, manifestos, reports, and similar collective texts are acceptable when the source presents the quote as the wording of one named document or issuing coalition. In that case, use the document title or coalition as the author.
     - The quote must have exactly one clear author: one person, one organisation speaking on its own behalf, or one named document/issuing coalition. Never combine multiple people into one author. Use a media outlet as author only for its signed or official editorial.
 
-    Complete-statement relevance check (must receive "ai_verified"):
+    COMPLETE statement relevance check (must receive "ai_verified"):
     A quote qualifies if it either:
-    - is directly about the COMPLETE statement; or
-    - is about something else, but clearly implies that the author supports, opposes, or abstains on the COMPLETE statement.
+    - is directly about the COMPLETE statement's claim, proposal, or question; or
+    - is about a narrower, causal, comparative, or underlying issue whose ordinary meaning makes one stance on the COMPLETE statement substantially more likely.
 
-    The author's position on the COMPLETE statement must be clear from the quote itself.
-    Do not accept a quote that only relates to one word, theme, subtopic, or nearby issue unless it also implies the author's position on the COMPLETE statement.
+    Do not require the quote to restate every part of the COMPLETE statement or amount to strict logical proof. For example, a prediction that AI will create a labor shortage strongly implies support for "AI will create more jobs than it destroys", and a quote about AI-driven worker replacement can strongly imply opposition to that same COMPLETE statement.
+    Do not accept a quote that only relates to one word, theme, subtopic, or nearby issue unless it also makes one stance on the COMPLETE statement substantially more likely.
     Do not infer a position from general sentiment, party membership, job title, or facts outside the quote.
 
     Vote check (must receive "ai_verified"):
-    - Classify the stance based solely on what the quote says about the whole statement.
-    - Use "For" only when the quote clearly supports the statement.
-    - Use "Against" only when the quote clearly opposes the statement.
-    - Use "Abstain" only when the quote is explicitly neutral or undecided on the statement.
-    - If the quote's stance would be "none" or is ambiguous, discard it. Never turn an unclear stance into "Abstain".
+    - Classify the stance based on what the quote says about the COMPLETE statement.
+    - Use "For" when the quote explicitly or strongly implies support for the statement.
+    - Use "Against" when the quote explicitly or strongly implies opposition to the statement.
+    - Use "Abstain" only when the quote is explicitly neutral or undecided on the COMPLETE statement.
+    - Do not require strict logical proof. If one position is substantially more likely than the alternatives, classify it and explain the inference in validation_note.
+    - If the quote's stance would be "none" or is genuinely ambiguous, discard it. Never turn an unclear stance into "Abstain".
 
     Metadata rules:
     - Fill every JSON field. Use an empty string when unavailable.
@@ -186,9 +187,9 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     Final QA before output:
     - Re-open every source URL and re-check exact text, attribution, and date.
     - Re-check that VerifierAI would mark the quote authentic without a correction.
-    - Re-check that VerifierAI would mark its relevance to the complete statement "ai_verified".
-    - Re-check that VerifierAI would derive the same For/Against/Abstain vote from the quote alone.
-    - Remove any candidate that fails authenticity, attribution, freshness, uniqueness, complete-statement relevance, or unambiguous vote classification.
+    - Re-check that VerifierAI would mark its relevance to the COMPLETE statement "ai_verified".
+    - Re-check that VerifierAI would derive the same For/Against/Abstain vote from the quote and cited source context if needed.
+    - Remove any candidate that fails authenticity, attribution, freshness, uniqueness, COMPLETE statement relevance, or unambiguous vote classification.
     - If not enough candidates pass, return fewer quotes. An empty result is better than a weak or unverifiable quote.
 
     Output: Return ONLY a valid JSON object matching the schema with as many qualifying items as you can find, up to #{limit} items.
@@ -225,7 +226,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
           %{
             "role" => "system",
             "content" =>
-              "You are a meticulous quote researcher. Use web_search to inspect primary sources, and reject any candidate that would fail quote-authenticity, complete-statement relevance, or vote-answer verification."
+              "You are a meticulous quote researcher. Use web_search to inspect primary sources, and reject any candidate that would fail quote-authenticity, COMPLETE statement relevance, or vote-answer verification."
           },
           %{
             "role" => "user",
@@ -328,7 +329,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
         "quotes" => %{
           type: "array",
           description:
-            "Up to #{limit} quotes that pass authenticity, complete-statement relevance, and vote-answer verification. Return fewer items rather than weak, duplicate, unverifiable, or fabricated quotes. Do not repeat authors.",
+            "Up to #{limit} quotes that pass authenticity, COMPLETE statement relevance, and vote-answer verification. Return fewer items rather than weak, duplicate, unverifiable, or fabricated quotes. Do not repeat authors.",
           minItems: 0,
           maxItems: limit,
           items: %{
@@ -376,7 +377,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
               "agree_rate" => %{
                 type: "string",
                 description:
-                  "The unambiguous position expressed by the quote alone. Abstain means explicitly neutral or undecided, never unclear.",
+                  "The unambiguous position supported by the quote and cited source context if needed. Abstain means explicitly neutral or undecided, never unclear.",
                 enum: [
                   "For",
                   "Against",
@@ -386,7 +387,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
               "validation_note" => %{
                 type: "string",
                 description:
-                  "Brief evidence that the source contains the exact quote, attribution and date, plus why the quote establishes this vote on the complete statement."
+                  "Brief evidence that the source contains the exact quote, attribution and date, plus why the quote supports this vote on the COMPLETE statement."
               }
             },
             required: [

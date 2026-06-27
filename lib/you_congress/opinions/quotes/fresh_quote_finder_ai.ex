@@ -76,7 +76,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     You are helping populate YouCongress (youcongress.org) with real, sourced quotes from notable public figures and experts.
 
     Objective:
-    Find up to #{limit} fresh quote published in the last #{window_days} days about AI governance, AI safety, AI's impact on jobs, or AI's broader implications for society, and only if the quote fully matches at least one provided YouCongress statement.
+    Find up to #{limit} fresh quote published in the last #{window_days} days about AI governance, AI safety, AI's impact on jobs, or AI's broader implications for society, and only if the quote qualifies for at least one provided YouCongress statement.
 
     Current UTC time: #{DateTime.to_iso8601(now)}
     Freshness window starts at UTC: #{DateTime.to_iso8601(window_start)}
@@ -92,20 +92,22 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     2. Prefer primary sources: speeches, testimony, interviews, official blog posts, reports, transcripts, or accessible official social posts.
     3. Fetch the source page. Do not rely on search snippets.
     4. Check the existing recent YouCongress quotes and do not return duplicates or substantially identical quotes.
-    5. Check the provided YouCongress statements and discard any quote that does not qualify for at least one complete statement.
+    5. Check the provided YouCongress statements and discard any quote that is not on-topic for at least one COMPLETE statement with a determinable stance signal.
     6. Keep searching after invalid or irrelevant candidates. Return no candidates only after making a thorough, persistent effort across multiple searches to find a qualifying quote.
 
-    Complete-statement relevance standard:
+    COMPLETE statement relevance standard:
     A quote qualifies for a statement if it either:
-    - is directly about the COMPLETE statement; or
+    - is directly about the COMPLETE statement's claim, proposal, or question; or
     - strongly implies through its ordinary meaning that the author supports,
       opposes, or abstains on the COMPLETE statement.
 
-    A quote need not restate every part of the statement or amount to strict
-    logical proof. It qualifies when one position is substantially more likely
-    than the alternatives based on the quote itself. For example, a prediction
-    that AI will create a labor shortage strongly implies support for "AI will
-    create more jobs than it destroys".
+    A quote need not restate every part of the COMPLETE statement or amount to
+    strict logical proof. It qualifies when one position on the COMPLETE
+    statement is substantially more likely than the alternatives based on the
+    quote itself. For example, a prediction that AI will create a labor shortage
+    strongly implies support for "AI will create more jobs than it destroys", and
+    a quote about AI-driven worker replacement can strongly imply opposition to
+    that same COMPLETE statement.
 
     Do not accept a quote that only relates to one word, theme, subtopic, or a
     nearby issue unless the quote supplies a necessary connection that strongly
@@ -121,7 +123,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
       observation cannot.
     - The quote must be suitable as a standalone quote.
     - The quote topic must be AI governance, AI safety, AI's impact on jobs, or AI's societal implications.
-    - The quote must clearly establish the author's position on at least one provided complete statement.
+    - The quote must make one position on at least one provided COMPLETE statement substantially more likely.
     - If a candidate fails any rule, discard it and keep searching.
 
     Quote quality rules:
@@ -140,8 +142,8 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     Final QA before output:
     - Re-check that every source_url includes the quoted text.
     - Re-check that every quote is not already in the existing recent quotes inventory.
-    - Re-check that every quote would receive "ai_verified" under the complete-statement relevance standard for at least one provided statement.
-    - Remove any quote that fails verification, attribution, freshness, uniqueness, or complete-statement relevance.
+    - Re-check that every quote would receive "ai_verified" under the COMPLETE statement relevance standard for at least one provided COMPLETE statement.
+    - Remove any quote that fails verification, attribution, freshness, uniqueness, or COMPLETE statement relevance.
 
     Output: Return ONLY a valid JSON object matching the schema with as many qualifying items as you can find, up to #{limit} item.
     """
@@ -175,7 +177,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
           %{
             "role" => "system",
             "content" =>
-              "You are a meticulous and persistent research assistant who only returns validated facts with exact citations. Use web_search extensively, trying multiple search strategies and primary sources containing exact quote text before returning no candidates. Accept explicit stances and strong ordinary-language implications on complete statements, including factual claims; reject merely adjacent quotes."
+              "You are a meticulous and persistent research assistant who only returns validated facts with exact citations. Use web_search extensively, trying multiple search strategies and primary sources containing exact quote text before returning no candidates. Accept explicit stances and strong ordinary-language implications on provided COMPLETE statements, including factual claims; reject merely adjacent quotes."
           },
           %{
             "role" => "user",

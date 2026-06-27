@@ -140,8 +140,10 @@ defmodule YouCongress.Verifications.VerifierAI do
     statement = opinion_statement.statement
 
     prompt = """
-    Verify whether the following quote establishes the author's position on the
-    complete statement.
+    Verify whether the following quote is relevant to the COMPLETE statement and
+    provides enough signal that the author's stance on the COMPLETE statement is
+    determinable. This relevance pass should not decide the final vote direction;
+    the separate vote pass does that.
 
     Statement: #{statement.title}
     Source URL: #{opinion.source_url || "None provided"}
@@ -151,19 +153,29 @@ defmodule YouCongress.Verifications.VerifierAI do
     \"\"\"
 
     A quote qualifies if it either:
-    - is directly about the COMPLETE statement; or
+    - is directly about the COMPLETE statement's claim, proposal, or question; or
     - is a comment, criticism, concern, argument, reason, or explanation that
       the cited source presents as part of the author's support, opposition, or
       abstention on the COMPLETE statement; or
-    - is about something else, but the quote plus its cited source context
-      clearly implies that the author supports, opposes, or abstains on the
-      COMPLETE statement.
+    - is about a narrower, causal, comparative, or underlying issue whose
+      ordinary meaning, plus the cited source context when available, makes one
+      stance on the COMPLETE statement substantially more likely than the
+      alternatives.
 
-    The author's position on the COMPLETE statement must be clear from the quote
-    plus, when a Source URL is provided, the source article's context around the
-    quote. Use web_search to inspect the source page when the quote is abstract,
-    uses shorthand, or refers to "the proposal", "this", "these ideas", or
-    similar context-dependent language.
+    Do not require the quote to restate every part of the COMPLETE statement, pin
+    down every quantified/net/comparative claim, or amount to strict logical
+    proof. If the quote is on the same issue and strongly points toward a likely
+    stance on the COMPLETE statement, mark it relevant and leave the exact
+    for/against/abstain classification to the vote pass.
+
+    For example, a quote arguing that AI investment is premised on employers
+    replacing large shares of workers is relevant to "AI will create more jobs
+    than it destroys": it strongly signals a determinable stance on net jobs even
+    if it does not explicitly compare total jobs created and destroyed.
+
+    Use web_search to inspect the source page when the quote is abstract, uses
+    shorthand, or refers to "the proposal", "this", "these ideas", or similar
+    context-dependent language.
 
     The clear support, opposition, or abstention may be stated elsewhere in the
     cited source article rather than inside the stored quote itself, as long as
@@ -178,19 +190,19 @@ defmodule YouCongress.Verifications.VerifierAI do
     corporations.
 
     Do not accept a quote that only relates to one word, theme, subtopic, or a
-    nearby issue unless the quote plus its source context also implies the
-    author's position on the COMPLETE statement. Do not infer a position from
-    general sentiment, party membership, job title, or facts outside the quote
-    and its cited source context. Do not accept a quote merely because the
-    article discusses the statement; the cited source must connect this author's
-    quoted comment or reason to their stance on the statement.
+    nearby issue unless the quote plus its source context supplies the necessary
+    connection and makes one stance on the COMPLETE statement substantially more
+    likely. Do not infer a position from general sentiment, party membership, job
+    title, or facts outside the quote and its cited source context. Do not accept
+    a quote merely because the article discusses the statement; the cited source
+    must connect this author's quoted comment or reason to the issue.
 
     Choose a status:
-    - "ai_verified": the quote is directly about the whole statement, or clearly
-      implies the author's support, opposition, or abstention on the whole
-      statement.
-    - "disputed": the quote does not make the author's position on the whole
-      statement clear.
+    - "ai_verified": the quote is on-topic for the COMPLETE statement and one of
+      support, opposition, or abstention on the COMPLETE statement is
+      substantially more likely, whether explicit or strongly implied.
+    - "disputed": the quote is off-topic, merely adjacent, or no stance on the
+      COMPLETE statement is substantially more likely.
     - "ai_unverifiable": you cannot tell.
     Always include a short comment explaining your decision.
     """
@@ -202,7 +214,7 @@ defmodule YouCongress.Verifications.VerifierAI do
        name: "RelevanceVerification",
        web_search: true,
        system:
-         "You judge whether a quote establishes an author's stance on a policy statement as a whole. Use the cited source context to resolve what an abstract or context-dependent quote is about, but do not use unrelated outside facts. Accept direct relevance or clear implication; reject partial or adjacent topics unless they imply a stance on the complete statement."
+         "You judge whether a quote is on-topic for a COMPLETE policy statement and provides a determinable stance signal on that COMPLETE statement. Use cited source context to resolve abstract or context-dependent quotes, but do not use unrelated outside facts. Accept explicit relevance and strong ordinary-language implications when one stance is substantially more likely; reject merely adjacent topics."
      }}
   end
 
