@@ -8,11 +8,16 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
 
   use Anubis.Server.Component, type: :tool
 
+  import Ecto.Query, warn: false
+
   alias Anubis.Server.Response
   alias Ecto.Changeset
   alias YouCongress.Accounts.Permissions
-  alias YouCongress.Verifications
+  alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.MCP.ToolUsageTracker
+  alias YouCongress.Repo
+  alias YouCongress.Verifications
+  alias YouCongress.Workers.VerificationWorker
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
@@ -45,6 +50,8 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
            user_id: user.id
          },
          {:ok, verification} <- Verifications.create_verification(attrs) do
+      maybe_enqueue_relation_verifications(opinion_id, normalized_status)
+
       data = %{
         verification: %{
           id: verification.id,
@@ -117,4 +124,16 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
   defp sanitize_model("Human"), do: "Unknown"
   defp sanitize_model("HUMAN"), do: "Unknown"
   defp sanitize_model(model), do: model
+
+  defp maybe_enqueue_relation_verifications(opinion_id, "ai_verified") do
+    from(os in OpinionStatement, where: os.opinion_id == ^opinion_id, select: os.id)
+    |> Repo.all()
+    |> Enum.each(fn opinion_statement_id ->
+      %{"subject" => "relevance", "id" => opinion_statement_id}
+      |> VerificationWorker.new()
+      |> Oban.insert()
+    end)
+  end
+
+  defp maybe_enqueue_relation_verifications(_opinion_id, _status), do: :ok
 end
