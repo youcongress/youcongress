@@ -209,6 +209,9 @@
                         delegating?={vote.author_id in @delegate_ids}
                         delegable={true}
                         regenerating_opinion_id={nil}
+                        added_at_position={
+                          if @feed_order == :quote_date, do: :actions, else: :badge
+                        }
                         page={:statements_index}
                       />
                     <% end %>

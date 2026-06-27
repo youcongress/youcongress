@@ -17,6 +17,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
     socket =
       socket
       |> assign(assigns)
+      |> assign_new(:added_at_position, fn -> :default end)
       |> assign_new(:expanded, fn -> false end)
       |> assign_new(:visible_opinion_id, fn -> nil end)
       |> assign_visible_opinion()
