@@ -16,6 +16,10 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
   attr :show_country_results, :boolean, default: false
   attr :country_results_filters, :map, default: %{}
   attr :country_results_target, :any, default: nil
+  attr :year_vote_frequencies, :list, default: nil
+  attr :show_year_results, :boolean, default: false
+  attr :year_results_filters, :map, default: %{}
+  attr :year_results_target, :any, default: nil
 
   def horizontal_bar(assigns) do
     assigns = assign_display_results(assigns)
@@ -34,16 +38,29 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
       />
 
       <div :if={@statement_id} class="space-y-3">
-        <button
-          id={if @id, do: "#{@id}-by-country"}
-          type="button"
-          phx-click="toggle-country-results"
-          phx-value-statement_id={@statement_id}
-          phx-target={@country_results_target}
-          class="text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700"
-        >
-          By country
-        </button>
+        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <button
+            id={if @id, do: "#{@id}-by-country"}
+            type="button"
+            phx-click="toggle-country-results"
+            phx-value-statement_id={@statement_id}
+            phx-target={@country_results_target}
+            class="uppercase tracking-wide hover:text-gray-700"
+          >
+            By country
+          </button>
+          <span class="text-gray-300">·</span>
+          <button
+            id={if @id, do: "#{@id}-by-year"}
+            type="button"
+            phx-click="toggle-year-results"
+            phx-value-statement_id={@statement_id}
+            phx-target={@year_results_target}
+            class="uppercase tracking-wide hover:text-gray-700"
+          >
+            By year
+          </button>
+        </div>
         <div :if={@show_country_results} class="grid gap-3 text-xs md:grid-cols-2">
           <ResultsComponent.country_filter_group
             title="Vote type"
@@ -93,6 +110,58 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
             vote_frequencies={country.vote_frequencies}
           />
         </div>
+
+        <div :if={@show_year_results} class="grid gap-3 text-xs md:grid-cols-2">
+          <ResultsComponent.country_filter_group
+            title="Vote type"
+            filters={@year_results_filters}
+            statement_id={@statement_id}
+            target={@year_results_target}
+            filter_event="toggle-year-results-filter"
+            options={[
+              {:direct, "Direct votes"},
+              {:delegated, "Delegated votes"}
+            ]}
+          />
+          <ResultsComponent.country_filter_group
+            title="Source"
+            filters={@year_results_filters}
+            statement_id={@statement_id}
+            target={@year_results_target}
+            filter_event="toggle-year-results-filter"
+            options={[
+              {:quotes, "Quotes"},
+              {:email_verified, "Users verified by email"},
+              {:phone_verified, "Users verified by phone"}
+            ]}
+          />
+        </div>
+        <div
+          :if={@show_year_results && is_nil(@year_vote_frequencies)}
+          class="text-xs text-gray-500"
+        >
+          Loading year results...
+        </div>
+        <div
+          :if={@show_year_results && @year_vote_frequencies == []}
+          class="text-xs text-gray-500"
+        >
+          No dated quotes yet.
+        </div>
+        <div
+          :if={
+            @show_year_results && is_list(@year_vote_frequencies) &&
+              @year_vote_frequencies != []
+          }
+          class="space-y-3"
+        >
+          <ResultsComponent.result_row
+            :for={year <- @year_vote_frequencies}
+            label={to_string(year.year)}
+            total_votes={year.total_votes}
+            vote_frequencies={year.vote_frequencies}
+          />
+        </div>
       </div>
     </div>
     """
@@ -103,6 +172,7 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
   attr :statement_id, :integer, required: true
   attr :target, :any, default: nil
   attr :options, :list, required: true
+  attr :filter_event, :string, default: "toggle-country-results-filter"
 
   def country_filter_group(assigns) do
     ~H"""
@@ -112,7 +182,7 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
         <input
           type="checkbox"
           checked={Map.get(@filters, filter, false)}
-          phx-click="toggle-country-results-filter"
+          phx-click={@filter_event}
           phx-value-filter={filter}
           phx-value-statement_id={@statement_id}
           phx-target={@target}

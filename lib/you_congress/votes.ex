@@ -622,6 +622,7 @@ defmodule YouCongress.Votes do
         direct: v.direct,
         author_country_id: a.country_id,
         author_country_name: c.name,
+        opinion_date: o.date,
         source_url: o.source_url,
         opinion_id: o.id,
         opinion_user_id: o.user_id,
