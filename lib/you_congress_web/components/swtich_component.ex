@@ -11,10 +11,8 @@ defmodule YouCongressWeb.Components.SwitchComponent do
 
   def render(assigns) do
     ~H"""
-    <div class="text-gray-600 pt-3 text-xs">
-      {@label1}
-    </div>
-    <div class="pt-2">
+    <div class="inline-flex items-center gap-3 text-xs text-gray-600">
+      <span class="leading-6 whitespace-nowrap">{@label1}</span>
       <button
         type="button"
         phx-click="toggle-switch"
@@ -37,9 +35,7 @@ defmodule YouCongressWeb.Components.SwitchComponent do
         >
         </span>
       </button>
-    </div>
-    <div class="text-gray-600 pt-3 text-xs pr-2">
-      {@label2}
+      <span class="leading-6 whitespace-nowrap">{@label2}</span>
     </div>
     """
   end
