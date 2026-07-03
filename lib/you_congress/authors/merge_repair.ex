@@ -49,7 +49,7 @@ defmodule YouCongress.Authors.MergeRepair do
         on: o.id == v.opinion_id,
         left_join: os in OpinionStatement,
         on: os.opinion_id == o.id and os.statement_id == v.statement_id,
-        where: not is_nil(o.source_url) and is_nil(os.id),
+        where: not (is_nil(o.source_url) and is_nil(o.source_text)) and is_nil(os.id),
         distinct: true,
         select: %{
           opinion_id: o.id,
@@ -107,8 +107,9 @@ defmodule YouCongress.Authors.MergeRepair do
       join: so in Opinion,
       on: so.id == os.opinion_id,
       where:
-        (is_nil(v.opinion_id) or is_nil(o.source_url)) and so.author_id == v.author_id and
-          not is_nil(so.source_url),
+        (is_nil(v.opinion_id) or (is_nil(o.source_url) and is_nil(o.source_text))) and
+          so.author_id == v.author_id and
+          not (is_nil(so.source_url) and is_nil(so.source_text)),
       distinct: true,
       select: %{
         id: v.id,
@@ -126,7 +127,7 @@ defmodule YouCongress.Authors.MergeRepair do
       on: os.opinion_id == o.id,
       where:
         os.statement_id == ^statement_id and o.author_id == ^author_id and
-          not is_nil(o.source_url),
+          not (is_nil(o.source_url) and is_nil(o.source_text)),
       order_by: [
         desc:
           fragment(

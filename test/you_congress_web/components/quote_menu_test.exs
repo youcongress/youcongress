@@ -10,7 +10,14 @@ defmodule YouCongressWeb.StatementLive.VoteComponent.QuoteMenuTest do
       render_component(&QuoteMenu.render/1,
         id: "quote-123",
         author: %{twitter_username: nil},
-        opinion: %{id: 123, twin: false, source_url: nil, ancestry: nil, author_id: 1},
+        opinion: %{
+          id: 123,
+          twin: false,
+          source_url: nil,
+          source_text: nil,
+          ancestry: nil,
+          author_id: 1
+        },
         current_user: %{author_id: 2},
         statement: %{slug: "test-statement"},
         page: :statement_show

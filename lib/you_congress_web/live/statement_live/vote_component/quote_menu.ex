@@ -31,7 +31,8 @@ defmodule YouCongressWeb.StatementLive.VoteComponent.QuoteMenu do
       </button>
       <div class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right">
         <div class="w-48 shrink rounded-xl bg-white p-4 text-sm font-semibold leading-6 text-gray-900 shadow-lg ring-1 ring-gray-900/5">
-          <%= if @opinion && (@opinion.twin || @opinion.source_url) && is_nil(@opinion.ancestry) do %>
+          <%= if @opinion && (@opinion.twin || @opinion.source_url || @opinion.source_text) &&
+                   is_nil(@opinion.ancestry) do %>
             <.link href="/faq#my-profile" class="block py-1 px-2 hover:text-indigo-600">
               I am this person!
             </.link>

@@ -17,6 +17,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
         date: opinion.date,
         date_precision: opinion.date_precision,
         source_url: opinion.source_url,
+        source_text: opinion.source_text,
         author_id: opinion.author_id
       })
 
@@ -161,6 +162,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
       "date" => socket.assigns.opinion.date,
       "date_precision" => socket.assigns.opinion.date_precision,
       "source_url" => socket.assigns.opinion.source_url,
+      "source_text" => socket.assigns.opinion.source_text,
       "author_id" => selected_author.id
     }
 
@@ -199,7 +201,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
         class="space-y-4"
       >
         <input type="hidden" name="opinion_id" value={@opinion.id} />
-
+        
     <!-- Opinion Content -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -212,7 +214,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-full"
           />
         </div>
-
+        
     <!-- Date -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
@@ -222,7 +224,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-44"
           />
         </div>
-
+        
     <!-- Date Precision -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Date precision</label>
@@ -241,6 +243,19 @@ defmodule YouCongressWeb.OpinionEditComponent do
             field={@form[:source_url]}
             type="url"
             placeholder="https://example.com/source"
+            class="w-full"
+          />
+        </div>
+        
+    <!-- Source passage (non-web sources) -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Source passage (book, PDF, paywalled)
+          </label>
+          <.input
+            field={@form[:source_text]}
+            type="textarea"
+            placeholder="e.g. Sapiens, Y. N. Harari, Harper, 2015, p. 241: «surrounding passage…»"
             class="w-full"
           />
         </div>

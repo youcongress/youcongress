@@ -250,10 +250,14 @@
                           </div>
                           <p class="text-gray-700 text-base leading-relaxed">
                             {opinion.content}
-                            <%= if opinion.source_url do %>
+                            <%= if Opinion.quote?(opinion) do %>
                               <.link
-                                href={opinion.source_url}
-                                target="_blank"
+                                href={
+                                  if Opinion.has_source_url?(opinion),
+                                    do: opinion.source_url,
+                                    else: ~p"/c/#{opinion.id}"
+                                }
+                                target={if Opinion.has_source_url?(opinion), do: "_blank"}
                                 class="text-gray-400 hover:text-gray-600 ml-1"
                                 title="Source"
                               >

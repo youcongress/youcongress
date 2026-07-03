@@ -171,6 +171,7 @@ defmodule YouCongress.Votes.VoteFrequencies do
   # or when it comes from an opinion that is not a user comment.
   defp quote_sourced?(%{has_user: false}), do: true
   defp quote_sourced?(%{source_url: source_url}) when is_binary(source_url), do: true
+  defp quote_sourced?(%{source_text: source_text}) when is_binary(source_text), do: true
 
   defp quote_sourced?(%{opinion_id: opinion_id, opinion_user_id: nil})
        when not is_nil(opinion_id),

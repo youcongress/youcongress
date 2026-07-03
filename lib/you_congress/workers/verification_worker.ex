@@ -104,7 +104,7 @@ defmodule YouCongress.Workers.VerificationWorker do
   defp load("quote", id, _args) do
     case Opinions.get_opinion(id) do
       nil -> {:skip, :quote_not_found}
-      %Opinion{source_url: nil} -> {:skip, :quote_has_no_source_url}
+      %Opinion{source_url: nil, source_text: nil} -> {:skip, :quote_has_no_source}
       %Opinion{} = opinion -> {:ok, opinion}
     end
   end
@@ -148,7 +148,7 @@ defmodule YouCongress.Workers.VerificationWorker do
 
   defp valid_vote_opinion?(%Vote{} = vote, %Opinion{} = opinion) do
     opinion.author_id == vote.author_id and
-      not is_nil(opinion.source_url) and
+      Opinion.quote?(opinion) and
       not is_nil(OpinionsStatements.get_opinion_statement(opinion.id, vote.statement_id))
   end
 

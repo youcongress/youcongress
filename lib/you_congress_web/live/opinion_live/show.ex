@@ -581,7 +581,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   defp quote?(%Opinion{} = opinion) do
-    !is_nil(opinion.source_url) && !opinion.twin && is_nil(opinion.ancestry)
+    Opinion.quote?(opinion) && !opinion.twin && is_nil(opinion.ancestry)
   end
 
   defp quote?(_), do: false

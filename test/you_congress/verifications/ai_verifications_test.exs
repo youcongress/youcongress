@@ -10,6 +10,7 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
   alias YouCongress.Opinions
   alias YouCongress.OpinionsStatements
   alias YouCongress.Verifications
+  alias YouCongress.Verifications.AIVerifications
   alias YouCongress.VoteVerifications
   alias YouCongress.Votes
   alias YouCongress.Workers.VerificationWorker
@@ -475,6 +476,51 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
   end
 
   describe "quote corrections" do
+    test "applies a source_text correction for a non-web quote with no URL" do
+      use_verifier(PositiveVerifier)
+      set_system_user()
+
+      author = author_fixture(%{name: "Book Author"})
+      user = user_fixture(%{author_id: author.id})
+
+      opinion =
+        without_system_user(fn ->
+          {:ok, %{opinion: opinion}} =
+            Opinions.create_opinion(%{
+              content: "A quote from a book.",
+              source_url: nil,
+              source_text: "Wrong citation, p. 1",
+              twin: false,
+              author_id: author.id,
+              user_id: user.id
+            })
+
+          opinion
+        end)
+
+      result = %{
+        "status" => "disputed",
+        "comment" => "Citation was wrong",
+        "model" => "m",
+        "correction" => %{
+          "content" => "A quote from a book.",
+          "source_url" => nil,
+          "source_text" => "Sapiens, Y. N. Harari, Harper, 2015, p. 241: the passage.",
+          "date" => nil,
+          "date_precision" => nil,
+          "author" => nil
+        }
+      }
+
+      assert :ok = AIVerifications.record_and_cascade("quote", opinion.id, result)
+
+      reloaded = Opinions.get_opinion!(opinion.id)
+
+      assert reloaded.source_url == nil
+      assert reloaded.source_text == "Sapiens, Y. N. Harari, Harper, 2015, p. 241: the passage."
+      assert reloaded.verification_status == :ai_verified
+    end
+
     test "updates corrected quote fields and re-verifies the corrected opinion" do
       use_verifier(CorrectingQuoteVerifier)
       put_env_restore(:verification_test_pid, self())

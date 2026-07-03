@@ -42,6 +42,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsShow do
       opinion_id: opinion.id,
       content: opinion.content,
       source_url: opinion.source_url,
+      source_text: opinion.source_text,
       author_id: opinion.author_id,
       user_id: opinion.user_id,
       verification_status: opinion.verification_status,

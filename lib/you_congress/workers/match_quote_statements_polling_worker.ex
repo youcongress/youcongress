@@ -101,7 +101,7 @@ defmodule YouCongress.Workers.MatchQuoteStatementsPollingWorker do
 
   defp load_quote(opinion_id) do
     case Opinions.get_opinion(normalize_id(opinion_id)) do
-      %Opinion{source_url: nil} -> nil
+      %Opinion{source_url: nil, source_text: nil} -> nil
       %Opinion{author_id: nil} -> nil
       %Opinion{} = opinion -> opinion
       nil -> nil

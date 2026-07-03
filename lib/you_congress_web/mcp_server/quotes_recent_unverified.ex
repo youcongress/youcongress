@@ -82,6 +82,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
       author_name: opinion.author && opinion.author.name,
       author_biography: opinion.author && opinion.author.bio,
       source_url: opinion.source_url,
+      source_text: opinion.source_text,
       verification_status: verification_status(opinion)
     })
   end

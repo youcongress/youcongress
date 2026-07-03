@@ -12,6 +12,7 @@ defmodule YouCongress.Opinions.Opinion do
 
   schema "opinions" do
     field :source_url, :string
+    field :source_text, :string
     field :content, :string
     field :content_embedding, Pgvector.Ecto.Vector
     field :similarity, :float, virtual: true
@@ -53,6 +54,7 @@ defmodule YouCongress.Opinions.Opinion do
       :content,
       :content_embedding,
       :source_url,
+      :source_text,
       :twin,
       :verification_status,
       :author_id,
@@ -71,6 +73,22 @@ defmodule YouCongress.Opinions.Opinion do
   end
 
   def date_precisions, do: @date_precisions
+
+  @doc """
+  Returns true when the opinion is a quote, i.e. it carries a source. A source can be
+  either a web URL (`source_url`) or a free-text passage from a non-web source such as a
+  book, PDF, or paywalled article (`source_text`).
+  """
+  def quote?(%{source_url: source_url, source_text: source_text}),
+    do: not (is_nil(source_url) and is_nil(source_text))
+
+  def quote?(_), do: false
+
+  @doc """
+  Returns true when the opinion has a linkable/fetchable web source URL.
+  """
+  def has_source_url?(%{source_url: source_url}), do: is_binary(source_url) and source_url != ""
+  def has_source_url?(_), do: false
 
   def display_date(%{date: nil}), do: nil
   def display_date(%{date: %Date{} = date, date_precision: :year}), do: pad_year(date.year)

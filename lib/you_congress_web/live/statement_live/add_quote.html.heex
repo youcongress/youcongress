@@ -32,10 +32,22 @@
       label="Source URL"
       data-lpignore="true"
       placeholder="https://..."
-      required
     />
     <%= if @errors[:source_url] do %>
       <span class="text-red-600 text-sm">Please provide a valid URL</span>
+    <% end %>
+    <.input
+      field={@form[:source_text]}
+      type="textarea"
+      label="Source passage (for books, PDFs, or paywalled sources)"
+      data-lpignore="true"
+      placeholder="e.g. Sapiens, Y. N. Harari, Harper, 2015, p. 241: «the surrounding passage that contains the quote…»"
+    />
+    <p class="text-sm text-gray-600 -mt-2">
+      Provide a Source URL or, when the source isn't on the open web, the surrounding passage.
+    </p>
+    <%= if @errors[:source] do %>
+      <span class="text-red-600 text-sm">Please provide a source URL or a source passage</span>
     <% end %>
     <.input
       field={@form[:date]}

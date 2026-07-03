@@ -236,6 +236,92 @@ defmodule YouCongress.OpinionsTest do
       assert opinion.source_url == nil
       assert opinion.content_embedding == nil
     end
+
+    test "generates an embedding for a source_text-only quote (no URL)" do
+      embedding = embedding([0.5, 0.25, -0.5])
+
+      with_mock Embeddings, embed: fn "book quoted content" -> {:ok, embedding} end do
+        {:ok, %{opinion: opinion}} =
+          Opinions.create_opinion(%{
+            content: "book quoted content",
+            source_url: nil,
+            source_text: "Sapiens, Y. N. Harari, Harper, 2015, p. 241: ...",
+            twin: false
+          })
+
+        opinion = Opinions.get_opinion!(opinion.id)
+
+        assert Pgvector.to_list(opinion.content_embedding) == embedding
+      end
+    end
+  end
+
+  describe "quote?/1 and has_source_url?/1" do
+    test "an opinion with only a source_url is a quote with a linkable URL" do
+      opinion = %Opinion{source_url: "https://example.com/quote", source_text: nil}
+
+      assert Opinion.quote?(opinion)
+      assert Opinion.has_source_url?(opinion)
+    end
+
+    test "an opinion with only a source_text is a quote without a linkable URL" do
+      opinion = %Opinion{source_url: nil, source_text: "Sapiens, p. 241: ..."}
+
+      assert Opinion.quote?(opinion)
+      refute Opinion.has_source_url?(opinion)
+    end
+
+    test "an opinion with neither source is not a quote" do
+      opinion = %Opinion{source_url: nil, source_text: nil}
+
+      refute Opinion.quote?(opinion)
+      refute Opinion.has_source_url?(opinion)
+    end
+  end
+
+  describe "source_text quotes" do
+    test "create_opinion enqueues quote verification for a source_text-only quote" do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        {:ok, %{opinion: opinion}} =
+          Opinions.create_opinion(%{
+            content: "a passage from a book",
+            source_url: nil,
+            source_text: "Sapiens, Y. N. Harari, Harper, 2015, p. 241: ...",
+            twin: false
+          })
+
+        assert_enqueued(
+          worker: VerificationWorker,
+          args: %{"subject" => "quote", "id" => opinion.id}
+        )
+      end)
+    end
+
+    test "only_quotes filter includes source_text-only quotes" do
+      user = user_fixture()
+      statement = statement_fixture()
+
+      {:ok, %{opinion: book_quote}} =
+        Opinions.create_opinion(%{
+          content: "passage only quote",
+          source_url: nil,
+          source_text: "Some book, p. 12: ...",
+          twin: false,
+          user_id: user.id
+        })
+
+      assert {:ok, _} = Opinions.add_opinion_to_statement(book_quote, statement, user.id)
+
+      assert %{} =
+               opinion =
+               Opinions.get_opinion(
+                 has_statements: true,
+                 only_quotes: true,
+                 order_by: [desc: :id]
+               )
+
+      assert opinion.id == book_quote.id
+    end
   end
 
   describe "get_opinion/1" do

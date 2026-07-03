@@ -24,6 +24,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsCreate do
     field :content, :string, required: true
     field :author_id, :integer, required: true
     field :source_url, :string
+    field :source_text, :string
     field :date, :string
     field :date_precision, :string
   end
@@ -80,7 +81,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsCreate do
 
   defp attrs_from_params(params) do
     params
-    |> Map.take([:content, :author_id, :source_url, :date, :date_precision])
+    |> Map.take([:content, :author_id, :source_url, :source_text, :date, :date_precision])
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
     |> Map.new()
   end
@@ -92,6 +93,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsCreate do
       opinion_id: opinion.id,
       content: opinion.content,
       source_url: opinion.source_url,
+      source_text: opinion.source_text,
       author_id: opinion.author_id
     })
   end
