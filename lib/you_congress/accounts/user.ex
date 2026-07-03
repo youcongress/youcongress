@@ -39,6 +39,9 @@ defmodule YouCongress.Accounts.User do
           newsletter: boolean()
         }
 
+  def normalize_email(email) when is_binary(email), do: String.downcase(email)
+  def normalize_email(email), do: email
+
   def password_registration_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email, :password, :author_id])
@@ -71,6 +74,7 @@ defmodule YouCongress.Accounts.User do
 
   defp validate_email(changeset, opts) do
     changeset
+    |> normalize_email_change()
     |> validate_required([:email])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
     |> validate_length(:email, max: 160)
@@ -79,6 +83,8 @@ defmodule YouCongress.Accounts.User do
 
   # Validates email only if present (for X OAuth where email may not be available)
   defp validate_optional_email(changeset, opts) do
+    changeset = normalize_email_change(changeset)
+
     if get_change(changeset, :email) do
       changeset
       |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/,
@@ -89,6 +95,10 @@ defmodule YouCongress.Accounts.User do
     else
       changeset
     end
+  end
+
+  defp normalize_email_change(changeset) do
+    update_change(changeset, :email, &normalize_email/1)
   end
 
   defp validate_password(changeset, opts) do

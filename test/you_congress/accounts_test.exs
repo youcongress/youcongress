@@ -16,6 +16,11 @@ defmodule YouCongress.AccountsTest do
       %{id: id} = user = user_fixture()
       assert %User{id: ^id} = Accounts.get_user_by_email(user.email)
     end
+
+    test "returns the user case-insensitively" do
+      %{id: id} = user_fixture(%{"email" => "MixedCase.User@example.com"}, %{}, false)
+      assert %User{id: ^id} = Accounts.get_user_by_email("MIXEDCASE.USER@EXAMPLE.COM")
+    end
   end
 
   describe "get_user_by_email_and_password/2" do
@@ -26,6 +31,21 @@ defmodule YouCongress.AccountsTest do
     test "does not return the user if the password is not valid" do
       user = user_fixture()
       refute Accounts.get_user_by_email_and_password(user.email, "invalid")
+    end
+
+    test "returns the user case-insensitively if the password is valid" do
+      password = valid_user_password()
+
+      {:ok, %{user: user}} =
+        Accounts.register_user(%{
+          "email" => "Login.User@example.com",
+          "password" => password
+        })
+
+      assert %User{id: id} =
+               Accounts.get_user_by_email_and_password("LOGIN.USER@EXAMPLE.COM", password)
+
+      assert id == user.id
     end
   end
 
@@ -52,6 +72,18 @@ defmodule YouCongress.AccountsTest do
       assert "has already been taken" in errors_on(changeset).email
     end
 
+    test "validates email uniqueness case-insensitively" do
+      %{email: email} = user_fixture()
+
+      {:error, :user, changeset, _} =
+        Accounts.register_user(%{
+          "email" => String.upcase(email),
+          "password" => "validpassword123"
+        })
+
+      assert "has already been taken" in errors_on(changeset).email
+    end
+
     test "registers with email/password" do
       email = "whatever@gmail.com"
       password = "d?we2424D-D2sm@"
@@ -61,6 +93,15 @@ defmodule YouCongress.AccountsTest do
       assert user.hashed_password
       assert user.email_confirmed_at == nil
       assert user.phone_number_confirmed_at == nil
+    end
+
+    test "normalizes email to lowercase" do
+      email = "Whatever#{System.unique_integer()}@Gmail.COM"
+
+      {:ok, %{user: user}} =
+        Accounts.register_user(%{"email" => email, "password" => valid_user_password()})
+
+      assert user.email == String.downcase(email)
     end
   end
 
@@ -165,6 +206,16 @@ defmodule YouCongress.AccountsTest do
       password = valid_user_password()
 
       {:error, changeset} = Accounts.apply_user_email(user, password, %{email: email})
+
+      assert "has already been taken" in errors_on(changeset).email
+    end
+
+    test "validates email uniqueness case-insensitively", %{user: user} do
+      %{email: email} = user_fixture()
+      password = valid_user_password()
+
+      {:error, changeset} =
+        Accounts.apply_user_email(user, password, %{email: String.upcase(email)})
 
       assert "has already been taken" in errors_on(changeset).email
     end
