@@ -524,10 +524,11 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
           <dd class="text-gray-700">
             Search quotes. Requires: <code class="bg-gray-100 px-1 rounded">query</code>.
             Optional: <code class="bg-gray-100 px-1 rounded">statement_id</code>
-            — include it to keyword-search quotes within that statement; omit it to search
+            — include it to keyword-search quotes within that statement (public); omit it to search
             all quotes by meaning (semantic similarity), with each result ranked by a
             <code class="bg-gray-100 px-1 rounded">similarity</code>
-            score.
+            score. Cross-statement semantic search requires an API key
+            (<code class="bg-gray-100 px-1 rounded">?key=YOUR_KEY</code>).
           </dd>
         </div>
         <div class="pl-4">

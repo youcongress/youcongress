@@ -241,7 +241,7 @@ defmodule YouCongressWeb.PageController do
     - opinions_statements_remove — unlink an opinion from a statement
 
     Quotes & verification (sourced opinions):
-    - quotes_search — keyword search within a statement, or semantic search across all quotes
+    - quotes_search — keyword search within a statement (public), or semantic search across all quotes (requires an API key)
     - quotes_list — list quotes with author, source, status and vote
     - quotes_random_unverified — a random unverified quote to review
     - quotes_recent_unverified — the most recent unverified quote to review
@@ -278,6 +278,12 @@ defmodule YouCongressWeb.PageController do
   def redirect_to_home(conn, _params) do
     conn
     |> redirect(to: ~p"/")
+    |> halt()
+  end
+
+  def redirect_to_fact_checker(conn, _params) do
+    conn
+    |> redirect(external: "https://hecperez.com/#fact-checker")
     |> halt()
   end
 
