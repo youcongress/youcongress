@@ -45,9 +45,22 @@ defmodule YouCongress.Opinions.Opinion do
     timestamps()
   end
 
+  @doc """
+  Normalizes opinion attributes before validation and source-dependent side effects.
+  """
+  def normalize_attrs(attrs) when is_map(attrs) do
+    attrs
+    |> stringify_keys()
+    |> normalize_source_attrs()
+    |> normalize_legacy_year()
+    |> normalize_date_value()
+  end
+
+  def normalize_attrs(attrs), do: attrs
+
   @doc false
   def changeset(opinion, attrs) do
-    attrs = normalize_date_attrs(attrs)
+    attrs = normalize_attrs(attrs)
 
     opinion
     |> cast(attrs, [
@@ -75,19 +88,19 @@ defmodule YouCongress.Opinions.Opinion do
   def date_precisions, do: @date_precisions
 
   @doc """
-  Returns true when the opinion is a quote, i.e. it carries a source. A source can be
-  either a web URL (`source_url`) or a free-text passage from a non-web source such as a
-  book, PDF, or paywalled article (`source_text`).
+  Returns true when the opinion is a quote, i.e. it carries a nonblank source.
+  A source can be either a web URL (`source_url`) or a free-text passage from a
+  non-web source such as a book, PDF, or paywalled article (`source_text`).
   """
   def quote?(%{source_url: source_url, source_text: source_text}),
-    do: not (is_nil(source_url) and is_nil(source_text))
+    do: source_present?(source_url) or source_present?(source_text)
 
   def quote?(_), do: false
 
   @doc """
   Returns true when the opinion has a linkable/fetchable web source URL.
   """
-  def has_source_url?(%{source_url: source_url}), do: is_binary(source_url) and source_url != ""
+  def has_source_url?(%{source_url: source_url}), do: string_source_present?(source_url)
   def has_source_url?(_), do: false
 
   def display_date(%{date: nil}), do: nil
@@ -118,15 +131,6 @@ defmodule YouCongress.Opinions.Opinion do
     }
   end
 
-  defp normalize_date_attrs(attrs) when is_map(attrs) do
-    attrs
-    |> stringify_keys()
-    |> normalize_legacy_year()
-    |> normalize_date_value()
-  end
-
-  defp normalize_date_attrs(attrs), do: attrs
-
   defp stringify_keys(attrs) do
     Map.new(attrs, fn {key, value} ->
       key =
@@ -138,6 +142,26 @@ defmodule YouCongress.Opinions.Opinion do
 
       {key, value}
     end)
+  end
+
+  defp normalize_source_attrs(attrs) do
+    attrs
+    |> normalize_blank_source("source_url")
+    |> normalize_blank_source("source_text")
+  end
+
+  defp normalize_blank_source(attrs, field) do
+    case Map.fetch(attrs, field) do
+      {:ok, value} when is_binary(value) ->
+        if String.trim(value) == "" do
+          Map.put(attrs, field, nil)
+        else
+          attrs
+        end
+
+      _ ->
+        attrs
+    end
   end
 
   defp normalize_legacy_year(%{"date" => date} = attrs) when date not in [nil, ""], do: attrs
@@ -251,6 +275,12 @@ defmodule YouCongress.Opinions.Opinion do
   defp starts_with_http("http://" <> _), do: true
   defp starts_with_http("https://" <> _), do: true
   defp starts_with_http(_), do: false
+
+  defp source_present?(value) when is_binary(value), do: string_source_present?(value)
+  defp source_present?(value), do: not is_nil(value)
+
+  defp string_source_present?(value) when is_binary(value), do: String.trim(value) != ""
+  defp string_source_present?(_), do: false
 
   def path_str(%{ancestry: nil, id: id}), do: "#{id}"
   def path_str(%{ancestry: ancestry, id: id}), do: "#{ancestry}/#{id}"

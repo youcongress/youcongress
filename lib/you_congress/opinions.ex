@@ -144,7 +144,11 @@ defmodule YouCongress.Opinions do
 
   """
   def create_opinion(attrs \\ %{}) do
-    attrs = ContentEmbedding.put(attrs, %Opinion{})
+    attrs =
+      attrs
+      |> Opinion.normalize_attrs()
+      |> ContentEmbedding.put(%Opinion{})
+
     user_id = value_from_attrs(attrs, :user_id)
 
     result =
@@ -239,7 +243,11 @@ defmodule YouCongress.Opinions do
 
   """
   def update_opinion(%Opinion{} = opinion, attrs, opts \\ []) when is_list(opts) do
-    attrs = ContentEmbedding.put(attrs, opinion)
+    attrs =
+      attrs
+      |> Opinion.normalize_attrs()
+      |> ContentEmbedding.put(opinion)
+
     changeset = Opinion.changeset(opinion, attrs)
     result = Repo.update(changeset)
     maybe_update_vote_author_on_opinion_update(result, opinion, changeset)
