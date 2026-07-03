@@ -33,7 +33,7 @@ defmodule YouCongressWeb.Router do
     live("/x/:twitter_username", AuthorLive.Show, :show)
     live("/h/:hall", StatementLive.Index, :index)
     live("/c/:id", OpinionLive.Show, :show)
-    live("/fact-checker", FactCheckerLive.Index, :index)
+    get("/fact-checker", PageController, :redirect_to_fact_checker)
     live("/verifications", VerificationLive.Index, :index)
     live("/contact", ContactLive, :new)
 

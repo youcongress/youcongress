@@ -3,9 +3,11 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
   Search quotes on YouCongress.
 
   With a statement_id, performs a keyword search for quotes within that statement
-  (policy proposal or claim). Without a statement_id, performs a general semantic
-  similarity search across all statements, returning quotes ranked by how closely
-  their meaning matches the query (each with a similarity score, 0.0–1.0).
+  (policy proposal or claim); this is public. Without a statement_id, performs a
+  general semantic similarity search across all statements, returning quotes
+  ranked by how closely their meaning matches the query (each with a similarity
+  score, 0.0–1.0). Cross-statement semantic search requires a valid API key
+  (pass `?key=YOUR_KEY` in the MCP request URL).
   """
 
   use Anubis.Server.Component, type: :tool
@@ -19,22 +21,26 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
 
   @limit 250
 
+  @missing_key_message "Cross-statement semantic search requires an API key. Pass ?key=YOUR_KEY in the MCP request URL, or provide a statement_id to keyword-search within a single statement."
+  @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API, or provide a statement_id to keyword-search within a single statement."
+
   schema do
     # statement_id is optional:
     # - With it: keyword search within that statement (works best when you already
-    #   know the statement — list statements first, then drill into one).
-    # - Without it: semantic similarity search across all statements.
+    #   know the statement — list statements first, then drill into one). Public.
+    # - Without it: semantic similarity search across all statements. Requires a
+    #   valid API key because it generates an embedding.
     field :statement_id, :integer
     field :query, :string, required: true
   end
 
   def execute(params, frame) do
-    ToolUsageTracker.track(__MODULE__, frame)
+    user_result = ToolUsageTracker.track(__MODULE__, frame, required_scope: :read)
 
     query = Map.get(params, :query)
 
     case Map.get(params, :statement_id) do
-      nil -> semantic_search(query, frame)
+      nil -> semantic_search(query, frame, user_result)
       statement_id -> statement_search(query, statement_id, frame)
     end
   end
@@ -53,20 +59,29 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
     {:reply, Response.json(Response.tool(), data), frame}
   end
 
-  defp semantic_search(query, frame) do
-    opinions =
-      query
-      |> Opinions.get_by_content_similarity()
-      |> Repo.preload(:author)
+  defp semantic_search(query, frame, user_result) do
+    case user_result do
+      {:ok, _user} ->
+        opinions =
+          query
+          |> Opinions.get_by_content_similarity()
+          |> Repo.preload(:author)
 
-    vote_map = votes_by_opinion(opinions)
+        vote_map = votes_by_opinion(opinions)
 
-    data = %{
-      matches: take_fields(opinions, vote_map),
-      more_quotes: []
-    }
+        data = %{
+          matches: take_fields(opinions, vote_map),
+          more_quotes: []
+        }
 
-    {:reply, Response.json(Response.tool(), data), frame}
+        {:reply, Response.json(Response.tool(), data), frame}
+
+      {:error, :invalid_api_key} ->
+        {:reply, Response.error(Response.tool(), @invalid_key_message), frame}
+
+      {:error, _} ->
+        {:reply, Response.error(Response.tool(), @missing_key_message), frame}
+    end
   end
 
   defp find_opinions(query, statement_id) do

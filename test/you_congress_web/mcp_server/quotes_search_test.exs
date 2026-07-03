@@ -6,6 +6,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
   import YouCongress.OpinionsFixtures
   import YouCongress.StatementsFixtures
 
+  alias YouCongress.Accounts
   alias YouCongress.Opinions
   alias YouCongress.Repo
   alias YouCongress.Verifications
@@ -69,7 +70,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
       end)
     end
 
-    test "without statement_id, runs semantic similarity search across all statements" do
+    test "without statement_id and with a valid API key, runs semantic similarity search" do
       statement = statement_fixture(%{title: "Price carbon emissions"})
 
       quote =
@@ -78,6 +79,9 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
         |> Repo.preload(:author)
 
       similar_quote = %{quote | similarity: 0.91}
+
+      api_key = api_key_fixture(user_fixture())
+      frame = Anubis.Server.Frame.new(%{query_params: %{"key" => api_key.token}})
 
       with_mocks([
         {Anubis.Server.Response, [],
@@ -88,13 +92,40 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
          ]},
         {Opinions, [:passthrough], [get_by_content_similarity: fn _query -> [similar_quote] end]}
       ]) do
-        assert {:reply, {:json, %{matches: matches, more_quotes: []}}, :frame} =
-                 QuotesSearch.execute(%{query: "carbon tax"}, :frame)
+        assert {:reply, {:json, %{matches: matches, more_quotes: []}}, ^frame} =
+                 QuotesSearch.execute(%{query: "carbon tax"}, frame)
 
         assert [%{opinion_id: opinion_id, similarity: 0.91}] = matches
         assert opinion_id == quote.id
       end
     end
+
+    test "without statement_id and without an API key, is rejected without embedding" do
+      with_mocks([
+        {Anubis.Server.Response, [],
+         [
+           tool: fn -> :tool end,
+           json: fn :tool, data -> {:json, data} end,
+           error: fn :tool, message -> {:error, message} end
+         ]},
+        {Opinions, [:passthrough],
+         [
+           get_by_content_similarity: fn _query ->
+             flunk("semantic search must not generate an embedding without an API key")
+           end
+         ]}
+      ]) do
+        assert {:reply, {:error, message}, :frame} =
+                 QuotesSearch.execute(%{query: "carbon tax"}, :frame)
+
+        assert message =~ "API key"
+      end
+    end
+  end
+
+  defp api_key_fixture(user) do
+    {:ok, api_key} = Accounts.create_api_key_for_user(user, %{"name" => "CLI", "scope" => :read})
+    api_key
   end
 
   defp quote_fixture(statement, content) do
