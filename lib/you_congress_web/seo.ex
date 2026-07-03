@@ -229,7 +229,7 @@ defmodule YouCongressWeb.SEO do
   def author_url(%{twitter_username: username}), do: url(~p"/x/#{username}")
 
   def citable_vote?(vote) do
-    vote.opinion && vote.opinion.source_url && !vote.twin && !vote.opinion.twin
+    vote.opinion && Opinion.quote?(vote.opinion) && !vote.twin && !vote.opinion.twin
   end
 
   def truncate(text, max_length) when is_binary(text) do

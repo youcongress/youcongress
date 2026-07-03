@@ -121,11 +121,15 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
                       phx-no-format
                     ><.highlight text={quote.content} terms={@parsed_terms}/></a>
                   </div>
-                  <%= if quote.source_url do %>
+                  <%= if Opinion.quote?(quote) do %>
                     <div class="text-xs text-gray-500 flex items-center gap-2">
-                      <a href={quote.source_url} target="_blank" class="hover:underline">
-                        Source
-                      </a>
+                      <%= if Opinion.has_source_url?(quote) do %>
+                        <a href={quote.source_url} target="_blank" class="hover:underline">
+                          Source
+                        </a>
+                      <% else %>
+                        <a href={~p"/c/#{quote.id}"} class="hover:underline">Source</a>
+                      <% end %>
                       <span :if={Opinion.display_date(quote)} class="text-gray-400">
                         {Opinion.display_date(quote)}
                       </span>

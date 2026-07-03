@@ -253,6 +253,7 @@ defmodule YouCongress.Verifications.AIVerifications do
       %{}
       |> maybe_put_string(:content, first_present(correction, ["content", "quote"]))
       |> maybe_put_string(:source_url, first_present(correction, ["source_url"]))
+      |> maybe_put_string(:source_text, first_present(correction, ["source_text"]))
       |> maybe_put_string(:date, first_present(correction, ["date"]))
       |> maybe_put_string(:date_precision, first_present(correction, ["date_precision"]))
 

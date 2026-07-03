@@ -22,7 +22,14 @@ defmodule YouCongress.Opinions do
   alias YouCongress.Workers.SyncStatementOpinionsCountWorker
   alias YouCongress.Workers.VerificationWorker
 
-  @quote_reverification_fields [:content, :source_url, :date, :date_precision, :author_id]
+  @quote_reverification_fields [
+    :content,
+    :source_url,
+    :source_text,
+    :date,
+    :date_precision,
+    :author_id
+  ]
 
   @doc """
   Returns the list of opinions.
@@ -105,7 +112,9 @@ defmodule YouCongress.Opinions do
           query_embedding = Pgvector.new(embedding)
 
           from(o in Opinion,
-            where: not is_nil(o.source_url) and not is_nil(o.content_embedding),
+            where:
+              not (is_nil(o.source_url) and is_nil(o.source_text)) and
+                not is_nil(o.content_embedding),
             order_by: cosine_distance(o.content_embedding, ^query_embedding),
             limit: 100,
             select_merge: %{
@@ -150,12 +159,14 @@ defmodule YouCongress.Opinions do
     result
   end
 
-  # A quote (an opinion with a source_url) is AI-verified whenever it is created.
-  defp maybe_enqueue_quote_verification(
-         {:ok, %{opinion: %Opinion{source_url: source_url, id: id}}}
-       )
-       when not is_nil(source_url) do
-    enqueue_quote_verification(id)
+  # A quote (an opinion with a source_url or source_text) is AI-verified whenever it is
+  # created.
+  defp maybe_enqueue_quote_verification({:ok, %{opinion: %Opinion{id: id} = opinion}}) do
+    if Opinion.quote?(opinion) do
+      enqueue_quote_verification(id)
+    else
+      :ok
+    end
   end
 
   defp maybe_enqueue_quote_verification(_), do: :ok
@@ -184,8 +195,9 @@ defmodule YouCongress.Opinions do
   defp maybe_enqueue_update_author_public_figure(multi, attrs) do
     author_id = attrs["author_id"] || attrs[:author_id]
     source_url = attrs["source_url"] || attrs[:source_url]
+    source_text = attrs["source_text"] || attrs[:source_text]
 
-    if author_id && source_url do
+    if author_id && (source_url || source_text) do
       Ecto.Multi.insert(
         multi,
         :update_author_public_figure,
@@ -247,12 +259,11 @@ defmodule YouCongress.Opinions do
 
   # Re-verify a quote only when quote identity/evidence fields changed (not on count-only updates).
   defp maybe_reverify_quote_on_update(
-         {:ok, %Opinion{source_url: source_url, id: id} = opinion},
+         {:ok, %Opinion{id: id} = opinion},
          changeset,
          opts
-       )
-       when not is_nil(source_url) do
-    if quote_reverification_field_changed?(changeset) &&
+       ) do
+    if Opinion.quote?(opinion) && quote_reverification_field_changed?(changeset) &&
          not author_endorsed_update?(opinion, changeset, opts) do
       enqueue_quote_verification(id, opts)
     end
@@ -293,8 +304,13 @@ defmodule YouCongress.Opinions do
     |> handle_transaction_result()
   end
 
-  defp maybe_delete_inferred_quote_votes(multi, %Opinion{source_url: nil}, _statement_ids),
-    do: multi
+  # Not a quote (no source_url and no source_text): nothing to clean up.
+  defp maybe_delete_inferred_quote_votes(
+         multi,
+         %Opinion{source_url: nil, source_text: nil},
+         _statement_ids
+       ),
+       do: multi
 
   defp maybe_delete_inferred_quote_votes(multi, %Opinion{author_id: nil}, _statement_ids),
     do: multi
@@ -348,7 +364,7 @@ defmodule YouCongress.Opinions do
       on: os.opinion_id == o.id,
       where:
         os.statement_id == ^statement_id and o.author_id in ^author_ids and
-          not is_nil(o.source_url),
+          not (is_nil(o.source_url) and is_nil(o.source_text)),
       order_by: [
         desc:
           fragment(
@@ -377,7 +393,7 @@ defmodule YouCongress.Opinions do
         on: os.opinion_id == o.id,
         where:
           os.statement_id in ^statement_ids and o.author_id in ^author_ids and
-            not is_nil(o.source_url),
+            not (is_nil(o.source_url) and is_nil(o.source_text)),
         order_by: [
           asc: os.statement_id,
           asc: o.author_id,
@@ -477,7 +493,7 @@ defmodule YouCongress.Opinions do
         from q in query, where: q.ancestry == ^"#{ancestry}"
 
       {:only_quotes, true}, query ->
-        from q in query, where: not is_nil(q.source_url)
+        from q in query, where: not (is_nil(q.source_url) and is_nil(q.source_text))
 
       {:year, year}, query ->
         from q in query,
@@ -800,10 +816,11 @@ defmodule YouCongress.Opinions do
 
   defp maybe_update_current_quote_vote(
          multi,
-         %Opinion{source_url: source_url, author_id: author_id} = opinion,
+         %Opinion{source_url: source_url, source_text: source_text, author_id: author_id} =
+           opinion,
          statement
        )
-       when not is_nil(source_url) and not is_nil(author_id) do
+       when not (is_nil(source_url) and is_nil(source_text)) and not is_nil(author_id) do
     Ecto.Multi.run(multi, :current_quote_vote, fn _repo, _changes ->
       case Votes.get_by(%{author_id: author_id, statement_id: statement.id}) do
         nil -> {:ok, nil}
@@ -816,10 +833,11 @@ defmodule YouCongress.Opinions do
 
   defp maybe_reassign_or_delete_current_quote_vote(
          multi,
-         %Opinion{source_url: source_url, author_id: author_id} = opinion,
+         %Opinion{source_url: source_url, source_text: source_text, author_id: author_id} =
+           opinion,
          statement
        )
-       when not is_nil(source_url) and not is_nil(author_id) do
+       when not (is_nil(source_url) and is_nil(source_text)) and not is_nil(author_id) do
     Ecto.Multi.run(multi, :current_quote_vote, fn _repo, _changes ->
       case Votes.get_by(%{
              author_id: author_id,
@@ -861,7 +879,7 @@ defmodule YouCongress.Opinions do
       on: os.opinion_id == o.id,
       where:
         os.statement_id == ^statement_id and o.author_id == ^author_id and
-          o.id != ^removed_opinion_id and not is_nil(o.source_url),
+          o.id != ^removed_opinion_id and not (is_nil(o.source_url) and is_nil(o.source_text)),
       order_by: [fragment("? DESC NULLS LAST", o.date), desc: o.id],
       limit: 1
     )

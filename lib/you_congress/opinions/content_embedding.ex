@@ -3,9 +3,10 @@ defmodule YouCongress.Opinions.ContentEmbedding do
   Decides when to generate, keep, or clear the `:content_embedding` of an
   opinion based on its attrs.
 
-  Only sourced quotes (content + source_url present) carry a content embedding.
-  The embedding is (re)generated when the quote is new, just became sourced, or
-  its content changed; it is cleared when the opinion stops being a sourced quote.
+  Only sourced quotes (content present plus a source_url or source_text) carry a
+  content embedding. The embedding is (re)generated when the quote is new, just
+  became sourced, or its content changed; it is cleared when the opinion stops
+  being a sourced quote.
   """
 
   alias YouCongress.Embeddings
@@ -21,12 +22,13 @@ defmodule YouCongress.Opinions.ContentEmbedding do
     else
       content = effective_attr(attrs, :content, opinion.content)
       source_url = effective_attr(attrs, :source_url, opinion.source_url)
+      source_text = effective_attr(attrs, :source_text, opinion.source_text)
 
       cond do
-        not sourced_quote?(content, source_url) ->
+        not sourced_quote?(content, source_url, source_text) ->
           maybe_clear_content_embedding(attrs, opinion)
 
-        should_generate_content_embedding?(attrs, opinion, content, source_url) ->
+        should_generate_content_embedding?(attrs, opinion, content, source_url, source_text) ->
           case Embeddings.embed(content) do
             {:ok, embedding} when is_list(embedding) ->
               put_attr(attrs, :content_embedding, embedding)
@@ -43,13 +45,14 @@ defmodule YouCongress.Opinions.ContentEmbedding do
 
   def put(attrs, _opinion), do: attrs
 
-  defp should_generate_content_embedding?(attrs, opinion, content, source_url) do
-    sourced_quote?(content, source_url) and
+  defp should_generate_content_embedding?(attrs, opinion, content, source_url, source_text) do
+    sourced_quote?(content, source_url, source_text) and
       (is_nil(opinion.id) or is_nil(opinion.content_embedding) or
          content_changed?(attrs, opinion) or quote_became_sourced?(attrs, opinion))
   end
 
-  defp sourced_quote?(content, source_url), do: present?(content) and present?(source_url)
+  defp sourced_quote?(content, source_url, source_text),
+    do: present?(content) and (present?(source_url) or present?(source_text))
 
   defp maybe_clear_content_embedding(attrs, %Opinion{content_embedding: nil}), do: attrs
 
@@ -69,7 +72,8 @@ defmodule YouCongress.Opinions.ContentEmbedding do
   end
 
   defp quote_became_sourced?(attrs, opinion) do
-    has_attr?(attrs, :source_url) and not present?(opinion.source_url)
+    (has_attr?(attrs, :source_url) or has_attr?(attrs, :source_text)) and
+      not (present?(opinion.source_url) or present?(opinion.source_text))
   end
 
   defp has_attr?(attrs, key) do

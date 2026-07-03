@@ -87,7 +87,7 @@ defmodule YouCongress.Votes do
                   WHEN ? IS NULL THEN 0
                   ELSE 1
                   END",
-                  o.source_url
+                  coalesce(o.source_url, o.source_text)
                 ),
               desc: o.likes_count,
               desc: o.descendants_count,
@@ -158,9 +158,14 @@ defmodule YouCongress.Votes do
 
     query =
       case source_filter do
-        :quotes -> where(base_query, [v, a, o, os], not is_nil(o.source_url))
-        :users -> where(base_query, [v, a, o, os], is_nil(o.source_url))
-        _ -> base_query
+        :quotes ->
+          where(base_query, [v, a, o, os], not (is_nil(o.source_url) and is_nil(o.source_text)))
+
+        :users ->
+          where(base_query, [v, a, o, os], is_nil(o.source_url) and is_nil(o.source_text))
+
+        _ ->
+          base_query
       end
 
     query =
@@ -195,7 +200,7 @@ defmodule YouCongress.Votes do
             WHEN ? IS NOT NULL THEN 2
             WHEN ? = FALSE THEN 3
             ELSE 4
-          END", o.source_url, a.wikipedia_url, o.twin),
+          END", coalesce(o.source_url, o.source_text), a.wikipedia_url, o.twin),
       {:desc, o.id}
     ])
     |> preload(^include_tables)
@@ -261,8 +266,8 @@ defmodule YouCongress.Votes do
     end)
   end
 
-  defp sourced_opinion_vote?(%Vote{opinion: %{source_url: source_url}})
-       when not is_nil(source_url),
+  defp sourced_opinion_vote?(%Vote{opinion: %{source_url: source_url, source_text: source_text}})
+       when not (is_nil(source_url) and is_nil(source_text)),
        do: true
 
   defp sourced_opinion_vote?(_vote), do: false
@@ -624,6 +629,7 @@ defmodule YouCongress.Votes do
         author_country_name: c.name,
         opinion_date: o.date,
         source_url: o.source_url,
+        source_text: o.source_text,
         opinion_id: o.id,
         opinion_user_id: o.user_id,
         has_user: not is_nil(u.id),
@@ -676,9 +682,14 @@ defmodule YouCongress.Votes do
 
     query =
       case source_filter do
-        :quotes -> from [v, o] in base_query, where: not is_nil(o.source_url)
-        :users -> from [v, o] in base_query, where: is_nil(o.source_url)
-        _ -> base_query
+        :quotes ->
+          from [v, o] in base_query, where: not (is_nil(o.source_url) and is_nil(o.source_text))
+
+        :users ->
+          from [v, o] in base_query, where: is_nil(o.source_url) and is_nil(o.source_text)
+
+        _ ->
+          base_query
       end
 
     query =
@@ -698,7 +709,7 @@ defmodule YouCongress.Votes do
       join: o in Opinion,
       on: v.opinion_id == o.id,
       where:
-        v.statement_id == ^statement_id and not is_nil(o.source_url) and
+        v.statement_id == ^statement_id and not (is_nil(o.source_url) and is_nil(o.source_text)) and
           v.twin == false and o.twin == false and
           not is_nil(a.wikipedia_url) and a.wikipedia_url != "",
       order_by: [desc_nulls_last: a.followers_count, asc: a.name],
@@ -720,9 +731,14 @@ defmodule YouCongress.Votes do
 
     query =
       case source_filter do
-        :quotes -> from [v, o] in base_query, where: not is_nil(o.source_url)
-        :users -> from [v, o] in base_query, where: is_nil(o.source_url)
-        _ -> base_query
+        :quotes ->
+          from [v, o] in base_query, where: not (is_nil(o.source_url) and is_nil(o.source_text))
+
+        :users ->
+          from [v, o] in base_query, where: is_nil(o.source_url) and is_nil(o.source_text)
+
+        _ ->
+          base_query
       end
 
     query

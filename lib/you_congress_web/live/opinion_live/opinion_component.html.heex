@@ -38,12 +38,12 @@
   </div>
 
   <div class="pt-2">
-    <%= if @opinion.source_url && !@opinion.twin do %>
+    <%= if Opinion.quote?(@opinion) && !@opinion.twin do %>
       <blockquote cite={@opinion.source_url} class="inline">{@opinion.content}</blockquote>
     <% else %>
       {@opinion.content}
     <% end %>
-    <%= if @opinion.source_url do %>
+    <%= if Opinion.quote?(@opinion) do %>
       <.live_component
         module={YouCongressWeb.Components.VerificationBadge}
         id={"#{@opinion.id}-#{if @statement, do: @statement.id}"}
@@ -51,12 +51,35 @@
         current_user={@current_user}
         link_to_opinion={@page != :opinion_show}
       />
-      <span class="text-xs">
-        <a href={@opinion.source_url} target="_blank" class="underline">source</a>
-      </span>
+      <%= cond do %>
+        <% Opinion.has_source_url?(@opinion) and !(@opinion.source_text && @page == :opinion_show) -> %>
+          <span class="text-xs">
+            <a href={@opinion.source_url} target="_blank" class="underline">source</a>
+          </span>
+        <% is_nil(@opinion.source_url) and @page != :opinion_show -> %>
+          <span class="text-xs">
+            <.link href={~p"/c/#{@opinion.id}"} class="underline">source</.link>
+          </span>
+        <% true -> %>
+      <% end %>
       <%= if Opinion.display_date(@opinion) do %>
         <span class="text-xs text-gray-500">({Opinion.display_date(@opinion)})</span>
       <% end %>
+    <% end %>
+    <%= if @opinion.source_text && @page == :opinion_show do %>
+      <div class="mt-2 border-l-2 border-gray-200 pl-3 text-sm text-gray-600">
+        <div class="font-semibold">Source:</div>
+        <%= if Opinion.has_source_url?(@opinion) do %>
+          <a
+            href={@opinion.source_url}
+            target="_blank"
+            class="whitespace-pre-line underline hover:text-gray-800"
+            phx-no-format
+          >{@opinion.source_text}</a>
+        <% else %>
+          <div class="whitespace-pre-line">{@opinion.source_text}</div>
+        <% end %>
+      </div>
     <% end %>
   </div>
   <div class="flex justify-between pt-4 pb-4">

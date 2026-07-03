@@ -95,7 +95,8 @@
   <% end %>
   <%= if @show_opinion && @visible_opinion do %>
     <div>
-      <% citable_quote? = @visible_opinion.source_url && !@vote.twin && !@visible_opinion.twin %>
+      <% citable_quote? =
+        Opinion.quote?(@visible_opinion) && !@vote.twin && !@visible_opinion.twin %>
       <%= if @current_user && @current_user.author_id == @author.id do %>
         <.link href={"/p/#{@statement.slug}"}>
           <%= if citable_quote? do %>
@@ -128,7 +129,7 @@
       <%= if @regenerating_opinion_id == @visible_opinion.id do %>
         <img src="/images/loading.gif" alt="Loading" />
       <% end %>
-      <%= if @visible_opinion.source_url do %>
+      <%= if Opinion.quote?(@visible_opinion) do %>
         <.live_component
           module={YouCongressWeb.Components.VerificationAggregate}
           id={"agg-#{@id}-#{@visible_opinion.id}-#{@statement.id}"}
@@ -139,9 +140,13 @@
           link_to_opinion={@page != :statement_show}
         />
       <% end %>
-      <%= if @visible_opinion.source_url do %>
+      <%= if Opinion.quote?(@visible_opinion) do %>
         <span class="text-xs">
-          <a href={@visible_opinion.source_url} target="_blank" class="underline">source</a>
+          <%= if Opinion.has_source_url?(@visible_opinion) do %>
+            <a href={@visible_opinion.source_url} target="_blank" class="underline">source</a>
+          <% else %>
+            <.link href={~p"/c/#{@visible_opinion.id}"} class="underline">source</.link>
+          <% end %>
         </span>
       <% end %>
       <%= if Opinion.display_date(@visible_opinion) do %>

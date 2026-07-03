@@ -58,6 +58,45 @@ defmodule YouCongressWeb.OpinionLiveTest do
   end
 
   describe "Show" do
+    test "renders the source passage for a source_text-only quote", %{conn: conn} do
+      author = author_fixture(%{name: "Book Author"})
+
+      opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "A quote from a book.",
+          source_url: nil,
+          source_text: "Sapiens, Y. N. Harari, Harper, 2015, p. 241: the passage.",
+          twin: false
+        })
+
+      {:ok, _view, html} = live(conn, ~p"/c/#{opinion.id}")
+
+      assert html =~ "Sapiens, Y. N. Harari, Harper, 2015, p. 241"
+      # No "source" link is rendered when there is no URL (the passage is shown instead).
+      refute html =~ ">source</a>"
+    end
+
+    test "links the source passage to the URL when both are present", %{conn: conn} do
+      author = author_fixture(%{name: "Book Author"})
+
+      opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "A quote from a book.",
+          source_url: "https://example.com/book",
+          source_text: "Sapiens, Y. N. Harari, Harper, 2015, p. 241: the passage.",
+          twin: false
+        })
+
+      {:ok, _view, html} = live(conn, ~p"/c/#{opinion.id}")
+
+      # The passage itself links to the source URL...
+      assert html =~ ~r|<a[^>]*href="https://example.com/book"[^>]*>\s*Sapiens|
+      # ...and there is no separate "source" link.
+      refute html =~ ">source</a>"
+    end
+
     test "edit opinion from opinion show page", %{conn: conn} do
       # Create a user and author
       user = user_fixture()

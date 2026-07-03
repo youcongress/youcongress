@@ -234,7 +234,7 @@ defmodule YouCongressWeb.PageController do
 
     Opinions (quotes/positions attributed to authors, linked to statements):
     - opinions_show — view an opinion with its statements and votes
-    - opinions_create — create an opinion; include source_url to make it a quote
+    - opinions_create — create an opinion; include source_url (web) or source_text (book/PDF/paywalled passage) to make it a quote
     - opinions_edit — edit an opinion
     - opinions_delete — delete an opinion
     - opinions_statements_add — link an opinion to a statement, set the vote, and optionally trigger relevance verification

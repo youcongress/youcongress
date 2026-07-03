@@ -255,7 +255,41 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
     answer = String.downcase(response || "") |> String.to_existing_atom()
     date = Map.get(params, "date")
     date_precision = Map.get(params, "date_precision")
+    source_text = Map.get(params, "source_text")
 
+    cond do
+      blank?(source_url) and blank?(source_text) ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Please provide a source URL or a source passage")
+         |> assign(:errors, %{source: ["can't be blank"]})}
+
+      true ->
+        add_quote_with_source(
+          socket,
+          statement,
+          author,
+          answer,
+          opinion,
+          source_url,
+          source_text,
+          date,
+          date_precision
+        )
+    end
+  end
+
+  defp add_quote_with_source(
+         socket,
+         statement,
+         author,
+         answer,
+         opinion,
+         source_url,
+         source_text,
+         date,
+         date_precision
+       ) do
     case Votes.get_by(statement_id: statement.id, author_id: author.id) do
       nil ->
         create_vote_and_opinion(
@@ -264,6 +298,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
           answer,
           opinion,
           source_url,
+          source_text,
           date,
           date_precision,
           socket
@@ -276,6 +311,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
           answer,
           opinion,
           source_url,
+          source_text,
           date,
           date_precision,
           socket
@@ -289,6 +325,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
          answer,
          opinion,
          source_url,
+         source_text,
          date,
          date_precision,
          socket
@@ -300,6 +337,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
              content: opinion,
              author_id: author.id,
              source_url: source_url,
+             source_text: source_text,
              date: date,
              date_precision: date_precision,
              user_id: current_user.id,
@@ -350,6 +388,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
          answer,
          opinion,
          source_url,
+         source_text,
          date,
          date_precision,
          socket
@@ -361,6 +400,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
              content: opinion,
              author_id: author.id,
              source_url: source_url,
+             source_text: source_text,
              date: date,
              date_precision: date_precision,
              user_id: current_user.id,
@@ -401,6 +441,10 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
          socket |> put_flash(:error, "Error. Please try again") |> assign(:errors, error_message)}
     end
   end
+
+  defp blank?(nil), do: true
+  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
+  defp blank?(_), do: false
 
   defp assign_statement_actions(socket, statement) do
     socket

@@ -33,7 +33,7 @@ defmodule YouCongress.Workers.EnqueueQuoteStatementMatchesWorker do
   defp opinion_ids(args) do
     query =
       from(o in Opinion,
-        where: not is_nil(o.source_url),
+        where: not (is_nil(o.source_url) and is_nil(o.source_text)),
         order_by: [asc: o.id],
         select: o.id
       )

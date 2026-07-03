@@ -32,7 +32,8 @@ defmodule YouCongress.Workers.BackfillOpinionEmbeddingWorker do
   defp opinion_ids(limit) do
     query =
       from(o in Opinion,
-        where: not is_nil(o.source_url) and is_nil(o.content_embedding),
+        where:
+          not (is_nil(o.source_url) and is_nil(o.source_text)) and is_nil(o.content_embedding),
         order_by: [asc: o.id],
         select: o.id
       )
@@ -51,7 +52,7 @@ defmodule YouCongress.Workers.BackfillOpinionEmbeddingWorker do
       nil ->
         :ok
 
-      %Opinion{source_url: nil} ->
+      %Opinion{source_url: nil, source_text: nil} ->
         :ok
 
       %Opinion{content_embedding: embedding} when not is_nil(embedding) ->

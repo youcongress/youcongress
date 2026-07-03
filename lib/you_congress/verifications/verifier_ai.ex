@@ -99,6 +99,11 @@ defmodule YouCongress.Verifications.VerifierAI do
     Author: #{author || "Unknown"}
     Date: #{Opinion.display_date(opinion) || "Unknown"}
     Source URL: #{opinion.source_url || "None provided"}
+    Source passage (provided by the submitter because the source may be a book,
+    PDF, or paywalled article that is not fetchable on the open web):
+    \"\"\"
+    #{opinion.source_text || "None provided"}
+    \"\"\"
     Quote:
     \"\"\"
     #{opinion.content}
@@ -106,12 +111,18 @@ defmodule YouCongress.Verifications.VerifierAI do
 
     Using web_search, confirm the quote is real and verbatim (allowing [...] for
     omitted text and faithful translation), that it is correctly attributed to the
-    author, and that the source URL contains it. Treat named declarations,
-    manifestos, open letters, petitions, collective statements, and similar
-    documents as valid quote authors when the source presents the quoted text as
-    the wording of that document, even if the document has many signers or a
-    broad coalition behind it. Do not dispute a quote merely because the author
-    is a document title rather than a single person or organisation.
+    author, and that the source URL contains it. When no fetchable source URL is
+    available but a source passage is provided above, verify the quote against that
+    passage instead: it is authentic when the quote appears in, or is a faithful
+    rendering/translation of, the provided passage and the passage attributes it to
+    the author. The provided passage replaces the web fetch you cannot perform for
+    such sources; still use web_search to corroborate the attribution where you can.
+    Treat named declarations, manifestos, open letters, petitions, collective
+    statements, and similar documents as valid quote authors when the source
+    presents the quoted text as the wording of that document, even if the document
+    has many signers or a broad coalition behind it. Do not dispute a quote merely
+    because the author is a document title rather than a single person or
+    organisation.
 
     #{quote_correction_instructions(allow_correction?)}
 
@@ -147,6 +158,7 @@ defmodule YouCongress.Verifications.VerifierAI do
 
     Statement: #{statement.title}
     Source URL: #{opinion.source_url || "None provided"}
+    Source passage (for non-web sources): #{opinion.source_text || "None provided"}
     Quote:
     \"\"\"
     #{opinion.content}
@@ -173,13 +185,16 @@ defmodule YouCongress.Verifications.VerifierAI do
     than it destroys": it strongly signals a determinable stance on net jobs even
     if it does not explicitly compare total jobs created and destroyed.
 
-    Use web_search to inspect the source page when the quote is abstract, uses
-    shorthand, or refers to "the proposal", "this", "these ideas", or similar
-    context-dependent language.
+    When a Source URL is provided, use web_search to inspect the source page when
+    the quote is abstract, uses shorthand, or refers to "the proposal", "this",
+    "these ideas", or similar context-dependent language. When no Source URL is
+    provided, use the Source passage above as the cited source context for the
+    same purpose (the source may be a book, PDF, or paywalled article that cannot
+    be fetched on the open web).
 
     The clear support, opposition, or abstention may be stated elsewhere in the
-    cited source article rather than inside the stored quote itself, as long as
-    the stored quote is one of the author's comments or reasons for that
+    cited source article or passage rather than inside the stored quote itself, as
+    long as the stored quote is one of the author's comments or reasons for that
     position.
 
     Source context may establish what the quote is responding to. For example,
@@ -229,6 +244,7 @@ defmodule YouCongress.Verifications.VerifierAI do
 
     Statement: #{statement.title}
     Source URL: #{(opinion && opinion.source_url) || "None provided"}
+    Source passage (for non-web sources): #{(opinion && opinion.source_text) || "None provided"}
     Quote:
     \"\"\"
     #{opinion && opinion.content}
@@ -236,13 +252,15 @@ defmodule YouCongress.Verifications.VerifierAI do
 
     Current recorded answer: #{vote.answer}
 
-    Based on what the quote says and, when a Source URL is provided, how the
-    cited source presents the quote, what is the author's most likely position
-    on the whole statement? A position may be explicit in the quote, strongly
-    implied by the quote's ordinary meaning, or stated in the cited source article
-    while the stored quote gives the author's comment, criticism, concern,
-    argument, reason, or explanation for that position. Use web_search to inspect
-    the source page when the quote is context-dependent.
+    Based on what the quote says and how the cited source presents it — the linked
+    page when a Source URL is provided, otherwise the Source passage above — what
+    is the author's most likely position on the whole statement? A position may be
+    explicit in the quote, strongly implied by the quote's ordinary meaning, or
+    stated in the cited source (article or passage) while the stored quote gives
+    the author's comment, criticism, concern, argument, reason, or explanation for
+    that position. When a Source URL is provided, use web_search to inspect the
+    source page when the quote is context-dependent; otherwise rely on the Source
+    passage above.
 
     Do not require the quote to restate every part of the statement or amount to
     strict logical proof. When one position is substantially more likely than the
@@ -284,12 +302,14 @@ defmodule YouCongress.Verifications.VerifierAI do
 
   defp quote_correction_instructions(true) do
     """
-    Also check whether the stored content, date, source URL, and author are the
+    Also check whether the stored content, date, source, and author are the
     right canonical values. If the quote is authentic but any stored field is
     wrong and you can recover the right values from reliable evidence, return
     status "disputed" and include a correction object with the proper content,
-    source_url, date, date_precision, and author metadata. Use null correction
-    when no correction should be applied.
+    source_url, source_text, date, date_precision, and author metadata. Provide
+    source_url for web sources and source_text for non-web sources (book, PDF,
+    paywalled article); set the one that does not apply to null. Use null
+    correction when no correction should be applied.
 
     For author corrections, return exactly one author name only when the quote has
     one individual author, when an organisation is speaking on its own behalf, or
@@ -348,8 +368,14 @@ defmodule YouCongress.Verifications.VerifierAI do
                 "Correct exact quote text, verbatim or faithfully translated. Do not include surrounding quotation marks."
             },
             "source_url" => %{
-              type: "string",
-              description: "Reliable source URL that contains the exact quote and attribution."
+              type: ["string", "null"],
+              description:
+                "Reliable source URL that contains the exact quote and attribution. Use null for non-web sources (books, PDFs, paywalled articles) that have no public URL."
+            },
+            "source_text" => %{
+              type: ["string", "null"],
+              description:
+                "For non-web sources, the corrected citation plus the surrounding passage that contains the quote (e.g. book title, author, edition, page, then the passage). Use null when the source is a web URL."
             },
             "date" => %{
               type: "string",
@@ -380,7 +406,14 @@ defmodule YouCongress.Verifications.VerifierAI do
               required: ["name", "bio", "wikipedia_url", "twitter_username"]
             }
           },
-          required: ["content", "source_url", "date", "date_precision", "author"]
+          required: [
+            "content",
+            "source_url",
+            "source_text",
+            "date",
+            "date_precision",
+            "author"
+          ]
         }
       },
       required: ["status", "comment", "correction"]

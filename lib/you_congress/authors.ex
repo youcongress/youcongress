@@ -802,7 +802,7 @@ defmodule YouCongress.Authors do
     sourced_opinion_id =
       [preferred_vote, survivor_vote, duplicate_vote]
       |> Enum.map(& &1.opinion)
-      |> Enum.find(fn opinion -> opinion && not is_nil(opinion.source_url) end)
+      |> Enum.find(fn opinion -> opinion && Opinion.quote?(opinion) end)
       |> case do
         nil -> nil
         opinion -> opinion.id
@@ -818,7 +818,7 @@ defmodule YouCongress.Authors do
     rows =
       opinions
       |> Enum.reject(&is_nil/1)
-      |> Enum.filter(&(not is_nil(&1.source_url)))
+      |> Enum.filter(&Opinion.quote?/1)
       |> Enum.uniq_by(& &1.id)
       |> Enum.map(fn opinion ->
         %{
@@ -1066,7 +1066,9 @@ defmodule YouCongress.Authors do
     from(a in Author,
       join: o in YouCongress.Opinions.Opinion,
       on: o.author_id == a.id,
-      where: not is_nil(o.source_url) and o.twin == false and not is_nil(a.name),
+      where:
+        not (is_nil(o.source_url) and is_nil(o.source_text)) and o.twin == false and
+          not is_nil(a.name),
       group_by: a.id,
       order_by: [desc: count(o.id)],
       limit: ^limit,
@@ -1117,7 +1119,7 @@ defmodule YouCongress.Authors do
             query,
             [author],
             fragment(
-              "EXISTS (SELECT 1 FROM opinions o WHERE o.author_id = ? AND o.source_url IS NOT NULL)",
+              "EXISTS (SELECT 1 FROM opinions o WHERE o.author_id = ? AND (o.source_url IS NOT NULL OR o.source_text IS NOT NULL))",
               author.id
             )
           )

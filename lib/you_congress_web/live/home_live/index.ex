@@ -6,6 +6,7 @@ defmodule YouCongressWeb.HomeLive.Index do
   alias YouCongress.Authors
   alias YouCongress.Halls
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.FeatureFlags
   alias YouCongress.Track
   alias YouCongress.Statements

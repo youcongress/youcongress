@@ -20,12 +20,13 @@ defmodule YouCongressWeb.MCPServer.OpinionsEdit do
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @forbidden_message "Your account is not allowed to edit this opinion."
   @not_found_message "Opinion not found."
-  @missing_fields_message "Provide at least one field to update: content, source_url, date, date_precision, author_id."
+  @missing_fields_message "Provide at least one field to update: content, source_url, source_text, date, date_precision, author_id."
 
   schema do
     field :opinion_id, :integer, required: true
     field :content, :string
     field :source_url, :string
+    field :source_text, :string
     field :date, :string
     field :date_precision, :string
     field :author_id, :integer
@@ -80,7 +81,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsEdit do
 
   defp attrs_from_params(params) do
     params
-    |> Map.take([:content, :source_url, :date, :date_precision, :author_id])
+    |> Map.take([:content, :source_url, :source_text, :date, :date_precision, :author_id])
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
     |> Map.new()
   end
@@ -106,6 +107,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsEdit do
       opinion_id: opinion.id,
       content: opinion.content,
       source_url: opinion.source_url,
+      source_text: opinion.source_text,
       verification_status: opinion.verification_status,
       author_id: opinion.author_id,
       user_id: opinion.user_id

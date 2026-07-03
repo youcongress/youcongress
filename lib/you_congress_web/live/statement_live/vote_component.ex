@@ -32,7 +32,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
     %{vote: vote, statement: statement, visible_opinion: opinion} = socket.assigns
 
     opinion_statement =
-      if opinion && opinion.source_url && statement do
+      if opinion && Opinion.quote?(opinion) && statement do
         YouCongress.OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
       end
 

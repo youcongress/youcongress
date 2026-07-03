@@ -459,7 +459,7 @@ defmodule YouCongress.Statements.StatementQueries do
                   o.date,
                   o.likes_count,
                   o.descendants_count,
-                  o.source_url,
+                  coalesce(o.source_url, o.source_text),
                   a.wikipedia_url,
                   v.twin,
                   o.id

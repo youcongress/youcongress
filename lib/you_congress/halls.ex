@@ -204,7 +204,8 @@ defmodule YouCongress.Halls do
       on: ov.statement_id == v.id,
       join: o in "opinions",
       on: ov.opinion_id == o.id,
-      where: not is_nil(o.source_url) and is_nil(o.verification_status),
+      where:
+        not (is_nil(o.source_url) and is_nil(o.source_text)) and is_nil(o.verification_status),
       group_by: [h.id, h.name],
       select: %{name: h.name, quote_count: count(o.id, :distinct)},
       order_by: h.name
@@ -237,7 +238,7 @@ defmodule YouCongress.Halls do
 
     quotes_query =
       from o in YouCongress.Opinions.Opinion,
-        where: not is_nil(o.source_url) and o.twin == false
+        where: not (is_nil(o.source_url) and is_nil(o.source_text)) and o.twin == false
 
     build_stats(%Hall{name: "all"}, statements, quotes_query)
   end
@@ -259,7 +260,7 @@ defmodule YouCongress.Halls do
         join: os in "opinions_statements",
         on: os.opinion_id == o.id,
         where: os.statement_id in ^statement_ids,
-        where: not is_nil(o.source_url) and o.twin == false
+        where: not (is_nil(o.source_url) and is_nil(o.source_text)) and o.twin == false
 
     build_stats(hall, statements, quotes_query)
   end
@@ -325,7 +326,9 @@ defmodule YouCongress.Halls do
       left_join: os in "opinions_statements",
       on: os.statement_id == hs.statement_id,
       left_join: o in YouCongress.Opinions.Opinion,
-      on: os.opinion_id == o.id and not is_nil(o.source_url) and o.twin == false,
+      on:
+        os.opinion_id == o.id and not (is_nil(o.source_url) and is_nil(o.source_text)) and
+          o.twin == false,
       where: h.name != "all",
       group_by: h.id,
       order_by: [desc: count(o.id, :distinct), asc: h.name],

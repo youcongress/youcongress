@@ -188,7 +188,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       with_mocked_response_and_key(api_key.token, fn frame ->
         assert {:reply,
                 {:error,
-                 "Provide at least one field to update: content, source_url, date, date_precision, author_id."},
+                 "Provide at least one field to update: content, source_url, source_text, date, date_precision, author_id."},
                 ^frame} =
                  OpinionsEdit.execute(%{opinion_id: opinion.id}, frame)
       end)

@@ -58,16 +58,22 @@
                 · <span>Unknown date</span>
               <% end %>
               · <span>Added {short_time(quote.inserted_at)}</span>
-              <%= if quote.source_url do %>
+              <%= if Opinion.quote?(quote) do %>
                 ·
-                <a
-                  href={quote.source_url}
-                  class="text-indigo-600 hover:underline"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  Source
-                </a>
+                <%= if Opinion.has_source_url?(quote) do %>
+                  <a
+                    href={quote.source_url}
+                    class="text-indigo-600 hover:underline"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    Source
+                  </a>
+                <% else %>
+                  <.link href={~p"/c/#{quote.id}"} class="text-indigo-600 hover:underline">
+                    Source
+                  </.link>
+                <% end %>
               <% end %>
               <%= if quote.statements && quote.statements != [] do %>
                 · In
