@@ -13,6 +13,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
 
   alias YouCongress.Accounts
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements
   alias YouCongress.Verifications
   alias YouCongress.Votes
@@ -158,6 +159,39 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
                    },
                    frame
                  )
+      end)
+    end
+
+    test "normalizes blank source_text without creating a quote" do
+      owner = user_fixture()
+      api_key = api_key_fixture(owner)
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        opinion_id =
+          with_mocked_response_and_key(api_key.token, fn frame ->
+            assert {:reply, {:json, %{opinion: payload}}, ^frame} =
+                     OpinionsCreate.execute(
+                       %{
+                         content: "This remains an ordinary opinion.",
+                         author_id: owner.author_id,
+                         source_text: " \n\t "
+                       },
+                       frame
+                     )
+
+            assert payload.source_text == nil
+            payload.opinion_id
+          end)
+
+        opinion = Opinions.get_opinion!(opinion_id)
+
+        assert opinion.source_text == nil
+        refute Opinion.quote?(opinion)
+
+        refute_enqueued(
+          worker: VerificationWorker,
+          args: %{"subject" => "quote", "id" => opinion.id}
+        )
       end)
     end
   end

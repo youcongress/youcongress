@@ -277,6 +277,13 @@ defmodule YouCongress.OpinionsTest do
       refute Opinion.quote?(opinion)
       refute Opinion.has_source_url?(opinion)
     end
+
+    test "blank source strings are not quote evidence" do
+      opinion = %Opinion{source_url: " ", source_text: "\n\t"}
+
+      refute Opinion.quote?(opinion)
+      refute Opinion.has_source_url?(opinion)
+    end
   end
 
   describe "source_text quotes" do
@@ -291,6 +298,29 @@ defmodule YouCongress.OpinionsTest do
           })
 
         assert_enqueued(
+          worker: VerificationWorker,
+          args: %{"subject" => "quote", "id" => opinion.id}
+        )
+      end)
+    end
+
+    test "blank source fields are normalized and do not enqueue quote verification" do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        assert {:ok, %{opinion: opinion}} =
+                 Opinions.create_opinion(%{
+                   content: "an unsourced opinion",
+                   source_url: " ",
+                   source_text: "\n\t",
+                   twin: false
+                 })
+
+        opinion = Opinions.get_opinion!(opinion.id)
+
+        assert opinion.source_url == nil
+        assert opinion.source_text == nil
+        refute Opinion.quote?(opinion)
+
+        refute_enqueued(
           worker: VerificationWorker,
           args: %{"subject" => "quote", "id" => opinion.id}
         )
