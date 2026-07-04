@@ -25,7 +25,6 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
 
   attr :statement, :map, required: true
   attr :synthesis, :map, required: true
-  attr :quotes_tally, :map, required: true
   attr :show_synthesis, :boolean, required: true
   attr :synthesis_opinions, :map, required: true
   attr :can_regenerate, :boolean, default: false
@@ -39,20 +38,13 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
       <button type="button" phx-click="toggle-synthesis" class="w-full text-left">
         <div class="flex items-center justify-between gap-2">
           <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">
-            AI synthesis of {total_quotes(@quotes_tally)} quotes
+            AI synthesis
           </span>
           <span class="shrink-0 text-xs text-gray-500 underline">
             {if @show_synthesis, do: "Hide", else: "Show more"}
           </span>
         </div>
         <p class="mt-1 font-semibold">{@synthesis["headline"]}</p>
-        <div class="mt-1 text-xs text-gray-600">
-          For {Map.get(@quotes_tally, :for, 0)} · Abstain {Map.get(@quotes_tally, :abstain, 0)} · Against {Map.get(
-            @quotes_tally,
-            :against,
-            0
-          )}
-        </div>
       </button>
 
       <%!-- Always in the DOM (crawlable); the toggle only flips visibility. --%>
@@ -141,8 +133,6 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
   end
 
   defp excerpt(_), do: ""
-
-  defp total_quotes(quotes_tally), do: quotes_tally |> Map.values() |> Enum.sum()
 
   defp generated_on(%{synthesis_generated_at: %DateTime{} = generated_at}) do
     " on " <> Calendar.strftime(generated_at, "%b %d, %Y")

@@ -81,7 +81,7 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
   end
 
   describe "synthesis card" do
-    test "renders collapsed with headline, DB tally and crawlable body", %{conn: conn} do
+    test "renders collapsed with headline and crawlable body", %{conn: conn} do
       statement = statement_with_quotes(25)
       [o1, o2] = cited_opinions(statement, 2)
       statement = put_synthesis(statement, [o1.id], [o2.id])
@@ -89,10 +89,10 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
 
       {:ok, view, html} = live(conn, ~p"/p/#{statement.slug}")
 
-      assert html =~ "AI synthesis of 25 quotes"
+      assert html =~ "AI synthesis"
       assert html =~ "Synthesis headline about the debate."
-      # Tally comes from the votes table; all fixture votes are :for.
-      assert html =~ "For 25"
+      refute html =~ "AI synthesis of 25 quotes"
+      refute html =~ "For 25 · Abstain 0 · Against 0"
       # The body ships in the initial HTML (crawlable) but starts hidden.
       assert html =~ "Pro cluster title"
       assert html =~ "Con cluster title"
@@ -114,7 +114,7 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
       {:ok, _view, html} = live(conn, ~p"/p/#{statement.slug}")
 
       hall_index = index_of!(html, ~s(href="/h/ai"))
-      synthesis_index = index_of!(html, "AI synthesis of 25 quotes")
+      synthesis_index = index_of!(html, "AI synthesis")
       vote_index = index_of!(html, "Cast your vote:")
 
       assert hall_index < synthesis_index
@@ -130,11 +130,25 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
       {:ok, view, _html} = live(conn, ~p"/p/#{statement.slug}")
 
       view |> element("button[phx-click='toggle-synthesis']") |> render_click()
+      assert_patch(view, ~p"/p/#{statement.slug}?#{%{synthesis: "true"}}")
       assert has_element?(view, "#synthesis-body")
       refute has_element?(view, "#synthesis-body.hidden")
 
       view |> element("button[phx-click='toggle-synthesis']") |> render_click()
+      assert_patch(view, ~p"/p/#{statement.slug}")
       assert has_element?(view, "#synthesis-body.hidden")
+    end
+
+    test "opens expanded from the synthesis URL param", %{conn: conn} do
+      statement = statement_with_quotes(25)
+      [o1] = cited_opinions(statement, 1)
+      statement = put_synthesis(statement, [o1.id], [])
+      enable_synthesis_flag()
+
+      {:ok, view, _html} = live(conn, ~p"/p/#{statement.slug}?#{%{synthesis: "true"}}")
+
+      assert has_element?(view, "#synthesis-body")
+      refute has_element?(view, "#synthesis-body.hidden")
     end
 
     test "hidden when the feature flag is off", %{conn: conn} do
@@ -144,7 +158,7 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
 
       {:ok, _view, html} = live(conn, ~p"/p/#{statement.slug}")
 
-      refute html =~ "AI synthesis of"
+      refute html =~ "AI synthesis"
       refute html =~ "Synthesis headline about the debate."
     end
 
@@ -154,7 +168,7 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
 
       {:ok, _view, html} = live(conn, ~p"/p/#{statement.slug}")
 
-      refute html =~ "AI synthesis of"
+      refute html =~ "AI synthesis"
     end
 
     test "hidden below the quote floor", %{conn: conn} do
@@ -165,7 +179,7 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
 
       {:ok, _view, html} = live(conn, ~p"/p/#{statement.slug}")
 
-      refute html =~ "AI synthesis of"
+      refute html =~ "AI synthesis"
     end
 
     test "omits quotes that were deleted after generation", %{conn: conn} do
@@ -177,7 +191,8 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
 
       {:ok, _view, html} = live(conn, ~p"/p/#{statement.slug}")
 
-      assert html =~ "AI synthesis of 25 quotes"
+      assert html =~ "AI synthesis"
+      refute html =~ "AI synthesis of 25 quotes"
       # The cluster survives; the deleted quote silently disappears from it.
       assert html =~ "Pro cluster title"
       refute html =~ "/c/#{o1.id}"

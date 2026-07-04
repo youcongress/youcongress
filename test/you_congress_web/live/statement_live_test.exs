@@ -620,6 +620,8 @@ defmodule YouCongressWeb.StatementLiveTest do
         |> element("#statement-results-by-country", "By country")
         |> render_click()
 
+      assert_patch(show_live, ~p"/p/#{statement.slug}?#{%{results: "country"}}")
+
       # Opening country results doesn't change the total
       assert html =~ "Results (3 votes):"
       assert html =~ "For 1 (33%)"
@@ -633,11 +635,76 @@ defmodule YouCongressWeb.StatementLiveTest do
         |> element("input[phx-value-filter='quotes']")
         |> render_click()
 
+      assert_patch(
+        show_live,
+        ~p"/p/#{statement.slug}?#{%{country_quotes: "false", results: "country"}}"
+      )
+
       assert html =~ "Results (1 vote):"
       assert html =~ "For 1 (100%)"
       assert html =~ "Against 0 (0%)"
       assert html =~ "Spain"
       refute html =~ "France"
+    end
+
+    test "loads country and year result views from URL params", %{
+      conn: conn,
+      statement: statement
+    } do
+      spain = country_fixture(%{name: "URL Spain"})
+      france = country_fixture(%{name: "URL France"})
+      spain_author = author_fixture(%{country_id: spain.id, name: "URL Spanish Voter"})
+      france_author = author_fixture(%{country_id: france.id, name: "URL French Voter"})
+
+      spain_quote =
+        opinion_fixture(%{
+          author_id: spain_author.id,
+          date: ~D[2026-01-01],
+          date_precision: :day
+        })
+
+      france_quote =
+        opinion_fixture(%{
+          author_id: france_author.id,
+          date: ~D[2025-01-01],
+          date_precision: :day
+        })
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: spain_author.id,
+        opinion_id: spain_quote.id,
+        answer: :for
+      })
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: france_author.id,
+        opinion_id: france_quote.id,
+        answer: :against
+      })
+
+      {:ok, country_live, country_html} =
+        live(conn, ~p"/p/#{statement.slug}?#{%{results: "country"}}")
+
+      assert country_html =~ "URL Spain"
+      assert country_html =~ "URL France"
+
+      year_html =
+        country_live
+        |> element("#statement-results-by-year", "By year")
+        |> render_click()
+
+      assert_patch(country_live, ~p"/p/#{statement.slug}?#{%{results: "year"}}")
+      assert year_html =~ "2026"
+      assert year_html =~ "2025"
+
+      {:ok, _filtered_live, filtered_html} =
+        live(conn, ~p"/p/#{statement.slug}?#{%{country_quotes: "false", results: "country"}}")
+
+      assert filtered_html =~ "No country results yet."
+      refute filtered_html =~ "URL Spain"
+      refute filtered_html =~ "URL France"
     end
 
     test "creates a comment", %{conn: conn, statement: statement} do
@@ -860,6 +927,7 @@ defmodule YouCongressWeb.StatementLiveTest do
         |> element("span", "Users")
         |> render_click()
 
+      assert_patch(show_live, ~p"/p/#{statement.slug}?#{%{source: "users"}}")
       assert html =~ human_author.name
       refute html =~ ai_author.name
 
@@ -869,6 +937,7 @@ defmodule YouCongressWeb.StatementLiveTest do
         |> element("span", "Quotes")
         |> render_click()
 
+      assert_patch(show_live, ~p"/p/#{statement.slug}")
       assert html =~ ai_author.name
       refute html =~ human_author.name
     end
