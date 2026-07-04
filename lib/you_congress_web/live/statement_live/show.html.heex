@@ -43,6 +43,17 @@
   <% end %>
 </div>
 
+<SynthesisComponent.card
+  :if={@show_synthesis_card?}
+  statement={@statement}
+  synthesis={@statement.synthesis}
+  quotes_tally={@quotes_tally}
+  show_synthesis={@show_synthesis}
+  synthesis_opinions={@synthesis_opinions}
+  can_regenerate={Permissions.can_regenerate_statement_synthesis?(@current_user)}
+  synthesis_regenerating={@synthesis_regenerating}
+/>
+
 <div class="mt-4">
   <div class="pb-1 text-xs">
     Cast your vote:
@@ -134,17 +145,6 @@
     Users ({@users_votes_count})
   </span>
 </div>
-
-<SynthesisComponent.card
-  :if={@show_synthesis_card?}
-  statement={@statement}
-  synthesis={@statement.synthesis}
-  quotes_tally={@quotes_tally}
-  show_synthesis={@show_synthesis}
-  synthesis_opinions={@synthesis_opinions}
-  can_regenerate={Permissions.can_regenerate_statement_synthesis?(@current_user)}
-  synthesis_regenerating={@synthesis_regenerating}
-/>
 
 <%= if @votes_from_delegates != [] || @votes_from_non_delegates != [] do %>
   <div class="mb-8">
