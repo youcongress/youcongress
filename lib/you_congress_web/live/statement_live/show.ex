@@ -16,6 +16,8 @@ defmodule YouCongressWeb.StatementLive.Show do
   alias YouCongressWeb.StatementLive.ResultsComponent
   alias YouCongress.HallsStatements
   alias YouCongress.Opinions.Quotes.Quotator
+  alias YouCongress.Statements.Synthesis
+  alias YouCongressWeb.StatementLive.SynthesisComponent
   alias YouCongress.Votes.VoteFrequencies
   alias YouCongressWeb.ReturnTo
   alias YouCongressWeb.SEO
@@ -41,7 +43,11 @@ defmodule YouCongressWeb.StatementLive.Show do
      |> assign(:country_results_filters, VoteFrequencies.default_country_filters())
      |> assign(:show_year_results, false)
      |> assign(:year_vote_frequencies, nil)
-     |> assign(:year_results_filters, VoteFrequencies.default_year_filters())}
+     |> assign(:year_results_filters, VoteFrequencies.default_year_filters())
+     |> assign(:show_synthesis, false)
+     |> assign(:show_synthesis_card?, false)
+     |> assign(:synthesis_opinions, %{})
+     |> assign(:synthesis_regenerating, false)}
   end
 
   @impl true
@@ -215,6 +221,36 @@ defmodule YouCongressWeb.StatementLive.Show do
       |> assign(:pending_vote_prompt, nil)
 
     {:noreply, socket}
+  end
+
+  def handle_event("toggle-synthesis", _, socket) do
+    {:noreply, assign(socket, :show_synthesis, !socket.assigns.show_synthesis)}
+  end
+
+  def handle_event("regenerate-synthesis", _, socket) do
+    current_user = socket.assigns.current_user
+
+    if Permissions.can_regenerate_statement_synthesis?(current_user) do
+      case Synthesis.enqueue_regeneration(socket.assigns.statement.id) do
+        {:ok, %Oban.Job{conflict?: true}} ->
+          {:noreply, put_flash(socket, :info, "Synthesis regeneration is already in progress.")}
+
+        {:ok, _job} ->
+          {:noreply,
+           socket
+           |> assign(:synthesis_regenerating, true)
+           |> put_flash(
+             :info,
+             "Regenerating the AI synthesis — it will appear here in a few minutes."
+           )}
+
+        {:error, reason} ->
+          Logger.error("Failed to enqueue synthesis regeneration: #{inspect(reason)}")
+          {:noreply, put_flash(socket, :error, "Unable to start synthesis regeneration.")}
+      end
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("toggle-country-results", %{"statement_id" => statement_id}, socket) do

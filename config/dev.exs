@@ -70,6 +70,9 @@ config :you_congress, YouCongressWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :you_congress, dev_routes: true
 
+# Exercise the AI quote synthesis locally (SynthesisFake when no OpenAI key)
+config :you_congress, :feature_flags, %{quote_synthesis: true}
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 config :logger, level: :debug

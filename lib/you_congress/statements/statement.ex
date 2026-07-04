@@ -23,6 +23,10 @@ defmodule YouCongress.Statements.Statement do
     field :opinion_likes_count, :integer, default: 0
     field :opinions_count, :integer, default: 0
 
+    field :synthesis, :map
+    field :synthesis_generated_at, :utc_datetime
+    field :synthesis_quotes_count, :integer
+
     has_many :votes, Vote
 
     has_many :opinion_statements, YouCongress.OpinionsStatements.OpinionStatement
@@ -74,6 +78,15 @@ defmodule YouCongress.Statements.Statement do
     |> generate_slug_if_empty()
     |> unique_constraint(:slug)
     |> put_halls(attrs)
+  end
+
+  @doc """
+  Changeset for the AI-generated quote synthesis, written by background
+  workers. Kept separate from `changeset/2` so synthesis writes never touch
+  the title/slug/halls logic.
+  """
+  def synthesis_changeset(statement, attrs) do
+    cast(statement, attrs, [:synthesis, :synthesis_generated_at, :synthesis_quotes_count])
   end
 
   defp put_halls(changeset, %{"halls" => halls}) when is_list(halls) do

@@ -55,6 +55,8 @@ config :you_congress,
 
 config :you_congress, :quote_verifier_implementation, YouCongress.Verifications.VerifierFake
 
+config :you_congress, :quote_synthesis_implementation, YouCongress.Statements.SynthesisFake
+
 config :you_congress, :wikidata_implementation, YouCongress.Wikidata.WikidataFake
 
 config :you_congress,

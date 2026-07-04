@@ -5,6 +5,30 @@ defmodule YouCongress.StatementsTest do
   alias YouCongress.Statements
   import YouCongress.AccountsFixtures
 
+  describe "update_synthesis/2" do
+    import YouCongress.StatementsFixtures
+
+    test "persists the synthesis fields without touching title or slug" do
+      statement = statement_fixture()
+
+      assert {:ok, updated} =
+               Statements.update_synthesis(statement, %{
+                 synthesis: %{"headline" => "H", "conclusion" => "C"},
+                 synthesis_generated_at: ~U[2026-07-04 10:00:00Z],
+                 synthesis_quotes_count: 30
+               })
+
+      assert updated.synthesis == %{"headline" => "H", "conclusion" => "C"}
+      assert updated.synthesis_generated_at == ~U[2026-07-04 10:00:00Z]
+      assert updated.synthesis_quotes_count == 30
+      assert updated.title == statement.title
+      assert updated.slug == statement.slug
+
+      reloaded = Statements.get_statement!(statement.id)
+      assert reloaded.synthesis["headline"] == "H"
+    end
+  end
+
   describe "statements" do
     alias YouCongress.Statements.Statement
 

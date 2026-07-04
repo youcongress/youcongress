@@ -135,6 +135,17 @@
   </span>
 </div>
 
+<SynthesisComponent.card
+  :if={@show_synthesis_card?}
+  statement={@statement}
+  synthesis={@statement.synthesis}
+  quotes_tally={@quotes_tally}
+  show_synthesis={@show_synthesis}
+  synthesis_opinions={@synthesis_opinions}
+  can_regenerate={Permissions.can_regenerate_statement_synthesis?(@current_user)}
+  synthesis_regenerating={@synthesis_regenerating}
+/>
+
 <%= if @votes_from_delegates != [] || @votes_from_non_delegates != [] do %>
   <div class="mb-8">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
