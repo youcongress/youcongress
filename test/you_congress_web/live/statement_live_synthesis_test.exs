@@ -5,6 +5,7 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
   import YouCongress.StatementsFixtures
   import YouCongress.VotesFixtures
 
+  alias YouCongress.HallsStatements
   alias YouCongress.Opinions
   alias YouCongress.Statements
 
@@ -72,6 +73,13 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
     statement
   end
 
+  defp index_of!(html, text) do
+    case :binary.match(html, text) do
+      {index, _length} -> index
+      :nomatch -> flunk("Expected HTML to include #{inspect(text)}")
+    end
+  end
+
   describe "synthesis card" do
     test "renders collapsed with headline, DB tally and crawlable body", %{conn: conn} do
       statement = statement_with_quotes(25)
@@ -94,6 +102,23 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
       assert html =~ "Balanced conclusion text."
       assert html =~ "AI-generated from the quotes on this page on Jul 04, 2026"
       assert has_element?(view, "#synthesis-body.hidden")
+    end
+
+    test "renders after halls and before voting controls", %{conn: conn} do
+      statement = statement_with_quotes(25)
+      [o1] = cited_opinions(statement, 1)
+      statement = put_synthesis(statement, [o1.id], [])
+      {:ok, _statement} = HallsStatements.sync!(statement.id, %{main_tag: "ai", other_tags: []})
+      enable_synthesis_flag()
+
+      {:ok, _view, html} = live(conn, ~p"/p/#{statement.slug}")
+
+      hall_index = index_of!(html, ~s(href="/h/ai"))
+      synthesis_index = index_of!(html, "AI synthesis of 25 quotes")
+      vote_index = index_of!(html, "Cast your vote:")
+
+      assert hall_index < synthesis_index
+      assert synthesis_index < vote_index
     end
 
     test "expands and collapses on toggle", %{conn: conn} do
