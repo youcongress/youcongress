@@ -29,6 +29,8 @@ if config_env() == :dev and !System.get_env("OPENAI_API_KEY") do
          YouCongress.Authors.CountryInferenceFake
 
   config :you_congress, :quote_verifier_implementation, YouCongress.Verifications.VerifierFake
+
+  config :you_congress, :quote_synthesis_implementation, YouCongress.Statements.SynthesisFake
 end
 
 # The admin/moderator user that owns AI-generated verifications. Without it, the

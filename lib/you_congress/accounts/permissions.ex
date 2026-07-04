@@ -45,6 +45,11 @@ defmodule YouCongress.Accounts.Permissions do
   def can_regenerate_opinion?(%User{role: "moderator"}), do: true
   def can_regenerate_opinion?(_), do: false
 
+  def can_regenerate_statement_synthesis?(%User{role: role}) when role in ["admin", "moderator"],
+    do: true
+
+  def can_regenerate_statement_synthesis?(_), do: false
+
   @doc """
   Checks if the user can add an opinion to a statement.
   """

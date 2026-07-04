@@ -5,8 +5,11 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
 
   import Phoenix.Component, only: [assign: 2]
 
+  alias YouCongress.FeatureFlags
+  alias YouCongress.Opinions
   alias YouCongress.Statements
   alias YouCongress.Statements.Statement
+  alias YouCongress.Statements.Synthesis
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
   alias YouCongress.Votes.VoteFrequencies
@@ -58,9 +61,18 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
     share_to_x_text =
       x_post(current_user_vote, statement) <> " https://youcongress.org/p/#{statement.slug}"
 
+    # Unfiltered quote tally: unlike quotes_votes_count above, it ignores the
+    # answer filter, so the synthesis card does not disappear when a visitor
+    # filters votes by answer.
+    quotes_tally = Votes.count_by_response_map_by_source(statement_id, source_filter: :quotes)
+    show_synthesis_card? = show_synthesis_card?(statement, quotes_tally)
+
     socket
     |> assign(
       statement: statement,
+      quotes_tally: quotes_tally,
+      show_synthesis_card?: show_synthesis_card?,
+      synthesis_opinions: synthesis_opinions(statement, show_synthesis_card?),
       votes_from_delegates: votes_from_delegates,
       votes_from_non_delegates: votes_with_opinion -- votes_from_delegates,
       votes_without_opinion: votes_without_opinion,
@@ -75,6 +87,27 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
       total_votes: Votes.count_by_statement(statement_id)
     )
     |> assign_main_variables(statement, current_user)
+  end
+
+  defp show_synthesis_card?(statement, quotes_tally) do
+    FeatureFlags.enabled?(:quote_synthesis) and not is_nil(statement.synthesis) and
+      Enum.sum(Map.values(quotes_tally)) >= Synthesis.min_quotes()
+  end
+
+  # The quotes the synthesis cites, resolved from the database so the card
+  # renders real quote content and authors (never LLM-generated quote text).
+  # Restricting to the statement's current quotes makes stale cited ids
+  # (deleted or detached quotes) vanish instead of erroring.
+  defp synthesis_opinions(_statement, false), do: %{}
+
+  defp synthesis_opinions(statement, true) do
+    Opinions.list_opinions(
+      ids: Synthesis.cited_opinion_ids(statement.synthesis),
+      statement_ids: [statement.id],
+      only_quotes: true,
+      preload: [:author]
+    )
+    |> Map.new(&{&1.id, &1})
   end
 
   defp get_opinions_by_response(statement_id, source_filter) do

@@ -346,6 +346,16 @@ defmodule YouCongress.Statements do
     update_statement(statement, %{opinions_count: count})
   end
 
+  @doc """
+  Persists the AI-generated quote synthesis. Bypasses `update_statement/2` so
+  a synthesis write can never trigger the title/halls side effects.
+  """
+  def update_synthesis(%Statement{} = statement, attrs) do
+    statement
+    |> Statement.synthesis_changeset(attrs)
+    |> Repo.update()
+  end
+
   def statements_count_created_in_the_last_hour do
     from(v in Statement, where: v.inserted_at > ago(1, "hour"), select: count(v.id))
     |> Repo.one()
