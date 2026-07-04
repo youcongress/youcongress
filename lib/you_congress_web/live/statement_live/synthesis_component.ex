@@ -35,7 +35,13 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
 
     ~H"""
     <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4" data-nosnippet>
-      <button type="button" phx-click="toggle-synthesis" class="w-full text-left">
+      <button
+        type="button"
+        phx-click="toggle-synthesis"
+        aria-expanded={to_string(@show_synthesis)}
+        aria-controls="synthesis-body"
+        class="w-full text-left"
+      >
         <div class="flex items-center justify-between gap-2">
           <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">
             AI synthesis
@@ -45,6 +51,9 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
           </span>
         </div>
         <p class="mt-1 font-semibold">{@synthesis["headline"]}</p>
+        <span :if={!@show_synthesis} class="mt-2 inline-block text-sm text-gray-600 underline">
+          Show arguments and insights
+        </span>
       </button>
 
       <%!-- Always in the DOM (crawlable); the toggle only flips visibility. --%>
