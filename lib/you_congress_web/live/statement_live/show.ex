@@ -17,6 +17,7 @@ defmodule YouCongressWeb.StatementLive.Show do
   alias YouCongress.HallsStatements
   alias YouCongress.Opinions.Quotes.Quotator
   alias YouCongress.Statements.Synthesis
+  alias YouCongressWeb.StatementLive.Show.Params
   alias YouCongressWeb.StatementLive.SynthesisComponent
   alias YouCongress.Votes.VoteFrequencies
   alias YouCongressWeb.ReturnTo
@@ -52,11 +53,13 @@ defmodule YouCongressWeb.StatementLive.Show do
 
   @impl true
   @spec handle_params(map, binary, Socket.t()) :: {:noreply, Socket.t()}
-  def handle_params(%{"slug" => slug}, url, socket) do
+  def handle_params(%{"slug" => slug} = params, url, socket) do
     statement = Statements.get_by!(slug: slug)
+    statement_page_params = Params.from_params(params)
 
     socket =
       socket
+      |> assign_statement_page_params(statement_page_params)
       |> assign(:return_to, ReturnTo.from_url(url))
       |> assign(:page_title, page_title(socket.assigns.live_action, statement.title))
       |> assign(:canonical_url, url(~p"/p/#{statement.slug}"))
@@ -67,9 +70,9 @@ defmodule YouCongressWeb.StatementLive.Show do
       |> assign(:show_ai_quote_action, true)
       |> assign(:regenerating_opinion_id, nil)
       |> assign(:find_quotes_in_progress, Quotator.find_quotes_in_progress?(statement.id))
-      |> assign(:source_filter, :quotes)
-      |> assign(:answer_filter, nil)
       |> load_statement_and_likes(statement)
+      |> maybe_reload_country_vote_frequencies()
+      |> maybe_reload_year_vote_frequencies()
       |> assign_page_description()
       |> load_random_statements(statement.id)
 
@@ -168,50 +171,18 @@ defmodule YouCongressWeb.StatementLive.Show do
   end
 
   def handle_event("filter-quotes", _, socket) do
-    %{assigns: %{source_filter: source_filter, statement: statement}} = socket
-
-    source_filter =
-      case source_filter do
-        nil -> :quotes
-        :quotes -> nil
-        :users -> :quotes
-      end
-
-    socket =
-      socket
-      |> assign(:source_filter, source_filter)
-      |> load_statement_and_likes(statement)
-
-    {:noreply, socket}
+    params = Params.toggle_source(socket.assigns.statement_page_params, :quotes)
+    {:noreply, patch_statement_page_params(socket, params)}
   end
 
   def handle_event("filter-users", _, socket) do
-    %{assigns: %{source_filter: source_filter, statement: statement}} = socket
-
-    source_filter =
-      case source_filter do
-        nil -> :users
-        :quotes -> :users
-        :users -> nil
-      end
-
-    socket =
-      socket
-      |> assign(:source_filter, source_filter)
-      |> load_statement_and_likes(statement)
-
-    {:noreply, socket}
+    params = Params.toggle_source(socket.assigns.statement_page_params, :users)
+    {:noreply, patch_statement_page_params(socket, params)}
   end
 
   def handle_event("filter-answer", %{"answer" => answer}, socket) do
-    %{assigns: %{statement: statement}} = socket
-
-    socket =
-      socket
-      |> assign(:answer_filter, answer)
-      |> load_statement_and_likes(statement)
-
-    {:noreply, socket}
+    params = Params.toggle_answer(socket.assigns.statement_page_params, answer)
+    {:noreply, patch_statement_page_params(socket, params)}
   end
 
   def handle_event("close-vote-auth-modal", _, socket) do
@@ -224,7 +195,12 @@ defmodule YouCongressWeb.StatementLive.Show do
   end
 
   def handle_event("toggle-synthesis", _, socket) do
-    {:noreply, assign(socket, :show_synthesis, !socket.assigns.show_synthesis)}
+    params =
+      Params.put(socket.assigns.statement_page_params, %{
+        show_synthesis: !socket.assigns.show_synthesis
+      })
+
+    {:noreply, patch_statement_page_params(socket, params)}
   end
 
   def handle_event("regenerate-synthesis", _, socket) do
@@ -253,82 +229,56 @@ defmodule YouCongressWeb.StatementLive.Show do
     end
   end
 
-  def handle_event("toggle-country-results", %{"statement_id" => statement_id}, socket) do
-    statement_id = String.to_integer(statement_id)
+  def handle_event("toggle-country-results", %{"statement_id" => _statement_id}, socket) do
+    params =
+      Params.put(socket.assigns.statement_page_params, %{
+        results: if(socket.assigns.show_country_results, do: nil, else: :country)
+      })
 
-    socket =
-      if socket.assigns.show_country_results do
-        assign(socket, :show_country_results, false)
-      else
-        socket
-        |> assign(:show_country_results, true)
-        |> assign(:show_year_results, false)
-        |> assign(
-          :country_vote_frequencies,
-          VoteFrequencies.get_by_country(statement_id, socket.assigns.country_results_filters)
-        )
-      end
-
-    {:noreply, socket}
+    {:noreply, patch_statement_page_params(socket, params)}
   end
 
   def handle_event(
         "toggle-country-results-filter",
-        %{"filter" => filter, "statement_id" => statement_id},
+        %{"filter" => filter, "statement_id" => _statement_id},
         socket
       ) do
     filters =
       VoteFrequencies.toggle_country_filter(socket.assigns.country_results_filters, filter)
 
-    statement_id = String.to_integer(statement_id)
+    params =
+      Params.put(socket.assigns.statement_page_params, %{
+        results: :country,
+        country_results_filters: filters
+      })
 
-    socket =
-      socket
-      |> assign(:show_country_results, true)
-      |> assign(:show_year_results, false)
-      |> assign(:country_results_filters, filters)
-      |> assign(:country_vote_frequencies, VoteFrequencies.get_by_country(statement_id, filters))
-
-    {:noreply, socket}
+    {:noreply, patch_statement_page_params(socket, params)}
   end
 
-  def handle_event("toggle-year-results", %{"statement_id" => statement_id}, socket) do
-    statement_id = String.to_integer(statement_id)
+  def handle_event("toggle-year-results", %{"statement_id" => _statement_id}, socket) do
+    params =
+      Params.put(socket.assigns.statement_page_params, %{
+        results: if(socket.assigns.show_year_results, do: nil, else: :year)
+      })
 
-    socket =
-      if socket.assigns.show_year_results do
-        assign(socket, :show_year_results, false)
-      else
-        socket
-        |> assign(:show_year_results, true)
-        |> assign(:show_country_results, false)
-        |> assign(
-          :year_vote_frequencies,
-          VoteFrequencies.get_by_year(statement_id, socket.assigns.year_results_filters)
-        )
-      end
-
-    {:noreply, socket}
+    {:noreply, patch_statement_page_params(socket, params)}
   end
 
   def handle_event(
         "toggle-year-results-filter",
-        %{"filter" => filter, "statement_id" => statement_id},
+        %{"filter" => filter, "statement_id" => _statement_id},
         socket
       ) do
     filters =
       VoteFrequencies.toggle_year_filter(socket.assigns.year_results_filters, filter)
 
-    statement_id = String.to_integer(statement_id)
+    params =
+      Params.put(socket.assigns.statement_page_params, %{
+        results: :year,
+        year_results_filters: filters
+      })
 
-    socket =
-      socket
-      |> assign(:show_year_results, true)
-      |> assign(:show_country_results, false)
-      |> assign(:year_results_filters, filters)
-      |> assign(:year_vote_frequencies, VoteFrequencies.get_by_year(statement_id, filters))
-
-    {:noreply, socket}
+    {:noreply, patch_statement_page_params(socket, params)}
   end
 
   @impl true
@@ -428,6 +378,26 @@ defmodule YouCongressWeb.StatementLive.Show do
       end
 
     assign(socket, :random_statements_from_main_hall, random_statements_from_main_hall)
+  end
+
+  defp assign_statement_page_params(socket, params) do
+    socket
+    |> assign(:statement_page_params, params)
+    |> assign(:show_synthesis, params.show_synthesis)
+    |> assign(:show_country_results, params.results == :country)
+    |> assign(:country_vote_frequencies, nil)
+    |> assign(:country_results_filters, params.country_results_filters)
+    |> assign(:show_year_results, params.results == :year)
+    |> assign(:year_vote_frequencies, nil)
+    |> assign(:year_results_filters, params.year_results_filters)
+    |> assign(:source_filter, params.source_filter)
+    |> assign(:answer_filter, params.answer_filter)
+  end
+
+  defp patch_statement_page_params(socket, params) do
+    push_patch(socket,
+      to: ~p"/p/#{socket.assigns.statement.slug}?#{Params.to_query(params)}"
+    )
   end
 
   defp maybe_reload_country_vote_frequencies(%{assigns: %{show_country_results: true}} = socket) do

@@ -41,6 +41,7 @@ defmodule YouCongress.MixProject do
       {:phoenix_html, "~> 3.3"},
       {:phoenix_live_reload, "~> 1.6", only: :dev},
       {:phoenix_live_view, "~> 1.1.13"},
+      {:flop, "~> 0.26.4"},
       {:floki, ">= 0.36.3", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.7"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
