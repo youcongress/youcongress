@@ -13,6 +13,8 @@ defmodule YouCongress.Statements.StatementQueries do
 
   @home_minimum_opinions 15
 
+  def home_minimum_opinions, do: @home_minimum_opinions
+
   @doc """
   Returns one vote per statement, prioritizing:
   1. Current user's vote (if logged in)
@@ -256,6 +258,7 @@ defmodule YouCongress.Statements.StatementQueries do
 
   Options:
   - :hall_name - filter by hall (default "all")
+  - :min_opinions - minimum sourced-opinion votes for a statement (default 15)
   - :offset - number of cards to skip
   - :limit - max cards to return
   """
@@ -263,6 +266,7 @@ defmodule YouCongress.Statements.StatementQueries do
     hall_name = Keyword.get(opts, :hall_name, "all")
     offset = Keyword.get(opts, :offset, 0)
     limit = Keyword.get(opts, :limit, 15)
+    min_opinions = min_opinions(opts)
 
     has_hall = hall_name != "all"
 
@@ -274,9 +278,10 @@ defmodule YouCongress.Statements.StatementQueries do
         {"", [], 1}
       end
 
-    offset_param = "$#{param_idx}"
-    limit_param = "$#{param_idx + 1}"
-    params = params ++ [offset, limit]
+    min_opinions_param = "$#{param_idx}"
+    offset_param = "$#{param_idx + 1}"
+    limit_param = "$#{param_idx + 2}"
+    params = params ++ [min_opinions, offset, limit]
 
     sql = """
     WITH ranked_votes AS (
@@ -303,22 +308,30 @@ defmodule YouCongress.Statements.StatementQueries do
                      ELSE 0
                    END DESC,
                    o.date DESC NULLS LAST,
-                   o.likes_count DESC, o.updated_at DESC, v.inserted_at DESC
+                   o.likes_count DESC NULLS LAST,
+                   o.updated_at DESC NULLS LAST,
+                   v.inserted_at DESC NULLS LAST,
+                   s.inserted_at DESC
         ) as vote_rank
       FROM statements s
-      JOIN votes v ON v.statement_id = s.id
-      JOIN opinions o ON o.id = v.opinion_id
-      JOIN authors a ON a.id = v.author_id
+      LEFT JOIN votes v ON v.statement_id = s.id
+        AND v.opinion_id IS NOT NULL
+        AND EXISTS (
+          SELECT 1 FROM authors a
+          WHERE a.id = v.author_id AND a.public_figure = TRUE
+        )
+      LEFT JOIN opinions o ON o.id = v.opinion_id
       LEFT JOIN opinions_statements os ON os.opinion_id = o.id AND os.statement_id = s.id
       #{hall_filter}
-      WHERE v.opinion_id IS NOT NULL
-        AND a.public_figure = TRUE
-        AND (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= #{@home_minimum_opinions}
+      WHERE (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= #{min_opinions_param}
     )
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
     WHERE rv.vote_rank = 1
-    ORDER BY rv.verification_rank DESC, rv.opinion_date DESC NULLS LAST, rv.top_opinion_likes_count DESC, rv.statement_inserted_at DESC
+    ORDER BY rv.verification_rank DESC,
+             rv.opinion_date DESC NULLS LAST,
+             rv.top_opinion_likes_count DESC NULLS LAST,
+             rv.statement_inserted_at DESC
     OFFSET #{offset_param}
     LIMIT #{limit_param}
     """
@@ -333,7 +346,7 @@ defmodule YouCongress.Statements.StatementQueries do
           %{vote_id: vote_id, statement_id: statement_id}
         end)
 
-      vote_ids = Enum.map(results, & &1.vote_id)
+      vote_ids = results |> Enum.map(& &1.vote_id) |> Enum.reject(&is_nil/1)
       statement_ids = results |> Enum.map(& &1.statement_id) |> Enum.uniq()
 
       votes =
@@ -356,7 +369,7 @@ defmodule YouCongress.Statements.StatementQueries do
         statement = Map.get(statements, statement_id)
 
         %OpinionCard{
-          id: "card-#{statement_id}-#{vote_id}",
+          id: opinion_card_id(statement_id, vote_id),
           statement: statement,
           vote: vote,
           round: 1
@@ -500,6 +513,7 @@ defmodule YouCongress.Statements.StatementQueries do
 
   Options:
   - :hall_name - filter by hall (default "all")
+  - :min_opinions - minimum sourced-opinion votes for a statement (default 15)
   - :offset - number of cards to skip
   - :limit - max cards to return
   """
@@ -507,6 +521,7 @@ defmodule YouCongress.Statements.StatementQueries do
     hall_name = Keyword.get(opts, :hall_name, "all")
     offset = Keyword.get(opts, :offset, 0)
     limit = Keyword.get(opts, :limit, 15)
+    min_opinions = min_opinions(opts)
 
     has_hall = hall_name != "all"
 
@@ -518,9 +533,10 @@ defmodule YouCongress.Statements.StatementQueries do
         {"", [], 1}
       end
 
-    offset_param = "$#{param_idx}"
-    limit_param = "$#{param_idx + 1}"
-    params = params ++ [offset, limit]
+    min_opinions_param = "$#{param_idx}"
+    offset_param = "$#{param_idx + 1}"
+    limit_param = "$#{param_idx + 2}"
+    params = params ++ [min_opinions, offset, limit]
 
     sql = """
     WITH ranked_votes AS (
@@ -529,6 +545,7 @@ defmodule YouCongress.Statements.StatementQueries do
         s.id as statement_id,
         o.date as opinion_date,
         o.id as opinion_id,
+        s.inserted_at as statement_inserted_at,
         CASE
           WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed')
            AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
@@ -546,22 +563,29 @@ defmodule YouCongress.Statements.StatementQueries do
                      WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
                      ELSE 0
                    END DESC,
-                   o.id DESC, v.id DESC
+                   o.id DESC NULLS LAST,
+                   v.id DESC NULLS LAST,
+                   s.inserted_at DESC
         ) as vote_rank
       FROM statements s
-      JOIN votes v ON v.statement_id = s.id
-      JOIN opinions o ON o.id = v.opinion_id
-      JOIN authors a ON a.id = v.author_id
+      LEFT JOIN votes v ON v.statement_id = s.id
+        AND v.opinion_id IS NOT NULL
+        AND EXISTS (
+          SELECT 1 FROM authors a
+          WHERE a.id = v.author_id AND a.public_figure = TRUE
+        )
+      LEFT JOIN opinions o ON o.id = v.opinion_id
       LEFT JOIN opinions_statements os ON os.opinion_id = o.id AND os.statement_id = s.id
       #{hall_filter}
-      WHERE v.opinion_id IS NOT NULL
-        AND a.public_figure = TRUE
-        AND (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= #{@home_minimum_opinions}
+      WHERE (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= #{min_opinions_param}
     )
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
     WHERE rv.vote_rank = 1
-    ORDER BY rv.opinion_date DESC NULLS LAST, rv.verification_rank DESC, rv.opinion_id DESC
+    ORDER BY rv.opinion_date DESC NULLS LAST,
+             rv.verification_rank DESC,
+             rv.opinion_id DESC NULLS LAST,
+             rv.statement_inserted_at DESC
     OFFSET #{offset_param}
     LIMIT #{limit_param}
     """
@@ -577,6 +601,7 @@ defmodule YouCongress.Statements.StatementQueries do
 
   Options:
   - :hall_name - filter by hall (default "all")
+  - :min_opinions - minimum sourced-opinion votes for a statement (default 15)
   - :offset - number of cards to skip
   - :limit - max cards to return
   """
@@ -584,6 +609,7 @@ defmodule YouCongress.Statements.StatementQueries do
     hall_name = Keyword.get(opts, :hall_name, "all")
     offset = Keyword.get(opts, :offset, 0)
     limit = Keyword.get(opts, :limit, 15)
+    min_opinions = min_opinions(opts)
 
     has_hall = hall_name != "all"
 
@@ -596,9 +622,10 @@ defmodule YouCongress.Statements.StatementQueries do
         {"", [], 1}
       end
 
-    offset_param = "$#{param_idx}"
-    limit_param = "$#{param_idx + 1}"
-    params = params ++ [offset, limit]
+    min_opinions_param = "$#{param_idx}"
+    offset_param = "$#{param_idx + 1}"
+    limit_param = "$#{param_idx + 2}"
+    params = params ++ [min_opinions, offset, limit]
 
     sql = """
     WITH ranked_votes AS (
@@ -606,6 +633,7 @@ defmodule YouCongress.Statements.StatementQueries do
         v.id as vote_id,
         s.id as statement_id,
         o.id as opinion_id,
+        s.inserted_at as statement_inserted_at,
         CASE
           WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed')
            AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
@@ -622,22 +650,28 @@ defmodule YouCongress.Statements.StatementQueries do
                      WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
                      ELSE 0
                    END DESC,
-                   o.id DESC, v.inserted_at DESC
+                   o.id DESC NULLS LAST,
+                   v.inserted_at DESC NULLS LAST,
+                   s.inserted_at DESC
         ) as vote_rank
       FROM statements s
-      JOIN votes v ON v.statement_id = s.id
-      JOIN opinions o ON o.id = v.opinion_id
-      JOIN authors a ON a.id = v.author_id
+      LEFT JOIN votes v ON v.statement_id = s.id
+        AND v.opinion_id IS NOT NULL
+        AND EXISTS (
+          SELECT 1 FROM authors a
+          WHERE a.id = v.author_id AND a.public_figure = TRUE
+        )
+      LEFT JOIN opinions o ON o.id = v.opinion_id
       LEFT JOIN opinions_statements os ON os.opinion_id = o.id AND os.statement_id = s.id
       #{hall_filter}
-      WHERE v.opinion_id IS NOT NULL
-        AND a.public_figure = TRUE
-        AND (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= #{@home_minimum_opinions}
+      WHERE (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= #{min_opinions_param}
     )
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
     WHERE rv.vote_rank = 1
-    ORDER BY rv.verification_rank DESC, rv.opinion_id DESC
+    ORDER BY rv.verification_rank DESC,
+             rv.opinion_id DESC NULLS LAST,
+             rv.statement_inserted_at DESC
     OFFSET #{offset_param}
     LIMIT #{limit_param}
     """
@@ -656,7 +690,7 @@ defmodule YouCongress.Statements.StatementQueries do
           %{vote_id: vote_id, statement_id: statement_id}
         end)
 
-      vote_ids = Enum.map(results, & &1.vote_id)
+      vote_ids = results |> Enum.map(& &1.vote_id) |> Enum.reject(&is_nil/1)
       statement_ids = results |> Enum.map(& &1.statement_id) |> Enum.uniq()
 
       votes =
@@ -679,7 +713,7 @@ defmodule YouCongress.Statements.StatementQueries do
         statement = Map.get(statements, statement_id)
 
         %OpinionCard{
-          id: "card-#{statement_id}-#{vote_id}",
+          id: opinion_card_id(statement_id, vote_id),
           statement: statement,
           vote: vote,
           round: 1
@@ -687,4 +721,24 @@ defmodule YouCongress.Statements.StatementQueries do
       end)
     end
   end
+
+  defp min_opinions(opts) do
+    opts
+    |> Keyword.get(:min_opinions, @home_minimum_opinions)
+    |> normalize_min_opinions()
+  end
+
+  defp normalize_min_opinions(value) when is_integer(value) and value >= 0, do: value
+
+  defp normalize_min_opinions(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {integer, ""} when integer >= 0 -> integer
+      _ -> @home_minimum_opinions
+    end
+  end
+
+  defp normalize_min_opinions(_value), do: @home_minimum_opinions
+
+  defp opinion_card_id(statement_id, nil), do: "card-#{statement_id}-statement"
+  defp opinion_card_id(statement_id, vote_id), do: "card-#{statement_id}-#{vote_id}"
 end

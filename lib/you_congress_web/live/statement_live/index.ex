@@ -52,6 +52,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
       |> assign(:page, 1)
       |> assign(:per_page, 15)
+      |> assign(:min_opinions, min_opinions_from_params(params))
       |> assign(:has_more_statements, true)
       |> assign(:editing_opinion_id, nil)
       |> assign(:can_create_statement?, Permissions.can_create_statement?(current_user))
@@ -75,6 +76,7 @@ defmodule YouCongressWeb.StatementLive.Index do
     socket =
       socket
       |> assign(:return_to, ReturnTo.from_url(url))
+      |> maybe_assign_min_opinions(params)
       |> apply_action(socket.assigns.live_action, params)
       |> maybe_apply_search_params(params)
 
@@ -408,6 +410,7 @@ defmodule YouCongressWeb.StatementLive.Index do
     } = socket
 
     offset = (page - 1) * per_page
+    min_opinions = socket.assigns.min_opinions
 
     cards =
       case feed_order do
@@ -415,21 +418,24 @@ defmodule YouCongressWeb.StatementLive.Index do
           StatementQueries.get_opinion_cards_by_quote_date(
             hall_name: hall_name,
             offset: offset,
-            limit: per_page
+            limit: per_page,
+            min_opinions: min_opinions
           )
 
         :added ->
           StatementQueries.get_opinion_cards_by_recency(
             hall_name: hall_name,
             offset: offset,
-            limit: per_page
+            limit: per_page,
+            min_opinions: min_opinions
           )
 
         _ ->
           StatementQueries.get_opinion_cards_by_quote_date(
             hall_name: hall_name,
             offset: offset,
-            limit: per_page
+            limit: per_page,
+            min_opinions: min_opinions
           )
       end
 
@@ -502,6 +508,31 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   defp assign_stats(socket, stats) do
     assign(socket, :hall_stats, stats)
+  end
+
+  defp maybe_assign_min_opinions(socket, params) do
+    min_opinions = min_opinions_from_params(params)
+
+    if socket.assigns.min_opinions == min_opinions do
+      socket
+    else
+      socket
+      |> assign(:min_opinions, min_opinions)
+      |> assign_cards(1)
+    end
+  end
+
+  defp min_opinions_from_params(%{"min_opinions" => value}) do
+    parse_min_opinions(to_string(value), StatementQueries.home_minimum_opinions())
+  end
+
+  defp min_opinions_from_params(_params), do: StatementQueries.home_minimum_opinions()
+
+  defp parse_min_opinions(value, fallback) do
+    case Integer.parse(value) do
+      {min_opinions, ""} when min_opinions >= 0 -> min_opinions
+      _ -> fallback
+    end
   end
 
   defp perform_search(socket, search) do
