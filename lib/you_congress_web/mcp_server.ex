@@ -4,7 +4,7 @@ defmodule YouCongressWeb.MCPServer do
     version: "1.0.0",
     capabilities: [:tools]
 
-  # Tools — when adding or changing tools, also update the human docs at /mcp-tools
+  # Tools: when adding or changing tools, also update the human docs at /mcp-tools
   # (lib/you_congress_web/controllers/page_html/mcp_tools.html.heex) and the
   # AI-facing tool list in build_llms_txt/0 (page_controller.ex, served at /llms.txt).
   # component(YouCongressWeb.MCPServer.StatementsSearch)

@@ -22,11 +22,11 @@ defmodule YouCongressWeb.HomeLive.Index do
       socket
       |> assign(
         :page_title,
-        "AI Safety & Governance liquid democracy polls with verifiable quotes | YouCongress"
+        "Expert and Citizen Preferences | YouCongress"
       )
       |> assign(
         :page_description,
-        "We gather verifiable quotes and use liquid democracy to surface alignment on AI governance."
+        "We structure sourced claims, quotes, votes and delegations to surface expert and citizen preferences."
       )
       |> assign(:skip_page_suffix, true)
       |> assign(:live_action, :new)

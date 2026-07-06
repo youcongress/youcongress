@@ -2,7 +2,7 @@ defmodule YouCongressWeb.SEOMetaTest do
   @moduledoc """
   Dead-render checks for SEO meta tags and JSON-LD. Canonical links,
   meta descriptions and structured data only matter for crawlers, which
-  see the dead render — so these use plain GETs, not live/2.
+  see the dead render, so these use plain GETs, not live/2.
   """
   use YouCongressWeb.ConnCase
 

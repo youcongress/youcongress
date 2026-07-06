@@ -2,8 +2,8 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
   @moduledoc """
   Aggregate verification badge for a quote shown in a statement context.
 
-  It combines the three progressive verification dimensions — quote authenticity,
-  opinion-statement relevance, and the vote's answer — into a single badge that
+  It combines the three progressive verification dimensions: quote authenticity,
+  opinion-statement relevance, and the vote's answer, into a single badge that
   only reads "Verified" when all three are positive (see
   `YouCongress.VerificationStatus.aggregate/3`).
 

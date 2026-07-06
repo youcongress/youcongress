@@ -217,7 +217,7 @@ defmodule YouCongressWeb.StatementLive.Show do
            |> assign(:synthesis_regenerating, true)
            |> put_flash(
              :info,
-             "Regenerating the AI synthesis — it will appear here in a few minutes."
+             "Regenerating the AI synthesis. It will appear here in a few minutes."
            )}
 
         {:error, reason} ->

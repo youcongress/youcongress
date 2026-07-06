@@ -24,11 +24,11 @@ defmodule YouCongressWeb.SEO do
     case top_hall_topics(halls, 3) do
       [] ->
         "Sourced quotes and votes from #{name} on AI policy statements. " <>
-          "See where they stand — for or against — with sources."
+          "See whether they stand for or against, with sources."
 
       topics ->
         "Sourced quotes and votes from #{name} on #{join_topics(topics)}. " <>
-          "See where they stand — for or against — on AI policy statements."
+          "See whether they stand for or against on AI policy statements."
     end
   end
 
@@ -93,7 +93,7 @@ defmodule YouCongressWeb.SEO do
   def opinion_description(opinion) do
     name = opinion.author.name || opinion.author.twitter_username || "Anonymous"
     date = if Opinion.display_date(opinion), do: ", #{Opinion.display_date(opinion)}"
-    "\"#{truncate(opinion.content, 110)}\" — #{name}#{date}. Sourced quote with source."
+    "\"#{truncate(opinion.content, 110)}\" - #{name}#{date}. Sourced quote with source."
   end
 
   # --- JSON-LD builders (schema.org) ---
@@ -146,7 +146,7 @@ defmodule YouCongressWeb.SEO do
 
   @doc """
   WebPage + ItemList of Quotation for a statement page. Only sourced,
-  non-twin opinions are included — AI-generated content must never be
+  non-twin opinions are included. AI-generated content must never be
   presented as a real quote.
   """
   def statement_graph(statement, votes, canonical_url) do
@@ -219,7 +219,7 @@ defmodule YouCongressWeb.SEO do
   end
 
   @doc """
-  Canonical path for an author, preferring the /x/ username URL —
+  Canonical path for an author, preferring the /x/ username URL.
   /a/:id pages canonicalize to it so the two routes don't compete.
   """
   def author_path(%{twitter_username: nil, id: author_id}), do: ~p"/a/#{author_id}"

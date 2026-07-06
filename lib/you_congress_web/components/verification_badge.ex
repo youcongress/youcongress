@@ -4,9 +4,9 @@ defmodule YouCongressWeb.Components.VerificationBadge do
 
   It works for three independently verifiable subjects:
 
-    * `:opinion` — is the quote authentic?
-    * `:opinion_statement` — is the quote exactly about this statement?
-    * `:vote` — is the vote's answer correct for the statement?
+    * `:opinion`: is the quote authentic?
+    * `:opinion_statement`: is the quote exactly about this statement?
+    * `:vote`: is the vote's answer correct for the statement?
 
   For logged-in users with permission, it renders a clickable badge with a
   dropdown to select a status. For everyone else, it renders a static link to

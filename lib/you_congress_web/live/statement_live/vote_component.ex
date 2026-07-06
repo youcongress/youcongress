@@ -138,7 +138,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
         send(
           self(),
           {:put_flash, :info,
-           "Added to your delegation list. You're voting as the majority of your delegates – unless you directly vote."}
+           "Added to your delegation list. You're voting as the majority of your delegates unless you directly vote."}
         )
 
         socket =

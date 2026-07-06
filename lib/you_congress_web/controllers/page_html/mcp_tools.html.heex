@@ -1,5 +1,5 @@
 <%!-- When changing the tool docs here, also update the AI-facing tool list in
-build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. --%>
+build_llms_txt/0 (page_controller.ex, served at /llms.txt), and vice versa. --%>
 <div class="max-w-4xl mx-auto space-y-8">
   <!-- Header Section -->
   <section aria-labelledby="mcp-heading">
@@ -47,7 +47,7 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
         <div>
           <h3 class="font-semibold text-lg">Option 1: Connect without an API Key</h3>
           <p class="text-gray-700 leading-relaxed">
-            The public YouCongress MCP endpoint works out of the box — no API key required. Just add it to your assistant and you're ready to browse public data.
+            The public YouCongress MCP endpoint works out of the box. No API key required. Just add it to your assistant and you're ready to browse public data.
           </p>
           <div class="mt-2 flex items-center gap-2 rounded-lg bg-gray-100 border border-gray-200">
             <pre class="flex-1 text-sm overflow-x-auto m-0"><code id="mcp-tools-url-public" class="block px-3 py-2">https://youcongress.org/mcp</code></pre>
@@ -208,7 +208,7 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
             to true to
             include each statement's halls (id and name);
             <code class="bg-gray-100 px-1 rounded">order</code>
-            ("desc" by id — newest first, default — or "asc");
+            ("desc" by id, newest first by default, or "asc");
             <code class="bg-gray-100 px-1 rounded">last_id</code>
             (pass the <code class="bg-gray-100 px-1 rounded">last_id</code>
             from a previous response to get the next page). Every result also includes the
@@ -292,7 +292,7 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
             and a <code class="bg-gray-100 px-1 rounded">main_hall</code>
             name.
             Optional:<br /> • <code class="bg-gray-100 px-1 rounded">other_halls</code>
-            — string of comma-separated values.<br /> Returns the updated
+            - string of comma-separated values.<br /> Returns the updated
             <code class="bg-gray-100 px-1 rounded">statement</code>
             (id, title, main_hall, halls).
           </dd>
@@ -326,14 +326,14 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
           <dd class="text-gray-700">
             List authors (up to 100 per page). Optional:
             <code class="bg-gray-100 px-1 rounded">order</code>
-            ("desc" by id — newest first, default — or "asc");
+            ("desc" by id, newest first by default, or "asc");
             <code class="bg-gray-100 px-1 rounded">last_id</code>
             (pass the <code class="bg-gray-100 px-1 rounded">last_id</code>
             from a previous response to get the next page);
             <code class="bg-gray-100 px-1 rounded">country</code>
-            (name or ISO code — only authors from that country);
+            (name or ISO code; only authors from that country);
             <code class="bg-gray-100 px-1 rounded">without_country</code>
-            (true — only authors with no country set).
+            (true; only authors with no country set).
             By default, authors from all countries (including those without a country) are listed.
           </dd>
         </div>
@@ -387,7 +387,7 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
         Every "quote" in YouCongress is simply an opinion that includes a <code class="bg-gray-100 px-1 rounded">source_url</code>. User-authored
         positions without a source URL are still stored as opinions, but they will not appear in the
         quote verification tools below. Use the opinions tools to create both sourced quotes and
-        unsourced user stances—just include the
+        unsourced user stances. Just include the
         <code class="bg-gray-100 px-1 rounded">source_url</code>
         when you want the opinion treated as a quote.
       </p>
@@ -524,7 +524,7 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
           <dd class="text-gray-700">
             Search quotes. Requires: <code class="bg-gray-100 px-1 rounded">query</code>.
             Optional: <code class="bg-gray-100 px-1 rounded">statement_id</code>
-            — include it to keyword-search quotes within that statement (public); omit it to search
+            - include it to keyword-search quotes within that statement (public); omit it to search
             all quotes by meaning (semantic similarity), with each result ranked by a
             <code class="bg-gray-100 px-1 rounded">similarity</code>
             score. Cross-statement semantic search requires an API key
@@ -541,7 +541,7 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
           <dd class="text-gray-700">
             List quotes (up to 100 per page), each with its author, source, verification status
             and vote. Optional: <code class="bg-gray-100 px-1 rounded">order</code>
-            ("desc" by id — newest first, default — or "asc");
+            ("desc" by id, newest first by default, or "asc");
             <code class="bg-gray-100 px-1 rounded">last_id</code>
             (pass the <code class="bg-gray-100 px-1 rounded">last_id</code>
             from a previous response to get the next page).
@@ -683,7 +683,7 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt) — and vice versa. -
         or another MCP-capable assistant and try pasting one of these prompts:
       </:intro>
       <:permission_notice>
-        Your AI assistant will use the YouCongress tools automatically. The first time it tries to use a tool, it may ask for your permission — just click <strong>Allow</strong>.
+        Your AI assistant will use the YouCongress tools automatically. The first time it tries to use a tool, it may ask for your permission. Just click <strong>Allow</strong>.
       </:permission_notice>
     </.prompt_examples>
   </section>

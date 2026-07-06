@@ -1,7 +1,7 @@
 defmodule YouCongressWeb.MCPServer.AuthorsList do
   @moduledoc """
   List authors on YouCongress.
-  Returns up to 100 authors ordered by id ("desc" by default — newest first, or "asc").
+  Returns up to 100 authors ordered by id ("desc" by default, newest first, or "asc").
   Pass the last_id from a previous response to get the next page.
   Pass country (name or ISO code) to only list authors from that country.
   Pass without_country: true to only list authors with no country set.

@@ -1,13 +1,13 @@
 <%= if @hall_name == "all" do %>
   <.json_ld data={SEO.website()} />
-  <h1 class="sr-only">YouCongress Polls</h1>
+  <h1 class="sr-only">YouCongress - Expert and Citizen Preferences</h1>
   <div class="text-center pt-2 pb-4">
     <div class="leading-8 text-gray-600">
       <h2 class="text-2xl font-bold">
-        Expert and Citizen Preferences on AI Governance
+        Expert and Citizen Preferences
       </h2>
       <p class="text-lg">
-        Sourced quotes and a participation layer keep expert and citizen preferences in plain view.
+        Source-grounded claims, quotes, votes and delegations make public reasoning easier to inspect, reuse and improve.
       </p>
       <HallHero.summary stats={@hall_stats} />
     </div>
@@ -23,7 +23,7 @@
         type="search"
         name="search"
         value={@search}
-        placeholder="Search AI quotes, people, policies..."
+        placeholder="Search quotes, claims, people, topics..."
         class="block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400"
         autofocus
         required

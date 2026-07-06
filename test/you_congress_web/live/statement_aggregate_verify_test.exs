@@ -115,7 +115,7 @@ defmodule YouCongressWeb.StatementAggregateVerifyTest do
         twin: false
       })
 
-    # The vote's own quote (older date) — what the answer is bound to.
+    # The vote's own quote (older date), what the answer is bound to.
     voted =
       opinion_fixture(%{
         author_id: author.id,
