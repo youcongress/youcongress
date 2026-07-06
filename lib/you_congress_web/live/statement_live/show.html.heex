@@ -143,6 +143,13 @@
   >
     Users ({@users_votes_count})
   </span>
+  <.link
+    :if={@quotes_votes_count > 0}
+    href={~p"/p/#{@statement.slug}/quotes.csv"}
+    class="hidden md:block text-xs text-gray-500 underline"
+  >
+    Download CSV
+  </.link>
 </div>
 
 <%= if @votes_from_delegates != [] || @votes_from_non_delegates != [] do %>

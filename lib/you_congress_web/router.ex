@@ -29,6 +29,7 @@ defmodule YouCongressWeb.Router do
     get("/sim", SimController, :index)
     get("/home", PageController, :redirect_to_home)
     live("/p/:slug", StatementLive.Show, :show)
+    get("/p/:slug/quotes.csv", StatementController, :quotes_csv)
     live("/a/:id", AuthorLive.Show, :show)
     live("/x/:twitter_username", AuthorLive.Show, :show)
     live("/h/:hall", StatementLive.Index, :index)
