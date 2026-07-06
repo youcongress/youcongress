@@ -15,7 +15,7 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   alias YouCongress.Statements
   alias YouCongress.Workers.QuotatorWorker
 
-  @number_of_quotes 5
+  @number_of_quotes 35
   @author_metadata_fields [
     {"bio", :bio},
     {"wikipedia_url", :wikipedia_url},
