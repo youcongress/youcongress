@@ -38,6 +38,21 @@ defmodule YouCongress.Statements.StatementQueriesTest do
                &(&1.statement.id == statement.id)
              )
 
+      assert Enum.any?(
+               StatementQueries.get_opinion_cards_by_recency(min_opinions: 14, limit: 20),
+               &(&1.statement.id == statement.id)
+             )
+
+      assert Enum.any?(
+               StatementQueries.get_opinion_cards_by_top_likes(min_opinions: 14, limit: 20),
+               &(&1.statement.id == statement.id)
+             )
+
+      assert Enum.any?(
+               StatementQueries.get_opinion_cards_by_quote_date(min_opinions: 14, limit: 20),
+               &(&1.statement.id == statement.id)
+             )
+
       fill_statement_with_quotes(statement.id, 1)
 
       assert Enum.any?(
@@ -54,6 +69,33 @@ defmodule YouCongress.Statements.StatementQueriesTest do
                StatementQueries.get_opinion_cards_by_quote_date(limit: 20),
                &(&1.statement.id == statement.id)
              )
+    end
+
+    test "min_opinions zero includes statements without opinions" do
+      statement = statement_fixture()
+
+      refute Enum.any?(
+               StatementQueries.get_opinion_cards_by_recency(limit: 20),
+               &(&1.statement.id == statement.id)
+             )
+
+      assert [
+               %{statement: %{id: statement_id}, vote: nil}
+             ] = StatementQueries.get_opinion_cards_by_recency(min_opinions: 0, limit: 20)
+
+      assert statement_id == statement.id
+
+      assert [
+               %{statement: %{id: statement_id}, vote: nil}
+             ] = StatementQueries.get_opinion_cards_by_quote_date(min_opinions: 0, limit: 20)
+
+      assert statement_id == statement.id
+
+      assert [
+               %{statement: %{id: statement_id}, vote: nil}
+             ] = StatementQueries.get_opinion_cards_by_top_likes(min_opinions: 0, limit: 20)
+
+      assert statement_id == statement.id
     end
 
     test "returns each quote only once even if multiple votes point to it" do

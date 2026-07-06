@@ -116,6 +116,17 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert has_element?(home_view, "#site-intro-featured-authors a", health_author.name)
     end
 
+    test "min_opinions query param includes zero-opinion statements", %{conn: conn} do
+      statement = statement_fixture(%{title: "Zero opinion home card"})
+
+      {:ok, _view, default_html} = live(conn, ~p"/")
+      refute default_html =~ statement.title
+
+      {:ok, _view, min_html} = live(conn, ~p"/?min_opinions=0")
+      assert min_html =~ statement.title
+      assert min_html =~ "Add an opinion"
+    end
+
     test "vote and create opinion", %{conn: conn, statement: statement} do
       # Create an opinion so the statement appears in the home feed.
       author = author_fixture()
