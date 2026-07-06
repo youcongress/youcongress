@@ -43,8 +43,8 @@ defmodule YouCongressWeb.HomeLiveTest do
   describe "Home page for non-logged visitors" do
     test "renders home page successfully", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/")
-      assert html =~ "YouCongress Polls"
-      assert html =~ "Search AI quotes, people, policies..."
+      assert html =~ "YouCongress - Expert and Citizen Preferences"
+      assert html =~ "Search quotes, claims, people, topics..."
     end
 
     test "shows statements regardless of wikipedia metadata in default mode", %{conn: conn} do

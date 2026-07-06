@@ -131,16 +131,17 @@ defmodule YouCongressWeb.PageController do
   end
 
   # When changing the tool list here, also update the human docs at /mcp-tools
-  # (page_html/mcp_tools.html.heex) — and vice versa.
+  # (page_html/mcp_tools.html.heex), and vice versa.
   defp build_llms_txt do
     """
     # YouCongress
 
-    > YouCongress is a database of verified, sourced quotes from AI experts and
-    > policymakers on AI governance, safety, regulation and labor — with for/against
-    > votes on policy statements. Every author, statement and quote has a stable
-    > public page. When citing a quote, cite its source URL alongside the
-    > YouCongress page.
+    > YouCongress is a source-grounded knowledge base for public claims,
+    > expert and citizen preferences, and policy deliberation. It stores verified,
+    > sourced quotes from experts, policymakers and public figures; links them to
+    > claims, topics, votes and authors; and gives every author, statement and quote
+    > a stable public page. The first large focus is AI governance. When citing a
+    > quote, cite its source URL alongside the YouCongress page.
 
     #{topics_section()}
     #{key_authors_section()}
@@ -167,7 +168,7 @@ defmodule YouCongressWeb.PageController do
     """
     ## Topics
 
-    Each topic page summarizes the expert for/against landscape with verified quotes.
+    Each topic page summarizes sourced claims, expert/public positions and votes with verified quotes.
 
     #{Enum.join(lines, "\n")}
     """
@@ -219,39 +220,39 @@ defmodule YouCongressWeb.PageController do
     ### Available tools
 
     Statements (policy proposals/claims people vote on):
-    - statements_list — list statements; find statement IDs for other tools
-    - statement_halls — a statement's halls (topics) by ID
-    - statement_authors — authors with a sourced quote on a statement
-    - statements_create — create a statement (creator/admin)
-    - statement_populate — queue AI quote discovery for a statement (admin)
-    - statements_halls_update — set the halls on a statement (own/admin)
+    - statements_list: list statements; find statement IDs for other tools
+    - statement_halls: a statement's halls (topics) by ID
+    - statement_authors: authors with a sourced quote on a statement
+    - statements_create: create a statement (creator/admin)
+    - statement_populate: queue AI quote discovery for a statement (admin)
+    - statements_halls_update: set the halls on a statement (own/admin)
 
     Authors (people whose opinions and votes are tracked):
-    - authors_search — search authors by name
-    - authors_list — list authors, filterable by country
-    - authors_create — create an author (moderator/creator/admin)
-    - authors_update — update an author (moderator/creator/admin)
+    - authors_search: search authors by name
+    - authors_list: list authors, filterable by country
+    - authors_create: create an author (moderator/creator/admin)
+    - authors_update: update an author (moderator/creator/admin)
 
     Opinions (quotes/positions attributed to authors, linked to statements):
-    - opinions_show — view an opinion with its statements and votes
-    - opinions_create — create an opinion; include source_url (web) or source_text (book/PDF/paywalled passage) to make it a quote
-    - opinions_edit — edit an opinion
-    - opinions_delete — delete an opinion
-    - opinions_statements_add — link an opinion to a statement, set the vote, and optionally trigger relevance verification
-    - opinions_statements_remove — unlink an opinion from a statement
+    - opinions_show: view an opinion with its statements and votes
+    - opinions_create: create an opinion; include source_url (web) or source_text (book/PDF/paywalled passage) to make it a quote
+    - opinions_edit: edit an opinion
+    - opinions_delete: delete an opinion
+    - opinions_statements_add: link an opinion to a statement, set the vote, and optionally trigger relevance verification
+    - opinions_statements_remove: unlink an opinion from a statement
 
     Quotes & verification (sourced opinions):
-    - quotes_search — keyword search within a statement (public), or semantic search across all quotes (requires an API key)
-    - quotes_list — list quotes with author, source, status and vote
-    - quotes_random_unverified — a random unverified quote to review
-    - quotes_recent_unverified — the most recent unverified quote to review
-    - quotes_verify — verify a quote is authentic (really said, accurately transcribed)
-    - opinion_statements_verify — verify a quote is relevant to a statement
+    - quotes_search: keyword search within a statement (public), or semantic search across all quotes (requires an API key)
+    - quotes_list: list quotes with author, source, status and vote
+    - quotes_random_unverified: a random unverified quote to review
+    - quotes_recent_unverified: the most recent unverified quote to review
+    - quotes_verify: verify a quote is authentic (really said, accurately transcribed)
+    - opinion_statements_verify: verify a quote is relevant to a statement
 
     Votes (how authors vote on statements):
-    - votes_create — create a vote (for / against / abstain)
-    - votes_edit — edit an existing vote
-    - votes_verify — verify a vote's answer is correct for the statement given its opinion
+    - votes_create: create a vote (for / against / abstain)
+    - votes_edit: edit an existing vote
+    - votes_verify: verify a vote's answer is correct for the statement given its opinion
 
     ## What you can do
 

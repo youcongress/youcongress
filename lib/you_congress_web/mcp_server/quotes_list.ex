@@ -1,7 +1,7 @@
 defmodule YouCongressWeb.MCPServer.QuotesList do
   @moduledoc """
   List quotes on YouCongress.
-  Returns up to 100 quotes ordered by id ("desc" by default — newest first, or "asc").
+  Returns up to 100 quotes ordered by id ("desc" by default, newest first, or "asc").
   Pass the last_id from a previous response to get the next page.
   """
 

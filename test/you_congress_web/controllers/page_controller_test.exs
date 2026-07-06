@@ -54,7 +54,7 @@ defmodule YouCongressWeb.PageControllerTest do
 
   test "GET /email-login-waiting-list", %{conn: conn} do
     conn = get(conn, ~p"/email-login-waiting-list")
-    assert html_response(conn, 200) =~ "Waiting list for email/password login – YouCongress"
+    assert html_response(conn, 200) =~ "Waiting list for email/password login - YouCongress"
   end
 
   test "POST /email-login-waiting-list/thanks", %{conn: conn} do

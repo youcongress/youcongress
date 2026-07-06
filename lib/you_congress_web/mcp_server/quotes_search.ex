@@ -6,7 +6,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
   (policy proposal or claim); this is public. Without a statement_id, performs a
   general semantic similarity search across all statements, returning quotes
   ranked by how closely their meaning matches the query (each with a similarity
-  score, 0.0–1.0). Cross-statement semantic search requires a valid API key
+  score, 0.0 to 1.0). Cross-statement semantic search requires a valid API key
   (pass `?key=YOUR_KEY` in the MCP request URL).
   """
 
@@ -27,7 +27,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
   schema do
     # statement_id is optional:
     # - With it: keyword search within that statement (works best when you already
-    #   know the statement — list statements first, then drill into one). Public.
+    #   know the statement; list statements first, then drill into one). Public.
     # - Without it: semantic similarity search across all statements. Requires a
     #   valid API key because it generates an embedding.
     field :statement_id, :integer

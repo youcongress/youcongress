@@ -339,10 +339,10 @@ defmodule YouCongressWeb.StatementLive.Index do
 
     socket
     |> assign(
-      page_title: "AI liquid democracy polls with verifiable quotes | YouCongress",
+      page_title: "Expert and Citizen Preferences | YouCongress",
       skip_page_suffix: true,
       page_description:
-        "We gather verifiable expert quotes and use liquid democracy to surface alignment on AI governance.",
+        "YouCongress structures sourced claims, quotes, votes and delegations so expert and citizen preferences are transparent and reusable.",
       canonical_url: url(~p"/"),
       statement: %Statement{}
     )

@@ -1,7 +1,7 @@
 defmodule YouCongressWeb.StatementLive.Index.HallHero do
   @moduledoc """
   Topic-hub intro for hall pages: H1, description, stats and top-author
-  links, plus CollectionPage JSON-LD — so /h/:hall pages rank for
+  links, plus CollectionPage JSON-LD, so /h/:hall pages rank for
   "expert opinions on {topic}" queries and AI assistants can cite them.
   """
   use Phoenix.Component

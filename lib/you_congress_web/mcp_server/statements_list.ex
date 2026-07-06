@@ -1,7 +1,7 @@
 defmodule YouCongressWeb.MCPServer.StatementsList do
   @moduledoc """
   List statements (policy proposals and claims) so, later, with the 'quotes_search' tool you can search quotes.
-  Returns up to 100 statements ordered by id ("desc" by default — newest first, or "asc").
+  Returns up to 100 statements ordered by id ("desc" by default, newest first, or "asc").
   Pass the last_id from a previous response to get the next page.
   """
 
