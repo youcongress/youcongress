@@ -8,6 +8,18 @@ defmodule YouCongress.Halls do
 
   alias YouCongress.Halls.Hall
 
+  @minimum_opinions_by_hall %{
+    "covid-19-origins" => 0,
+    "eggs-health" => 0
+  }
+
+  @doc """
+  Returns the minimum sourced-opinion count required for a hall feed.
+  """
+  def minimum_opinions_for(hall_name, default) do
+    Map.get(@minimum_opinions_by_hall, hall_name, default)
+  end
+
   @doc """
   Returns the list of halls.
 

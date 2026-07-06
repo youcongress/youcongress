@@ -6,6 +6,7 @@ defmodule YouCongress.Statements.StatementQueries do
   import Ecto.Query, warn: false
   alias YouCongress.Repo
 
+  alias YouCongress.Halls
   alias YouCongress.Votes
   alias YouCongress.Votes.Vote
   alias YouCongress.Statements.Statement
@@ -723,21 +724,24 @@ defmodule YouCongress.Statements.StatementQueries do
   end
 
   defp min_opinions(opts) do
+    default =
+      Halls.minimum_opinions_for(Keyword.get(opts, :hall_name, "all"), @home_minimum_opinions)
+
     opts
-    |> Keyword.get(:min_opinions, @home_minimum_opinions)
-    |> normalize_min_opinions()
+    |> Keyword.get(:min_opinions, default)
+    |> normalize_min_opinions(default)
   end
 
-  defp normalize_min_opinions(value) when is_integer(value) and value >= 0, do: value
+  defp normalize_min_opinions(value, _default) when is_integer(value) and value >= 0, do: value
 
-  defp normalize_min_opinions(value) when is_binary(value) do
+  defp normalize_min_opinions(value, default) when is_binary(value) do
     case Integer.parse(value) do
       {integer, ""} when integer >= 0 -> integer
-      _ -> @home_minimum_opinions
+      _ -> default
     end
   end
 
-  defp normalize_min_opinions(_value), do: @home_minimum_opinions
+  defp normalize_min_opinions(_value, default), do: default
 
   defp opinion_card_id(statement_id, nil), do: "card-#{statement_id}-statement"
   defp opinion_card_id(statement_id, vote_id), do: "card-#{statement_id}-#{vote_id}"

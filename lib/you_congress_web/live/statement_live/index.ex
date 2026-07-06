@@ -33,6 +33,8 @@ defmodule YouCongressWeb.StatementLive.Index do
   def mount(params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
     current_user = socket.assigns.current_user
+    hall_name = hall_name_from_params(params)
+    min_opinions = min_opinions_from_params(params, hall_name)
 
     socket =
       socket
@@ -45,14 +47,14 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:search_has_more, empty_search_has_more())
       |> assign(:search_totals, empty_search_totals())
       |> assign(:feed_order, :added)
-      |> assign(:hall_name, params["hall"] || HallNav.default_hall())
+      |> assign(:hall_name, hall_name)
       |> assign(:hall_stats, nil)
       |> assign(:new_poll_visible?, false)
       |> assign(:current_user_delegation_ids, get_current_user_delegation_ids(current_user))
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
       |> assign(:page, 1)
       |> assign(:per_page, 15)
-      |> assign(:min_opinions, min_opinions_from_params(params))
+      |> assign(:min_opinions, min_opinions)
       |> assign(:has_more_statements, true)
       |> assign(:editing_opinion_id, nil)
       |> assign(:can_create_statement?, Permissions.can_create_statement?(current_user))
@@ -76,7 +78,7 @@ defmodule YouCongressWeb.StatementLive.Index do
     socket =
       socket
       |> assign(:return_to, ReturnTo.from_url(url))
-      |> maybe_assign_min_opinions(params)
+      |> maybe_assign_feed_scope(params)
       |> apply_action(socket.assigns.live_action, params)
       |> maybe_apply_search_params(params)
 
@@ -510,23 +512,38 @@ defmodule YouCongressWeb.StatementLive.Index do
     assign(socket, :hall_stats, stats)
   end
 
-  defp maybe_assign_min_opinions(socket, params) do
-    min_opinions = min_opinions_from_params(params)
+  defp maybe_assign_feed_scope(socket, params) do
+    hall_name = hall_name_from_params(params)
+    min_opinions = min_opinions_from_params(params, hall_name)
 
-    if socket.assigns.min_opinions == min_opinions do
+    if socket.assigns.hall_name == hall_name && socket.assigns.min_opinions == min_opinions do
       socket
     else
       socket
+      |> assign(:hall_name, hall_name)
       |> assign(:min_opinions, min_opinions)
       |> assign_cards(1)
     end
   end
 
-  defp min_opinions_from_params(%{"min_opinions" => value}) do
-    parse_min_opinions(to_string(value), StatementQueries.home_minimum_opinions())
+  defp hall_name_from_params(%{"hall" => hall_name})
+       when is_binary(hall_name) and hall_name != "" do
+    hall_name
   end
 
-  defp min_opinions_from_params(_params), do: StatementQueries.home_minimum_opinions()
+  defp hall_name_from_params(_params), do: HallNav.default_hall()
+
+  defp min_opinions_from_params(%{"min_opinions" => value}, hall_name) do
+    parse_min_opinions(to_string(value), default_min_opinions_for(hall_name))
+  end
+
+  defp min_opinions_from_params(_params, hall_name) do
+    default_min_opinions_for(hall_name)
+  end
+
+  defp default_min_opinions_for(hall_name) do
+    Halls.minimum_opinions_for(hall_name, StatementQueries.home_minimum_opinions())
+  end
 
   defp parse_min_opinions(value, fallback) do
     case Integer.parse(value) do
