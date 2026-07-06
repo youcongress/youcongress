@@ -106,11 +106,11 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       assert has_element?(
                home_view,
-               "a[href='/h/covid-19-origins?min_opinions=0']",
+               "a[href='/h/covid-19-origins']",
                "COVID origins"
              )
 
-      assert has_element?(home_view, "a[href='/h/eggs-health?min_opinions=0']", "Eggs and Health")
+      assert has_element?(home_view, "a[href='/h/eggs-health']", "Eggs and Health")
       assert has_element?(home_view, "a[href='/h/us-congress']", "🇺🇸 Congress")
       refute has_element?(home_view, "a[href='/h/cern-for-ai']")
       refute has_element?(home_view, "a[href='/h/open-source']")
@@ -135,6 +135,24 @@ defmodule YouCongressWeb.StatementLiveTest do
       {:ok, _view, min_html} = live(conn, ~p"/?min_opinions=0")
       assert min_html =~ statement.title
       assert min_html =~ "Add an opinion"
+    end
+
+    test "configured halls include zero-opinion statements without query params", %{conn: conn} do
+      halls = [
+        {"covid-19-origins", "COVID origins zero opinion card"},
+        {"eggs-health", "Eggs health zero opinion card"}
+      ]
+
+      Enum.each(halls, fn {hall_name, title} ->
+        statement = statement_fixture(%{title: title})
+        {:ok, _} = HallsStatements.sync!(statement.id, %{main_tag: hall_name, other_tags: []})
+
+        {:ok, _view, html} = live(conn, ~p"/h/#{hall_name}")
+
+        assert html =~ title
+        assert html =~ "Add an opinion"
+        refute html =~ "min_opinions=0"
+      end)
     end
 
     test "vote and create opinion", %{conn: conn, statement: statement} do

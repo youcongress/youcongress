@@ -16,8 +16,8 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     {"ai-governance", "AI governance"},
     {"ai-safety", "AI safety"},
     {"impact-on-labor", "Impact on labor"},
-    {"covid-19-origins", "COVID origins", [min_opinions: 0]},
-    {"eggs-health", "Eggs and Health", [min_opinions: 0]},
+    {"covid-19-origins", "COVID origins"},
+    {"eggs-health", "Eggs and Health"},
     {"us-congress", "🇺🇸 Congress"}
   ]
 
@@ -48,16 +48,12 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
 
   defp hall_link({@default_hall, _title}), do: hall_link(@default_hall)
   defp hall_link({hall_name, _title}), do: hall_link(hall_name)
-  defp hall_link({@default_hall, _title, query}), do: ~p"/?#{query}"
-  defp hall_link({hall_name, _title, query}), do: ~p"/h/#{hall_name}?#{query}"
   defp hall_link(@default_hall), do: ~p"/"
   defp hall_link(hall_name), do: ~p"/h/#{hall_name}"
 
   defp hall_slug({hall_name, _title}), do: hall_name
-  defp hall_slug({hall_name, _title, _query}), do: hall_name
 
   defp hall_title({_hall_name, title}), do: title
-  defp hall_title({_hall_name, title, _query}), do: title
 
   defp hall_pills(hall_name) do
     if Enum.any?(@featured_halls, fn hall_pill -> hall_slug(hall_pill) == hall_name end) do
