@@ -110,7 +110,7 @@ defmodule YouCongressWeb.StatementLiveTest do
                "COVID origins"
              )
 
-      assert has_element?(home_view, "a[href='/h/eggs-health']", "Eggs and Health")
+      assert has_element?(home_view, "a[href='/h/eggs-and-health']", "Eggs & Health")
       assert has_element?(home_view, "a[href='/h/us-congress']", "🇺🇸 Congress")
       refute has_element?(home_view, "a[href='/h/cern-for-ai']")
       refute has_element?(home_view, "a[href='/h/open-source']")
@@ -140,7 +140,7 @@ defmodule YouCongressWeb.StatementLiveTest do
     test "configured halls include zero-opinion statements without query params", %{conn: conn} do
       halls = [
         {"covid-19-origins", "COVID origins zero opinion card"},
-        {"eggs-health", "Eggs health zero opinion card"}
+        {"eggs-and-health", "Eggs health zero opinion card"}
       ]
 
       Enum.each(halls, fn {hall_name, title} ->

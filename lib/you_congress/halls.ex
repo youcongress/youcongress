@@ -10,7 +10,7 @@ defmodule YouCongress.Halls do
 
   @minimum_opinions_by_hall %{
     "covid-19-origins" => 0,
-    "eggs-health" => 0
+    "eggs-and-health" => 0
   }
 
   @doc """
