@@ -103,7 +103,17 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert home_html =~ ai_statement.title
       assert home_html =~ other_statement.title
       assert has_element?(home_view, "a[href='/'][class*='bg-indigo-600']", "All")
+
+      assert has_element?(
+               home_view,
+               "a[href='/h/covid-19-origins?min_opinions=0']",
+               "COVID origins"
+             )
+
+      assert has_element?(home_view, "a[href='/h/eggs-health?min_opinions=0']", "Eggs and Health")
       assert has_element?(home_view, "a[href='/h/us-congress']", "🇺🇸 Congress")
+      refute has_element?(home_view, "a[href='/h/cern-for-ai']")
+      refute has_element?(home_view, "a[href='/h/open-source']")
       refute has_element?(home_view, "a[href='/h/congreso-es']")
 
       assert has_element?(

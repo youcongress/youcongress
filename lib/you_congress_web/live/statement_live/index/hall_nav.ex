@@ -16,8 +16,8 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     {"ai-governance", "AI governance"},
     {"ai-safety", "AI safety"},
     {"impact-on-labor", "Impact on labor"},
-    {"cern-for-ai", "CERN for AI"},
-    {"open-source", "Open Source"},
+    {"covid-19-origins", "COVID origins", [min_opinions: 0]},
+    {"eggs-health", "Eggs and Health", [min_opinions: 0]},
     {"us-congress", "🇺🇸 Congress"}
   ]
 
@@ -32,12 +32,12 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     <div class="pb-2">
       <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
         <div class="flex flex-wrap gap-2">
-          <%= for {hall_slug, hall_title} <- @hall_pills do %>
+          <%= for hall_pill <- @hall_pills do %>
             <HallNav.pill
               url_hall_name={@hall_name}
-              hall_name={hall_slug}
-              hall_link={hall_link(hall_slug)}
-              hall_title={hall_title}
+              hall_name={hall_slug(hall_pill)}
+              hall_link={hall_link(hall_pill)}
+              hall_title={hall_title(hall_pill)}
             />
           <% end %>
         </div>
@@ -46,11 +46,21 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     """
   end
 
+  defp hall_link({@default_hall, _title}), do: hall_link(@default_hall)
+  defp hall_link({hall_name, _title}), do: hall_link(hall_name)
+  defp hall_link({@default_hall, _title, query}), do: ~p"/?#{query}"
+  defp hall_link({hall_name, _title, query}), do: ~p"/h/#{hall_name}?#{query}"
   defp hall_link(@default_hall), do: ~p"/"
   defp hall_link(hall_name), do: ~p"/h/#{hall_name}"
 
+  defp hall_slug({hall_name, _title}), do: hall_name
+  defp hall_slug({hall_name, _title, _query}), do: hall_name
+
+  defp hall_title({_hall_name, title}), do: title
+  defp hall_title({_hall_name, title, _query}), do: title
+
   defp hall_pills(hall_name) do
-    if Enum.any?(@featured_halls, fn {slug, _} -> slug == hall_name end) do
+    if Enum.any?(@featured_halls, fn hall_pill -> hall_slug(hall_pill) == hall_name end) do
       @featured_halls
     else
       [{hall_name, StringUtils.titleize_hall(hall_name)} | @featured_halls]
