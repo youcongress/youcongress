@@ -783,10 +783,10 @@ CREATE UNIQUE INDEX authors_twitter_id_str_index ON public.authors USING btree (
 
 
 --
--- Name: authors_twitter_url_index; Type: INDEX; Schema: public; Owner: -
+-- Name: authors_twitter_username_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX authors_twitter_url_index ON public.authors USING btree (twitter_username);
+CREATE UNIQUE INDEX authors_twitter_username_index ON public.authors USING btree (twitter_username);
 
 
 --

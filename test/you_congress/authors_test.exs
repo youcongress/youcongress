@@ -100,6 +100,30 @@ defmodule YouCongress.AuthorsTest do
       assert author.wikipedia_url == "https://en.wikipedia.org/wiki/whatever"
     end
 
+    test "create_author/1 returns changeset error for duplicate twitter username" do
+      country = country_fixture(name: "Duplicate Username Country")
+
+      attrs = %{
+        bio: "some bio",
+        country_id: country.id,
+        twin_origin: true,
+        name: "some name",
+        twitter_username: "duplicate_username",
+        wikipedia_url: "https://en.wikipedia.org/wiki/Duplicate_Username_One"
+      }
+
+      assert {:ok, %Author{}} = Authors.create_author(attrs)
+
+      assert {:error, changeset} =
+               Authors.create_author(%{
+                 attrs
+                 | name: "other name",
+                   wikipedia_url: "https://en.wikipedia.org/wiki/Duplicate_Username_Two"
+               })
+
+      assert "has already been taken" in errors_on(changeset).twitter_username
+    end
+
     test "create_author/1 resolves legacy country names and ISO codes" do
       country = country_fixture(name: "United States", iso_alpha2: "US", iso_alpha3: "USA")
 
