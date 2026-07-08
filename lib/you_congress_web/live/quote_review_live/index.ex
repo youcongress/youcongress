@@ -224,8 +224,8 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
         statements_with_votes =
           Enum.map(quote.statements, fn statement ->
             author_vote =
-              statement.id
-              |> Map.get(votes_by_statement)
+              votes_by_statement
+              |> Map.get(statement.id)
               |> vote_with_quote_status(quote.id)
 
             statement
