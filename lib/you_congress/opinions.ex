@@ -31,6 +31,7 @@ defmodule YouCongress.Opinions do
     :date_precision,
     :author_id
   ]
+  @positive_verification_statuses [:endorsed, :verified, :ai_verified]
 
   @doc """
   Returns the list of opinions.
@@ -546,6 +547,22 @@ defmodule YouCongress.Opinions do
                 "EXISTS (SELECT 1 FROM votes v WHERE v.opinion_id = ? AND v.verification_status IS NULL)",
                 q.id
               )
+
+      {:needs_quote_review, true}, query ->
+        # Reviewable quote work: either the quote itself has not been checked, or
+        # the quote is authenticated and a downstream relation/vote check is pending.
+        from q in query,
+          where:
+            is_nil(q.verification_status) or
+              (q.verification_status in ^@positive_verification_statuses and
+                 (fragment(
+                    "EXISTS (SELECT 1 FROM opinions_statements os WHERE os.opinion_id = ? AND os.verification_status IS NULL)",
+                    q.id
+                  ) or
+                    fragment(
+                      "EXISTS (SELECT 1 FROM votes v WHERE v.opinion_id = ? AND v.verification_status IS NULL)",
+                      q.id
+                    )))
 
       {:preload, preloads}, query ->
         from q in query, preload: ^preloads

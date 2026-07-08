@@ -395,6 +395,38 @@ defmodule YouCongress.OpinionsTest do
     end
   end
 
+  describe "list_opinions/1" do
+    test "needs_quote_review includes unverified quotes and verified quotes with pending downstream checks" do
+      unverified_quote = quote_review_fixture(nil)
+      relation_pending = quote_review_fixture(:verified)
+
+      vote_pending =
+        quote_review_fixture(:ai_verified, relation_status: :verified, vote_status: nil)
+
+      complete =
+        quote_review_fixture(:verified, relation_status: :verified, vote_status: :verified)
+
+      disputed = quote_review_fixture(:disputed)
+      unverifiable = quote_review_fixture(:ai_unverifiable)
+
+      ids =
+        Opinions.list_opinions(
+          has_statements: true,
+          only_quotes: true,
+          needs_quote_review: true,
+          order_by: [asc: :id]
+        )
+        |> Enum.map(& &1.id)
+
+      assert unverified_quote.id in ids
+      assert relation_pending.id in ids
+      assert vote_pending.id in ids
+      refute complete.id in ids
+      refute disputed.id in ids
+      refute unverifiable.id in ids
+    end
+  end
+
   describe "get_opinion/1" do
     test "honors descending id order when filtering opinions with statements" do
       user = user_fixture()
@@ -785,5 +817,47 @@ defmodule YouCongress.OpinionsTest do
 
   defp embedding(values) do
     values ++ List.duplicate(0.0, @embedding_dimensions - length(values))
+  end
+
+  defp quote_review_fixture(quote_status, opts \\ []) do
+    user = user_fixture()
+    statement = statement_fixture()
+
+    opinion =
+      opinion_fixture(%{
+        user_id: user.id,
+        author_id: user.author_id,
+        twin: true,
+        verification_status: quote_status
+      })
+
+    {:ok, _} =
+      Opinions.add_opinion_to_statement(opinion, statement, user.id,
+        trigger_relevance_verification: false
+      )
+
+    if Keyword.has_key?(opts, :relation_status) do
+      opinion.id
+      |> OpinionsStatements.get_opinion_statement(statement.id)
+      |> change(verification_status: opts[:relation_status])
+      |> Repo.update!()
+    end
+
+    case Keyword.get(opts, :vote_status, :none) do
+      :none ->
+        :ok
+
+      status ->
+        {:ok, _vote} =
+          Votes.create_vote(%{
+            author_id: user.author_id,
+            statement_id: statement.id,
+            opinion_id: opinion.id,
+            answer: :for,
+            verification_status: status
+          })
+    end
+
+    Opinions.get_opinion!(opinion.id)
   end
 end
