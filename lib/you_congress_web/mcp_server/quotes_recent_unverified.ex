@@ -1,6 +1,6 @@
 defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
   @moduledoc """
-  Return the most recent unverified quotes plus the statements and votes that already use them.
+  Return the most recent quotes with no quote verification plus the statements and votes that already use them.
   Returns 10 quotes by default; pass `count` to change it (max 100).
   We skip quotes with source_url starting with twitter, x, youtube as AI is not able to access them.
   """
@@ -63,7 +63,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
     opts = [
       has_statements: true,
       only_quotes: true,
-      needs_verification: true,
+      is_verified: false,
       limit: count,
       order_by: [desc: :id],
       preload: [:author, :statements, :opinion_statements],

@@ -42,7 +42,8 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
            list_opinions: fn opts ->
              assert opts[:has_statements] == true
              assert opts[:only_quotes] == true
-             assert opts[:needs_verification] == true
+             assert opts[:is_verified] == false
+             refute Keyword.has_key?(opts, :needs_verification)
              assert opts[:limit] == 10
              assert opts[:order_by] == [desc: :id]
              assert opts[:preload] == [:author, :statements, :opinion_statements]
@@ -138,6 +139,28 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
 
         assert quote_payload.opinion_id == allowed_article.id
         assert quote_payload.source_url == "https://example.com/opinion"
+      end
+    end
+
+    test "requests only quotes with no quote verification" do
+      with_mocks([
+        {Anubis.Server.Response, [],
+         [
+           tool: fn -> :tool end,
+           json: fn :tool, data -> {:json, data} end,
+           error: fn :tool, message -> {:error, message} end
+         ]},
+        {YouCongress.Opinions, [],
+         [
+           list_opinions: fn opts ->
+             assert opts[:is_verified] == false
+             refute Keyword.has_key?(opts, :needs_verification)
+             []
+           end
+         ]}
+      ]) do
+        assert {:reply, {:error, "No unverified quotes available."}, :frame} =
+                 QuotesRecentUnverified.execute(%{}, :frame)
       end
     end
 
