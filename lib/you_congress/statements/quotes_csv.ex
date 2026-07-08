@@ -28,7 +28,8 @@ defmodule YouCongress.Statements.QuotesCsv do
     "author_wikipedia_url",
     "quote",
     "vote",
-    "date",
+    "quote_date",
+    "quote_date_precision",
     "source_url",
     "quote_verification_status",
     "quote_verification_comment",
@@ -119,6 +120,7 @@ defmodule YouCongress.Statements.QuotesCsv do
       opinion.content,
       vote.answer,
       Opinion.date_iso(opinion),
+      Opinion.date_precision_string(opinion),
       opinion.source_url
     ] ++
       verification_columns(quote_verification) ++
