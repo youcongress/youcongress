@@ -82,6 +82,20 @@ defmodule YouCongressWeb.MCPServer.VotesVerify do
            "Cannot verify this vote yet: the quote (opinion) must be verified or ai_verified first."
          ), frame}
 
+      {:error, :quote_not_found} ->
+        {:reply,
+         Response.error(
+           Response.tool(),
+           "Cannot verify this vote: the linked quote (opinion) could not be found."
+         ), frame}
+
+      {:error, :quote_author_mismatch} ->
+        {:reply,
+         Response.error(
+           Response.tool(),
+           "Cannot verify this vote: the linked quote belongs to a different author than the vote."
+         ), frame}
+
       {:error, :relevance_not_verified} ->
         {:reply,
          Response.error(
