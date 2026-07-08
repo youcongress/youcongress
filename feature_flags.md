@@ -1,0 +1,1 @@
+FEATURE_FLAGS=quote_synthesis=true,log_in_with_x=true,automatic_verifications=false
