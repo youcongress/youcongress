@@ -1,5 +1,7 @@
 defmodule YouCongress.X.XAPITest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
+
+  import Mock
 
   alias YouCongress.X.XAPI
 
@@ -37,6 +39,47 @@ defmodule YouCongress.X.XAPITest do
       # Each call should generate unique values
       refute code_verifier1 == code_verifier2
       refute state1 == state2
+    end
+  end
+
+  describe "fetch_user_by_username/1" do
+    setup do
+      previous_token = Application.get_env(:you_congress, :x_bearer_token)
+      Application.put_env(:you_congress, :x_bearer_token, "test-token")
+
+      on_exit(fn ->
+        case previous_token do
+          nil -> Application.delete_env(:you_congress, :x_bearer_token)
+          token -> Application.put_env(:you_congress, :x_bearer_token, token)
+        end
+      end)
+
+      :ok
+    end
+
+    test "returns user not found for 404 X API responses" do
+      body = %{
+        "errors" => [
+          %{
+            "title" => "Not Found Error",
+            "detail" => "Could not find user with username: missing_user"
+          }
+        ]
+      }
+
+      with_mock Req,
+        get: fn _url, _opts -> {:ok, %Req.Response{status: 404, body: body}} end do
+        assert {:error, "User not found"} = XAPI.fetch_user_by_username("missing_user")
+      end
+    end
+
+    test "keeps non-not-found X API responses retryable" do
+      body = %{"title" => "Too Many Requests"}
+
+      with_mock Req,
+        get: fn _url, _opts -> {:ok, %Req.Response{status: 429, body: body}} end do
+        assert {:error, "Failed to fetch user"} = XAPI.fetch_user_by_username("rate_limited")
+      end
     end
   end
 end

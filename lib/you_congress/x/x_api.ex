@@ -111,13 +111,8 @@ defmodule YouCongress.X.XAPI do
         {:ok, %Req.Response{status: 200, body: %{"data" => user_data}}} ->
           {:ok, normalize_user_data(user_data)}
 
-        {:ok, %Req.Response{status: 200, body: %{"errors" => errors}}} ->
-          Logger.error("X user not found: username=#{username}, errors=#{inspect(errors)}")
-          {:error, "User not found"}
-
-        {:ok, %Req.Response{status: status, body: body}} ->
-          Logger.error("X user fetch failed: status=#{status}, body=#{inspect(body)}")
-          {:error, "Failed to fetch user"}
+        {:ok, %Req.Response{} = response} ->
+          handle_user_fetch_error(username, response)
 
         {:error, reason} ->
           Logger.error("X user fetch request failed: #{inspect(reason)}")
@@ -125,6 +120,23 @@ defmodule YouCongress.X.XAPI do
       end
     end
   end
+
+  defp handle_user_fetch_error(username, %Req.Response{status: status, body: body}) do
+    if user_not_found_response?(status, body) do
+      Logger.error(
+        "X user not found: username=#{username}, status=#{status}, body=#{inspect(body)}"
+      )
+
+      {:error, "User not found"}
+    else
+      Logger.error("X user fetch failed: status=#{status}, body=#{inspect(body)}")
+      {:error, "Failed to fetch user"}
+    end
+  end
+
+  defp user_not_found_response?(404, _body), do: true
+  defp user_not_found_response?(200, %{"errors" => errors}) when is_list(errors), do: true
+  defp user_not_found_response?(_status, _body), do: false
 
   # App-only Bearer Token from the X developer portal (Keys & Tokens).
   # Required for public user lookups; the OAuth 2.0 client credentials
