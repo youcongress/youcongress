@@ -11,6 +11,7 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
   alias YouCongress.Votes
   alias YouCongressWeb.MCPServer.VotesCreate
   alias YouCongressWeb.MCPServer.VotesEdit
+  alias YouCongressWeb.MCPServer.VotesVerify
 
   @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
@@ -292,6 +293,45 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
       with_mocked_response_and_key(api_key.token, fn frame ->
         assert {:reply, {:error, @not_found_message}, ^frame} =
                  VotesEdit.execute(%{statement_id: -1, author_id: -1, answer: "against"}, frame)
+      end)
+    end
+  end
+
+  describe "VotesVerify.execute/2" do
+    test "returns a deterministic error when the linked quote author does not match the vote author" do
+      admin = admin_fixture()
+      other_user = user_fixture()
+      api_key = api_key_fixture(admin)
+      statement = statement_fixture()
+
+      mismatched_quote =
+        opinion_fixture(%{
+          author_id: other_user.author_id,
+          user_id: other_user.id
+        })
+
+      vote =
+        vote_fixture(%{
+          author_id: admin.author_id,
+          statement_id: statement.id,
+          opinion_id: mismatched_quote.id,
+          answer: :for
+        })
+
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply,
+                {:error,
+                 "Cannot verify this vote: the linked quote belongs to a different author than the vote."},
+                ^frame} =
+                 VotesVerify.execute(
+                   %{
+                     vote_id: vote.id,
+                     status: "ai_verified",
+                     comment: "Correct vote",
+                     model: "claude-opus-4.6"
+                   },
+                   frame
+                 )
       end)
     end
   end
