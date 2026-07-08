@@ -9,6 +9,7 @@ defmodule YouCongress.Opinions do
 
   alias YouCongress.Embeddings
   alias YouCongress.Endorsements
+  alias YouCongress.FeatureFlags
   alias YouCongress.Likes
   alias YouCongress.Opinions.ContentEmbedding
   alias YouCongress.Opinions.Opinion
@@ -164,9 +165,9 @@ defmodule YouCongress.Opinions do
   end
 
   # A quote (an opinion with a source_url or source_text) is AI-verified whenever it is
-  # created.
+  # created while automatic verification is enabled.
   defp maybe_enqueue_quote_verification({:ok, %{opinion: %Opinion{id: id} = opinion}}) do
-    if Opinion.quote?(opinion) do
+    if automatic_verifications_enabled?() && Opinion.quote?(opinion) do
       enqueue_quote_verification(id)
     else
       :ok
@@ -272,6 +273,7 @@ defmodule YouCongress.Opinions do
          opts
        ) do
     if Opinion.quote?(opinion) && quote_reverification_field_changed?(changeset) &&
+         automatic_verifications_enabled?() &&
          not author_endorsed_update?(opinion, changeset, opts) do
       enqueue_quote_verification(id, opts)
     end
@@ -725,7 +727,8 @@ defmodule YouCongress.Opinions do
   end
 
   defp maybe_enqueue_relevance_verification(multi, %Opinion{id: opinion_id}, opts) do
-    if Keyword.get(opts, :trigger_relevance_verification, true) &&
+    if automatic_verifications_enabled?() &&
+         Keyword.get(opts, :trigger_relevance_verification, true) &&
          relevance_verification_ready?(opinion_id) do
       Oban.insert(multi, :relevance_verification, fn %{opinion_statement: opinion_statement} ->
         VerificationWorker.new(%{"subject" => "relevance", "id" => opinion_statement.id})
@@ -733,6 +736,10 @@ defmodule YouCongress.Opinions do
     else
       multi
     end
+  end
+
+  defp automatic_verifications_enabled? do
+    FeatureFlags.enabled?(:automatic_verifications)
   end
 
   defp relevance_verification_ready?(opinion_id) do

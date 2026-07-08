@@ -13,6 +13,7 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
   alias Anubis.Server.Response
   alias Ecto.Changeset
   alias YouCongress.Accounts.Permissions
+  alias YouCongress.FeatureFlags
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.MCP.ToolUsageTracker
   alias YouCongress.Repo
@@ -126,6 +127,14 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
   defp sanitize_model(model), do: model
 
   defp maybe_enqueue_relation_verifications(opinion_id, "ai_verified") do
+    if FeatureFlags.enabled?(:automatic_verifications) do
+      enqueue_relation_verifications(opinion_id)
+    end
+  end
+
+  defp maybe_enqueue_relation_verifications(_opinion_id, _status), do: :ok
+
+  defp enqueue_relation_verifications(opinion_id) do
     from(os in OpinionStatement, where: os.opinion_id == ^opinion_id, select: os.id)
     |> Repo.all()
     |> Enum.each(fn opinion_statement_id ->
@@ -134,6 +143,4 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
       |> Oban.insert()
     end)
   end
-
-  defp maybe_enqueue_relation_verifications(_opinion_id, _status), do: :ok
 end

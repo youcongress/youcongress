@@ -19,6 +19,28 @@ defmodule YouCongress.OpinionsTest do
 
   @embedding_dimensions 1536
 
+  defp disable_automatic_verifications do
+    original = Application.fetch_env(:you_congress, :feature_flags)
+
+    flags =
+      case original do
+        {:ok, map} when is_map(map) -> Map.put(map, :automatic_verifications, false)
+        _ -> %{automatic_verifications: false}
+      end
+
+    Application.put_env(:you_congress, :feature_flags, flags)
+
+    on_exit(fn ->
+      case original do
+        {:ok, original_value} ->
+          Application.put_env(:you_congress, :feature_flags, original_value)
+
+        :error ->
+          Application.delete_env(:you_congress, :feature_flags)
+      end
+    end)
+  end
+
   describe "author endorsements" do
     test "creating a human-authored opinion marks it as endorsed" do
       user = user_fixture()
@@ -304,6 +326,25 @@ defmodule YouCongress.OpinionsTest do
       end)
     end
 
+    test "create_opinion does not enqueue quote verification when automatic verifications are disabled" do
+      disable_automatic_verifications()
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        {:ok, %{opinion: opinion}} =
+          Opinions.create_opinion(%{
+            content: "a passage from a book",
+            source_url: nil,
+            source_text: "Sapiens, Y. N. Harari, Harper, 2015, p. 241: ...",
+            twin: false
+          })
+
+        refute_enqueued(
+          worker: VerificationWorker,
+          args: %{"subject" => "quote", "id" => opinion.id}
+        )
+      end)
+    end
+
     test "blank source fields are normalized and do not enqueue quote verification" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         assert {:ok, %{opinion: opinion}} =
@@ -419,6 +460,33 @@ defmodule YouCongress.OpinionsTest do
         opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
 
         assert_enqueued(
+          worker: VerificationWorker,
+          args: %{"subject" => "relevance", "id" => opinion_statement.id}
+        )
+      end)
+    end
+
+    test "does not enqueue relevance verification when automatic verifications are disabled" do
+      disable_automatic_verifications()
+
+      user = user_fixture()
+      opinion = opinion_fixture(%{user_id: user.id})
+      statement = statement_fixture()
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: user.id,
+          status: :verified,
+          comment: "Authentic"
+        })
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        assert {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement, user.id)
+
+        opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+
+        refute_enqueued(
           worker: VerificationWorker,
           args: %{"subject" => "relevance", "id" => opinion_statement.id}
         )

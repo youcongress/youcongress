@@ -442,6 +442,59 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
     end
   end
 
+  describe "automatic_verifications feature flag" do
+    test "records quote verification without cascading to relevance when disabled" do
+      use_verifier(PositiveVerifier)
+      set_system_user()
+      put_env_restore(:feature_flags, %{automatic_verifications: false})
+      %{opinion: opinion, statement: statement, vote: vote} = build_quote_with_vote(:against)
+
+      verify_quote(opinion.id)
+
+      assert Opinions.get_opinion!(opinion.id).verification_status == :ai_verified
+
+      os = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+      assert os.verification_status == nil
+
+      reloaded = Votes.get_vote!(vote.id)
+      assert reloaded.verification_status == nil
+      assert reloaded.answer == :against
+    end
+
+    test "records relevance verification without cascading to vote when disabled" do
+      system_user = set_system_user()
+      put_env_restore(:feature_flags, %{automatic_verifications: false})
+      %{opinion: opinion, statement: statement, vote: vote} = build_quote_with_vote(:against)
+
+      {:ok, _} =
+        Verifications.create_verification(%{
+          opinion_id: opinion.id,
+          user_id: system_user.id,
+          status: :ai_verified,
+          comment: "Authentic",
+          model: "m"
+        })
+
+      os = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+
+      assert :ok =
+               AIVerifications.record_and_cascade("relevance", os.id, %{
+                 "status" => "ai_verified",
+                 "comment" => "Relevant",
+                 "model" => "m"
+               })
+
+      assert OpinionsStatements.get_opinion_statement(opinion.id, statement.id).verification_status ==
+               :ai_verified
+
+      assert VoteVerifications.list_verifications(vote_id: vote.id) == []
+
+      reloaded = Votes.get_vote!(vote.id)
+      assert reloaded.verification_status == nil
+      assert reloaded.answer == :against
+    end
+  end
+
   describe "disputed relevance" do
     test "unlinks the quote from the statement" do
       use_verifier(DisputedRelevanceVerifier)
@@ -750,6 +803,29 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
 
       {:ok, _opinion} = Opinions.update_opinion(opinion, %{author_id: other_author.id})
       assert_received {:submitted, :quote, _}
+    end
+
+    test "does not re-verify quote updates when automatic verifications are disabled" do
+      use_verifier(MessageVerifier)
+      put_env_restore(:verification_test_pid, self())
+      put_env_restore(:feature_flags, %{automatic_verifications: false})
+
+      author = author_fixture()
+      user = user_fixture(%{author_id: author.id})
+
+      {:ok, %{opinion: opinion}} =
+        Opinions.create_opinion(%{
+          content: "original",
+          source_url: "https://example.com/q",
+          twin: false,
+          author_id: author.id,
+          user_id: user.id
+        })
+
+      refute_received {:submitted, :quote, _}
+
+      {:ok, _opinion} = Opinions.update_opinion(opinion, %{source_url: "https://example.com/q2"})
+      refute_received {:submitted, :quote, _}
     end
 
     test "does not re-verify when the author edits and endorses their own quote" do
