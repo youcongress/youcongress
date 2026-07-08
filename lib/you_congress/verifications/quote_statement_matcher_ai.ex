@@ -12,7 +12,7 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
 
   alias YouCongress.Opinions.Opinion
 
-  @model :"gpt-5.4"
+  @model :"gpt-5.4-mini"
   @timeout_in_min 120
   @answers ["for", "against", "abstain"]
 

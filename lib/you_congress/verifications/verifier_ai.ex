@@ -22,7 +22,7 @@ defmodule YouCongress.Verifications.VerifierAI do
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Votes.Vote
 
-  @model :"gpt-5.4"
+  @model :"gpt-5.4-mini"
   @timeout_in_min 120
 
   @statuses ["ai_verified", "ai_unverifiable", "disputed", "unverifiable", "unverified"]
