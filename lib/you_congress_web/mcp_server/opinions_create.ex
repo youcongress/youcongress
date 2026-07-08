@@ -4,6 +4,8 @@ defmodule YouCongressWeb.MCPServer.OpinionsCreate do
 
   The caller must provide a valid API key using the `?key=` query param and
   have permission to speak for the provided author.
+
+  If the source has an url, you must set it in source_url.
   """
 
   use Anubis.Server.Component, type: :tool
