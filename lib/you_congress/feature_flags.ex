@@ -7,9 +7,10 @@ defmodule YouCongress.FeatureFlags do
   (e.g. `FEATURE_FLAGS=log_in_with_x=true`).
   """
 
-  @type flag :: :log_in_with_x | :quote_synthesis
+  @type flag :: :log_in_with_x | :quote_synthesis | :automatic_verifications
 
   @default_flags %{
+    automatic_verifications: true,
     log_in_with_x: true,
     quote_synthesis: false
   }

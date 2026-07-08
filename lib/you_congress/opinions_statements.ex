@@ -5,6 +5,7 @@ defmodule YouCongress.OpinionsStatements do
 
   import Ecto.Query, warn: false
   alias YouCongress.Endorsements
+  alias YouCongress.FeatureFlags
   alias YouCongress.Repo
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
@@ -87,7 +88,8 @@ defmodule YouCongress.OpinionsStatements do
   end
 
   defp maybe_enqueue_relevance_verification(%OpinionStatement{id: id, opinion_id: opinion_id}) do
-    if relevance_verification_ready?(opinion_id) do
+    if FeatureFlags.enabled?(:automatic_verifications) &&
+         relevance_verification_ready?(opinion_id) do
       %{"subject" => "relevance", "id" => id}
       |> VerificationWorker.new()
       |> Oban.insert()

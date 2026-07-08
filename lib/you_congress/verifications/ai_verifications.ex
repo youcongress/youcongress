@@ -22,6 +22,7 @@ defmodule YouCongress.Verifications.AIVerifications do
 
   alias YouCongress.Repo
   alias YouCongress.Authors
+  alias YouCongress.FeatureFlags
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
@@ -114,7 +115,9 @@ defmodule YouCongress.Verifications.AIVerifications do
 
         case OpinionStatementVerifications.create_verification(attrs) do
           {:ok, _} ->
-            if VerificationStatus.positive?(status), do: enqueue_votes(opinion_statement)
+            if VerificationStatus.positive?(status) && automatic_verifications_enabled?(),
+              do: enqueue_votes(opinion_statement)
+
             :ok
 
           {:error, reason} ->
@@ -168,7 +171,9 @@ defmodule YouCongress.Verifications.AIVerifications do
 
     case Verifications.create_verification(attrs) do
       {:ok, _} ->
-        if VerificationStatus.positive?(status), do: enqueue_relevance(opinion_id)
+        if VerificationStatus.positive?(status) && automatic_verifications_enabled?(),
+          do: enqueue_relevance(opinion_id)
+
         :ok
 
       {:error, reason} ->
@@ -220,6 +225,10 @@ defmodule YouCongress.Verifications.AIVerifications do
 
   defp maybe_put_arg(args, _key, nil), do: args
   defp maybe_put_arg(args, key, value), do: Map.put(args, key, value)
+
+  defp automatic_verifications_enabled? do
+    FeatureFlags.enabled?(:automatic_verifications)
+  end
 
   defp unlink(%OpinionStatement{opinion_id: opinion_id, statement_id: statement_id}) do
     opinion = Opinions.get_opinion(opinion_id)
