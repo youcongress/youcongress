@@ -17,6 +17,7 @@ defmodule YouCongressWeb.StatementControllerTest do
   describe "GET /p/:slug/quotes.csv" do
     test "downloads the statement quotes with their latest verifications", %{conn: conn} do
       statement = statement_fixture()
+
       author =
         author_fixture(%{
           name: "Jane Doe",
@@ -93,6 +94,30 @@ defmodule YouCongressWeb.StatementControllerTest do
       body = response(conn, 200)
       [row] = CSV.parse_string(body)
 
+      assert [headers, ^row] = CSV.parse_string(body, skip_headers: false)
+
+      assert headers == [
+               "opinion_id",
+               "author",
+               "author_bio",
+               "author_x_url",
+               "author_wikipedia_url",
+               "quote",
+               "vote",
+               "quote_date",
+               "quote_date_precision",
+               "source_url",
+               "quote_verification_status",
+               "quote_verification_comment",
+               "quote_verification_date",
+               "relevance_verification_status",
+               "relevance_verification_comment",
+               "relevance_verification_date",
+               "vote_verification_status",
+               "vote_verification_comment",
+               "vote_verification_date"
+             ]
+
       today = Date.utc_today() |> Date.to_iso8601()
 
       assert row == [
@@ -104,6 +129,7 @@ defmodule YouCongressWeb.StatementControllerTest do
                ~s(A quote with "quotes", commas, and\na newline),
                "against",
                "2023-05-10",
+               "day",
                "https://example.com/article",
                "verified",
                "source checked",
