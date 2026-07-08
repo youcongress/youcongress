@@ -1,6 +1,7 @@
 defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
   @moduledoc """
-  Return a random unverified quote plus the statements and votes that already use it.
+  Return random unverified quotes plus the statements and votes that already use them.
+  Returns 10 quotes by default; pass `count` to change it (max 100).
   We skip quotes with source_url starting with twitter, x, youtube as AI is not able to access them.
   """
 
@@ -16,6 +17,8 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
   alias YouCongress.MCP.ToolUsageTracker
 
   @no_quote_message "No unverified quotes available."
+  @default_count 10
+  @max_count 100
   @unsupported_source_prefixes [
     "https://twitter.com",
     "https://x.com",
@@ -23,43 +26,56 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
   ]
 
   schema do
+    field :count, :integer, default: @default_count
   end
 
   @impl true
-  def execute(_params, frame) do
+  def execute(params, frame) do
     ToolUsageTracker.track(__MODULE__, frame)
 
-    case random_unverified_quote() do
-      nil ->
+    case random_unverified_quotes(count(params)) do
+      [] ->
         {:reply, Response.error(Response.tool(), @no_quote_message), frame}
 
-      opinion ->
-        votes = votes_by_statement(opinion)
-        relevance = relevance_by_statement(opinion)
-
-        data = %{
-          quote: serialize_quote(opinion),
-          statements: serialize_statements(opinion, votes, relevance)
-        }
+      opinions ->
+        data = %{quotes: Enum.map(opinions, &serialize/1)}
 
         {:reply, Response.json(Response.tool(), data), frame}
     end
   end
 
-  defp random_unverified_quote do
+  defp count(params) do
+    params
+    |> Map.get(:count, @default_count)
+    |> Kernel.||(@default_count)
+    |> max(1)
+    |> min(@max_count)
+  end
+
+  defp serialize(opinion) do
+    votes = votes_by_statement(opinion)
+    relevance = relevance_by_statement(opinion)
+
+    %{
+      quote: serialize_quote(opinion),
+      statements: serialize_statements(opinion, votes, relevance)
+    }
+  end
+
+  defp random_unverified_quotes(count) do
     random_order = dynamic([q], fragment("RANDOM()"))
 
     opts = [
       has_statements: true,
       only_quotes: true,
       needs_verification: true,
-      limit: 1,
+      limit: count,
       order_by: random_order,
       preload: [:author, :statements, :opinion_statements],
       exclude_source_prefixes: @unsupported_source_prefixes
     ]
 
-    Opinions.get_opinion(opts)
+    Opinions.list_opinions(opts)
   end
 
   defp votes_by_statement(%{id: opinion_id}) do

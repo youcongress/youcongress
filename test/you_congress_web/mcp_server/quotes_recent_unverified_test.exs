@@ -6,7 +6,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
   alias YouCongressWeb.MCPServer.QuotesRecentUnverified
 
   describe "execute/2" do
-    test "returns the most recent unverified quote with statements and votes" do
+    test "returns the most recent unverified quotes with statements and votes" do
       opinion = %{
         id: 31,
         content: "We need to tax carbon to save the planet.",
@@ -39,14 +39,15 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
          ]},
         {YouCongress.Opinions, [],
          [
-           get_opinion: fn opts ->
+           list_opinions: fn opts ->
              assert opts[:has_statements] == true
              assert opts[:only_quotes] == true
              assert opts[:needs_verification] == true
+             assert opts[:limit] == 10
              assert opts[:order_by] == [desc: :id]
              assert opts[:preload] == [:author, :statements, :opinion_statements]
              assert opts[:exclude_source_prefixes] == unsupported_source_prefixes()
-             opinion
+             [opinion]
            end
          ]},
         {YouCongress.Votes, [],
@@ -57,8 +58,10 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
            end
          ]}
       ]) do
-        assert {:reply, {:json, %{quote: quote_payload, statements: [statement_payload]}}, :frame} =
+        assert {:reply, {:json, %{quotes: [quote_entry]}}, :frame} =
                  QuotesRecentUnverified.execute(%{}, :frame)
+
+        %{quote: quote_payload, statements: [statement_payload]} = quote_entry
 
         assert quote_payload.opinion_id == opinion.id
         assert quote_payload.quote == opinion.content
@@ -66,6 +69,36 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
         assert statement_payload.statement_title == "Tax carbon emissions"
         assert statement_payload.vote.vote_id == vote.id
         assert statement_payload.vote.answer == :for
+      end
+    end
+
+    test "defaults to 10 quotes and clamps count to a maximum of 100" do
+      with_mocks([
+        {Anubis.Server.Response, [],
+         [
+           tool: fn -> :tool end,
+           json: fn :tool, data -> {:json, data} end,
+           error: fn :tool, message -> {:error, message} end
+         ]},
+        {YouCongress.Opinions, [],
+         [
+           list_opinions: fn opts ->
+             send(self(), {:limit, opts[:limit]})
+             []
+           end
+         ]}
+      ]) do
+        QuotesRecentUnverified.execute(%{}, :frame)
+        assert_received {:limit, 10}
+
+        QuotesRecentUnverified.execute(%{count: 25}, :frame)
+        assert_received {:limit, 25}
+
+        QuotesRecentUnverified.execute(%{count: 500}, :frame)
+        assert_received {:limit, 100}
+
+        QuotesRecentUnverified.execute(%{count: 0}, :frame)
+        assert_received {:limit, 1}
       end
     end
 
@@ -92,15 +125,15 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
          ]},
         {YouCongress.Opinions, [],
          [
-           get_opinion: fn opts ->
+           list_opinions: fn opts ->
              assert opts[:order_by] == [desc: :id]
              assert opts[:exclude_source_prefixes] == unsupported_source_prefixes()
-             allowed_article
+             [allowed_article]
            end
          ]},
         {YouCongress.Votes, [], [list_votes: fn _opts -> [] end]}
       ]) do
-        assert {:reply, {:json, %{quote: quote_payload}}, :frame} =
+        assert {:reply, {:json, %{quotes: [%{quote: quote_payload}]}}, :frame} =
                  QuotesRecentUnverified.execute(%{}, :frame)
 
         assert quote_payload.opinion_id == allowed_article.id
@@ -116,7 +149,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
            json: fn :tool, data -> {:json, data} end,
            error: fn :tool, message -> {:error, message} end
          ]},
-        {YouCongress.Opinions, [], [get_opinion: fn _opts -> nil end]}
+        {YouCongress.Opinions, [], [list_opinions: fn _opts -> [] end]}
       ]) do
         assert {:reply, {:error, "No unverified quotes available."}, :frame} =
                  QuotesRecentUnverified.execute(%{}, :frame)
