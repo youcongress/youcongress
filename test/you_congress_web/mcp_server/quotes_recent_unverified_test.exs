@@ -16,8 +16,9 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
         source_text: nil,
         date: ~D[2024-01-01],
         date_precision: :year,
-        verification_status: nil,
-        statements: [%{id: 8, title: "Tax carbon emissions"}]
+        verification_status: :verified,
+        statements: [%{id: 8, title: "Tax carbon emissions"}],
+        opinion_statements: [%{statement_id: 8, verification_status: :ai_verified}]
       }
 
       vote = %{
@@ -27,7 +28,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
         author_id: 12,
         author: %{name: "Ada"},
         direct: true,
-        verification_status: nil
+        verification_status: :verified
       }
 
       with_mocks([
@@ -42,7 +43,8 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
            list_opinions: fn opts ->
              assert opts[:has_statements] == true
              assert opts[:only_quotes] == true
-             assert opts[:is_verified] == false
+             assert opts[:needs_quote_review] == true
+             refute Keyword.has_key?(opts, :is_verified)
              refute Keyword.has_key?(opts, :needs_verification)
              assert opts[:limit] == 10
              assert opts[:order_by] == [desc: :id]
@@ -66,10 +68,13 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
 
         assert quote_payload.opinion_id == opinion.id
         assert quote_payload.quote == opinion.content
+        assert quote_payload.verification_status == :verified
         assert statement_payload.statement_id == 8
         assert statement_payload.statement_title == "Tax carbon emissions"
+        assert statement_payload.relevance_status == :ai_verified
         assert statement_payload.vote.vote_id == vote.id
         assert statement_payload.vote.answer == :for
+        assert statement_payload.vote.verification_status == :verified
       end
     end
 
@@ -142,7 +147,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
       end
     end
 
-    test "requests only quotes with no quote verification" do
+    test "requests quotes with pending reviewable verification work" do
       with_mocks([
         {Anubis.Server.Response, [],
          [
@@ -153,13 +158,14 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
         {YouCongress.Opinions, [],
          [
            list_opinions: fn opts ->
-             assert opts[:is_verified] == false
+             assert opts[:needs_quote_review] == true
+             refute Keyword.has_key?(opts, :is_verified)
              refute Keyword.has_key?(opts, :needs_verification)
              []
            end
          ]}
       ]) do
-        assert {:reply, {:error, "No unverified quotes available."}, :frame} =
+        assert {:reply, {:error, "No quotes needing verification review available."}, :frame} =
                  QuotesRecentUnverified.execute(%{}, :frame)
       end
     end
@@ -174,7 +180,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
          ]},
         {YouCongress.Opinions, [], [list_opinions: fn _opts -> [] end]}
       ]) do
-        assert {:reply, {:error, "No unverified quotes available."}, :frame} =
+        assert {:reply, {:error, "No quotes needing verification review available."}, :frame} =
                  QuotesRecentUnverified.execute(%{}, :frame)
       end
     end

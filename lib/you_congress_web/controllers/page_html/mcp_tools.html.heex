@@ -555,8 +555,10 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt), and vice versa. --%>
             </span>
           </dt>
           <dd class="text-gray-700">
-            Get a random quote with no quote verification to review. No parameters needed.
-            Skips quotes from Twitter/X and YouTube since AI cannot access those sources.
+            Get random quotes needing reviewable verification work. This includes quotes with
+            no quote verification and quote-verified rows with missing relevance or vote
+            verification, while excluding quote-level disputed/unverifiable rows. No parameters
+            needed. Skips quotes from Twitter/X and YouTube since AI cannot access those sources.
           </dd>
         </div>
         <div class="pl-4">
@@ -567,8 +569,11 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt), and vice versa. --%>
             </span>
           </dt>
           <dd class="text-gray-700">
-            Get the most recent quote with no quote verification to review. No parameters needed.
-            Skips quotes from Twitter/X and YouTube since AI cannot access those sources.
+            Get the most recent quotes needing reviewable verification work. This includes
+            quotes with no quote verification and quote-verified rows with missing relevance
+            or vote verification, while excluding quote-level disputed/unverifiable rows. No
+            parameters needed. Skips quotes from Twitter/X and YouTube since AI cannot access
+            those sources.
           </dd>
         </div>
         <div class="pl-4">
