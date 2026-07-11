@@ -18,8 +18,10 @@ defmodule YouCongressWeb.StatementController do
   end
 
   def all_quotes_csv(conn, _params) do
+    date = Calendar.strftime(Date.utc_today(), "%Y%m%d")
+
     send_download(conn, {:binary, QuotesCsv.generate_all()},
-      filename: "dataset.csv",
+      filename: "youcongress-dataset-#{date}.csv",
       content_type: "text/csv"
     )
   end
