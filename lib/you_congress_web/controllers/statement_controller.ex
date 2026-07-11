@@ -11,18 +11,22 @@ defmodule YouCongressWeb.StatementController do
   def quotes_csv(conn, %{"slug" => slug}) do
     statement = Statements.get_by!(slug: slug)
 
-    send_download(conn, {:binary, QuotesCsv.generate(statement)},
-      filename: "#{statement.slug}-quotes.csv",
+    conn
+    |> put_resp_header("cache-control", "no-store")
+    |> send_download({:binary, QuotesCsv.generate(statement)},
+      filename: "youcongress-statement-#{statement.id}-#{statement.slug}-#{today()}.csv",
       content_type: "text/csv"
     )
   end
 
   def all_quotes_csv(conn, _params) do
-    date = Calendar.strftime(Date.utc_today(), "%Y%m%d")
-
-    send_download(conn, {:binary, QuotesCsv.generate_all()},
-      filename: "youcongress-dataset-#{date}.csv",
+    conn
+    |> put_resp_header("cache-control", "no-store")
+    |> send_download({:binary, QuotesCsv.generate_all()},
+      filename: "youcongress-dataset-#{today()}.csv",
       content_type: "text/csv"
     )
   end
+
+  defp today, do: Calendar.strftime(Date.utc_today(), "%Y%m%d")
 end
