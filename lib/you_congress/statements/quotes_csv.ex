@@ -20,6 +20,7 @@ defmodule YouCongress.Statements.QuotesCsv do
   alias YouCongress.Repo
   alias YouCongress.Statements
   alias YouCongress.Statements.Statement
+  alias YouCongress.VerificationStatus
   alias YouCongress.Verifications
   alias YouCongress.Votes
   alias YouCongress.VoteVerifications
@@ -88,6 +89,7 @@ defmodule YouCongress.Statements.QuotesCsv do
         include: [:author, opinion: :author],
         source_filter: :quotes
       )
+      |> filter_verified(statement.id)
 
     opinion_ids = Enum.map(votes, & &1.opinion_id)
 
@@ -107,6 +109,34 @@ defmodule YouCongress.Statements.QuotesCsv do
         vote_verifications[vote.id]
       )
     end)
+  end
+
+  # Keep only quotes whose aggregate verification — authenticity → relevance →
+  # vote answer — is positive (endorsed, verified or ai_verified). Disputed,
+  # unverified and unverifiable quotes are excluded from the export.
+  defp filter_verified(votes, statement_id) do
+    opinion_ids = Enum.map(votes, & &1.opinion_id)
+    relevance_status = relevance_status_by_opinion(statement_id, opinion_ids)
+
+    Enum.filter(votes, fn vote ->
+      VerificationStatus.aggregate(
+        vote.opinion.verification_status,
+        relevance_status[vote.opinion_id],
+        vote.verification_status
+      )
+      |> VerificationStatus.positive?()
+    end)
+  end
+
+  # Cached relevance status per opinion, from the opinion-statement join row
+  # that links each quote to this statement.
+  defp relevance_status_by_opinion(statement_id, opinion_ids) do
+    from(os in OpinionStatement,
+      where: os.statement_id == ^statement_id and os.opinion_id in ^opinion_ids,
+      select: {os.opinion_id, os.verification_status}
+    )
+    |> Repo.all()
+    |> Map.new()
   end
 
   # Latest relevance verification per opinion, resolved through the
