@@ -60,9 +60,13 @@ defmodule YouCongress.Statements.QuotesCsv do
     end)
   end
 
+  # Minimum verified quotes a statement needs to be included in the dataset export.
+  @min_quotes 3
+
   @doc """
   CSV export of every statement's sourced quotes, all in one file.
   Same columns as `generate/1`, with one row per quote vote across all statements.
+  Only statements with at least #{@min_quotes} verified quotes are included.
   """
   @spec generate_all() :: binary
   def generate_all do
@@ -72,7 +76,9 @@ defmodule YouCongress.Statements.QuotesCsv do
   defp generate_all_uncached do
     rows =
       Statements.list_statements()
-      |> Enum.flat_map(&rows/1)
+      |> Enum.map(&rows/1)
+      |> Enum.filter(&(length(&1) >= @min_quotes))
+      |> Enum.concat()
 
     dump([@headers | rows])
   end
