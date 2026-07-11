@@ -78,8 +78,8 @@ defmodule YouCongressWeb.StatementControllerTest do
         VoteVerifications.create_verification(%{
           vote_id: vote.id,
           user_id: user.id,
-          status: :disputed,
-          comment: "answer looks wrong"
+          status: :verified,
+          comment: "answer confirmed"
         })
 
       conn = get(conn, ~p"/p/#{statement.slug}/quotes.csv")
@@ -87,18 +87,29 @@ defmodule YouCongressWeb.StatementControllerTest do
       assert [content_type] = get_resp_header(conn, "content-type")
       assert content_type =~ "text/csv"
 
-      assert get_resp_header(conn, "content-disposition") == [
-               ~s(attachment; filename="#{statement.slug}-quotes.csv")
-             ]
+      assert [disposition] = get_resp_header(conn, "content-disposition")
+
+      assert disposition =~
+               ~r/attachment; filename="youcongress-statement-#{statement.id}-#{statement.slug}-\d{8}-\d{6}\.csv"/
 
       body = response(conn, 200)
-      [row] = CSV.parse_string(body)
 
-      assert [headers, ^row] = CSV.parse_string(body, skip_headers: false)
+      assert [[cc_by_notice], [quotation_notice], headers, row] =
+               CSV.parse_string(body, skip_headers: false)
+
+      assert cc_by_notice =~ "CC BY 4.0"
+      assert cc_by_notice =~ "YouCongress annotations"
+      assert quotation_notice =~ "Not licensed by us"
+      assert quotation_notice =~ "quote text and author bios"
 
       assert headers == [
+               "statement_title",
+               "statement_id",
+               "statement_url",
                "opinion_id",
+               "opinion_url",
                "author",
+               "author_url",
                "author_bio",
                "author_x_url",
                "author_wikipedia_url",
@@ -121,8 +132,13 @@ defmodule YouCongressWeb.StatementControllerTest do
       today = Date.utc_today() |> Date.to_iso8601()
 
       assert row == [
+               statement.title,
+               to_string(statement.id),
+               url(~p"/p/#{statement.slug}"),
                to_string(opinion.id),
+               url(~p"/c/#{opinion.id}"),
                "Jane Doe",
+               url(~p"/x/janedoe"),
                "Physicist",
                "https://x.com/janedoe",
                "https://en.wikipedia.org/wiki/Jane_Doe",
@@ -137,8 +153,8 @@ defmodule YouCongressWeb.StatementControllerTest do
                "ai_verified",
                "on topic",
                today,
-               "disputed",
-               "answer looks wrong",
+               "verified",
+               "answer confirmed",
                today
              ]
 
@@ -169,7 +185,10 @@ defmodule YouCongressWeb.StatementControllerTest do
       conn = get(conn, ~p"/p/#{statement.slug}/quotes.csv")
 
       body = response(conn, 200)
-      assert CSV.parse_string(body) == []
+
+      assert [[_cc_by_notice], [_quotation_notice], _headers] =
+               CSV.parse_string(body, skip_headers: false)
+
       refute body =~ "an unsourced user opinion"
     end
 
