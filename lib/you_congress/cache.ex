@@ -27,6 +27,15 @@ defmodule YouCongress.Cache do
   """
   @spec fetch(term, non_neg_integer, (-> value)) :: value when value: term
   def fetch(key, ttl_ms, fun) when is_function(fun, 0) do
+    # If the cache process hasn't started yet (e.g. after a dev code reload that
+    # didn't restart the supervision tree), skip caching and compute directly.
+    case :ets.whereis(@table) do
+      :undefined -> fun.()
+      _tid -> fetch_cached(key, ttl_ms, fun)
+    end
+  end
+
+  defp fetch_cached(key, ttl_ms, fun) do
     now = System.monotonic_time(:millisecond)
 
     case :ets.lookup(@table, key) do
@@ -43,7 +52,11 @@ defmodule YouCongress.Cache do
   @doc "Removes a cached entry."
   @spec delete(term) :: :ok
   def delete(key) do
-    :ets.delete(@table, key)
+    case :ets.whereis(@table) do
+      :undefined -> :ok
+      _tid -> :ets.delete(@table, key)
+    end
+
     :ok
   end
 end
