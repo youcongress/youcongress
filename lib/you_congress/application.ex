@@ -29,6 +29,8 @@ defmodule YouCongress.Application do
        }},
       # Start the Ecto repository
       YouCongress.Repo,
+      # In-memory ETS cache (per-node, TTL based)
+      YouCongress.Cache,
       # Start the PubSub system
       {Phoenix.PubSub, name: YouCongress.PubSub},
       # Start the Endpoint (http/https)

@@ -13,6 +13,7 @@ defmodule YouCongress.Statements.QuotesCsv do
 
   alias NimbleCSV.RFC4180, as: CSV
 
+  alias YouCongress.Cache
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.OpinionStatementVerifications
@@ -62,6 +63,10 @@ defmodule YouCongress.Statements.QuotesCsv do
   """
   @spec generate_all() :: binary
   def generate_all do
+    Cache.fetch(:dataset_csv, :timer.hours(1), &generate_all_uncached/0)
+  end
+
+  defp generate_all_uncached do
     rows =
       Statements.list_statements()
       |> Enum.flat_map(&rows/1)
