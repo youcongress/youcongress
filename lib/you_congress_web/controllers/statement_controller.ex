@@ -14,7 +14,7 @@ defmodule YouCongressWeb.StatementController do
     conn
     |> put_resp_header("cache-control", "no-store")
     |> send_download({:binary, QuotesCsv.generate(statement)},
-      filename: "youcongress-statement-#{statement.id}-#{statement.slug}-#{today()}.csv",
+      filename: "youcongress-statement-#{statement.id}-#{statement.slug}-#{timestamp()}.csv",
       content_type: "text/csv"
     )
   end
@@ -23,10 +23,10 @@ defmodule YouCongressWeb.StatementController do
     conn
     |> put_resp_header("cache-control", "no-store")
     |> send_download({:binary, QuotesCsv.generate_all()},
-      filename: "youcongress-dataset-#{today()}.csv",
+      filename: "youcongress-dataset-#{timestamp()}.csv",
       content_type: "text/csv"
     )
   end
 
-  defp today, do: Calendar.strftime(Date.utc_today(), "%Y%m%d")
+  defp timestamp, do: Calendar.strftime(DateTime.utc_now(), "%Y%m%d-%H%M%S")
 end
