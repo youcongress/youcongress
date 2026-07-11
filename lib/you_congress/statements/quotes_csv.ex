@@ -54,7 +54,9 @@ defmodule YouCongress.Statements.QuotesCsv do
 
   @spec generate(Statement.t()) :: binary
   def generate(%Statement{} = statement) do
-    dump([@headers | rows(statement)])
+    Cache.fetch({:statement_csv, statement.id}, :timer.hours(1), fn ->
+      dump([@headers | rows(statement)])
+    end)
   end
 
   @doc """
