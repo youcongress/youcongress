@@ -9,6 +9,8 @@ defmodule YouCongress.Statements.QuotesCsv do
 
   import Ecto.Query, warn: false
 
+  use YouCongressWeb, :verified_routes
+
   alias NimbleCSV.RFC4180, as: CSV
 
   alias YouCongress.Opinions.Opinion
@@ -19,10 +21,16 @@ defmodule YouCongress.Statements.QuotesCsv do
   alias YouCongress.Verifications
   alias YouCongress.Votes
   alias YouCongress.VoteVerifications
+  alias YouCongressWeb.SEO
 
   @headers [
+    "statement_title",
+    "statement_id",
+    "statement_url",
     "opinion_id",
+    "opinion_url",
     "author",
+    "author_url",
     "author_bio",
     "author_x_url",
     "author_wikipedia_url",
@@ -62,6 +70,7 @@ defmodule YouCongress.Statements.QuotesCsv do
     rows =
       Enum.map(votes, fn vote ->
         row(
+          statement,
           vote,
           quote_verifications[vote.opinion_id],
           relevance_verifications[vote.opinion_id],
@@ -107,13 +116,18 @@ defmodule YouCongress.Statements.QuotesCsv do
     |> Map.new(fn {key, list} -> {key, Enum.max_by(list, & &1.id)} end)
   end
 
-  defp row(vote, quote_verification, relevance_verification, vote_verification) do
+  defp row(statement, vote, quote_verification, relevance_verification, vote_verification) do
     opinion = vote.opinion
     author = opinion.author
 
     [
+      statement.title,
+      statement.id,
+      url(~p"/p/#{statement.slug}"),
       opinion.id,
+      url(~p"/c/#{opinion.id}"),
       author.name,
+      SEO.author_url(author),
       author.bio,
       author.twitter_username && "https://x.com/#{author.twitter_username}",
       author.wikipedia_url,
