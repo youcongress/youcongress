@@ -16,4 +16,11 @@ defmodule YouCongressWeb.StatementController do
       content_type: "text/csv"
     )
   end
+
+  def all_quotes_csv(conn, _params) do
+    send_download(conn, {:binary, QuotesCsv.generate_all()},
+      filename: "dataset.csv",
+      content_type: "text/csv"
+    )
+  end
 end

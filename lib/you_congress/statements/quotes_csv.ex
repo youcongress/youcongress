@@ -17,6 +17,7 @@ defmodule YouCongress.Statements.QuotesCsv do
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.OpinionStatementVerifications
   alias YouCongress.Repo
+  alias YouCongress.Statements
   alias YouCongress.Statements.Statement
   alias YouCongress.Verifications
   alias YouCongress.Votes
@@ -52,6 +53,29 @@ defmodule YouCongress.Statements.QuotesCsv do
 
   @spec generate(Statement.t()) :: binary
   def generate(%Statement{} = statement) do
+    dump([@headers | rows(statement)])
+  end
+
+  @doc """
+  CSV export of every statement's sourced quotes, all in one file.
+  Same columns as `generate/1`, with one row per quote vote across all statements.
+  """
+  @spec generate_all() :: binary
+  def generate_all do
+    rows =
+      Statements.list_statements()
+      |> Enum.flat_map(&rows/1)
+
+    dump([@headers | rows])
+  end
+
+  defp dump(data) do
+    data
+    |> CSV.dump_to_iodata()
+    |> IO.iodata_to_binary()
+  end
+
+  defp rows(%Statement{} = statement) do
     votes =
       Votes.list_votes_with_opinion(statement.id,
         include: [:author, opinion: :author],
@@ -67,20 +91,15 @@ defmodule YouCongress.Statements.QuotesCsv do
     relevance_verifications = relevance_verifications(statement.id, opinion_ids)
     vote_verifications = vote_verifications(votes)
 
-    rows =
-      Enum.map(votes, fn vote ->
-        row(
-          statement,
-          vote,
-          quote_verifications[vote.opinion_id],
-          relevance_verifications[vote.opinion_id],
-          vote_verifications[vote.id]
-        )
-      end)
-
-    [@headers | rows]
-    |> CSV.dump_to_iodata()
-    |> IO.iodata_to_binary()
+    Enum.map(votes, fn vote ->
+      row(
+        statement,
+        vote,
+        quote_verifications[vote.opinion_id],
+        relevance_verifications[vote.opinion_id],
+        vote_verifications[vote.id]
+      )
+    end)
   end
 
   # Latest relevance verification per opinion, resolved through the

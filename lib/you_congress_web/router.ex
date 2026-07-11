@@ -30,6 +30,7 @@ defmodule YouCongressWeb.Router do
     get("/home", PageController, :redirect_to_home)
     live("/p/:slug", StatementLive.Show, :show)
     get("/p/:slug/quotes.csv", StatementController, :quotes_csv)
+    get("/dataset.csv", StatementController, :all_quotes_csv)
     live("/a/:id", AuthorLive.Show, :show)
     live("/x/:twitter_username", AuthorLive.Show, :show)
     live("/h/:hall", StatementLive.Index, :index)
