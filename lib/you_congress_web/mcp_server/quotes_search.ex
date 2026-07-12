@@ -21,6 +21,10 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
 
   @limit 250
 
+  # Accepted values for the `statuses` filter. "unverified" maps to a nil
+  # verification_status; the rest mirror the Opinion verification_status enum.
+  @statuses ~w(unverified verified ai_verified ai_unverifiable endorsed disputed unverifiable)
+
   @missing_key_message "Cross-statement semantic search requires an API key. Pass ?key=YOUR_KEY in the MCP request URL, or provide a statement_id to keyword-search within a single statement."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API, or provide a statement_id to keyword-search within a single statement."
 
@@ -32,22 +36,29 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
     #   valid API key because it generates an embedding.
     field :statement_id, :integer
     field :query, :string, required: true
+
+    # Optional filter: only return quotes whose verification_status is one of
+    # these. Use "unverified" for quotes that have not been verified yet.
+    field :statuses, {:list, {:enum, @statuses}},
+      description:
+        "Only return quotes with one of these verification statuses. Options: #{Enum.join(@statuses, ", ")}."
   end
 
   def execute(params, frame) do
     user_result = ToolUsageTracker.track(__MODULE__, frame, required_scope: :read)
 
     query = Map.get(params, :query)
+    statuses = parse_statuses(Map.get(params, :statuses))
 
     case Map.get(params, :statement_id) do
-      nil -> semantic_search(query, frame, user_result)
-      statement_id -> statement_search(query, statement_id, frame)
+      nil -> semantic_search(query, statuses, frame, user_result)
+      statement_id -> statement_search(query, statement_id, statuses, frame)
     end
   end
 
-  defp statement_search(query, statement_id, frame) do
-    opinions = find_opinions(query, statement_id)
-    more_opinions = more_opinions(statement_id, opinions)
+  defp statement_search(query, statement_id, statuses, frame) do
+    opinions = find_opinions(query, statement_id, statuses)
+    more_opinions = more_opinions(statement_id, opinions, statuses)
     all_opinions = opinions ++ more_opinions
     vote_map = votes_by_opinion(all_opinions)
 
@@ -59,12 +70,12 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
     {:reply, Response.json(Response.tool(), data), frame}
   end
 
-  defp semantic_search(query, frame, user_result) do
+  defp semantic_search(query, statuses, frame, user_result) do
     case user_result do
       {:ok, _user} ->
         opinions =
           query
-          |> Opinions.get_by_content_similarity()
+          |> Opinions.get_by_content_similarity(statuses: statuses)
           |> Repo.preload(:author)
 
         vote_map = votes_by_opinion(opinions)
@@ -84,17 +95,24 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
     end
   end
 
-  defp find_opinions(query, statement_id) do
-    [statement_ids: [statement_id], search: query, limit: @limit, preload: :author]
+  defp find_opinions(query, statement_id, statuses) do
+    [
+      statement_ids: [statement_id],
+      search: query,
+      statuses: statuses,
+      limit: @limit,
+      preload: :author
+    ]
     |> Opinions.list_opinions()
   end
 
-  defp more_opinions(statement_id, opinions) do
+  defp more_opinions(statement_id, opinions, statuses) do
     opinions_ids = Enum.map(opinions, & &1.id)
     opinions_count = length(opinions_ids)
 
     Opinions.list_opinions(
       statement_ids: [statement_id],
+      statuses: statuses,
       limit: @limit - opinions_count,
       exclude_ids: opinions_ids,
       preload: :author
@@ -150,4 +168,15 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
 
   defp verification_status(%{verification_status: nil}), do: :unverified
   defp verification_status(%{verification_status: status}), do: status
+
+  # Turns the incoming string statuses into the values the query expects:
+  # "unverified" becomes nil (no verification_status), the rest become atoms.
+  defp parse_statuses(statuses) when is_list(statuses) and statuses != [] do
+    Enum.map(statuses, fn
+      "unverified" -> nil
+      status -> String.to_existing_atom(status)
+    end)
+  end
+
+  defp parse_statuses(_statuses), do: nil
 end
