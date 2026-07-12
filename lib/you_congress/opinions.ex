@@ -104,8 +104,13 @@ defmodule YouCongress.Opinions do
 
   Each returned opinion has its `:similarity` virtual field populated with the
   cosine similarity (1.0 - cosine distance) to the query text.
+
+  Accepts `:statuses`, a list of `verification_status` values (use `nil` for
+  unverified quotes) to restrict the results to.
   """
-  def get_by_content_similarity(text) when is_binary(text) do
+  def get_by_content_similarity(text, opts \\ [])
+
+  def get_by_content_similarity(text, opts) when is_binary(text) do
     if String.trim(text) == "" do
       []
     else
@@ -123,6 +128,7 @@ defmodule YouCongress.Opinions do
               similarity: 1.0 - cosine_distance(o.content_embedding, ^query_embedding)
             }
           )
+          |> filter_by_statuses(opts[:statuses])
           |> Repo.all()
 
         _ ->
@@ -131,7 +137,7 @@ defmodule YouCongress.Opinions do
     end
   end
 
-  def get_by_content_similarity(_text), do: []
+  def get_by_content_similarity(_text, _opts), do: []
 
   @doc """
   Creates a opinion.
@@ -533,6 +539,12 @@ defmodule YouCongress.Opinions do
       {:is_verified, false}, query ->
         from q in query, where: is_nil(q.verification_status)
 
+      {:statuses, statuses}, query when is_list(statuses) ->
+        filter_by_statuses(query, statuses)
+
+      {:statuses, nil}, query ->
+        query
+
       {:needs_verification, true}, query ->
         # Any of the three dimensions still pending: the quote's own authenticity,
         # the relevance of any of its statement links, or any of its votes' answers.
@@ -583,6 +595,29 @@ defmodule YouCongress.Opinions do
         query
     end)
   end
+
+  # Restricts a query to opinions whose `verification_status` is in `statuses`.
+  # A `nil` entry matches unverified quotes (those without a status).
+  defp filter_by_statuses(query, statuses) when is_list(statuses) do
+    {nils, concrete} = Enum.split_with(statuses, &is_nil/1)
+
+    cond do
+      concrete == [] and nils == [] ->
+        query
+
+      concrete == [] ->
+        from q in query, where: is_nil(q.verification_status)
+
+      nils == [] ->
+        from q in query, where: q.verification_status in ^concrete
+
+      true ->
+        from q in query,
+          where: is_nil(q.verification_status) or q.verification_status in ^concrete
+    end
+  end
+
+  defp filter_by_statuses(query, _statuses), do: query
 
   def delete_opinion_and_descendants(%Opinion{} = opinion) do
     subtree_ids = Opinion.subtree_ids(opinion)
