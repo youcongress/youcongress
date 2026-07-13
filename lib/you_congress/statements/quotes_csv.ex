@@ -2,9 +2,11 @@ defmodule YouCongress.Statements.QuotesCsv do
   @moduledoc """
   Builds the CSV export of a statement's sourced quotes.
 
-  One row per quote vote, with the latest verification of each kind — quote
-  authenticity, statement relevance and vote answer — and its comment. Only the
-  most recent verification per kind is exported, not the full history.
+  One row per quote-statement link — so an author with several quotes on the
+  same statement gets one row per quote, not just the one their vote points
+  at — with the latest verification of each kind: quote authenticity,
+  statement relevance and vote answer. Only the most recent verification per
+  kind is exported, not the full history.
 
   The first two rows carry the licence notice: YouCongress annotations are
   CC BY 4.0, while quote text and author bios are third-party content that
@@ -104,86 +106,97 @@ defmodule YouCongress.Statements.QuotesCsv do
   end
 
   defp rows(%Statement{} = statement) do
-    votes =
-      Votes.list_votes_with_opinion(statement.id,
-        include: [:author, opinion: :author],
-        source_filter: :quotes
-      )
-      |> filter_verified(statement.id)
+    votes_by_author = votes_by_author(statement.id)
+    vote_verifications = vote_verifications(votes_by_author)
 
-    opinion_ids = Enum.map(votes, & &1.opinion_id)
+    links =
+      statement.id
+      |> quote_links()
+      |> filter_verified(votes_by_author, vote_verifications)
 
     quote_verifications =
-      Verifications.list_verifications(opinion_id: opinion_ids)
+      Verifications.list_verifications(opinion_id: Enum.map(links, & &1.opinion_id))
       |> latest_by(& &1.opinion_id)
 
-    relevance_verifications = relevance_verifications(statement.id, opinion_ids)
-    vote_verifications = vote_verifications(votes)
+    relevance_verifications =
+      OpinionStatementVerifications.list_verifications(
+        opinion_statement_id: Enum.map(links, & &1.id)
+      )
+      |> latest_by(& &1.opinion_statement_id)
 
-    Enum.map(votes, fn vote ->
+    Enum.map(links, fn link ->
+      vote = votes_by_author[link.opinion.author_id]
+
       row(
         statement,
+        link.opinion,
         vote,
-        quote_verifications[vote.opinion_id],
-        relevance_verifications[vote.opinion_id],
-        vote_verifications[vote.id]
+        quote_verifications[link.opinion_id],
+        relevance_verifications[link.id],
+        latest_vote_verification(vote_verifications, vote, link)
       )
     end)
+  end
+
+  # Every sourced quote linked to the statement — one link per quote, so
+  # authors with several quotes on the statement contribute several rows.
+  defp quote_links(statement_id) do
+    from(os in OpinionStatement,
+      join: o in assoc(os, :opinion),
+      join: a in assoc(o, :author),
+      where: os.statement_id == ^statement_id,
+      where: not (is_nil(o.source_url) and is_nil(o.source_text)),
+      order_by: [desc_nulls_last: o.date, desc: o.id],
+      preload: [opinion: {o, author: a}]
+    )
+    |> Repo.all()
+  end
+
+  defp votes_by_author(statement_id) do
+    statement_id
+    |> Votes.list_votes()
+    |> Map.new(&{&1.author_id, &1})
   end
 
   # Keep only quotes whose aggregate verification — authenticity → relevance →
   # vote answer — is positive (endorsed, verified or ai_verified). Disputed,
   # unverified and unverifiable quotes are excluded from the export.
-  defp filter_verified(votes, statement_id) do
-    opinion_ids = Enum.map(votes, & &1.opinion_id)
-    relevance_status = relevance_status_by_opinion(statement_id, opinion_ids)
+  defp filter_verified(links, votes_by_author, vote_verifications) do
+    Enum.filter(links, fn link ->
+      vote = votes_by_author[link.opinion.author_id]
 
-    Enum.filter(votes, fn vote ->
       VerificationStatus.aggregate(
-        vote.opinion.verification_status,
-        relevance_status[vote.opinion_id],
-        vote.verification_status
+        link.opinion.verification_status,
+        link.verification_status,
+        vote_status(vote_verifications, vote, link)
       )
       |> VerificationStatus.positive?()
     end)
   end
 
-  # Cached relevance status per opinion, from the opinion-statement join row
-  # that links each quote to this statement.
-  defp relevance_status_by_opinion(statement_id, opinion_ids) do
-    from(os in OpinionStatement,
-      where: os.statement_id == ^statement_id and os.opinion_id in ^opinion_ids,
-      select: {os.opinion_id, os.verification_status}
-    )
-    |> Repo.all()
-    |> Map.new()
+  # Vote verifications grouped by the quote they were stamped with, so each
+  # quote row resolves the vote answer against its own verification trail.
+  defp vote_verifications(votes_by_author) do
+    vote_ids = votes_by_author |> Map.values() |> Enum.map(& &1.id)
+
+    VoteVerifications.list_verifications(vote_id: vote_ids)
+    |> Enum.group_by(&{&1.vote_id, &1.opinion_id})
   end
 
-  # Latest relevance verification per opinion, resolved through the
-  # opinion-statement join row that links each quote to this statement.
-  defp relevance_verifications(statement_id, opinion_ids) do
-    opinion_id_by_os_id =
-      from(os in OpinionStatement,
-        where: os.statement_id == ^statement_id and os.opinion_id in ^opinion_ids,
-        select: {os.id, os.opinion_id}
-      )
-      |> Repo.all()
-      |> Map.new()
+  defp vote_status(_vote_verifications, nil, _link), do: nil
 
-    OpinionStatementVerifications.list_verifications(
-      opinion_statement_id: Map.keys(opinion_id_by_os_id)
-    )
-    |> latest_by(&opinion_id_by_os_id[&1.opinion_statement_id])
+  defp vote_status(vote_verifications, vote, link) do
+    vote_verifications
+    |> Map.get({vote.id, link.opinion_id}, [])
+    |> VerificationStatus.resolve_from_list()
   end
 
-  # Latest vote verification per vote. A verification only applies while the
-  # vote still points at the opinion it was stamped with.
-  defp vote_verifications(votes) do
-    opinion_id_by_vote_id = Map.new(votes, &{&1.id, &1.opinion_id})
+  defp latest_vote_verification(_vote_verifications, nil, _link), do: nil
 
-    VoteVerifications.list_verifications(vote_id: Map.keys(opinion_id_by_vote_id))
-    |> Enum.filter(&(&1.opinion_id == opinion_id_by_vote_id[&1.vote_id]))
-    |> latest_by(& &1.vote_id)
+  defp latest_vote_verification(vote_verifications, vote, link) do
+    vote_verifications
+    |> Map.get({vote.id, link.opinion_id}, [])
+    |> Enum.max_by(& &1.id, fn -> nil end)
   end
 
   defp latest_by(verifications, key_fun) do
@@ -192,8 +205,7 @@ defmodule YouCongress.Statements.QuotesCsv do
     |> Map.new(fn {key, list} -> {key, Enum.max_by(list, & &1.id)} end)
   end
 
-  defp row(statement, vote, quote_verification, relevance_verification, vote_verification) do
-    opinion = vote.opinion
+  defp row(statement, opinion, vote, quote_verification, relevance_verification, vote_verification) do
     author = opinion.author
 
     [
