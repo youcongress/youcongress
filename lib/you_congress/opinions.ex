@@ -556,24 +556,81 @@ defmodule YouCongress.Opinions do
                 q.id
               ) or
               fragment(
-                "EXISTS (SELECT 1 FROM votes v WHERE v.opinion_id = ? AND v.verification_status IS NULL)",
-                q.id
+                """
+                EXISTS (
+                  SELECT 1
+                  FROM votes v
+                  WHERE v.opinion_id = ?
+                    AND v.verification_status IS NULL
+                    AND EXISTS (
+                      SELECT 1
+                      FROM opinions_statements os
+                      WHERE os.opinion_id = ?
+                        AND os.statement_id = v.statement_id
+                        AND os.verification_status IN ('endorsed', 'verified', 'ai_verified')
+                    )
+                    AND (
+                      v.author_id = ?
+                      OR NOT EXISTS (
+                        SELECT 1
+                        FROM votes author_vote
+                        WHERE author_vote.statement_id = v.statement_id
+                          AND author_vote.author_id = ?
+                      )
+                    )
+                )
+                """,
+                q.id,
+                q.id,
+                q.author_id,
+                q.author_id
               )
 
       {:needs_quote_review, true}, query ->
-        # Reviewable quote work: either the quote itself has not been checked, or
-        # the quote is authenticated and a downstream relation/vote check is pending.
         from q in query,
           where:
             is_nil(q.verification_status) or
               (q.verification_status in ^@positive_verification_statuses and
                  (fragment(
-                    "EXISTS (SELECT 1 FROM opinions_statements os WHERE os.opinion_id = ? AND os.verification_status IS NULL)",
+                    """
+                    EXISTS (
+                      SELECT 1
+                      FROM opinions_statements os
+                      WHERE os.opinion_id = ?
+                        AND os.verification_status IS NULL
+                    )
+                    """,
                     q.id
                   ) or
                     fragment(
-                      "EXISTS (SELECT 1 FROM votes v WHERE v.opinion_id = ? AND v.verification_status IS NULL)",
-                      q.id
+                      """
+                      EXISTS (
+                        SELECT 1
+                        FROM votes v
+                        WHERE v.opinion_id = ?
+                          AND v.verification_status IS NULL
+                          AND EXISTS (
+                            SELECT 1
+                            FROM opinions_statements os
+                            WHERE os.opinion_id = ?
+                              AND os.statement_id = v.statement_id
+                              AND os.verification_status IN ('endorsed', 'verified', 'ai_verified')
+                          )
+                          AND (
+                            v.author_id = ?
+                            OR NOT EXISTS (
+                              SELECT 1
+                              FROM votes author_vote
+                              WHERE author_vote.statement_id = v.statement_id
+                                AND author_vote.author_id = ?
+                            )
+                          )
+                      )
+                      """,
+                      q.id,
+                      q.id,
+                      q.author_id,
+                      q.author_id
                     )))
 
       {:preload, preloads}, query ->
