@@ -409,6 +409,11 @@ defmodule YouCongress.OpinionsTest do
       disputed = quote_review_fixture(:disputed)
       unverifiable = quote_review_fixture(:ai_unverifiable)
 
+      # A pending vote does not surface the quote when its statement's relevance
+      # is not positive yet (the vote step is gated behind the relevance step).
+      vote_pending_unverifiable_relation =
+        quote_review_fixture(:ai_verified, relation_status: :ai_unverifiable, vote_status: nil)
+
       ids =
         Opinions.list_opinions(
           has_statements: true,
@@ -424,6 +429,7 @@ defmodule YouCongress.OpinionsTest do
       refute complete.id in ids
       refute disputed.id in ids
       refute unverifiable.id in ids
+      refute vote_pending_unverifiable_relation.id in ids
     end
   end
 

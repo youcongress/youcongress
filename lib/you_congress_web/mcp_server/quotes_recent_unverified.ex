@@ -73,10 +73,15 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
     Opinions.list_opinions(opts)
   end
 
-  defp votes_by_statement(%{id: opinion_id}) do
+  defp votes_by_statement(%{id: opinion_id, author_id: author_id}) do
     Votes.list_votes(opinion_ids: [opinion_id], preload: [:author])
-    |> Enum.reduce(%{}, fn vote, acc ->
-      Map.put(acc, vote.statement_id, vote)
+    |> Enum.group_by(& &1.statement_id)
+    |> Map.new(fn {statement_id, votes} ->
+      vote =
+        Enum.find(votes, &(&1.author_id == author_id)) ||
+          List.first(votes)
+
+      {statement_id, vote}
     end)
   end
 
