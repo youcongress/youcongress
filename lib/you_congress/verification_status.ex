@@ -48,6 +48,24 @@ defmodule YouCongress.VerificationStatus do
   defp map_ai_status(nil), do: nil
   defp map_ai_status(status), do: status
 
+  @doc """
+  Same resolution as `resolve/1`, but over an in-memory list of verification
+  rows (each exposing `status`, `model` and `id`). Verifications are
+  insert-only, so the highest id is the most recent of its kind.
+  """
+  def resolve_from_list(verifications) do
+    {human, ai} = Enum.split_with(verifications, &(&1.model == "human"))
+
+    case latest_status_from_list(human) do
+      nil -> ai |> latest_status_from_list() |> map_ai_status()
+      :unverified -> nil
+      status -> status
+    end
+  end
+
+  defp latest_status_from_list([]), do: nil
+  defp latest_status_from_list(verifications), do: Enum.max_by(verifications, & &1.id).status
+
   @positive [:endorsed, :verified, :ai_verified]
 
   @doc """
