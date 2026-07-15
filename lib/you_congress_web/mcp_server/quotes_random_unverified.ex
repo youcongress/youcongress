@@ -2,7 +2,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
   @moduledoc """
   Return random quotes with pending reviewable verification work plus the statements and votes that already use them.
   Returns 10 quotes by default; pass `count` to change it (max 100).
-  We skip quotes with source_url starting with twitter, x, youtube as AI is not able to access them.
+  We skip quotes with source_url starting with youtube as AI is not able to access them.
   """
 
   use Anubis.Server.Component, type: :tool
@@ -20,8 +20,6 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
   @default_count 10
   @max_count 100
   @unsupported_source_prefixes [
-    "https://twitter.com",
-    "https://x.com",
     "https://www.youtube.com"
   ]
 
