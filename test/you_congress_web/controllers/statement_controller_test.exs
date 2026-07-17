@@ -94,7 +94,7 @@ defmodule YouCongressWeb.StatementControllerTest do
 
       body = response(conn, 200)
 
-      assert [[cc_by_notice], [quotation_notice], headers, row] =
+      assert [headers, [cc_by_notice], [quotation_notice], row] =
                CSV.parse_string(body, skip_headers: false)
 
       assert cc_by_notice =~ "CC BY 4.0"
@@ -188,7 +188,7 @@ defmodule YouCongressWeb.StatementControllerTest do
 
       body = response(conn, 200)
 
-      assert [[_cc_by_notice], [_quotation_notice], _headers] =
+      assert [_headers, [_cc_by_notice], [_quotation_notice]] =
                CSV.parse_string(body, skip_headers: false)
 
       refute body =~ "an unsourced user opinion"

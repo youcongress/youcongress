@@ -66,6 +66,25 @@ defmodule YouCongress.VerificationStatus do
   defp latest_status_from_list([]), do: nil
   defp latest_status_from_list(verifications), do: Enum.max_by(verifications, & &1.id).status
 
+  @doc """
+  The authoritative verification row from an in-memory list, picked the same way
+  `resolve_from_list/1` picks the status: the latest human verification, or the
+  latest AI one when there is no human verification. Returns `nil` for an empty
+  list. Verifications are insert-only, so the highest id is the most recent.
+
+  Unlike `resolve_from_list/1` this returns the row itself (status, comment,
+  date) and does not collapse a human `:unverified` to `nil` — callers that only
+  export positively-resolved rows never see that case.
+  """
+  def latest_authoritative([]), do: nil
+
+  def latest_authoritative(verifications) do
+    case Enum.filter(verifications, &(&1.model == "human")) do
+      [] -> Enum.max_by(verifications, & &1.id)
+      human -> Enum.max_by(human, & &1.id)
+    end
+  end
+
   @positive [:endorsed, :verified, :ai_verified]
 
   @doc """
