@@ -4,9 +4,12 @@ defmodule YouCongress.Statements.QuotesCsv do
 
   One row per quote-statement link — so an author with several quotes on the
   same statement gets one row per quote, not just the one their vote points
-  at — with the latest verification of each kind: quote authenticity,
-  statement relevance and vote answer. Only the most recent verification per
-  kind is exported, not the full history.
+  at — with the authoritative verification of each kind: quote authenticity,
+  statement relevance and vote answer. "Authoritative" is the same resolution
+  used to filter (latest human verification, else latest AI), so the exported
+  status always matches the status the quote was kept on — a later AI `disputed`
+  re-check on a quote a human has verified never surfaces as a disputed row.
+  Only that one verification per kind is exported, not the full history.
 
   The header is the first row; the licence notice follows on the second and
   third rows, each prefixed with `# ` so it reads as a comment: YouCongress
@@ -197,13 +200,13 @@ defmodule YouCongress.Statements.QuotesCsv do
   defp latest_vote_verification(vote_verifications, vote, link) do
     vote_verifications
     |> Map.get({vote.id, link.opinion_id}, [])
-    |> Enum.max_by(& &1.id, fn -> nil end)
+    |> VerificationStatus.latest_authoritative()
   end
 
   defp latest_by(verifications, key_fun) do
     verifications
     |> Enum.group_by(key_fun)
-    |> Map.new(fn {key, list} -> {key, Enum.max_by(list, & &1.id)} end)
+    |> Map.new(fn {key, list} -> {key, VerificationStatus.latest_authoritative(list)} end)
   end
 
   defp row(statement, opinion, vote, quote_verification, relevance_verification, vote_verification) do

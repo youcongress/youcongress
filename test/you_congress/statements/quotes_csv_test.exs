@@ -155,6 +155,19 @@ defmodule YouCongress.Statements.QuotesCsvTest do
     assert csv_rows(ctx.statement) == []
   end
 
+  test "a later AI dispute on a human-verified quote does not export as disputed" do
+    ctx = setup_statement()
+    # A human verifies the whole pipeline...
+    verify_pipeline(ctx, ctx.opinion, :verified)
+    # ...then an AI re-check disputes the quote. The human verification wins, so
+    # the quote stays verified and must not surface as a "disputed" row.
+    verify_quote(ctx.opinion, ctx.user, :disputed, "gpt-test")
+
+    assert [row] = csv_rows(ctx.statement)
+    assert quote_column(row) == "Main quote content"
+    assert quote_verification_status(row) == "verified"
+  end
+
   test "vote verifications stamped for another quote do not leak into a row" do
     ctx = setup_statement()
     verify_pipeline(ctx, ctx.opinion, :verified)
