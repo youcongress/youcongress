@@ -8,9 +8,10 @@ defmodule YouCongress.Statements.QuotesCsv do
   statement relevance and vote answer. Only the most recent verification per
   kind is exported, not the full history.
 
-  The first two rows carry the licence notice: YouCongress annotations are
-  CC BY 4.0, while quote text and author bios are third-party content that
-  remains its rights holders' property.
+  The header is the first row; the licence notice follows on the second and
+  third rows, each prefixed with `# ` so it reads as a comment: YouCongress
+  annotations are CC BY 4.0, while quote text and author bios are third-party
+  content that remains its rights holders' property.
   """
 
   import Ecto.Query, warn: false
@@ -34,10 +35,10 @@ defmodule YouCongress.Statements.QuotesCsv do
 
   @license_rows [
     [
-      "License CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/): the YouCongress annotations in this file — statement titles and statement-to-quote mapping, vote labels, verification statuses, comments and dates, and the column schema. Attribution: YouCongress (https://youcongress.org)."
+      "# License CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/): the YouCongress annotations in this file — statement titles and statement-to-quote mapping, vote labels, verification statuses, comments and dates, and the column schema. Attribution: YouCongress (https://youcongress.org)."
     ],
     [
-      "Not licensed by us: quote text and author bios are third-party content reproduced as short excerpts under the right of quotation and remain the property of their respective rights holders. See each row's source_url for the original source."
+      "# Not licensed by us: quote text and author bios are third-party content reproduced as short excerpts under the right of quotation and remain the property of their respective rights holders. See each row's source_url for the original source."
     ]
   ]
 
@@ -99,8 +100,8 @@ defmodule YouCongress.Statements.QuotesCsv do
     dump([@headers | rows])
   end
 
-  defp dump(data) do
-    (@license_rows ++ data)
+  defp dump([headers | rows]) do
+    ([headers] ++ @license_rows ++ rows)
     |> CSV.dump_to_iodata()
     |> IO.iodata_to_binary()
   end
