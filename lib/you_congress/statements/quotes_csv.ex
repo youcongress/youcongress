@@ -224,7 +224,7 @@ defmodule YouCongress.Statements.QuotesCsv do
       author.bio,
       author.twitter_username && "https://x.com/#{author.twitter_username}",
       author.wikipedia_url,
-      opinion.content,
+      truncate(opinion.content),
       vote.answer,
       Opinion.date_iso(opinion),
       Opinion.date_precision_string(opinion),
@@ -234,6 +234,20 @@ defmodule YouCongress.Statements.QuotesCsv do
       verification_columns(quote_verification) ++
       verification_columns(relevance_verification) ++
       verification_columns(vote_verification)
+  end
+
+  # Cap exported quote text so a handful of very long quotes don't bloat the
+  # CSV. Truncated quotes get a trailing ellipsis to signal the cut.
+  @max_quote_length 1500
+
+  defp truncate(nil), do: nil
+
+  defp truncate(content) when is_binary(content) do
+    if String.length(content) > @max_quote_length do
+      String.slice(content, 0, @max_quote_length) <> "..."
+    else
+      content
+    end
   end
 
   defp verification_columns(nil), do: [nil, nil, nil]
