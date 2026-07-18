@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouCongress Topic Quotes"
+  short_description: "Find new internet quotes and add them to existing YouCongress statements"
+  default_prompt: "Use $youcongress-topic-quotes to find sourced quotes on the internet that are not already present on YouCongress, then add and link them to existing YouCongress statements via MCP tools. Use only authors who have no opinion already on the target statement. Do not repeat authors."
