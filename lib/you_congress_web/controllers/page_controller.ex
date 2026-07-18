@@ -246,13 +246,13 @@ defmodule YouCongressWeb.PageController do
     - quotes_list: list quotes with author, source, status and vote
     - quotes_random_unverified: random quotes needing reviewable verification work, excluding quote-level disputed/unverifiable rows
     - quotes_recent_unverified: recent quotes needing reviewable verification work, excluding quote-level disputed/unverifiable rows
-    - quotes_verify: verify a quote is authentic (really said, accurately transcribed)
-    - opinion_statements_verify: verify a quote is relevant to a statement
+    - quotes_verify: verify a quote is authentic (really said, accurately transcribed) (moderator/admin)
+    - opinion_statements_verify: verify a quote is relevant to a statement (moderator/admin)
 
     Votes (how authors vote on statements):
     - votes_create: create a vote (for / against / abstain)
     - votes_edit: edit an existing vote
-    - votes_verify: verify a vote's answer is correct for the statement given its opinion
+    - votes_verify: verify a vote's answer is correct for the statement given its opinion (moderator/admin)
 
     ## What you can do
 
