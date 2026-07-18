@@ -24,5 +24,7 @@ defmodule YouCongress.Tools.StringUtils do
   def titleize_hall("agi"), do: "AGI"
   def titleize_hall("us-congress"), do: "the US Congress"
   def titleize_hall("congreso-es"), do: "the Spanish Congress"
+  def titleize_hall("flf-epistack"), do: "FLF Epistack"
+  def titleize_hall("covid-19-origins"), do: "COVID-19 Origins"
   def titleize_hall(hall_name), do: titleize(hall_name)
 end
