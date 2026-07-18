@@ -99,7 +99,7 @@ defmodule YouCongressWeb.StatementControllerTest do
 
       assert cc_by_notice =~ "CC BY 4.0"
       assert cc_by_notice =~ "YouCongress annotations"
-      assert quotation_notice =~ "Not licensed by us"
+      assert quotation_notice =~ "Excluded from the license"
       assert quotation_notice =~ "quote text and author bios"
 
       assert headers == [

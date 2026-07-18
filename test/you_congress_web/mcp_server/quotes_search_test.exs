@@ -90,7 +90,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
            json: fn :tool, data -> {:json, data} end,
            error: fn :tool, message -> {:error, message} end
          ]},
-        {Opinions, [:passthrough], [get_by_content_similarity: fn _query -> [similar_quote] end]}
+        {Opinions, [:passthrough], [get_by_content_similarity: fn _query, _opts -> [similar_quote] end]}
       ]) do
         assert {:reply, {:json, %{matches: matches, more_quotes: []}}, ^frame} =
                  QuotesSearch.execute(%{query: "carbon tax"}, frame)
@@ -110,7 +110,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
          ]},
         {Opinions, [:passthrough],
          [
-           get_by_content_similarity: fn _query ->
+           get_by_content_similarity: fn _query, _opts ->
              flunk("semantic search must not generate an embedding without an API key")
            end
          ]}
