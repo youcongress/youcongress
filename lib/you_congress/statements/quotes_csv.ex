@@ -13,8 +13,9 @@ defmodule YouCongress.Statements.QuotesCsv do
 
   The header is the first row; the licence notice follows on the second and
   third rows, each prefixed with `# ` so it reads as a comment: YouCongress
-  annotations are CC BY 4.0, while quote text and author bios are third-party
-  content that remains its rights holders' property.
+  annotations — including the `source_text` citations we write — are CC BY 4.0,
+  while quote text and author bios are third-party content that remains its
+  rights holders' property.
   """
 
   import Ecto.Query, warn: false
@@ -38,10 +39,10 @@ defmodule YouCongress.Statements.QuotesCsv do
 
   @license_rows [
     [
-      "# License CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/): the YouCongress annotations in this file — statement titles and statement-to-quote mapping, vote labels, verification statuses, comments and dates, and the column schema. Attribution: YouCongress (https://youcongress.org)."
+      "# License CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/): the YouCongress annotations in this file: statement titles and statement-to-quote mapping, vote labels, the source_text citations we write, verification statuses, comments and dates, and the column schema. Attribution: YouCongress (https://youcongress.org)."
     ],
     [
-      "# Not licensed by us: quote text and author bios are third-party content reproduced as short excerpts under the right of quotation and remain the property of their respective rights holders. See each row's source_url for the original source."
+      "# Excluded from the license: quote text and author bios are third-party content reproduced as short excerpts under the right of quotation and remain the property of their respective rights holders. See each row's source_url for the original source."
     ]
   ]
 
