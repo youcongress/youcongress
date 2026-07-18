@@ -39,7 +39,7 @@ defmodule YouCongress.Statements.QuotesCsv do
 
   @license_rows [
     [
-      "# License CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/): the YouCongress annotations in this file: statement titles and statement-to-quote mapping, vote labels, the source_text citations we write, verification statuses, comments and dates, and the column schema. Attribution: YouCongress (https://youcongress.org)."
+      "# License CC-BY-4.0 (https://creativecommons.org/licenses/by/4.0/): the YouCongress annotations in this file: statement titles and statement-to-quote mapping, vote labels, the source_text citations we write, verification statuses, comments and dates, and the column schema. Attribution: YouCongress (https://youcongress.org)."
     ],
     [
       "# Excluded from the license: quote text and author bios are third-party content reproduced as short excerpts under the right of quotation and remain the property of their respective rights holders. See each row's source_url for the original source."

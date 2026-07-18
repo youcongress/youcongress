@@ -97,7 +97,7 @@ defmodule YouCongressWeb.StatementControllerTest do
       assert [headers, [cc_by_notice], [quotation_notice], row] =
                CSV.parse_string(body, skip_headers: false)
 
-      assert cc_by_notice =~ "CC BY 4.0"
+      assert cc_by_notice =~ "CC-BY-4.0"
       assert cc_by_notice =~ "YouCongress annotations"
       assert quotation_notice =~ "Excluded from the license"
       assert quotation_notice =~ "quote text and author bios"
