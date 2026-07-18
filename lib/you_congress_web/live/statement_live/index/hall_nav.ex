@@ -18,7 +18,6 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
     {"impact-on-labor", "AI impact on labor"},
     {"covid-19-origins", "COVID-19 origins"},
     {"eggs-and-health", "Eggs & Health"},
-    {"flf-epistack", "FLF Epistack"},
     {"us-congress", "🇺🇸 Congress"}
   ]
 
