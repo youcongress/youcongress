@@ -168,6 +168,30 @@ defmodule YouCongress.Statements.QuotesCsvTest do
     assert quote_verification_status(row) == "verified"
   end
 
+  test "truncates quotes longer than 1500 characters with an ellipsis" do
+    ctx = setup_statement()
+    long_content = String.duplicate("a", 2000)
+    long_quote = add_quote(ctx.statement, ctx.author, ctx.user, long_content)
+    verify_pipeline(ctx, long_quote, :verified)
+    verify_pipeline(ctx, ctx.opinion, :verified)
+
+    quotes = ctx.statement |> csv_rows() |> Enum.map(&quote_column/1)
+    truncated = String.duplicate("a", 1500) <> "..."
+
+    assert truncated in quotes
+    assert "Main quote content" in quotes
+  end
+
+  test "does not truncate quotes of exactly 1500 characters" do
+    ctx = setup_statement()
+    content = String.duplicate("a", 1500)
+    exact_quote = add_quote(ctx.statement, ctx.author, ctx.user, content)
+    verify_pipeline(ctx, exact_quote, :verified)
+
+    quotes = ctx.statement |> csv_rows() |> Enum.map(&quote_column/1)
+    assert content in quotes
+  end
+
   test "vote verifications stamped for another quote do not leak into a row" do
     ctx = setup_statement()
     verify_pipeline(ctx, ctx.opinion, :verified)
