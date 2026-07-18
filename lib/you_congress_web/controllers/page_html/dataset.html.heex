@@ -1,0 +1,68 @@
+<div class="max-w-4xl mx-auto space-y-8">
+  <!-- Header Section -->
+  <section aria-labelledby="dataset-page-heading">
+    <h1
+      id="dataset-page-heading"
+      class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg"
+    >
+      Export the YouCongress dataset
+    </h1>
+    <p class="mt-6 text-lg leading-relaxed">
+      YouCongress's data layer consists of sourced quotes from experts, policymakers and public figures, linked to statements (claims and policy proposals) and to each author's stance (For/Abstain/Against), inferred from their quotes. You can export this data as CSV.
+    </p>
+  </section>
+  
+<!-- Full dataset -->
+  <section
+    aria-labelledby="dataset-heading"
+    class="p-6 bg-indigo-50 rounded-lg border border-indigo-200"
+  >
+    <h2 id="dataset-heading" class="text-lg font-bold text-indigo-900">
+      Full dataset
+    </h2>
+    <p class="mt-2 text-indigo-800">
+      Download every statement's sourced quotes in a single CSV file. It contains one row per quote–statement link, with the author, the quote text, the vote, the source URL, and the authoritative verification status for the quote's authenticity, its relevance to the statement, and the vote. Only statements with at least three verified quotes are included.
+    </p>
+    <div class="mt-4">
+      <a
+        href="/dataset.csv"
+        class="inline-block bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+      >
+        Download dataset.csv
+      </a>
+    </div>
+    <p class="mt-4 text-sm text-indigo-700">
+      Licensed <strong>CC BY 4.0</strong>
+      — the YouCongress annotations in the file (statement titles, the statement-to-quote mapping, vote labels, our
+      <code class="bg-indigo-100 px-1 rounded">source_text</code>
+      citations, verification statuses, comments and dates) may be reused with attribution to YouCongress.org.
+    </p>
+    <p class="text-sm text-indigo-700">
+      Excluded from this license: quote text and author bios are third-party content reproduced as short excerpts and remain the property of their respective rights holders; see each row's <code class="bg-indigo-100 px-1 rounded">source_url</code>.
+    </p>
+  </section>
+  
+<!-- Per-statement export -->
+  <section aria-labelledby="statement-export-heading">
+    <h2
+      id="statement-export-heading"
+      class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg"
+    >
+      Export a single statement
+    </h2>
+    <p class="mt-6 leading-relaxed">
+      You can also export the quotes for just one statement. Open any statement page and click the
+      <strong>Download CSV</strong>
+      link (shown once the statement has at least one quote). The file uses the same columns as the
+      full dataset, limited to that statement's sourced quotes.
+    </p>
+    <div class="mt-4">
+      <.link
+        href={~p"/"}
+        class="inline-block bg-white text-blue-700 border border-blue-300 font-semibold py-2 px-4 rounded-lg hover:bg-blue-100 transition-colors duration-200"
+      >
+        Browse statements
+      </.link>
+    </div>
+  </section>
+</div>
