@@ -287,6 +287,7 @@ defmodule YouCongress.Halls do
         join: a in YouCongress.Authors.Author,
         on: a.id == o.author_id,
         where: not is_nil(a.name),
+        where: fragment("length(?)", a.name) <= 25,
         group_by: a.id,
         order_by: [desc: count(o.id, :distinct), asc: a.name],
         limit: 6,
