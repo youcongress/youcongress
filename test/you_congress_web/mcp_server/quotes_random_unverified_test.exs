@@ -188,8 +188,6 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverifiedTest do
 
   defp unsupported_source_prefixes do
     [
-      "https://twitter.com",
-      "https://x.com",
       "https://www.youtube.com"
     ]
   end
