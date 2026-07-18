@@ -123,6 +123,25 @@ defmodule YouCongressWeb.MCPServer.QuotesVerifyTest do
         )
       end)
     end
+
+    test "rejects users without the moderator or admin role" do
+      user = user_fixture()
+      api_key = api_key_fixture(user)
+      {opinion, _opinion_statement} = quote_link_fixture(user)
+
+      with_mocked_response_and_key(api_key.token, fn frame ->
+        assert {:reply, {:error, "Your account is not allowed to verify opinions."}, ^frame} =
+                 QuotesVerify.execute(
+                   %{
+                     opinion_id: opinion.id,
+                     status: "ai_verified",
+                     comment: "Authentic quote",
+                     model: "claude-opus-4.6"
+                   },
+                   frame
+                 )
+      end)
+    end
   end
 
   defp quote_link_fixture(user) do
