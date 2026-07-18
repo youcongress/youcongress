@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouCongress Verify Quotes"
+  short_description: "Verify quotes and remove contradicted links"
+  default_prompt: "Use $youcongress-verify-quotes to verify recent unverified YouCongress quotes, preserve ai_unverifiable quote links, remove contradicted associations, and verify vote answers."
