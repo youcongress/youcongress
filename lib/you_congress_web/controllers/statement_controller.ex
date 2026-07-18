@@ -3,6 +3,7 @@ defmodule YouCongressWeb.StatementController do
 
   alias YouCongress.Statements
   alias YouCongress.Statements.QuotesCsv
+  alias YouCongress.Track
 
   def redirect_to_p(conn, %{"slug" => slug}) do
     redirect(conn, to: ~p"/p/#{slug}")
@@ -20,6 +21,8 @@ defmodule YouCongressWeb.StatementController do
   end
 
   def all_quotes_csv(conn, _params) do
+    Track.event("Download Dataset CSV", conn.assigns[:current_user])
+
     conn
     |> put_resp_header("cache-control", "no-store")
     |> send_download({:binary, QuotesCsv.generate_all()},

@@ -66,6 +66,7 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through([:browser, :require_admin_user])
 
+    get("/dataset", PageController, :dataset)
     get("/dataset.csv", StatementController, :all_quotes_csv)
 
     live("/p/new", StatementLive.Index, :new)

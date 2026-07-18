@@ -121,6 +121,10 @@ defmodule YouCongressWeb.PageController do
     render(conn, :mcp_tools)
   end
 
+  def dataset(conn, _params) do
+    render(conn, :dataset)
+  end
+
   # Machine-readable site description for AI assistants/agents.
   # See https://llmstxt.org/. Advertises the MCP server so AIs visiting the
   # site discover the tools without a human having to configure them.
