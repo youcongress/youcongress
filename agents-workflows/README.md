@@ -2,9 +2,9 @@
 
 The system currently has two operational modes that converge on the same data model.
 
-In the repository-backed workflow, separate workers discover candidate quotations, link them to relevant statements, verify source fidelity, assess relevance, infer stance, and synthesize collections of records. The separation allows the verification passes to run not only on machine-discovered records but also on quotations contributed through the interface or external tools.
+In the application workflow, which requires `FEATURE_FLAGS=automatic_verifications=false`, separate workers discover candidate quotations, link them to relevant statements, verify source fidelity, assess relevance, infer stance, and synthesize collections of records. The separation allows the verification passes to run not only on machine-discovered records but also on quotations contributed through the interface or external tools.
 
-For larger collections, such as the competition case studies, scheduled coding-agent jobs perform bulk discovery and insertion using skills. Records then pass through the same structured verification. This mode is currently more cost-effective for large searches, although it is less encapsulated than the repository-native workflow.
+For larger collections, such as the Future of Life Foundation Epistack competition case studies, scheduled coding-agent jobs perform bulk discovery and insertion using skills. Records then pass through the same structured verification. This mode is currently more cost-effective for large searches, although it is less encapsulated than the repository-native workflow.
 
 ## Simplified pipeline
 
