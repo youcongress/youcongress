@@ -76,7 +76,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallHero do
 
   defp intro(hall_name, stats) do
     stats.hall.description ||
-      "Quotes, votes and policy statements on #{StringUtils.titleize_hall(hall_name)} " <>
+      "Sourced quotes, claims, policy proposals and stances on #{StringUtils.titleize_hall(hall_name)} " <>
         "from AI researchers, executives and policymakers."
   end
 
