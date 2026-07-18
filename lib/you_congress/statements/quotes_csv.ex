@@ -104,6 +104,34 @@ defmodule YouCongress.Statements.QuotesCsv do
     dump([@headers | rows])
   end
 
+  @doc """
+  Counts describing the full dataset export (`generate_all/0`), for headline
+  figures like the home page: the number of statements included and the number
+  of distinct sourced quotes across them. Uses the exact same filtering as the
+  export — statements with at least #{@min_quotes} verified quotes, excluding
+  disputed quotes and quotes not linked to any statement.
+  """
+  @spec dataset_counts() :: %{statement_count: non_neg_integer, quote_count: non_neg_integer}
+  def dataset_counts do
+    Cache.fetch(:dataset_counts, :timer.hours(1), &dataset_counts_uncached/0)
+  end
+
+  defp dataset_counts_uncached do
+    included =
+      Statements.list_statements()
+      |> Enum.map(&verified_links/1)
+      |> Enum.filter(&(length(&1) >= @min_quotes))
+
+    quote_count =
+      included
+      |> Enum.concat()
+      |> Enum.map(& &1.opinion_id)
+      |> Enum.uniq()
+      |> length()
+
+    %{statement_count: length(included), quote_count: quote_count}
+  end
+
   defp dump([headers | rows]) do
     ([headers] ++ @license_rows ++ rows)
     |> CSV.dump_to_iodata()
@@ -114,10 +142,7 @@ defmodule YouCongress.Statements.QuotesCsv do
     votes_by_author = votes_by_author(statement.id)
     vote_verifications = vote_verifications(votes_by_author)
 
-    links =
-      statement.id
-      |> quote_links()
-      |> filter_verified(votes_by_author, vote_verifications)
+    links = verified_links(statement, votes_by_author, vote_verifications)
 
     quote_verifications =
       Verifications.list_verifications(opinion_id: Enum.map(links, & &1.opinion_id))
@@ -141,6 +166,19 @@ defmodule YouCongress.Statements.QuotesCsv do
         latest_vote_verification(vote_verifications, vote, link)
       )
     end)
+  end
+
+  # The statement's verified quote links — the exact set the export keeps.
+  defp verified_links(%Statement{} = statement) do
+    votes_by_author = votes_by_author(statement.id)
+    vote_verifications = vote_verifications(votes_by_author)
+    verified_links(statement, votes_by_author, vote_verifications)
+  end
+
+  defp verified_links(%Statement{} = statement, votes_by_author, vote_verifications) do
+    statement.id
+    |> quote_links()
+    |> filter_verified(votes_by_author, vote_verifications)
   end
 
   # Every sourced quote linked to the statement — one link per quote, so

@@ -240,6 +240,11 @@ defmodule YouCongress.Halls do
 
   @doc """
   Stats across all statements, without filtering through a hall.
+
+  The headline `quote_count` and `statement_count` mirror the full dataset
+  export: only statements with enough verified quotes count, and disputed
+  quotes and quotes not linked to any statement are excluded. `top_authors`
+  keeps the broader sourced-quote ranking.
   """
   def all_stats do
     statements =
@@ -252,7 +257,9 @@ defmodule YouCongress.Halls do
       from o in YouCongress.Opinions.Opinion,
         where: not (is_nil(o.source_url) and is_nil(o.source_text)) and o.twin == false
 
-    build_stats(%Hall{name: "all"}, statements, quotes_query)
+    %Hall{name: "all"}
+    |> build_stats(statements, quotes_query)
+    |> Map.merge(YouCongress.Statements.QuotesCsv.dataset_counts())
   end
 
   defp build_hall_stats(hall) do
