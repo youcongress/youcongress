@@ -34,6 +34,8 @@ defmodule YouCongressWeb.Router do
     live("/x/:twitter_username", AuthorLive.Show, :show)
     live("/h/:hall", StatementLive.Index, :index)
     live("/c/:id", OpinionLive.Show, :show)
+    get("/dataset", PageController, :dataset)
+    get("/dataset.csv", StatementController, :all_quotes_csv)
     get("/fact-checker", PageController, :redirect_to_fact_checker)
     live("/verifications", VerificationLive.Index, :index)
     live("/contact", ContactLive, :new)
@@ -65,9 +67,6 @@ defmodule YouCongressWeb.Router do
 
   scope "/", YouCongressWeb do
     pipe_through([:browser, :require_admin_user])
-
-    get("/dataset", PageController, :dataset)
-    get("/dataset.csv", StatementController, :all_quotes_csv)
 
     live("/p/new", StatementLive.Index, :new)
     live("/p/:slug/edit", StatementLive.Show, :edit)

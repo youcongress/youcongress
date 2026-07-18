@@ -39,9 +39,12 @@ defmodule YouCongressWeb.PageController do
 
   defp build_sitemap(statements, authors, halls, quotes) do
     static_urls =
-      Enum.map([url(~p"/"), url(~p"/about"), url(~p"/faq"), url(~p"/mcp-tools")], fn loc ->
-        url_entry(loc, nil, "0.7")
-      end)
+      Enum.map(
+        [url(~p"/"), url(~p"/about"), url(~p"/faq"), url(~p"/mcp-tools"), url(~p"/dataset")],
+        fn loc ->
+          url_entry(loc, nil, "0.7")
+        end
+      )
 
     statement_urls =
       Enum.map(statements, fn statement ->
