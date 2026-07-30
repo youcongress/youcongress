@@ -339,7 +339,9 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
 
     displayed_countries =
       case selected_country do
-        nil -> country_vote_frequencies
+        # Exclude the aggregated "European Union" row so its member votes are
+        # not double-counted in the cross-country total.
+        nil -> Enum.reject(country_vote_frequencies, &aggregate_row?/1)
         _ -> Enum.filter(country_vote_frequencies, &country_selected?(selected_country, &1))
       end
 
@@ -384,4 +386,7 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
   defp country_selected?(:unknown, %{country_id: nil}), do: true
   defp country_selected?(nil, _country), do: false
   defp country_selected?(selected, %{country_id: country_id}), do: selected == country_id
+
+  defp aggregate_row?(%{aggregate: true}), do: true
+  defp aggregate_row?(_), do: false
 end

@@ -5,6 +5,7 @@ defmodule YouCongress.Votes do
 
   import Ecto.Query, warn: false
 
+  alias YouCongress.Countries
   alias YouCongress.DelegationVotes
   alias YouCongress.Endorsements
   alias YouCongress.Authors.Author
@@ -181,6 +182,7 @@ defmodule YouCongress.Votes do
       case author_country do
         nil -> query
         :unknown -> where(query, [v, a, o, os], is_nil(a.country_id))
+        :eu -> where(query, [v, a, o, os], a.country_id in ^Countries.eu_member_ids())
         country_id -> where(query, [v, a, o, os], a.country_id == ^country_id)
       end
 
@@ -320,6 +322,7 @@ defmodule YouCongress.Votes do
       case author_country do
         nil -> query
         :unknown -> where(query, [v, a], is_nil(a.country_id))
+        :eu -> where(query, [v, a], a.country_id in ^Countries.eu_member_ids())
         country_id -> where(query, [v, a], a.country_id == ^country_id)
       end
 
@@ -617,6 +620,12 @@ defmodule YouCongress.Votes do
     query
     |> join(:inner, [v], a in assoc(v, :author), as: :country_author)
     |> where([country_author: a], is_nil(a.country_id))
+  end
+
+  defp filter_votes_by_country(query, :eu) do
+    query
+    |> join(:inner, [v], a in assoc(v, :author), as: :country_author)
+    |> where([country_author: a], a.country_id in ^Countries.eu_member_ids())
   end
 
   defp filter_votes_by_country(query, country_id) do

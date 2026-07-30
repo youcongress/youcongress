@@ -443,6 +443,72 @@ defmodule YouCongress.VotesTest do
 
       assert quote_country_id == quote_country.id
     end
+
+    test "VoteFrequencies.get_by_country/2 adds an aggregated European Union row" do
+      statement = statement_fixture()
+      france = country_fixture(%{name: "France", iso_alpha2: "FR"})
+      germany = country_fixture(%{name: "Germany", iso_alpha2: "DE"})
+      usa = country_fixture(%{name: "United States", iso_alpha2: "US"})
+
+      france_for = author_fixture(%{country_id: france.id})
+      germany_against = author_fixture(%{country_id: germany.id})
+      usa_for = author_fixture(%{country_id: usa.id})
+
+      vote_fixture(%{statement_id: statement.id, author_id: france_for.id, answer: :for})
+      vote_fixture(%{statement_id: statement.id, author_id: germany_against.id, answer: :against})
+      vote_fixture(%{statement_id: statement.id, author_id: usa_for.id, answer: :for})
+
+      results =
+        VoteFrequencies.get_by_country(statement.id, VoteFrequencies.default_country_filters())
+
+      # The EU row is prepended and aggregates France + Germany, but not the US.
+      assert %{
+               country_id: :eu,
+               country_name: "European Union",
+               total_votes: 2,
+               aggregate: true,
+               vote_frequencies: %{for: {1, 50}, abstain: {0, 0}, against: {1, 50}}
+             } = hd(results)
+
+      # The individual member countries remain listed alongside the EU row.
+      names = Enum.map(results, & &1.country_name)
+      assert "France" in names
+      assert "Germany" in names
+      assert "United States" in names
+    end
+
+    test "VoteFrequencies.get_by_country/2 sorts the EU row by vote count like other countries" do
+      statement = statement_fixture()
+      france = country_fixture(%{name: "France", iso_alpha2: "FR"})
+      usa = country_fixture(%{name: "United States", iso_alpha2: "US"})
+
+      # One EU vote (France) vs. three United States votes.
+      france_for = author_fixture(%{country_id: france.id})
+      vote_fixture(%{statement_id: statement.id, author_id: france_for.id, answer: :for})
+
+      for _ <- 1..3 do
+        usa_author = author_fixture(%{country_id: usa.id})
+        vote_fixture(%{statement_id: statement.id, author_id: usa_author.id, answer: :for})
+      end
+
+      results =
+        VoteFrequencies.get_by_country(statement.id, VoteFrequencies.default_country_filters())
+
+      # The United States (3 votes) outranks the EU aggregate (1 vote).
+      assert Enum.map(results, & &1.country_name) == ["United States", "European Union", "France"]
+    end
+
+    test "VoteFrequencies.get_by_country/2 omits the EU row when no EU votes exist" do
+      statement = statement_fixture()
+      usa = country_fixture(%{name: "United States", iso_alpha2: "US"})
+      usa_for = author_fixture(%{country_id: usa.id})
+      vote_fixture(%{statement_id: statement.id, author_id: usa_for.id, answer: :for})
+
+      results =
+        VoteFrequencies.get_by_country(statement.id, VoteFrequencies.default_country_filters())
+
+      refute Enum.any?(results, &(&1.country_id == :eu))
+    end
   end
 
   defp create_vote_with_opinion(statement, author, opts \\ []) do
