@@ -141,6 +141,7 @@ defmodule YouCongress.Votes do
     twin_options = Keyword.get(opts, :twin_options, [true, false])
     source_filter = Keyword.get(opts, :source_filter)
     answer = Keyword.get(opts, :answer)
+    author_country = Keyword.get(opts, :author_country)
 
     base_query =
       Vote
@@ -174,6 +175,13 @@ defmodule YouCongress.Votes do
         |> where([v, a, o, os], v.answer == ^answer)
       else
         query
+      end
+
+    query =
+      case author_country do
+        nil -> query
+        :unknown -> where(query, [v, a, o, os], is_nil(a.country_id))
+        country_id -> where(query, [v, a, o, os], a.country_id == ^country_id)
       end
 
     query
@@ -289,6 +297,7 @@ defmodule YouCongress.Votes do
     exclude_ids = Keyword.get(opts, :exclude_ids, [])
     twin_options = Keyword.get(opts, :twin_options, [true, false])
     answer_filter = Keyword.get(opts, :answer_filter)
+    author_country = Keyword.get(opts, :author_country)
 
     base_query =
       Vote
@@ -305,6 +314,13 @@ defmodule YouCongress.Votes do
         |> where([v, a], v.answer == ^answer_filter)
       else
         base_query
+      end
+
+    query =
+      case author_country do
+        nil -> query
+        :unknown -> where(query, [v, a], is_nil(a.country_id))
+        country_id -> where(query, [v, a], a.country_id == ^country_id)
       end
 
     query
@@ -565,6 +581,7 @@ defmodule YouCongress.Votes do
   def count_by_response(statement_id, opts \\ []) do
     has_opinion_id = Keyword.get(opts, :has_opinion_id, nil)
     twin = Keyword.get(opts, :twin)
+    author_country = Keyword.get(opts, :author_country)
 
     query =
       from(v in Vote,
@@ -588,7 +605,24 @@ defmodule YouCongress.Votes do
       end
 
     query
+    |> filter_votes_by_country(author_country)
     |> Repo.all()
+  end
+
+  # Restricts a vote query to the authors of a given country. `nil` leaves the
+  # query untouched, `:unknown` keeps votes whose author has no country.
+  defp filter_votes_by_country(query, nil), do: query
+
+  defp filter_votes_by_country(query, :unknown) do
+    query
+    |> join(:inner, [v], a in assoc(v, :author), as: :country_author)
+    |> where([country_author: a], is_nil(a.country_id))
+  end
+
+  defp filter_votes_by_country(query, country_id) do
+    query
+    |> join(:inner, [v], a in assoc(v, :author), as: :country_author)
+    |> where([country_author: a], a.country_id == ^country_id)
   end
 
   def count_by_response_map(statement_id, opts \\ []) do
@@ -672,6 +706,7 @@ defmodule YouCongress.Votes do
   def count_with_opinion_source(statement_id, opts \\ []) do
     source_filter = Keyword.get(opts, :source_filter)
     answer = Keyword.get(opts, :answer)
+    author_country = Keyword.get(opts, :author_country)
 
     base_query =
       from v in Vote,
@@ -699,7 +734,9 @@ defmodule YouCongress.Votes do
         query
       end
 
-    Repo.one(query)
+    query
+    |> filter_votes_by_country(author_country)
+    |> Repo.one()
   end
 
   def list_top_sourced_statement_authors(statement_id, limit \\ 3) do
@@ -720,6 +757,7 @@ defmodule YouCongress.Votes do
 
   def count_by_response_map_by_source(statement_id, opts \\ []) do
     source_filter = Keyword.get(opts, :source_filter)
+    author_country = Keyword.get(opts, :author_country)
 
     base_query =
       from v in Vote,
@@ -742,6 +780,7 @@ defmodule YouCongress.Votes do
       end
 
     query
+    |> filter_votes_by_country(author_country)
     |> Repo.all()
     |> Enum.into(%{})
   end
@@ -771,6 +810,9 @@ defmodule YouCongress.Votes do
 
         {:answer, answer}, query ->
           where(query, [v], v.answer == ^answer)
+
+        {:author_country, author_country}, query ->
+          filter_votes_by_country(query, author_country)
 
         _, query ->
           query

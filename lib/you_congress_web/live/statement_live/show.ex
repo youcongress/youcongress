@@ -41,6 +41,8 @@ defmodule YouCongressWeb.StatementLive.Show do
      |> assign(:show_vote_auth_modal, false)
      |> assign(:show_country_results, false)
      |> assign(:country_vote_frequencies, nil)
+     |> assign(:selected_country, nil)
+     |> assign(:selected_country_name, nil)
      |> assign(:country_results_filters, VoteFrequencies.default_country_filters())
      |> assign(:show_year_results, false)
      |> assign(:year_vote_frequencies, nil)
@@ -72,6 +74,7 @@ defmodule YouCongressWeb.StatementLive.Show do
       |> assign(:find_quotes_in_progress, Quotator.find_quotes_in_progress?(statement.id))
       |> load_statement_and_likes(statement)
       |> maybe_reload_country_vote_frequencies()
+      |> assign_selected_country_name()
       |> maybe_reload_year_vote_frequencies()
       |> assign_page_description()
       |> load_random_statements(statement.id)
@@ -232,7 +235,23 @@ defmodule YouCongressWeb.StatementLive.Show do
   def handle_event("toggle-country-results", %{"statement_id" => _statement_id}, socket) do
     params =
       Params.put(socket.assigns.statement_page_params, %{
-        results: if(socket.assigns.show_country_results, do: nil, else: :country)
+        results: if(socket.assigns.show_country_results, do: nil, else: :country),
+        selected_country: nil
+      })
+
+    {:noreply, patch_statement_page_params(socket, params)}
+  end
+
+  def handle_event("select-country", %{"country" => country}, socket) do
+    selected = parse_selected_country(country)
+
+    new_selected =
+      if socket.assigns.selected_country == selected, do: nil, else: selected
+
+    params =
+      Params.put(socket.assigns.statement_page_params, %{
+        results: :country,
+        selected_country: new_selected
       })
 
     {:noreply, patch_statement_page_params(socket, params)}
@@ -258,7 +277,8 @@ defmodule YouCongressWeb.StatementLive.Show do
   def handle_event("toggle-year-results", %{"statement_id" => _statement_id}, socket) do
     params =
       Params.put(socket.assigns.statement_page_params, %{
-        results: if(socket.assigns.show_year_results, do: nil, else: :year)
+        results: if(socket.assigns.show_year_results, do: nil, else: :year),
+        selected_country: nil
       })
 
     {:noreply, patch_statement_page_params(socket, params)}
@@ -320,6 +340,7 @@ defmodule YouCongressWeb.StatementLive.Show do
       socket
       |> load_statement_and_likes(statement)
       |> maybe_reload_country_vote_frequencies()
+      |> assign_selected_country_name()
       |> maybe_reload_year_vote_frequencies()
 
     vote = socket.assigns.current_user_vote
@@ -386,6 +407,7 @@ defmodule YouCongressWeb.StatementLive.Show do
     |> assign(:show_synthesis, params.show_synthesis)
     |> assign(:show_country_results, params.results == :country)
     |> assign(:country_vote_frequencies, nil)
+    |> assign(:selected_country, params.selected_country)
     |> assign(:country_results_filters, params.country_results_filters)
     |> assign(:show_year_results, params.results == :year)
     |> assign(:year_vote_frequencies, nil)
@@ -412,6 +434,38 @@ defmodule YouCongressWeb.StatementLive.Show do
   end
 
   defp maybe_reload_country_vote_frequencies(socket), do: socket
+
+  defp parse_selected_country("unknown"), do: :unknown
+
+  defp parse_selected_country(country) when is_binary(country) do
+    case Integer.parse(country) do
+      {id, ""} -> id
+      _ -> nil
+    end
+  end
+
+  # Resolves the display name of the selected country from the already-loaded
+  # per-country frequencies so we can label the active filter.
+  defp assign_selected_country_name(%{assigns: %{selected_country: nil}} = socket) do
+    assign(socket, :selected_country_name, nil)
+  end
+
+  defp assign_selected_country_name(%{assigns: %{country_vote_frequencies: frequencies}} = socket)
+       when is_list(frequencies) do
+    selected = socket.assigns.selected_country
+
+    name =
+      Enum.find_value(frequencies, fn country ->
+        if country_matches?(country, selected), do: country.country_name
+      end)
+
+    assign(socket, :selected_country_name, name)
+  end
+
+  defp assign_selected_country_name(socket), do: assign(socket, :selected_country_name, nil)
+
+  defp country_matches?(%{country_id: nil}, :unknown), do: true
+  defp country_matches?(%{country_id: country_id}, selected), do: country_id == selected
 
   defp maybe_reload_year_vote_frequencies(%{assigns: %{show_year_results: true}} = socket) do
     assign(

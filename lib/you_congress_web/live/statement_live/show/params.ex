@@ -8,7 +8,7 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
   @filter_keys [:direct, :delegated, :quotes, :email_verified, :phone_verified]
   @country_filter_fields Enum.map(@filter_keys, &String.to_atom("country_#{&1}"))
   @year_filter_fields Enum.map(@filter_keys, &String.to_atom("year_#{&1}"))
-  @simple_fields [:synthesis, :results, :source, :answer] ++
+  @simple_fields [:synthesis, :results, :source, :answer, :country] ++
                    @country_filter_fields ++ @year_filter_fields
 
   @derive {
@@ -21,6 +21,7 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
     field :results, Ecto.Enum, values: [:country, :year]
     field :source, Ecto.Enum, values: [:quotes, :users, :all]
     field :answer, Ecto.Enum, values: [:for, :abstain, :against]
+    field :country, :string
 
     field :country_direct, :boolean
     field :country_delegated, :boolean
@@ -41,6 +42,7 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
       results: nil,
       source_filter: :quotes,
       answer_filter: nil,
+      selected_country: nil,
       country_results_filters: VoteFrequencies.default_country_filters(),
       year_results_filters: VoteFrequencies.default_year_filters()
     }
@@ -103,6 +105,9 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
       %Flop.Filter{field: :answer, value: value}, params ->
         put(params, %{answer_filter: normalize_answer(value)})
 
+      %Flop.Filter{field: :country, value: value}, params ->
+        put(params, %{selected_country: normalize_country(value)})
+
       %Flop.Filter{field: field, value: value}, params ->
         apply_filter_field(params, field, value)
     end)
@@ -150,6 +155,7 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
     |> Map.update!(:results, &normalize_results/1)
     |> Map.update!(:source_filter, &normalize_source_filter/1)
     |> Map.update!(:answer_filter, &normalize_answer/1)
+    |> Map.update!(:selected_country, &normalize_country/1)
     |> Map.update!(:country_results_filters, &VoteFrequencies.normalize_country_filters/1)
     |> Map.update!(:year_results_filters, &VoteFrequencies.normalize_year_filters/1)
   end
@@ -179,12 +185,29 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
   defp normalize_answer(answer) when answer in [:against, "against", "Against"], do: "Against"
   defp normalize_answer(_), do: nil
 
+  # The selected country is either a country id, `:unknown` (authors without a
+  # country) or nil (no country selected).
+  defp normalize_country(nil), do: nil
+  defp normalize_country(:unknown), do: :unknown
+  defp normalize_country("unknown"), do: :unknown
+  defp normalize_country(id) when is_integer(id), do: id
+
+  defp normalize_country(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {int, ""} -> int
+      _ -> nil
+    end
+  end
+
+  defp normalize_country(_), do: nil
+
   defp encode_query_params(params) do
     %{}
     |> put_query(:synthesis, params.show_synthesis, "true")
     |> put_query(:results, params.results)
     |> put_source_query(params.source_filter)
     |> put_answer_query(params.answer_filter)
+    |> put_country_query(params.results, params.selected_country)
     |> put_filter_queries(:country, params.results, params.country_results_filters)
     |> put_filter_queries(:year, params.results, params.year_results_filters)
   end
@@ -200,6 +223,12 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
 
   defp put_answer_query(query, nil), do: query
   defp put_answer_query(query, answer), do: Map.put(query, :answer, answer_param(answer))
+
+  # The selected country only applies while the country results view is active.
+  defp put_country_query(query, :country, nil), do: query
+  defp put_country_query(query, :country, :unknown), do: Map.put(query, :country, "unknown")
+  defp put_country_query(query, :country, id), do: Map.put(query, :country, to_string(id))
+  defp put_country_query(query, _results, _selected), do: query
 
   defp put_filter_queries(query, group, group, filters) do
     defaults = VoteFrequencies.default_country_filters()

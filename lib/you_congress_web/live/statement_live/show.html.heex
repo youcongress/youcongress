@@ -90,6 +90,8 @@
     country_vote_frequencies={@country_vote_frequencies}
     show_country_results={@show_country_results}
     country_results_filters={@country_results_filters}
+    selected_country={@selected_country}
+    select_country?={true}
     year_vote_frequencies={@year_vote_frequencies}
     show_year_results={@show_year_results}
     year_results_filters={@year_results_filters}
@@ -108,6 +110,24 @@
     regenerating_opinion_id={@regenerating_opinion_id}
     page={:statement_show}
   />
+</div>
+
+<div
+  :if={@selected_country}
+  class="mt-4 flex items-center justify-between gap-3 rounded-md bg-indigo-50 px-3 py-2 text-sm text-indigo-900 ring-1 ring-inset ring-indigo-100"
+>
+  <span>
+    Showing results and opinions from
+    <strong>{@selected_country_name || "the selected country"}</strong>
+  </span>
+  <button
+    type="button"
+    phx-click="select-country"
+    phx-value-country={if @selected_country == :unknown, do: "unknown", else: @selected_country}
+    class="flex-none text-xs font-semibold underline hover:no-underline"
+  >
+    Clear
+  </button>
 </div>
 
 <div
