@@ -8,6 +8,8 @@ defmodule YouCongress.Votes.VoteFrequencies do
 
   @responses [:for, :abstain, :against]
   @unknown_country "Unknown country"
+  @eu_country_id :eu
+  @eu_country_name "European Union"
   @country_filter_keys [:direct, :delegated, :quotes, :email_verified, :phone_verified]
   @default_country_filters Map.new(@country_filter_keys, &{&1, true})
 
@@ -54,22 +56,57 @@ defmodule YouCongress.Votes.VoteFrequencies do
   def get_by_country(statement_id, filters) do
     filters = normalize_country_filters(filters)
     countries = Countries.list_countries()
+    eu_country_ids = MapSet.new(Countries.eu_member_ids())
 
-    statement_id
-    |> Votes.country_result_vote_rows()
-    |> Enum.filter(&include_vote?(&1, filters))
-    |> Enum.group_by(&country_key(&1, filters, countries))
-    |> Enum.map(fn {{country_id, country_name}, rows} ->
-      counts = Enum.frequencies_by(rows, & &1.answer)
+    keyed_rows =
+      statement_id
+      |> Votes.country_result_vote_rows()
+      |> Enum.filter(&include_vote?(&1, filters))
+      |> Enum.map(fn row -> {country_key(row, filters, countries), row} end)
 
-      %{
-        country_id: country_id,
-        country_name: country_name,
-        total_votes: Enum.sum(Map.values(counts)),
-        vote_frequencies: frequencies(counts)
-      }
-    end)
+    country_results =
+      keyed_rows
+      |> Enum.group_by(fn {key, _row} -> key end, fn {_key, row} -> row end)
+      |> Enum.map(fn {{country_id, country_name}, rows} ->
+        country_result(country_id, country_name, rows)
+      end)
+
+    country_results
+    |> add_eu_result(keyed_rows, eu_country_ids)
     |> sort_country_results()
+  end
+
+  defp country_result(country_id, country_name, rows) do
+    counts = Enum.frequencies_by(rows, & &1.answer)
+
+    %{
+      country_id: country_id,
+      country_name: country_name,
+      total_votes: Enum.sum(Map.values(counts)),
+      vote_frequencies: frequencies(counts)
+    }
+  end
+
+  # Adds an aggregated "European Union" row combining every vote whose resolved
+  # country is an EU member. Flagged with `aggregate: true` so callers can keep
+  # it out of cross-country totals. It is sorted among the countries by vote
+  # count like any other row. Omitted when no EU votes exist.
+  defp add_eu_result(country_results, keyed_rows, eu_country_ids) do
+    eu_rows =
+      for {{country_id, _name}, row} <- keyed_rows,
+          MapSet.member?(eu_country_ids, country_id),
+          do: row
+
+    case eu_rows do
+      [] ->
+        country_results
+
+      rows ->
+        eu_result =
+          Map.put(country_result(@eu_country_id, @eu_country_name, rows), :aggregate, true)
+
+        [eu_result | country_results]
+    end
   end
 
   @spec get_by_year(number, map) :: [

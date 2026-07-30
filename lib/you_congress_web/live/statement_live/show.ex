@@ -436,6 +436,7 @@ defmodule YouCongressWeb.StatementLive.Show do
   defp maybe_reload_country_vote_frequencies(socket), do: socket
 
   defp parse_selected_country("unknown"), do: :unknown
+  defp parse_selected_country("eu"), do: :eu
 
   defp parse_selected_country(country) when is_binary(country) do
     case Integer.parse(country) do

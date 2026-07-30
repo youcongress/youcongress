@@ -185,11 +185,13 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
   defp normalize_answer(answer) when answer in [:against, "against", "Against"], do: "Against"
   defp normalize_answer(_), do: nil
 
-  # The selected country is either a country id, `:unknown` (authors without a
-  # country) or nil (no country selected).
+  # The selected country is either a country id, `:eu` (aggregated EU members),
+  # `:unknown` (authors without a country) or nil (no country selected).
   defp normalize_country(nil), do: nil
   defp normalize_country(:unknown), do: :unknown
   defp normalize_country("unknown"), do: :unknown
+  defp normalize_country(:eu), do: :eu
+  defp normalize_country("eu"), do: :eu
   defp normalize_country(id) when is_integer(id), do: id
 
   defp normalize_country(id) when is_binary(id) do

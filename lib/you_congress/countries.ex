@@ -8,6 +8,9 @@ defmodule YouCongress.Countries do
   alias YouCongress.Countries.Country
   alias YouCongress.Repo
 
+  # ISO alpha-2 codes of the 27 European Union member states.
+  @eu_iso_alpha2 ~w(AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE)
+
   @country_aliases %{
     "u.s." => "US",
     "u.s.a." => "US",
@@ -132,6 +135,19 @@ defmodule YouCongress.Countries do
 
   def country_name(%{country: %Country{name: name}}), do: name
   def country_name(_), do: nil
+
+  @doc "ISO alpha-2 codes of the European Union member states."
+  def eu_iso_alpha2_codes, do: @eu_iso_alpha2
+
+  @doc "Returns true if the country is an EU member state."
+  def eu_member?(%Country{iso_alpha2: iso}), do: iso in @eu_iso_alpha2
+  def eu_member?(_), do: false
+
+  @doc "Returns the ids of the countries that are EU member states."
+  def eu_member_ids do
+    from(c in Country, where: c.iso_alpha2 in ^@eu_iso_alpha2, select: c.id)
+    |> Repo.all()
+  end
 
   defp tag_result({:ok, country}, action), do: {:ok, country, action}
   defp tag_result({:error, changeset}, _action), do: {:error, changeset}
