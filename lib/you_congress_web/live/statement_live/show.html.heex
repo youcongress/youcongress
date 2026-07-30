@@ -132,7 +132,7 @@
 
 <div
   :if={@total_opinions > 0}
-  class="md:space-x-4 pb-2 text-right flex justify-end items-center"
+  class="pb-2 text-right flex flex-wrap justify-end items-center gap-2 md:gap-0 md:space-x-4"
 >
   <div class="md:hidden">
     <form phx-change="filter-answer" class="pl-2 inline">
@@ -168,13 +168,13 @@
   </span>
   <span
     phx-click="filter-quotes"
-    class={"hidden md:block text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :quotes && "bg-gray-200"}"}
+    class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :quotes && "bg-gray-200"}"}
   >
     Quotes ({@quotes_votes_count})
   </span>
   <span
     phx-click="filter-users"
-    class={"hidden md:block text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :users && "bg-gray-200"}"}
+    class={"text-xs cursor-pointer rounded-md border-2 border-gray-300 p-1 #{@source_filter == :users && "bg-gray-200"}"}
   >
     Users ({@users_votes_count})
   </span>
