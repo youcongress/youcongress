@@ -22,7 +22,8 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
       assigns: %{
         current_user: current_user,
         source_filter: source_filter,
-        answer_filter: answer_filter
+        answer_filter: answer_filter,
+        selected_country: selected_country
       }
     } = socket
 
@@ -36,15 +37,24 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
         else: String.downcase(answer_filter) |> String.to_existing_atom()
 
     quotes_votes_count =
-      Votes.count_with_opinion_source(statement_id, source_filter: :quotes, answer: answer)
+      Votes.count_with_opinion_source(statement_id,
+        source_filter: :quotes,
+        answer: answer,
+        author_country: selected_country
+      )
 
     users_votes_count =
-      Votes.count_with_opinion_source(statement_id, source_filter: :users, answer: answer)
+      Votes.count_with_opinion_source(statement_id,
+        source_filter: :users,
+        answer: answer,
+        author_country: selected_country
+      )
 
     opts = [
       include: [:author, opinion: :author],
       exclude_ids: exclude_ids,
-      source_filter: source_filter
+      source_filter: source_filter,
+      author_country: selected_country
     ]
 
     opts = if is_nil(answer), do: opts, else: [{:answer, answer} | opts]
@@ -81,8 +91,10 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
       quotes_votes_count: quotes_votes_count,
       seo_quote_authors: Votes.list_top_sourced_statement_authors(statement_id, 3),
       users_votes_count: users_votes_count,
-      total_opinions: Votes.count_by(statement_id: statement_id),
-      opinions_by_response: get_opinions_by_response(statement.id, source_filter),
+      total_opinions:
+        Votes.count_by(statement_id: statement_id, author_country: selected_country),
+      opinions_by_response:
+        get_opinions_by_response(statement.id, source_filter, selected_country),
       vote_frequencies: VoteFrequencies.get(statement_id),
       total_votes: Votes.count_by_statement(statement_id)
     )
@@ -110,11 +122,25 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
     |> Map.new(&{&1.id, &1})
   end
 
-  defp get_opinions_by_response(statement_id, source_filter) do
+  defp get_opinions_by_response(statement_id, source_filter, author_country) do
     case source_filter do
-      :quotes -> Votes.count_by_response_map_by_source(statement_id, source_filter: :quotes)
-      :users -> Votes.count_by_response_map_by_source(statement_id, source_filter: :users)
-      _ -> Votes.count_by_response_map(statement_id, has_opinion_id: true)
+      :quotes ->
+        Votes.count_by_response_map_by_source(statement_id,
+          source_filter: :quotes,
+          author_country: author_country
+        )
+
+      :users ->
+        Votes.count_by_response_map_by_source(statement_id,
+          source_filter: :users,
+          author_country: author_country
+        )
+
+      _ ->
+        Votes.count_by_response_map(statement_id,
+          has_opinion_id: true,
+          author_country: author_country
+        )
     end
   end
 

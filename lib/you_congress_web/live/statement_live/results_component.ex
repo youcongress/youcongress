@@ -16,6 +16,9 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
   attr :show_country_results, :boolean, default: false
   attr :country_results_filters, :map, default: %{}
   attr :country_results_target, :any, default: nil
+  attr :selected_country, :any, default: nil
+  attr :select_country?, :boolean, default: false
+  attr :country_select_target, :any, default: nil
   attr :year_vote_frequencies, :list, default: nil
   attr :show_year_results, :boolean, default: false
   attr :year_results_filters, :map, default: %{}
@@ -103,12 +106,33 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
           }
           class="space-y-3"
         >
-          <ResultsComponent.result_row
-            :for={country <- @country_vote_frequencies}
-            label={country.country_name}
-            total_votes={country.total_votes}
-            vote_frequencies={country.vote_frequencies}
-          />
+          <%= for country <- @country_vote_frequencies do %>
+            <button
+              :if={@select_country?}
+              type="button"
+              phx-click="select-country"
+              phx-value-country={country.country_id || "unknown"}
+              phx-target={@country_select_target}
+              aria-pressed={to_string(country_selected?(@selected_country, country))}
+              class={[
+                "block w-full text-left rounded-md px-2 py-1 -mx-2 transition hover:bg-gray-50",
+                country_selected?(@selected_country, country) &&
+                  "bg-indigo-50 ring-1 ring-inset ring-indigo-200"
+              ]}
+            >
+              <ResultsComponent.result_row
+                label={country.country_name}
+                total_votes={country.total_votes}
+                vote_frequencies={country.vote_frequencies}
+              />
+            </button>
+            <ResultsComponent.result_row
+              :if={!@select_country?}
+              label={country.country_name}
+              total_votes={country.total_votes}
+              vote_frequencies={country.vote_frequencies}
+            />
+          <% end %>
         </div>
 
         <div :if={@show_year_results} class="grid gap-3 text-xs md:grid-cols-2">
@@ -311,10 +335,18 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
            assigns
        )
        when is_list(country_vote_frequencies) do
+    selected_country = Map.get(assigns, :selected_country)
+
+    displayed_countries =
+      case selected_country do
+        nil -> country_vote_frequencies
+        _ -> Enum.filter(country_vote_frequencies, &country_selected?(selected_country, &1))
+      end
+
     counts =
       Map.new(@responses, fn response ->
         count =
-          Enum.sum_by(country_vote_frequencies, fn country ->
+          Enum.sum_by(displayed_countries, fn country ->
             country.vote_frequencies
             |> Map.get(response, {0, 0})
             |> elem(0)
@@ -348,4 +380,8 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
 
   defp vote_count_label(1), do: "1 vote"
   defp vote_count_label(count), do: "#{count} votes"
+
+  defp country_selected?(:unknown, %{country_id: nil}), do: true
+  defp country_selected?(nil, _country), do: false
+  defp country_selected?(selected, %{country_id: country_id}), do: selected == country_id
 end

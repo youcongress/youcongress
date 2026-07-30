@@ -686,6 +686,84 @@ defmodule YouCongressWeb.StatementLiveTest do
       refute html =~ "France"
     end
 
+    test "clicking a country filters the stats and opinions to that country", %{
+      conn: conn,
+      statement: statement
+    } do
+      spain = country_fixture(%{name: "Pick Spain"})
+      france = country_fixture(%{name: "Pick France"})
+
+      spain_author = author_fixture(%{country_id: spain.id, name: "Pick Spanish Voter"})
+      france_author = author_fixture(%{country_id: france.id, name: "Pick French Voter"})
+
+      spain_opinion =
+        opinion_fixture(%{
+          author_id: spain_author.id,
+          content: "SpainOpinionContent",
+          source_url: "https://example.com/spain",
+          twin: false
+        })
+
+      france_opinion =
+        opinion_fixture(%{
+          author_id: france_author.id,
+          content: "FranceOpinionContent",
+          source_url: "https://example.com/france",
+          twin: false
+        })
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: spain_author.id,
+        opinion_id: spain_opinion.id,
+        answer: :for,
+        twin: false
+      })
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: france_author.id,
+        opinion_id: france_opinion.id,
+        answer: :against,
+        twin: false
+      })
+
+      {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}?#{%{results: "country"}}")
+
+      assert html =~ "Results (2 votes):"
+      assert html =~ "SpainOpinionContent"
+      assert html =~ "FranceOpinionContent"
+
+      # Click the Spain country row
+      html =
+        show_live
+        |> element("button[phx-value-country='#{spain.id}']")
+        |> render_click()
+
+      assert_patch(
+        show_live,
+        ~p"/p/#{statement.slug}?#{%{results: "country", country: to_string(spain.id)}}"
+      )
+
+      # Stats and opinions now reflect only Spain
+      assert html =~ "Results (1 vote):"
+      assert html =~ "For 1 (100%)"
+      assert html =~ "Showing results and opinions from"
+      assert html =~ "Pick Spain"
+      assert html =~ "SpainOpinionContent"
+      refute html =~ "FranceOpinionContent"
+
+      # Clearing the filter restores the full results
+      html =
+        show_live
+        |> element("button", "Clear")
+        |> render_click()
+
+      assert_patch(show_live, ~p"/p/#{statement.slug}?#{%{results: "country"}}")
+      assert html =~ "Results (2 votes):"
+      assert html =~ "FranceOpinionContent"
+    end
+
     test "loads country and year result views from URL params", %{
       conn: conn,
       statement: statement
