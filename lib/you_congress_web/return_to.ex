@@ -17,7 +17,7 @@ defmodule YouCongressWeb.ReturnTo do
          path when is_binary(path) <- uri.path,
          true <- String.starts_with?(path, "/"),
          false <- path in @blocked_paths do
-      %URI{path: path, query: uri.query}
+      %URI{path: path, query: uri.query, fragment: uri.fragment}
       |> URI.to_string()
     else
       _ -> nil

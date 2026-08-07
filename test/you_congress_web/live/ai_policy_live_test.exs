@@ -16,6 +16,23 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
     assert html =~ "100 AI Policies"
     assert html =~ "Create account &amp; register interest"
     assert html =~ "AI Page Country"
+    assert html =~ "/auth/google?return_to=%2Fai%3Ffrom%3Dgoogle%23register"
+  end
+
+  test "a user coming back from Google sees a flash pointing to the Join us section", %{
+    conn: conn
+  } do
+    user = AccountsFixtures.user_fixture() |> Repo.preload(:author)
+
+    {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/ai?from=google")
+
+    assert html =~ "Logged in with Google. Now you can register your interest."
+  end
+
+  test "the Google flash is not shown to logged out visitors", %{conn: conn} do
+    {:ok, _view, html} = live(conn, ~p"/ai?from=google")
+
+    refute html =~ "Logged in with Google"
   end
 
   test "a signed-in user updates country and AI signup context", %{conn: conn} do

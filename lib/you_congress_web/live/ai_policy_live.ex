@@ -4,6 +4,11 @@ defmodule YouCongressWeb.AiPolicyLive do
   alias Ecto.Changeset
   alias YouCongress.Accounts
   alias YouCongress.Countries
+  alias YouCongressWeb.ReturnTo
+
+  # Where Google sends users back to: the "Join us" section, with a marker so we
+  # can confirm the login happened.
+  @google_return_to "/ai?from=google#register"
 
   defmodule Signup do
     use Ecto.Schema
@@ -21,7 +26,15 @@ defmodule YouCongressWeb.AiPolicyLive do
 
     def changeset(signup, attrs \\ %{}, require_account? \\ true) do
       signup
-      |> cast(attrs, [:name, :email, :password, :country_id, :professional_background, :interests, :availability_and_motivation])
+      |> cast(attrs, [
+        :name,
+        :email,
+        :password,
+        :country_id,
+        :professional_background,
+        :interests,
+        :availability_and_motivation
+      ])
       |> validate_required([:country_id])
       |> maybe_require_account(require_account?)
     end
@@ -55,10 +68,10 @@ defmodule YouCongressWeb.AiPolicyLive do
   ]
 
   @impl true
-  def mount(_params, session, socket) do
+  def mount(params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
     user = socket.assigns.current_user
-    context = user && user.sign_up_context || %{}
+    context = (user && user.sign_up_context) || %{}
 
     values = %{
       "country_id" => user && user.author && user.author.country_id,
@@ -70,14 +83,26 @@ defmodule YouCongressWeb.AiPolicyLive do
     {:ok,
      socket
      |> assign(:page_title, "AI Policy Group | YouCongress")
-     |> assign(:page_description, "Join a global community building practical AI policy proposals.")
+     |> assign(
+       :page_description,
+       "Join a global community building practical AI policy proposals."
+     )
      |> assign(:current_user, user)
      |> assign(:countries, Countries.country_options())
      |> assign(:backgrounds, @backgrounds)
      |> assign(:interests, @interests)
      |> assign(:saved, false)
+     |> assign(:google_href, ReturnTo.auth_path(:google, nil, @google_return_to))
+     |> assign(:log_in_href, ReturnTo.log_in_path(nil, "/ai#register"))
+     |> maybe_put_google_flash(params)
      |> assign_form(Signup.changeset(%Signup{}, values, is_nil(user)))}
   end
+
+  defp maybe_put_google_flash(%{assigns: %{current_user: %{}}} = socket, %{"from" => "google"}) do
+    put_flash(socket, :info, "Logged in with Google. Now you can register your interest.")
+  end
+
+  defp maybe_put_google_flash(socket, _params), do: socket
 
   @impl true
   def handle_event("validate", %{"signup" => attrs}, socket) do
@@ -85,7 +110,11 @@ defmodule YouCongressWeb.AiPolicyLive do
     {:noreply, assign_form(socket, %{changeset | action: :validate})}
   end
 
-  def handle_event("register-interest", %{"signup" => attrs}, %{assigns: %{current_user: nil}} = socket) do
+  def handle_event(
+        "register-interest",
+        %{"signup" => attrs},
+        %{assigns: %{current_user: nil}} = socket
+      ) do
     changeset = Signup.changeset(%Signup{}, attrs, true)
 
     if changeset.valid? do
@@ -131,7 +160,9 @@ defmodule YouCongressWeb.AiPolicyLive do
   end
 
   defp copy_account_errors(changeset, error_changeset) do
-    Enum.reduce(error_changeset.errors, %{changeset | action: :validate}, fn {field, {message, opts}}, acc ->
+    Enum.reduce(error_changeset.errors, %{changeset | action: :validate}, fn {field,
+                                                                              {message, opts}},
+                                                                             acc ->
       Changeset.add_error(acc, field, message, opts)
     end)
   end
@@ -145,7 +176,7 @@ defmodule YouCongressWeb.AiPolicyLive do
     <div class="rounded-2xl border border-zinc-700 bg-zinc-800 p-7">
       <p class="font-extrabold text-[#f0a882]">{@number}</p>
       <h3 class="mt-3 text-xl font-bold">{@title}</h3>
-      <p class="mt-3 leading-relaxed text-zinc-400"><%= render_slot(@inner_block) %></p>
+      <p class="mt-3 leading-relaxed text-zinc-400">{render_slot(@inner_block)}</p>
     </div>
     """
   end

@@ -43,7 +43,8 @@
             class="rounded-lg bg-brand px-7 py-3.5 font-semibold text-white hover:bg-[#a63300]"
           >
             Register your interest
-          </a><a
+          </a>
+          <a
             href="#focus"
             class="rounded-lg border border-zinc-300 px-7 py-3.5 font-semibold text-zinc-900 hover:bg-zinc-50"
           >Read the mission</a>
@@ -85,8 +86,7 @@
         </p>
         <div class="mt-7 overflow-hidden rounded-xl border border-[#eee7df]">
           <div class="bg-[#fbeee7] p-3">
-            <b class="mr-5 text-sm text-[#8f2c00]">Sep 2026</b>
-            Sweden
+            <b class="mr-5 text-sm text-[#8f2c00]">Sep 2026</b> Sweden
           </div>
           <div class="border-t border-[#eee7df] bg-white p-3">
             <b class="mr-5 text-sm text-[#8f2c00]">Nov 2026</b> Bulgaria
@@ -178,7 +178,8 @@
           <div class="flex gap-4 border-b border-[#ece6df] py-5">
             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
               {number}
-            </span><span class="pt-1 text-zinc-800">{text}</span>
+            </span>
+            <span class="pt-1 text-zinc-800">{text}</span>
           </div>
         <% end %>
       </div>
@@ -226,12 +227,13 @@
           <%= if !@current_user do %>
             <div class="mb-5 space-y-2">
               <a
-                href="/auth/google?return_to=%2Fai"
+                href={@google_href}
                 class="flex w-full items-center justify-center rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
               >
                 Sign up with Google
-              </a><a
-                href="/log_in?return_to=%2Fai"
+              </a>
+              <a
+                href={@log_in_href}
                 class="block text-center text-sm text-brand hover:underline"
               >Already have an account? Log in</a>
               <p class="text-center text-xs text-zinc-500">
@@ -301,7 +303,8 @@
               field={@form[:availability_and_motivation]}
               type="textarea"
               label="Availability & motivation (optional)"
-            /><button
+            />
+            <button
               type="submit"
               class="w-full rounded-lg bg-brand px-5 py-3 font-semibold text-white hover:bg-[#a63300]"
               phx-disable-with="Saving…"
