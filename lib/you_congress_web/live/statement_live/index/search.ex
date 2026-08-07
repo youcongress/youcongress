@@ -144,9 +144,10 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
       <div
         :if={@active_tab_has_more}
         id="search-results-sentinel"
-        phx-hook="InfiniteSearchResults"
+        phx-hook="InfiniteScroll"
+        data-event="load-more-search"
         data-has-more={to_string(@active_tab_has_more)}
-        data-result-count={@active_results_count}
+        data-item-count={@active_results_count}
         class="flex justify-center py-4 text-sm text-gray-500"
       >
         Loading more results...

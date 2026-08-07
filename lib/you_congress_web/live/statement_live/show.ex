@@ -139,6 +139,10 @@ defmodule YouCongressWeb.StatementLive.Show do
     end
   end
 
+  def handle_event("load-more-opinions", _, socket) do
+    {:noreply, VotesLoader.load_more_votes(socket)}
+  end
+
   def handle_event("post", %{"comment" => opinion}, socket) do
     Comments.post_event(opinion, socket)
   end
@@ -404,6 +408,8 @@ defmodule YouCongressWeb.StatementLive.Show do
   defp assign_statement_page_params(socket, params) do
     socket
     |> assign(:statement_page_params, params)
+    # Any filter change restarts the opinion list from the top.
+    |> assign(:opinions_page, 1)
     |> assign(:show_synthesis, params.show_synthesis)
     |> assign(:show_country_results, params.results == :country)
     |> assign(:country_vote_frequencies, nil)

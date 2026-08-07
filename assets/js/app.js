@@ -24,7 +24,7 @@ import topbar from "../vendor/topbar"
 import QuoteMenu from "./hooks/quote_menu"
 import Turnstile from "./hooks/turnstile"
 import SessionLogin from "./hooks/session_login"
-import InfiniteSearchResults from "./hooks/infinite_search_results"
+import InfiniteScroll from "./hooks/infinite_scroll"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 
@@ -32,7 +32,7 @@ let Hooks = {
   QuoteMenu: QuoteMenu,
   Turnstile: Turnstile,
   SessionLogin: SessionLogin,
-  InfiniteSearchResults: InfiniteSearchResults
+  InfiniteScroll: InfiniteScroll
 };
 
 let liveSocket = new LiveSocket("/live", Socket, {
