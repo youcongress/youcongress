@@ -223,16 +223,12 @@
         <%= if @saved do %>
           <div class="py-10 text-center">
             <h3 class="text-2xl font-bold text-zinc-900">You're on the list.</h3>
-            <%= if @current_user do %>
-              <p class="mt-3">We'll use these details to invite you to a suitable session.</p>
-            <% else %>
-              <p class="mt-3">
-                We sent a six-digit code to your email. Taking you to the confirmation step…
-              </p>
-              <a href={@confirm_email_href} class="mt-3 inline-block text-brand hover:underline">
-                Confirm your email
-              </a>
-            <% end %>
+            <p class="mt-3">
+              We sent a six-digit code to your email. Taking you to the confirmation step…
+            </p>
+            <a href={@confirm_email_href} class="mt-3 inline-block text-brand hover:underline">
+              Confirm your email
+            </a>
           </div>
         <% else %>
           <%= if !@current_user do %>

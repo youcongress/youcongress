@@ -14,6 +14,10 @@ defmodule YouCongressWeb.AiPolicyLive do
   @x_return_to "/ai?from=x#register"
   @return_to "/ai#register"
 
+  # Once the interest is registered, the sign-up flow ends here instead of
+  # sending people back to the landing page they already filled in.
+  @welcome_return_to "/ai-welcome"
+
   defmodule Signup do
     use Ecto.Schema
     import Ecto.Changeset
@@ -103,7 +107,7 @@ defmodule YouCongressWeb.AiPolicyLive do
      |> assign(:x_href, ReturnTo.auth_path(:x, nil, @x_return_to))
      |> assign(:log_in_with_x?, FeatureFlags.enabled?(:log_in_with_x))
      |> assign(:log_in_href, ReturnTo.log_in_path(nil, @return_to))
-     |> assign(:confirm_email_href, ReturnTo.sign_up_path(@return_to))
+     |> assign(:confirm_email_href, ReturnTo.sign_up_path(@welcome_return_to))
      |> maybe_put_oauth_flash(params)
      |> assign_form(Signup.changeset(%Signup{}, values, is_nil(user)))}
   end
@@ -160,8 +164,7 @@ defmodule YouCongressWeb.AiPolicyLive do
           {:noreply,
            socket
            |> assign(:current_user, %{user | author: author})
-           |> assign(:saved, true)
-           |> put_flash(:info, "Your interest has been registered.")}
+           |> push_navigate(to: ~p"/ai-welcome")}
 
         {:error, _step, %Changeset{} = error_changeset, _} ->
           {:noreply, assign_form(socket, copy_account_errors(changeset, error_changeset))}
@@ -177,7 +180,7 @@ defmodule YouCongressWeb.AiPolicyLive do
     push_event(socket, "session-login", %{
       token: Accounts.generate_live_login_token(user),
       redirect_to: redirect_to,
-      return_to: @return_to
+      return_to: @welcome_return_to
     })
   end
 

@@ -123,8 +123,8 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
 
     assert_push_event(view, "session-login", %{
       token: token,
-      redirect_to: "/sign_up?return_to=%2Fai%23register",
-      return_to: "/ai#register"
+      redirect_to: "/sign_up?return_to=%2Fai-welcome",
+      return_to: "/ai-welcome"
     })
 
     assert {:ok, user} = Accounts.consume_live_login_token(token)
@@ -134,12 +134,12 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
     assert html =~ "Taking you to the confirmation step"
 
     {:ok, _view, sign_up_html} =
-      conn |> log_in_user(user) |> live(~p"/sign_up?return_to=%2Fai%23register")
+      conn |> log_in_user(user) |> live(~p"/sign_up?return_to=%2Fai-welcome")
 
     assert sign_up_html =~ "Enter your confirmation code"
   end
 
-  test "a logged-in user with a confirmed email is not sent to the confirmation step", %{
+  test "a logged-in user with a confirmed email is sent to /ai-welcome", %{
     conn: conn
   } do
     country = CountriesFixtures.country_fixture(name: "Confirmed AI Country")
@@ -150,13 +150,12 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
 
     {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/ai")
 
-    html =
-      view
-      |> form("#ai-policy-registration", signup: %{"country_id" => country.id})
-      |> render_submit()
+    view
+    |> form("#ai-policy-registration", signup: %{"country_id" => country.id})
+    |> render_submit()
 
     refute_push_event(view, "session-login", %{})
-    assert html =~ "We&#39;ll use these details to invite you to a suitable session."
+    assert_redirect(view, ~p"/ai-welcome")
   end
 
   test "new AI registrations persist the country on the author and the context on the user" do
