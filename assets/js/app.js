@@ -100,10 +100,11 @@ function setupCopyButtons() {
       await writeToClipboard(text)
       const originalLabel = button.getAttribute("data-original-label") || button.getAttribute("aria-label") || button.innerText.trim() || "Copy"
       button.setAttribute("data-original-label", originalLabel)
-      button.setAttribute("aria-label", "Copied!")
 
       const originalText = button.getAttribute("data-original-text") || button.innerText.trim()
       const successLabel = button.dataset.copySuccessLabel
+      // Keep the accessible name in sync with the visible text (WCAG 2.5.3).
+      button.setAttribute("aria-label", successLabel || "Copied!")
       if (successLabel) {
         button.setAttribute("data-original-text", originalText)
         button.textContent = successLabel

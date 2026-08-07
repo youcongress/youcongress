@@ -22,7 +22,7 @@ defmodule YouCongressWeb.Components.SwitchComponent do
           "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
         ]}
         role="switch"
-        aria-checked={@is_active}
+        aria-checked={to_string(@is_active)}
       >
         <span class="sr-only">Use setting</span>
         <span

@@ -38,7 +38,7 @@
 <% end %>
 
 <%= if @opinion.statements != [] do %>
-  <div class="pb-2">Policy proposals and claims</div>
+  <h2 class="pb-2">Policy proposals and claims</h2>
   <div class="bg-gray-100 rounded-md p-4 mb-6">
     <%= for statement <- @opinion.statements do %>
       <div class="mb-3 last:mb-0" data-testid={"statement-verify-#{statement.id}"}>
@@ -127,11 +127,11 @@
               :if={statement.relation_verifications != []}
               verifications={statement.relation_verifications}
               title="Statement relation comments"
-              title_tag="h4"
+              title_tag="h3"
               title_class="sr-only"
               entries_class="space-y-1"
             />
-            <div :if={statement.relation_verifications == []} class="text-xs text-gray-500">
+            <div :if={statement.relation_verifications == []} class="text-xs text-gray-600">
               No statement relation verification comments yet.
             </div>
           </div>
@@ -192,11 +192,11 @@
               :if={statement.vote_verifications != []}
               verifications={statement.vote_verifications}
               title="Vote answer comments"
-              title_tag="h4"
+              title_tag="h3"
               title_class="sr-only"
               entries_class="space-y-1"
             />
-            <div :if={statement.vote_verifications == []} class="text-xs text-gray-500">
+            <div :if={statement.vote_verifications == []} class="text-xs text-gray-600">
               <%= if statement.author_vote do %>
                 No vote answer verification comments yet.
               <% else %>
