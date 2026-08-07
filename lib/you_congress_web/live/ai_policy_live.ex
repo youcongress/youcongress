@@ -4,11 +4,13 @@ defmodule YouCongressWeb.AiPolicyLive do
   alias Ecto.Changeset
   alias YouCongress.Accounts
   alias YouCongress.Countries
+  alias YouCongress.FeatureFlags
   alias YouCongressWeb.ReturnTo
 
-  # Where Google sends users back to: the "Join us" section, with a marker so we
-  # can confirm the login happened.
+  # Where the OAuth providers send users back to: the "Join us" section, with a
+  # marker so we can confirm the login happened.
   @google_return_to "/ai?from=google#register"
+  @x_return_to "/ai?from=x#register"
 
   defmodule Signup do
     use Ecto.Schema
@@ -96,16 +98,20 @@ defmodule YouCongressWeb.AiPolicyLive do
      |> assign(:interests, @interests)
      |> assign(:saved, false)
      |> assign(:google_href, ReturnTo.auth_path(:google, nil, @google_return_to))
+     |> assign(:x_href, ReturnTo.auth_path(:x, nil, @x_return_to))
+     |> assign(:log_in_with_x?, FeatureFlags.enabled?(:log_in_with_x))
      |> assign(:log_in_href, ReturnTo.log_in_path(nil, "/ai#register"))
-     |> maybe_put_google_flash(params)
+     |> maybe_put_oauth_flash(params)
      |> assign_form(Signup.changeset(%Signup{}, values, is_nil(user)))}
   end
 
-  defp maybe_put_google_flash(%{assigns: %{current_user: %{}}} = socket, %{"from" => "google"}) do
-    put_flash(socket, :info, "Logged in with Google. Now you can register your interest.")
+  defp maybe_put_oauth_flash(%{assigns: %{current_user: %{}}} = socket, %{"from" => from})
+       when from in ~w(google x) do
+    provider = if from == "google", do: "Google", else: "X"
+    put_flash(socket, :info, "Logged in with #{provider}. Now you can register your interest.")
   end
 
-  defp maybe_put_google_flash(socket, _params), do: socket
+  defp maybe_put_oauth_flash(socket, _params), do: socket
 
   @impl true
   def handle_event("validate", %{"signup" => attrs}, socket) do
