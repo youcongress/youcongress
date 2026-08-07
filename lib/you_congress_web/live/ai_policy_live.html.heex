@@ -47,7 +47,9 @@
           <a
             href="#focus"
             class="rounded-lg border border-zinc-300 px-7 py-3.5 font-semibold text-zinc-900 hover:bg-zinc-50"
-          >Read the mission</a>
+          >
+            Read the mission
+          </a>
         </div>
         <div class="mt-10 flex flex-wrap gap-x-8 gap-y-3 border-t border-zinc-200 pt-6 text-sm text-zinc-500">
           <span><b class="text-xl text-zinc-900">~60</b> minute sessions</span><span><b class="text-xl text-zinc-900">3–7</b> people per group</span><span><b class="text-xl text-zinc-900">EN</b> shared language</span>
@@ -235,7 +237,9 @@
               <a
                 href={@log_in_href}
                 class="block text-center text-sm text-brand hover:underline"
-              >Already have an account? Log in</a>
+              >
+                Already have an account? Log in
+              </a>
               <p class="text-center text-xs text-zinc-500">
                 After signing in, return here to tell us your country and interests.
               </p>
@@ -266,6 +270,23 @@
               <p class="-mt-3 text-xs text-zinc-500">
                 Create a YouCongress account so you can vote and delegate later.
               </p>
+            <% else %>
+              <div>
+                <.label for="current_name">Full name</.label>
+                <input
+                  type="text"
+                  id="current_name"
+                  name="current_name"
+                  value={@current_user.author.name}
+                  disabled
+                  class="mt-2 block w-full cursor-not-allowed rounded-lg border-zinc-300 bg-zinc-100 text-zinc-500 focus:ring-0 sm:text-sm sm:leading-6"
+                />
+              </div>
+              <p class="-mt-3 text-xs text-zinc-500">
+                <.link navigate={~p"/settings"} class="text-brand hover:underline">
+                  Change your name in settings
+                </.link>
+              </p>
             <% end %>
             <.input
               field={@form[:country_id]}
@@ -280,6 +301,11 @@
               label="Professional background"
               prompt="Select one"
               options={@backgrounds}
+            />
+            <.input
+              field={@form[:linkedin_or_website]}
+              label="LinkedIn or website (optional)"
+              placeholder="linkedin.com/in/your-profile"
             />
             <fieldset>
               <legend class="mb-2 text-sm font-semibold leading-6 text-zinc-800">

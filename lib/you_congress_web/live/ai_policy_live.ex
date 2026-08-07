@@ -20,6 +20,7 @@ defmodule YouCongressWeb.AiPolicyLive do
       field :password, :string
       field :country_id, :integer
       field :professional_background, :string
+      field :linkedin_or_website, :string
       field :interests, {:array, :string}, default: []
       field :availability_and_motivation, :string
     end
@@ -32,6 +33,7 @@ defmodule YouCongressWeb.AiPolicyLive do
         :password,
         :country_id,
         :professional_background,
+        :linkedin_or_website,
         :interests,
         :availability_and_motivation
       ])
@@ -76,6 +78,7 @@ defmodule YouCongressWeb.AiPolicyLive do
     values = %{
       "country_id" => user && user.author && user.author.country_id,
       "professional_background" => context["professional_background"],
+      "linkedin_or_website" => context["linkedin_or_website"],
       "interests" => context["interests"] || [],
       "availability_and_motivation" => context["availability_and_motivation"]
     }

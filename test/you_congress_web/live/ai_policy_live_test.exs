@@ -35,6 +35,20 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
     refute html =~ "Logged in with Google"
   end
 
+  test "a signed-in user sees their name prefilled and a link to settings", %{conn: conn} do
+    country = CountriesFixtures.country_fixture(name: "Prefilled AI Country")
+
+    user =
+      AccountsFixtures.user_fixture(%{}, %{name: "Prefilled Participant", country_id: country.id})
+      |> Repo.preload(:author)
+
+    {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/ai")
+
+    assert html =~ "Prefilled Participant"
+    assert html =~ "Change your name in settings"
+    assert html =~ ~s(href="/settings")
+  end
+
   test "a signed-in user updates country and AI signup context", %{conn: conn} do
     initial_country = CountriesFixtures.country_fixture(name: "Initial AI Country")
     selected_country = CountriesFixtures.country_fixture(name: "Selected AI Country")
@@ -53,6 +67,7 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
       signup: %{
         "country_id" => selected_country.id,
         "professional_background" => "policy",
+        "linkedin_or_website" => "linkedin.com/in/ai-participant",
         "interests" => ["governance", "jobs"],
         "availability_and_motivation" => "Weekday evenings"
       }
@@ -67,6 +82,7 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
     assert updated_user.sign_up_context == %{
              "campaign" => "ai_policy_group",
              "professional_background" => "policy",
+             "linkedin_or_website" => "linkedin.com/in/ai-participant",
              "interests" => ["governance", "jobs"],
              "availability_and_motivation" => "Weekday evenings"
            }
@@ -82,6 +98,7 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
           "name" => "AI Participant",
           "country_id" => country.id,
           "professional_background" => "tech",
+          "linkedin_or_website" => "https://example.com/ai-participant",
           "interests" => ["competitiveness"],
           "availability_and_motivation" => "I can join monthly."
         }
@@ -90,5 +107,6 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
     assert author.country_id == country.id
     assert user.sign_up_context["professional_background"] == "tech"
     assert user.sign_up_context["interests"] == ["competitiveness"]
+    assert user.sign_up_context["linkedin_or_website"] == "https://example.com/ai-participant"
   end
 end

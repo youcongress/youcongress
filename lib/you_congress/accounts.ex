@@ -192,7 +192,13 @@ defmodule YouCongress.Accounts do
     %{
       "campaign" => "ai_policy_group",
       "professional_background" =>
-        blank_to_nil(Map.get(attrs, "professional_background") || Map.get(attrs, :professional_background)),
+        blank_to_nil(
+          Map.get(attrs, "professional_background") || Map.get(attrs, :professional_background)
+        ),
+      "linkedin_or_website" =>
+        blank_to_nil(
+          Map.get(attrs, "linkedin_or_website") || Map.get(attrs, :linkedin_or_website)
+        ),
       "interests" => Map.get(attrs, "interests") || Map.get(attrs, :interests) || [],
       "availability_and_motivation" =>
         blank_to_nil(
