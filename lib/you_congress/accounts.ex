@@ -143,6 +143,65 @@ defmodule YouCongress.Accounts do
     |> Repo.transaction()
   end
 
+  def register_ai_policy_user(user_attrs, signup_attrs) do
+    author_attrs =
+      signup_attrs
+      |> Map.take(["name", "country_id"])
+      |> Map.put("twin_origin", false)
+
+    context = ai_policy_sign_up_context(signup_attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:author, Author.changeset(%Author{}, author_attrs))
+    |> Ecto.Multi.insert(:user, fn %{author: author} ->
+      %User{}
+      |> User.password_registration_changeset(Map.put(user_attrs, "author_id", author.id))
+      |> Ecto.Changeset.put_change(:sign_up_context, context)
+    end)
+    |> Repo.transaction()
+  end
+
+  @doc """
+  Records a user's interest in the AI Policy Group. The country is profile data,
+  while campaign-specific answers stay on the user in `sign_up_context`.
+  """
+  def register_ai_policy_interest(%User{author_id: author_id} = user, attrs) do
+    country_id = Map.get(attrs, "country_id") || Map.get(attrs, :country_id)
+
+    context = ai_policy_sign_up_context(attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:author, fn _ ->
+      author = Repo.get!(Author, author_id)
+      Author.profile_changeset(author, %{country_id: country_id}, [:country_id])
+    end)
+    |> Ecto.Multi.update(:user, User.sign_up_context_changeset(user, %{sign_up_context: context}))
+    |> Repo.transaction()
+  end
+
+  defp blank_to_nil(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      value -> value
+    end
+  end
+
+  defp blank_to_nil(value), do: value
+
+  defp ai_policy_sign_up_context(attrs) do
+    %{
+      "campaign" => "ai_policy_group",
+      "professional_background" =>
+        blank_to_nil(Map.get(attrs, "professional_background") || Map.get(attrs, :professional_background)),
+      "interests" => Map.get(attrs, "interests") || Map.get(attrs, :interests) || [],
+      "availability_and_motivation" =>
+        blank_to_nil(
+          Map.get(attrs, "availability_and_motivation") ||
+            Map.get(attrs, :availability_and_motivation)
+        )
+    }
+  end
+
   def x_register_user(user_attrs, author_attrs \\ %{}) do
     author_attrs = Map.put(author_attrs, :twin_origin, false)
 

@@ -54,8 +54,10 @@ defmodule YouCongress.MixProject do
       {:gettext, "~> 0.24"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:faker, "~> 0.17", only: [:test, :dev]},
-      {:mock, "~> 0.3.8", only: :test},
+      {:faker, "~> 0.19", only: [:test, :dev]},
+      {:mock, "~> 0.3.9", only: :test},
+      # Mock 0.3.x accepts Meck's stable API; Meck 1.x is required for OTP 29.
+      {:meck, "~> 1.2", only: :test, override: true},
       {:openai, "~> 0.5.4"},
       {:pgvector, "~> 0.3.0"},
       {:oban, "~> 2.20.2"},

@@ -18,6 +18,7 @@ defmodule YouCongress.Accounts.User do
     field :phone_number_confirmed_at, :naive_datetime
     field :role, :string, default: "user"
     field :newsletter, :boolean, default: false
+    field :sign_up_context, :map
 
     belongs_to :author, YouCongress.Authors.Author
     has_many :api_keys, YouCongress.Accounts.ApiKey
@@ -64,6 +65,10 @@ defmodule YouCongress.Accounts.User do
   def welcome_changeset(user, attrs) do
     user
     |> cast(attrs, [:newsletter])
+  end
+
+  def sign_up_context_changeset(user, attrs) do
+    cast(user, attrs, [:sign_up_context])
   end
 
   def login_with_x_changeset(user, attrs, opts \\ []) do
