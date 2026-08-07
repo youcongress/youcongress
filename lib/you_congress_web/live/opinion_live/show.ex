@@ -725,7 +725,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
     ~H"""
     <.link
       href={@href}
-      class="text-xs font-normal text-gray-500 underline hover:text-indigo-600"
+      class="text-xs font-normal text-gray-600 underline hover:text-indigo-600"
       data-testid={@testid}
     >
       Report this

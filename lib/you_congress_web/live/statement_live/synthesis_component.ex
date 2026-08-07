@@ -42,15 +42,16 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
         aria-controls="synthesis-body"
         class="w-full text-left"
       >
-        <div class="flex items-center justify-between gap-2">
+        <%!-- Only phrasing content here: a button may not contain div/p. --%>
+        <span class="flex items-center justify-between gap-2">
           <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">
             AI synthesis
           </span>
           <span class="shrink-0 text-xs text-gray-500 underline">
             {if @show_synthesis, do: "Hide", else: "Show more"}
           </span>
-        </div>
-        <p class="mt-1 font-semibold">{@synthesis["headline"]}</p>
+        </span>
+        <span class="mt-1 block font-semibold">{@synthesis["headline"]}</span>
         <span :if={!@show_synthesis} class="mt-2 inline-block text-sm text-gray-600 underline">
           Show arguments and insights
         </span>
@@ -59,9 +60,9 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
       <%!-- Always in the DOM (crawlable); the toggle only flips visibility. --%>
       <div id="synthesis-body" class={["mt-4 space-y-6", !@show_synthesis && "hidden"]}>
         <section :for={{key, label} <- @sections} :if={@synthesis[key] not in [nil, []]}>
-          <h3 class={section_class(key)}>{label}</h3>
+          <h2 class={section_class(key)}>{label}</h2>
           <div :for={cluster <- @synthesis[key]} class="mt-3">
-            <h4 class="text-sm font-semibold">{cluster["title"]}</h4>
+            <h3 class="text-sm font-semibold">{cluster["title"]}</h3>
             <p class="text-sm text-gray-700">{cluster["summary"]}</p>
             <ul class="mt-2 space-y-2">
               <li
@@ -91,7 +92,7 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
         </section>
 
         <section :if={@synthesis["insights"] not in [nil, []]}>
-          <h3 class="text-sm font-bold uppercase tracking-wide text-gray-500">Insights</h3>
+          <h2 class="text-sm font-bold uppercase tracking-wide text-gray-500">Insights</h2>
           <ul class="mt-2 list-inside list-disc space-y-1 text-sm text-gray-700">
             <li :for={insight <- @synthesis["insights"]}>{insight}</li>
           </ul>

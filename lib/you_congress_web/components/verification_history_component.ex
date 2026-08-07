@@ -21,7 +21,7 @@ defmodule YouCongressWeb.Components.VerificationHistory do
       <.dynamic_tag tag_name={@title_tag} class={@title_class}>{@title}</.dynamic_tag>
       <div class={@entries_class}>
         <%= for verification <- @verifications do %>
-          <div class="flex items-center gap-2 text-xs text-gray-500">
+          <div class="flex items-center gap-2 text-xs text-gray-600">
             <span class={[
               "inline-flex items-center rounded px-2 py-0.5 font-medium whitespace-nowrap",
               status_badge_classes(verification.status)
