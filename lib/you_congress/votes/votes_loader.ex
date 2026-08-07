@@ -1,6 +1,9 @@
 defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
   @moduledoc """
-  Loads statement and votes
+  Loads statement and votes.
+
+  Votes with an opinion are paginated: the page renders the first `per_page`
+  and appends the next ones as the visitor scrolls (see `load_more_votes/1`).
   """
 
   import Phoenix.Component, only: [assign: 2]
@@ -15,6 +18,11 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
   alias YouCongress.Votes.VoteFrequencies
   alias YouCongress.Delegations
   alias YouCongress.Accounts.User
+
+  @per_page 30
+
+  @spec per_page :: pos_integer
+  def per_page, do: @per_page
 
   @spec load_statement_and_votes(Socket.t(), number) :: Socket.t()
   def load_statement_and_votes(socket, statement_id) do
@@ -31,10 +39,7 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
     current_user_vote = get_current_user_vote(statement, current_user)
     exclude_ids = (current_user_vote && [current_user_vote.id]) || []
 
-    answer =
-      if answer_filter == "" || is_nil(answer_filter),
-        do: nil,
-        else: String.downcase(answer_filter) |> String.to_existing_atom()
+    answer = answer_filter_to_atom(answer_filter)
 
     quotes_votes_count =
       Votes.count_with_opinion_source(statement_id,
@@ -50,15 +55,15 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
         author_country: selected_country
       )
 
-    opts = [
-      include: [:author, opinion: :author],
-      exclude_ids: exclude_ids,
-      source_filter: source_filter,
-      author_country: selected_country
-    ]
+    opts = votes_with_opinion_opts(exclude_ids, source_filter, answer, selected_country)
 
-    opts = if is_nil(answer), do: opts, else: [{:answer, answer} | opts]
-    votes_with_opinion = Votes.list_votes_with_opinion(statement_id, opts)
+    # A reload (a new vote, a "reload changes" click) refetches every page the
+    # visitor has already scrolled through, so they don't lose their place.
+    pages = Map.get(socket.assigns, :opinions_page, 1)
+    loaded_limit = pages * @per_page
+
+    votes_with_opinion =
+      Votes.list_votes_with_opinion(statement_id, opts ++ [limit: loaded_limit, offset: 0])
 
     votes_without_opinion =
       case source_filter do
@@ -86,6 +91,10 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
       votes_from_delegates: votes_from_delegates,
       votes_from_non_delegates: votes_with_opinion -- votes_from_delegates,
       votes_without_opinion: votes_without_opinion,
+      opinions_page: pages,
+      has_more_opinions: length(votes_with_opinion) == loaded_limit,
+      # Only the first page: keeps the JSON-LD blob small and stable while scrolling.
+      seo_votes: Enum.take(votes_with_opinion, @per_page),
       current_user_vote: current_user_vote,
       share_to_x_text: share_to_x_text,
       quotes_votes_count: quotes_votes_count,
@@ -99,6 +108,66 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
       total_votes: Votes.count_by_statement(statement_id)
     )
     |> assign_main_variables(statement, current_user)
+  end
+
+  @doc """
+  Appends the next page of votes with opinion to the already-loaded ones.
+  """
+  @spec load_more_votes(Socket.t()) :: Socket.t()
+  def load_more_votes(%{assigns: %{has_more_opinions: false}} = socket), do: socket
+
+  def load_more_votes(socket) do
+    %{
+      assigns: %{
+        statement: statement,
+        current_user: current_user,
+        current_user_vote: current_user_vote,
+        source_filter: source_filter,
+        answer_filter: answer_filter,
+        selected_country: selected_country,
+        opinions_page: page,
+        votes_from_delegates: votes_from_delegates,
+        votes_from_non_delegates: votes_from_non_delegates
+      }
+    } = socket
+
+    exclude_ids = (current_user_vote && [current_user_vote.id]) || []
+    answer = answer_filter_to_atom(answer_filter)
+    opts = votes_with_opinion_opts(exclude_ids, source_filter, answer, selected_country)
+
+    new_votes =
+      Votes.list_votes_with_opinion(
+        statement.id,
+        opts ++ [limit: @per_page, offset: page * @per_page]
+      )
+
+    new_from_delegates = get_votes_from_delegates(new_votes, current_user)
+
+    socket
+    |> assign(
+      votes_from_delegates: votes_from_delegates ++ new_from_delegates,
+      votes_from_non_delegates: votes_from_non_delegates ++ (new_votes -- new_from_delegates),
+      opinions_page: page + 1,
+      has_more_opinions: length(new_votes) == @per_page
+    )
+    |> load_delegations(current_user)
+  end
+
+  defp votes_with_opinion_opts(exclude_ids, source_filter, answer, selected_country) do
+    opts = [
+      include: [:author, opinion: :author],
+      exclude_ids: exclude_ids,
+      source_filter: source_filter,
+      author_country: selected_country
+    ]
+
+    if is_nil(answer), do: opts, else: [{:answer, answer} | opts]
+  end
+
+  defp answer_filter_to_atom(answer_filter) when answer_filter in ["", nil], do: nil
+
+  defp answer_filter_to_atom(answer_filter) do
+    answer_filter |> String.downcase() |> String.to_existing_atom()
   end
 
   defp show_synthesis_card?(statement, quotes_tally) do

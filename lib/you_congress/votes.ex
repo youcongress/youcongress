@@ -143,6 +143,8 @@ defmodule YouCongress.Votes do
     source_filter = Keyword.get(opts, :source_filter)
     answer = Keyword.get(opts, :answer)
     author_country = Keyword.get(opts, :author_country)
+    limit_opt = Keyword.get(opts, :limit)
+    offset_opt = Keyword.get(opts, :offset)
 
     base_query =
       Vote
@@ -211,12 +213,22 @@ defmodule YouCongress.Votes do
             WHEN ? = FALSE THEN 3
             ELSE 4
           END", coalesce(o.source_url, o.source_text), a.wikipedia_url, o.twin),
-      {:desc, o.id}
+      {:desc, o.id},
+      # Final tiebreaker so paginated reads never repeat or skip a vote.
+      {:desc, v.id}
     ])
+    |> maybe_limit(limit_opt)
+    |> maybe_offset(offset_opt)
     |> preload(^include_tables)
     |> Repo.all()
     |> with_alternate_sourced_opinions(statement_id)
   end
+
+  defp maybe_limit(query, nil), do: query
+  defp maybe_limit(query, limit), do: limit(query, ^limit)
+
+  defp maybe_offset(query, nil), do: query
+  defp maybe_offset(query, offset), do: offset(query, ^offset)
 
   def with_alternate_sourced_opinions([]), do: []
 

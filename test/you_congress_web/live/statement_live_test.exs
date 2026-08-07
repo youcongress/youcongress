@@ -17,6 +17,7 @@ defmodule YouCongressWeb.StatementLiveTest do
   alias YouCongress.HallsStatements
   alias YouCongress.Opinions
   alias YouCongress.Likes
+  alias YouCongressWeb.StatementLive.Show.VotesLoader
 
   @create_attrs %{title: "nuclear energy"}
   @suggested_titles [
@@ -357,6 +358,54 @@ defmodule YouCongressWeb.StatementLiveTest do
       {:ok, _show_live, html} = live(conn, ~p"/p/#{statement.slug}")
 
       assert html =~ statement.title
+    end
+
+    test "loads opinions page by page as the visitor scrolls", %{
+      conn: conn,
+      statement: statement
+    } do
+      per_page = VotesLoader.per_page()
+      fill_statement_with_quotes(statement.id, per_page + 5)
+
+      {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+
+      assert occurrences(html, ~s(class="pb-12")) == per_page
+      assert html =~ "Loading more opinions..."
+      assert has_element?(show_live, "#statement-opinions-sentinel")
+
+      html = render_hook(show_live, "load-more-opinions")
+
+      assert occurrences(html, ~s(class="pb-12")) == per_page + 5
+      refute html =~ "Loading more opinions..."
+      refute has_element?(show_live, "#statement-opinions-sentinel")
+    end
+
+    test "keeps the already scrolled opinions after a reload", %{
+      conn: conn,
+      statement: statement
+    } do
+      per_page = VotesLoader.per_page()
+      fill_statement_with_quotes(statement.id, per_page + 5)
+
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}")
+      render_hook(show_live, "load-more-opinions")
+
+      html = render_click(show_live, "reload")
+
+      assert occurrences(html, ~s(class="pb-12")) == per_page + 5
+    end
+
+    test "resets the opinion list when a filter changes", %{conn: conn, statement: statement} do
+      per_page = VotesLoader.per_page()
+      fill_statement_with_quotes(statement.id, per_page + 5)
+
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}")
+      render_hook(show_live, "load-more-opinions")
+
+      html = show_live |> element("span", "Quotes") |> render_click()
+
+      assert_patch(show_live)
+      assert occurrences(html, ~s(class="pb-12")) == per_page
     end
 
     test "source link underline does not include the date separator", %{

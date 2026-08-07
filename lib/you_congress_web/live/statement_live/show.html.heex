@@ -1,10 +1,4 @@
-<.json_ld data={
-  SEO.statement_graph(
-    @statement,
-    @votes_from_delegates ++ @votes_from_non_delegates,
-    url(~p"/p/#{@statement.slug}")
-  )
-} />
+<.json_ld data={SEO.statement_graph(@statement, @seo_votes, url(~p"/p/#{@statement.slug}"))} />
 <%= if @reload do %>
   <div class="pb-6">
     <button
@@ -188,7 +182,7 @@
 </div>
 
 <%= if @votes_from_delegates != [] || @votes_from_non_delegates != [] do %>
-  <div class="mb-8">
+  <div id="statement-opinions" class="mb-8">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <%= for answer <- [:for, :abstain, :against] do %>
         <div>
@@ -239,6 +233,17 @@
           </ul>
         </div>
       <% end %>
+    </div>
+    <div
+      :if={@has_more_opinions}
+      id="statement-opinions-sentinel"
+      phx-hook="InfiniteScroll"
+      data-event="load-more-opinions"
+      data-has-more={to_string(@has_more_opinions)}
+      data-item-count={length(@votes_from_delegates) + length(@votes_from_non_delegates)}
+      class="pt-4 text-center text-sm text-gray-500"
+    >
+      Loading more opinions...
     </div>
   </div>
 <% end %>
