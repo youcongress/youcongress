@@ -1,4 +1,8 @@
-<main class="overflow-x-hidden text-zinc-700 scroll-smooth">
+<main
+  id="ai-policy"
+  phx-hook="SessionLogin"
+  class="overflow-x-hidden text-zinc-700 scroll-smooth"
+>
   <header class="sticky top-0 z-50 border-b border-zinc-200 bg-white/90 backdrop-blur">
     <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
       <a href="#top" class="flex items-center gap-2 text-zinc-900">
@@ -219,11 +223,16 @@
         <%= if @saved do %>
           <div class="py-10 text-center">
             <h3 class="text-2xl font-bold text-zinc-900">You're on the list.</h3>
-            <p class="mt-3">
-              {if @current_user,
-                do: "We'll use these details to invite you to a suitable session.",
-                else: "Check your email to confirm your YouCongress account."}
-            </p>
+            <%= if @current_user do %>
+              <p class="mt-3">We'll use these details to invite you to a suitable session.</p>
+            <% else %>
+              <p class="mt-3">
+                We sent a six-digit code to your email. Taking you to the confirmation step…
+              </p>
+              <a href={@confirm_email_href} class="mt-3 inline-block text-brand hover:underline">
+                Confirm your email
+              </a>
+            <% end %>
           </div>
         <% else %>
           <%= if !@current_user do %>

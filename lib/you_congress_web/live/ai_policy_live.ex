@@ -3,6 +3,7 @@ defmodule YouCongressWeb.AiPolicyLive do
 
   alias Ecto.Changeset
   alias YouCongress.Accounts
+  alias YouCongress.Accounts.User
   alias YouCongress.Countries
   alias YouCongress.FeatureFlags
   alias YouCongressWeb.ReturnTo
@@ -11,6 +12,7 @@ defmodule YouCongressWeb.AiPolicyLive do
   # marker so we can confirm the login happened.
   @google_return_to "/ai?from=google#register"
   @x_return_to "/ai?from=x#register"
+  @return_to "/ai#register"
 
   defmodule Signup do
     use Ecto.Schema
@@ -100,7 +102,8 @@ defmodule YouCongressWeb.AiPolicyLive do
      |> assign(:google_href, ReturnTo.auth_path(:google, nil, @google_return_to))
      |> assign(:x_href, ReturnTo.auth_path(:x, nil, @x_return_to))
      |> assign(:log_in_with_x?, FeatureFlags.enabled?(:log_in_with_x))
-     |> assign(:log_in_href, ReturnTo.log_in_path(nil, "/ai#register"))
+     |> assign(:log_in_href, ReturnTo.log_in_path(nil, @return_to))
+     |> assign(:confirm_email_href, ReturnTo.sign_up_path(@return_to))
      |> maybe_put_oauth_flash(params)
      |> assign_form(Signup.changeset(%Signup{}, values, is_nil(user)))}
   end
@@ -135,7 +138,7 @@ defmodule YouCongressWeb.AiPolicyLive do
         {:noreply,
          socket
          |> assign(:saved, true)
-         |> put_flash(:info, "Your account has been created. Check your email to confirm it.")}
+         |> session_login(user, socket.assigns.confirm_email_href)}
       else
         {:error, :user, %Changeset{} = error_changeset, _} ->
           {:noreply, assign_form(socket, copy_account_errors(changeset, error_changeset))}
@@ -166,6 +169,16 @@ defmodule YouCongressWeb.AiPolicyLive do
     else
       {:noreply, assign_form(socket, %{changeset | action: :validate})}
     end
+  end
+
+  # Log the new account in and send the browser to the sign-up flow, which
+  # resumes at the step asking for the code we just emailed.
+  defp session_login(socket, %User{} = user, redirect_to) do
+    push_event(socket, "session-login", %{
+      token: Accounts.generate_live_login_token(user),
+      redirect_to: redirect_to,
+      return_to: @return_to
+    })
   end
 
   defp copy_account_errors(changeset, error_changeset) do

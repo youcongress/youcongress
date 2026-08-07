@@ -103,6 +103,62 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
            }
   end
 
+  test "a new account is logged in and sent to the email confirmation step", %{conn: conn} do
+    country = CountriesFixtures.country_fixture(name: "Confirmation AI Country")
+    email = AccountsFixtures.unique_user_email()
+
+    {:ok, view, _html} = live(conn, ~p"/ai")
+
+    html =
+      view
+      |> form("#ai-policy-registration",
+        signup: %{
+          "name" => "AI Participant",
+          "email" => email,
+          "password" => "a secure password",
+          "country_id" => country.id
+        }
+      )
+      |> render_submit()
+
+    assert_push_event(view, "session-login", %{
+      token: token,
+      redirect_to: "/sign_up?return_to=%2Fai%23register",
+      return_to: "/ai#register"
+    })
+
+    assert {:ok, user} = Accounts.consume_live_login_token(token)
+    assert user.email == email
+    assert is_nil(user.email_confirmed_at)
+
+    assert html =~ "Taking you to the confirmation step"
+
+    {:ok, _view, sign_up_html} =
+      conn |> log_in_user(user) |> live(~p"/sign_up?return_to=%2Fai%23register")
+
+    assert sign_up_html =~ "Enter your confirmation code"
+  end
+
+  test "a logged-in user with a confirmed email is not sent to the confirmation step", %{
+    conn: conn
+  } do
+    country = CountriesFixtures.country_fixture(name: "Confirmed AI Country")
+
+    user =
+      AccountsFixtures.user_fixture(%{}, %{name: "Confirmed Participant"})
+      |> Repo.preload(:author)
+
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/ai")
+
+    html =
+      view
+      |> form("#ai-policy-registration", signup: %{"country_id" => country.id})
+      |> render_submit()
+
+    refute_push_event(view, "session-login", %{})
+    assert html =~ "We&#39;ll use these details to invite you to a suitable session."
+  end
+
   test "new AI registrations persist the country on the author and the context on the user" do
     country = CountriesFixtures.country_fixture(name: "New AI Registration Country")
 
