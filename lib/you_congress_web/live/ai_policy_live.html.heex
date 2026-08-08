@@ -31,7 +31,7 @@
           Log out
         </.link>
         <a href="#register" class="rounded-lg bg-brand px-4 py-2 text-white hover:bg-[#a63300]">
-          <span class="hidden sm:inline">Find your group</span><span class="sm:hidden">Join</span>
+          <span class="hidden sm:inline">Register your interest</span><span class="sm:hidden">Register</span>
         </a>
       </div>
     </div>
@@ -61,7 +61,7 @@
             href="#register"
             class="rounded-lg bg-brand px-7 py-3.5 font-semibold text-white hover:bg-[#a63300]"
           >
-            Find your working group
+            Register your interest
           </a>
           <a
             href="#focus"
@@ -243,11 +243,15 @@
       <div>
         <p class="text-xs font-bold uppercase tracking-widest text-[#8f2c00]">Join us</p>
         <h2 class="mt-3 text-4xl font-extrabold tracking-tight text-zinc-900">
-          {if @current_user, do: "Find your working group", else: "Create an account and join"}
+          Tell us how you'd like to contribute
         </h2>
         <p class="mt-5 text-lg leading-relaxed">
           Choose a policy area and how you want to contribute. We'll use both to connect you with
           focused work that moves the mission forward.
+        </p>
+        <p class="mt-4 leading-relaxed text-zinc-600">
+          We'll contact you when enough people with compatible interests and availability are ready
+          to form a working group.
         </p>
         <ol class="mt-7 space-y-4 text-sm">
           <li>
@@ -420,8 +424,8 @@
               phx-disable-with="Saving…"
             >
               {if @current_user,
-                do: "Find my working group",
-                else: "Create account & find my group"}
+                do: "Register my interest",
+                else: "Create account & register interest"}
             </button>
           </.form>
         <% end %>
@@ -438,7 +442,7 @@
         href="#register"
         class="rounded-lg bg-brand px-6 py-3 font-semibold text-white hover:bg-[#a63300]"
       >
-        Find your working group
+        Register your interest
       </a>
     </div>
   </section>

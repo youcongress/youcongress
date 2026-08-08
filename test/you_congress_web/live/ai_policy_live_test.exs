@@ -14,7 +14,9 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
     {:ok, _view, html} = live(conn, ~p"/ai")
 
     assert html =~ "100 AI Policies"
-    assert html =~ "Create account &amp; find my group"
+    assert html =~ "Create account &amp; register interest"
+    assert html =~ "Tell us how you&#39;d like to contribute"
+    assert html =~ "when enough people with compatible interests and availability are ready"
     assert html =~ "Send me occasional emails about features and content"
     assert html =~ "AI Page Country"
     assert html =~ "Private preview"
