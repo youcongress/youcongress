@@ -10,9 +10,9 @@ defmodule YouCongressWeb.AiPolicyLive do
 
   # Where the OAuth providers send users back to: the "Join us" section, with a
   # marker so we can confirm the login happened.
-  @google_return_to "/ai?from=google#register"
-  @x_return_to "/ai?from=x#register"
-  @return_to "/ai#register"
+  @google_return_to "/ai-policy?from=google#register"
+  @x_return_to "/ai-policy?from=x#register"
+  @return_to "/ai-policy#register"
 
   # Once the interest is registered, the sign-up flow ends here instead of
   # sending people back to the landing page they already filled in.
@@ -76,7 +76,8 @@ defmodule YouCongressWeb.AiPolicyLive do
   @interests [
     {"Jobs & shared prosperity", "jobs"},
     {"Governance & safety", "governance"},
-    {"Competitiveness & sovereignty", "competitiveness"}
+    {"Competitiveness & sovereignty", "competitiveness"},
+    {"Professional English practice", "english_practice"}
   ]
 
   @impl true
@@ -94,27 +95,30 @@ defmodule YouCongressWeb.AiPolicyLive do
       "newsletter" => user && user.newsletter
     }
 
-    {:ok,
-     socket
-     |> assign(:page_title, "AI Policy Group | YouCongress")
-     |> assign(
-       :page_description,
-       "Join a global community building practical AI policy proposals."
-     )
-     |> assign(:current_user, user)
-     |> assign(:countries, Countries.country_options())
-     |> assign(:backgrounds, @backgrounds)
-     |> assign(:interests, @interests)
-     |> assign(:saved, false)
-     |> assign(:google_href, ReturnTo.auth_path(:google, nil, @google_return_to))
-     |> assign(:x_href, ReturnTo.auth_path(:x, nil, @x_return_to))
-     |> assign(:log_in_with_x?, FeatureFlags.enabled?(:log_in_with_x))
-     |> assign(:log_in_href, ReturnTo.log_in_path(nil, @return_to))
-     |> assign(:confirm_email_href, ReturnTo.sign_up_path(@welcome_return_to))
-     |> maybe_put_oauth_flash(params)
-     |> assign_form(Signup.changeset(%Signup{}, values, is_nil(user))),
-     # The template renders its own header and footer, so skip the app layout's.
-     layout: {YouCongressWeb.Layouts, :landing}}
+    page_description =
+      "Join small international groups to shape practical AI policies and build confidence " <>
+        "discussing complex ideas in English."
+
+    {
+      :ok,
+      socket
+      |> assign(:page_title, "AI Policy Group | YouCongress")
+      |> assign(:page_description, page_description)
+      |> assign(:current_user, user)
+      |> assign(:countries, Countries.country_options())
+      |> assign(:backgrounds, @backgrounds)
+      |> assign(:interests, @interests)
+      |> assign(:saved, false)
+      |> assign(:google_href, ReturnTo.auth_path(:google, nil, @google_return_to))
+      |> assign(:x_href, ReturnTo.auth_path(:x, nil, @x_return_to))
+      |> assign(:log_in_with_x?, FeatureFlags.enabled?(:log_in_with_x))
+      |> assign(:log_in_href, ReturnTo.log_in_path(nil, @return_to))
+      |> assign(:confirm_email_href, ReturnTo.sign_up_path(@welcome_return_to))
+      |> maybe_put_oauth_flash(params)
+      |> assign_form(Signup.changeset(%Signup{}, values, is_nil(user))),
+      # The template renders its own header and footer, so skip the app layout's.
+      layout: {YouCongressWeb.Layouts, :landing}
+    }
   end
 
   defp maybe_put_oauth_flash(%{assigns: %{current_user: %{}}} = socket, %{"from" => from})

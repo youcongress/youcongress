@@ -14,14 +14,14 @@ defmodule YouCongressWeb.AiWelcomeLive do
     {:ok,
      socket
      |> assign(:page_title, "You're in | AI Policy Group")
-     |> assign(:invite_url, url(~p"/ai"))}
+     |> assign(:invite_url, url(~p"/ai-policy"))}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <div class="border-b border-amber-300 bg-amber-100 px-6 py-2 text-center text-sm font-medium text-amber-900">
-      Private preview — please don’t post or share this page publicly before Tuesday, September 8.
+      Private preview: please don’t post or share this page publicly before Tuesday, September 8.
       Personal invitations are welcome.
     </div>
 

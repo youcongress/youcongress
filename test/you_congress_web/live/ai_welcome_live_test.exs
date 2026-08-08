@@ -16,7 +16,7 @@ defmodule YouCongressWeb.AiWelcomeLiveTest do
     assert html =~ "Personal invitations are welcome"
     assert html =~ "Your interest is registered"
     assert html =~ "Invite a friend"
-    assert html =~ "#{YouCongressWeb.Endpoint.url()}/ai"
+    assert html =~ "#{YouCongressWeb.Endpoint.url()}/ai-policy"
     assert html =~ "Explore YouCongress"
   end
 
