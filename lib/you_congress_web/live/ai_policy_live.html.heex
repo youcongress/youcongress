@@ -11,23 +11,29 @@
           AI Policy Group
         </span>
       </a>
-      <nav class="hidden items-center gap-6 text-sm font-medium md:flex">
-        <a href="#focus" class="hover:text-brand">Focus</a><a
-          href="#why-now"
-          class="hover:text-brand"
-        >Why now</a><a href="#sessions" class="hover:text-brand">Sessions</a><a
-          href="#process"
-          class="hover:text-brand"
-        >Process</a>
+      <div class="flex items-center gap-4 text-sm font-medium md:gap-6">
+        <nav class="hidden items-center gap-6 md:flex">
+          <a href="#focus" class="hover:text-brand">Focus</a><a
+            href="#why-now"
+            class="hover:text-brand"
+          >Why now</a><a href="#sessions" class="hover:text-brand">Sessions</a><a
+            href="#process"
+            class="hover:text-brand"
+          >Process</a>
+        </nav>
+        <a :if={!@current_user} href={@log_in_href} class="hover:text-brand">Log in</a>
+        <.link :if={@current_user} href={~p"/log_out"} method="delete" class="hover:text-brand">
+          Log out
+        </.link>
         <a href="#register" class="rounded-lg bg-brand px-4 py-2 text-white hover:bg-[#a63300]">
           Register
         </a>
-      </nav>
+      </div>
     </div>
   </header>
 
   <section id="top">
-    <div class="mx-auto max-w-7xl px-6 py-20 md:py-24">
+    <div class="mx-auto max-w-7xl px-6 pb-20 pt-4 md:pb-24 md:pt-6">
       <div class="max-w-4xl">
         <p class="mb-6 flex items-center gap-2 text-[13px] font-semibold text-[#8f2c00]">
           <span class="h-2 w-2 rounded-full bg-brand"></span>A global online community, starting in Europe

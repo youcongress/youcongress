@@ -112,7 +112,9 @@ defmodule YouCongressWeb.AiPolicyLive do
      |> assign(:log_in_href, ReturnTo.log_in_path(nil, @return_to))
      |> assign(:confirm_email_href, ReturnTo.sign_up_path(@welcome_return_to))
      |> maybe_put_oauth_flash(params)
-     |> assign_form(Signup.changeset(%Signup{}, values, is_nil(user)))}
+     |> assign_form(Signup.changeset(%Signup{}, values, is_nil(user))),
+     # The template renders its own header and footer, so skip the app layout's.
+     layout: {YouCongressWeb.Layouts, :landing}}
   end
 
   defp maybe_put_oauth_flash(%{assigns: %{current_user: %{}}} = socket, %{"from" => from})
