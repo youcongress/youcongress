@@ -20,6 +20,10 @@ defmodule YouCongressWeb.AiWelcomeLive do
   @impl true
   def render(assigns) do
     ~H"""
+    <div class="border-b border-amber-300 bg-amber-100 px-6 py-2 text-center text-sm font-medium text-amber-900">
+      Please don't share this link publicly. The campaign has not been launched yet.
+    </div>
+
     <div class="mx-auto max-w-2xl px-6 py-16 text-zinc-700">
       <p class="text-xs font-bold uppercase tracking-widest text-[#8f2c00]">AI Policy Group</p>
       <h1 class="mt-3 text-4xl font-extrabold tracking-tight text-zinc-900">
