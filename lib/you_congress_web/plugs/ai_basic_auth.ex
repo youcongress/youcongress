@@ -8,7 +8,7 @@ defmodule YouCongressWeb.Plugs.AiBasicAuth do
   """
   import Plug.Conn
 
-  @realm "AI Policy Group"
+  @realm "AI Working Groups"
 
   def init(opts), do: opts
 

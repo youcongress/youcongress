@@ -163,7 +163,7 @@ defmodule YouCongress.Accounts do
   end
 
   @doc """
-  Records a user's interest in the AI Policy Group. The country is profile data,
+  Records a user's interest in the AI working groups. The country is profile data,
   while campaign-specific answers stay on the user in `sign_up_context`.
   """
   def register_ai_policy_interest(%User{author_id: author_id} = user, attrs) do
@@ -211,6 +211,8 @@ defmodule YouCongress.Accounts do
           Map.get(attrs, "linkedin_or_website") || Map.get(attrs, :linkedin_or_website)
         ),
       "interests" => Map.get(attrs, "interests") || Map.get(attrs, :interests) || [],
+      "contribution_areas" =>
+        Map.get(attrs, "contribution_areas") || Map.get(attrs, :contribution_areas) || [],
       "availability_and_motivation" =>
         blank_to_nil(
           Map.get(attrs, "availability_and_motivation") ||

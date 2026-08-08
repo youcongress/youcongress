@@ -8,13 +8,13 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
   alias YouCongress.CountriesFixtures
   alias YouCongress.Repo
 
-  test "renders the AI Policy Group page and account registration fields", %{conn: conn} do
+  test "renders the AI working groups page and account registration fields", %{conn: conn} do
     _country = CountriesFixtures.country_fixture(name: "AI Page Country")
 
-    {:ok, _view, html} = live(conn, ~p"/ai-policy")
+    {:ok, _view, html} = live(conn, ~p"/ai")
 
     assert html =~ "100 AI Policies"
-    assert html =~ "Create account &amp; register interest"
+    assert html =~ "Create account &amp; find my group"
     assert html =~ "Send me occasional emails about features and content"
     assert html =~ "AI Page Country"
     assert html =~ "Private preview"
@@ -23,13 +23,18 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
     assert html =~ "AI is changing society before society has chosen the rules"
     assert html =~ "Most people will"
     assert html =~ "AI policy is too important to leave only to a few governments"
-    assert html =~ "build confidence discussing complex ideas in English"
-    assert html =~ "Practice with a purpose"
-    assert html =~ "Professional English practice"
+    assert html =~ "Small working groups, concrete outcomes"
+    assert html =~ "Shape policy"
+    assert html =~ "Build the commons"
+    assert html =~ "Build political influence"
+    assert html =~ "How would you like to contribute?"
+    assert html =~ "Improve YouCongress"
+    assert html =~ "Reach policymakers and civic organizations"
     refute html =~ "Sep 2026"
     refute html =~ "Sweden"
-    assert html =~ "/auth/google?return_to=%2Fai-policy%3Ffrom%3Dgoogle%23register"
-    assert html =~ "/auth/x?return_to=%2Fai-policy%3Ffrom%3Dx%23register"
+    assert html =~ "/auth/google?return_to=%2Fai%3Ffrom%3Dgoogle%23register"
+    assert html =~ "/auth/x?return_to=%2Fai%3Ffrom%3Dx%23register"
+    assert html =~ ~s(rel="canonical" href="#{YouCongressWeb.Endpoint.url()}/ai")
   end
 
   test "a user coming back from Google sees a flash pointing to the Join us section", %{
@@ -37,13 +42,13 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
   } do
     user = AccountsFixtures.user_fixture() |> Repo.preload(:author)
 
-    {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/ai-policy?from=google")
+    {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/ai?from=google")
 
     assert html =~ "Logged in with Google. Now you can register your interest."
   end
 
   test "the Google flash is not shown to logged out visitors", %{conn: conn} do
-    {:ok, _view, html} = live(conn, ~p"/ai-policy?from=google")
+    {:ok, _view, html} = live(conn, ~p"/ai?from=google")
 
     refute html =~ "Logged in with Google"
   end
@@ -51,13 +56,13 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
   test "a user coming back from X sees a flash pointing to the Join us section", %{conn: conn} do
     user = AccountsFixtures.user_fixture() |> Repo.preload(:author)
 
-    {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/ai-policy?from=x")
+    {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/ai?from=x")
 
     assert html =~ "Logged in with X. Now you can register your interest."
   end
 
   test "the X flash is not shown to logged out visitors", %{conn: conn} do
-    {:ok, _view, html} = live(conn, ~p"/ai-policy?from=x")
+    {:ok, _view, html} = live(conn, ~p"/ai?from=x")
 
     refute html =~ "Logged in with X"
   end
@@ -69,7 +74,7 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
       AccountsFixtures.user_fixture(%{}, %{name: "Prefilled Participant", country_id: country.id})
       |> Repo.preload(:author)
 
-    {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/ai-policy")
+    {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/ai")
 
     assert html =~ "Prefilled Participant"
     assert html =~ "Change your name in settings"
@@ -87,7 +92,7 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
       })
       |> Repo.preload(:author)
 
-    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/ai-policy")
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/ai")
 
     view
     |> form("#ai-policy-registration",
@@ -95,7 +100,8 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
         "country_id" => selected_country.id,
         "professional_background" => "policy",
         "linkedin_or_website" => "linkedin.com/in/ai-participant",
-        "interests" => ["governance", "jobs", "english_practice"],
+        "interests" => ["governance", "jobs"],
+        "contribution_areas" => ["policy", "research", "outreach"],
         "availability_and_motivation" => "Weekday evenings",
         "newsletter" => "true"
       }
@@ -112,7 +118,8 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
              "campaign" => "ai_policy_group",
              "professional_background" => "policy",
              "linkedin_or_website" => "linkedin.com/in/ai-participant",
-             "interests" => ["governance", "jobs", "english_practice"],
+             "interests" => ["governance", "jobs"],
+             "contribution_areas" => ["policy", "research", "outreach"],
              "availability_and_motivation" => "Weekday evenings"
            }
   end
@@ -121,7 +128,7 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
     country = CountriesFixtures.country_fixture(name: "Confirmation AI Country")
     email = AccountsFixtures.unique_user_email()
 
-    {:ok, view, _html} = live(conn, ~p"/ai-policy")
+    {:ok, view, _html} = live(conn, ~p"/ai")
 
     html =
       view
@@ -164,7 +171,7 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
       AccountsFixtures.user_fixture(%{}, %{name: "Confirmed Participant"})
       |> Repo.preload(:author)
 
-    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/ai-policy")
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/ai")
 
     view
     |> form("#ai-policy-registration", signup: %{"country_id" => country.id})
@@ -185,7 +192,8 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
           "country_id" => country.id,
           "professional_background" => "tech",
           "linkedin_or_website" => "https://example.com/ai-participant",
-          "interests" => ["competitiveness", "english_practice"],
+          "interests" => ["competitiveness"],
+          "contribution_areas" => ["platform", "communications"],
           "availability_and_motivation" => "I can join monthly.",
           "newsletter" => "false"
         }
@@ -193,7 +201,8 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
 
     assert author.country_id == country.id
     assert user.sign_up_context["professional_background"] == "tech"
-    assert user.sign_up_context["interests"] == ["competitiveness", "english_practice"]
+    assert user.sign_up_context["interests"] == ["competitiveness"]
+    assert user.sign_up_context["contribution_areas"] == ["platform", "communications"]
     assert user.sign_up_context["linkedin_or_website"] == "https://example.com/ai-participant"
     refute user.newsletter
   end
@@ -207,7 +216,7 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
 
     {:ok, user} = Accounts.welcome_update(user, %{"newsletter" => true})
 
-    {:ok, view, html} = conn |> log_in_user(user) |> live(~p"/ai-policy")
+    {:ok, view, html} = conn |> log_in_user(user) |> live(~p"/ai")
 
     assert html =~ ~s(name="signup[newsletter]" value="true" checked)
 

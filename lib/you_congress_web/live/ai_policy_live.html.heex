@@ -12,8 +12,8 @@
     <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
       <a href="#top" class="flex items-center gap-2 text-zinc-900">
         <span class="text-lg font-bold">YouCongress</span>
-        <span class="rounded-full border border-[#f4d6c6] bg-[#fbeee7] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#8f2c00]">
-          AI Policy Group
+        <span class="hidden rounded-full border border-[#f4d6c6] bg-[#fbeee7] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#8f2c00] sm:inline">
+          AI Working Groups
         </span>
       </a>
       <div class="flex items-center gap-4 text-sm font-medium md:gap-6">
@@ -21,7 +21,7 @@
           <a href="#focus" class="hover:text-brand">Focus</a><a
             href="#why-now"
             class="hover:text-brand"
-          >Why now</a><a href="#sessions" class="hover:text-brand">Sessions</a><a
+          >Why now</a><a href="#working-groups" class="hover:text-brand">Working groups</a><a
             href="#process"
             class="hover:text-brand"
           >Process</a>
@@ -31,7 +31,7 @@
           Log out
         </.link>
         <a href="#register" class="rounded-lg bg-brand px-4 py-2 text-white hover:bg-[#a63300]">
-          Register
+          <span class="hidden sm:inline">Find your group</span><span class="sm:hidden">Join</span>
         </a>
       </div>
     </div>
@@ -41,23 +41,27 @@
     <div class="mx-auto max-w-7xl px-6 pb-20 pt-4 md:pb-24 md:pt-6">
       <div class="max-w-4xl">
         <p class="mb-6 flex items-center gap-2 text-[13px] font-semibold text-[#8f2c00]">
-          <span class="h-2 w-2 rounded-full bg-brand"></span>A global online community, starting in Europe
+          <span class="h-2 w-2 rounded-full bg-brand"></span>A global civic initiative, starting in Europe
         </p>
         <h1 class="text-5xl font-extrabold leading-none tracking-tight text-zinc-900 md:text-7xl">
           100 AI Policies<br />We Can Agree On
         </h1>
         <p class="mt-7 max-w-2xl text-xl leading-relaxed">
-          Join small international groups across Europe and beyond to shape practical AI policies and build confidence discussing complex ideas in English. Together, we'll bring the strongest ideas into election debates.
+          Join small working groups turning broadly supported AI policies into political action.
+          Help shape proposals, improve the open platform and evidence behind them, or bring the
+          strongest ideas to journalists and political leaders.
         </p>
         <p class="mt-4 max-w-2xl leading-relaxed text-zinc-500">
-          You don't need to be an AI expert or speak perfect English. These are thoughtful conversations, not language classes.
+          Choose the work that fits your experience and time. You don't need to be an AI expert or
+          speak perfect English: clear thinking, curiosity, and a willingness to contribute matter
+          most.
         </p>
         <div class="mt-9 flex flex-wrap gap-3">
           <a
             href="#register"
             class="rounded-lg bg-brand px-7 py-3.5 font-semibold text-white hover:bg-[#a63300]"
           >
-            Register your interest
+            Find your working group
           </a>
           <a
             href="#focus"
@@ -67,7 +71,7 @@
           </a>
         </div>
         <div class="mt-10 flex flex-wrap gap-x-8 gap-y-3 border-t border-zinc-200 pt-6 text-sm text-zinc-500">
-          <span><b class="text-xl text-zinc-900">~60</b> minute sessions</span><span><b class="text-xl text-zinc-900">3–7</b> people per group</span><span><b class="text-xl text-zinc-900">English</b> practice with purpose</span>
+          <span><b class="text-xl text-zinc-900">3</b> policy areas</span><span><b class="text-xl text-zinc-900">3</b> ways to contribute</span><span><b class="text-xl text-zinc-900">Concrete</b> outputs, not just talk</span>
         </div>
       </div>
     </div>
@@ -114,38 +118,57 @@
           <li>→ Develop concrete policy proposals</li>
           <li>→ Document evidence and objections</li>
           <li>→ Identify areas of broad agreement</li>
+          <li>→ Improve the open tools that make deliberation possible</li>
+          <li>→ Brief journalists and civil-society organizations</li>
           <li>→ Ask parties and candidates to respond</li>
           <li>→ Compare their positions transparently</li>
-          <li>→ Help participants advocate for supported proposals</li>
         </ul>
       </div>
     </div>
   </section>
 
   <section class="mx-auto max-w-7xl px-6 py-16 text-center text-2xl font-extrabold text-zinc-900 md:text-3xl">
-    Global discussion. National policy agendas. Electoral accountability.
+    Global collaboration. National policy agendas. Electoral accountability.
     <span class="text-brand">Political action.</span>
   </section>
 
-  <section id="sessions" class="bg-zinc-900 text-white">
+  <section id="working-groups" class="bg-zinc-900 text-white">
     <div class="mx-auto max-w-7xl px-6 py-20">
       <p class="text-xs font-bold uppercase tracking-widest text-[#f0a882]">
-        Small, practical conversations
+        Choose how you contribute
       </p>
-      <h2 class="mt-3 text-4xl font-extrabold">YouCongress AI Policy Sessions</h2>
+      <h2 class="mt-3 text-4xl font-extrabold">Small working groups, concrete outcomes</h2>
       <p class="mt-5 max-w-3xl text-lg leading-relaxed text-zinc-300">
-        Work on real policy questions with people from different countries while building confidence speaking about complex professional subjects in English.
+        Every group serves the same mission, but not everyone has to do the same kind of work.
+        Join where your skills, interests, and relationships can make the greatest difference.
       </p>
-      <div class="mt-10 grid grid-cols-2 gap-4 md:grid-cols-5">
-        <.fact label="Online" detail="join from anywhere" /><.fact
-          label="~60 min"
-          detail="focused sessions"
-        /><.fact label="3–7 people" detail="small groups" /><.fact
-          label="English"
-          detail="practice with purpose"
-        /><.fact label="1 question" detail="at a time" />
+      <div class="mt-10 grid gap-5 md:grid-cols-3">
+        <.work_group number="01" title="Shape policy">
+          Develop specific proposals around the three mission questions, collect evidence, test
+          objections, and improve policies until they can earn broad support.
+        </.work_group>
+        <.work_group number="02" title="Build the commons">
+          Improve YouCongress, its open data, research tools, onboarding, and deliberation process
+          so more people can contribute effectively.
+        </.work_group>
+        <.work_group number="03" title="Build political influence">
+          Turn supported policies into useful briefings and bring them to journalists, civil
+          society, parties, candidates, and policymakers.
+        </.work_group>
       </div>
-      <p class="mt-10 text-2xl font-semibold text-[#f0a882]">“More groups, not bigger calls.”</p>
+      <div class="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <.fact label="Online" detail="join from anywhere" /><.fact
+          label="3–7 people"
+          detail="small enough to work"
+        /><.fact label="One clear task" detail="a defined contribution" /><.fact
+          label="A useful output"
+          detail="something the mission needs"
+        />
+      </div>
+      <p class="mt-10 max-w-3xl text-lg text-zinc-300">
+        Groups collaborate in English so people from different countries can work together. Perfect
+        English is not expected; the work comes first.
+      </p>
     </div>
   </section>
 
@@ -168,11 +191,13 @@
     </div>
     <div class="border-zinc-200 md:border-l md:pl-14">
       <p class="mb-3 text-xs font-bold uppercase tracking-widest text-[#8f2c00]">
-        Professional English
+        Different ways to help
       </p>
-      <h2 class="text-3xl font-extrabold text-zinc-900">Practice with a purpose</h2>
+      <h2 class="text-3xl font-extrabold text-zinc-900">Contribute with what you know</h2>
       <p class="mt-5 leading-relaxed">
-        English lets people from different countries participate together. These are not language classes: good AI policy is the purpose, and every session is a chance to build confidence discussing complex professional subjects.
+        Useful contributions include policy knowledge, lived experience, research, software,
+        product design, facilitation, writing, journalism, community organizing, and relationships
+        with public institutions. You can start with a small, well-defined task.
       </p>
     </div>
   </section>
@@ -185,8 +210,12 @@
       <h2 class="mt-3 max-w-xl text-4xl font-extrabold tracking-tight text-zinc-900">
         How a proposal becomes influence
       </h2>
+      <p class="mt-5 max-w-3xl text-lg leading-relaxed text-zinc-600">
+        Policy, platform, and outreach groups reinforce one another. Together they move an idea
+        through a transparent path from proposal to public agreement and political response.
+      </p>
       <div class="mt-10 grid gap-x-10 md:grid-cols-2">
-        <%= for {text, number} <- Enum.with_index(["Someone proposes a specific AI policy.", "Evidence, expert opinions, and objections are collected.", "A small online group discusses and improves it.", "The proposal is published and voted on through YouCongress.", "Policies with broad support enter election-specific agendas.", "Political parties and candidates are invited to respond.", "Their positions are published transparently.", "Participants organize to share supported proposals."], 1) do %>
+        <%= for {text, number} <- Enum.with_index(["Someone proposes a specific AI policy.", "A policy group collects evidence, expert opinions, and objections.", "The group tests and improves the proposal.", "The proposal is published and voted on through YouCongress.", "Platform groups improve the open tools and data supporting the process.", "Outreach groups turn broadly supported policies into briefings and election agendas.", "Journalists, parties, candidates, and policymakers are invited to engage and respond.", "Responses are published transparently and participants organize the next action."], 1) do %>
           <div class="flex gap-4 border-b border-[#ece6df] py-5">
             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
               {number}
@@ -196,10 +225,14 @@
         <% end %>
       </div>
       <p class="mt-9 max-w-3xl leading-relaxed text-zinc-600">
-        Steps 2 and 4 don't happen on a whiteboard. They run on YouCongress: an open-source, open-data base of sourced quotes from researchers, officials and public figures, each traceable to where and when it was said, plus voting and delegation, so support for a proposal is visible and can be traced back to the evidence behind it.
+        This work doesn't disappear on a whiteboard. It runs on YouCongress: an open-source,
+        open-data base of sourced quotes from researchers, officials, and public figures, each
+        traceable to where and when it was said, plus voting and delegation, so support for a
+        proposal is visible and connected to the evidence behind it.
       </p>
       <p class="mt-6 max-w-3xl text-lg font-semibold text-zinc-900">
-        The objective is not simply to host conversations. It is to turn well-reasoned public agreement into political influence.
+        The objective is not to host conversations. It is to produce useful work that turns
+        well-reasoned public agreement into political influence.
       </p>
     </div>
   </section>
@@ -209,22 +242,24 @@
       <div>
         <p class="text-xs font-bold uppercase tracking-widest text-[#8f2c00]">Join us</p>
         <h2 class="mt-3 text-4xl font-extrabold tracking-tight text-zinc-900">
-          {if @current_user, do: "Register your interest", else: "Create an account and join"}
+          {if @current_user, do: "Find your working group", else: "Create an account and join"}
         </h2>
         <p class="mt-5 text-lg leading-relaxed">
-          Help identify 100 practical policies on jobs, governance, safety, and competitiveness, then bring the strongest ideas into election debates.
+          Choose a policy area and how you want to contribute. We'll use both to connect you with
+          focused work that moves the mission forward.
         </p>
         <ol class="mt-7 space-y-4 text-sm">
           <li>
-            <b class="mr-3 text-brand">01</b> Tell us your country, background, and interests.
+            <b class="mr-3 text-brand">01</b>
+            Choose the questions and contribution areas that fit you.
           </li>
           <li>
             <b class="mr-3 text-brand">02</b>
-            Invite one thoughtful person from a different country or profession.
+            Join a small group with a clear task and a useful deliverable.
           </li>
           <li>
             <b class="mr-3 text-brand">03</b>
-            Join a small pilot session and start shaping proposals.
+            Help publish the result or bring it to the people who can act on it.
           </li>
         </ol>
       </div>
@@ -333,7 +368,7 @@
             />
             <fieldset>
               <legend class="mb-2 text-sm font-semibold leading-6 text-zinc-800">
-                Interests
+                Policy interests
               </legend>
               <div class="grid gap-2 sm:grid-cols-2">
                 <%= for {label, value} <- @interests do %>
@@ -349,10 +384,29 @@
                 <% end %>
               </div>
             </fieldset>
+            <fieldset>
+              <legend class="mb-2 text-sm font-semibold leading-6 text-zinc-800">
+                How would you like to contribute?
+              </legend>
+              <p class="mb-3 text-xs text-zinc-500">Choose as many as you like.</p>
+              <div class="grid gap-2 sm:grid-cols-2">
+                <%= for {label, value} <- @contribution_areas do %>
+                  <label class="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="signup[contribution_areas][]"
+                      value={value}
+                      checked={value in (@form[:contribution_areas].value || [])}
+                      class="mt-0.5 rounded border-zinc-300 text-brand focus:ring-brand"
+                    />{label}
+                  </label>
+                <% end %>
+              </div>
+            </fieldset>
             <.input
               field={@form[:availability_and_motivation]}
               type="textarea"
-              label="Availability & motivation (optional)"
+              label="Availability, motivation, or an idea you want to work on (optional)"
             />
             <.input
               field={@form[:newsletter]}
@@ -365,8 +419,8 @@
               phx-disable-with="Saving…"
             >
               {if @current_user,
-                do: "Register my interest",
-                else: "Create account & register interest"}
+                do: "Find my working group",
+                else: "Create account & find my group"}
             </button>
           </.form>
         <% end %>
@@ -377,13 +431,13 @@
   <section class="bg-zinc-900">
     <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 py-16 text-center md:flex-row md:text-left">
       <h2 class="text-3xl font-extrabold text-white">
-        Discuss globally. Build agreement. <span class="text-[#f0a882]">Act politically.</span>
+        Work globally. Build agreement. <span class="text-[#f0a882]">Act politically.</span>
       </h2>
       <a
         href="#register"
         class="rounded-lg bg-brand px-6 py-3 font-semibold text-white hover:bg-[#a63300]"
       >
-        Register your interest
+        Find your working group
       </a>
     </div>
   </section>

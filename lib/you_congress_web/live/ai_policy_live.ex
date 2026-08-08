@@ -10,9 +10,9 @@ defmodule YouCongressWeb.AiPolicyLive do
 
   # Where the OAuth providers send users back to: the "Join us" section, with a
   # marker so we can confirm the login happened.
-  @google_return_to "/ai-policy?from=google#register"
-  @x_return_to "/ai-policy?from=x#register"
-  @return_to "/ai-policy#register"
+  @google_return_to "/ai?from=google#register"
+  @x_return_to "/ai?from=x#register"
+  @return_to "/ai#register"
 
   # Once the interest is registered, the sign-up flow ends here instead of
   # sending people back to the landing page they already filled in.
@@ -30,6 +30,7 @@ defmodule YouCongressWeb.AiPolicyLive do
       field :professional_background, :string
       field :linkedin_or_website, :string
       field :interests, {:array, :string}, default: []
+      field :contribution_areas, {:array, :string}, default: []
       field :availability_and_motivation, :string
       field :newsletter, :boolean, default: false
     end
@@ -44,6 +45,7 @@ defmodule YouCongressWeb.AiPolicyLive do
         :professional_background,
         :linkedin_or_website,
         :interests,
+        :contribution_areas,
         :availability_and_motivation,
         :newsletter
       ])
@@ -76,8 +78,16 @@ defmodule YouCongressWeb.AiPolicyLive do
   @interests [
     {"Jobs & shared prosperity", "jobs"},
     {"Governance & safety", "governance"},
-    {"Competitiveness & sovereignty", "competitiveness"},
-    {"Professional English practice", "english_practice"}
+    {"Competitiveness & sovereignty", "competitiveness"}
+  ]
+
+  @contribution_areas [
+    {"Develop and review policies", "policy"},
+    {"Research evidence and objections", "research"},
+    {"Improve YouCongress — product, design, or engineering", "platform"},
+    {"Writing, journalism, or communications", "communications"},
+    {"Reach policymakers and civic organizations", "outreach"},
+    {"Facilitate and organize working groups", "organizing"}
   ]
 
   @impl true
@@ -91,23 +101,26 @@ defmodule YouCongressWeb.AiPolicyLive do
       "professional_background" => context["professional_background"],
       "linkedin_or_website" => context["linkedin_or_website"],
       "interests" => context["interests"] || [],
+      "contribution_areas" => context["contribution_areas"] || [],
       "availability_and_motivation" => context["availability_and_motivation"],
       "newsletter" => user && user.newsletter
     }
 
     page_description =
-      "Join small international groups to shape practical AI policies and build confidence " <>
-        "discussing complex ideas in English."
+      "Join small working groups to shape practical AI policies, improve the open platform " <>
+        "behind them, and turn broad agreement into political action."
 
     {
       :ok,
       socket
-      |> assign(:page_title, "AI Policy Group | YouCongress")
+      |> assign(:page_title, "AI Working Groups")
       |> assign(:page_description, page_description)
+      |> assign(:canonical_url, url(~p"/ai"))
       |> assign(:current_user, user)
       |> assign(:countries, Countries.country_options())
       |> assign(:backgrounds, @backgrounds)
       |> assign(:interests, @interests)
+      |> assign(:contribution_areas, @contribution_areas)
       |> assign(:saved, false)
       |> assign(:google_href, ReturnTo.auth_path(:google, nil, @google_return_to))
       |> assign(:x_href, ReturnTo.auth_path(:x, nil, @x_return_to))
@@ -212,6 +225,20 @@ defmodule YouCongressWeb.AiPolicyLive do
       <h3 class="mt-3 text-xl font-bold">{@title}</h3>
       <p class="mt-3 leading-relaxed text-zinc-400">{render_slot(@inner_block)}</p>
     </div>
+    """
+  end
+
+  attr :number, :string, required: true
+  attr :title, :string, required: true
+  slot :inner_block, required: true
+
+  def work_group(assigns) do
+    ~H"""
+    <article class="rounded-2xl border border-zinc-700 bg-zinc-800 p-7">
+      <p class="font-extrabold text-[#f0a882]">{@number}</p>
+      <h3 class="mt-3 text-2xl font-bold">{@title}</h3>
+      <p class="mt-4 leading-relaxed text-zinc-300">{render_slot(@inner_block)}</p>
+    </article>
     """
   end
 

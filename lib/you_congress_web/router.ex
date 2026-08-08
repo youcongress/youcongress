@@ -69,7 +69,7 @@ defmodule YouCongressWeb.Router do
     pipe_through([:browser, :ai_preview])
 
     live_session :ai_preview do
-      live("/ai-policy", AiPolicyLive, :index)
+      live("/ai", AiPolicyLive, :index)
       live("/ai-welcome", AiWelcomeLive, :index)
     end
   end
