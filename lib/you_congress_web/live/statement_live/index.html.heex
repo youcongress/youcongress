@@ -1,16 +1,39 @@
 <%= if @hall_name == "all" do %>
   <.json_ld data={SEO.website()} />
-  <h1 class="sr-only">YouCongress - Expert and Citizen Preferences</h1>
+  <h1 class="sr-only">YouCongress - Sourced Public Positions on Policy</h1>
   <div class="text-center pt-2 pb-4">
     <div class="leading-8 text-gray-600">
       <h2 class="text-2xl font-bold">
-        Expert and Citizen Preferences
+        Sourced public positions on policy
       </h2>
       <p class="text-lg">
-        Sourced quotes, claims, policy proposals and stances make public reasoning easier to inspect, reuse and improve.
+        Traceable public statements, claims, and policy proposals—alongside direct citizen votes.
+      </p>
+      <p class="mx-auto mt-1 max-w-3xl text-sm leading-6 text-gray-500">
+        Source and stance annotations are inspectable and correctable. Record counts are not polls,
+        measures of consensus, or truth scores.
       </p>
       <HallHero.summary stats={@hall_stats} />
     </div>
+  </div>
+  <div
+    :if={@ai_policy_launch?}
+    id="ai-policy-launch-banner"
+    class="mx-auto mb-4 max-w-4xl rounded-xl border border-[#f0c9b5] bg-[#fbeee7] px-5 py-4 text-left sm:flex sm:items-center sm:justify-between sm:gap-6"
+  >
+    <div>
+      <p class="text-xs font-bold uppercase tracking-widest text-[#8f2c00]">New initiative</p>
+      <p class="mt-1 font-semibold text-zinc-900">Help find 100 AI policies we can agree on.</p>
+      <p class="mt-1 text-sm text-zinc-600">
+        Test proposals against evidence and disagreement, then turn the strongest into political agendas.
+      </p>
+    </div>
+    <a
+      href="/ai"
+      class="mt-3 inline-flex shrink-0 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-[#a63300] sm:mt-0"
+    >
+      Explore the initiative
+    </a>
   </div>
 <% else %>
   <HallHero.render hall_name={@hall_name} stats={@hall_stats} />

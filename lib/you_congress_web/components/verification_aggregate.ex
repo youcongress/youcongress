@@ -79,7 +79,7 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
           ]}
           phx-click="toggle-dropdown"
           phx-target={@myself}
-          title="Change quote, statement relation, and vote answer verifications"
+          title="Change quote, statement relation, and stance classification verifications"
         >
           {badge_label(@aggregate)}
         </button>
@@ -371,7 +371,7 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
   defp row_state(assigns, :vote) do
     cond do
       is_nil(assigns.vote) ->
-        {:disabled, "no vote"}
+        {:disabled, "no stance classification"}
 
       not VerificationStatus.positive?(authenticity_status(assigns)) ->
         {:disabled, "verify quote first"}
@@ -388,7 +388,7 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
 
   defp row_label(:quote), do: "Quote authenticity"
   defp row_label(:relevance), do: "Statement relation"
-  defp row_label(:vote), do: "Vote answer"
+  defp row_label(:vote), do: "Stance classification"
 
   # --- labels & colors -------------------------------------------------------
 

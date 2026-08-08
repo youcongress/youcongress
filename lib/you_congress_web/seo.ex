@@ -23,12 +23,12 @@ defmodule YouCongressWeb.SEO do
   def author_description(name, halls) do
     case top_hall_topics(halls, 3) do
       [] ->
-        "Sourced quotes and votes from #{name} on AI policy statements. " <>
-          "See whether they stand for or against, with sources."
+        "Sourced public statements from #{name} on AI policy. " <>
+          "Inspect the sources and the stance inferred for each statement."
 
       topics ->
-        "Sourced quotes and votes from #{name} on #{join_topics(topics)}. " <>
-          "See whether they stand for or against on AI policy statements."
+        "Sourced public statements from #{name} on #{join_topics(topics)}. " <>
+          "Inspect the sources and the stance inferred for each policy statement."
     end
   end
 
@@ -44,10 +44,10 @@ defmodule YouCongressWeb.SEO do
 
     cond do
       length(author_names) == 3 ->
-        "Who's for and against \"#{title}\"? #{quote_summary} including #{join_names(author_names)}."
+        "Sourced positions on \"#{title}\": #{quote_summary} including #{join_names(author_names)}, with stance annotations."
 
       quotes_votes_count >= 15 ->
-        "Who's for and against \"#{title}\"? #{quote_summary} from experts and public figures."
+        "Sourced positions on \"#{title}\": #{quote_summary} with traceable sources and stance annotations."
 
       true ->
         statement_description(title, nil, 0, [])
@@ -55,12 +55,12 @@ defmodule YouCongressWeb.SEO do
   end
 
   def statement_description(title, _vote_frequencies, _quotes_votes_count, _authors) do
-    "Who's for and against \"#{truncate(title, 90)}\"? " <>
-      "See sourced quotes, votes and sources on YouCongress."
+    "Sourced positions on \"#{truncate(title, 90)}\". " <>
+      "See sourced quotes, stance annotations and sources on YouCongress."
   end
 
   def hall_title(hall_name) do
-    "Expert opinions on #{StringUtils.titleize_hall(hall_name)} | YouCongress"
+    "Sourced positions on #{StringUtils.titleize_hall(hall_name)} | YouCongress"
   end
 
   def hall_description(hall_name, stats \\ nil)
@@ -69,16 +69,16 @@ defmodule YouCongressWeb.SEO do
       when quotes > 0 do
     topic = StringUtils.titleize_hall(hall_name)
 
-    "What do experts say about #{topic}? #{quotes} sourced #{plural(quotes, "quote")} " <>
-      "for and against, with votes and sources, across #{statements} " <>
+    "Explore #{quotes} sourced public #{plural(quotes, "statement")} about #{topic}, " <>
+      "with traceable sources and stance annotations across #{statements} " <>
       "#{plural(statements, "statement")}."
   end
 
   def hall_description(hall_name, _stats) do
     topic = StringUtils.titleize_hall(hall_name)
 
-    "What do experts say about #{topic}? Sourced quotes for and against, " <>
-      "with votes and sources, from AI researchers and policymakers."
+    "Explore sourced public statements about #{topic}, with traceable sources and " <>
+      "inspectable stance annotations."
   end
 
   @doc """
@@ -186,7 +186,7 @@ defmodule YouCongressWeb.SEO do
     %{
       "@context" => "https://schema.org",
       "@type" => "CollectionPage",
-      "name" => "Expert opinions on #{StringUtils.titleize_hall(hall_name)}",
+      "name" => "Sourced positions on #{StringUtils.titleize_hall(hall_name)}",
       "url" => url(~p"/h/#{hall_name}"),
       "description" => description,
       "hasPart" => %{

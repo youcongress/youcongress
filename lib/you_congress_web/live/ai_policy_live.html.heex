@@ -3,7 +3,10 @@
   phx-hook="SessionLogin"
   class="overflow-x-hidden text-zinc-700 scroll-smooth"
 >
-  <div class="border-b border-amber-300 bg-amber-100 px-6 py-2 text-center text-sm font-medium text-amber-900">
+  <div
+    :if={!@launched?}
+    class="border-b border-amber-300 bg-amber-100 px-6 py-2 text-center text-sm font-medium text-amber-900"
+  >
     Private preview: please don’t post or share this page publicly before Tuesday, September 8.
     Personal invitations are welcome.
   </div>
@@ -18,20 +21,20 @@
       </a>
       <div class="flex items-center gap-4 text-sm font-medium md:gap-6">
         <nav class="hidden items-center gap-6 md:flex">
-          <a href="#focus" class="hover:text-brand">Focus</a><a
-            href="#why-now"
+          <a href="#evidence" class="hover:text-brand">Evidence</a><a
+            href="#method"
             class="hover:text-brand"
-          >Why now</a><a href="#working-groups" class="hover:text-brand">Working groups</a><a
-            href="#process"
+          >Method</a><a href="#working-groups" class="hover:text-brand">Working groups</a><a
+            href="#accountability"
             class="hover:text-brand"
-          >Process</a>
+          >About</a>
         </nav>
         <a :if={!@current_user} href={@log_in_href} class="hover:text-brand">Log in</a>
         <.link :if={@current_user} href={~p"/log_out"} method="delete" class="hover:text-brand">
           Log out
         </.link>
         <a href="#register" class="rounded-lg bg-brand px-4 py-2 text-white hover:bg-[#a63300]">
-          <span class="hidden sm:inline">Register your interest</span><span class="sm:hidden">Register</span>
+          <span class="hidden sm:inline">Join a working group</span><span class="sm:hidden">Join</span>
         </a>
       </div>
     </div>
@@ -43,36 +46,125 @@
         <p class="mb-6 flex items-center gap-2 text-[13px] font-semibold text-[#8f2c00]">
           <span class="h-2 w-2 rounded-full bg-brand"></span>A global civic initiative, starting in Europe
         </p>
-        <h1 class="text-5xl font-extrabold leading-none tracking-tight text-zinc-900 md:text-7xl">
-          100 AI Policies<br />We Can Agree On
+        <h1 class="text-5xl font-extrabold leading-[0.96] tracking-tight text-zinc-900 md:text-7xl">
+          Help find 100 AI policies<br />we can agree on
         </h1>
         <p class="mt-7 max-w-2xl text-xl leading-relaxed">
-          Join small working groups turning broadly supported AI policies into political action.
-          Help shape proposals, improve the open platform and evidence behind them, or bring the
-          strongest ideas to journalists and political leaders.
+          An open, source-grounded project to test concrete proposals against evidence, serious
+          objections, and people with different interests—then turn the strongest into national
+          and European policy agendas.
         </p>
         <p class="mt-4 max-w-2xl leading-relaxed text-zinc-500">
-          Choose the work that fits your experience and time. You don't need to be an AI expert or
-          speak perfect English: clear thinking, curiosity, and a willingness to contribute matter
-          most.
+          The goal is not to manufacture consensus or count quotations as votes. It is to discover
+          where robust agreement exists, show the remaining disagreement honestly, and make useful
+          proposals easier to act on.
         </p>
         <div class="mt-9 flex flex-wrap gap-3">
           <a
-            href="#register"
+            href="/h/ai-governance"
             class="rounded-lg bg-brand px-7 py-3.5 font-semibold text-white hover:bg-[#a63300]"
           >
-            Register your interest
+            Explore current evidence
           </a>
           <a
-            href="#focus"
+            href="#register"
             class="rounded-lg border border-zinc-300 px-7 py-3.5 font-semibold text-zinc-900 hover:bg-zinc-50"
           >
-            Read the mission
+            Join a working group
           </a>
         </div>
         <div class="mt-10 flex flex-wrap gap-x-8 gap-y-3 border-t border-zinc-200 pt-6 text-sm text-zinc-500">
-          <span><b class="text-xl text-zinc-900">3</b> policy areas</span><span><b class="text-xl text-zinc-900">3</b> ways to contribute</span><span><b class="text-xl text-zinc-900">Concrete</b> outputs, not just talk</span>
+          <span><b class="text-xl text-zinc-900">{@stats.quote_count}</b> sourced records</span><span><b class="text-xl text-zinc-900">{@stats.statement_count}</b> proposals and claims</span><span><b class="text-xl text-zinc-900">Open</b> source and data</span>
         </div>
+        <p class="mt-3 max-w-3xl text-xs leading-relaxed text-zinc-500">
+          Platform totals include AI and other public questions. They measure records collected,
+          not public support, expert consensus, or evidential weight.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="evidence" class="border-y border-[#f0ece7] bg-[#faf8f5]">
+    <div class="mx-auto max-w-7xl px-6 py-20">
+      <div class="max-w-3xl">
+        <p class="text-xs font-bold uppercase tracking-widest text-[#8f2c00]">
+          Start with the work
+        </p>
+        <h2 class="mt-3 text-4xl font-extrabold tracking-tight text-zinc-900">
+          Inspect the evidence before joining the initiative
+        </h2>
+        <p class="mt-5 text-lg leading-relaxed text-zinc-600">
+          YouCongress already preserves sourced public statements and links them to specific claims
+          and policy proposals. Every record points back to its source and can be challenged,
+          corrected, or reviewed.
+        </p>
+      </div>
+      <div class="mt-10 grid gap-5 md:grid-cols-3">
+        <a
+          href="/h/ai-governance"
+          class="group rounded-2xl border border-zinc-200 bg-white p-7 hover:border-[#d96b39] hover:shadow-sm"
+        >
+          <p class="text-xs font-bold uppercase tracking-widest text-[#8f2c00]">
+            Policy collection
+          </p>
+          <h3 class="mt-3 text-2xl font-bold text-zinc-900 group-hover:text-brand">
+            AI governance
+          </h3>
+          <p class="mt-3 leading-relaxed text-zinc-600">
+            Regulation, accountability, rights, compute governance, and international coordination.
+          </p>
+          <p class="mt-5 font-semibold text-brand">Explore sourced positions →</p>
+        </a>
+        <a
+          href="/h/impact-on-labor"
+          class="group rounded-2xl border border-zinc-200 bg-white p-7 hover:border-[#d96b39] hover:shadow-sm"
+        >
+          <p class="text-xs font-bold uppercase tracking-widest text-[#8f2c00]">
+            Policy collection
+          </p>
+          <h3 class="mt-3 text-2xl font-bold text-zinc-900 group-hover:text-brand">
+            Jobs and prosperity
+          </h3>
+          <p class="mt-3 leading-relaxed text-zinc-600">
+            Automation, worker power, adaptation, job quality, and sharing the gains from AI.
+          </p>
+          <p class="mt-5 font-semibold text-brand">Explore sourced positions →</p>
+        </a>
+        <a
+          href="/h/ai-safety"
+          class="group rounded-2xl border border-zinc-200 bg-white p-7 hover:border-[#d96b39] hover:shadow-sm"
+        >
+          <p class="text-xs font-bold uppercase tracking-widest text-[#8f2c00]">
+            Policy collection
+          </p>
+          <h3 class="mt-3 text-2xl font-bold text-zinc-900 group-hover:text-brand">AI safety</h3>
+          <p class="mt-3 leading-relaxed text-zinc-600">
+            Frontier risks, evaluations, oversight, coordination, and emergency preparedness.
+          </p>
+          <p class="mt-5 font-semibold text-brand">Explore sourced positions →</p>
+        </a>
+      </div>
+      <div class="mt-8 flex flex-wrap gap-3 text-sm">
+        <a
+          href="/dataset"
+          class="rounded-lg border border-zinc-300 bg-white px-4 py-2 font-semibold hover:border-zinc-500"
+        >
+          Download and reuse the data
+        </a>
+        <a
+          href="https://github.com/youcongress/youcongress"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="rounded-lg border border-zinc-300 bg-white px-4 py-2 font-semibold hover:border-zinc-500"
+        >
+          Inspect the source code
+        </a>
+        <a
+          href="/faq#verify-quotes"
+          class="rounded-lg border border-zinc-300 bg-white px-4 py-2 font-semibold hover:border-zinc-500"
+        >
+          Read how verification works
+        </a>
       </div>
     </div>
   </section>
@@ -81,7 +173,8 @@
     <div class="mx-auto max-w-7xl px-6 py-20">
       <p class="mb-4 text-xs font-bold uppercase tracking-widest text-[#f0a882]">Our mission</p>
       <blockquote class="max-w-5xl text-3xl font-semibold leading-snug md:text-[34px]">
-        Find practical AI policies we can broadly agree on, and organize to make them politically actionable, around three questions:
+        Find practical AI policies that can survive evidence, disagreement, and implementation—and
+        organize to make the strongest politically actionable around three questions:
       </blockquote>
       <div class="mt-12 grid gap-5 md:grid-cols-3">
         <.focus_card number="01" title="AI, jobs, and shared prosperity">
@@ -117,7 +210,7 @@
         <ul class="mt-4 space-y-3">
           <li>→ Develop concrete policy proposals</li>
           <li>→ Document evidence and objections</li>
-          <li>→ Identify areas of broad agreement</li>
+          <li>→ Test where agreement is broad, narrow, or absent</li>
           <li>→ Improve the open tools that make deliberation possible</li>
           <li>→ Brief journalists and civil-society organizations</li>
           <li>→ Ask parties and candidates to respond</li>
@@ -128,8 +221,97 @@
   </section>
 
   <section class="mx-auto max-w-7xl px-6 py-16 text-center text-2xl font-extrabold text-zinc-900 md:text-3xl">
-    Global collaboration. National policy agendas. Electoral accountability.
+    Global evidence. National policy agendas. Electoral accountability.
     <span class="text-brand">Political action.</span>
+  </section>
+
+  <section id="method" class="border-y border-[#e7e2dc] bg-white">
+    <div class="mx-auto max-w-7xl px-6 py-20">
+      <div class="grid gap-14 lg:grid-cols-[1.05fr_.95fr]">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-widest text-[#8f2c00]">
+            Agreement without false certainty
+          </p>
+          <h2 class="mt-3 text-4xl font-extrabold tracking-tight text-zinc-900">
+            What “we can agree on” means
+          </h2>
+          <p class="mt-5 text-lg leading-relaxed text-zinc-600">
+            It is a question to investigate, not a conclusion hidden in the title. A candidate
+            policy becomes stronger when people with different interests can support its precise
+            wording after seeing the evidence, costs, trade-offs, and best objections.
+          </p>
+          <p class="mt-5 leading-relaxed text-zinc-600">
+            We will report different signals separately: direct participant votes, sourced public
+            positions, countries and stakeholder perspectives where coverage allows. Raw quote
+            counts will never be presented as a poll, a truth score, or proof of consensus.
+          </p>
+          <div class="mt-7 rounded-xl border border-[#f0c9b5] bg-[#fbeee7] p-5 leading-relaxed text-zinc-800">
+            <strong>Important limitation:</strong>
+            the corpus reflects its sources, searches, contributors, and time periods. “AI
+            Verified” means an automated check found support for an annotation; it is not blinded
+            human validation or independent evidence.
+          </div>
+        </div>
+        <div>
+          <p class="text-xs font-bold uppercase tracking-widest text-zinc-500">
+            The policy test
+          </p>
+          <ol class="mt-4 space-y-4">
+            <li class="rounded-xl border border-zinc-200 p-5">
+              <p class="font-bold text-zinc-900">
+                <span class="mr-3 text-brand">01</span>Important
+              </p>
+              <p class="mt-2 text-sm leading-relaxed text-zinc-600">
+                The proposal addresses a consequential problem rather than an easy talking point.
+              </p>
+            </li>
+            <li class="rounded-xl border border-zinc-200 p-5">
+              <p class="font-bold text-zinc-900">
+                <span class="mr-3 text-brand">02</span>Actionable
+              </p>
+              <p class="mt-2 text-sm leading-relaxed text-zinc-600">
+                A government or institution can implement it, with ownership and jurisdiction made clear.
+              </p>
+            </li>
+            <li class="rounded-xl border border-zinc-200 p-5">
+              <p class="font-bold text-zinc-900">
+                <span class="mr-3 text-brand">03</span>Evidence-tested
+              </p>
+              <p class="mt-2 text-sm leading-relaxed text-zinc-600">
+                The public dossier includes primary sources, uncertainties, costs, and the strongest objections.
+              </p>
+            </li>
+            <li class="rounded-xl border border-zinc-200 p-5">
+              <p class="font-bold text-zinc-900">
+                <span class="mr-3 text-brand">04</span>Robustly supported
+              </p>
+              <p class="mt-2 text-sm leading-relaxed text-zinc-600">
+                Support is examined across relevant perspectives—not inferred from the volume of material collected.
+              </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="mt-10 border-t border-zinc-200 pt-8">
+        <h3 class="text-2xl font-bold text-zinc-900">
+          What every promoted policy should publish
+        </h3>
+        <div class="mt-5 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          <div class="rounded-xl bg-[#faf8f5] p-4">
+            A precise proposal and responsible institution
+          </div>
+          <div class="rounded-xl bg-[#faf8f5] p-4">
+            Best evidence, counterevidence, and uncertainty
+          </div>
+          <div class="rounded-xl bg-[#faf8f5] p-4">
+            Strongest objections and unresolved cruxes
+          </div>
+          <div class="rounded-xl bg-[#faf8f5] p-4">
+            Contributors, review status, and a correction path
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section id="working-groups" class="bg-zinc-900 text-white">
@@ -169,6 +351,10 @@
         Groups currently collaborate in English so people from different countries can work
         together. As the community grows, we may open groups in other languages. Perfect English
         is not expected; the work comes first.
+      </p>
+      <p class="mt-4 max-w-3xl text-sm leading-relaxed text-zinc-400">
+        Before accepting an invitation, you will see the task, expected time, duration, owner, and
+        intended deliverable. Joining the participant pool is not a commitment to every group offered.
       </p>
     </div>
   </section>
@@ -213,10 +399,10 @@
       </h2>
       <p class="mt-5 max-w-3xl text-lg leading-relaxed text-zinc-600">
         Policy, platform, and outreach groups reinforce one another. Together they move an idea
-        through a transparent path from proposal to public agreement and political response.
+        through a transparent path from proposal to scrutiny, measured support, and political response.
       </p>
       <div class="mt-10 grid gap-x-10 md:grid-cols-2">
-        <%= for {text, number} <- Enum.with_index(["Someone proposes a specific AI policy.", "A policy group collects evidence, expert opinions, and objections.", "The group tests and improves the proposal.", "The proposal is published and voted on through YouCongress.", "Platform groups improve the open tools and data supporting the process.", "Outreach groups turn broadly supported policies into briefings and election agendas.", "Journalists, parties, candidates, and policymakers are invited to engage and respond.", "Responses are published transparently and participants organize the next action."], 1) do %>
+        <%= for {text, number} <- Enum.with_index(["Someone proposes a specific AI policy and names who could implement it.", "A policy group collects primary sources, relevant public positions, uncertainties, and objections.", "The group tests the wording, costs, trade-offs, and implementation path.", "Featured source annotations are human-reviewed before the policy is promoted.", "The proposal is published with separate participation and sourced-position signals.", "Platform groups improve the open tools, data, and correction process.", "Outreach groups turn robustly supported policies into briefings and political agendas.", "Public responses, corrections, and unresolved disagreements stay visible."], 1) do %>
           <div class="flex gap-4 border-b border-[#ece6df] py-5">
             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
               {number}
@@ -227,14 +413,76 @@
       </div>
       <p class="mt-9 max-w-3xl leading-relaxed text-zinc-600">
         This work doesn't disappear on a whiteboard. It runs on YouCongress: an open-source,
-        open-data base of sourced quotes from researchers, officials, and public figures, each
-        traceable to where and when it was said, plus voting and delegation, so support for a
-        proposal is visible and connected to the evidence behind it.
+        open-data base of sourced statements from researchers, officials, organizations, and public
+        figures, each traceable to where and when it was said. Direct participant votes and positions
+        inferred from sourced material remain visibly distinct.
       </p>
       <p class="mt-6 max-w-3xl text-lg font-semibold text-zinc-900">
-        The objective is not to host conversations. It is to produce useful work that turns
-        well-reasoned public agreement into political influence.
+        The objective is not to host conversations or optimize for agreement. It is to produce
+        useful work that turns well-reasoned, honestly measured support into political influence.
       </p>
+    </div>
+  </section>
+
+  <section id="accountability" class="bg-white">
+    <div class="mx-auto grid max-w-7xl gap-14 px-6 py-20 lg:grid-cols-2">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-widest text-[#8f2c00]">
+          Who is responsible
+        </p>
+        <h2 class="mt-3 text-4xl font-extrabold tracking-tight text-zinc-900">
+          A public project with named humans
+        </h2>
+        <p class="mt-5 text-lg leading-relaxed text-zinc-600">
+          YouCongress was started by <a
+            href="https://hecperez.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="font-semibold text-brand hover:underline"
+          >Hector Perez</a>,
+          an AI engineering leader and civic-tech builder in Madrid. Design contributor
+          <a
+            href="https://www.gonzalocardenete.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="font-semibold text-brand hover:underline"
+          >
+            Gonzalo Cardenete
+          </a>
+          brings experience from open democratic-participation projects including Decidim.
+        </p>
+        <p class="mt-5 leading-relaxed text-zinc-600">
+          The initiative is looking for policy specialists, researchers, workers, technologists,
+          journalists, organizers, and critical reviewers. Participation or a public quotation does
+          not imply endorsement of YouCongress or of any proposal.
+        </p>
+      </div>
+      <div class="rounded-2xl border border-zinc-200 bg-[#faf8f5] p-7 md:p-9">
+        <p class="text-xs font-bold uppercase tracking-widest text-zinc-500">Open by design</p>
+        <ul class="mt-5 space-y-4 leading-relaxed text-zinc-700">
+          <li>
+            <strong class="text-zinc-900">Open source:</strong>
+            application code is available under the MIT License.
+          </li>
+          <li>
+            <strong class="text-zinc-900">Open data:</strong>
+            structured annotations and metadata are released under CC BY 4.0; third-party quotations retain their original rights.
+          </li>
+          <li>
+            <strong class="text-zinc-900">Traceable:</strong>
+            public records link to their sources and expose verification status.
+          </li>
+          <li>
+            <strong class="text-zinc-900">Correctable:</strong>
+            authors and readers can report attribution, relevance, or stance problems.
+          </li>
+        </ul>
+        <div class="mt-7 flex flex-wrap gap-3 text-sm font-semibold">
+          <a href="/about" class="text-brand hover:underline">About YouCongress →</a>
+          <a href="/dataset" class="text-brand hover:underline">Dataset and licenses →</a>
+          <a href="/contact" class="text-brand hover:underline">Report an issue →</a>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -243,15 +491,18 @@
       <div>
         <p class="text-xs font-bold uppercase tracking-widest text-[#8f2c00]">Join us</p>
         <h2 class="mt-3 text-4xl font-extrabold tracking-tight text-zinc-900">
-          Tell us how you'd like to contribute
+          Join the participant pool
         </h2>
         <p class="mt-5 text-lg leading-relaxed">
-          Choose a policy area and how you want to contribute. We'll use both to connect you with
-          focused work that moves the mission forward.
+          Tell us which policy questions and kinds of work fit you. We'll use your answers to invite
+          you to a defined task with a clear owner, time expectation, and intended output.
         </p>
         <p class="mt-4 leading-relaxed text-zinc-600">
-          We'll contact you when enough people with compatible interests and availability are ready
-          to form a working group.
+          If a suitable group is not ready yet, we'll keep you informed without treating your
+          registration as a commitment. Questions or partnership ideas are welcome at <a
+            href="mailto:hello@youcongress.org"
+            class="text-brand hover:underline"
+          >hello@youcongress.org</a>.
         </p>
         <ol class="mt-7 space-y-4 text-sm">
           <li>
@@ -416,7 +667,7 @@
             <.input
               field={@form[:newsletter]}
               type="checkbox"
-              label="Send me occasional emails about features and content"
+              label="Send me occasional updates about the AI policy initiative"
             />
             <button
               type="submit"
@@ -424,8 +675,8 @@
               phx-disable-with="Saving…"
             >
               {if @current_user,
-                do: "Register my interest",
-                else: "Create account & register interest"}
+                do: "Submit my interests",
+                else: "Create account & join the participant pool"}
             </button>
           </.form>
         <% end %>
@@ -442,7 +693,7 @@
         href="#register"
         class="rounded-lg bg-brand px-6 py-3 font-semibold text-white hover:bg-[#a63300]"
       >
-        Register your interest
+        Join a working group
       </a>
     </div>
   </section>
@@ -450,7 +701,10 @@
     <span class="font-bold text-zinc-900">YouCongress</span><span class="space-x-4"><a
       href="/about"
       class="hover:text-brand"
-    >About</a><a href="/terms" class="hover:text-brand">Terms</a><a
+    >About</a><a href="/dataset" class="hover:text-brand">Data</a><a
+      href="https://github.com/youcongress/youcongress"
+      class="hover:text-brand"
+    >Code</a><a href="/terms" class="hover:text-brand">Terms</a><a
       href="/privacy-policy"
       class="hover:text-brand"
     >Privacy</a><a href="/contact" class="hover:text-brand">Contact</a></span>

@@ -2,12 +2,14 @@ defmodule YouCongressWeb.AiWelcomeLive do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Track
+  alias YouCongress.FeatureFlags
 
   @impl true
   def mount(_params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
     context = (socket.assigns.current_user && socket.assigns.current_user.sign_up_context) || %{}
     selected_contributions = selected_contributions(context["contribution_areas"] || [])
+    launched? = FeatureFlags.enabled?(:ai_policy_launch)
 
     if connected?(socket) do
       Track.event("View AI Working Groups Welcome", socket.assigns.current_user)
@@ -16,6 +18,8 @@ defmodule YouCongressWeb.AiWelcomeLive do
     {:ok,
      socket
      |> assign(:page_title, "You're in | AI Working Groups")
+     |> assign(:noindex, true)
+     |> assign(:launched?, launched?)
      |> assign(:selected_contributions, selected_contributions)
      |> assign(:invite_url, url(~p"/ai"))}
   end
@@ -23,7 +27,10 @@ defmodule YouCongressWeb.AiWelcomeLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="border-b border-amber-300 bg-amber-100 px-6 py-2 text-center text-sm font-medium text-amber-900">
+    <div
+      :if={!@launched?}
+      class="border-b border-amber-300 bg-amber-100 px-6 py-2 text-center text-sm font-medium text-amber-900"
+    >
       Private preview: please don’t post or share this page publicly before Tuesday, September 8.
       Personal invitations are welcome.
     </div>
@@ -81,8 +88,8 @@ defmodule YouCongressWeb.AiWelcomeLive do
       <div class="mt-8 border-t border-zinc-200 pt-8">
         <h2 class="text-2xl font-bold text-zinc-900">Start exploring the evidence</h2>
         <p class="mt-3 leading-relaxed">
-          Explore policy proposals and sourced quotes from experts and public figures, vote on
-          statements, and delegate your vote to people you trust.
+          Explore policy proposals and sourced public positions, cast your own votes, and delegate
+          your vote to people you trust. Collected positions and participant votes remain distinct.
         </p>
         <.link
           navigate={~p"/"}

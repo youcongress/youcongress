@@ -43,7 +43,9 @@ defmodule YouCongressWeb.HomeLiveTest do
   describe "Home page for non-logged visitors" do
     test "renders home page successfully", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/")
-      assert html =~ "YouCongress - Expert and Citizen Preferences"
+      assert html =~ "Sourced public positions on policy"
+      assert html =~ "Record counts are not polls"
+      assert html =~ "measures of consensus, or truth scores"
       assert html =~ "Search quotes, claims, people, topics..."
     end
 

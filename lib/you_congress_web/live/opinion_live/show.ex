@@ -683,7 +683,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
   defp verification_subject_label("quote"), do: "Quote authenticity verification"
   defp verification_subject_label("relevance"), do: "Statement relation verification"
-  defp verification_subject_label("vote"), do: "Vote inference verification"
+  defp verification_subject_label("vote"), do: "Stance classification verification"
 
   attr :subject, :string, required: true
   attr :id, :integer, required: true
@@ -775,9 +775,9 @@ defmodule YouCongressWeb.OpinionLive.Show do
     end
   end
 
-  defp vote_answer_label(:for), do: "votes For"
-  defp vote_answer_label(:against), do: "votes Against"
-  defp vote_answer_label(:abstain), do: "abstains"
+  defp vote_answer_label(:for), do: "Classified as For"
+  defp vote_answer_label(:against), do: "Classified as Against"
+  defp vote_answer_label(:abstain), do: "Classification unclear"
   defp vote_answer_label(_), do: nil
 
   defp vote_answer_class(:for), do: "text-green-800 font-semibold"

@@ -3,9 +3,11 @@ defmodule YouCongress.FeatureFlagsTest do
 
   alias YouCongress.FeatureFlags
 
-  test "parses automatic_verifications from FEATURE_FLAGS" do
-    assert FeatureFlags.overrides_from_env("automatic_verifications=false") == %{
-             automatic_verifications: false
-           }
+  test "parses supported flags from FEATURE_FLAGS" do
+    assert FeatureFlags.overrides_from_env("automatic_verifications=false,ai_policy_launch=true") ==
+             %{
+               automatic_verifications: false,
+               ai_policy_launch: true
+             }
   end
 end

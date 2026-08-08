@@ -8,16 +8,24 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
   alias YouCongress.CountriesFixtures
   alias YouCongress.Repo
 
+  setup do
+    previous_flags = Application.get_env(:you_congress, :feature_flags)
+    flags = Map.new(previous_flags || %{}) |> Map.put(:ai_policy_launch, false)
+    Application.put_env(:you_congress, :feature_flags, flags)
+
+    on_exit(fn -> Application.put_env(:you_congress, :feature_flags, previous_flags) end)
+  end
+
   test "renders the AI working groups page and account registration fields", %{conn: conn} do
     _country = CountriesFixtures.country_fixture(name: "AI Page Country")
 
     {:ok, _view, html} = live(conn, ~p"/ai")
 
     assert html =~ "100 AI Policies"
-    assert html =~ "Create account &amp; register interest"
-    assert html =~ "Tell us how you&#39;d like to contribute"
-    assert html =~ "when enough people with compatible interests and availability are ready"
-    assert html =~ "Send me occasional emails about features and content"
+    assert html =~ "Create account &amp; join the participant pool"
+    assert html =~ "Join the participant pool"
+    assert html =~ "clear owner, time expectation"
+    assert html =~ "Send me occasional updates about the AI policy initiative"
     assert html =~ "AI Page Country"
     assert html =~ "Private preview"
     assert html =~ "before Tuesday, September 8"
@@ -32,11 +40,40 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
     assert html =~ "How would you like to contribute?"
     assert html =~ "Improve YouCongress"
     assert html =~ "Reach policymakers and civic organizations"
+    assert html =~ "What “we can agree on” means"
+    assert html =~ "Raw quote"
+    assert html =~ "counts will never be presented as a poll"
+    assert html =~ "automated check found support for an annotation"
+    assert html =~ "Inspect the evidence before joining the initiative"
+    assert html =~ "A public project with named humans"
+    assert html =~ ~s(<meta name="robots" content="noindex")
+
+    assert html =~
+             ~s(<meta property="og:image" content="#{YouCongressWeb.Endpoint.url()}/images/ai-policy-og.png")
+
     refute html =~ "Sep 2026"
     refute html =~ "Sweden"
     assert html =~ "/auth/google?return_to=%2Fai%3Ffrom%3Dgoogle%23register"
     assert html =~ "/auth/x?return_to=%2Fai%3Ffrom%3Dx%23register"
     assert html =~ ~s(rel="canonical" href="#{YouCongressWeb.Endpoint.url()}/ai")
+  end
+
+  test "launch flag makes the page public and reveals launch links", %{conn: conn} do
+    flags = Application.get_env(:you_congress, :feature_flags, %{})
+    Application.put_env(:you_congress, :feature_flags, Map.put(flags, :ai_policy_launch, true))
+
+    {:ok, _view, html} = live(conn, ~p"/ai")
+    refute html =~ "Private preview"
+    refute html =~ ~s(<meta name="robots" content="noindex")
+
+    {:ok, _view, home_html} = live(conn, ~p"/")
+    assert home_html =~ "Help find 100 AI policies we can agree on"
+
+    about_html = conn |> get(~p"/about") |> html_response(200)
+    assert about_html =~ "100 AI Policies initiative"
+
+    sitemap = conn |> get(~p"/sitemap.xml") |> response(200)
+    assert sitemap =~ "<loc>#{YouCongressWeb.Endpoint.url()}/ai</loc>"
   end
 
   test "a user coming back from Google sees a flash pointing to the Join us section", %{

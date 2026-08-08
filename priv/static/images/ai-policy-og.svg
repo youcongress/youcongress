@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#faf8f5"/>
+  <rect x="0" y="0" width="24" height="630" fill="#c2410c"/>
+  <circle cx="1030" cy="110" r="280" fill="#fbe4d7"/>
+  <circle cx="1090" cy="500" r="190" fill="#27272a"/>
+  <circle cx="1065" cy="500" r="110" fill="#c2410c" opacity="0.86"/>
+  <circle cx="104" cy="244" r="7" fill="#c2410c"/>
+  <text x="124" y="251" fill="#18181b" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">YouCongress · AI Working Groups</text>
+  <text x="96" y="340" fill="#18181b" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="800">Help find 100 AI policies</text>
+  <text x="96" y="392" fill="#18181b" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="800">we can agree on</text>
+  <text x="96" y="474" fill="#52525b" font-family="Arial, Helvetica, sans-serif" font-size="18">Test proposals against evidence, serious objections,</text>
+  <text x="96" y="505" fill="#52525b" font-family="Arial, Helvetica, sans-serif" font-size="18">and different perspectives—then make them actionable.</text>
+  <text x="96" y="570" fill="#c2410c" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">EXPLORE THE WORK  ·  YOUCONGRESS.ORG/AI</text>
+</svg>

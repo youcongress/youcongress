@@ -36,7 +36,8 @@ defmodule YouCongressWeb.SEOTest do
     end
 
     test "has a hall-less fallback" do
-      assert SEO.author_description("Jane", []) =~ "Sourced quotes and votes from Jane"
+      assert SEO.author_description("Jane", []) =~ "Sourced public statements from Jane"
+      assert SEO.author_description("Jane", []) =~ "stance inferred"
     end
   end
 
@@ -77,7 +78,7 @@ defmodule YouCongressWeb.SEOTest do
         )
 
       assert description ==
-               "Who's for and against \"Should AI be regulated?\"? 38 sourced quotes including Tim Berners-Lee, Scott Alexander and Cory Doctorow."
+               "Sourced positions on \"Should AI be regulated?\": 38 sourced quotes including Tim Berners-Lee, Scott Alexander and Cory Doctorow, with stance annotations."
 
       refute description =~ "%"
     end
@@ -111,7 +112,7 @@ defmodule YouCongressWeb.SEOTest do
         )
 
       assert description ==
-               "Who's for and against \"Should AI be regulated?\"? Sourced quotes including Tim Berners-Lee, Scott Alexander and Cory Doctorow."
+               "Sourced positions on \"Should AI be regulated?\": Sourced quotes including Tim Berners-Lee, Scott Alexander and Cory Doctorow, with stance annotations."
 
       refute description =~ "3 sourced"
       refute description =~ "%"
@@ -121,13 +122,13 @@ defmodule YouCongressWeb.SEOTest do
       description = SEO.statement_description("Should AI be regulated?", %{}, 15, [])
 
       assert description ==
-               "Who's for and against \"Should AI be regulated?\"? 15 sourced quotes from experts and public figures."
+               "Sourced positions on \"Should AI be regulated?\": 15 sourced quotes with traceable sources and stance annotations."
     end
 
     test "falls back without enough quotes or named authors" do
       description = SEO.statement_description("Should AI be regulated?", %{}, 0)
 
-      assert description =~ "See sourced quotes, votes and sources"
+      assert description =~ "See sourced quotes, stance annotations and sources"
       refute description =~ "% for"
       refute description =~ "0 sourced"
     end

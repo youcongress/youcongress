@@ -8,10 +8,12 @@
       Export the YouCongress dataset
     </h1>
     <p class="mt-6 text-lg leading-relaxed">
-      YouCongress's data layer consists of sourced quotes from experts, policymakers and public figures, linked to statements (claims and policy proposals) and to each author's stance (For/Abstain/Against), inferred from their quotes. You can export this data as CSV.
+      YouCongress's data layer consists of sourced public statements linked to claims and policy
+      proposals, with a stance annotation (For/Unclear/Against) inferred for each relationship.
+      Direct participant votes are separate. You can export the source-grounded records as CSV.
     </p>
   </section>
-  
+
 <!-- Full dataset -->
   <section
     aria-labelledby="dataset-heading"
@@ -21,7 +23,11 @@
       Full dataset
     </h2>
     <p class="mt-2 text-indigo-800">
-      Download every statement's sourced quotes in a single CSV file. It contains one row per quote–statement link, with the author, the quote text, the vote, the source URL, and the authoritative verification status for the quote's authenticity, its relevance to the statement, and the vote. Only statements with at least three verified quotes are included.
+      Download every statement's sourced quotes in a single CSV file. It contains one row per
+      quote–statement link, with the author, quote text, stance annotation (stored in the
+      <code class="bg-indigo-100 px-1 rounded">vote</code>
+      column), source URL, and verification status for authenticity, relevance, and stance. Only
+      statements with at least three verified quotes are included.
     </p>
     <div class="mt-4">
       <a
@@ -66,7 +72,7 @@
     </div>
   </section>
 
-<!-- Known limitations -->
+  <!-- Known limitations -->
   <section
     aria-labelledby="limitations-heading"
     class="p-6 bg-amber-50 rounded-lg border border-amber-200"
@@ -75,6 +81,10 @@
       Known limitations
     </h2>
     <ul class="mt-2 space-y-2 text-amber-800 list-disc list-inside">
+      <li>
+        The corpus is not a representative sample. Counts do not measure public support, expert
+        consensus, truth, or evidential weight.
+      </li>
       <li>
         Most assessments and the stance inference (For/Abstain/Against) are done by AIs, so they may contain errors.
       </li>

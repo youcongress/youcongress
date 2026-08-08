@@ -6,6 +6,7 @@ defmodule YouCongressWeb.AiPolicyLive do
   alias YouCongress.Accounts.User
   alias YouCongress.Countries
   alias YouCongress.FeatureFlags
+  alias YouCongress.Halls
   alias YouCongressWeb.ReturnTo
 
   # Where the OAuth providers send users back to: the "Join us" section, with a
@@ -95,6 +96,7 @@ defmodule YouCongressWeb.AiPolicyLive do
     socket = assign_current_user(socket, session["user_token"])
     user = socket.assigns.current_user
     context = (user && user.sign_up_context) || %{}
+    launched? = FeatureFlags.enabled?(:ai_policy_launch)
 
     values = %{
       "country_id" => user && user.author && user.author.country_id,
@@ -107,15 +109,25 @@ defmodule YouCongressWeb.AiPolicyLive do
     }
 
     page_description =
-      "Join small working groups to shape practical AI policies, improve the open platform " <>
-        "behind them, and turn broad agreement into political action."
+      "Help test practical AI policies against sourced evidence, serious objections, and " <>
+        "different perspectives—then turn the strongest proposals into political agendas."
 
     {
       :ok,
       socket
-      |> assign(:page_title, "AI Working Groups")
+      |> assign(:page_title, "Help Find 100 AI Policies We Can Agree On")
       |> assign(:page_description, page_description)
       |> assign(:canonical_url, url(~p"/ai"))
+      |> assign(:page_image, url(~p"/images/ai-policy-og.png"))
+      |> assign(:page_image_width, 1200)
+      |> assign(:page_image_height, 630)
+      |> assign(
+        :page_image_alt,
+        "Help find 100 AI policies we can agree on — YouCongress"
+      )
+      |> assign(:noindex, !launched?)
+      |> assign(:launched?, launched?)
+      |> assign(:stats, Halls.all_stats())
       |> assign(:current_user, user)
       |> assign(:countries, Countries.country_options())
       |> assign(:backgrounds, @backgrounds)

@@ -25,7 +25,9 @@ defmodule YouCongressWeb.PageControllerTest do
 
     assert html =~ "About YouCongress"
     assert html =~ ~s(href="/contact")
-    assert html =~ "contact us"
+    assert html =~ "Contact us"
+    assert html =~ "What YouCongress does not claim"
+    assert html =~ "Not a representative poll"
   end
 
   test "GET /about loads as a user", %{conn: conn} do

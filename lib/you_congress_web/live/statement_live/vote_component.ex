@@ -394,6 +394,25 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
     """
   end
 
+  defp stance(assigns, response) do
+    assigns =
+      assign(assigns, color: response_color(response), response: stance_text(response))
+
+    ~H"""
+    <span class={"#{@color} font-bold"}>
+      {@response}
+    </span>
+    """
+  end
+
+  defp stance_text(:for), do: "For"
+  defp stance_text("for"), do: "For"
+  defp stance_text(:against), do: "Against"
+  defp stance_text("against"), do: "Against"
+  defp stance_text(:abstain), do: "Unclear"
+  defp stance_text("abstain"), do: "Unclear"
+  defp stance_text(val), do: to_string(val)
+
   defp response(:for), do: "vote For"
   defp response("for"), do: "vote For"
   defp response(:against), do: "vote Against"

@@ -91,7 +91,7 @@ defmodule YouCongressWeb.SEOMetaTest do
       conn = get(conn, ~p"/p/#{statement.slug}")
       html = html_response(conn, 200)
 
-      assert html =~ "See sourced quotes, votes and sources"
+      assert html =~ "See sourced quotes, stance annotations and sources"
       refute html =~ "% for,"
       refute html =~ "2 sourced quotes"
 
@@ -107,6 +107,8 @@ defmodule YouCongressWeb.SEOMetaTest do
 
       assert html =~ ~s(<blockquote cite="https://example.com/real")
       refute html =~ ~s(<blockquote cite="https://example.com/twin")
+      assert html =~ "has a sourced statement classified as"
+      refute html =~ "votes For and says"
     end
   end
 
@@ -118,8 +120,8 @@ defmodule YouCongressWeb.SEOMetaTest do
       conn = get(conn, ~p"/h/ai-safety")
       html = html_response(conn, 200)
 
-      assert html =~ "Expert opinions on AI Safety | YouCongress"
-      assert html =~ ~r{<h1[^>]*>\s*Expert opinions on AI Safety\s*</h1>}
+      assert html =~ "Sourced positions on AI Safety | YouCongress"
+      assert html =~ ~r{<h1[^>]*>\s*Sourced positions on AI Safety\s*</h1>}
       assert html =~ "1 policy proposals and claims"
       assert html =~ ~s("@type":"CollectionPage")
 
@@ -131,7 +133,7 @@ defmodule YouCongressWeb.SEOMetaTest do
       conn = get(conn, ~p"/h/some-unknown-hall")
       html = html_response(conn, 200)
 
-      assert html =~ ~r{<h1[^>]*>\s*Expert opinions on Some Unknown Hall\s*</h1>}
+      assert html =~ ~r{<h1[^>]*>\s*Sourced positions on Some Unknown Hall\s*</h1>}
       refute html =~ ~s("@type":"CollectionPage")
     end
 
@@ -139,18 +141,18 @@ defmodule YouCongressWeb.SEOMetaTest do
       conn = get(conn, ~p"/h/congreso-es")
       html = html_response(conn, 200)
 
-      assert html =~ "Expert opinions on the Spanish Congress | YouCongress"
-      assert html =~ ~r{<h1[^>]*>\s*Expert opinions on the Spanish Congress\s*</h1>}
-      refute html =~ "Expert opinions on Congreso Es"
+      assert html =~ "Sourced positions on the Spanish Congress | YouCongress"
+      assert html =~ ~r{<h1[^>]*>\s*Sourced positions on the Spanish Congress\s*</h1>}
+      refute html =~ "Sourced positions on Congreso Es"
     end
 
     test "US Congress hall uses its search-friendly name", %{conn: conn} do
       conn = get(conn, ~p"/h/us-congress")
       html = html_response(conn, 200)
 
-      assert html =~ "Expert opinions on the US Congress | YouCongress"
-      assert html =~ ~r{<h1[^>]*>\s*Expert opinions on the US Congress\s*</h1>}
-      refute html =~ "Expert opinions on US Congress"
+      assert html =~ "Sourced positions on the US Congress | YouCongress"
+      assert html =~ ~r{<h1[^>]*>\s*Sourced positions on the US Congress\s*</h1>}
+      refute html =~ "Sourced positions on US Congress"
     end
   end
 
@@ -161,6 +163,11 @@ defmodule YouCongressWeb.SEOMetaTest do
 
       assert html =~ ~s("@type":"WebSite")
       assert html =~ "search_term_string"
+
+      assert html =~
+               ~s(<meta property="og:image" content="#{YouCongressWeb.Endpoint.url()}/images/og-default.png")
+
+      assert html =~ ~s(<meta name="twitter:card" content="summary_large_image")
     end
   end
 

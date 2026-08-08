@@ -1,8 +1,8 @@
 defmodule YouCongressWeb.StatementLive.Index.HallHero do
   @moduledoc """
   Topic-hub intro for hall pages: H1, description, stats and top-author
-  links, plus CollectionPage JSON-LD, so /h/:hall pages rank for
-  "expert opinions on {topic}" queries and AI assistants can cite them.
+  links, plus CollectionPage JSON-LD, so public positions remain discoverable
+  without implying that the collected sources form a representative expert poll.
   """
   use Phoenix.Component
   use YouCongressWeb, :verified_routes
@@ -19,7 +19,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallHero do
     ~H"""
     <div class="text-center pt-2 pb-4">
       <h1 class="text-2xl font-bold leading-8 text-gray-600">
-        Expert opinions on {StringUtils.titleize_hall(@hall_name)}
+        Sourced positions on {StringUtils.titleize_hall(@hall_name)}
       </h1>
     </div>
     """
@@ -31,7 +31,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallHero do
       <.json_ld data={collection_page(@hall_name, @stats)} />
       <div class="leading-8 text-gray-600">
         <h1 class="text-2xl font-bold">
-          Expert opinions on {StringUtils.titleize_hall(@hall_name)}
+          Sourced positions on {StringUtils.titleize_hall(@hall_name)}
         </h1>
         <p class="text-lg">{intro(@hall_name, @stats)}</p>
         <.summary stats={@stats} />
@@ -76,8 +76,8 @@ defmodule YouCongressWeb.StatementLive.Index.HallHero do
 
   defp intro(hall_name, stats) do
     stats.hall.description ||
-      "Sourced quotes, claims, policy proposals and stances on #{StringUtils.titleize_hall(hall_name)} " <>
-        "from AI researchers, executives and policymakers."
+      "Traceable public statements, claims, policy proposals and stance annotations on " <>
+        "#{StringUtils.titleize_hall(hall_name)}. Record counts are not polls or truth scores."
   end
 
   defp plural(1, word), do: word

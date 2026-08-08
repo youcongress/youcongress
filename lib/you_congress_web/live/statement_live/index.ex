@@ -6,6 +6,7 @@ defmodule YouCongressWeb.StatementLive.Index do
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors
   alias YouCongress.Delegations
+  alias YouCongress.FeatureFlags
   alias YouCongress.Likes
   alias YouCongress.Opinions
   alias YouCongress.OpinionsStatements
@@ -58,6 +59,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:has_more_statements, true)
       |> assign(:editing_opinion_id, nil)
       |> assign(:can_create_statement?, Permissions.can_create_statement?(current_user))
+      |> assign(:ai_policy_launch?, FeatureFlags.enabled?(:ai_policy_launch))
       |> stream(:opinion_cards, [], reset: true)
       |> assign_cards(1)
       |> assign(:pending_guest_votes, %{})
@@ -339,10 +341,10 @@ defmodule YouCongressWeb.StatementLive.Index do
 
     socket
     |> assign(
-      page_title: "Expert and Citizen Preferences | YouCongress",
+      page_title: "Sourced Public Positions on Policy | YouCongress",
       skip_page_suffix: true,
       page_description:
-        "YouCongress structures sourced claims, quotes, votes and delegations so expert and citizen preferences are transparent and reusable.",
+        "Explore traceable public statements, policy proposals, claims, and direct citizen votes without treating source counts as polls or truth scores.",
       canonical_url: url(~p"/"),
       statement: %Statement{}
     )

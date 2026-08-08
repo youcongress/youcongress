@@ -28,9 +28,22 @@
     <% end %>
     <meta property="og:type" content={assigns[:og_type] || "website"} />
     <meta property="og:site_name" content="YouCongress" />
-    <meta property="og:image" content={assigns[:page_image] || url(~p"/images/og-default.png")} />
+    <% social_image = assigns[:page_image] || url(~p"/images/og-default.png") %>
+    <% social_image_alt =
+      assigns[:page_image_alt] || assigns[:page_title] ||
+        "YouCongress — sourced public positions on policy" %>
+    <% social_image_width =
+      assigns[:page_image_width] || if(is_nil(assigns[:page_image]), do: 1200) %>
+    <% social_image_height =
+      assigns[:page_image_height] || if(is_nil(assigns[:page_image]), do: 630) %>
+    <meta property="og:image" content={social_image} />
+    <meta :if={social_image_width} property="og:image:width" content={social_image_width} />
+    <meta :if={social_image_height} property="og:image:height" content={social_image_height} />
+    <meta property="og:image:alt" content={social_image_alt} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={assigns[:page_title] || "YouCongress"} />
+    <meta name="twitter:image" content={social_image} />
+    <meta name="twitter:image:alt" content={social_image_alt} />
     <%= if assigns[:noindex] do %>
       <meta name="robots" content="noindex" />
     <% end %>

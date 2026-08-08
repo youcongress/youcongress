@@ -23,6 +23,13 @@ defmodule YouCongressWeb.TopHeaderComponent do
         <div class="hidden md:flex text-sm items-center gap-6 leading-6 text-zinc-900">
           <.github_link />
           <.link
+            :if={YouCongress.FeatureFlags.enabled?(:ai_policy_launch)}
+            href={~p"/ai"}
+            class="px-3 py-2 font-semibold text-brand hover:text-[#a63300] transition-colors"
+          >
+            100 AI Policies
+          </.link>
+          <.link
             :if={@current_user && YouCongress.Accounts.sign_up_complete?(@current_user)}
             href={~p"/"}
             class="px-3 py-2 hover:text-zinc-700 transition-colors"
@@ -65,6 +72,13 @@ defmodule YouCongressWeb.TopHeaderComponent do
         <div class="md:hidden flex flex-col items-end gap-3 text-sm">
           <div class="flex items-center gap-4">
             <.github_link class="p-3" />
+            <.link
+              :if={YouCongress.FeatureFlags.enabled?(:ai_policy_launch)}
+              href={~p"/ai"}
+              class="px-1 py-3 font-semibold text-brand hover:text-[#a63300] min-w-[44px] text-center"
+            >
+              AI
+            </.link>
             <.link
               :if={!@current_user || YouCongress.Accounts.sign_up_complete?(@current_user)}
               href={~p"/about"}

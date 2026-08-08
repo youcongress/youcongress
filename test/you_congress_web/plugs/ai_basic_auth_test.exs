@@ -3,9 +3,13 @@ defmodule YouCongressWeb.Plugs.AiBasicAuthTest do
 
   setup do
     previous = Application.get_env(:you_congress, :ai_basic_auth)
+    previous_flags = Application.get_env(:you_congress, :feature_flags)
+    flags = Map.new(previous_flags || %{}) |> Map.put(:ai_policy_launch, false)
+    Application.put_env(:you_congress, :feature_flags, flags)
 
     on_exit(fn ->
       Application.put_env(:you_congress, :ai_basic_auth, previous)
+      Application.put_env(:you_congress, :feature_flags, previous_flags)
     end)
 
     :ok
@@ -46,6 +50,16 @@ defmodule YouCongressWeb.Plugs.AiBasicAuthTest do
         |> get(~p"/ai")
 
       assert html_response(conn, 200) =~ "100 AI Policies"
+    end
+
+    test "launch flag bypasses preview credentials", %{conn: conn} do
+      flags = Application.get_env(:you_congress, :feature_flags, %{})
+      Application.put_env(:you_congress, :feature_flags, Map.put(flags, :ai_policy_launch, true))
+
+      conn = get(conn, ~p"/ai")
+
+      assert html_response(conn, 200) =~ "Help find 100 AI policies"
+      refute conn.resp_body =~ "Private preview"
     end
   end
 

@@ -8,11 +8,21 @@ defmodule YouCongressWeb.Plugs.AiBasicAuth do
   """
   import Plug.Conn
 
+  alias YouCongress.FeatureFlags
+
   @realm "AI Working Groups"
 
   def init(opts), do: opts
 
   def call(conn, _opts) do
+    if FeatureFlags.enabled?(:ai_policy_launch) do
+      conn
+    else
+      authenticate_preview(conn)
+    end
+  end
+
+  defp authenticate_preview(conn) do
     config = Application.get_env(:you_congress, :ai_basic_auth) || []
 
     case {config[:username], config[:password]} do

@@ -107,7 +107,7 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert has_element?(
                home_view,
                "a[href='/h/covid-19-origins']",
-               "COVID origins"
+               "COVID-19 origins"
              )
 
       assert has_element?(home_view, "a[href='/h/eggs-and-health']", "Eggs & Health")
@@ -789,6 +789,7 @@ defmodule YouCongressWeb.StatementLiveTest do
           user_id: user.id,
           statement_id: statement.id,
           content: "whatever",
+          source_url: nil,
           twin: false
         })
 

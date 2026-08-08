@@ -38,13 +38,18 @@ defmodule YouCongressWeb.PageController do
   end
 
   defp build_sitemap(statements, authors, halls, quotes) do
+    static_paths =
+      [url(~p"/"), url(~p"/about"), url(~p"/faq"), url(~p"/mcp-tools"), url(~p"/dataset")]
+
+    static_paths =
+      if FeatureFlags.enabled?(:ai_policy_launch),
+        do: [url(~p"/ai") | static_paths],
+        else: static_paths
+
     static_urls =
-      Enum.map(
-        [url(~p"/"), url(~p"/about"), url(~p"/faq"), url(~p"/mcp-tools"), url(~p"/dataset")],
-        fn loc ->
-          url_entry(loc, nil, "0.7")
-        end
-      )
+      Enum.map(static_paths, fn loc ->
+        url_entry(loc, nil, "0.7")
+      end)
 
     statement_urls =
       Enum.map(statements, fn statement ->
@@ -106,6 +111,11 @@ defmodule YouCongressWeb.PageController do
 
   def about(conn, _params) do
     render(conn, :about,
+      page_title: "About YouCongress",
+      page_description:
+        "How YouCongress builds an open, source-grounded record of public policy positions—and what the data can and cannot show.",
+      canonical_url: url(~p"/about"),
+      ai_policy_launch?: FeatureFlags.enabled?(:ai_policy_launch),
       search: nil,
       search_tab: :quotes,
       halls: [],
@@ -143,12 +153,13 @@ defmodule YouCongressWeb.PageController do
     """
     # YouCongress
 
-    > YouCongress is a source-grounded knowledge base for public claims,
-    > expert and citizen preferences, and policy deliberation. It stores verified,
-    > sourced quotes from experts, policymakers and public figures; links them to
-    > claims, topics, votes and authors; and gives every author, statement and quote
-    > a stable public page. The first large focus is AI governance. When citing a
-    > quote, cite its source URL alongside the YouCongress page.
+    > YouCongress is a source-grounded knowledge base for public claims, policy
+    > proposals and deliberation. It preserves sourced public statements; links them
+    > to claims, topics, authors and inspectable stance annotations; and gives every
+    > author, statement and quotation a stable public page. Direct participant votes
+    > are recorded separately. The corpus is not a representative poll, consensus
+    > measure or truth score. When citing a quote, cite its original source URL
+    > alongside the YouCongress page.
 
     #{topics_section()}
     #{key_authors_section()}
@@ -169,13 +180,14 @@ defmodule YouCongressWeb.PageController do
       |> Enum.map(fn {hall, quote_count} ->
         topic = YouCongress.Tools.StringUtils.titleize_hall(hall.name)
 
-        "- [#{topic}](#{url(~p"/h/#{hall.name}")}): #{quote_count} verified quotes for and against"
+        "- [#{topic}](#{url(~p"/h/#{hall.name}")}): #{quote_count} sourced statements with stance annotations"
       end)
 
     """
     ## Topics
 
-    Each topic page summarizes sourced claims, expert/public positions and votes with verified quotes.
+    Each topic page organizes sourced public positions and policy claims. Coverage reflects the
+    collected corpus rather than a representative sample.
 
     #{Enum.join(lines, "\n")}
     """

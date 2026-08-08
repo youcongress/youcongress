@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#18181b"/>
+  <circle cx="1060" cy="-30" r="360" fill="#4f46e5" opacity="0.55"/>
+  <circle cx="1160" cy="610" r="270" fill="#c2410c" opacity="0.34"/>
+  <rect x="72" y="64" width="1056" height="502" rx="32" fill="#27272a" stroke="#52525b"/>
+  <circle cx="112" cy="244" r="7" fill="#d9571f"/>
+  <text x="132" y="251" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">YouCongress</text>
+  <text x="112" y="340" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="800">Sourced public positions</text>
+  <text x="112" y="392" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="800">on policy</text>
+  <text x="112" y="474" fill="#d4d4d8" font-family="Arial, Helvetica, sans-serif" font-size="18">Traceable statements, claims, proposals, and direct votes.</text>
+  <text x="112" y="532" fill="#f5a37f" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700">OPEN SOURCE  ·  OPEN DATA  ·  CORRECTABLE</text>
+  <text x="112" y="580" fill="#d4d4d8" font-family="Arial, Helvetica, sans-serif" font-size="16">youcongress.org</text>
+</svg>

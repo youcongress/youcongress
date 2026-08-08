@@ -22,11 +22,11 @@ defmodule YouCongressWeb.HomeLive.Index do
       socket
       |> assign(
         :page_title,
-        "Expert and Citizen Preferences | YouCongress"
+        "Sourced Public Positions on Policy | YouCongress"
       )
       |> assign(
         :page_description,
-        "We structure sourced claims, quotes, votes and delegations to surface expert and citizen preferences."
+        "Explore traceable public statements and policy claims alongside a separate layer for direct votes and delegation."
       )
       |> assign(:skip_page_suffix, true)
       |> assign(:live_action, :new)

@@ -494,7 +494,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
           vote_id: vote.id,
           user_id: user.id,
           status: :disputed,
-          comment: "Vote answer needs review"
+          comment: "Stance classification needs review"
         })
 
       {:ok, view, html} = live(conn, ~p"/c/#{opinion.id}")
@@ -503,13 +503,13 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert html =~ "Quote authentic"
       assert html =~ "Statement relation"
       assert html =~ "Relation is exact"
-      assert html =~ "Vote answer"
-      assert html =~ "Vote answer needs review"
+      assert html =~ "Stance classification"
+      assert html =~ "Stance classification needs review"
 
       reports = [
         {"quote-authenticity-report", "Report quote authenticity verification"},
         {"statement-relation-report-#{statement.id}", "Report statement relation verification"},
-        {"vote-inference-report-#{statement.id}", "Report vote inference verification"}
+        {"vote-inference-report-#{statement.id}", "Report stance classification verification"}
       ]
 
       for {testid, expected_subject} <- reports do
@@ -663,7 +663,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
       # The statement is listed with the author's vote answer
       assert html =~ "We should deliberate publicly"
-      assert html =~ "votes For"
+      assert html =~ "Classified as For"
 
       # The statement verification area is rendered next to the statement.
       card = ~s|[data-testid="statement-verify-#{statement.id}"]|
