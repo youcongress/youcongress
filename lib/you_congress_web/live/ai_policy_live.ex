@@ -31,6 +31,7 @@ defmodule YouCongressWeb.AiPolicyLive do
       field :linkedin_or_website, :string
       field :interests, {:array, :string}, default: []
       field :availability_and_motivation, :string
+      field :newsletter, :boolean, default: false
     end
 
     def changeset(signup, attrs \\ %{}, require_account? \\ true) do
@@ -43,7 +44,8 @@ defmodule YouCongressWeb.AiPolicyLive do
         :professional_background,
         :linkedin_or_website,
         :interests,
-        :availability_and_motivation
+        :availability_and_motivation,
+        :newsletter
       ])
       |> validate_required([:country_id])
       |> maybe_require_account(require_account?)
@@ -88,7 +90,8 @@ defmodule YouCongressWeb.AiPolicyLive do
       "professional_background" => context["professional_background"],
       "linkedin_or_website" => context["linkedin_or_website"],
       "interests" => context["interests"] || [],
-      "availability_and_motivation" => context["availability_and_motivation"]
+      "availability_and_motivation" => context["availability_and_motivation"],
+      "newsletter" => user && user.newsletter
     }
 
     {:ok,

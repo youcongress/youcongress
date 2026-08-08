@@ -5,6 +5,10 @@ defmodule YouCongressWeb.ReturnTo do
 
   @blocked_paths ["/log_in", "/log_out", "/sign_up", "/welcome"]
 
+  # Destinations that welcome the user themselves, so the generic /welcome step
+  # is skipped and we go straight there.
+  @self_welcoming_paths ["/ai-welcome"]
+
   def sanitize(nil), do: nil
 
   def sanitize(return_to) when is_binary(return_to) do
@@ -50,7 +54,21 @@ defmodule YouCongressWeb.ReturnTo do
   def from_same_origin_url(_, _), do: nil
 
   def welcome_path(return_to) do
-    path_with_query("/welcome", return_to: sanitize(return_to))
+    return_to = sanitize(return_to)
+
+    if self_welcoming?(return_to) do
+      return_to
+    else
+      path_with_query("/welcome", return_to: return_to)
+    end
+  end
+
+  defp self_welcoming?(nil), do: false
+
+  defp self_welcoming?(return_to) do
+    URI.parse(return_to).path in @self_welcoming_paths
+  rescue
+    URI.Error -> false
   end
 
   def sign_up_path(return_to, pending_actions \\ nil) do

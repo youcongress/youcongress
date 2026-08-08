@@ -157,6 +157,7 @@ defmodule YouCongress.Accounts do
       %User{}
       |> User.password_registration_changeset(Map.put(user_attrs, "author_id", author.id))
       |> Ecto.Changeset.put_change(:sign_up_context, context)
+      |> Ecto.Changeset.put_change(:newsletter, newsletter?(signup_attrs))
     end)
     |> Repo.transaction()
   end
@@ -175,8 +176,18 @@ defmodule YouCongress.Accounts do
       author = Repo.get!(Author, author_id)
       Author.profile_changeset(author, %{country_id: country_id}, [:country_id])
     end)
-    |> Ecto.Multi.update(:user, User.sign_up_context_changeset(user, %{sign_up_context: context}))
+    |> Ecto.Multi.update(
+      :user,
+      user
+      |> User.sign_up_context_changeset(%{sign_up_context: context})
+      |> User.welcome_changeset(%{newsletter: newsletter?(attrs)})
+    )
     |> Repo.transaction()
+  end
+
+  defp newsletter?(attrs) do
+    value = Map.get(attrs, "newsletter") || Map.get(attrs, :newsletter)
+    value in [true, "true"]
   end
 
   defp blank_to_nil(value) when is_binary(value) do

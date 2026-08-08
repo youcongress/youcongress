@@ -15,6 +15,7 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
 
     assert html =~ "100 AI Policies"
     assert html =~ "Create account &amp; register interest"
+    assert html =~ "Send me occasional emails about features and content"
     assert html =~ "AI Page Country"
     assert html =~ "/auth/google?return_to=%2Fai%3Ffrom%3Dgoogle%23register"
     assert html =~ "/auth/x?return_to=%2Fai%3Ffrom%3Dx%23register"
@@ -84,7 +85,8 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
         "professional_background" => "policy",
         "linkedin_or_website" => "linkedin.com/in/ai-participant",
         "interests" => ["governance", "jobs"],
-        "availability_and_motivation" => "Weekday evenings"
+        "availability_and_motivation" => "Weekday evenings",
+        "newsletter" => "true"
       }
     )
     |> render_submit()
@@ -93,6 +95,7 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
     updated_author = Repo.get!(YouCongress.Authors.Author, user.author_id)
 
     assert updated_author.country_id == selected_country.id
+    assert updated_user.newsletter
 
     assert updated_user.sign_up_context == %{
              "campaign" => "ai_policy_group",
@@ -116,7 +119,8 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
           "name" => "AI Participant",
           "email" => email,
           "password" => "a secure password",
-          "country_id" => country.id
+          "country_id" => country.id,
+          "newsletter" => "true"
         }
       )
       |> render_submit()
@@ -129,6 +133,7 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
 
     assert {:ok, user} = Accounts.consume_live_login_token(token)
     assert user.email == email
+    assert user.newsletter
     assert is_nil(user.email_confirmed_at)
 
     assert html =~ "Taking you to the confirmation step"
@@ -170,7 +175,8 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
           "professional_background" => "tech",
           "linkedin_or_website" => "https://example.com/ai-participant",
           "interests" => ["competitiveness"],
-          "availability_and_motivation" => "I can join monthly."
+          "availability_and_motivation" => "I can join monthly.",
+          "newsletter" => "false"
         }
       )
 
@@ -178,5 +184,28 @@ defmodule YouCongressWeb.AiPolicyLiveTest do
     assert user.sign_up_context["professional_background"] == "tech"
     assert user.sign_up_context["interests"] == ["competitiveness"]
     assert user.sign_up_context["linkedin_or_website"] == "https://example.com/ai-participant"
+    refute user.newsletter
+  end
+
+  test "a signed-in user can opt out of the newsletter", %{conn: conn} do
+    country = CountriesFixtures.country_fixture(name: "Opt Out AI Country")
+
+    user =
+      AccountsFixtures.user_fixture(%{}, %{name: "Subscribed Participant"})
+      |> Repo.preload(:author)
+
+    {:ok, user} = Accounts.welcome_update(user, %{"newsletter" => true})
+
+    {:ok, view, html} = conn |> log_in_user(user) |> live(~p"/ai")
+
+    assert html =~ ~s(name="signup[newsletter]" value="true" checked)
+
+    view
+    |> form("#ai-policy-registration",
+      signup: %{"country_id" => country.id, "newsletter" => "false"}
+    )
+    |> render_submit()
+
+    refute Repo.get!(Accounts.User, user.id).newsletter
   end
 end
