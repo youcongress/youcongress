@@ -70,6 +70,11 @@ config :openai,
   organization_key: System.get_env("OPENAI_ORGANIZATION_KEY"),
   http_options: [recv_timeout: 60_000]
 
+# The AI policy pages are behind HTTP Basic Auth until we launch them.
+config :you_congress, :ai_basic_auth,
+  username: System.get_env("AI_BASIC_AUTH_USERNAME"),
+  password: System.get_env("AI_BASIC_AUTH_PASSWORD")
+
 config :you_congress, :amplitude_api_key, System.get_env("AMPLITUDE_KEY")
 config :you_congress, :base_url, System.get_env("BASE_URL")
 

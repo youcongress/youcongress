@@ -16,6 +16,10 @@ defmodule YouCongressWeb.Router do
     plug(:redirect_to_user_registration_if_email_or_phone_unconfirmed)
   end
 
+  pipeline :ai_preview do
+    plug(YouCongressWeb.Plugs.AiBasicAuth)
+  end
+
   pipeline :mcp do
     plug(:accepts, ["json"])
     plug(:fetch_query_params)
@@ -54,11 +58,20 @@ defmodule YouCongressWeb.Router do
     get("/email-login-waiting-list", PageController, :email_login_waiting_list)
     get("/email-login-waiting-list/thanks", PageController, :email_login_waiting_list_thanks)
     live("/sign_up", UserRegistrationLive, :new)
-    live("/ai", AiPolicyLive, :index)
-    live("/ai-welcome", AiWelcomeLive, :index)
 
     # Legacy redirection from /v/:slug to /p/:slug
     get("/v/:slug", StatementController, :redirect_to_p)
+  end
+
+  # Not launched yet: gated behind HTTP Basic Auth. They get their own
+  # live_session so live navigation from public routes can't skip the pipeline.
+  scope "/", YouCongressWeb do
+    pipe_through([:browser, :ai_preview])
+
+    live_session :ai_preview do
+      live("/ai", AiPolicyLive, :index)
+      live("/ai-welcome", AiWelcomeLive, :index)
+    end
   end
 
   scope "/" do
