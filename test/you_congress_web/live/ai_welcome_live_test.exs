@@ -11,6 +11,9 @@ defmodule YouCongressWeb.AiWelcomeLiveTest do
 
     {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/ai-welcome")
 
+    assert html =~ "Private preview"
+    assert html =~ "before Tuesday, September 8"
+    assert html =~ "Personal invitations are welcome"
     assert html =~ "Your interest is registered"
     assert html =~ "Invite a friend"
     assert html =~ "#{YouCongressWeb.Endpoint.url()}/ai"

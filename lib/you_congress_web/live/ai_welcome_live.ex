@@ -21,7 +21,8 @@ defmodule YouCongressWeb.AiWelcomeLive do
   def render(assigns) do
     ~H"""
     <div class="border-b border-amber-300 bg-amber-100 px-6 py-2 text-center text-sm font-medium text-amber-900">
-      Please don't share this link publicly. The campaign has not been launched yet.
+      Private preview — please don’t post or share this page publicly before Tuesday, September 8.
+      Personal invitations are welcome.
     </div>
 
     <div class="mx-auto max-w-2xl px-6 py-16 text-zinc-700">
