@@ -1,6 +1,6 @@
 # YouCongress
 
-[YouCongress.org](https://youcongress.org) is a non-profit, open-source, open-data platform for building source-grounded knowledge bases around hard public questions. It has two connected but distinct layers:
+[YouCongress.org](https://youcongress.org) is a non-profit, open-source and open-data platform for building source-grounded knowledge bases around hard public questions. It has two connected but distinct layers:
 
 - **Data layer:** a provenance-preserving ingestion and structure layer that turns public discourse into inspectable quote–claim records.
 - **Participation layer (beta):** a liquid-democracy interface for direct votes, optional delegation, and policy discussion.
