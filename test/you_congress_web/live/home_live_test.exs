@@ -71,7 +71,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ non_wikipedia_statement.title
     end
 
-    test "shows statements feed in default added mode", %{conn: conn} do
+    test "shows statements feed in default quote date mode", %{conn: conn} do
       statement =
         statement_fixture(title: "AI Safety Statement")
         |> add_statement_to_ai_hall()
@@ -84,7 +84,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ statement.title
     end
 
-    test "defaults to added order and toggles to quote date order", %{conn: conn} do
+    test "defaults to quote date order and toggles to added order", %{conn: conn} do
       newer_date_statement =
         statement_fixture(title: "Newest quote date statement")
         |> add_statement_to_ai_hall()
@@ -142,23 +142,19 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ "Newest quote date content"
       assert html =~ "Most recently added content"
 
-      older_added_position = html |> :binary.match(older_date_statement.title) |> elem(0)
-      newer_added_position = html |> :binary.match(newer_date_statement.title) |> elem(0)
-      assert older_added_position < newer_added_position
+      newer_date_position = html |> :binary.match(newer_date_statement.title) |> elem(0)
+      older_date_position = html |> :binary.match(older_date_statement.title) |> elem(0)
+      assert newer_date_position < older_date_position
 
       view |> element("button[phx-click='toggle-switch']") |> render_click()
-      quote_date_html = render(view)
+      added_html = render(view)
 
-      newer_date_position =
-        quote_date_html |> :binary.match(newer_date_statement.title) |> elem(0)
-
-      older_date_position =
-        quote_date_html |> :binary.match(older_date_statement.title) |> elem(0)
-
-      assert newer_date_position < older_date_position
+      older_added_position = added_html |> :binary.match(older_date_statement.title) |> elem(0)
+      newer_added_position = added_html |> :binary.match(newer_date_statement.title) |> elem(0)
+      assert older_added_position < newer_added_position
     end
 
-    test "uses badge in default added mode and inline time in quote-date mode", %{conn: conn} do
+    test "uses inline time in default quote-date mode and badge in added mode", %{conn: conn} do
       statement =
         statement_fixture(title: "Timestamp Statement")
         |> add_statement_to_ai_hall()
@@ -193,28 +189,31 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       assert has_element?(
                view,
-               "[data-testid='added-at-badge-#{vote.id}'].bg-indigo-50.text-indigo-700",
-               "Added 1h ago"
-             )
-
-      refute has_element?(view, "[data-testid='added-at-inline-#{vote.id}']")
-
-      view |> element("button[phx-click='toggle-switch']") |> render_click()
-
-      refute has_element?(view, "[data-testid='added-at-badge-#{vote.id}']")
-
-      assert has_element?(
-               view,
                "[data-testid='added-at-inline-#{vote.id}']",
                "added 1h ago"
+             )
+
+      refute has_element?(
+               view,
+               "[data-testid='added-at-badge-#{vote.id}'].bg-indigo-50.text-indigo-700"
              )
 
       card_html = view |> element("[data-testid='vote-card-#{vote.id}']") |> render()
       assert length(Regex.scan(~r/added 1h ago/, card_html)) == 1
       refute html =~ "13d ago"
+
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
+
+      assert has_element?(
+               view,
+               "[data-testid='added-at-badge-#{vote.id}'].bg-indigo-50.text-indigo-700",
+               "Added 1h ago"
+             )
+
+      refute has_element?(view, "[data-testid='added-at-inline-#{vote.id}']")
     end
 
-    test "uses a gray added badge in default added mode for opinions older than one week", %{
+    test "uses a gray added badge in added mode for opinions older than one week", %{
       conn: conn
     } do
       statement =
@@ -238,6 +237,8 @@ defmodule YouCongressWeb.HomeLiveTest do
       |> Repo.update_all(set: [inserted_at: opinion_inserted_at, updated_at: opinion_inserted_at])
 
       {:ok, view, _html} = live(conn, ~p"/")
+
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
 
       assert has_element?(
                view,
