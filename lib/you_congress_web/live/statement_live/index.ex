@@ -46,7 +46,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:quotes, [])
       |> assign(:search_has_more, empty_search_has_more())
       |> assign(:search_totals, empty_search_totals())
-      |> assign(:feed_order, :added)
+      |> assign(:feed_order, :quote_date)
       |> assign(:hall_name, hall_name)
       |> assign(:hall_stats, nil)
       |> assign(:new_poll_visible?, false)
