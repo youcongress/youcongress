@@ -20,6 +20,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
       |> assign_new(:added_at_position, fn -> :default end)
       |> assign_new(:expanded, fn -> false end)
       |> assign_new(:visible_opinion_id, fn -> nil end)
+      |> assign_new(:login_required_for_actions, fn -> false end)
       |> assign_visible_opinion()
       |> assign_verification_context()
       |> assign_content_variables()
