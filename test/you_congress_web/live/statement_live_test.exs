@@ -99,11 +99,11 @@ defmodule YouCongressWeb.StatementLiveTest do
       add_sourced_quotes.(ai_statement, ai_author, 2)
       add_sourced_quotes.(other_statement, health_author, 3)
 
-      {:ok, home_view, home_html} = live(conn, ~p"/")
+      {:ok, home_view, home_html} = live(conn, ~p"/explore")
 
       assert home_html =~ ai_statement.title
       assert home_html =~ other_statement.title
-      assert has_element?(home_view, "a[href='/'][class*='bg-indigo-600']", "All")
+      assert has_element?(home_view, "a[href='/explore'][class*='bg-indigo-600']", "All")
 
       assert has_element?(
                home_view,
@@ -127,10 +127,10 @@ defmodule YouCongressWeb.StatementLiveTest do
     test "min_opinions query param includes zero-opinion statements", %{conn: conn} do
       statement = statement_fixture(%{title: "Zero opinion home card"})
 
-      {:ok, _view, default_html} = live(conn, ~p"/")
+      {:ok, _view, default_html} = live(conn, ~p"/explore")
       refute default_html =~ statement.title
 
-      {:ok, _view, min_html} = live(conn, ~p"/?min_opinions=0")
+      {:ok, _view, min_html} = live(conn, ~p"/explore?min_opinions=0")
       assert min_html =~ statement.title
       assert min_html =~ "Add an opinion"
     end
@@ -164,7 +164,7 @@ defmodule YouCongressWeb.StatementLiveTest do
       fill_statement_with_quotes(statement.id)
 
       conn = log_in_as_user(conn)
-      {:ok, index_live, html} = live(conn, ~p"/")
+      {:ok, index_live, html} = live(conn, ~p"/explore")
 
       assert html =~ statement.title
 
@@ -241,7 +241,7 @@ defmodule YouCongressWeb.StatementLiveTest do
         })
 
       conn = log_in_user(conn, current_user)
-      {:ok, index_live, html} = live(conn, ~p"/")
+      {:ok, index_live, html} = live(conn, ~p"/explore")
 
       assert html =~ statement.title
       refute html =~ voter_country.name
@@ -274,7 +274,7 @@ defmodule YouCongressWeb.StatementLiveTest do
           create_statement_with_feed_quote(title, quote_date)
         end)
 
-      {:ok, view, quote_date_html} = live(conn, ~p"/")
+      {:ok, view, quote_date_html} = live(conn, ~p"/explore")
 
       assert quote_date_html =~ "Quote date"
       assert quote_date_html =~ "Added"
@@ -311,7 +311,7 @@ defmodule YouCongressWeb.StatementLiveTest do
          [generate_rewordings: fn _, _ -> {:ok, @suggested_titles, 0} end]}
       ]) do
         conn = log_in_as_admin(conn)
-        {:ok, index_live, _html} = live(conn, ~p"/")
+        {:ok, index_live, _html} = live(conn, ~p"/explore")
 
         index_live
         |> element("button#create-poll-button", "New")

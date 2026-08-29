@@ -11,7 +11,7 @@ defmodule YouCongressWeb.StatementLiveQuotedSearchTest do
       # Search for "brown fox" (with quotes)
       # "The quick [brown fox] jumps" -> Match
       # "The fox jumps quickly" -> No match
-      {:ok, _view, html} = live(conn, ~p"/?search=\"brown fox\"", on_error: :warn)
+      {:ok, _view, html} = live(conn, ~p"/explore?search=\"brown fox\"", on_error: :warn)
 
       assert html =~ "The quick"
       refute html =~ "quickly"
@@ -22,7 +22,7 @@ defmodule YouCongressWeb.StatementLiveQuotedSearchTest do
       _other = opinion_fixture(content: "fox matches brown")
 
       # Search for brown fox (no quotes) -> both should match
-      {:ok, _view, html} = live(conn, ~p"/?search=brown fox", on_error: :warn)
+      {:ok, _view, html} = live(conn, ~p"/explore?search=brown fox", on_error: :warn)
 
       # Expecting <b>fox</b> matches <b>brown</b>
       assert html =~ "<b>fox</b>"
@@ -37,7 +37,7 @@ defmodule YouCongressWeb.StatementLiveQuotedSearchTest do
       # But LiveView search logic separates results by tabs. We check if opinion is in list.
       # If no results, tab might default to quotes but show empty.
 
-      {:ok, _view, html} = live(conn, ~p"/?search=\"brown fox\"", on_error: :warn)
+      {:ok, _view, html} = live(conn, ~p"/explore?search=\"brown fox\"", on_error: :warn)
 
       refute html =~ "The brown quick fox"
     end

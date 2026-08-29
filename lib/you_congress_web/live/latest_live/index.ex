@@ -10,6 +10,7 @@ defmodule YouCongressWeb.LatestLive.Index do
   alias YouCongress.Votes
   alias YouCongressWeb.DateGroup
   alias YouCongressWeb.ReturnTo
+  alias YouCongressWeb.SEO
   alias YouCongressWeb.StatementLive.VoteComponent
 
   @per_page 15
@@ -44,12 +45,13 @@ defmodule YouCongressWeb.LatestLive.Index do
     socket =
       socket
       |> assign(:return_to, ReturnTo.from_url(url))
-      |> assign(:page_title, "Newest Opinions")
+      |> assign(:page_title, "Latest Expert and Citizen Positions | YouCongress")
+      |> assign(:skip_page_suffix, true)
       |> assign(
         :page_description,
         "The most recent sourced opinions, ordered by the date they were stated, together with each author's statements and votes."
       )
-      |> assign(:noindex, true)
+      |> assign(:canonical_url, url(~p"/"))
 
     {:noreply, socket}
   end

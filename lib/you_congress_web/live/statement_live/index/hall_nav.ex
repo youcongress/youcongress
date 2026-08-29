@@ -48,7 +48,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallNav do
 
   defp hall_link({@default_hall, _title}), do: hall_link(@default_hall)
   defp hall_link({hall_name, _title}), do: hall_link(hall_name)
-  defp hall_link(@default_hall), do: ~p"/"
+  defp hall_link(@default_hall), do: ~p"/explore"
   defp hall_link(hall_name), do: ~p"/h/#{hall_name}"
 
   defp hall_slug({hall_name, _title}), do: hall_name

@@ -343,7 +343,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       skip_page_suffix: true,
       page_description:
         "YouCongress structures sourced claims, quotes, votes and delegations so expert and citizen preferences are transparent and reusable.",
-      canonical_url: url(~p"/"),
+      canonical_url: url(~p"/explore"),
       statement: %Statement{}
     )
     |> assign_stats(hall_stats)

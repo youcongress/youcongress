@@ -42,7 +42,7 @@ defmodule YouCongressWeb.HomeLiveTest do
 
   describe "Home page for non-logged visitors" do
     test "renders home page successfully", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/")
+      {:ok, _view, html} = live(conn, ~p"/explore")
 
       assert html =~
                "What experts and citizens think about AI governance, safety, jobs and society"
@@ -66,7 +66,7 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       fill_statement_with_quotes(non_wikipedia_statement.id)
 
-      {:ok, _view, html} = live(conn, ~p"/")
+      {:ok, _view, html} = live(conn, ~p"/explore")
 
       # Default quote-date mode shows both statements
       assert html =~ wikipedia_statement.title
@@ -81,7 +81,7 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       fill_statement_with_quotes(statement.id)
 
-      {:ok, _view, html} = live(conn, ~p"/")
+      {:ok, _view, html} = live(conn, ~p"/explore")
 
       assert html =~ statement.title
     end
@@ -137,7 +137,7 @@ defmodule YouCongressWeb.HomeLiveTest do
         answer: :for
       })
 
-      {:ok, view, html} = live(conn, ~p"/")
+      {:ok, view, html} = live(conn, ~p"/explore")
 
       assert html =~ "Quote date"
       assert html =~ "Added"
@@ -185,7 +185,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       from(v in Vote, where: v.id == ^vote.id)
       |> Repo.update_all(set: [inserted_at: vote_inserted_at, updated_at: vote_inserted_at])
 
-      {:ok, view, html} = live(conn, ~p"/")
+      {:ok, view, html} = live(conn, ~p"/explore")
 
       assert html =~ "Timestamped opinion content"
 
@@ -238,7 +238,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       from(o in Opinion, where: o.id == ^opinion.id)
       |> Repo.update_all(set: [inserted_at: opinion_inserted_at, updated_at: opinion_inserted_at])
 
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/explore")
 
       view |> element("button[phx-click='toggle-switch']") |> render_click()
 
@@ -294,7 +294,7 @@ defmodule YouCongressWeb.HomeLiveTest do
           answer: :for
         })
 
-      {:ok, view, html} = live(conn, ~p"/")
+      {:ok, view, html} = live(conn, ~p"/explore")
 
       assert html =~ statement.title
       assert html =~ "Newer feed quote"
@@ -381,7 +381,7 @@ defmodule YouCongressWeb.HomeLiveTest do
         answer: :for
       })
 
-      {:ok, _view, html} = live(conn, ~p"/")
+      {:ok, _view, html} = live(conn, ~p"/explore")
 
       assert html =~ statement.title
       assert html =~ "Aggregate verified feed quote"
@@ -407,7 +407,7 @@ defmodule YouCongressWeb.HomeLiveTest do
         answer: :for
       })
 
-      {:ok, _view, html} = live(conn, ~p"/")
+      {:ok, _view, html} = live(conn, ~p"/explore")
 
       assert html =~ profile_image_url
       assert html =~ "flex items-center space-x-2"
@@ -426,7 +426,7 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       fill_statement_with_quotes(statement.id)
 
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/explore")
 
       # Vote For
       view
@@ -440,7 +440,7 @@ defmodule YouCongressWeb.HomeLiveTest do
       _statement = statement_fixture(title: "AI Safety Bill") |> add_statement_to_ai_hall()
       _other_statement = statement_fixture(title: "Tax Reform") |> add_statement_to_ai_hall()
 
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/explore")
 
       # Perform a search
       view
@@ -465,7 +465,7 @@ defmodule YouCongressWeb.HomeLiveTest do
 
       conn = log_in_user(conn, user)
 
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/explore")
 
       # Vote For
       view
