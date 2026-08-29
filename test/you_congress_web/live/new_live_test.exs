@@ -103,6 +103,36 @@ defmodule YouCongressWeb.NewLiveTest do
       assert newer_position < older_position
     end
 
+    test "groups the cards under date headers", %{conn: conn} do
+      today_statement = statement_fixture(title: "Today statement")
+      old_statement = statement_fixture(title: "Old statement")
+
+      add_opinion(today_statement, author_fixture(),
+        content: "Fresh opinion",
+        answer: :for,
+        date: Date.utc_today(),
+        date_precision: :day
+      )
+
+      add_opinion(old_statement, author_fixture(),
+        content: "Ancient opinion",
+        answer: :for,
+        date: ~D[1963-08-28],
+        date_precision: :day
+      )
+
+      {:ok, _view, html} = live(conn, ~p"/new")
+
+      assert html =~ ~s(id="new-date-group-0")
+      assert html =~ ~s(id="new-date-group-1")
+      assert html =~ "Today"
+      assert html =~ "1963"
+
+      today_position = html |> :binary.match("Today") |> elem(0)
+      old_position = html |> :binary.match("1963") |> elem(0)
+      assert today_position < old_position
+    end
+
     test "shows the author's statements and votes under the opinion", %{conn: conn} do
       author = author_fixture(%{name: "Grace Hopper"})
 
