@@ -40,7 +40,28 @@ defmodule YouCongressWeb.StatementLive.Index.HallHero do
     """
   end
 
+  @doc """
+  Hero for the home feed (the virtual "all" hall), where the headline names
+  the topics we cover instead of a single hall.
+  """
+  attr :stats, :map, default: nil
+
+  def home(assigns) do
+    ~H"""
+    <div class="text-center pt-2 pb-4">
+      <div class="leading-8 text-gray-600">
+        <h1 class="text-2xl font-bold">
+          What experts and citizens think about AI governance, safety, jobs and society
+        </h1>
+        <p class="text-lg">{home_intro(@stats)}</p>
+        <.summary stats={@stats} show_counts={false} />
+      </div>
+    </div>
+    """
+  end
+
   attr :stats, :map, required: true
+  attr :show_counts, :boolean, default: true
 
   def summary(%{stats: nil} = assigns) do
     ~H"""
@@ -49,7 +70,7 @@ defmodule YouCongressWeb.StatementLive.Index.HallHero do
 
   def summary(assigns) do
     ~H"""
-    <p id="site-intro-stats" class="text-sm text-gray-500">
+    <p :if={@show_counts} id="site-intro-stats" class="text-sm text-gray-500">
       {@stats.quote_count} sourced {plural(@stats.quote_count, "quote")} · {@stats.statement_count} policy proposals and claims
     </p>
     <p
@@ -78,6 +99,13 @@ defmodule YouCongressWeb.StatementLive.Index.HallHero do
     stats.hall.description ||
       "Sourced quotes, claims, policy proposals and stances on #{StringUtils.titleize_hall(hall_name)} " <>
         "from AI researchers, executives and policymakers."
+  end
+
+  defp home_intro(nil), do: "Compare arguments, vote directly, or delegate your vote."
+
+  defp home_intro(stats) do
+    "Explore #{stats.quote_count} sourced positions on #{stats.statement_count} " <>
+      "important questions. Compare arguments, vote directly, or delegate your vote."
   end
 
   defp plural(1, word), do: word

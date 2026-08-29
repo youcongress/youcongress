@@ -29,8 +29,8 @@ defmodule YouCongressWeb.TopHeaderComponent do
           >
             Home
           </.link>
-          <.link href={~p"/new"} class="px-3 py-2 hover:text-zinc-700 transition-colors">
-            New
+          <.link href={~p"/latest"} class="px-3 py-2 hover:text-zinc-700 transition-colors">
+            Latest
           </.link>
           <.link
             :if={!@current_user || YouCongress.Accounts.sign_up_complete?(@current_user)}
@@ -69,10 +69,10 @@ defmodule YouCongressWeb.TopHeaderComponent do
           <div class="flex items-center gap-4">
             <.github_link class="p-3" />
             <.link
-              href={~p"/new"}
+              href={~p"/latest"}
               class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
             >
-              New
+              Latest
             </.link>
             <.link
               :if={!@current_user || YouCongress.Accounts.sign_up_complete?(@current_user)}

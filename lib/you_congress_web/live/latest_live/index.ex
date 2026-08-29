@@ -1,4 +1,4 @@
-defmodule YouCongressWeb.NewLive.Index do
+defmodule YouCongressWeb.LatestLive.Index do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Delegations
