@@ -595,6 +595,87 @@ defmodule YouCongress.Statements.StatementQueries do
   end
 
   @doc """
+  Returns one opinion card per statement featuring the statement's newest
+  opinion, ordered by the date of the opinion (not the date it was added).
+
+  Unlike the home feed, opinions are not grouped by answer: each statement
+  appears once with its single newest opinion, from any author.
+
+  Options:
+  - :hall_name - filter by hall (default "all")
+  - :offset - number of cards to skip
+  - :limit - max cards to return
+  """
+  def get_newest_opinion_cards(opts \\ []) do
+    hall_name = Keyword.get(opts, :hall_name, "all")
+    offset = Keyword.get(opts, :offset, 0)
+    limit = Keyword.get(opts, :limit, 15)
+
+    has_hall = hall_name != "all"
+
+    {hall_filter, params, param_idx} =
+      if has_hall do
+        {"JOIN halls_statements hs ON hs.statement_id = s.id
+         JOIN halls h ON h.id = hs.hall_id AND h.name = $1", [hall_name], 2}
+      else
+        {"", [], 1}
+      end
+
+    offset_param = "$#{param_idx}"
+    limit_param = "$#{param_idx + 1}"
+    params = params ++ [offset, limit]
+
+    sql = """
+    WITH ranked_votes AS (
+      SELECT
+        v.id as vote_id,
+        s.id as statement_id,
+        o.date as opinion_date,
+        o.id as opinion_id,
+        s.inserted_at as statement_inserted_at,
+        CASE
+          WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed')
+           AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
+           AND v.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 2
+          WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
+          ELSE 0
+        END as verification_rank,
+        ROW_NUMBER() OVER (
+          PARTITION BY s.id
+          ORDER BY o.date DESC NULLS LAST,
+                   CASE
+                     WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed')
+                      AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
+                      AND v.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 2
+                     WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
+                     ELSE 0
+                   END DESC,
+                   o.id DESC NULLS LAST,
+                   v.id DESC NULLS LAST,
+                   s.inserted_at DESC
+        ) as vote_rank
+      FROM statements s
+      JOIN votes v ON v.statement_id = s.id
+        AND v.opinion_id IS NOT NULL
+      JOIN opinions o ON o.id = v.opinion_id
+      LEFT JOIN opinions_statements os ON os.opinion_id = o.id AND os.statement_id = s.id
+      #{hall_filter}
+    )
+    SELECT rv.vote_id, rv.statement_id
+    FROM ranked_votes rv
+    WHERE rv.vote_rank = 1
+    ORDER BY rv.opinion_date DESC NULLS LAST,
+             rv.verification_rank DESC,
+             rv.opinion_id DESC NULLS LAST,
+             rv.statement_inserted_at DESC
+    OFFSET #{offset_param}
+    LIMIT #{limit_param}
+    """
+
+    run_opinion_cards_query(sql, params)
+  end
+
+  @doc """
   Returns opinion cards ordered by most recently added opinions first.
 
   Unlike round-robin, statements can appear consecutively if they have

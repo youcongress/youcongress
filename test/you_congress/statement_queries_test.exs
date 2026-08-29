@@ -447,6 +447,158 @@ defmodule YouCongress.Statements.StatementQueriesTest do
     end
   end
 
+  describe "get_newest_opinion_cards/1" do
+    test "orders statements by the date of the newest opinion" do
+      older_statement = statement_fixture()
+      older_author = author_fixture()
+
+      older_opinion =
+        opinion_fixture(%{
+          author_id: older_author.id,
+          date: ~D[2020-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(older_opinion, older_statement.id)
+
+      vote_fixture(%{
+        statement_id: older_statement.id,
+        author_id: older_author.id,
+        opinion_id: older_opinion.id,
+        answer: :for
+      })
+
+      newer_statement = statement_fixture()
+      newer_author = author_fixture()
+
+      newer_opinion =
+        opinion_fixture(%{
+          author_id: newer_author.id,
+          date: ~D[2026-06-18],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(newer_opinion, newer_statement.id)
+
+      vote_fixture(%{
+        statement_id: newer_statement.id,
+        author_id: newer_author.id,
+        opinion_id: newer_opinion.id,
+        answer: :for
+      })
+
+      cards = StatementQueries.get_newest_opinion_cards(limit: 20)
+
+      assert Enum.map(cards, & &1.statement.id) == [newer_statement.id, older_statement.id]
+    end
+
+    test "features only the newest opinion per statement regardless of answer" do
+      statement = statement_fixture()
+      for_author = author_fixture()
+      against_author = author_fixture()
+      abstain_author = author_fixture()
+
+      for_opinion =
+        opinion_fixture(%{
+          author_id: for_author.id,
+          content: "Older for opinion",
+          date: ~D[2024-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(for_opinion, statement.id)
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: for_author.id,
+        opinion_id: for_opinion.id,
+        answer: :for
+      })
+
+      against_opinion =
+        opinion_fixture(%{
+          author_id: against_author.id,
+          content: "Older against opinion",
+          date: ~D[2024-02-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(against_opinion, statement.id)
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: against_author.id,
+        opinion_id: against_opinion.id,
+        answer: :against
+      })
+
+      newest_opinion =
+        opinion_fixture(%{
+          author_id: abstain_author.id,
+          content: "Newest abstain opinion",
+          date: ~D[2026-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(newest_opinion, statement.id)
+
+      newest_vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: abstain_author.id,
+          opinion_id: newest_opinion.id,
+          answer: :abstain
+        })
+
+      [card] = StatementQueries.get_newest_opinion_cards(limit: 20)
+
+      assert card.statement.id == statement.id
+      assert card.vote.id == newest_vote.id
+      assert card.vote.opinion.id == newest_opinion.id
+      assert card.vote.answer == :abstain
+    end
+
+    test "skips statements without opinion votes" do
+      statement_fixture()
+
+      assert StatementQueries.get_newest_opinion_cards(limit: 20) == []
+    end
+
+    test "paginates with offset and limit" do
+      Enum.each(1..3, fn i ->
+        statement = statement_fixture()
+        author = author_fixture()
+
+        opinion =
+          opinion_fixture(%{
+            author_id: author.id,
+            date: Date.add(~D[2026-01-01], i),
+            date_precision: :day
+          })
+
+        {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: opinion.id,
+          answer: :for
+        })
+      end)
+
+      all_cards = StatementQueries.get_newest_opinion_cards(limit: 20)
+      assert length(all_cards) == 3
+
+      first_two = StatementQueries.get_newest_opinion_cards(limit: 2)
+
+      assert Enum.map(first_two, & &1.statement.id) ==
+               Enum.map(Enum.take(all_cards, 2), & &1.statement.id)
+
+      third = StatementQueries.get_newest_opinion_cards(offset: 2, limit: 2)
+      assert Enum.map(third, & &1.statement.id) == [Enum.at(all_cards, 2).statement.id]
+    end
+  end
+
   describe "get_top_votes_by_answer_for_statements/2" do
     test "uses quote dates in quote date mode" do
       statement = statement_fixture()

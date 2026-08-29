@@ -373,6 +373,51 @@ defmodule YouCongress.Votes do
   end
 
   @doc """
+  Returns a map of author_id => votes with each author's most recent votes,
+  ordered by the date of the vote's opinion (descending). Votes without a
+  dated opinion come last. AI twin votes are excluded.
+
+  Options:
+  - :limit - max votes per author (default 5)
+  """
+  def list_recent_votes_by_author_ids(author_ids, opts \\ [])
+
+  def list_recent_votes_by_author_ids([], _opts), do: %{}
+
+  def list_recent_votes_by_author_ids(author_ids, opts)
+      when is_list(author_ids) and is_list(opts) do
+    limit = Keyword.get(opts, :limit, 5)
+
+    ranking_query =
+      from(v in Vote,
+        left_join: o in assoc(v, :opinion),
+        where: v.author_id in ^author_ids and v.twin == false,
+        select: %{
+          vote_id: v.id,
+          author_id: v.author_id,
+          rank:
+            fragment(
+              "ROW_NUMBER() OVER (PARTITION BY ? ORDER BY ? DESC NULLS LAST, ? DESC NULLS LAST, ? DESC)",
+              v.author_id,
+              o.date,
+              o.id,
+              v.id
+            )
+        }
+      )
+
+    from(v in Vote,
+      join: rv in subquery(ranking_query),
+      on: rv.vote_id == v.id,
+      where: rv.rank <= ^limit,
+      order_by: [asc: rv.author_id, asc: rv.rank],
+      preload: [:statement, :opinion]
+    )
+    |> Repo.all()
+    |> Enum.group_by(& &1.author_id)
+  end
+
+  @doc """
   Gets a single vote.
 
   Raises `Ecto.NoResultsError` if the Vote does not exist.

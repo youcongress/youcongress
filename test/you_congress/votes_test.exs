@@ -31,6 +31,101 @@ defmodule YouCongress.VotesTest do
       assert Votes.get_vote!(vote.id) == vote
     end
 
+    test "list_recent_votes_by_author_ids/2 returns each author's votes by opinion date" do
+      author = author_fixture()
+      other_author = author_fixture()
+
+      older_statement = statement_fixture()
+      newer_statement = statement_fixture()
+      undated_statement = statement_fixture()
+
+      older_opinion =
+        opinion_fixture(%{author_id: author.id, date: ~D[2024-01-01], date_precision: :day})
+
+      {:ok, _} = YouCongress.Opinions.add_opinion_to_statement(older_opinion, older_statement.id)
+
+      older_vote =
+        vote_fixture(%{
+          statement_id: older_statement.id,
+          author_id: author.id,
+          opinion_id: older_opinion.id,
+          answer: :for
+        })
+
+      newer_opinion =
+        opinion_fixture(%{author_id: author.id, date: ~D[2026-01-01], date_precision: :day})
+
+      {:ok, _} = YouCongress.Opinions.add_opinion_to_statement(newer_opinion, newer_statement.id)
+
+      newer_vote =
+        vote_fixture(%{
+          statement_id: newer_statement.id,
+          author_id: author.id,
+          opinion_id: newer_opinion.id,
+          answer: :against
+        })
+
+      undated_vote =
+        vote_fixture(%{
+          statement_id: undated_statement.id,
+          author_id: author.id,
+          answer: :abstain
+        })
+
+      other_vote = vote_fixture(%{author_id: other_author.id, answer: :for})
+
+      votes_by_author = Votes.list_recent_votes_by_author_ids([author.id, other_author.id])
+
+      assert Enum.map(votes_by_author[author.id], & &1.id) == [
+               newer_vote.id,
+               older_vote.id,
+               undated_vote.id
+             ]
+
+      assert Enum.map(votes_by_author[other_author.id], & &1.id) == [other_vote.id]
+
+      assert %Vote{statement: %{slug: _}, opinion: %{date: _}} =
+               hd(votes_by_author[author.id])
+    end
+
+    test "list_recent_votes_by_author_ids/2 limits votes per author" do
+      author = author_fixture()
+
+      votes =
+        Enum.map(1..3, fn i ->
+          statement = statement_fixture()
+          opinion = opinion_fixture(%{author_id: author.id})
+
+          {:ok, _} =
+            YouCongress.Opinions.add_opinion_to_statement(opinion, statement.id)
+
+          vote_fixture(%{
+            statement_id: statement.id,
+            author_id: author.id,
+            opinion_id: opinion.id,
+            answer: :for
+          })
+        end)
+
+      votes_by_author = Votes.list_recent_votes_by_author_ids([author.id], limit: 2)
+
+      vote_ids = Enum.map(votes, & &1.id)
+      assert length(votes_by_author[author.id]) == 2
+      assert Enum.all?(votes_by_author[author.id], &(&1.id in vote_ids))
+    end
+
+    test "list_recent_votes_by_author_ids/2 excludes twin votes and returns empty map without authors" do
+      author = author_fixture()
+      statement = statement_fixture()
+
+      twin_vote = vote_fixture(%{statement_id: statement.id, author_id: author.id, twin: true})
+
+      votes_by_author = Votes.list_recent_votes_by_author_ids([author.id])
+      refute twin_vote.id in Enum.map(votes_by_author[author.id] || [], & &1.id)
+
+      assert Votes.list_recent_votes_by_author_ids([]) == %{}
+    end
+
     test "create_vote/1 with valid data creates a vote" do
       valid_attrs = %{
         opinion_id: opinion_fixture().id,
