@@ -7,6 +7,7 @@ defmodule YouCongressWeb.NewLive.Index do
   alias YouCongress.Statements.StatementQueries
   alias YouCongress.Track
   alias YouCongress.Votes
+  alias YouCongressWeb.DateGroup
   alias YouCongressWeb.ReturnTo
   alias YouCongressWeb.StatementLive.VoteComponent
 
@@ -94,6 +95,19 @@ defmodule YouCongressWeb.NewLive.Index do
     end
   end
 
+  @doc """
+  Splits the loaded cards into date groups ("Today", "Yesterday", ...) so the
+  feed renders as a timeline. Cards already arrive sorted by opinion date.
+  """
+  def date_groups(cards) do
+    DateGroup.group(cards, &card_date/1)
+  end
+
+  defp card_date(%{vote: %{opinion: %Opinion{date: date, date_precision: precision}}}),
+    do: {date, precision}
+
+  defp card_date(_card), do: nil
+
   def author_votes(author_votes_by_id, author_id, statement_id) do
     author_votes_by_id
     |> Map.get(author_id, [])
@@ -110,7 +124,8 @@ defmodule YouCongressWeb.NewLive.Index do
   defp author_name(_author), do: "Anonymous"
 
   defp answer_badge(answer) do
-    base_classes = "shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold"
+    base_classes =
+      "shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold"
 
     color_classes =
       case answer do
