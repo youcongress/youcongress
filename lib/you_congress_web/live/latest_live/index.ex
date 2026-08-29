@@ -3,8 +3,8 @@ defmodule YouCongressWeb.LatestLive.Index do
 
   alias YouCongress.Delegations
   alias YouCongress.Likes
-  alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.Statements.QuotesCsv
   alias YouCongress.Statements.StatementQueries
   alias YouCongress.Track
   alias YouCongress.Votes
@@ -30,7 +30,7 @@ defmodule YouCongressWeb.LatestLive.Index do
       |> assign(:author_votes, %{})
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
       |> assign(:delegate_ids, current_user_delegation_ids(current_user))
-      |> assign(:sourced_position_count, Opinions.count(only_quotes: true, twin: false))
+      |> assign(:sourced_position_count, QuotesCsv.dataset_counts().quote_count)
       |> assign_cards(1)
 
     if connected?(socket) do
