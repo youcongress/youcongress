@@ -2,10 +2,12 @@ defmodule YouCongressWeb.NewLiveTest do
   use YouCongressWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
+  import YouCongress.AccountsFixtures
   import YouCongress.AuthorsFixtures
   import YouCongress.OpinionsFixtures
   import YouCongress.StatementsFixtures
   import YouCongress.VotesFixtures
+  import YouCongressWeb.ConnCase
 
   alias YouCongress.Opinions
 
@@ -132,6 +134,45 @@ defmodule YouCongressWeb.NewLiveTest do
       # Only the card for the statement with an opinion vote is rendered
       assert length(Regex.scan(~r/Featured Statement/, html)) == 1
       assert length(Regex.scan(~r/Other Voted Statement/, html)) == 1
+    end
+
+    test "hides the like, comment, x and delegate actions for logged out users", %{conn: conn} do
+      statement = statement_fixture(title: "Guest Actions Statement")
+      author = author_fixture()
+
+      add_opinion(statement, author,
+        content: "Guest actions opinion",
+        answer: :for,
+        date: ~D[2026-01-01],
+        date_precision: :day
+      )
+
+      {:ok, _view, html} = live(conn, ~p"/new")
+
+      refute html =~ "/images/comment.svg"
+      refute html =~ "/images/heart.svg"
+      refute html =~ "/images/x.svg"
+      refute html =~ "Delegate"
+    end
+
+    test "shows the like, comment, x and delegate actions for logged in users", %{conn: conn} do
+      statement = statement_fixture(title: "Logged In Actions Statement")
+      author = author_fixture()
+
+      add_opinion(statement, author,
+        content: "Logged in actions opinion",
+        answer: :for,
+        date: ~D[2026-01-01],
+        date_precision: :day
+      )
+
+      conn = log_in_user(conn, user_fixture())
+      {:ok, _view, html} = live(conn, ~p"/new")
+
+      assert html =~ "/images/comment.svg"
+      assert html =~ "/images/heart.svg"
+      assert html =~ "/images/x.svg"
+      assert html =~ "Delegate"
     end
   end
 end
