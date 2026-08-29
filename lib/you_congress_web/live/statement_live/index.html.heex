@@ -1,17 +1,6 @@
 <%= if @hall_name == "all" do %>
   <.json_ld data={SEO.website()} />
-  <h1 class="sr-only">YouCongress - Expert and Citizen Preferences</h1>
-  <div class="text-center pt-2 pb-4">
-    <div class="leading-8 text-gray-600">
-      <h2 class="text-2xl font-bold">
-        Expert and Citizen Preferences
-      </h2>
-      <p class="text-lg">
-        Sourced quotes, claims, policy proposals and stances make public reasoning easier to inspect, reuse and improve.
-      </p>
-      <HallHero.summary stats={@hall_stats} />
-    </div>
-  </div>
+  <HallHero.home stats={@hall_stats} />
 <% else %>
   <HallHero.render hall_name={@hall_name} stats={@hall_stats} />
 <% end %>

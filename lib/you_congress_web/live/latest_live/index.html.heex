@@ -7,10 +7,10 @@
   </div>
 </div>
 
-<ul id="new-opinion-cards" phx-viewport-bottom={@has_more_cards && "load-more"} class="pt-2">
+<ul id="latest-opinion-cards" phx-viewport-bottom={@has_more_cards && "load-more"} class="pt-2">
   <%= for {group, group_index} <- Enum.with_index(date_groups(@cards)) do %>
     <li
-      id={"new-date-group-#{group_index}"}
+      id={"latest-date-group-#{group_index}"}
       class={[
         "sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-2",
         group_index > 0 && "mt-8"
@@ -24,7 +24,7 @@
     </li>
     <li
       :for={card <- group.items}
-      id={"new-card-#{card.id}"}
+      id={"latest-card-#{card.id}"}
       class="mt-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
     >
       <div class="p-4 md:p-5">

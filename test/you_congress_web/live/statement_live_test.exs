@@ -117,11 +117,8 @@ defmodule YouCongressWeb.StatementLiveTest do
       refute has_element?(home_view, "a[href='/h/open-source']")
       refute has_element?(home_view, "a[href='/h/congreso-es']")
 
-      assert has_element?(
-               home_view,
-               "#site-intro-stats",
-               "5 sourced quotes · 3 policy proposals and claims"
-             )
+      assert home_html =~ "Explore 5 sourced positions on 3 important questions."
+      refute has_element?(home_view, "#site-intro-stats")
 
       assert has_element?(home_view, "#site-intro-featured-authors a", ai_author.name)
       assert has_element?(home_view, "#site-intro-featured-authors a", health_author.name)

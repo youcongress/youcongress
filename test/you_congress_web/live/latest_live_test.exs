@@ -1,4 +1,4 @@
-defmodule YouCongressWeb.NewLiveTest do
+defmodule YouCongressWeb.LatestLiveTest do
   use YouCongressWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
@@ -36,7 +36,7 @@ defmodule YouCongressWeb.NewLiveTest do
         date_precision: :day
       )
 
-      {:ok, _view, html} = live(conn, ~p"/new")
+      {:ok, _view, html} = live(conn, ~p"/latest")
 
       assert html =~ "Newest Opinions"
       assert html =~ "AI Safety Statement"
@@ -71,7 +71,7 @@ defmodule YouCongressWeb.NewLiveTest do
         date_precision: :day
       )
 
-      {:ok, _view, html} = live(conn, ~p"/new")
+      {:ok, _view, html} = live(conn, ~p"/latest")
 
       assert html =~ "Newest abstain opinion"
       refute html =~ "Older for opinion"
@@ -96,7 +96,7 @@ defmodule YouCongressWeb.NewLiveTest do
         date_precision: :day
       )
 
-      {:ok, _view, html} = live(conn, ~p"/new")
+      {:ok, _view, html} = live(conn, ~p"/latest")
 
       newer_position = html |> :binary.match("Newer dated opinion") |> elem(0)
       older_position = html |> :binary.match("Older dated opinion") |> elem(0)
@@ -121,10 +121,10 @@ defmodule YouCongressWeb.NewLiveTest do
         date_precision: :day
       )
 
-      {:ok, _view, html} = live(conn, ~p"/new")
+      {:ok, _view, html} = live(conn, ~p"/latest")
 
-      assert html =~ ~s(id="new-date-group-0")
-      assert html =~ ~s(id="new-date-group-1")
+      assert html =~ ~s(id="latest-date-group-0")
+      assert html =~ ~s(id="latest-date-group-1")
       assert html =~ "Today"
       assert html =~ "1963"
 
@@ -154,7 +154,7 @@ defmodule YouCongressWeb.NewLiveTest do
         answer: :against
       })
 
-      {:ok, _view, html} = live(conn, ~p"/new")
+      {:ok, _view, html} = live(conn, ~p"/latest")
 
       assert html =~ "Grace Hopper · statements &amp; votes"
       assert html =~ "Other Voted Statement"
@@ -177,7 +177,7 @@ defmodule YouCongressWeb.NewLiveTest do
         date_precision: :day
       )
 
-      {:ok, _view, html} = live(conn, ~p"/new")
+      {:ok, _view, html} = live(conn, ~p"/latest")
 
       refute html =~ "/images/comment.svg"
       refute html =~ "/images/heart.svg"
@@ -197,7 +197,7 @@ defmodule YouCongressWeb.NewLiveTest do
       )
 
       conn = log_in_user(conn, user_fixture())
-      {:ok, _view, html} = live(conn, ~p"/new")
+      {:ok, _view, html} = live(conn, ~p"/latest")
 
       assert html =~ "/images/comment.svg"
       assert html =~ "/images/heart.svg"
