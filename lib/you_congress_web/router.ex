@@ -28,7 +28,7 @@ defmodule YouCongressWeb.Router do
 
     get("/sim", SimController, :index)
     get("/home", PageController, :redirect_to_home)
-    live("/latest", LatestLive.Index, :index)
+    live("/explore", StatementLive.Index, :index)
     live("/p/:slug", StatementLive.Show, :show)
     get("/p/:slug/quotes.csv", StatementController, :quotes_csv)
     live("/a/:id", AuthorLive.Show, :show)
@@ -138,7 +138,7 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through([:browser])
 
-    live("/", StatementLive.Index, :index)
+    live("/", LatestLive.Index, :index)
   end
 
   scope "/", YouCongressWeb do

@@ -211,7 +211,7 @@ defmodule YouCongressWeb.SEO do
         "@type" => "SearchAction",
         "target" => %{
           "@type" => "EntryPoint",
-          "urlTemplate" => url(~p"/") <> "?search={search_term_string}"
+          "urlTemplate" => url(~p"/explore") <> "?search={search_term_string}"
         },
         "query-input" => "required name=search_term_string"
       }
