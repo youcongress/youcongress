@@ -43,7 +43,7 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
     )
   end
 
-  defp put_synthesis(statement, for_ids, against_ids) do
+  defp put_synthesis(statement, for_ids, against_ids, middle_ids \\ []) do
     {:ok, statement} =
       Statements.update_synthesis(statement, %{
         synthesis: %{
@@ -62,8 +62,11 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
               "opinion_ids" => against_ids
             }
           ],
-          "middle_ground" => [],
-          "insights" => ["Insight number one."],
+          "middle_ground" => middle_ground(middle_ids),
+          "insights" => [
+            "Insight number one.",
+            "The quotes show support and opposition coming from varied backgrounds, including economists, politicians, advocacy groups, unions, journalists, and technology figures."
+          ],
           "conclusion" => "Balanced conclusion text."
         },
         synthesis_generated_at: ~U[2026-07-04 10:00:00Z],
@@ -71,6 +74,18 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
       })
 
     statement
+  end
+
+  defp middle_ground([]), do: []
+
+  defp middle_ground(opinion_ids) do
+    [
+      %{
+        "title" => "Middle cluster title",
+        "summary" => "Middle cluster summary.",
+        "opinion_ids" => opinion_ids
+      }
+    ]
   end
 
   defp index_of!(html, text) do
@@ -101,9 +116,52 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
       assert html =~ o1.author.name
       assert html =~ "/c/#{o1.id}"
       assert html =~ "Insight number one."
+      assert html =~ "Source diversity"
+
+      assert html =~
+               "The quotes show support and opposition coming from varied backgrounds, including economists, politicians, advocacy groups, unions, journalists, and technology figures."
+
       assert html =~ "Balanced conclusion text."
       assert html =~ "AI-generated from the quotes on this page on Jul 04, 2026"
       assert has_element?(view, "#synthesis-body.hidden")
+    end
+
+    test "renders framing, key insights, arguments, and closing material in order", %{conn: conn} do
+      statement = statement_with_quotes(25)
+      [o1, o2, o3] = cited_opinions(statement, 3)
+      statement = put_synthesis(statement, [o1.id], [o2.id], [o3.id])
+      enable_synthesis_flag()
+
+      {:ok, _view, html} = live(conn, ~p"/p/#{statement.slug}?#{%{synthesis: "true"}}")
+
+      synthesis_index = index_of!(html, "AI synthesis")
+      framing_index = index_of!(html, "Synthesis headline about the debate.")
+      insights_heading_index = index_of!(html, "Key insights")
+      insight_index = index_of!(html, "Insight number one.")
+      for_index = index_of!(html, "Arguments for")
+      against_index = index_of!(html, "Arguments against")
+      middle_index = index_of!(html, "Middle ground")
+      conclusion_index = index_of!(html, "Balanced conclusion text.")
+      source_heading_index = index_of!(html, "Source diversity")
+
+      source_observation =
+        "The quotes show support and opposition coming from varied backgrounds, including economists, politicians, advocacy groups, unions, journalists, and technology figures."
+
+      source_observation_index = index_of!(html, source_observation)
+      generation_index = index_of!(html, "AI-generated from the quotes on this page")
+
+      assert synthesis_index < framing_index
+      assert framing_index < insights_heading_index
+      assert insights_heading_index < insight_index
+      assert insight_index < for_index
+      assert for_index < against_index
+      assert against_index < middle_index
+      assert middle_index < conclusion_index
+      assert conclusion_index < source_heading_index
+      assert source_heading_index < source_observation_index
+      assert source_observation_index < generation_index
+      assert length(:binary.matches(html, "Insight number one.")) == 1
+      assert length(:binary.matches(html, source_observation)) == 1
     end
 
     test "renders after halls and before voting controls", %{conn: conn} do

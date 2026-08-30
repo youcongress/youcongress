@@ -31,7 +31,13 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
   attr :synthesis_regenerating, :boolean, default: false
 
   def card(assigns) do
-    assigns = assign(assigns, :sections, @sections)
+    {key_insights, source_observations} = split_insights(assigns.synthesis["insights"])
+
+    assigns =
+      assigns
+      |> assign(:sections, @sections)
+      |> assign(:key_insights, key_insights)
+      |> assign(:source_observations, source_observations)
 
     ~H"""
     <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4" data-nosnippet>
@@ -59,6 +65,13 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
 
       <%!-- Always in the DOM (crawlable); the toggle only flips visibility. --%>
       <div id="synthesis-body" class={["mt-4 space-y-6", !@show_synthesis && "hidden"]}>
+        <section :if={@key_insights != []}>
+          <h2 class="text-sm font-bold uppercase tracking-wide text-gray-500">Key insights</h2>
+          <ul class="mt-2 list-inside list-disc space-y-1 text-sm text-gray-700">
+            <li :for={insight <- @key_insights}>{insight}</li>
+          </ul>
+        </section>
+
         <section :for={{key, label} <- @sections} :if={@synthesis[key] not in [nil, []]}>
           <h2 class={section_class(key)}>{label}</h2>
           <div :for={cluster <- @synthesis[key]} class="mt-3">
@@ -91,14 +104,14 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
           </div>
         </section>
 
-        <section :if={@synthesis["insights"] not in [nil, []]}>
-          <h2 class="text-sm font-bold uppercase tracking-wide text-gray-500">Insights</h2>
+        <p class="text-sm text-gray-700">{@synthesis["conclusion"]}</p>
+
+        <section :if={@source_observations != []}>
+          <h2 class="text-sm font-bold uppercase tracking-wide text-gray-500">Source diversity</h2>
           <ul class="mt-2 list-inside list-disc space-y-1 text-sm text-gray-700">
-            <li :for={insight <- @synthesis["insights"]}>{insight}</li>
+            <li :for={observation <- @source_observations}>{observation}</li>
           </ul>
         </section>
-
-        <p class="text-sm text-gray-700">{@synthesis["conclusion"]}</p>
 
         <footer class="flex items-center justify-between gap-2 border-t border-gray-200 pt-2 text-xs text-gray-500">
           <span>
@@ -126,6 +139,40 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
     do: "text-sm font-bold uppercase tracking-wide text-red-700"
 
   defp section_class(_), do: "text-sm font-bold uppercase tracking-wide text-blue-800"
+
+  # Older syntheses store substantive insights and observations about the
+  # quoted contributors in one list. Keep both kinds of content, but separate
+  # clear source-diversity observations so the debate itself stays up front.
+  defp split_insights(insights) do
+    insights
+    |> List.wrap()
+    |> Enum.split_with(&(not source_diversity_observation?(&1)))
+  end
+
+  defp source_diversity_observation?(insight) when is_binary(insight) do
+    insight = String.downcase(insight)
+
+    source_focused? =
+      Regex.match?(~r/\b(quotes?|contributors?|authors?|speakers?|voices)\b/, insight) or
+        Regex.match?(~r/\bsupport(?:ers)? and opposition\b/, insight)
+
+    background_focused? =
+      Regex.match?(
+        ~r/\b(backgrounds?|professions?|roles?|institutions?|fields?|sectors?)\b/,
+        insight
+      )
+
+    diversity_focused? =
+      Regex.match?(
+        ~r/\b(varied|diverse|diversity|range|mix|span|spans|include|includes|across)\b/,
+        insight
+      ) or
+        String.contains?(insight, "come from")
+
+    source_focused? and background_focused? and diversity_focused?
+  end
+
+  defp source_diversity_observation?(_), do: false
 
   defp resolve(ids, opinions_by_id) do
     ids

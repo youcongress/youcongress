@@ -6,6 +6,7 @@ defmodule Mix.Tasks.Statements.BackfillSyntheses do
 
     * `--limit` - maximum number of statements to enqueue
     * `--force` - also regenerate statements that already have a synthesis
+    * `--existing-only` - only regenerate statements that already have a synthesis
     * `--dry-run` - only print the candidate statements
     * `--stagger` - seconds between submissions (default 60)
 
@@ -30,7 +31,13 @@ defmodule Mix.Tasks.Statements.BackfillSyntheses do
 
     {opts, _argv, _invalid} =
       OptionParser.parse(args,
-        strict: [limit: :integer, force: :boolean, dry_run: :boolean, stagger: :integer]
+        strict: [
+          limit: :integer,
+          force: :boolean,
+          existing_only: :boolean,
+          dry_run: :boolean,
+          stagger: :integer
+        ]
       )
 
     unless FeatureFlags.enabled?(:quote_synthesis) do
@@ -42,6 +49,7 @@ defmodule Mix.Tasks.Statements.BackfillSyntheses do
     candidates =
       Synthesis.backfill(
         force: opts[:force],
+        only_existing: opts[:existing_only],
         limit: opts[:limit],
         dry_run: opts[:dry_run],
         stagger_in_seconds: opts[:stagger] || 60

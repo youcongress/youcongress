@@ -176,6 +176,7 @@ defmodule YouCongress.Statements.Synthesis do
   Options:
 
     * `:force` - also regenerate statements that already have a synthesis
+    * `:only_existing` - only regenerate statements that already have a synthesis
     * `:limit` - maximum number of statements to enqueue
     * `:dry_run` - only return the candidates, without enqueuing
     * `:stagger_in_seconds` - delay between submissions (default 60), so a
@@ -188,10 +189,9 @@ defmodule YouCongress.Statements.Synthesis do
 
     candidates =
       Statements.list_statements()
+      |> Enum.filter(&synthesis_candidate?(&1, opts))
       |> Enum.map(&{&1, quotes_count(&1.id)})
-      |> Enum.filter(fn {statement, count} ->
-        count >= @min_quotes and (opts[:force] || is_nil(statement.synthesis))
-      end)
+      |> Enum.filter(fn {_statement, count} -> count >= @min_quotes end)
       |> maybe_take(opts[:limit])
 
     unless opts[:dry_run] do
@@ -205,6 +205,14 @@ defmodule YouCongress.Statements.Synthesis do
     end
 
     candidates
+  end
+
+  defp synthesis_candidate?(statement, opts) do
+    cond do
+      opts[:only_existing] -> not is_nil(statement.synthesis)
+      opts[:force] -> true
+      true -> is_nil(statement.synthesis)
+    end
   end
 
   defp sanitize_clusters(raw, valid_ids) do
