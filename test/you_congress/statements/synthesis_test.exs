@@ -212,5 +212,24 @@ defmodule YouCongress.Statements.SynthesisTest do
 
       _ = statement
     end
+
+    test "can target only statements that already have a synthesis" do
+      without_synthesis = statement_fixture()
+      fill_statement_with_quotes(without_synthesis.id, 25)
+
+      with_synthesis = statement_fixture()
+      fill_statement_with_quotes(with_synthesis.id, 25)
+
+      {:ok, with_synthesis} =
+        Statements.update_synthesis(with_synthesis, %{
+          synthesis: %{"headline" => "H", "conclusion" => "C"},
+          synthesis_quotes_count: 25
+        })
+
+      with_synthesis_id = with_synthesis.id
+
+      assert [{%Statement{id: ^with_synthesis_id}, 25}] =
+               Synthesis.backfill(dry_run: true, only_existing: true)
+    end
   end
 end
