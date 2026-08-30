@@ -28,7 +28,6 @@ defmodule YouCongressWeb.ContactLive do
           label="Your website or social media link (optional)"
           placeholder="https://"
         />
-        <.input field={@form[:subject]} type="text" label="Subject" required />
         <.input field={@form[:body]} type="textarea" label="Message" rows="8" required />
 
         <div
@@ -57,7 +56,6 @@ defmodule YouCongressWeb.ContactLive do
     attrs = %{
       "name" => current_user && current_user.author && current_user.author.name,
       "email" => current_user && current_user.email,
-      "subject" => params["subject"],
       "body" => params["body"]
     }
 

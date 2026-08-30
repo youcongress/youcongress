@@ -79,6 +79,6 @@ defmodule YouCongressWeb.StatementLive.VoteComponent.QuoteMenu do
   end
 
   defp report_contact_path(opinion_id) do
-    ~p"/contact?#{%{subject: "Report comment", body: url(~p"/c/#{opinion_id}")}}"
+    ~p"/contact?#{%{body: "I would like to report this comment:\n#{url(~p"/c/#{opinion_id}")}\n\nDetails:\n"}}"
   end
 end

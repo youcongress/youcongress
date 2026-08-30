@@ -7,14 +7,13 @@ defmodule YouCongressWeb.ContactLiveTest do
   describe "contact page" do
     test "renders the form and prefills report details", %{conn: conn} do
       {:ok, _view, html} =
-        live(conn, ~p"/contact?#{%{subject: "Report comment", body: "http://example.com/c/42"}}")
+        live(conn, ~p"/contact?#{%{body: "http://example.com/c/42"}}")
 
       assert html =~ "Contact us"
       assert html =~ "Name"
       assert html =~ "Email"
       assert html =~ "Your website or social media link (optional)"
       assert html =~ "Message"
-      assert html =~ ~s(value="Report comment")
       assert html =~ "http://example.com/c/42"
     end
 
@@ -55,7 +54,7 @@ defmodule YouCongressWeb.ContactLiveTest do
 
       html =
         view
-        |> form("#contact-form", contact: %{name: "", email: "", subject: "", body: ""})
+        |> form("#contact-form", contact: %{name: "", email: "", body: ""})
         |> render_submit()
 
       assert html =~ "can&#39;t be blank"
@@ -72,7 +71,6 @@ defmodule YouCongressWeb.ContactLiveTest do
             name: "Ada Lovelace",
             email: "ada@example.com",
             website: "https://example.com/ada",
-            subject: "A question",
             body: "Can you help?"
           }
         )
@@ -83,7 +81,7 @@ defmodule YouCongressWeb.ContactLiveTest do
       assert_email_sent(
         to: "hi@youcongress.org",
         reply_to: "ada@example.com",
-        subject: "A question",
+        subject: "Contact form by Ada Lovelace",
         text_body: ~r/Name: Ada Lovelace.*https:\/\/example.com\/ada.*Can you help\?/s
       )
     end
