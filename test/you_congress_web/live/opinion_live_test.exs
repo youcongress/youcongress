@@ -507,12 +507,12 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert html =~ "Vote answer needs review"
 
       reports = [
-        {"quote-authenticity-report", "Report quote authenticity verification"},
-        {"statement-relation-report-#{statement.id}", "Report statement relation verification"},
-        {"vote-inference-report-#{statement.id}", "Report vote inference verification"}
+        {"quote-authenticity-report", "quote authenticity verification"},
+        {"statement-relation-report-#{statement.id}", "statement relation verification"},
+        {"vote-inference-report-#{statement.id}", "vote inference verification"}
       ]
 
-      for {testid, expected_subject} <- reports do
+      for {testid, expected_label} <- reports do
         assert has_element?(view, ~s|a[data-testid="#{testid}"]|, "Report this")
 
         [href] =
@@ -523,7 +523,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
         query = href |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
 
-        assert query["subject"] == expected_subject
+        assert query["body"] =~ expected_label
         assert query["body"] =~ "/c/#{opinion.id}"
       end
 

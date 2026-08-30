@@ -746,7 +746,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
     body =
       "I would like to report an issue with the #{String.downcase(label)} history.#{statement_context}\nOpinion: #{url(~p"/c/#{opinion_id}")}\n\nDetails:\n"
 
-    ~p"/contact?#{%{subject: "Report #{String.downcase(label)}", body: body}}"
+    ~p"/contact?#{%{body: body}}"
   end
 
   # Verified quotes get a search-friendly title; plain comments and

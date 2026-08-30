@@ -33,9 +33,14 @@ defmodule YouCongressWeb.StatementLive.VoteComponent.QuoteMenuTest do
 
     query = href |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
 
-    assert query["subject"] == "Report comment"
+    assert query["body"] =~ "I would like to report this comment:"
 
-    comment_uri = URI.parse(query["body"])
+    comment_uri =
+      query["body"]
+      |> String.split()
+      |> Enum.find(&String.starts_with?(&1, "http"))
+      |> URI.parse()
+
     assert comment_uri.scheme in ["http", "https"]
     assert comment_uri.path == "/c/123"
   end
