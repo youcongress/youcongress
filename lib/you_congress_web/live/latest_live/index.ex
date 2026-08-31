@@ -18,7 +18,7 @@ defmodule YouCongressWeb.LatestLive.Index do
   @author_votes_limit 5
 
   @impl true
-  def mount(_params, session, socket) do
+  def mount(params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
     current_user = socket.assigns.current_user
 
@@ -27,7 +27,7 @@ defmodule YouCongressWeb.LatestLive.Index do
       |> assign(:page, 1)
       |> assign(:per_page, @per_page)
       |> assign(:has_more_cards, true)
-      |> assign(:feed_order, :quote_date)
+      |> assign(:feed_order, feed_order_from_params(params))
       |> assign(:cards, [])
       |> assign(:author_votes, %{})
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
@@ -43,7 +43,9 @@ defmodule YouCongressWeb.LatestLive.Index do
   end
 
   @impl true
-  def handle_params(_params, url, socket) do
+  def handle_params(params, url, socket) do
+    feed_order = feed_order_from_params(params)
+
     socket =
       socket
       |> assign(:return_to, ReturnTo.from_url(url))
@@ -54,6 +56,7 @@ defmodule YouCongressWeb.LatestLive.Index do
         "The most recent sourced opinions, ordered by the date they were stated, together with each author's statements and votes."
       )
       |> assign(:canonical_url, url(~p"/"))
+      |> maybe_change_feed_order(feed_order)
 
     {:noreply, socket}
   end
@@ -68,17 +71,12 @@ defmodule YouCongressWeb.LatestLive.Index do
   end
 
   def handle_event("toggle-switch", _, socket) do
-    feed_order = if socket.assigns.feed_order == :quote_date, do: :added, else: :quote_date
+    path =
+      if socket.assigns.feed_order == :quote_date,
+        do: ~p"/?#{%{sort: "quote-added"}}",
+        else: ~p"/"
 
-    socket =
-      socket
-      |> assign(:feed_order, feed_order)
-      |> assign(:cards, [])
-      |> assign(:author_votes, %{})
-      |> assign(:has_more_cards, true)
-      |> assign_cards(1)
-
-    {:noreply, socket}
+    {:noreply, push_patch(socket, to: path)}
   end
 
   @impl true
@@ -92,6 +90,21 @@ defmodule YouCongressWeb.LatestLive.Index do
   end
 
   def handle_info(_, socket), do: {:noreply, socket}
+
+  defp feed_order_from_params(%{"sort" => "quote-added"}), do: :added
+  defp feed_order_from_params(_params), do: :quote_date
+
+  defp maybe_change_feed_order(%{assigns: %{feed_order: feed_order}} = socket, feed_order),
+    do: socket
+
+  defp maybe_change_feed_order(socket, feed_order) do
+    socket
+    |> assign(:feed_order, feed_order)
+    |> assign(:cards, [])
+    |> assign(:author_votes, %{})
+    |> assign(:has_more_cards, true)
+    |> assign_cards(1)
+  end
 
   defp assign_cards(socket, page) do
     %{:per_page => per_page} = socket.assigns
