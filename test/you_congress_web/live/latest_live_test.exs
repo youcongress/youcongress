@@ -1,6 +1,7 @@
 defmodule YouCongressWeb.LatestLiveTest do
   use YouCongressWeb.ConnCase, async: false
 
+  import Ecto.Query
   import Phoenix.LiveViewTest
   import YouCongress.AccountsFixtures
   import YouCongress.AuthorsFixtures
@@ -10,6 +11,8 @@ defmodule YouCongressWeb.LatestLiveTest do
   import YouCongressWeb.ConnCase
 
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
+  alias YouCongress.Repo
 
   defp add_opinion(statement, author, attrs) do
     opinion = opinion_fixture(Keyword.put(attrs, :author_id, author.id))
@@ -131,6 +134,65 @@ defmodule YouCongressWeb.LatestLiveTest do
       today_position = html |> :binary.match("Today") |> elem(0)
       old_position = html |> :binary.match("1963") |> elem(0)
       assert today_position < old_position
+    end
+
+    test "toggles from quote dates to added dates and shows added timestamps", %{conn: conn} do
+      recently_added_statement = statement_fixture(title: "Recently added old quote")
+      earlier_added_statement = statement_fixture(title: "Earlier added new quote")
+
+      recent_opinion =
+        add_opinion(recently_added_statement, author_fixture(),
+          content: "Old quote added recently",
+          answer: :for,
+          date: ~D[2020-01-01],
+          date_precision: :day
+        )
+
+      earlier_opinion =
+        add_opinion(earlier_added_statement, author_fixture(),
+          content: "New quote added earlier",
+          answer: :against,
+          date: Date.utc_today(),
+          date_precision: :day
+        )
+
+      one_hour_ago =
+        NaiveDateTime.utc_now()
+        |> NaiveDateTime.add(-60 * 60, :second)
+        |> NaiveDateTime.truncate(:second)
+
+      eight_days_ago =
+        NaiveDateTime.utc_now()
+        |> NaiveDateTime.add(-8 * 86_400, :second)
+        |> NaiveDateTime.truncate(:second)
+
+      from(o in Opinion, where: o.id == ^recent_opinion.opinion_id)
+      |> Repo.update_all(set: [inserted_at: one_hour_ago])
+
+      from(o in Opinion, where: o.id == ^earlier_opinion.opinion_id)
+      |> Repo.update_all(set: [inserted_at: eight_days_ago])
+
+      {:ok, view, html} = live(conn, ~p"/")
+
+      assert html =~ "Quote date"
+      assert html =~ "Added"
+      refute html =~ "Added 1h ago"
+
+      recent_position = html |> :binary.match("Earlier added new quote") |> elem(0)
+      old_position = html |> :binary.match("Recently added old quote") |> elem(0)
+      assert recent_position < old_position
+
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
+      added_html = render(view)
+
+      recently_added_position =
+        added_html |> :binary.match("Recently added old quote") |> elem(0)
+
+      earlier_added_position = added_html |> :binary.match("Earlier added new quote") |> elem(0)
+      assert recently_added_position < earlier_added_position
+      assert added_html =~ "Today"
+      assert added_html =~ "Added 1h ago"
+      assert added_html =~ "Added 8d ago"
     end
 
     test "shows the author's statements and votes under the opinion", %{conn: conn} do
