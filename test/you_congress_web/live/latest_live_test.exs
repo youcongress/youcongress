@@ -183,6 +183,7 @@ defmodule YouCongressWeb.LatestLiveTest do
       assert recent_position < old_position
 
       view |> element("button[phx-click='toggle-switch']") |> render_click()
+      assert_patch(view, "/?sort=quote-added")
       added_html = render(view)
 
       recently_added_position =
@@ -193,6 +194,15 @@ defmodule YouCongressWeb.LatestLiveTest do
       assert added_html =~ "Today"
       assert added_html =~ "Added 1h ago"
       assert added_html =~ "Added 8d ago"
+
+      {:ok, direct_view, direct_html} = live(conn, ~p"/?sort=quote-added")
+
+      assert has_element?(direct_view, "button[role='switch'][aria-checked='true']")
+      assert direct_html =~ "Added 1h ago"
+
+      direct_view |> element("button[phx-click='toggle-switch']") |> render_click()
+      assert_patch(direct_view, "/")
+      refute render(direct_view) =~ "Added 1h ago"
     end
 
     test "shows the author's statements and votes under the opinion", %{conn: conn} do
