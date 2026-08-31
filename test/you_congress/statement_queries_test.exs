@@ -7,7 +7,9 @@ defmodule YouCongress.Statements.StatementQueriesTest do
   import YouCongress.VotesFixtures
 
   alias YouCongress.Opinions
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements
+  alias YouCongress.Repo
   alias YouCongress.Statements.StatementQueries
   alias YouCongress.Votes
 
@@ -556,6 +558,61 @@ defmodule YouCongress.Statements.StatementQueriesTest do
       assert card.vote.id == newest_vote.id
       assert card.vote.opinion.id == newest_opinion.id
       assert card.vote.answer == :abstain
+    end
+
+    test "can order and select each statement's opinion by when it was added" do
+      first_statement = statement_fixture()
+      first_author = author_fixture()
+
+      newest_quote =
+        opinion_fixture(%{
+          author_id: first_author.id,
+          content: "Newest quote date, added first",
+          date: ~D[2026-08-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(newest_quote, first_statement.id)
+
+      vote_fixture(%{
+        statement_id: first_statement.id,
+        author_id: first_author.id,
+        opinion_id: newest_quote.id,
+        answer: :for
+      })
+
+      second_statement = statement_fixture()
+      second_author = author_fixture()
+
+      most_recently_added =
+        opinion_fixture(%{
+          author_id: second_author.id,
+          content: "Older quote date, added last",
+          date: ~D[2020-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(most_recently_added, second_statement.id)
+
+      vote_fixture(%{
+        statement_id: second_statement.id,
+        author_id: second_author.id,
+        opinion_id: most_recently_added.id,
+        answer: :against
+      })
+
+      older_inserted_at = ~N[2026-01-01 00:00:00]
+      newer_inserted_at = ~N[2026-02-01 00:00:00]
+
+      from(o in Opinion, where: o.id == ^newest_quote.id)
+      |> Repo.update_all(set: [inserted_at: older_inserted_at])
+
+      from(o in Opinion, where: o.id == ^most_recently_added.id)
+      |> Repo.update_all(set: [inserted_at: newer_inserted_at])
+
+      cards = StatementQueries.get_newest_opinion_cards(order_by: :added, limit: 20)
+
+      assert Enum.map(cards, & &1.statement.id) == [second_statement.id, first_statement.id]
     end
 
     test "skips statements without opinion votes" do

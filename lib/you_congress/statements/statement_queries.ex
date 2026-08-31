@@ -596,20 +596,24 @@ defmodule YouCongress.Statements.StatementQueries do
 
   @doc """
   Returns one opinion card per statement featuring the statement's newest
-  opinion, ordered by the date of the opinion (not the date it was added).
+  opinion, ordered by quote date by default or insertion time in added mode.
 
   Unlike the home feed, opinions are not grouped by answer: each statement
   appears once with its single newest opinion, from any author.
 
   Options:
   - :hall_name - filter by hall (default "all")
+  - :order_by - `:quote_date` (default) or `:added`
   - :offset - number of cards to skip
   - :limit - max cards to return
   """
   def get_newest_opinion_cards(opts \\ []) do
     hall_name = Keyword.get(opts, :hall_name, "all")
+    order_by = Keyword.get(opts, :order_by, :quote_date)
     offset = Keyword.get(opts, :offset, 0)
     limit = Keyword.get(opts, :limit, 15)
+
+    {rank_order, feed_order} = newest_opinion_order(order_by)
 
     has_hall = hall_name != "all"
 
@@ -631,6 +635,7 @@ defmodule YouCongress.Statements.StatementQueries do
         v.id as vote_id,
         s.id as statement_id,
         o.date as opinion_date,
+        o.inserted_at as opinion_inserted_at,
         o.id as opinion_id,
         s.inserted_at as statement_inserted_at,
         CASE
@@ -642,17 +647,7 @@ defmodule YouCongress.Statements.StatementQueries do
         END as verification_rank,
         ROW_NUMBER() OVER (
           PARTITION BY s.id
-          ORDER BY o.date DESC NULLS LAST,
-                   CASE
-                     WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed')
-                      AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
-                      AND v.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 2
-                     WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
-                     ELSE 0
-                   END DESC,
-                   o.id DESC NULLS LAST,
-                   v.id DESC NULLS LAST,
-                   s.inserted_at DESC
+          ORDER BY #{rank_order}
         ) as vote_rank
       FROM statements s
       JOIN votes v ON v.statement_id = s.id
@@ -664,15 +659,54 @@ defmodule YouCongress.Statements.StatementQueries do
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
     WHERE rv.vote_rank = 1
-    ORDER BY rv.opinion_date DESC NULLS LAST,
-             rv.verification_rank DESC,
-             rv.opinion_id DESC NULLS LAST,
-             rv.statement_inserted_at DESC
+    ORDER BY #{feed_order}
     OFFSET #{offset_param}
     LIMIT #{limit_param}
     """
 
     run_opinion_cards_query(sql, params)
+  end
+
+  defp newest_opinion_order(:added) do
+    rank_order = """
+    o.inserted_at DESC NULLS LAST,
+    o.id DESC NULLS LAST,
+    v.id DESC NULLS LAST,
+    s.inserted_at DESC
+    """
+
+    feed_order = """
+    rv.opinion_inserted_at DESC NULLS LAST,
+    rv.opinion_id DESC NULLS LAST,
+    rv.statement_inserted_at DESC
+    """
+
+    {rank_order, feed_order}
+  end
+
+  defp newest_opinion_order(_order_by) do
+    rank_order = """
+    o.date DESC NULLS LAST,
+    CASE
+      WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed')
+       AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
+       AND v.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 2
+      WHEN o.verification_status IN ('verified', 'ai_verified', 'endorsed') THEN 1
+      ELSE 0
+    END DESC,
+    o.id DESC NULLS LAST,
+    v.id DESC NULLS LAST,
+    s.inserted_at DESC
+    """
+
+    feed_order = """
+    rv.opinion_date DESC NULLS LAST,
+    rv.verification_rank DESC,
+    rv.opinion_id DESC NULLS LAST,
+    rv.statement_inserted_at DESC
+    """
+
+    {rank_order, feed_order}
   end
 
   @doc """

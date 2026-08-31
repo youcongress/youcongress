@@ -9,6 +9,7 @@ defmodule YouCongressWeb.LatestLive.Index do
   alias YouCongress.Track
   alias YouCongress.Votes
   alias YouCongressWeb.DateGroup
+  alias YouCongressWeb.Components.SwitchComponent
   alias YouCongressWeb.ReturnTo
   alias YouCongressWeb.SEO
   alias YouCongressWeb.StatementLive.VoteComponent
@@ -26,6 +27,7 @@ defmodule YouCongressWeb.LatestLive.Index do
       |> assign(:page, 1)
       |> assign(:per_page, @per_page)
       |> assign(:has_more_cards, true)
+      |> assign(:feed_order, :quote_date)
       |> assign(:cards, [])
       |> assign(:author_votes, %{})
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
@@ -65,6 +67,20 @@ defmodule YouCongressWeb.LatestLive.Index do
     end
   end
 
+  def handle_event("toggle-switch", _, socket) do
+    feed_order = if socket.assigns.feed_order == :quote_date, do: :added, else: :quote_date
+
+    socket =
+      socket
+      |> assign(:feed_order, feed_order)
+      |> assign(:cards, [])
+      |> assign(:author_votes, %{})
+      |> assign(:has_more_cards, true)
+      |> assign_cards(1)
+
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_info({:put_flash, kind, msg}, socket) do
     socket =
@@ -81,7 +97,12 @@ defmodule YouCongressWeb.LatestLive.Index do
     %{:per_page => per_page} = socket.assigns
     offset = (page - 1) * per_page
 
-    cards = StatementQueries.get_newest_opinion_cards(offset: offset, limit: per_page)
+    cards =
+      StatementQueries.get_newest_opinion_cards(
+        offset: offset,
+        limit: per_page,
+        order_by: socket.assigns.feed_order
+      )
 
     if cards == [] do
       assign(socket, :has_more_cards, false)
@@ -101,16 +122,26 @@ defmodule YouCongressWeb.LatestLive.Index do
 
   @doc """
   Splits the loaded cards into date groups ("Today", "Yesterday", ...) so the
-  feed renders as a timeline. Cards already arrive sorted by opinion date.
+  feed renders as a timeline. Cards already arrive sorted for the active mode.
   """
-  def date_groups(cards) do
-    DateGroup.group(cards, &card_date/1)
+  def date_groups(cards, feed_order \\ :quote_date) do
+    DateGroup.group(cards, &card_date(&1, feed_order))
   end
 
-  defp card_date(%{vote: %{opinion: %Opinion{date: date, date_precision: precision}}}),
-    do: {date, precision}
+  defp card_date(
+         %{vote: %{opinion: %Opinion{date: date, date_precision: precision}}},
+         :quote_date
+       ),
+       do: {date, precision}
 
-  defp card_date(_card), do: nil
+  defp card_date(%{vote: %{opinion: %Opinion{inserted_at: inserted_at}}}, :added),
+    do: inserted_at_date(inserted_at)
+
+  defp card_date(_card, _feed_order), do: nil
+
+  defp inserted_at_date(%DateTime{} = datetime), do: DateTime.to_date(datetime)
+  defp inserted_at_date(%NaiveDateTime{} = datetime), do: NaiveDateTime.to_date(datetime)
+  defp inserted_at_date(_datetime), do: nil
 
   def author_votes(author_votes_by_id, author_id, statement_id) do
     author_votes_by_id

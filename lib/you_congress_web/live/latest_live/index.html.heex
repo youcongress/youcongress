@@ -24,8 +24,16 @@
   </div>
 </div>
 
+<div class="flex justify-center pb-2">
+  <SwitchComponent.render
+    is_active={@feed_order == :added}
+    label1="Quote date"
+    label2="Added"
+  />
+</div>
+
 <ul id="latest-opinion-cards" phx-viewport-bottom={@has_more_cards && "load-more"} class="pt-2">
-  <%= for {group, group_index} <- Enum.with_index(date_groups(@cards)) do %>
+  <%= for {group, group_index} <- Enum.with_index(date_groups(@cards, @feed_order)) do %>
     <li
       id={"latest-date-group-#{group_index}"}
       class={[
@@ -74,6 +82,7 @@
             delegable={true}
             login_required_for_actions={true}
             regenerating_opinion_id={nil}
+            added_at_position={if @feed_order == :added, do: :badge, else: :default}
             page={:statements_index}
           />
         </div>
