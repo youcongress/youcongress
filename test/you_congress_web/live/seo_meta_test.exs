@@ -155,10 +155,22 @@ defmodule YouCongressWeb.SEOMetaTest do
   end
 
   describe "home page" do
-    test "has WebSite + SearchAction JSON-LD", %{conn: conn} do
+    test "has feed metadata and WebSite + SearchAction JSON-LD", %{conn: conn} do
       conn = get(conn, ~p"/")
       html = html_response(conn, 200)
 
+      title = "What's new in AI governance, safety, jobs and society | YouCongress"
+      escaped_title = title |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
+
+      description =
+        "Follow the latest sourced positions from experts, policymakers and public figures."
+
+      assert html =~ ~s(<title>#{escaped_title}</title>)
+      assert html =~ ~s(<meta content="#{escaped_title}" property="og:title")
+      assert html =~ ~s(<meta name="twitter:title" content="#{escaped_title}")
+      assert html =~ ~s(<meta name="description" content="#{description}")
+      assert html =~ ~s(<meta content="#{description}" property="og:description")
+      assert html =~ ~s(<meta name="twitter:description" content="#{description}")
       assert html =~ ~s("@type":"WebSite")
       assert html =~ "search_term_string"
     end

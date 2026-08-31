@@ -49,11 +49,14 @@ defmodule YouCongressWeb.LatestLive.Index do
     socket =
       socket
       |> assign(:return_to, ReturnTo.from_url(url))
-      |> assign(:page_title, "Latest Expert and Citizen Positions | YouCongress")
+      |> assign(
+        :page_title,
+        "What's new in AI governance, safety, jobs and society | YouCongress"
+      )
       |> assign(:skip_page_suffix, true)
       |> assign(
         :page_description,
-        "The most recent sourced opinions, ordered by the date they were stated, together with each author's statements and votes."
+        "Follow the latest sourced positions from experts, policymakers and public figures."
       )
       |> assign(:canonical_url, url(~p"/"))
       |> maybe_change_feed_order(feed_order)
