@@ -596,7 +596,9 @@ defmodule YouCongress.Statements.StatementQueries do
 
   @doc """
   Returns one opinion card per statement featuring the statement's newest
-  opinion, ordered by quote date by default or insertion time in added mode.
+  fully verified opinion, ordered by quote date by default or insertion time in
+  added mode. Quote authenticity, statement relevance, and vote answer must
+  each be verified, AI-verified, or endorsed.
 
   Unlike the home feed, opinions are not grouped by answer: each statement
   appears once with its single newest opinion, from any author.
@@ -653,8 +655,11 @@ defmodule YouCongress.Statements.StatementQueries do
       JOIN votes v ON v.statement_id = s.id
         AND v.opinion_id IS NOT NULL
       JOIN opinions o ON o.id = v.opinion_id
-      LEFT JOIN opinions_statements os ON os.opinion_id = o.id AND os.statement_id = s.id
+      JOIN opinions_statements os ON os.opinion_id = o.id AND os.statement_id = s.id
       #{hall_filter}
+      WHERE o.verification_status IN ('verified', 'ai_verified', 'endorsed')
+        AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
+        AND v.verification_status IN ('verified', 'ai_verified', 'endorsed')
     )
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv

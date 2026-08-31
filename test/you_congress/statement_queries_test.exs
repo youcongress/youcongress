@@ -13,11 +13,37 @@ defmodule YouCongress.Statements.StatementQueriesTest do
   alias YouCongress.Statements.StatementQueries
   alias YouCongress.Votes
 
-  defp verify_relevance(opinion, statement) do
+  defp verify_relevance(opinion, statement, status \\ :ai_verified) do
     opinion.id
     |> OpinionsStatements.get_opinion_statement(statement.id)
-    |> Ecto.Changeset.change(verification_status: :ai_verified)
+    |> Ecto.Changeset.change(verification_status: status)
     |> YouCongress.Repo.update!()
+  end
+
+  defp set_verification_pipeline(opinion, statement, vote) do
+    set_verification_pipeline(
+      opinion,
+      statement,
+      vote,
+      {:ai_verified, :ai_verified, :ai_verified}
+    )
+  end
+
+  defp set_verification_pipeline(
+         opinion,
+         statement,
+         vote,
+         {quote_status, relevance_status, vote_status}
+       ) do
+    opinion
+    |> Ecto.Changeset.change(verification_status: quote_status)
+    |> Repo.update!()
+
+    verify_relevance(opinion, statement, relevance_status)
+
+    vote
+    |> Ecto.Changeset.change(verification_status: vote_status)
+    |> Repo.update!()
   end
 
   describe "get_opinion_cards_by_recency/1" do
@@ -463,12 +489,15 @@ defmodule YouCongress.Statements.StatementQueriesTest do
 
       {:ok, _} = Opinions.add_opinion_to_statement(older_opinion, older_statement.id)
 
-      vote_fixture(%{
-        statement_id: older_statement.id,
-        author_id: older_author.id,
-        opinion_id: older_opinion.id,
-        answer: :for
-      })
+      older_vote =
+        vote_fixture(%{
+          statement_id: older_statement.id,
+          author_id: older_author.id,
+          opinion_id: older_opinion.id,
+          answer: :for
+        })
+
+      set_verification_pipeline(older_opinion, older_statement, older_vote)
 
       newer_statement = statement_fixture()
       newer_author = author_fixture()
@@ -482,12 +511,15 @@ defmodule YouCongress.Statements.StatementQueriesTest do
 
       {:ok, _} = Opinions.add_opinion_to_statement(newer_opinion, newer_statement.id)
 
-      vote_fixture(%{
-        statement_id: newer_statement.id,
-        author_id: newer_author.id,
-        opinion_id: newer_opinion.id,
-        answer: :for
-      })
+      newer_vote =
+        vote_fixture(%{
+          statement_id: newer_statement.id,
+          author_id: newer_author.id,
+          opinion_id: newer_opinion.id,
+          answer: :for
+        })
+
+      set_verification_pipeline(newer_opinion, newer_statement, newer_vote)
 
       cards = StatementQueries.get_newest_opinion_cards(limit: 20)
 
@@ -510,12 +542,15 @@ defmodule YouCongress.Statements.StatementQueriesTest do
 
       {:ok, _} = Opinions.add_opinion_to_statement(for_opinion, statement.id)
 
-      vote_fixture(%{
-        statement_id: statement.id,
-        author_id: for_author.id,
-        opinion_id: for_opinion.id,
-        answer: :for
-      })
+      for_vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: for_author.id,
+          opinion_id: for_opinion.id,
+          answer: :for
+        })
+
+      set_verification_pipeline(for_opinion, statement, for_vote)
 
       against_opinion =
         opinion_fixture(%{
@@ -527,12 +562,15 @@ defmodule YouCongress.Statements.StatementQueriesTest do
 
       {:ok, _} = Opinions.add_opinion_to_statement(against_opinion, statement.id)
 
-      vote_fixture(%{
-        statement_id: statement.id,
-        author_id: against_author.id,
-        opinion_id: against_opinion.id,
-        answer: :against
-      })
+      against_vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: against_author.id,
+          opinion_id: against_opinion.id,
+          answer: :against
+        })
+
+      set_verification_pipeline(against_opinion, statement, against_vote)
 
       newest_opinion =
         opinion_fixture(%{
@@ -551,6 +589,8 @@ defmodule YouCongress.Statements.StatementQueriesTest do
           opinion_id: newest_opinion.id,
           answer: :abstain
         })
+
+      set_verification_pipeline(newest_opinion, statement, newest_vote)
 
       [card] = StatementQueries.get_newest_opinion_cards(limit: 20)
 
@@ -574,12 +614,15 @@ defmodule YouCongress.Statements.StatementQueriesTest do
 
       {:ok, _} = Opinions.add_opinion_to_statement(newest_quote, first_statement.id)
 
-      vote_fixture(%{
-        statement_id: first_statement.id,
-        author_id: first_author.id,
-        opinion_id: newest_quote.id,
-        answer: :for
-      })
+      first_vote =
+        vote_fixture(%{
+          statement_id: first_statement.id,
+          author_id: first_author.id,
+          opinion_id: newest_quote.id,
+          answer: :for
+        })
+
+      set_verification_pipeline(newest_quote, first_statement, first_vote)
 
       second_statement = statement_fixture()
       second_author = author_fixture()
@@ -594,12 +637,15 @@ defmodule YouCongress.Statements.StatementQueriesTest do
 
       {:ok, _} = Opinions.add_opinion_to_statement(most_recently_added, second_statement.id)
 
-      vote_fixture(%{
-        statement_id: second_statement.id,
-        author_id: second_author.id,
-        opinion_id: most_recently_added.id,
-        answer: :against
-      })
+      second_vote =
+        vote_fixture(%{
+          statement_id: second_statement.id,
+          author_id: second_author.id,
+          opinion_id: most_recently_added.id,
+          answer: :against
+        })
+
+      set_verification_pipeline(most_recently_added, second_statement, second_vote)
 
       older_inserted_at = ~N[2026-01-01 00:00:00]
       newer_inserted_at = ~N[2026-02-01 00:00:00]
@@ -613,6 +659,116 @@ defmodule YouCongress.Statements.StatementQueriesTest do
       cards = StatementQueries.get_newest_opinion_cards(order_by: :added, limit: 20)
 
       assert Enum.map(cards, & &1.statement.id) == [second_statement.id, first_statement.id]
+    end
+
+    test "requires positive quote, relevance, and vote verification in every order" do
+      statement = statement_fixture()
+      verified_author = author_fixture()
+
+      verified_opinion =
+        opinion_fixture(%{
+          author_id: verified_author.id,
+          content: "Fully verified older quote",
+          date: ~D[2020-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(verified_opinion, statement.id)
+
+      verified_vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: verified_author.id,
+          opinion_id: verified_opinion.id,
+          answer: :for
+        })
+
+      set_verification_pipeline(
+        verified_opinion,
+        statement,
+        verified_vote,
+        {:verified, :ai_verified, :endorsed}
+      )
+
+      unverified_author = author_fixture()
+
+      unverified_newer_opinion =
+        opinion_fixture(%{
+          author_id: unverified_author.id,
+          content: "Unverified newer quote",
+          date: ~D[2026-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(unverified_newer_opinion, statement.id)
+
+      unverified_newer_vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: unverified_author.id,
+          opinion_id: unverified_newer_opinion.id,
+          answer: :against
+        })
+
+      set_verification_pipeline(
+        unverified_newer_opinion,
+        statement,
+        unverified_newer_vote,
+        {nil, :ai_verified, :ai_verified}
+      )
+
+      pending_relevance_statement = statement_fixture()
+      pending_relevance_author = author_fixture()
+      pending_relevance_opinion = opinion_fixture(%{author_id: pending_relevance_author.id})
+
+      {:ok, _} =
+        Opinions.add_opinion_to_statement(
+          pending_relevance_opinion,
+          pending_relevance_statement.id
+        )
+
+      pending_relevance_vote =
+        vote_fixture(%{
+          statement_id: pending_relevance_statement.id,
+          author_id: pending_relevance_author.id,
+          opinion_id: pending_relevance_opinion.id
+        })
+
+      set_verification_pipeline(
+        pending_relevance_opinion,
+        pending_relevance_statement,
+        pending_relevance_vote,
+        {:ai_verified, nil, :ai_verified}
+      )
+
+      pending_vote_statement = statement_fixture()
+      pending_vote_author = author_fixture()
+      pending_vote_opinion = opinion_fixture(%{author_id: pending_vote_author.id})
+
+      {:ok, _} =
+        Opinions.add_opinion_to_statement(pending_vote_opinion, pending_vote_statement.id)
+
+      pending_vote =
+        vote_fixture(%{
+          statement_id: pending_vote_statement.id,
+          author_id: pending_vote_author.id,
+          opinion_id: pending_vote_opinion.id
+        })
+
+      set_verification_pipeline(
+        pending_vote_opinion,
+        pending_vote_statement,
+        pending_vote,
+        {:ai_verified, :ai_verified, nil}
+      )
+
+      for order <- [:quote_date, :added] do
+        assert [%{statement: %{id: statement_id}, vote: %{id: vote_id}}] =
+                 StatementQueries.get_newest_opinion_cards(order_by: order, limit: 20)
+
+        assert statement_id == statement.id
+        assert vote_id == verified_vote.id
+      end
     end
 
     test "skips statements without opinion votes" do
@@ -635,12 +791,15 @@ defmodule YouCongress.Statements.StatementQueriesTest do
 
         {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
 
-        vote_fixture(%{
-          statement_id: statement.id,
-          author_id: author.id,
-          opinion_id: opinion.id,
-          answer: :for
-        })
+        vote =
+          vote_fixture(%{
+            statement_id: statement.id,
+            author_id: author.id,
+            opinion_id: opinion.id,
+            answer: :for
+          })
+
+        set_verification_pipeline(opinion, statement, vote)
       end)
 
       all_cards = StatementQueries.get_newest_opinion_cards(limit: 20)
