@@ -12,16 +12,31 @@ defmodule YouCongressWeb.LatestLiveTest do
 
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Repo
 
   defp add_opinion(statement, author, attrs) do
-    opinion = opinion_fixture(Keyword.put(attrs, :author_id, author.id))
+    opinion =
+      attrs
+      |> Keyword.put(:author_id, author.id)
+      |> Keyword.put(:verification_status, :ai_verified)
+      |> opinion_fixture()
 
     {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
 
+    from(os in OpinionStatement,
+      where: os.opinion_id == ^opinion.id and os.statement_id == ^statement.id
+    )
+    |> Repo.update_all(set: [verification_status: :ai_verified])
+
     vote_fixture(
       Map.merge(
-        %{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id},
+        %{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: opinion.id,
+          verification_status: :ai_verified
+        },
         Map.new(attrs)
       )
     )
@@ -41,7 +56,7 @@ defmodule YouCongressWeb.LatestLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/")
 
-      assert html =~ "Latest Expert and Citizen Positions"
+      assert html =~ "new in AI governance, safety, jobs and society"
       assert html =~ "AI Safety Statement"
       assert html =~ "A very recent opinion"
       assert html =~ "Ada Lovelace"
