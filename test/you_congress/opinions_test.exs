@@ -278,6 +278,49 @@ defmodule YouCongress.OpinionsTest do
     end
   end
 
+  describe "user-facing updates" do
+    test "ignores crafted internal fields while saving editable fields" do
+      owner = user_fixture()
+      other_user = user_fixture()
+      quoted_author = author_fixture()
+
+      opinion =
+        opinion_fixture(%{
+          content: "original content",
+          user_id: owner.id,
+          author_id: quoted_author.id,
+          twin: false,
+          verification_status: nil,
+          ancestry: nil,
+          descendants_count: 0,
+          likes_count: 0
+        })
+
+      assert {:ok, updated} =
+               Opinions.update_opinion_from_user(
+                 opinion,
+                 %{
+                   "content" => "edited content",
+                   "verification_status" => "verified",
+                   "user_id" => other_user.id,
+                   "twin" => true,
+                   "ancestry" => "1/2",
+                   "descendants_count" => 999,
+                   "likes_count" => 999,
+                   "content_embedding" => embedding([1.0])
+                 }, actor_user: owner)
+
+      assert updated.content == "edited content"
+      assert updated.user_id == owner.id
+      assert updated.twin == false
+      assert updated.verification_status == nil
+      assert updated.ancestry == nil
+      assert updated.descendants_count == 0
+      assert updated.likes_count == 0
+      assert updated.content_embedding == nil
+    end
+  end
+
   describe "quote?/1 and has_source_url?/1" do
     test "an opinion with only a source_url is a quote with a linkable URL" do
       opinion = %Opinion{source_url: "https://example.com/quote", source_text: nil}

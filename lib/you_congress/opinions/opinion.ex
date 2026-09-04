@@ -9,6 +9,7 @@ defmodule YouCongress.Opinions.Opinion do
   import Ecto.Changeset
 
   @date_precisions [:day, :month, :year]
+  @user_editable_fields [:content, :source_url, :source_text, :author_id, :date, :date_precision]
 
   schema "opinions" do
     field :source_url, :string
@@ -57,6 +58,25 @@ defmodule YouCongress.Opinions.Opinion do
   end
 
   def normalize_attrs(attrs), do: attrs
+
+  @doc """
+  Keeps only fields that may be changed through a user-facing opinion edit form.
+
+  Internal state such as ownership, verification, embeddings, ancestry, and
+  counters must be changed only by their dedicated trusted workflows.
+  """
+  def user_editable_attrs(attrs) when is_map(attrs) do
+    attrs
+    |> normalize_attrs()
+    |> Map.take(Enum.map(@user_editable_fields, &Atom.to_string/1))
+  end
+
+  def user_editable_attrs(_attrs), do: %{}
+
+  @doc false
+  def user_edit_changeset(opinion, attrs) do
+    changeset(opinion, user_editable_attrs(attrs))
+  end
 
   @doc false
   def changeset(opinion, attrs) do

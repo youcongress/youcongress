@@ -263,6 +263,16 @@ defmodule YouCongress.Opinions do
     maybe_endorse_updated_opinion(result, changeset, opts)
   end
 
+  @doc """
+  Updates an opinion using only fields permitted in user-facing edit forms.
+
+  This boundary prevents crafted form parameters from changing internal fields
+  accepted by the broader changeset used by trusted application workflows.
+  """
+  def update_opinion_from_user(%Opinion{} = opinion, attrs, opts \\ []) when is_list(opts) do
+    update_opinion(opinion, Opinion.user_editable_attrs(attrs), opts)
+  end
+
   defp maybe_update_vote_author_on_opinion_update({:ok, %Opinion{} = updated}, opinion, changeset) do
     if Map.has_key?(changeset.changes, :author_id) and updated.author_id != opinion.author_id do
       Votes.update_author_for_opinion_votes(updated.id, updated.author_id)

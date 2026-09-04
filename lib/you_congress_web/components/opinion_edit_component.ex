@@ -12,7 +12,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
   @impl true
   def update(%{opinion: opinion} = assigns, socket) do
     changeset =
-      Opinion.changeset(opinion, %{
+      Opinion.user_edit_changeset(opinion, %{
         content: opinion.content,
         date: opinion.date,
         date_precision: opinion.date_precision,
@@ -60,7 +60,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
 
     changeset =
       (opinion || %Opinion{})
-      |> Opinion.changeset(opinion_params)
+      |> Opinion.user_edit_changeset(opinion_params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, :form, to_form(changeset))}
@@ -95,7 +95,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
     opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :statements])
 
     if Permissions.can_edit_opinion?(opinion, socket.assigns[:current_user]) do
-      case Opinions.update_opinion(opinion, opinion_params,
+      case Opinions.update_opinion_from_user(opinion, opinion_params,
              actor_user: socket.assigns[:current_user]
            ) do
         {:ok, updated_opinion} ->
@@ -168,7 +168,7 @@ defmodule YouCongressWeb.OpinionEditComponent do
 
     changeset =
       socket.assigns.opinion
-      |> Opinion.changeset(opinion_params)
+      |> Opinion.user_edit_changeset(opinion_params)
       |> Map.put(:action, :validate)
 
     {:noreply,
