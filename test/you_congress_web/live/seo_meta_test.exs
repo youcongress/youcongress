@@ -29,6 +29,13 @@ defmodule YouCongressWeb.SEOMetaTest do
       assert html =~ ~s("@type":"Person")
       assert html =~ ~s("name":"Jane Expert")
       refute html =~ ~s(<meta name="robots" content="noindex")
+
+      assert_social_card(
+        html,
+        "/images/social-author.png",
+        "Sourced quotes and positions from Jane Expert on YouCongress",
+        1730
+      )
     end
 
     test "nameless author is noindexed", %{conn: conn} do
@@ -107,6 +114,12 @@ defmodule YouCongressWeb.SEOMetaTest do
 
       assert html =~ ~s(<blockquote cite="https://example.com/real")
       refute html =~ ~s(<blockquote cite="https://example.com/twin")
+
+      assert_social_card(
+        html,
+        "/images/social-statement.png",
+        "Sourced positions for and against: AI labs should publish safety frameworks"
+      )
     end
   end
 
@@ -155,7 +168,7 @@ defmodule YouCongressWeb.SEOMetaTest do
   end
 
   describe "home page" do
-    test "has feed metadata and WebSite + SearchAction JSON-LD", %{conn: conn} do
+    test "has social-card metadata and WebSite + SearchAction JSON-LD", %{conn: conn} do
       conn = get(conn, ~p"/")
       html = html_response(conn, 200)
 
@@ -163,7 +176,7 @@ defmodule YouCongressWeb.SEOMetaTest do
       escaped_title = title |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
 
       description =
-        "Follow the latest sourced positions from experts, policymakers and public figures."
+        "Follow the latest sourced positions from experts, policymakers and public figures on AI governance, safety, jobs and society."
 
       assert html =~ ~s(<title>#{escaped_title}</title>)
       assert html =~ ~s(<meta content="#{escaped_title}" property="og:title")
@@ -171,8 +184,36 @@ defmodule YouCongressWeb.SEOMetaTest do
       assert html =~ ~s(<meta name="description" content="#{description}")
       assert html =~ ~s(<meta content="#{description}" property="og:description")
       assert html =~ ~s(<meta name="twitter:description" content="#{description}")
+
+      assert_social_card(
+        html,
+        "/images/social-home.png",
+        "YouCongress latest sourced positions from experts, policymakers and public figures"
+      )
+
       assert html =~ ~s("@type":"WebSite")
       assert html =~ "search_term_string"
+    end
+  end
+
+  describe "explore page" do
+    test "has dedicated social-card metadata", %{conn: conn} do
+      conn = get(conn, ~p"/explore")
+      html = html_response(conn, 200)
+
+      assert html =~
+               "<title>Explore sourced quotes, claims, people and topics | YouCongress</title>"
+
+      assert html =~
+               ~s(<meta name="description" content="Search sourced quotes and compare where experts, policymakers and citizens stand on consequential questions.")
+
+      assert html =~ ~s(<link rel="canonical" href="#{YouCongressWeb.Endpoint.url()}/explore">)
+
+      assert_social_card(
+        html,
+        "/images/social-explore.png",
+        "Explore sourced quotes, public figures, policy statements and topics on YouCongress"
+      )
     end
   end
 
@@ -217,5 +258,22 @@ defmodule YouCongressWeb.SEOMetaTest do
       refute html =~ "application/ld+json"
       refute html =~ "<blockquote"
     end
+  end
+
+  # Bluesky, LinkedIn and WhatsApp read the Open Graph fields; X reads the
+  # twitter:* fields. Both families intentionally point at the same card.
+  defp assert_social_card(html, image_path, alt, width \\ 1731) do
+    image_url = YouCongressWeb.Endpoint.url() <> image_path
+
+    assert html =~ ~s(<meta property="og:image" content="#{image_url}")
+    assert html =~ ~s(<meta property="og:image:url" content="#{image_url}")
+    assert html =~ ~s(<meta property="og:image:secure_url" content="#{image_url}")
+    assert html =~ ~s(<meta property="og:image:type" content="image/png")
+    assert html =~ ~s(<meta property="og:image:width" content="#{width}")
+    assert html =~ ~s(<meta property="og:image:height" content="909")
+    assert html =~ ~s(<meta property="og:image:alt" content="#{alt}")
+    assert html =~ ~s(<meta name="twitter:card" content="summary_large_image")
+    assert html =~ ~s(<meta name="twitter:image" content="#{image_url}")
+    assert html =~ ~s(<meta name="twitter:image:alt" content="#{alt}")
   end
 end

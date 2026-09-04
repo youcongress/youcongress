@@ -339,11 +339,16 @@ defmodule YouCongressWeb.StatementLive.Index do
 
     socket
     |> assign(
-      page_title: "Expert and Citizen Preferences | YouCongress",
+      page_title: "Explore sourced quotes, claims, people and topics | YouCongress",
       skip_page_suffix: true,
       page_description:
-        "YouCongress structures sourced claims, quotes, votes and delegations so expert and citizen preferences are transparent and reusable.",
+        "Search sourced quotes and compare where experts, policymakers and citizens stand on consequential questions.",
       canonical_url: url(~p"/explore"),
+      page_image: url(~p"/images/social-explore.png"),
+      page_image_alt:
+        "Explore sourced quotes, public figures, policy statements and topics on YouCongress",
+      page_image_width: 1731,
+      page_image_height: 909,
       statement: %Statement{}
     )
     |> assign_stats(hall_stats)

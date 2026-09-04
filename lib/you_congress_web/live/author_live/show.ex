@@ -204,7 +204,10 @@ defmodule YouCongressWeb.AuthorLive.Show do
     socket
     |> assign(:canonical_url, SEO.author_url(author))
     |> assign(:og_type, "profile")
-    |> assign(:page_image, author.profile_image_url)
+    |> assign(:page_image, url(~p"/images/social-author.png"))
+    |> assign(:page_image_alt, "Sourced quotes and positions from #{name} on YouCongress")
+    |> assign(:page_image_width, 1730)
+    |> assign(:page_image_height, 909)
     |> then(fn socket ->
       if author.name do
         socket
