@@ -66,6 +66,13 @@ defmodule YouCongressWeb.StatementLive.Show do
       |> assign(:page_title, page_title(socket.assigns.live_action, statement.title))
       |> assign(:canonical_url, url(~p"/p/#{statement.slug}"))
       |> assign(:og_type, "article")
+      |> assign(:page_image, url(~p"/images/social-statement.png"))
+      |> assign(
+        :page_image_alt,
+        "Sourced positions for and against: #{SEO.truncate(statement.title, 140)}"
+      )
+      |> assign(:page_image_width, 1731)
+      |> assign(:page_image_height, 909)
       |> assign(:statement, statement)
       |> assign(reload: false)
       |> assign(full_width: true)

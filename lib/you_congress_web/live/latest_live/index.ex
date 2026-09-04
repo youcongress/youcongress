@@ -56,9 +56,16 @@ defmodule YouCongressWeb.LatestLive.Index do
       |> assign(:skip_page_suffix, true)
       |> assign(
         :page_description,
-        "Follow the latest sourced positions from experts, policymakers and public figures."
+        "Follow the latest sourced positions from experts, policymakers and public figures on AI governance, safety, jobs and society."
       )
       |> assign(:canonical_url, url(~p"/"))
+      |> assign(:page_image, url(~p"/images/social-home.png"))
+      |> assign(
+        :page_image_alt,
+        "YouCongress latest sourced positions from experts, policymakers and public figures"
+      )
+      |> assign(:page_image_width, 1731)
+      |> assign(:page_image_height, 909)
       |> maybe_change_feed_order(feed_order)
 
     {:noreply, socket}
