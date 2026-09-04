@@ -5,9 +5,11 @@ defmodule YouCongress.Embeddings.OpenAI do
 
   @behaviour YouCongress.Embeddings
 
+  alias YouCongress.OpenAIClient
+
   @impl YouCongress.Embeddings
   def embed(text) when is_binary(text) do
-    case OpenAI.embeddings(model: YouCongress.Embeddings.model(), input: text) do
+    case OpenAIClient.embeddings(model: YouCongress.Embeddings.model(), input: text) do
       {:ok, response} -> embedding_from_response(response)
       {:error, reason} -> {:error, reason}
     end
