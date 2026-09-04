@@ -630,6 +630,12 @@ defmodule YouCongress.AuthorsTest do
       assert found.id == author1.id
     end
 
+    test "get_author_by_twitter_id_str_or_username/2 does not fall back to a recycled username" do
+      _author = author_fixture(twitter_id_str: "original-id", twitter_username: "recycled_name")
+
+      assert Authors.get_author_by_twitter_id_str_or_username("new-owner-id", "recycled_name") == nil
+    end
+
     test "get_author_by_twitter_id_str_or_username/2 returns nil for both nil" do
       assert Authors.get_author_by_twitter_id_str_or_username(nil, nil) == nil
     end
