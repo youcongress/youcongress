@@ -111,7 +111,10 @@ defmodule YouCongress.Authors do
   end
 
   @doc """
-  Gets an author by twitter_id_str first, then falls back to twitter_username.
+  Gets an author by the stable twitter_id_str when it is available.
+
+  Falls back to twitter_username only when no stable ID was supplied. This avoids
+  linking an X account to an existing author when a username has been recycled.
   Returns nil if no author is found.
 
   ## Examples
@@ -132,12 +135,8 @@ defmodule YouCongress.Authors do
     get_author_by(twitter_username: twitter_username)
   end
 
-  def get_author_by_twitter_id_str_or_username(twitter_id_str, twitter_username) do
-    # Try to find by twitter_id_str first (more reliable)
-    case Repo.get_by(Author, twitter_id_str: twitter_id_str) do
-      nil -> get_author_by(twitter_username: twitter_username)
-      author -> author
-    end
+  def get_author_by_twitter_id_str_or_username(twitter_id_str, _twitter_username) do
+    Repo.get_by(Author, twitter_id_str: twitter_id_str)
   end
 
   @doc """
