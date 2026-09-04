@@ -4,6 +4,7 @@ defmodule YouCongress.Halls.Classification do
   """
 
   alias YouCongress.DigitalTwins.OpenAIModel
+  alias YouCongress.OpenAIClient
 
   @answer0 """
   {
@@ -72,7 +73,7 @@ defmodule YouCongress.Halls.Classification do
   @spec ask_gpt(binary, OpenAIModel.t()) ::
           {:ok, map} | {:error, binary}
   defp ask_gpt(prompt, model) do
-    OpenAI.chat_completion(
+    OpenAIClient.chat_completion(
       model: model,
       response_format: %{type: "json_schema", json_schema: @json_schema},
       messages: [

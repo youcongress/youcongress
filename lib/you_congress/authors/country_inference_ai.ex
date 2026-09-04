@@ -6,6 +6,7 @@ defmodule YouCongress.Authors.CountryInferenceAI do
   alias YouCongress.Authors.Author
   alias YouCongress.Authors.CountryInference
   alias YouCongress.DigitalTwins.OpenAIModel
+  alias YouCongress.OpenAIClient
 
   @behaviour CountryInference
 
@@ -25,7 +26,7 @@ defmodule YouCongress.Authors.CountryInferenceAI do
 
   @spec ask_gpt(binary(), OpenAIModel.t()) :: {:ok, map()} | {:error, binary()}
   defp ask_gpt(prompt, model) do
-    OpenAI.chat_completion(
+    OpenAIClient.chat_completion(
       model: model,
       response_format: %{
         type: "json_schema",

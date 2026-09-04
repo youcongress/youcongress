@@ -4,6 +4,7 @@ defmodule YouCongress.Halls.DescriptionGenerator do
   """
 
   alias YouCongress.DigitalTwins.OpenAIModel
+  alias YouCongress.OpenAIClient
   alias YouCongress.Tools.StringUtils
 
   @json_schema %{
@@ -48,7 +49,7 @@ defmodule YouCongress.Halls.DescriptionGenerator do
   end
 
   defp ask_gpt(prompt, model) do
-    OpenAI.chat_completion(
+    OpenAIClient.chat_completion(
       model: model,
       response_format: %{type: "json_schema", json_schema: @json_schema},
       messages: [

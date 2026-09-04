@@ -65,7 +65,7 @@ if feature_flags_env = System.get_env("FEATURE_FLAGS") do
          YouCongress.FeatureFlags.overrides_from_env(feature_flags_env)
 end
 
-config :openai,
+config :you_congress, :openai,
   api_key: System.get_env("OPENAI_API_KEY"),
   organization_key: System.get_env("OPENAI_ORGANIZATION_KEY"),
   http_options: [recv_timeout: 60_000]
@@ -127,7 +127,7 @@ if config_env() == :prod do
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
-      # See the documentation on https://hexdocs.pm/plug_cowboy/Plug.Cowboy.html
+      # See the documentation on https://hexdocs.pm/bandit/Bandit.html
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: port

@@ -4,6 +4,7 @@ defmodule YouCongress.Statements.TitleRewordingAI do
   """
 
   alias YouCongress.DigitalTwins.OpenAIModel
+  alias YouCongress.OpenAIClient
 
   @prompt """
   Generate three questions from the prompt so:
@@ -49,7 +50,7 @@ defmodule YouCongress.Statements.TitleRewordingAI do
 
   @spec ask_gpt(binary, OpenAIModel.t()) :: {:ok, map} | {:error, binary}
   defp ask_gpt(prompt, model) do
-    OpenAI.chat_completion(
+    OpenAIClient.chat_completion(
       model: model,
       response_format: %{
         type: "json_schema",
