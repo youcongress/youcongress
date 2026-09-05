@@ -352,9 +352,47 @@ defmodule YouCongressWeb.StatementLiveTest do
     end
 
     test "displays statement as non-logged visitor", %{conn: conn, statement: statement} do
-      {:ok, _show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+      {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}")
 
       assert html =~ statement.title
+      refute has_element?(show_live, "#statement-url")
+    end
+
+    test "displays the statement URL to visitors", %{conn: conn, statement: statement} do
+      {:ok, statement} = Statements.update_statement(statement, %{url: "https://ai-2040.com/"})
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}")
+
+      assert has_element?(
+               show_live,
+               "h1 a#statement-url[href='https://ai-2040.com/'][aria-label='Open statement link (opens in a new tab)'] .hero-link"
+             )
+    end
+
+    test "edits, validates, and clears a statement URL", %{conn: conn, statement: statement} do
+      conn = log_in_as_admin(conn)
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}/show/edit")
+
+      assert has_element?(show_live, "input[type='url'][name='statement[url]']")
+
+      assert show_live
+             |> form("#statement-form", statement: %{url: "javascript:alert(1)"})
+             |> render_submit() =~ "must be a valid HTTP or HTTPS URL"
+
+      show_live
+      |> form("#statement-form", statement: %{url: "https://ai-2040.com/"})
+      |> render_submit()
+
+      assert_patch(show_live, ~p"/p/#{statement.slug}")
+      assert has_element?(show_live, "a#statement-url[href='https://ai-2040.com/']")
+      assert Statements.get_statement!(statement.id).url == "https://ai-2040.com/"
+
+      show_live |> element("a", "Edit") |> render_click()
+      assert has_element?(show_live, "input[name='statement[url]'][value='https://ai-2040.com/']")
+      show_live |> form("#statement-form", statement: %{url: ""}) |> render_submit()
+
+      assert_patch(show_live, ~p"/p/#{statement.slug}")
+      refute has_element?(show_live, "#statement-url")
+      assert is_nil(Statements.get_statement!(statement.id).url)
     end
 
     test "loads opinions page by page as the visitor scrolls", %{

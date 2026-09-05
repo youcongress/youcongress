@@ -18,6 +18,7 @@ defmodule YouCongress.Statements.Statement do
 
   schema "statements" do
     field :title, :string
+    field :url, :string
 
     field :slug, :string
     field :opinion_likes_count, :integer, default: 0
@@ -54,6 +55,7 @@ defmodule YouCongress.Statements.Statement do
 
   @type t :: %__MODULE__{
           title: String.t(),
+          url: String.t() | nil,
           votes: [Vote.t()],
           user: User.t(),
           user_id: integer() | nil,
@@ -67,6 +69,7 @@ defmodule YouCongress.Statements.Statement do
     statement
     |> cast(attrs, [
       :title,
+      :url,
       :user_id,
       :slug,
       :opinion_likes_count,
@@ -74,6 +77,8 @@ defmodule YouCongress.Statements.Statement do
       :updated_at
     ])
     |> validate_required([:title])
+    |> update_change(:url, fn url -> if url, do: String.trim(url) end)
+    |> validate_url()
     |> unique_constraint(:title)
     |> generate_slug_if_empty()
     |> unique_constraint(:slug)
@@ -87,6 +92,19 @@ defmodule YouCongress.Statements.Statement do
   """
   def synthesis_changeset(statement, attrs) do
     cast(statement, attrs, [:synthesis, :synthesis_generated_at, :synthesis_quotes_count])
+  end
+
+  defp validate_url(changeset) do
+    validate_change(changeset, :url, fn :url, url ->
+      case URI.new(url) do
+        {:ok, %URI{scheme: scheme, host: host}}
+        when scheme in ["http", "https"] and is_binary(host) and host != "" ->
+          []
+
+        _ ->
+          [url: "must be a valid HTTP or HTTPS URL"]
+      end
+    end)
   end
 
   defp put_halls(changeset, %{"halls" => halls}) when is_list(halls) do
