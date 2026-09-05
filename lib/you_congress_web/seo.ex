@@ -40,23 +40,21 @@ defmodule YouCongressWeb.SEO do
       when is_integer(quotes_votes_count) and quotes_votes_count > 0 do
     author_names = top_statement_author_names(authors)
     quote_summary = statement_quote_summary(quotes_votes_count)
-    title = truncate(title, 70)
 
     cond do
       length(author_names) == 3 ->
-        "Who's for and against \"#{title}\"? #{quote_summary} including #{join_names(author_names)}."
+        "#{quote_summary} including #{join_names(author_names)}. See who's for and against."
 
       quotes_votes_count >= 15 ->
-        "Who's for and against \"#{title}\"? #{quote_summary} from experts and public figures."
+        "#{quote_summary} from experts and public figures. See who's for and against."
 
       true ->
         statement_description(title, nil, 0, [])
     end
   end
 
-  def statement_description(title, _vote_frequencies, _quotes_votes_count, _authors) do
-    "Who's for and against \"#{truncate(title, 90)}\"? " <>
-      "See sourced quotes, votes and sources on YouCongress."
+  def statement_description(_title, _vote_frequencies, _quotes_votes_count, _authors) do
+    "See who's for and against, with sourced quotes, votes and original sources."
   end
 
   def hall_title(hall_name) do
