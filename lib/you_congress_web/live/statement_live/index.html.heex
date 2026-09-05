@@ -20,12 +20,24 @@
   </div>
 
   <%= if is_nil(@search) do %>
-    <div class="flex-1 min-w-[200px] flex justify-center w-full md:w-auto flex items-center gap-3 justify-center md:justify-end flex-shrink-0">
+    <div class="flex-1 min-w-[200px] w-full md:w-auto flex flex-wrap items-center gap-3 justify-center md:justify-end flex-shrink-0">
       <SwitchComponent.render
         is_active={@feed_order == :added}
         label1="Quote date"
         label2="Added"
       />
+      <form id="vote-share-filter" phx-change="filter-vote-share">
+        <label for="agreement-filter" class="sr-only">Agreement</label>
+        <select
+          id="agreement-filter"
+          name="agreement"
+          class="rounded-lg border-zinc-300 py-2 pl-3 pr-8 text-sm text-zinc-700 focus:border-indigo-500 focus:ring-indigo-500"
+        >
+          <option value="all" selected={@agreement == "all"}>High and low agreement</option>
+          <option value="high" selected={@agreement == "high"}>High agreement (&gt;80%)</option>
+          <option value="low" selected={@agreement == "low"}>No clear agreement (≤80%)</option>
+        </select>
+      </form>
       <div>
         <.link
           href={~p"/mcp-tools"}
@@ -239,6 +251,13 @@
         </div>
       </li>
     </ul>
+    <p
+      :if={@agreement != "all" && map_size(@cards_by_id) == 0}
+      id="vote-share-empty"
+      class="py-8 text-center text-sm text-zinc-600"
+    >
+      No statements match this agreement filter.
+    </p>
     <%= if !@has_more_statements && @can_create_statement? do %>
       <div class="text-center pt-6">
         <button

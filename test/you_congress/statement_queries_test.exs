@@ -46,6 +46,51 @@ defmodule YouCongress.Statements.StatementQueriesTest do
     |> Repo.update!()
   end
 
+  describe "vote share filter" do
+    test "includes any response strictly above 80%, excludes empty and boundary cases, and paginates" do
+      qualifying =
+        for answer <- [:for, :against, :abstain] do
+          statement = statement_fixture()
+
+          for _ <- 1..5 do
+            vote_fixture(%{statement_id: statement.id, answer: answer})
+          end
+
+          other_answer = if answer == :for, do: :against, else: :for
+          vote_fixture(%{statement_id: statement.id, answer: other_answer})
+          statement.id
+        end
+
+      boundary = statement_fixture()
+      for _ <- 1..4, do: vote_fixture(%{statement_id: boundary.id, answer: :for})
+      vote_fixture(%{statement_id: boundary.id, answer: :against})
+      empty = statement_fixture()
+
+      for query <- [
+            &StatementQueries.get_opinion_cards_by_quote_date/1,
+            &StatementQueries.get_opinion_cards_by_recency/1
+          ] do
+        opts = [min_opinions: 0, agreement: "high"]
+        cards = query.(opts)
+        ids = Enum.map(cards, & &1.statement.id)
+        assert Enum.sort(ids) == Enum.sort(qualifying)
+        refute boundary.id in ids
+        refute empty.id in ids
+
+        paginated_ids =
+          for offset <- 0..2 do
+            [card] = query.(opts ++ [offset: offset, limit: 1])
+            card.statement.id
+          end
+
+        assert paginated_ids == ids
+        low_cards = query.(min_opinions: 0, agreement: "low")
+        assert Enum.map(low_cards, & &1.statement.id) == [boundary.id]
+        assert length(query.(min_opinions: 0)) == 5
+      end
+    end
+  end
+
   describe "get_opinion_cards_by_recency/1" do
     test "only returns statements with at least 15 opinions" do
       statement = statement_fixture()

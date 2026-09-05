@@ -523,6 +523,7 @@ defmodule YouCongress.Statements.StatementQueries do
     offset = Keyword.get(opts, :offset, 0)
     limit = Keyword.get(opts, :limit, 15)
     min_opinions = min_opinions(opts)
+    vote_share_filter = vote_share_filter(opts)
 
     has_hall = hall_name != "all"
 
@@ -579,6 +580,7 @@ defmodule YouCongress.Statements.StatementQueries do
       LEFT JOIN opinions_statements os ON os.opinion_id = o.id AND os.statement_id = s.id
       #{hall_filter}
       WHERE (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= #{min_opinions_param}
+      #{vote_share_filter}
     )
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
@@ -731,6 +733,7 @@ defmodule YouCongress.Statements.StatementQueries do
     offset = Keyword.get(opts, :offset, 0)
     limit = Keyword.get(opts, :limit, 15)
     min_opinions = min_opinions(opts)
+    vote_share_filter = vote_share_filter(opts)
 
     has_hall = hall_name != "all"
 
@@ -786,6 +789,7 @@ defmodule YouCongress.Statements.StatementQueries do
       LEFT JOIN opinions_statements os ON os.opinion_id = o.id AND os.statement_id = s.id
       #{hall_filter}
       WHERE (SELECT COUNT(*) FROM votes v2 WHERE v2.statement_id = s.id AND v2.opinion_id IS NOT NULL) >= #{min_opinions_param}
+      #{vote_share_filter}
     )
     SELECT rv.vote_id, rv.statement_id
     FROM ranked_votes rv
@@ -798,6 +802,29 @@ defmodule YouCongress.Statements.StatementQueries do
     """
 
     run_opinion_cards_query(sql, params)
+  end
+
+  # Apply before pagination and count all votes, as the statement results do.
+  defp vote_share_filter(opts) do
+    case Keyword.get(opts, :agreement, "all") do
+      agreement when agreement in ["high", "low"] ->
+        comparison = if agreement == "high", do: ">", else: "<="
+
+        """
+        AND EXISTS (
+          SELECT 1 FROM (
+            SELECT COUNT(share_votes.answer) AS vote_count FROM votes share_votes
+            WHERE share_votes.statement_id = s.id
+            GROUP BY share_votes.answer
+          ) response_counts
+          HAVING SUM(vote_count) > 0
+            AND MAX(vote_count) * 5 #{comparison} SUM(vote_count) * 4
+        )
+        """
+
+      _ ->
+        ""
+    end
   end
 
   defp run_opinion_cards_query(sql, params) do
