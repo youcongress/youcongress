@@ -86,6 +86,61 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ statement.title
     end
 
+    test "filters vote shares in both sort modes and restores the feed when selecting all", %{
+      conn: conn
+    } do
+      consensus = statement_fixture(title: "Strong consensus")
+      split = statement_fixture(title: "Evenly split")
+      vote_fixture(%{statement_id: consensus.id, answer: :against})
+      vote_fixture(%{statement_id: split.id, answer: :for})
+      vote_fixture(%{statement_id: split.id, answer: :against})
+
+      {:ok, view, _html} = live(conn, ~p"/explore?min_opinions=0")
+      assert has_element?(view, "#opinion-cards-list", split.title)
+      refute has_element?(view, "#agreement-filter option[value=high][selected]")
+
+      view |> form("#vote-share-filter", agreement: "high") |> render_change()
+      assert has_element?(view, "#agreement-filter option[value=high][selected]")
+      assert has_element?(view, "#opinion-cards-list", consensus.title)
+      refute has_element?(view, "#opinion-cards-list", split.title)
+
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
+      assert has_element?(view, "#agreement-filter option[value=high][selected]")
+      assert has_element?(view, "#opinion-cards-list", consensus.title)
+      refute has_element?(view, "#opinion-cards-list", split.title)
+
+      view |> form("#vote-share-filter", agreement: "low") |> render_change()
+      assert has_element?(view, "#agreement-filter option[value=low][selected]")
+      assert has_element?(view, "#opinion-cards-list", split.title)
+      refute has_element?(view, "#opinion-cards-list", consensus.title)
+
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
+      assert has_element?(view, "#opinion-cards-list", split.title)
+      refute has_element?(view, "#opinion-cards-list", consensus.title)
+
+      view |> form("#vote-share-filter", agreement: "all") |> render_change()
+      assert has_element?(view, "#opinion-cards-list", split.title)
+      assert has_element?(view, "#opinion-cards-list", consensus.title)
+    end
+
+    test "clears previous cards when the vote filter has no matches", %{conn: conn} do
+      statement = statement_fixture(title: "No consensus")
+      vote_fixture(%{statement_id: statement.id, answer: :for})
+      vote_fixture(%{statement_id: statement.id, answer: :against})
+
+      {:ok, view, _html} = live(conn, ~p"/explore?min_opinions=0")
+      assert has_element?(view, "#opinion-cards-list", statement.title)
+
+      view |> form("#vote-share-filter", agreement: "high") |> render_change()
+      refute has_element?(view, "#opinion-cards-list > li")
+      assert has_element?(view, "#vote-share-empty")
+      refute has_element?(view, "#opinion-cards-list[phx-viewport-bottom]")
+
+      view |> form("#vote-share-filter", agreement: "all") |> render_change()
+      assert has_element?(view, "#opinion-cards-list", statement.title)
+      refute has_element?(view, "#vote-share-empty")
+    end
+
     test "defaults to quote date order and toggles to added order", %{conn: conn} do
       newer_date_statement =
         statement_fixture(title: "Newest quote date statement")

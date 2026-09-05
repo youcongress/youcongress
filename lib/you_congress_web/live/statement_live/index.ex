@@ -47,6 +47,7 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:search_has_more, empty_search_has_more())
       |> assign(:search_totals, empty_search_totals())
       |> assign(:feed_order, :quote_date)
+      |> assign(:agreement, "all")
       |> assign(:hall_name, hall_name)
       |> assign(:hall_stats, nil)
       |> assign(:new_poll_visible?, false)
@@ -173,6 +174,16 @@ defmodule YouCongressWeb.StatementLive.Index do
     socket =
       socket
       |> assign(:feed_order, feed_order)
+      |> assign_cards(1)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("filter-vote-share", %{"agreement" => agreement}, socket)
+      when agreement in ["all", "high", "low"] do
+    socket =
+      socket
+      |> assign(:agreement, agreement)
       |> assign_cards(1)
 
     {:noreply, socket}
@@ -426,7 +437,8 @@ defmodule YouCongressWeb.StatementLive.Index do
             hall_name: hall_name,
             offset: offset,
             limit: per_page,
-            min_opinions: min_opinions
+            min_opinions: min_opinions,
+            agreement: socket.assigns.agreement
           )
 
         :added ->
@@ -434,7 +446,8 @@ defmodule YouCongressWeb.StatementLive.Index do
             hall_name: hall_name,
             offset: offset,
             limit: per_page,
-            min_opinions: min_opinions
+            min_opinions: min_opinions,
+            agreement: socket.assigns.agreement
           )
 
         _ ->
@@ -442,11 +455,24 @@ defmodule YouCongressWeb.StatementLive.Index do
             hall_name: hall_name,
             offset: offset,
             limit: per_page,
-            min_opinions: min_opinions
+            min_opinions: min_opinions,
+            agreement: socket.assigns.agreement
           )
       end
 
     if cards == [] do
+      socket =
+        if page == 1 do
+          socket
+          |> stream(:opinion_cards, [], reset: true)
+          |> assign(:page, 1)
+          |> assign(:cards_by_id, %{})
+          |> assign(:votes, %{})
+          |> assign(:opinions, %{})
+        else
+          socket
+        end
+
       assign(socket, :has_more_statements, false)
     else
       # Extract statement IDs for loading current user's data
