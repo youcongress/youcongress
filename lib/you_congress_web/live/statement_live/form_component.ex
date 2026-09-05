@@ -22,6 +22,12 @@ defmodule YouCongressWeb.StatementLive.FormComponent do
       >
         <.input field={@form[:title]} type="text" label="Title" />
         <.input field={@form[:slug]} type="text" label="Slug" />
+        <.input
+          field={@form[:url]}
+          type="url"
+          label="URL (optional)"
+          placeholder="https://example.com/"
+        />
         <.live_component module={HallsInputComponent} id="halls-input" form={@form} />
         <:actions>
           <.button phx-disable-with="Saving...">Save Statement</.button>

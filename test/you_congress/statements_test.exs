@@ -57,6 +57,41 @@ defmodule YouCongress.StatementsTest do
       assert {:error, %Ecto.Changeset{}} = Statements.create_statement(@invalid_attrs)
     end
 
+    test "statement URLs are optional, trimmed, persisted, and clearable" do
+      statement = statement_fixture()
+      assert is_nil(statement.url)
+
+      for url <- ["https://ai-2040.com/", "http://example.com/plan?year=2040#details"] do
+        assert {:ok, updated} = Statements.update_statement(statement, %{url: "  #{url}  "})
+        assert Statements.get_statement!(statement.id).url == url
+
+        for blank <- ["", "   ", nil] do
+          assert {:ok, cleared} = Statements.update_statement(updated, %{url: blank})
+          assert is_nil(cleared.url)
+          assert is_nil(Statements.get_statement!(statement.id).url)
+        end
+      end
+    end
+
+    test "rejects URLs without an HTTP or HTTPS scheme and host" do
+      statement = statement_fixture()
+
+      for url <- [
+            "javascript:alert(1)",
+            "ftp://example.com/",
+            "//example.com/",
+            "example.com",
+            "https://",
+            "https:///plan",
+            "https://example .com/"
+          ] do
+        assert {:error, changeset} = Statements.update_statement(statement, %{url: url})
+        assert "must be a valid HTTP or HTTPS URL" in errors_on(changeset).url
+      end
+
+      assert is_nil(Statements.get_statement!(statement.id).url)
+    end
+
     test "create_statement/1 does not enqueue a quote job automatically" do
       user = admin_fixture()
 
