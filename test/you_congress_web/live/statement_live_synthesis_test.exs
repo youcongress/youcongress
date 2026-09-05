@@ -107,7 +107,7 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
       assert html =~ "AI synthesis"
       assert html =~ "Synthesis headline about the debate."
       assert html =~ "Show more"
-      assert html =~ "Show arguments and insights"
+      assert html =~ "Show insights and arguments"
       refute html =~ "AI synthesis of 25 quotes"
       refute html =~ "For 25 · Abstain 0 · Against 0"
       # The body ships in the initial HTML (crawlable) but starts hidden.
@@ -194,13 +194,13 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
       assert has_element?(view, "#synthesis-body")
       refute has_element?(view, "#synthesis-body.hidden")
       assert render(view) =~ "Hide"
-      refute render(view) =~ "Show arguments and insights"
+      refute render(view) =~ "Show insights and arguments"
 
       view |> element("button[phx-click='toggle-synthesis']") |> render_click()
       assert_patch(view, ~p"/p/#{statement.slug}")
       assert has_element?(view, "#synthesis-body.hidden")
       assert render(view) =~ "Show more"
-      assert render(view) =~ "Show arguments and insights"
+      assert render(view) =~ "Show insights and arguments"
     end
 
     test "opens expanded from the synthesis URL param", %{conn: conn} do
