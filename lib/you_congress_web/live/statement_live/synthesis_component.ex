@@ -59,7 +59,7 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
         </span>
         <span class="mt-1 block font-semibold">{@synthesis["headline"]}</span>
         <span :if={!@show_synthesis} class="mt-2 inline-block text-sm text-gray-600 underline">
-          Show arguments and insights
+          Show insights and arguments
         </span>
       </button>
 
