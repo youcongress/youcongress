@@ -77,7 +77,7 @@ defmodule YouCongressWeb.SEOTest do
         )
 
       assert description ==
-               "Who's for and against \"Should AI be regulated?\"? 38 sourced quotes including Tim Berners-Lee, Scott Alexander and Cory Doctorow."
+               "38 sourced quotes including Tim Berners-Lee, Scott Alexander and Cory Doctorow. See who's for and against."
 
       refute description =~ "%"
     end
@@ -111,7 +111,7 @@ defmodule YouCongressWeb.SEOTest do
         )
 
       assert description ==
-               "Who's for and against \"Should AI be regulated?\"? Sourced quotes including Tim Berners-Lee, Scott Alexander and Cory Doctorow."
+               "Sourced quotes including Tim Berners-Lee, Scott Alexander and Cory Doctorow. See who's for and against."
 
       refute description =~ "3 sourced"
       refute description =~ "%"
@@ -121,15 +121,16 @@ defmodule YouCongressWeb.SEOTest do
       description = SEO.statement_description("Should AI be regulated?", %{}, 15, [])
 
       assert description ==
-               "Who's for and against \"Should AI be regulated?\"? 15 sourced quotes from experts and public figures."
+               "15 sourced quotes from experts and public figures. See who's for and against."
     end
 
     test "falls back without enough quotes or named authors" do
-      description = SEO.statement_description("Should AI be regulated?", %{}, 0)
+      for count <- [0, 1, 14] do
+        description = SEO.statement_description("Should AI be regulated?", %{}, count)
 
-      assert description =~ "See sourced quotes, votes and sources"
-      refute description =~ "% for"
-      refute description =~ "0 sourced"
+        assert description ==
+                 "See who's for and against, with sourced quotes, votes and original sources."
+      end
     end
   end
 

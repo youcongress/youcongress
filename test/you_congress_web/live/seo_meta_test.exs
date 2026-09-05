@@ -98,7 +98,22 @@ defmodule YouCongressWeb.SEOMetaTest do
       conn = get(conn, ~p"/p/#{statement.slug}")
       html = html_response(conn, 200)
 
-      assert html =~ "See sourced quotes, votes and sources"
+      document = Floki.parse_document!(html)
+
+      for selector <- [
+            ~s(meta[name="description"]),
+            ~s(meta[property="og:description"]),
+            ~s(meta[name="twitter:description"])
+          ] do
+        assert Floki.attribute(document, selector, "content") ==
+                 ["See who's for and against, with sourced quotes, votes and original sources."]
+      end
+
+      for selector <- [~s(meta[property="og:title"]), ~s(meta[name="twitter:title"])] do
+        assert [title] = Floki.attribute(document, selector, "content")
+        assert title =~ statement.title
+      end
+
       refute html =~ "% for,"
       refute html =~ "2 sourced quotes"
 
