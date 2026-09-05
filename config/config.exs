@@ -14,6 +14,7 @@ config :you_congress, YouCongress.Repo, types: YouCongress.PostgrexTypes
 
 # Configures the endpoint
 config :you_congress, YouCongressWeb.Endpoint,
+  adapter: Bandit.PhoenixAdapter,
   url: [host: "localhost"],
   render_errors: [
     formats: [html: YouCongressWeb.ErrorHTML, json: YouCongressWeb.ErrorJSON],
@@ -73,7 +74,7 @@ oban_plugins =
     [
       {Oban.Plugins.Cron,
        crontab: [
-#         {"0 5,17 * * *", YouCongress.Workers.FreshQuoteDiscoveryWorker}
+         #         {"0 5,17 * * *", YouCongress.Workers.FreshQuoteDiscoveryWorker}
        ]}
       | oban_plugins
     ]
