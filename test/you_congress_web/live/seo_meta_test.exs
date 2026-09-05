@@ -261,7 +261,7 @@ defmodule YouCongressWeb.SEOMetaTest do
   end
 
   # Bluesky, LinkedIn and WhatsApp read the Open Graph fields; X reads the
-  # twitter:* fields. Both families intentionally point at the same card.
+  # twitter:* fields use a dedicated square summary card.
   defp assert_social_card(html, image_path, alt, width \\ 1731) do
     image_url = YouCongressWeb.Endpoint.url() <> image_path
 
@@ -272,8 +272,12 @@ defmodule YouCongressWeb.SEOMetaTest do
     assert html =~ ~s(<meta property="og:image:width" content="#{width}")
     assert html =~ ~s(<meta property="og:image:height" content="909")
     assert html =~ ~s(<meta property="og:image:alt" content="#{alt}")
-    assert html =~ ~s(<meta name="twitter:card" content="summary_large_image")
-    assert html =~ ~s(<meta name="twitter:image" content="#{image_url}")
-    assert html =~ ~s(<meta name="twitter:image:alt" content="#{alt}")
+    assert html =~ ~s(<meta name="twitter:card" content="summary")
+
+    assert html =~
+             ~s(<meta name="twitter:image" content="#{YouCongressWeb.Endpoint.url()}/images/social-x-square.png")
+
+    assert html =~
+             ~s(content="YouCongress illustration of public voices on overlapping quotation cards")
   end
 end
