@@ -406,7 +406,9 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       assert occurrences(html, ~s(class="pb-12")) == per_page
       assert html =~ "Loading more opinions..."
-      assert has_element?(show_live, "#statement-opinions-sentinel")
+      assert has_element?(show_live, "#statement-opinions-sentinel-for")
+      assert has_element?(show_live, "#statement-opinions-sentinel-abstain")
+      assert has_element?(show_live, "#statement-opinions-sentinel-against")
 
       html = render_hook(show_live, "load-more-opinions")
 
