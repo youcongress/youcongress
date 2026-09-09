@@ -598,12 +598,13 @@ defmodule YouCongress.Statements.StatementQueries do
 
   @doc """
   Returns one opinion card per statement featuring the statement's newest
-  fully verified opinion, ordered by quote date by default or insertion time in
-  added mode. Quote authenticity, statement relevance, and vote answer must
-  each be verified, AI-verified, or endorsed.
+  fully verified opinion, with each opinion shown at most once across the
+  feed. Cards are ordered by quote date by default or insertion time in added
+  mode. Quote authenticity, statement relevance, and vote answer must each be
+  verified, AI-verified, or endorsed.
 
-  Unlike the home feed, opinions are not grouped by answer: each statement
-  appears once with its single newest opinion, from any author.
+  Unlike the statement feed, opinions are not grouped by answer: each
+  statement appears once with its single newest opinion, from any author.
 
   Options:
   - :hall_name - filter by hall (default "all")
@@ -662,11 +663,21 @@ defmodule YouCongress.Statements.StatementQueries do
       WHERE o.verification_status IN ('verified', 'ai_verified', 'endorsed')
         AND os.verification_status IN ('verified', 'ai_verified', 'endorsed')
         AND v.verification_status IN ('verified', 'ai_verified', 'endorsed')
+    ),
+    deduplicated_opinions AS (
+      SELECT
+        rv.*,
+        ROW_NUMBER() OVER (
+          PARTITION BY rv.opinion_id
+          ORDER BY #{feed_order}, rv.vote_id DESC, rv.statement_id DESC
+        ) AS opinion_rank
+      FROM ranked_votes rv
+      WHERE rv.vote_rank = 1
     )
     SELECT rv.vote_id, rv.statement_id
-    FROM ranked_votes rv
-    WHERE rv.vote_rank = 1
-    ORDER BY #{feed_order}
+    FROM deduplicated_opinions rv
+    WHERE rv.opinion_rank = 1
+    ORDER BY #{feed_order}, rv.statement_id DESC
     OFFSET #{offset_param}
     LIMIT #{limit_param}
     """
