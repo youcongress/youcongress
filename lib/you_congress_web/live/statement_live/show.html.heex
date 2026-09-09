@@ -243,19 +243,19 @@
               </li>
             <% end %>
           </ul>
+          <div
+            :if={@has_more_opinions}
+            id={"statement-opinions-sentinel-#{answer}"}
+            phx-hook="InfiniteScroll"
+            data-event="load-more-opinions"
+            data-has-more={to_string(@has_more_opinions)}
+            data-item-count={length(@votes_from_delegates) + length(@votes_from_non_delegates)}
+            class="pt-4 text-center text-sm text-gray-500"
+          >
+            Loading more opinions...
+          </div>
         </div>
       <% end %>
-    </div>
-    <div
-      :if={@has_more_opinions}
-      id="statement-opinions-sentinel"
-      phx-hook="InfiniteScroll"
-      data-event="load-more-opinions"
-      data-has-more={to_string(@has_more_opinions)}
-      data-item-count={length(@votes_from_delegates) + length(@votes_from_non_delegates)}
-      class="pt-4 text-center text-sm text-gray-500"
-    >
-      Loading more opinions...
     </div>
   </div>
 <% end %>
