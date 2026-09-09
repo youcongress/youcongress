@@ -96,6 +96,46 @@ defmodule YouCongressWeb.LatestLiveTest do
       refute html =~ "Older against opinion"
     end
 
+    test "shows a quote only once when it is linked to multiple statements", %{conn: conn} do
+      first_statement = statement_fixture(title: "First linked statement")
+      second_statement = statement_fixture(title: "Second linked statement")
+      author = author_fixture()
+
+      opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "One quote linked to multiple statements",
+          verification_status: :ai_verified,
+          date: ~D[2026-01-01],
+          date_precision: :day
+        })
+
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, first_statement.id)
+      {:ok, _} = Opinions.add_opinion_to_statement(opinion, second_statement.id)
+
+      for statement <- [first_statement, second_statement] do
+        from(os in OpinionStatement,
+          where: os.opinion_id == ^opinion.id and os.statement_id == ^statement.id
+        )
+        |> Repo.update_all(set: [verification_status: :ai_verified])
+
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: opinion.id,
+          verification_status: :ai_verified
+        })
+      end
+
+      {:ok, view, html} = live(conn, ~p"/")
+
+      assert length(Regex.scan(~r/One quote linked to multiple statements/, html)) == 1
+
+      view |> element("button[phx-click='toggle-switch']") |> render_click()
+
+      assert length(Regex.scan(~r/One quote linked to multiple statements/, render(view))) == 1
+    end
+
     test "orders statements by the date of the opinion", %{conn: conn} do
       older_statement = statement_fixture(title: "Older opinion statement")
       newer_statement = statement_fixture(title: "Newer opinion statement")
