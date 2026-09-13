@@ -36,8 +36,8 @@ defmodule YouCongress.Statements.SynthesisTest do
 
     test "requires the quote floor when there is no synthesis yet" do
       enable_synthesis_flag()
-      refute Synthesis.eligible?(%Statement{synthesis: nil}, 24)
-      assert Synthesis.eligible?(%Statement{synthesis: nil}, 25)
+      refute Synthesis.eligible?(%Statement{synthesis: nil}, 19)
+      assert Synthesis.eligible?(%Statement{synthesis: nil}, 20)
     end
 
     test "requires the staleness delta when a synthesis exists" do
@@ -83,6 +83,34 @@ defmodule YouCongress.Statements.SynthesisTest do
       assert clean["headline"] == "Headline."
       assert clean["conclusion"] == "Conclusion."
       assert clean["model"] == "gpt-test"
+    end
+
+    test "removes opinion id citations from user-visible prose" do
+      raw = %{
+        "headline" => "Headline (1, 2).",
+        "arguments_for" => [
+          %{
+            "title" => "Title (1)",
+            "summary" => "Summary (1, 2).",
+            "opinion_ids" => [1, 2]
+          }
+        ],
+        "arguments_against" => [],
+        "middle_ground" => [],
+        "insights" => ["Insight (2, 1)."],
+        "conclusion" => "Conclusion (1, 2)."
+      }
+
+      assert {:ok, clean} = Synthesis.sanitize(raw, MapSet.new([1, 2]))
+
+      assert clean["headline"] == "Headline."
+
+      assert clean["arguments_for"] == [
+               %{"title" => "Title", "summary" => "Summary.", "opinion_ids" => [1, 2]}
+             ]
+
+      assert clean["insights"] == ["Insight."]
+      assert clean["conclusion"] == "Conclusion."
     end
 
     test "caps clusters, opinion ids and insights" do

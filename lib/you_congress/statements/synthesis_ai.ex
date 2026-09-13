@@ -26,10 +26,12 @@ defmodule YouCongress.Statements.SynthesisAI do
   @system_message "You are a neutral policy analyst synthesizing sourced quotes about a debate " <>
                     "statement for YouCongress. Ground every claim exclusively in the quotes " <>
                     "provided. Never introduce outside facts, events, statistics, or names. " <>
-                    "Never invent, alter, or paraphrase quote text as if quoting. Cite quotes " <>
-                    "only by their opinion_id, using only ids present in the input. Write in " <>
-                    "English, in plain text (no markdown), in a measured, non-partisan tone " <>
-                    "that presents the strongest version of each side."
+                    "Never invent, alter, or paraphrase quote text as if quoting. Opinion IDs " <>
+                    "are internal metadata: use them only in the opinion_ids arrays for clusters. " <>
+                    "Never put an opinion ID, citation marker, or parenthetical list of numeric " <>
+                    "IDs in any prose field, including the headline, title, summary, insights, " <>
+                    "or conclusion. Write in English, in plain text (no markdown), in a measured, " <>
+                    "non-partisan tone that presents the strongest version of each side."
 
   @impl true
   def submit(statement, votes) do
@@ -197,10 +199,10 @@ defmodule YouCongress.Statements.SynthesisAI do
        - summary: 1-3 sentences stating the argument as its proponents make it,
          without endorsing or rebutting it, using only content present in the
          quotes
-       - opinion_ids: 1-6 ids of quotes that best represent this cluster. Prefer
-         clear, substantive, recent quotes from diverse authors. A quote's
-         cluster must match what that quote actually argues; use its stance
-         field as a strong prior.
+       - opinion_ids: 1-6 ids of quotes that best represent this cluster. This is
+         internal metadata, not a prose citation. Prefer clear, substantive,
+         recent quotes from diverse authors. A quote's cluster must match what
+         that quote actually argues; use its stance field as a strong prior.
     3. insights: up to 5 one-sentence cross-cutting observations strictly
        derivable from the quotes — e.g. points where opposing sides agree,
        differing definitions or timeframes behind the disagreement, or patterns
@@ -211,7 +213,9 @@ defmodule YouCongress.Statements.SynthesisAI do
     Rules: represent each side by its strongest arguments regardless of how many
     quotes it has; if material for a section is missing, keep it minimal or empty
     rather than padding; every opinion_id you output must be one of the ids
-    above; English only; plain text only (no markdown).
+    above; use opinion_ids only in the cluster metadata arrays; never include
+    opinion IDs or citation markers in headline, title, summary, insights, or
+    conclusion; English only; plain text only (no markdown).
     """
   end
 
@@ -237,7 +241,7 @@ defmodule YouCongress.Statements.SynthesisAI do
           maxItems: 6,
           items: %{type: "integer"},
           description:
-            "opinion_id values of the provided quotes that best represent this argument. Only ids from the input."
+            "Internal metadata: opinion_id values of the provided quotes that best represent this argument. Only ids from the input; do not repeat them in prose."
         }
       },
       required: ["title", "summary", "opinion_ids"]
@@ -276,12 +280,16 @@ defmodule YouCongress.Statements.SynthesisAI do
           type: "array",
           minItems: 0,
           maxItems: 5,
-          items: %{type: "string"}
+          items: %{
+            type: "string",
+            description:
+              "One cross-cutting observation in prose, with no opinion IDs or citations."
+          }
         },
         "conclusion" => %{
           type: "string",
           description:
-            "2-3 neutral sentences on the state of the debate. No verdict, no vote counts."
+            "2-3 neutral sentences on the state of the debate. No verdict, vote counts, opinion IDs, or citations."
         }
       },
       required: [
