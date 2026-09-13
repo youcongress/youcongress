@@ -60,7 +60,7 @@ defmodule YouCongress.Workers.StatementSynthesisWorkerTest do
     test "skips below the quote floor" do
       enable_synthesis_flag()
       statement = statement_fixture()
-      fill_statement_with_quotes(statement.id, 24)
+      fill_statement_with_quotes(statement.id, 19)
 
       Oban.Testing.with_testing_mode(:manual, fn ->
         assert :ok = perform(%{"statement_id" => statement.id})
@@ -128,7 +128,7 @@ defmodule YouCongress.Workers.StatementSynthesisWorkerTest do
       end)
 
       small = statement_fixture(%{title: "small statement"})
-      fill_statement_with_quotes(small.id, 24)
+      fill_statement_with_quotes(small.id, 19)
 
       Oban.Testing.with_testing_mode(:manual, fn ->
         assert :ok = perform(%{"statement_id" => small.id, "force" => true})

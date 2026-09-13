@@ -22,7 +22,7 @@ defmodule YouCongress.Statements.Synthesis do
   alias YouCongress.Votes.Vote
   alias YouCongress.Workers.StatementSynthesisWorker
 
-  @min_quotes 25
+  @min_quotes 20
   @staleness_delta 10
   @max_clusters_per_side 5
   @max_opinion_ids_per_cluster 6
@@ -157,9 +157,9 @@ defmodule YouCongress.Statements.Synthesis do
          {:ok, conclusion} <- fetch_nonblank(raw, "conclusion") do
       clean =
         %{
-          "headline" => headline,
-          "conclusion" => conclusion,
-          "insights" => sanitize_insights(raw["insights"])
+          "headline" => strip_opinion_id_citations(headline, valid_ids),
+          "conclusion" => strip_opinion_id_citations(conclusion, valid_ids),
+          "insights" => sanitize_insights(raw["insights"], valid_ids)
         }
         |> Map.merge(sanitize_clusters(raw, valid_ids))
         |> maybe_put_model(raw)
@@ -229,7 +229,11 @@ defmodule YouCongress.Statements.Synthesis do
             |> Enum.filter(&MapSet.member?(valid_ids, &1))
             |> Enum.take(@max_opinion_ids_per_cluster)
 
-          %{"title" => cluster["title"], "summary" => cluster["summary"], "opinion_ids" => ids}
+          %{
+            "title" => strip_opinion_id_citations(cluster["title"], valid_ids),
+            "summary" => strip_opinion_id_citations(cluster["summary"], valid_ids),
+            "opinion_ids" => ids
+          }
         end)
         |> Enum.reject(&(&1["opinion_ids"] == []))
         |> Enum.take(@max_clusters_per_side)
@@ -245,13 +249,35 @@ defmodule YouCongress.Statements.Synthesis do
 
   defp valid_cluster_shape?(_), do: false
 
-  defp sanitize_insights(insights) when is_list(insights) do
+  defp sanitize_insights(insights, valid_ids) when is_list(insights) do
     insights
     |> Enum.filter(&(is_binary(&1) and String.trim(&1) != ""))
+    |> Enum.map(&strip_opinion_id_citations(&1, valid_ids))
     |> Enum.take(@max_insights)
   end
 
-  defp sanitize_insights(_), do: []
+  defp sanitize_insights(_, _valid_ids), do: []
+
+  # Quote ids are stored separately for resolving the source excerpts in the
+  # UI. Remove citation-shaped id lists if a model nevertheless leaks them
+  # into user-visible prose.
+  defp strip_opinion_id_citations(text, valid_ids) when is_binary(text) do
+    Regex.replace(~r/\s*\(([^()]*)\)/, text, fn match, inner ->
+      if opinion_id_list?(inner, valid_ids), do: "", else: match
+    end)
+  end
+
+  defp opinion_id_list?(inner, valid_ids) do
+    ids = String.split(inner, ",", trim: true)
+
+    ids != [] and
+      Enum.all?(ids, fn value ->
+        case Integer.parse(String.trim(value)) do
+          {id, ""} -> MapSet.member?(valid_ids, id)
+          _ -> false
+        end
+      end)
+  end
 
   defp fetch_nonblank(map, key) do
     case map[key] do
