@@ -13,6 +13,7 @@ defmodule YouCongress.Workers.MatchQuoteStatementsPollingWorker do
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Statements
+  alias YouCongress.Verifications.KeyIdeaCoverage
   alias YouCongress.Verifications.QuoteStatementMatcher
   alias YouCongress.Votes
   alias YouCongress.Workers.JobMetadata
@@ -158,7 +159,9 @@ defmodule YouCongress.Workers.MatchQuoteStatementsPollingWorker do
     statement_id = normalize_id(match["statement_id"] || match[:statement_id])
     answer = normalize_answer(match["answer"] || match[:answer])
 
-    if statement_id && answer, do: {statement_id, answer}, else: nil
+    if statement_id && answer && KeyIdeaCoverage.valid?(match),
+      do: {statement_id, answer},
+      else: nil
   end
 
   defp normalize_match(_), do: nil

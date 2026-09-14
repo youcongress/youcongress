@@ -9,6 +9,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
 
   alias YouCongress.DigitalTwins.OpenAIModel
   alias YouCongress.Opinions.Quotes.FreshQuoteFinder
+  alias YouCongress.Verifications.KeyIdeaCoverage
 
   @model :"gpt-5.4"
   @timeout_in_min 120
@@ -92,38 +93,24 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     2. Prefer primary sources: speeches, testimony, interviews, official blog posts, reports, transcripts, or accessible official social posts.
     3. Fetch the source page. Do not rely on search snippets.
     4. Check the existing recent YouCongress quotes and do not return duplicates or substantially identical quotes.
-    5. Check the provided YouCongress statements and discard any quote that is not on-topic for at least one COMPLETE statement with a determinable stance signal.
+    5. Check the provided YouCongress statements and discard any quote that does not cover every material key idea of at least one COMPLETE statement with a determinable stance signal.
     6. Keep searching after invalid or irrelevant candidates. Return no candidates only after making a thorough, persistent effort across multiple searches to find a qualifying quote.
 
     COMPLETE statement relevance standard:
-    A quote qualifies for a statement if it either:
-    - is directly about the COMPLETE statement's claim, proposal, or question; or
-    - strongly implies through its ordinary meaning that the author supports,
-      opposes, or abstains on the COMPLETE statement.
-
-    A quote need not restate every part of the COMPLETE statement or amount to
-    strict logical proof. It qualifies when one position on the COMPLETE
-    statement is substantially more likely than the alternatives based on the
-    quote itself. For example, a prediction that AI will create a labor shortage
-    strongly implies support for "AI will create more jobs than it destroys", and
-    a quote about AI-driven worker replacement can strongly imply opposition to
-    that same COMPLETE statement.
-
-    Do not accept a quote that only relates to one word, theme, subtopic, or a
-    nearby issue unless the quote supplies a necessary connection that strongly
-    implies the author's position on the COMPLETE statement.
-    Do not infer a position from general sentiment, party membership, job title, or facts outside the quote.
+    #{KeyIdeaCoverage.prompt_instructions()}
+    Return the ID of the one provided statement used for this coverage check.
+    Do not infer a position from general sentiment, party membership, job title,
+    or facts outside the quote.
 
     Validation rules:
     - The source URL must contain the exact quote, allowing only faithful translation or [...] for omitted text.
     - The quote must be attributed to the returned author.
     - The publication date must be within the freshness window.
-    - The quote must establish a position on a provided proposal or claim. A
-      prediction can establish a position on a factual claim; a merely related
-      observation cannot.
+    - The quote must cover every material key idea and establish a position on
+      the selected provided proposal or claim. A merely related observation cannot.
     - The quote must be suitable as a standalone quote.
     - The quote topic must be AI governance, AI safety, AI's impact on jobs, or AI's societal implications.
-    - The quote must make one position on at least one provided COMPLETE statement substantially more likely.
+    - The quote must cover all key ideas of at least one provided COMPLETE statement and make one position on it determinable.
     - If a candidate fails any rule, discard it and keep searching.
 
     Quote quality rules:
@@ -134,7 +121,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     - The quote must have one clear author: a person, an organisation, or one named document/issuing coalition. Use the media outlet as author only for a signed/official editorial by that outlet.
 
     Metadata rules:
-    - Fill every JSON field. Use an empty string when unavailable.
+    - Fill every JSON field. Use an empty string only for unavailable author text metadata; never for statement_id or coverage fields.
     - Use YYYY-MM-DD for date and "day" for date_precision.
     - If you provide wikipedia_url or twitter_username, the page/account must exist and belong to the author.
     - Authors must be experts, public figures, relevant organisations, or otherwise notable in the topic domain.
@@ -142,7 +129,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     Final QA before output:
     - Re-check that every source_url includes the quoted text.
     - Re-check that every quote is not already in the existing recent quotes inventory.
-    - Re-check that every quote would receive "ai_verified" under the COMPLETE statement relevance standard for at least one provided COMPLETE statement.
+    - Re-check that every quote would receive "ai_verified" under the strict key-idea coverage standard for its returned statement_id.
     - Remove any quote that fails verification, attribution, freshness, uniqueness, or COMPLETE statement relevance.
 
     Output: Return ONLY a valid JSON object matching the schema with as many qualifying items as you can find, up to #{limit} item.
@@ -177,7 +164,7 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
           %{
             "role" => "system",
             "content" =>
-              "You are a meticulous and persistent research assistant who only returns validated facts with exact citations. Use web_search extensively, trying multiple search strategies and primary sources containing exact quote text before returning no candidates. Accept explicit stances and strong ordinary-language implications on provided COMPLETE statements, including factual claims; reject merely adjacent quotes."
+              "You are a meticulous and persistent quote researcher. Accept a candidate only when the quote itself covers every material key idea of one provided COMPLETE statement and makes a stance determinable. Source context may clarify shorthand but may not supply a missing key idea."
           },
           %{
             "role" => "user",
@@ -308,6 +295,32 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
                 type: "string",
                 description:
                   "Brief note explaining source/date/attribution validation and the strongest matching statement."
+              },
+              "statement_id" => %{
+                type: "integer",
+                description:
+                  "ID of the provided statement whose every material key idea is covered."
+              },
+              "all_key_ideas_covered" => %{
+                type: "boolean",
+                description:
+                  "True only when the quote covers every material idea of statement_id."
+              },
+              "key_idea_coverage" => %{
+                type: "array",
+                minItems: 1,
+                items: %{
+                  type: "object",
+                  additionalProperties: false,
+                  properties: %{
+                    "idea" => %{type: "string"},
+                    "evidence" => %{
+                      type: "string",
+                      description: "Exact wording from the quote supporting this idea."
+                    }
+                  },
+                  required: ["idea", "evidence"]
+                }
               }
             },
             required: [
@@ -316,7 +329,10 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
               "date",
               "date_precision",
               "author",
-              "validation_note"
+              "validation_note",
+              "statement_id",
+              "all_key_ideas_covered",
+              "key_idea_coverage"
             ]
           }
         }

@@ -21,15 +21,43 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
 
   # --- Stub verifiers ---------------------------------------------------------
 
+  defmodule CompleteCoverage do
+    def status(comment \\ "c") do
+      %{
+        "status" => "ai_verified",
+        "comment" => comment,
+        "model" => "m",
+        "all_key_ideas_covered" => true,
+        "key_idea_coverage" => [
+          %{"idea" => "complete statement", "evidence" => "complete quote evidence"}
+        ],
+        "missing_key_ideas" => []
+      }
+    end
+
+    def vote do
+      %{
+        "correct_answer" => "for",
+        "comment" => "c",
+        "model" => "m",
+        "all_key_ideas_covered" => true,
+        "key_idea_coverage" => [
+          %{"idea" => "complete statement", "evidence" => "complete quote evidence"}
+        ],
+        "missing_key_ideas" => []
+      }
+    end
+  end
+
   defmodule PositiveVerifier do
     @behaviour YouCongress.Verifications.Verifier
     def submit(subject_type, %{id: id}), do: {:ok, "#{subject_type}:#{id}"}
 
     def check_job_status("vote:" <> _),
-      do: {:ok, :completed, %{"correct_answer" => "for", "comment" => "c", "model" => "m"}}
+      do: {:ok, :completed, CompleteCoverage.vote()}
 
     def check_job_status(_),
-      do: {:ok, :completed, %{"status" => "ai_verified", "comment" => "c", "model" => "m"}}
+      do: {:ok, :completed, CompleteCoverage.status()}
   end
 
   defmodule DisputedRelevanceVerifier do
@@ -43,7 +71,7 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
       do: {:ok, :completed, %{"status" => "disputed", "comment" => "off-topic", "model" => "m"}}
 
     def check_job_status("vote:" <> _),
-      do: {:ok, :completed, %{"correct_answer" => "for", "comment" => "c", "model" => "m"}}
+      do: {:ok, :completed, CompleteCoverage.vote()}
   end
 
   defmodule UnverifiableQuoteVerifier do
@@ -66,10 +94,10 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
     end
 
     def check_job_status("vote:" <> _),
-      do: {:ok, :completed, %{"correct_answer" => "for", "comment" => "c", "model" => "m"}}
+      do: {:ok, :completed, CompleteCoverage.vote()}
 
     def check_job_status(_),
-      do: {:ok, :completed, %{"status" => "ai_verified", "comment" => "c", "model" => "m"}}
+      do: {:ok, :completed, CompleteCoverage.status()}
   end
 
   defmodule CapturingVoteVerifier do
@@ -87,10 +115,10 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
     def submit(subject_type, %{id: id}), do: {:ok, "#{subject_type}:#{id}"}
 
     def check_job_status("vote:" <> _),
-      do: {:ok, :completed, %{"correct_answer" => "for", "comment" => "c", "model" => "m"}}
+      do: {:ok, :completed, CompleteCoverage.vote()}
 
     def check_job_status(_),
-      do: {:ok, :completed, %{"status" => "ai_verified", "comment" => "c", "model" => "m"}}
+      do: {:ok, :completed, CompleteCoverage.status()}
   end
 
   defmodule CorrectingQuoteVerifier do
@@ -138,10 +166,10 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
     end
 
     def check_job_status("vote:" <> _),
-      do: {:ok, :completed, %{"correct_answer" => "for", "comment" => "c", "model" => "m"}}
+      do: {:ok, :completed, CompleteCoverage.vote()}
 
     def check_job_status(_),
-      do: {:ok, :completed, %{"status" => "ai_verified", "comment" => "c", "model" => "m"}}
+      do: {:ok, :completed, CompleteCoverage.status()}
 
     def correct_content, do: @correct_content
     def correct_source_url, do: @correct_source_url
@@ -186,7 +214,7 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
     end
 
     def check_job_status(_),
-      do: {:ok, :completed, %{"status" => "ai_verified", "comment" => "c", "model" => "m"}}
+      do: {:ok, :completed, CompleteCoverage.status()}
 
     defp correction(number) do
       %{
@@ -251,7 +279,7 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
     end
 
     def check_job_status(_),
-      do: {:ok, :completed, %{"status" => "ai_verified", "comment" => "c", "model" => "m"}}
+      do: {:ok, :completed, CompleteCoverage.status()}
 
     defp correction(author_name, wikipedia_url) do
       {:ok, :completed,

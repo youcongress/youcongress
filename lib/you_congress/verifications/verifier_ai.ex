@@ -15,11 +15,10 @@ defmodule YouCongress.Verifications.VerifierAI do
 
   @behaviour YouCongress.Verifications.Verifier
 
-  require Logger
-
   alias YouCongress.Repo
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
+  alias YouCongress.Verifications.KeyIdeaCoverage
   alias YouCongress.Votes.Vote
 
   @model :"gpt-5.4-mini"
@@ -151,10 +150,9 @@ defmodule YouCongress.Verifications.VerifierAI do
     statement = opinion_statement.statement
 
     prompt = """
-    Verify whether the following quote is relevant to the COMPLETE statement and
-    provides enough signal that the author's stance on the COMPLETE statement is
-    determinable. This relevance pass should not decide the final vote direction;
-    the separate vote pass does that.
+    Verify whether the following quote covers every material key idea of the
+    COMPLETE statement and makes the author's stance determinable. This relevance
+    pass should not decide the final vote direction; the separate vote pass does.
 
     Statement: #{statement.title}
     Source URL: #{opinion.source_url || "None provided"}
@@ -164,26 +162,7 @@ defmodule YouCongress.Verifications.VerifierAI do
     #{opinion.content}
     \"\"\"
 
-    A quote qualifies if it either:
-    - is directly about the COMPLETE statement's claim, proposal, or question; or
-    - is a comment, criticism, concern, argument, reason, or explanation that
-      the cited source presents as part of the author's support, opposition, or
-      abstention on the COMPLETE statement; or
-    - is about a narrower, causal, comparative, or underlying issue whose
-      ordinary meaning, plus the cited source context when available, makes one
-      stance on the COMPLETE statement substantially more likely than the
-      alternatives.
-
-    Do not require the quote to restate every part of the COMPLETE statement, pin
-    down every quantified/net/comparative claim, or amount to strict logical
-    proof. If the quote is on the same issue and strongly points toward a likely
-    stance on the COMPLETE statement, mark it relevant and leave the exact
-    for/against/abstain classification to the vote pass.
-
-    For example, a quote arguing that AI investment is premised on employers
-    replacing large shares of workers is relevant to "AI will create more jobs
-    than it destroys": it strongly signals a determinable stance on net jobs even
-    if it does not explicitly compare total jobs created and destroyed.
+    #{KeyIdeaCoverage.prompt_instructions()}
 
     When a Source URL is provided, use web_search to inspect the source page when
     the quote is abstract, uses shorthand, or refers to "the proposal", "this",
@@ -192,32 +171,17 @@ defmodule YouCongress.Verifications.VerifierAI do
     same purpose (the source may be a book, PDF, or paywalled article that cannot
     be fetched on the open web).
 
-    The clear support, opposition, or abstention may be stated elsewhere in the
-    cited source article or passage rather than inside the stored quote itself, as
-    long as the stored quote is one of the author's comments or reasons for that
-    position.
-
-    Source context may establish what the quote is responding to. For example,
-    if a source article is about a proposal to create AI-run non-human
-    corporations, and the quote criticizes that idea as "programmed impunity" or
-    responsibility shifted onto machines, treat the quote as relevant to a
-    statement about granting AI agents legal personhood as non-human
-    corporations.
-
-    Do not accept a quote that only relates to one word, theme, subtopic, or a
-    nearby issue unless the quote plus its source context supplies the necessary
-    connection and makes one stance on the COMPLETE statement substantially more
-    likely. Do not infer a position from general sentiment, party membership, job
-    title, or facts outside the quote and its cited source context. Do not accept
-    a quote merely because the article discusses the statement; the cited source
-    must connect this author's quoted comment or reason to the issue.
+    Source context may identify what a pronoun or shorthand phrase in the quote
+    refers to, but the quoted words must still express every material proposition.
+    Do not accept a quote merely because the article discusses a missing idea.
+    Do not infer a position from general sentiment, party membership, job title,
+    institutional role, or facts outside the quote.
 
     Choose a status:
-    - "ai_verified": the quote is on-topic for the COMPLETE statement and one of
-      support, opposition, or abstention on the COMPLETE statement is
-      substantially more likely, whether explicit or strongly implied.
-    - "disputed": the quote is off-topic, merely adjacent, or no stance on the
-      COMPLETE statement is substantially more likely.
+    - "ai_verified": every material key idea is covered by the quote and a stance
+      on the COMPLETE statement is determinable.
+    - "disputed": at least one material key idea is missing, the quote is merely
+      adjacent, or no stance on the COMPLETE statement is determinable.
     - "ai_unverifiable": you cannot tell.
     Always include a short comment explaining your decision.
     """
@@ -225,11 +189,11 @@ defmodule YouCongress.Verifications.VerifierAI do
     {:ok,
      %{
        prompt: prompt,
-       schema: status_schema(),
+       schema: relevance_status_schema(),
        name: "RelevanceVerification",
        web_search: true,
        system:
-         "You judge whether a quote is on-topic for a COMPLETE policy statement and provides a determinable stance signal on that COMPLETE statement. Use cited source context to resolve abstract or context-dependent quotes, but do not use unrelated outside facts. Accept explicit relevance and strong ordinary-language implications when one stance is substantially more likely; reject merely adjacent topics."
+         "Verify relevance only when the quote itself covers every material key idea of the COMPLETE statement. Source context may resolve a referent but cannot supply a missing idea. Reject broader, narrower, and merely adjacent claims."
      }}
   end
 
@@ -239,8 +203,8 @@ defmodule YouCongress.Verifications.VerifierAI do
     statement = vote.statement
 
     prompt = """
-    Determine the author's position on the statement based on the quote and,
-    when needed, the cited source article's context around the quote.
+    Determine the author's position on the statement from the quote itself. Use
+    the cited source only to verify wording or resolve genuine shorthand.
 
     Statement: #{statement.title}
     Source URL: #{(opinion && opinion.source_url) || "None provided"}
@@ -252,37 +216,21 @@ defmodule YouCongress.Verifications.VerifierAI do
 
     Current recorded answer: #{vote.answer}
 
-    Based on what the quote says and how the cited source presents it — the linked
-    page when a Source URL is provided, otherwise the Source passage above — what
-    is the author's most likely position on the whole statement? A position may be
-    explicit in the quote, strongly implied by the quote's ordinary meaning, or
-    stated in the cited source (article or passage) while the stored quote gives
-    the author's comment, criticism, concern, argument, reason, or explanation for
-    that position. When a Source URL is provided, use web_search to inspect the
-    source page when the quote is context-dependent; otherwise rely on the Source
-    passage above.
-
-    Do not require the quote to restate every part of the statement or amount to
-    strict logical proof. When one position is substantially more likely than the
-    alternatives, classify it as that position and explain the inference in the
-    comment.
-
-    For example, a prediction that AI will create a labor shortage strongly
-    implies support for the statement "AI will create more jobs than it
-    destroys", even though it does not explicitly compare jobs created and
-    destroyed.
+    Before classifying a vote, apply this relevance gate:
+    #{KeyIdeaCoverage.prompt_instructions()}
+    When a Source URL is provided, use web_search to inspect the source only to
+    verify the quote and resolve genuine shorthand. Do not use surrounding text
+    to add a material proposition absent from the quote.
 
     Answer with exactly one of:
     - "for": the quote explicitly or strongly implies support for the statement.
     - "against": the quote explicitly or strongly implies opposition to the
       statement.
     - "abstain": the quote is explicitly neutral/undecided on the statement.
-    - "none": no position is substantially more likely because the quote is
-      genuinely ambiguous, merely adjacent to the issue, or missing a necessary
-      connection to the statement in both the quote and its cited source context.
-      Do not choose "none" merely because some reasonable inference is required.
+    - "none": any material key idea is missing, or the quote is genuinely
+      ambiguous or merely adjacent to the issue.
     Always include a short comment justifying the answer with the quote's wording
-    and, when used, the cited source context. If the position is implied rather
+    and, when used to resolve shorthand, the cited source context. If the position is implied rather
     than explicit in the stored quote, identify that inference and any limitation
     in the evidence.
     """
@@ -294,7 +242,7 @@ defmodule YouCongress.Verifications.VerifierAI do
        name: "VoteVerification",
        web_search: true,
        system:
-         "You classify an author's most likely stance on a statement from a quote and its cited source context. Accept explicit positions, strong ordinary-language implications, and source-supported comments or reasons for a stated stance. Do not use unrelated outside facts. Choose \"none\" only when no stance is substantially more likely, and explain inferential limitations in the comment."
+         "Classify a vote only after the quote itself covers every material key idea of the COMPLETE statement. Source context may resolve shorthand but cannot supply a missing idea. Return none whenever coverage is incomplete."
      }}
   end
 
@@ -344,6 +292,28 @@ defmodule YouCongress.Verifications.VerifierAI do
         "comment" => %{type: "string", description: "Short justification with evidence."}
       },
       required: ["status", "comment"]
+    }
+  end
+
+  defp relevance_status_schema do
+    %{
+      type: "object",
+      additionalProperties: false,
+      properties:
+        Map.merge(
+          %{
+            "status" => %{type: "string", enum: @statuses},
+            "comment" => %{type: "string", description: "Short justification with evidence."}
+          },
+          coverage_properties()
+        ),
+      required: [
+        "status",
+        "comment",
+        "all_key_ideas_covered",
+        "key_idea_coverage",
+        "missing_key_ideas"
+      ]
     }
   end
 
@@ -424,14 +394,56 @@ defmodule YouCongress.Verifications.VerifierAI do
     %{
       type: "object",
       additionalProperties: false,
-      properties: %{
-        "correct_answer" => %{type: "string", enum: @answers},
-        "comment" => %{
-          type: "string",
-          description: "Short justification with the quote's wording."
+      properties:
+        Map.merge(
+          %{
+            "correct_answer" => %{type: "string", enum: @answers},
+            "comment" => %{
+              type: "string",
+              description: "Short justification with the quote's wording."
+            }
+          },
+          coverage_properties()
+        ),
+      required: [
+        "correct_answer",
+        "comment",
+        "all_key_ideas_covered",
+        "key_idea_coverage",
+        "missing_key_ideas"
+      ]
+    }
+  end
+
+  defp coverage_properties do
+    %{
+      "all_key_ideas_covered" => %{
+        type: "boolean",
+        description:
+          "True only when every material idea in the statement is covered by the quote."
+      },
+      "key_idea_coverage" => %{
+        type: "array",
+        minItems: 0,
+        items: %{
+          type: "object",
+          additionalProperties: false,
+          properties: %{
+            "idea" => %{type: "string"},
+            "evidence" => %{
+              type: "string",
+              description: "Exact wording from the quote supporting this idea."
+            }
+          },
+          required: ["idea", "evidence"]
         }
       },
-      required: ["correct_answer", "comment"]
+      "missing_key_ideas" => %{
+        type: "array",
+        items: %{type: "string"},
+        description:
+          "Every material statement idea not expressed by the quote; empty only on a pass."
+      }
     }
   end
 
@@ -493,8 +505,7 @@ defmodule YouCongress.Verifications.VerifierAI do
   end
 
   # Quote authenticity needs primary-source browsing. Relevance and vote-answer
-  # checks also use browsing so the verifier can inspect the cited source context
-  # around abstract or shorthand quotes.
+  # checks use browsing only to verify wording and resolve genuine shorthand.
   defp maybe_put_web_search(body, true) do
     body
     |> Map.put("tools", [%{"type" => "web_search"}])

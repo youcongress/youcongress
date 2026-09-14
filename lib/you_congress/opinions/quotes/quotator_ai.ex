@@ -9,6 +9,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
 
   alias YouCongress.DigitalTwins.OpenAIModel
   alias YouCongress.Opinions.Quotes.Quotator
+  alias YouCongress.Verifications.KeyIdeaCoverage
 
   @behaviour Quotator
 
@@ -160,24 +161,20 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     - The quote must have exactly one clear author: one person, one organisation speaking on its own behalf, or one named document/issuing coalition. Never combine multiple people into one author. Use a media outlet as author only for its signed or official editorial.
 
     COMPLETE statement relevance check (must receive "ai_verified"):
-    A quote qualifies if it either:
-    - is directly about the COMPLETE statement's claim, proposal, or question; or
-    - is about a narrower, causal, comparative, or underlying issue whose ordinary meaning makes one stance on the COMPLETE statement substantially more likely.
-
-    Do not require the quote to restate every part of the COMPLETE statement or amount to strict logical proof. For example, a prediction that AI will create a labor shortage strongly implies support for "AI will create more jobs than it destroys", and a quote about AI-driven worker replacement can strongly imply opposition to that same COMPLETE statement.
-    Do not accept a quote that only relates to one word, theme, subtopic, or nearby issue unless it also makes one stance on the COMPLETE statement substantially more likely.
-    Do not infer a position from general sentiment, party membership, job title, or facts outside the quote.
+    #{KeyIdeaCoverage.prompt_instructions()}
+    The quote must itself make the author's stance on the complete statement
+    determinable. Do not use the source article to fill a missing key idea.
 
     Vote check (must receive "ai_verified"):
     - Classify the stance based on what the quote says about the COMPLETE statement.
     - Use "For" when the quote explicitly or strongly implies support for the statement.
     - Use "Against" when the quote explicitly or strongly implies opposition to the statement.
     - Use "Abstain" only when the quote is explicitly neutral or undecided on the COMPLETE statement.
-    - Do not require strict logical proof. If one position is substantially more likely than the alternatives, classify it and explain the inference in validation_note.
+    - Require complete key-idea coverage before classifying a position. If any material idea is missing, discard the quote.
     - If the quote's stance would be "none" or is genuinely ambiguous, discard it. Never turn an unclear stance into "Abstain".
 
     Metadata rules:
-    - Fill every JSON field. Use an empty string when unavailable.
+    - Fill every JSON field. Use an empty string only for unavailable author text metadata; never for coverage fields.
     - Set date to the quote/source date. Use YYYY-MM-DD when the exact day is recoverable, YYYY-MM when only the month is known, or YYYY when only the year is known. Set date_precision to "day", "month", or "year" to match.
     - If you provide wikipedia_url or twitter_username, the page/account must exist and belong to the author.
     - Authors must be experts, public figures, relevant organisations, or otherwise notable in the statement's domain.
@@ -187,8 +184,8 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
     Final QA before output:
     - Re-open every source URL and re-check exact text, attribution, and date.
     - Re-check that VerifierAI would mark the quote authentic without a correction.
-    - Re-check that VerifierAI would mark its relevance to the COMPLETE statement "ai_verified".
-    - Re-check that VerifierAI would derive the same For/Against/Abstain vote from the quote and cited source context if needed.
+    - Re-check that VerifierAI would mark its relevance to the COMPLETE statement "ai_verified" under the strict key-idea coverage gate.
+    - Re-check that VerifierAI would derive the same For/Against/Abstain vote from the quote itself.
     - Remove any candidate that fails authenticity, attribution, freshness, uniqueness, COMPLETE statement relevance, or unambiguous vote classification.
     - If not enough candidates pass, return fewer quotes. An empty result is better than a weak or unverifiable quote.
 
@@ -377,7 +374,7 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
               "agree_rate" => %{
                 type: "string",
                 description:
-                  "The unambiguous position supported by the quote and cited source context if needed. Abstain means explicitly neutral or undecided, never unclear.",
+                  "The unambiguous position supported by the quote itself. Abstain means explicitly neutral or undecided, never unclear.",
                 enum: [
                   "For",
                   "Against",
@@ -388,6 +385,27 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
                 type: "string",
                 description:
                   "Brief evidence that the source contains the exact quote, attribution and date, plus why the quote supports this vote on the COMPLETE statement."
+              },
+              "all_key_ideas_covered" => %{
+                type: "boolean",
+                description:
+                  "True only when the quote covers every material idea in the COMPLETE statement."
+              },
+              "key_idea_coverage" => %{
+                type: "array",
+                minItems: 1,
+                items: %{
+                  type: "object",
+                  additionalProperties: false,
+                  properties: %{
+                    "idea" => %{type: "string"},
+                    "evidence" => %{
+                      type: "string",
+                      description: "Exact wording from the quote supporting this idea."
+                    }
+                  },
+                  required: ["idea", "evidence"]
+                }
               }
             },
             required: [
@@ -397,7 +415,9 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
               "date_precision",
               "author",
               "agree_rate",
-              "validation_note"
+              "validation_note",
+              "all_key_ideas_covered",
+              "key_idea_coverage"
             ]
           }
         }

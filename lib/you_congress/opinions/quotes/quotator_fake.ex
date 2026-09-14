@@ -69,7 +69,11 @@ defmodule YouCongress.Opinions.Quotes.QuotatorFake do
         "wikipedia_url" => "https://en.wikipedia.org/wiki/" <> wikipedia_title(name),
         "twitter_username" => Faker.Internet.user_name()
       },
-      "agree_rate" => Enum.random(["For", "Against", "Abstain"])
+      "agree_rate" => Enum.random(["For", "Against", "Abstain"]),
+      "all_key_ideas_covered" => true,
+      "key_idea_coverage" => [
+        %{"idea" => "complete statement", "evidence" => question_title}
+      ]
     }
   end
 

@@ -13,6 +13,7 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   alias YouCongress.Repo
   alias YouCongress.Votes
   alias YouCongress.Statements
+  alias YouCongress.Verifications.KeyIdeaCoverage
   alias YouCongress.Workers.QuotatorWorker
 
   @number_of_quotes 5
@@ -184,6 +185,7 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
 
     with :ok <- require_string(quote, :missing_quote),
          :ok <- require_string(source_url, :missing_source_url),
+         :ok <- validate_key_idea_coverage(quote_data, quote),
          :ok <- validate_date(date, date_precision),
          :ok <- ensure_current_year(date),
          {:ok, author} <- normalize_candidate_author(author),
@@ -201,6 +203,12 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   end
 
   defp normalize_quote_attrs(_quote_data), do: {:skip, :invalid_quote}
+
+  defp validate_key_idea_coverage(quote_data, quote) do
+    if KeyIdeaCoverage.valid?(quote_data, quote),
+      do: :ok,
+      else: {:skip, :incomplete_key_idea_coverage}
+  end
 
   defp normalize_candidate_author(author) when is_map(author) do
     name = author["name"] || author[:name]

@@ -5,6 +5,8 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderFake do
 
   @behaviour YouCongress.Opinions.Quotes.FreshQuoteFinder
 
+  alias YouCongress.Statements
+
   @impl true
   def find_quote(recent_quotes, opts \\ []) do
     notify({:fresh_quote_find_quote, recent_quotes, opts})
@@ -19,14 +21,20 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderFake do
     Application.get_env(
       :you_congress,
       :fresh_quote_finder_test_status,
-      {:ok, :completed, %{quotes: [default_quote()]}}
+      {:ok, :completed, %{quotes: default_quotes()}}
     )
   end
 
-  defp default_quote do
+  defp default_quotes do
+    case Statements.list_statements(order: :id_asc) do
+      [statement | _] -> [default_quote(statement)]
+      [] -> []
+    end
+  end
+
+  defp default_quote(statement) do
     %{
-      "quote" =>
-        "AI systems are already changing work, and public policy needs to help workers adapt while keeping deployment accountable.",
+      "quote" => "I support this complete proposal: #{statement.title}",
       "source_url" => "https://example.com/fresh-ai-jobs-quote",
       "date" => Date.utc_today() |> Date.to_iso8601(),
       "date_precision" => "day",
@@ -36,7 +44,12 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderFake do
         "wikipedia_url" => "https://en.wikipedia.org/wiki/Fresh_Quote_Author",
         "twitter_username" => "freshquoteauthor"
       },
-      "validation_note" => "Fake quote for development and tests."
+      "validation_note" => "Fake quote for development and tests.",
+      "statement_id" => statement.id,
+      "all_key_ideas_covered" => true,
+      "key_idea_coverage" => [
+        %{"idea" => "complete statement", "evidence" => statement.title}
+      ]
     }
   end
 
