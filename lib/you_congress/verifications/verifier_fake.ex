@@ -17,7 +17,26 @@ defmodule YouCongress.Verifications.VerifierFake do
   @impl true
   def check_job_status("fake:vote:" <> _id) do
     {:ok, :completed,
-     %{"correct_answer" => "for", "comment" => "Fake verification", "model" => "fake-llm"}}
+     %{
+       "correct_answer" => "for",
+       "comment" => "Fake verification",
+       "model" => "fake-llm",
+       "all_key_ideas_covered" => true,
+       "key_idea_coverage" => [%{"idea" => "complete statement", "evidence" => "fake quote"}],
+       "missing_key_ideas" => []
+     }}
+  end
+
+  def check_job_status("fake:relevance:" <> _id) do
+    {:ok, :completed,
+     %{
+       "status" => "ai_verified",
+       "comment" => "Fake verification",
+       "model" => "fake-llm",
+       "all_key_ideas_covered" => true,
+       "key_idea_coverage" => [%{"idea" => "complete statement", "evidence" => "fake quote"}],
+       "missing_key_ideas" => []
+     }}
   end
 
   def check_job_status("fake:" <> _rest) do

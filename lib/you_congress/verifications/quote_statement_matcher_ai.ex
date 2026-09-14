@@ -3,14 +3,15 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
   OpenAI-backed quote-to-statement matcher.
 
   It applies the same relevance standard as `VerifierAI`: a quote should match a
-  statement when it is on-topic and provides a determinable stance signal on the
-  COMPLETE statement. `submit/2` starts a background Responses API job and
-  `check_job_status/1` polls for the parsed matches.
+  statement only when its own words cover every material key idea and provide a
+  determinable stance signal on the COMPLETE statement. `submit/2` starts a
+  background Responses API job and `check_job_status/1` polls for the matches.
   """
 
   @behaviour YouCongress.Verifications.QuoteStatementMatcher
 
   alias YouCongress.Opinions.Opinion
+  alias YouCongress.Verifications.KeyIdeaCoverage
 
   @model :"gpt-5.4-mini"
   @timeout_in_min 120
@@ -75,9 +76,8 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
       |> Enum.map_join("\n", fn statement -> "- #{statement.id}: #{statement.title}" end)
 
     """
-    Select every statement from the list where the quote is on-topic and provides
-    enough signal that the author's stance on the COMPLETE statement is
-    determinable.
+    Select every statement from the list where the quote covers every material
+    key idea and makes the author's stance on the COMPLETE statement determinable.
 
     Author: #{author || "Unknown"}
     Date: #{Opinion.display_date(opinion) || "Unknown"}
@@ -90,30 +90,14 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
     Statements:
     #{statements_text}
 
-    Use the same standard as relevance and vote verification. A quote qualifies
-    for a statement if it either:
-    - is directly about the COMPLETE statement's claim, proposal, or question; or
-    - strongly implies through its ordinary meaning that the author supports,
-      opposes, or abstains on the COMPLETE statement.
-
-    The quote need not restate every part of the COMPLETE statement or amount to
-    strict logical proof. Match it when one position on the COMPLETE statement is
-    substantially more likely than the alternatives based on the quote itself.
-    For example, a prediction that AI will create a labor shortage strongly
-    implies support for "AI will create more jobs than it destroys", and a quote
-    about AI-driven worker replacement can strongly imply opposition to that same
-    COMPLETE statement.
-
-    Do not accept a quote that only relates to one word, theme, subtopic, or a
-    nearby issue unless the quote supplies a necessary connection that strongly
-    implies the author's position on the COMPLETE statement. Do not infer a
-    position from general sentiment, party membership, job title, or facts
-    outside the quote.
+    Use the same standard as relevance and vote verification.
+    #{KeyIdeaCoverage.prompt_instructions()}
+    Do not infer a position from general sentiment, party membership, job title,
+    or facts outside the quote.
 
     Return only matches that should receive "ai_verified" in later relevance and
-    vote verification. Leave a statement unmatched when no position is
-    substantially more likely, not merely because reasonable inference is
-    required.
+    vote verification. Leave a statement unmatched when any material key idea is
+    absent, even if the quote supports a broader, narrower, or adjacent claim.
 
     For each match, choose:
     - "for": the quote explicitly or strongly implies support for the statement.
@@ -149,7 +133,7 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
           %{
             "role" => "system",
             "content" =>
-              "You judge an author's most likely stance on COMPLETE statements from a quote. Accept explicit stances and strong ordinary-language implications. Reject merely adjacent topics, but do not require strict logical proof; explain inferential limitations in the comment."
+              "Match a quote only when its own words cover every material key idea of the COMPLETE statement. Source context may clarify shorthand but cannot supply a missing idea. Reject broader, narrower, and adjacent claims."
           },
           %{
             "role" => "user",
@@ -227,7 +211,7 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
         "matches" => %{
           type: "array",
           description:
-            "Only high-confidence COMPLETE statements where the quote is on-topic and one stance is substantially more likely.",
+            "Only COMPLETE statements whose every material key idea is covered by the quote and whose stance is determinable.",
           items: %{
             type: "object",
             additionalProperties: false,
@@ -245,9 +229,36 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
                 type: "string",
                 description:
                   "Short justification using the quote's wording, including any inference and its limitations"
+              },
+              "all_key_ideas_covered" => %{
+                type: "boolean",
+                description:
+                  "True only when the quote covers every material idea in this statement."
+              },
+              "key_idea_coverage" => %{
+                type: "array",
+                minItems: 1,
+                items: %{
+                  type: "object",
+                  additionalProperties: false,
+                  properties: %{
+                    "idea" => %{type: "string"},
+                    "evidence" => %{
+                      type: "string",
+                      description: "Exact wording from the quote supporting this idea."
+                    }
+                  },
+                  required: ["idea", "evidence"]
+                }
               }
             },
-            required: ["statement_id", "answer", "comment"]
+            required: [
+              "statement_id",
+              "answer",
+              "comment",
+              "all_key_ideas_covered",
+              "key_idea_coverage"
+            ]
           }
         }
       },

@@ -16,7 +16,9 @@ defmodule YouCongress.Verifications.QuoteStatementMatcher do
           optional(String.t()) => term(),
           optional(:statement_id) => integer(),
           optional(:answer) => answer(),
-          optional(:comment) => String.t()
+          optional(:comment) => String.t(),
+          optional(:all_key_ideas_covered) => boolean(),
+          optional(:key_idea_coverage) => [map()]
         }
 
   @callback submit(Opinion.t(), [Statement.t()]) :: {:ok, String.t()} | {:error, term()}

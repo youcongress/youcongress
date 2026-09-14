@@ -5,6 +5,7 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorkerTest do
   import YouCongress.AccountsFixtures
   import YouCongress.AuthorsFixtures
   import YouCongress.OpinionsFixtures
+  import YouCongress.StatementsFixtures
 
   alias YouCongress.Opinions
   alias YouCongress.Workers.FreshQuoteDiscoveryPollingWorker
@@ -36,7 +37,18 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorkerTest do
           "wikipedia_url" => "https://en.wikipedia.org/wiki/Fresh_AI_Author",
           "twitter_username" => "freshaiauthor"
         },
-        "validation_note" => "Source contains quote, attribution, and date."
+        "validation_note" => "Source contains quote, attribution, and date.",
+        "all_key_ideas_covered" => true,
+        "key_idea_coverage" => [
+          %{
+            "idea" => "AI changes jobs",
+            "evidence" => "AI is changing jobs quickly"
+          },
+          %{
+            "idea" => "deployers should be accountable",
+            "evidence" => "holding deployers accountable"
+          }
+        ]
       },
       attrs
     )
@@ -44,6 +56,8 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorkerTest do
 
   defp perform_with_quotes(quotes) do
     user = user_fixture()
+    statement = statement_fixture()
+    quotes = Enum.map(quotes, &Map.put_new(&1, "statement_id", statement.id))
 
     put_env_restore(
       :fresh_quote_finder_test_status,
@@ -198,6 +212,20 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorkerTest do
       refute_enqueued(worker: MatchQuoteStatementsWorker)
     end
 
+    test "skips a candidate without complete key-idea coverage" do
+      assert :ok = perform_with_quotes([candidate(%{"all_key_ideas_covered" => false})])
+
+      assert Opinions.count(only_quotes: true) == 0
+      refute_enqueued(worker: MatchQuoteStatementsWorker)
+    end
+
+    test "skips a candidate whose coverage statement does not exist" do
+      assert :ok = perform_with_quotes([candidate(%{"statement_id" => -1})])
+
+      assert Opinions.count(only_quotes: true) == 0
+      refute_enqueued(worker: MatchQuoteStatementsWorker)
+    end
+
     test "snoozes while the OpenAI job is still in progress" do
       put_env_restore(:fresh_quote_finder_test_status, {:ok, :in_progress})
 
@@ -209,10 +237,12 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorkerTest do
 
     test "stores saved quote details in the Oban job metadata" do
       user = user_fixture()
+      statement = statement_fixture()
+      quote = candidate(%{"statement_id" => statement.id})
 
       put_env_restore(
         :fresh_quote_finder_test_status,
-        {:ok, :completed, %{quotes: [candidate()]}}
+        {:ok, :completed, %{quotes: [quote]}}
       )
 
       {:ok, job} =
@@ -246,10 +276,12 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorkerTest do
     test "stores why a quote wasn't saved in the Oban job metadata" do
       existing = opinion_fixture(%{source_url: candidate()["source_url"]})
       user = user_fixture()
+      statement = statement_fixture()
+      quote = candidate(%{"statement_id" => statement.id})
 
       put_env_restore(
         :fresh_quote_finder_test_status,
-        {:ok, :completed, %{quotes: [candidate()]}}
+        {:ok, :completed, %{quotes: [quote]}}
       )
 
       {:ok, job} =

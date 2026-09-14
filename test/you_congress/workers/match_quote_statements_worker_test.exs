@@ -80,6 +80,18 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
     put_env_restore(:quote_statement_matcher_test_matches, matches)
   end
 
+  defp covered_match(statement_id, answer, comment) do
+    %{
+      "statement_id" => statement_id,
+      "answer" => answer,
+      "comment" => comment,
+      "all_key_ideas_covered" => true,
+      "key_idea_coverage" => [
+        %{"idea" => "complete statement", "evidence" => "direct quote evidence"}
+      ]
+    }
+  end
+
   defp set_system_user do
     user = user_fixture()
     put_env_restore(:verification_user_id, user.id)
@@ -142,12 +154,8 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
         })
 
       use_static_matcher([
-        %{"statement_id" => for_statement.id, "answer" => "for", "comment" => "supports it"},
-        %{
-          "statement_id" => "#{against_statement.id}",
-          "answer" => "Against",
-          "comment" => "opposes it"
-        }
+        covered_match(for_statement.id, "for", "supports it"),
+        covered_match("#{against_statement.id}", "Against", "opposes it")
       ])
 
       assert :ok =
@@ -185,9 +193,9 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
       assert {:ok, _} = Opinions.add_opinion_to_statement(quote, linked_statement, user.id)
 
       use_static_matcher([
-        %{"statement_id" => linked_statement.id, "answer" => "abstain", "comment" => "neutral"},
-        %{"statement_id" => invalid_answer_statement.id, "answer" => "maybe", "comment" => "bad"},
-        %{"statement_id" => -1, "answer" => "for", "comment" => "missing"}
+        covered_match(linked_statement.id, "abstain", "neutral"),
+        covered_match(invalid_answer_statement.id, "maybe", "bad"),
+        covered_match(-1, "for", "missing")
       ])
 
       assert :ok =
@@ -204,6 +212,32 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
       refute OpinionsStatements.get_opinion_statement(quote.id, invalid_answer_statement.id)
 
       refute Votes.get_by(statement_id: linked_statement.id, author_id: author.id)
+    end
+
+    test "does not link a match with incomplete key-idea coverage" do
+      quote = sourced_quote()
+      statement = statement_fixture()
+      set_system_user()
+
+      use_static_matcher([
+        %{
+          "statement_id" => statement.id,
+          "answer" => "for",
+          "comment" => "Only a nearby topic",
+          "all_key_ideas_covered" => false,
+          "key_idea_coverage" => [
+            %{"idea" => "one subtopic", "evidence" => "nearby wording"}
+          ]
+        }
+      ])
+
+      assert :ok =
+               MatchQuoteStatementsWorker.perform(%Oban.Job{
+                 args: %{"opinion_id" => quote.id}
+               })
+
+      refute OpinionsStatements.get_opinion_statement(quote.id, statement.id)
+      refute Votes.get_by(statement_id: statement.id, author_id: quote.author_id)
     end
 
     test "skips sourced quotes when verification_user_id is not configured" do
@@ -284,8 +318,8 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
       set_system_user()
 
       use_static_matcher([
-        %{"statement_id" => "#{statement.id}", "answer" => "for", "comment" => "supports it"},
-        %{"statement_id" => -1, "answer" => "for", "comment" => "not a candidate"}
+        covered_match("#{statement.id}", "for", "supports it"),
+        covered_match(-1, "for", "not a candidate")
       ])
 
       {:ok, job} =
@@ -328,7 +362,7 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
         })
 
       use_static_matcher([
-        %{"statement_id" => statement.id, "answer" => "for", "comment" => "supports it"}
+        covered_match(statement.id, "for", "supports it")
       ])
 
       Oban.Testing.with_testing_mode(:manual, fn ->

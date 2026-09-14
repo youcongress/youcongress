@@ -12,6 +12,7 @@ defmodule YouCongress.Workers.VerificationPollingWorker do
 
   alias YouCongress.Verifications.Verifier
   alias YouCongress.Verifications.AIVerifications
+  alias YouCongress.Verifications.KeyIdeaCoverage
   alias YouCongress.Workers.JobMetadata
 
   @impl Oban.Worker
@@ -22,6 +23,8 @@ defmodule YouCongress.Workers.VerificationPollingWorker do
       ) do
     case Verifier.check_job_status(job_id) do
       {:ok, :completed, result} ->
+        result = KeyIdeaCoverage.enforce_verification_result(subject, result)
+
         AIVerifications.record_and_cascade(
           subject,
           id,

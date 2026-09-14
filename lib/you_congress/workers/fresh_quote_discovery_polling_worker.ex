@@ -17,6 +17,8 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Opinions.Quotes.FreshQuoteFinder
   alias YouCongress.Repo
+  alias YouCongress.Statements
+  alias YouCongress.Verifications.KeyIdeaCoverage
   alias YouCongress.Workers.JobMetadata
   alias YouCongress.Workers.MatchQuoteStatementsWorker
 
@@ -81,7 +83,7 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
              twin: false
            }) do
       enqueue_statement_matching(opinion.id, index)
-      {:ok, opinion}
+      {:ok, opinion, attrs.statement_id}
     else
       {:skip, reason} ->
         Logger.info("Skipping fresh quote candidate: #{inspect(reason)}")
@@ -95,8 +97,13 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
 
   defp persist_quote(_quote_data, _user_id, _index), do: {:skip, :invalid_candidate}
 
-  defp candidate_result({:ok, opinion}, index) do
-    %{"candidate_index" => index, "outcome" => "saved", "opinion_id" => opinion.id}
+  defp candidate_result({:ok, opinion, statement_id}, index) do
+    %{
+      "candidate_index" => index,
+      "outcome" => "saved",
+      "opinion_id" => opinion.id,
+      "coverage_statement_id" => statement_id
+    }
   end
 
   defp candidate_result({:skip, reason}, index) do
@@ -144,6 +151,7 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
     date = quote_data["date"] || quote_data[:date]
     date_precision = quote_data["date_precision"] || quote_data[:date_precision]
     author = quote_data["author"] || quote_data[:author] || %{}
+    statement_id = normalize_id(quote_data["statement_id"] || quote_data[:statement_id])
 
     cond do
       blank?(quote) -> {:skip, :missing_quote}
@@ -151,11 +159,14 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
       blank?(date) -> {:skip, :missing_date}
       date_precision != "day" -> {:skip, :date_precision_not_day}
       is_nil(user_id) -> {:skip, :missing_user_id}
-      true -> build_attrs(quote, source_url, date, author)
+      not KeyIdeaCoverage.valid?(quote_data, quote) -> {:skip, :incomplete_key_idea_coverage}
+      is_nil(statement_id) -> {:skip, :missing_coverage_statement}
+      is_nil(Statements.get_statement(statement_id)) -> {:skip, :unknown_coverage_statement}
+      true -> build_attrs(quote, source_url, date, author, statement_id)
     end
   end
 
-  defp build_attrs(quote, source_url, date, author) do
+  defp build_attrs(quote, source_url, date, author, statement_id) do
     with {:ok, parsed_date} <- parse_date(date),
          {:ok, author_attrs} <- normalize_author_attrs(author) do
       {:ok,
@@ -163,7 +174,8 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
          quote: String.trim(quote),
          source_url: normalize_source_url(source_url),
          date: parsed_date,
-         author: author_attrs
+         author: author_attrs,
+         statement_id: statement_id
        }}
     else
       :error -> {:skip, :invalid_date}
@@ -331,6 +343,17 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
 
   defp normalize_source_url(url) when is_binary(url), do: String.trim(url)
   defp normalize_source_url(url), do: url
+
+  defp normalize_id(id) when is_integer(id), do: id
+
+  defp normalize_id(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {int, ""} -> int
+      _ -> nil
+    end
+  end
+
+  defp normalize_id(_id), do: nil
 
   defp normalize_wikipedia_url(nil), do: nil
   defp normalize_wikipedia_url(""), do: nil

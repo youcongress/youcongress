@@ -27,7 +27,14 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
           "twitter_username" => "verifiedexpert"
         },
         "agree_rate" => "For",
-        "validation_note" => "Exact source text and an unambiguous vote."
+        "validation_note" => "Exact source text and an unambiguous vote.",
+        "all_key_ideas_covered" => true,
+        "key_idea_coverage" => [
+          %{
+            "idea" => "complete policy with safeguards and benefits",
+            "evidence" => "complete policy because its safeguards and benefits"
+          }
+        ]
       },
       attrs
     )
@@ -161,6 +168,35 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
 
       assert Votes.count_by_statement(statement.id) == 0
       assert is_nil(Opinions.get_by(content: candidate()["quote"]))
+    end
+
+    test "rejects a candidate without complete key-idea coverage" do
+      statement = statement_fixture()
+      user = user_fixture()
+
+      assert {:ok, 0} =
+               Quotator.save_quotes_from_job(%{
+                 statement_id: statement.id,
+                 quotes: [candidate(%{"all_key_ideas_covered" => false})],
+                 user_id: user.id
+               })
+
+      assert Votes.count_by_statement(statement.id) == 0
+      assert is_nil(Opinions.get_by(content: candidate()["quote"]))
+    end
+
+    test "rejects a candidate without per-idea quote evidence" do
+      statement = statement_fixture()
+      user = user_fixture()
+
+      assert {:ok, 0} =
+               Quotator.save_quotes_from_job(%{
+                 statement_id: statement.id,
+                 quotes: [candidate(%{"key_idea_coverage" => []})],
+                 user_id: user.id
+               })
+
+      assert Votes.count_by_statement(statement.id) == 0
     end
 
     test "rejects a sourced quote outside the current-year discovery window" do
