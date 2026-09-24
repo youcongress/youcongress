@@ -5,12 +5,25 @@ defmodule YouCongress.ReconsiderationsTest do
   import YouCongress.AuthorsFixtures
   import YouCongress.StatementsFixtures
 
+  alias YouCongress.Accounts
+  alias YouCongress.Authors
   alias YouCongress.Delegations
   alias YouCongress.Reconsiderations
   alias YouCongress.Votes
 
   setup do
-    creator = user_fixture()
+    {:ok, creator} =
+      user_fixture()
+      |> Accounts.update_role("creator")
+
+    username = "alice_#{System.unique_integer([:positive])}" |> String.slice(0, 15)
+
+    {:ok, creator_author} =
+      creator.author_id
+      |> Authors.get_author!()
+      |> Authors.update_author(%{username: username})
+
+    creator = %{creator | author: creator_author}
     participant = user_fixture()
     delegate = author_fixture(%{name: "Featured guest"})
     first_statement = statement_fixture(%{title: "The first proposal should pass"})
@@ -87,6 +100,23 @@ defmodule YouCongress.ReconsiderationsTest do
 
     assert Enum.find(stats.statements, &(&1.statement_id == context.second_statement.id)).changed ==
              0
+  end
+
+  test "finds a page only under its creator username", context do
+    found =
+      Reconsiderations.get_reconsideration_by_username_and_slug!(
+        String.upcase(context.creator.author.username),
+        context.reconsideration.slug
+      )
+
+    assert found.id == context.reconsideration.id
+
+    assert_raise Ecto.NoResultsError, fn ->
+      Reconsiderations.get_reconsideration_by_username_and_slug!(
+        "someone_else",
+        context.reconsideration.slug
+      )
+    end
   end
 
   test "only accepts one completed response per author", context do
