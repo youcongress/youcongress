@@ -109,7 +109,7 @@ defmodule YouCongress.Authors.Author do
   defp validate_username(changeset) do
     changeset
     |> update_change(:username, &normalize_username/1)
-    |> validate_length(:username, min: 3, max: 30)
+    |> validate_length(:username, min: 5, max: 30)
     |> validate_format(:username, @username_format,
       message: "may contain only lowercase letters, numbers, and underscores"
     )
