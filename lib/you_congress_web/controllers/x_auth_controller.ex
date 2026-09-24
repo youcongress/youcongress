@@ -279,25 +279,7 @@ defmodule YouCongressWeb.XAuthController do
     pending_json = get_session(conn, :oauth_pending_actions)
     conn = delete_session(conn, :oauth_pending_actions)
 
-    if pending_json do
-      case Jason.decode(pending_json) do
-        {:ok, %{"delegate_ids" => delegate_ids, "votes" => votes}} ->
-          # Create delegations
-          for id <- delegate_ids do
-            YouCongress.Delegations.create_delegation(user, id)
-          end
-
-          # Create votes
-          Enum.each(votes, fn {_statement_id, vote_data} ->
-            if vote_data["answer"] && vote_data["answer"] != "" do
-              create_pending_vote(user, vote_data)
-            end
-          end)
-
-        _ ->
-          :ok
-      end
-    end
+    YouCongress.PendingActions.process(user, pending_json)
 
     conn
   end
@@ -315,18 +297,6 @@ defmodule YouCongressWeb.XAuthController do
 
   defp put_sign_up_return_to(conn, return_to) do
     put_session(conn, :user_return_to, ReturnTo.sign_up_path(return_to))
-  end
-
-  defp create_pending_vote(user, vote_data) do
-    YouCongress.Votes.create_or_update(%{
-      statement_id: vote_data["statement_id"],
-      answer: String.to_existing_atom(vote_data["answer"]),
-      author_id: user.author_id,
-      user_id: user.id,
-      direct: true
-    })
-  rescue
-    _ -> :ok
   end
 
   defp ensure_x_login_enabled(conn, _opts) do

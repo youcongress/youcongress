@@ -88,6 +88,7 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through([:browser, :require_authenticated_user])
 
+    live("/reconsider/new", ReconsiderLive.New, :new)
     live("/welcome", WelcomeLive.Index, :index)
     live("/p/:slug/add-quote", StatementLive.AddQuote, :add_quote)
 
@@ -138,6 +139,7 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through([:browser])
 
+    live("/reconsider/:slug", ReconsiderLive.Show, :show)
     live("/", LatestLive.Index, :index)
   end
 
