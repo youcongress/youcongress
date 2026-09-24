@@ -26,6 +26,45 @@ defmodule YouCongressWeb.SettingsLiveTest do
       {:ok, _settings_live, html} = live(conn, ~p"/settings")
       assert html =~ "Settings"
       assert html =~ "Name: Someone"
+      assert html =~ "YouCongress username"
+      assert html =~ "author[username]"
+    end
+
+    test "users can set a normalized YouCongress username", %{
+      conn: conn,
+      current_user: current_user
+    } do
+      conn = log_in_user(conn, current_user)
+      {:ok, settings_live, _html} = live(conn, ~p"/settings")
+
+      html =
+        render_submit(settings_live, "save", %{
+          "author" => %{"username" => "  My_Profile  "}
+        })
+
+      assert html =~ "Settings updated successfully"
+      assert Authors.get_author!(current_user.author_id).username == "my_profile"
+      assert has_element?(settings_live, "input[name='author[username]'][value='my_profile']")
+    end
+
+    test "YouCongress usernames must be unique and cannot use application routes", %{
+      conn: conn,
+      current_user: current_user
+    } do
+      _other_user = user_fixture(%{}, %{name: "Other", username: "already_taken"})
+
+      conn = log_in_user(conn, current_user)
+      {:ok, settings_live, _html} = live(conn, ~p"/settings")
+
+      assert render_submit(settings_live, "save", %{
+               "author" => %{"username" => "ALREADY_TAKEN"}
+             }) =~ "has already been taken"
+
+      assert render_submit(settings_live, "save", %{
+               "author" => %{"username" => "settings"}
+             }) =~ "is reserved"
+
+      assert Authors.get_author!(current_user.author_id).username == nil
     end
 
     test "users without a verified phone see a link to verify it", %{conn: conn} do

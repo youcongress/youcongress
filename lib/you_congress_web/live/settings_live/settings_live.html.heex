@@ -12,6 +12,16 @@
   </.link>
 </div>
 <.simple_form for={@form} id="author-form" phx-change="validate" phx-submit="save">
+  <.input
+    field={@form[:username]}
+    label="YouCongress username"
+    placeholder="your_username"
+  />
+  <p class="-mt-4 text-sm text-zinc-500">
+    Your profile URL will be youcongress.org/your_username. Use 3–30 lowercase letters,
+    numbers, or underscores.
+  </p>
+
   <%= if !!@current_user.hashed_password do %>
     <.input field={@form[:name]} label="Name" />
     <.input field={@form[:bio]} label="One-line bio" />

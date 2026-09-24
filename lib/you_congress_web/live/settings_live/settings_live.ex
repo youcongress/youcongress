@@ -46,9 +46,18 @@ defmodule YouCongressWeb.SettingsLive do
            profile_allowed_fields(socket.assigns.current_user)
          ) do
       {:ok, author} ->
+        author = Authors.preload(author, [:country])
+
         {:noreply,
          socket
-         |> assign_profile_author(Authors.preload(author, [:country]))
+         |> assign_profile_author(author)
+         |> assign(:current_user, %{socket.assigns.current_user | author: author})
+         |> assign_form(
+           Authors.change_profile_author(
+             author,
+             profile_allowed_fields(socket.assigns.current_user)
+           )
+         )
          |> put_flash(:info, "Settings updated successfully")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -122,6 +131,7 @@ defmodule YouCongressWeb.SettingsLive do
   defp profile_allowed_fields(current_user) do
     current_user
     |> profile_text_fields()
+    |> then(&[:username | &1])
     |> maybe_allow_country(current_user)
   end
 

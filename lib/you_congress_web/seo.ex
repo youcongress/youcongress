@@ -217,11 +217,17 @@ defmodule YouCongressWeb.SEO do
   end
 
   @doc """
-  Canonical path for an author, preferring the /x/ username URL.
-  /a/:id pages canonicalize to it so the two routes don't compete.
+  Canonical path for an author, preferring their YouCongress username, then X username.
+  /a/:id and /x/:twitter_username pages canonicalize to it so the routes don't compete.
   """
+  def author_path(%{username: username}) when is_binary(username) and username != "",
+    do: ~p"/#{username}"
+
   def author_path(%{twitter_username: nil, id: author_id}), do: ~p"/a/#{author_id}"
   def author_path(%{twitter_username: username}), do: ~p"/x/#{username}"
+
+  def author_url(%{username: username}) when is_binary(username) and username != "",
+    do: url(~p"/#{username}")
 
   def author_url(%{twitter_username: nil, id: author_id}), do: url(~p"/a/#{author_id}")
   def author_url(%{twitter_username: username}), do: url(~p"/x/#{username}")
