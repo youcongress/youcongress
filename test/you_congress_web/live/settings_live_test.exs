@@ -67,6 +67,20 @@ defmodule YouCongressWeb.SettingsLiveTest do
       assert Authors.get_author!(current_user.author_id).username == nil
     end
 
+    test "YouCongress usernames must contain at least five characters", %{
+      conn: conn,
+      current_user: current_user
+    } do
+      conn = log_in_user(conn, current_user)
+      {:ok, settings_live, _html} = live(conn, ~p"/settings")
+
+      assert render_submit(settings_live, "save", %{
+               "author" => %{"username" => "four"}
+             }) =~ "should be at least 5 character(s)"
+
+      assert Authors.get_author!(current_user.author_id).username == nil
+    end
+
     test "users without a verified phone see a link to verify it", %{conn: conn} do
       current_user = user_fixture(%{}, %{name: "Someone", twin_origin: false}, false)
       {:ok, current_user} = Accounts.confirm_user_email(current_user)
