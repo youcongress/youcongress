@@ -8,8 +8,10 @@ defmodule YouCongressWeb.AuthorLiveTest do
   import YouCongress.VotesFixtures
   import YouCongress.StatementsFixtures
   import YouCongress.OpinionsFixtures
+  import YouCongress.HallsFixtures
 
   alias YouCongress.Opinions
+  alias YouCongress.HallsStatements
 
   @create_attrs %{
     bio: "some bio",
@@ -100,6 +102,87 @@ defmodule YouCongressWeb.AuthorLiveTest do
       assert has_element?(show_live, "img[src='/images/wikipedia.svg'][alt='Wikipedia']")
       refute html =~ "X: @#{author.twitter_username}"
       refute has_element?(show_live, "a", "Wikipedia")
+    end
+
+    test "suggests up to five other authors with sourced quotes in the same halls", %{
+      conn: conn,
+      author: author
+    } do
+      hall = hall_fixture(%{name: "author-recommendations"})
+      other_hall = hall_fixture(%{name: "unrelated-author-recommendations"})
+      statement = statement_fixture(title: "Shared recommendation statement")
+      other_statement = statement_fixture(title: "Unrelated recommendation statement")
+
+      assert {:ok, _statement} =
+               HallsStatements.sync!(statement.id, %{main_tag: hall.name, other_tags: []})
+
+      assert {:ok, _statement} =
+               HallsStatements.sync!(other_statement.id, %{
+                 main_tag: other_hall.name,
+                 other_tags: []
+               })
+
+      author_opinion = add_sourced_opinion(author, statement, "Original author quote")
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: author.id,
+        opinion_id: author_opinion.id
+      })
+
+      related_authors =
+        Enum.map(1..6, fn number ->
+          related_author =
+            author_fixture(%{
+              name: "Related Author #{number}",
+              twitter_username: "related_author_#{number}",
+              bio: "Related bio #{number}",
+              profile_image_url: "https://example.com/related-#{number}.jpg"
+            })
+
+          add_sourced_opinion(related_author, statement, "Related quote #{number}")
+          related_author
+        end)
+
+      unrelated_author =
+        author_fixture(%{
+          name: "Unrelated Author",
+          twitter_username: "unrelated_author"
+        })
+
+      add_sourced_opinion(unrelated_author, other_statement, "Unrelated quote")
+
+      {:ok, show_live, html} = live(conn, ~p"/x/#{author.twitter_username}")
+
+      assert html =~ "Other authors to follow"
+      assert length(Regex.scan(~r/data-testid="other-author"/, html)) == 5
+
+      Enum.each(Enum.take(related_authors, 5), fn related_author ->
+        assert has_element?(
+                 show_live,
+                 "#other-authors a[href='/x/#{related_author.twitter_username}']",
+                 related_author.name
+               )
+
+        assert has_element?(
+                 show_live,
+                 "#other-authors img[src='#{related_author.profile_image_url}']"
+               )
+
+        assert html =~ related_author.bio
+      end)
+
+      refute has_element?(
+               show_live,
+               "#other-authors a[href='/x/#{List.last(related_authors).twitter_username}']"
+             )
+
+      refute has_element?(
+               show_live,
+               "#other-authors a[href='/x/#{unrelated_author.twitter_username}']"
+             )
+
+      refute has_element?(show_live, "#other-authors a[href='/x/#{author.twitter_username}']")
     end
 
     test "lets visitors switch between an author's sourced quotes for a statement", %{conn: conn} do
@@ -365,5 +448,18 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       assert html =~ voter_country.name
     end
+  end
+
+  defp add_sourced_opinion(author, statement, content) do
+    opinion =
+      opinion_fixture(%{
+        author_id: author.id,
+        content: content,
+        source_url: "https://example.com/#{System.unique_integer([:positive])}"
+      })
+
+    {:ok, opinion} = Opinions.update_opinion(opinion, %{twin: false})
+    {:ok, _opinion} = Opinions.add_opinion_to_statement(opinion, statement.id)
+    opinion
   end
 end

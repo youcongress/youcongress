@@ -125,6 +125,37 @@ defmodule YouCongress.HallsTest do
     end
   end
 
+  describe "list_top_authors_for_halls/2" do
+    test "returns same-hall authors by sourced quote count, with exclusions and a limit" do
+      hall = hall_fixture(%{name: "shared-topic"})
+      other_hall = hall_fixture(%{name: "different-topic"})
+      statement = statement_fixture()
+      other_statement = statement_fixture()
+
+      assert {:ok, _statement} =
+               HallsStatements.sync!(statement.id, %{main_tag: hall.name, other_tags: []})
+
+      assert {:ok, _statement} =
+               HallsStatements.sync!(other_statement.id, %{
+                 main_tag: other_hall.name,
+                 other_tags: []
+               })
+
+      excluded_author = add_quote(statement, "Excluded Author", nil)
+      first_author = add_quote(statement, "Alpha Author", nil)
+      second_author = add_quote(statement, "Beta Author", nil)
+      _other_author = add_quote(other_statement, "Unrelated Author", nil)
+
+      authors =
+        Halls.list_top_authors_for_halls([hall.name],
+          exclude_author_ids: [excluded_author.id],
+          limit: 2
+        )
+
+      assert Enum.map(authors, & &1.id) == [first_author.id, second_author.id]
+    end
+  end
+
   describe "all_stats/0" do
     test "counts sourced quotes that are not attached to a statement" do
       statement = statement_fixture()

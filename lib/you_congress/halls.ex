@@ -239,6 +239,53 @@ defmodule YouCongress.Halls do
   end
 
   @doc """
+  Returns the most-quoted authors in any of the named halls.
+
+  Authors are ranked with the same sourced-quote criteria used by a hall's
+  `top_authors`, with an optional list of author IDs to exclude.
+  """
+  def list_top_authors_for_halls(hall_names, opts \\ []) do
+    hall_names = hall_names |> Enum.reject(&(&1 == "all")) |> Enum.uniq()
+    excluded_author_ids = Keyword.get(opts, :exclude_author_ids, [])
+    limit = Keyword.get(opts, :limit, 6)
+
+    if hall_names == [] do
+      []
+    else
+      query =
+        from o in YouCongress.Opinions.Opinion,
+          join: opinion_statement in "opinions_statements",
+          on: opinion_statement.opinion_id == o.id,
+          join: hall_statement in "halls_statements",
+          on: hall_statement.statement_id == opinion_statement.statement_id,
+          join: hall in Hall,
+          on: hall.id == hall_statement.hall_id,
+          join: author in YouCongress.Authors.Author,
+          as: :author,
+          on: author.id == o.author_id,
+          left_join: country in assoc(author, :country),
+          where: hall.name in ^hall_names,
+          where: not (is_nil(o.source_url) and is_nil(o.source_text)) and o.twin == false,
+          where: not is_nil(author.name),
+          where: fragment("length(?)", author.name) <= 25,
+          where: hall.name != "congreso-es" or country.name == "Spain",
+          group_by: author.id,
+          order_by: [desc: count(o.id, :distinct), asc: author.name],
+          limit: ^limit,
+          select: author
+
+      query =
+        if excluded_author_ids == [] do
+          query
+        else
+          where(query, [author: author], author.id not in ^excluded_author_ids)
+        end
+
+      Repo.all(query)
+    end
+  end
+
+  @doc """
   Stats across all statements, without filtering through a hall.
 
   The headline `quote_count` and `statement_count` mirror the full dataset
