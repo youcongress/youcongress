@@ -29,6 +29,7 @@ defmodule YouCongress.Authors do
     :verified,
     :location,
     :twitter_username,
+    :username,
     :google_id,
     :bio,
     :wikipedia_url,
@@ -184,6 +185,10 @@ defmodule YouCongress.Authors do
         {:twitter_username, twitter_username}, query ->
           twitter_username = String.downcase(twitter_username)
           from a in query, where: fragment("lower(?)", a.twitter_username) == ^twitter_username
+
+        {:username, username}, query ->
+          username = String.downcase(username)
+          from a in query, where: fragment("lower(?)", a.username) == ^username
 
         _, query ->
           query

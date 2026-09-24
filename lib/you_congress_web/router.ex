@@ -172,4 +172,10 @@ defmodule YouCongressWeb.Router do
       on_mount: [{YouCongressWeb.UserAuth, :mount_current_user}] do
     end
   end
+
+  scope "/", YouCongressWeb do
+    pipe_through(:browser)
+
+    live("/@:username", AuthorLive.Show, :show)
+  end
 end

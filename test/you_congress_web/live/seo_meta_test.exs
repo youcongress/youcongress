@@ -38,6 +38,22 @@ defmodule YouCongressWeb.SEOMetaTest do
       )
     end
 
+    test "canonicalizes legacy author URLs to a YouCongress username", %{conn: conn} do
+      author =
+        author_fixture(%{
+          name: "Jane Username",
+          username: "jane_username",
+          twitter_username: "jane_x"
+        })
+
+      for path <- [~p"/a/#{author.id}", ~p"/x/#{author.twitter_username}", ~p"/@jane_username"] do
+        html = conn |> get(path) |> html_response(200)
+
+        assert html =~
+                 ~s(<link rel="canonical" href="#{YouCongressWeb.Endpoint.url()}/@jane_username">)
+      end
+    end
+
     test "nameless author is noindexed", %{conn: conn} do
       author_fixture(%{name: nil, bio: nil, twin_origin: false, twitter_username: "ghostuser"})
 

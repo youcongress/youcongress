@@ -12,6 +12,25 @@
   </.link>
 </div>
 <.simple_form for={@form} id="author-form" phx-change="validate" phx-submit="save">
+  <.input
+    field={@form[:username]}
+    label="YouCongress username"
+    placeholder="your_username"
+  />
+  <p class="-mt-4 text-sm text-zinc-500">
+    Your profile URL will be youcongress.org/@your_username. Use 5–15 lowercase letters,
+    numbers, or underscores.
+  </p>
+  <p class="mt-2 text-sm text-zinc-500">
+    Three- and four-character usernames are reserved as a special perk for YouCongress donors
+    and supporters. Interested? Email <.link
+      href="mailto:hector@youcongress.org"
+      class="font-medium text-blue-600 hover:underline"
+    >
+      hector@youcongress.org
+    </.link>.
+  </p>
+
   <%= if !!@current_user.hashed_password do %>
     <.input field={@form[:name]} label="Name" />
     <.input field={@form[:bio]} label="One-line bio" />
