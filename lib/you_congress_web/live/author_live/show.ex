@@ -107,6 +107,12 @@ defmodule YouCongressWeb.AuthorLive.Show do
     |> Authors.preload([:country])
   end
 
+  defp get_author!(%{"username" => username}) do
+    [username: username]
+    |> Authors.get_author_by!()
+    |> Authors.preload([:country])
+  end
+
   @impl true
   def handle_event(
         "toggle-delegate",

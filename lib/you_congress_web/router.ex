@@ -170,4 +170,11 @@ defmodule YouCongressWeb.Router do
       on_mount: [{YouCongressWeb.UserAuth, :mount_current_user}] do
     end
   end
+
+  # Keep this route last so application paths such as /settings take precedence.
+  scope "/", YouCongressWeb do
+    pipe_through(:browser)
+
+    live("/:username", AuthorLive.Show, :show)
+  end
 end

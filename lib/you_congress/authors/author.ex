@@ -5,6 +5,14 @@ defmodule YouCongress.Authors.Author do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @username_format ~r/\A[a-z0-9][a-z0-9_]*\z/
+  @reserved_usernames ~w(
+    a about assets auth authors c contact dataset dev email-login-waiting-list explore
+    fact-checker faq h home images landing llms.txt log_in log_out mcp mcp-tools oban p
+    privacy-policy reset_password robots.txt settings sign_up sim sitemap.xml terms users v
+    verifications waiting_list welcome x
+  )
+
   schema "authors" do
     # twitter fields
     field :name, :string
@@ -16,6 +24,7 @@ defmodule YouCongress.Authors.Author do
     field :verified, :boolean
     field :location, :string
     field :twitter_username, :string
+    field :username, :string
     field :google_id, :string
     # bio is AI-generated for twins and is displayed instead of description if present
     field :bio, :string
@@ -43,6 +52,7 @@ defmodule YouCongress.Authors.Author do
       :wikipedia_url,
       :wikidata,
       :twitter_username,
+      :username,
       :google_id,
       :country_id,
       :twin_origin,
@@ -58,6 +68,7 @@ defmodule YouCongress.Authors.Author do
     ])
     |> validate_required([:twin_origin])
     |> validate_required_if_twin_origin()
+    |> validate_username()
     |> unique_constraint(:twitter_username)
     |> unique_constraint(:twitter_username, name: :authors_twitter_url_index)
     |> unique_constraint(:twitter_id_str)
@@ -72,12 +83,14 @@ defmodule YouCongress.Authors.Author do
 
     author
     |> cast(attrs, allowed_fields)
+    |> validate_username()
     |> foreign_key_constraint(:country_id)
   end
 
-  defp normalize_profile_field!(field) when field in [:name, :bio, :country_id], do: field
+  defp normalize_profile_field!(field) when field in [:name, :bio, :country_id, :username],
+    do: field
 
-  defp normalize_profile_field!(field) when field in ["name", "bio", "country_id"] do
+  defp normalize_profile_field!(field) when field in ["name", "bio", "country_id", "username"] do
     String.to_existing_atom(field)
   end
 
@@ -91,6 +104,23 @@ defmodule YouCongress.Authors.Author do
     else
       changeset
     end
+  end
+
+  defp validate_username(changeset) do
+    changeset
+    |> update_change(:username, &normalize_username/1)
+    |> validate_length(:username, min: 3, max: 30)
+    |> validate_format(:username, @username_format,
+      message: "may contain only lowercase letters, numbers, and underscores"
+    )
+    |> validate_exclusion(:username, @reserved_usernames, message: "is reserved")
+    |> unique_constraint(:username, name: :authors_username_index)
+  end
+
+  defp normalize_username(username) do
+    username
+    |> String.trim()
+    |> String.downcase()
   end
 
   defp validate_wikipedia_url_if_present(changeset) do
