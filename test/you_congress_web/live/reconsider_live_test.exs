@@ -3,6 +3,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
 
   import Phoenix.LiveViewTest
   import YouCongress.AccountsFixtures
+  import YouCongress.AuthorsFixtures
   import YouCongress.StatementsFixtures
 
   alias YouCongress.Accounts
@@ -76,15 +77,16 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     conn = log_in_user(conn, context.creator)
     {:ok, view, html} = live(conn, ~p"/reconsider/new")
     assert html =~ "Create a Reconsider page"
+    refute html =~ "For creators"
+
+    select_statement(view, context.statement, "private cars")
 
     params = %{
       "reconsideration" => %{
         "title" => "A second city-streets article",
         "description" => "Consider the evidence.",
         "content_url" => "https://example.com/second-article",
-        "content_type" => "article",
-        "statement_refs" => "/p/#{context.statement.slug}",
-        "delegate_refs" => ""
+        "content_type" => "article"
       }
     }
 
@@ -99,6 +101,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
   test "creator form keeps its references when validation fails", %{conn: conn} = context do
     conn = log_in_user(conn, context.creator)
     {:ok, view, _html} = live(conn, ~p"/reconsider/new")
+    select_statement(view, context.statement, "private cars")
 
     html =
       render_submit(view, "save", %{
@@ -106,14 +109,61 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
           "title" => "Invalid URL example",
           "description" => "",
           "content_url" => "not-a-url",
-          "content_type" => "article",
-          "statement_refs" => "/p/#{context.statement.slug}",
-          "delegate_refs" => ""
+          "content_type" => "article"
         }
       })
 
     assert html =~ "must be a valid HTTP or HTTPS URL"
-    assert html =~ context.statement.slug
+    assert html =~ context.statement.title
+    assert has_element?(view, "#selected-statement-#{context.statement.id}")
+  end
+
+  test "statements and delegates can be searched, selected, and removed",
+       %{
+         conn: conn
+       } = context do
+    second_statement = statement_fixture(%{title: "Nuclear power should be expanded rapidly"})
+
+    delegate =
+      author_fixture(%{
+        name: "Ada Energy",
+        username: "ada_energy",
+        bio: "Writes about advanced reactors and clean grids"
+      })
+
+    conn = log_in_user(conn, context.creator)
+    {:ok, view, _html} = live(conn, ~p"/reconsider/new")
+
+    select_statement(view, context.statement, "private cars")
+    select_statement(view, second_statement, "nuclear power")
+
+    assert has_element?(view, "#selected-statement-#{context.statement.id}")
+    assert has_element?(view, "#selected-statement-#{second_statement.id}")
+
+    view
+    |> element("#selected-statement-#{context.statement.id} button")
+    |> render_click()
+
+    refute has_element?(view, "#selected-statement-#{context.statement.id}")
+
+    view
+    |> element("#delegate-search")
+    |> render_change(%{"delegate_search" => "advanced reactors"})
+
+    assert has_element?(view, "#delegate-result-#{delegate.id}")
+
+    view
+    |> element("#delegate-result-#{delegate.id}")
+    |> render_click()
+
+    assert has_element?(view, "#selected-delegate-#{delegate.id}")
+    assert render(view) =~ "@ada_energy"
+
+    view
+    |> element("#selected-delegate-#{delegate.id} button")
+    |> render_click()
+
+    refute has_element?(view, "#selected-delegate-#{delegate.id}")
   end
 
   test "the legacy URL redirects permanently to the creator URL", %{conn: conn} = context do
@@ -167,5 +217,17 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
 
   defp reconsideration_path(context) do
     "/@#{context.creator.author.username}/r/#{context.reconsideration.slug}"
+  end
+
+  defp select_statement(view, statement, query) do
+    view
+    |> element("#statement-search")
+    |> render_change(%{"statement_search" => query})
+
+    assert has_element?(view, "#statement-result-#{statement.id}")
+
+    view
+    |> element("#statement-result-#{statement.id}")
+    |> render_click()
   end
 end

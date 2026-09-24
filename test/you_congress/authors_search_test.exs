@@ -16,5 +16,20 @@ defmodule YouCongress.AuthorsSearchTest do
       assert [result] = Authors.list_authors(search: "Asimov doctor")
       assert result.id == author.id
     end
+
+    test "search/1 finds authors by YouCongress username and bio" do
+      author =
+        author_fixture(
+          name: "Ada Energy",
+          username: "ada_energy",
+          bio: "Writes about advanced reactors and clean grids"
+        )
+
+      assert [username_result] = Authors.list_authors(search: "ada_energy")
+      assert username_result.id == author.id
+
+      assert [bio_result] = Authors.list_authors(search: "advanced reactors")
+      assert bio_result.id == author.id
+    end
   end
 end

@@ -1,7 +1,13 @@
 defmodule YouCongressWeb.ReconsiderLive.New do
   use YouCongressWeb, :live_view
 
+  alias YouCongress.Authors
   alias YouCongress.Reconsiderations
+  alias YouCongress.Statements
+
+  @search_limit 8
+  @minimum_query_length 2
+  @maximum_statements 5
 
   @impl true
   def mount(_params, session, socket) do
@@ -35,11 +41,117 @@ defmodule YouCongressWeb.ReconsiderLive.New do
      socket
      |> assign(:page_title, "Create a Reconsider page")
      |> assign(:form, form)
-     |> assign(:error_message, nil)}
+     |> assign(:error_message, nil)
+     |> assign(:selected_statements, [])
+     |> assign(:statement_query, "")
+     |> assign(:statement_results, [])
+     |> assign(:selected_delegates, [])
+     |> assign(:delegate_query, "")
+     |> assign(:delegate_results, [])}
+  end
+
+  @impl true
+  def handle_event("search-statements", %{"statement_search" => query}, socket) do
+    results =
+      if searchable?(query) and length(socket.assigns.selected_statements) < @maximum_statements do
+        selected_ids = Enum.map(socket.assigns.selected_statements, & &1.id)
+
+        Statements.list_statements(
+          search: String.trim(query),
+          exclude_ids: selected_ids,
+          order: :opinion_likes_count_desc,
+          limit: @search_limit
+        )
+      else
+        []
+      end
+
+    {:noreply,
+     socket
+     |> assign(:statement_query, query)
+     |> assign(:statement_results, results)}
+  end
+
+  def handle_event("add-statement", %{"id" => id}, socket) do
+    with true <- length(socket.assigns.selected_statements) < @maximum_statements,
+         {:ok, id} <- parse_id(id),
+         statement when not is_nil(statement) <-
+           Enum.find(socket.assigns.statement_results, &(&1.id == id)) do
+      {:noreply,
+       socket
+       |> update(:selected_statements, &(&1 ++ [statement]))
+       |> assign(:statement_query, "")
+       |> assign(:statement_results, [])
+       |> assign(:error_message, nil)}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("remove-statement", %{"id" => id}, socket) do
+    case parse_id(id) do
+      {:ok, id} ->
+        {:noreply,
+         update(socket, :selected_statements, &Enum.reject(&1, fn item -> item.id == id end))}
+
+      :error ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("search-delegates", %{"delegate_search" => query}, socket) do
+    results =
+      if searchable?(query) do
+        excluded_ids = [socket.assigns.current_user.author_id | selected_delegate_ids(socket)]
+
+        Authors.list_authors(
+          search: String.trim(query),
+          order_by: [asc: :name, asc: :id],
+          limit: @search_limit
+        )
+        |> Enum.reject(&(&1.id in excluded_ids))
+      else
+        []
+      end
+
+    {:noreply,
+     socket
+     |> assign(:delegate_query, query)
+     |> assign(:delegate_results, results)}
+  end
+
+  def handle_event("add-delegate", %{"id" => id}, socket) do
+    with {:ok, id} <- parse_id(id),
+         delegate when not is_nil(delegate) <-
+           Enum.find(socket.assigns.delegate_results, &(&1.id == id)) do
+      {:noreply,
+       socket
+       |> update(:selected_delegates, &(&1 ++ [delegate]))
+       |> assign(:delegate_query, "")
+       |> assign(:delegate_results, [])}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("remove-delegate", %{"id" => id}, socket) do
+    case parse_id(id) do
+      {:ok, id} ->
+        {:noreply,
+         update(socket, :selected_delegates, &Enum.reject(&1, fn item -> item.id == id end))}
+
+      :error ->
+        {:noreply, socket}
+    end
   end
 
   @impl true
   def handle_event("save", %{"reconsideration" => params}, socket) do
+    params =
+      params
+      |> Map.put("statement_refs", selected_statement_refs(socket))
+      |> Map.put("delegate_refs", selected_delegate_refs(socket))
+
     case Reconsiderations.create_from_refs(socket.assigns.current_user, params) do
       {:ok, reconsideration} ->
         {:noreply,
@@ -76,13 +188,45 @@ defmodule YouCongressWeb.ReconsiderLive.New do
     end
   end
 
+  defp searchable?(query), do: String.length(String.trim(query)) >= @minimum_query_length
+
+  defp parse_id(id) when is_integer(id), do: {:ok, id}
+
+  defp parse_id(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {id, ""} -> {:ok, id}
+      _ -> :error
+    end
+  end
+
+  defp parse_id(_id), do: :error
+
+  defp selected_statement_refs(socket) do
+    Enum.map_join(socket.assigns.selected_statements, "\n", &to_string(&1.id))
+  end
+
+  defp selected_delegate_refs(socket) do
+    Enum.map_join(socket.assigns.selected_delegates, "\n", &to_string(&1.id))
+  end
+
+  defp selected_delegate_ids(socket), do: Enum.map(socket.assigns.selected_delegates, & &1.id)
+
+  defp author_name(author),
+    do: author.name || author.username || author.twitter_username || "YouCongress author"
+
+  defp author_username(%{username: username}) when is_binary(username), do: "@#{username}"
+
+  defp author_username(%{twitter_username: username}) when is_binary(username),
+    do: "@#{username}"
+
+  defp author_username(_author), do: nil
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-2xl px-4 py-8 sm:px-6">
       <div class="mb-8">
-        <p class="text-sm font-semibold uppercase tracking-wide text-indigo-600">For creators</p>
-        <h1 class="mt-2 text-3xl font-bold tracking-tight text-gray-900">Create a Reconsider page</h1>
+        <h1 class="text-3xl font-bold tracking-tight text-gray-900">Create a Reconsider page</h1>
         <p class="mt-3 text-gray-600">
           Ask your audience what they believed before your article or video and what they believe now.
         </p>
@@ -111,25 +255,168 @@ defmodule YouCongressWeb.ReconsiderLive.New do
           options={[{"Article", "article"}, {"Video", "video"}]}
           required
         />
-        <.input
-          field={@form[:statement_refs]}
-          type="textarea"
-          label="YouCongress statements (one per line, 1–5)"
-          placeholder="Paste a statement URL or slug"
-          required
-        />
-        <p class="-mt-4 text-xs text-gray-500">
-          Find existing statements in <.link navigate={~p"/explore"} class="text-indigo-600 underline">Explore</.link>.
-        </p>
-        <.input
-          field={@form[:delegate_refs]}
-          type="textarea"
-          label="Other people viewers may delegate to (optional, one per line)"
-          placeholder="Paste a YouCongress author URL, an @username, or an author ID"
-        />
-        <p class="-mt-4 text-xs text-gray-500">
-          Your own YouCongress profile is included automatically.
-        </p>
+        <div id="statement-picker" class="space-y-3">
+          <label for="statement-search" class="block text-sm font-semibold leading-6 text-zinc-800">
+            YouCongress statements (1–5)
+          </label>
+
+          <div :if={@selected_statements != []} id="selected-statements" class="space-y-2">
+            <div
+              :for={statement <- @selected_statements}
+              id={"selected-statement-#{statement.id}"}
+              class="flex items-start justify-between gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2"
+            >
+              <span class="text-sm text-gray-900">{statement.title}</span>
+              <button
+                type="button"
+                phx-click="remove-statement"
+                phx-value-id={statement.id}
+                aria-label={"Remove #{statement.title}"}
+                class="shrink-0 text-lg leading-5 text-indigo-700 hover:text-indigo-900"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          <div :if={length(@selected_statements) < 5} class="relative">
+            <input
+              id="statement-search"
+              name="statement_search"
+              type="search"
+              value={@statement_query}
+              placeholder="Start typing a statement…"
+              autocomplete="off"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-controls="statement-results"
+              aria-expanded={@statement_results != []}
+              phx-change="search-statements"
+              phx-debounce="250"
+              class="block w-full rounded-lg border-0 px-3 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+            />
+
+            <div
+              :if={@statement_results != []}
+              id="statement-results"
+              role="listbox"
+              class="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
+            >
+              <button
+                :for={statement <- @statement_results}
+                id={"statement-result-#{statement.id}"}
+                type="button"
+                role="option"
+                phx-click="add-statement"
+                phx-value-id={statement.id}
+                class="block w-full rounded-md px-3 py-2 text-left text-sm text-gray-900 hover:bg-indigo-50 focus:bg-indigo-50 focus:outline-none"
+              >
+                {statement.title}
+              </button>
+            </div>
+          </div>
+
+          <p :if={length(@selected_statements) == 5} class="text-xs font-medium text-indigo-700">
+            You have selected the maximum of five statements.
+          </p>
+          <p
+            :if={
+              searchable?(@statement_query) && @statement_results == [] &&
+                length(@selected_statements) < 5
+            }
+            id="no-statement-results"
+            class="text-xs text-gray-500"
+          >
+            No matching statements found.
+          </p>
+          <p class="text-xs text-gray-500">
+            Type at least two characters, then select a statement. You can add up to five.
+          </p>
+        </div>
+
+        <div id="delegate-picker" class="space-y-3">
+          <label for="delegate-search" class="block text-sm font-semibold leading-6 text-zinc-800">
+            Other people viewers may delegate to (optional)
+          </label>
+
+          <div :if={@selected_delegates != []} id="selected-delegates" class="flex flex-wrap gap-2">
+            <div
+              :for={delegate <- @selected_delegates}
+              id={"selected-delegate-#{delegate.id}"}
+              class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm text-gray-900"
+            >
+              <span>{author_name(delegate)}</span>
+              <span :if={author_username(delegate)} class="text-gray-500">
+                {author_username(delegate)}
+              </span>
+              <button
+                type="button"
+                phx-click="remove-delegate"
+                phx-value-id={delegate.id}
+                aria-label={"Remove #{author_name(delegate)}"}
+                class="text-lg leading-4 text-indigo-700 hover:text-indigo-900"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          <div class="relative">
+            <input
+              id="delegate-search"
+              name="delegate_search"
+              type="search"
+              value={@delegate_query}
+              placeholder="Search by name, username, or bio…"
+              autocomplete="off"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-controls="delegate-results"
+              aria-expanded={@delegate_results != []}
+              phx-change="search-delegates"
+              phx-debounce="250"
+              class="block w-full rounded-lg border-0 px-3 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+            />
+
+            <div
+              :if={@delegate_results != []}
+              id="delegate-results"
+              role="listbox"
+              class="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
+            >
+              <button
+                :for={delegate <- @delegate_results}
+                id={"delegate-result-#{delegate.id}"}
+                type="button"
+                role="option"
+                phx-click="add-delegate"
+                phx-value-id={delegate.id}
+                class="block w-full rounded-md px-3 py-2 text-left hover:bg-indigo-50 focus:bg-indigo-50 focus:outline-none"
+              >
+                <span class="flex items-baseline gap-2">
+                  <span class="text-sm font-medium text-gray-900">{author_name(delegate)}</span>
+                  <span :if={author_username(delegate)} class="text-xs text-gray-500">
+                    {author_username(delegate)}
+                  </span>
+                </span>
+                <span :if={delegate.bio} class="mt-0.5 line-clamp-2 block text-xs text-gray-500">
+                  {delegate.bio}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <p
+            :if={searchable?(@delegate_query) && @delegate_results == []}
+            id="no-delegate-results"
+            class="text-xs text-gray-500"
+          >
+            No matching people found.
+          </p>
+          <p class="text-xs text-gray-500">
+            Your own YouCongress profile is included automatically.
+          </p>
+        </div>
 
         <:actions>
           <.button phx-disable-with="Creating…">Create Reconsider page</.button>
