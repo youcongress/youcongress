@@ -337,8 +337,9 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
               Who would you trust to represent you?
             </legend>
             <p class="mt-2 text-sm text-gray-600">
-              Optional. These are global delegations. When you have not voted directly, YouCongress
-              follows the most common answer among your delegates. Your own votes always take priority.
+              Optional. These are global delegations. When you have not voted directly on an issue,
+              YouCongress follows the most common answer among your delegates. Your own votes always
+              take priority.
             </p>
 
             <div class="mt-4 space-y-3">
