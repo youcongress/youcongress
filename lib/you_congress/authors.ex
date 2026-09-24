@@ -1106,7 +1106,9 @@ defmodule YouCongress.Authors do
             from a in query_acc,
               where:
                 ilike(a.name, ^term_pattern) or
-                  ilike(a.twitter_username, ^term_pattern)
+                  ilike(a.username, ^term_pattern) or
+                  ilike(a.twitter_username, ^term_pattern) or
+                  ilike(a.bio, ^term_pattern)
           end)
 
         {:country_id, nil}, query ->
