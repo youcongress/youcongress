@@ -64,7 +64,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
     other_authors =
       halls
       |> Enum.map(fn {hall_name, _count} -> hall_name end)
-      |> Halls.list_top_authors_for_halls(exclude_author_ids: [author.id], limit: 5)
+      |> Halls.list_top_authors_for_halls(exclude_author_ids: [author.id], limit: 6)
 
     name = author.name || author.twitter_username || "Anonymous user"
 
