@@ -46,11 +46,11 @@ defmodule YouCongressWeb.SEOMetaTest do
           twitter_username: "jane_x"
         })
 
-      for path <- [~p"/a/#{author.id}", ~p"/x/#{author.twitter_username}", ~p"/jane_username"] do
+      for path <- [~p"/a/#{author.id}", ~p"/x/#{author.twitter_username}", ~p"/@jane_username"] do
         html = conn |> get(path) |> html_response(200)
 
         assert html =~
-                 ~s(<link rel="canonical" href="#{YouCongressWeb.Endpoint.url()}/jane_username">)
+                 ~s(<link rel="canonical" href="#{YouCongressWeb.Endpoint.url()}/@jane_username">)
       end
     end
 

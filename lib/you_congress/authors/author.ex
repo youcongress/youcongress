@@ -6,12 +6,6 @@ defmodule YouCongress.Authors.Author do
   import Ecto.Changeset
 
   @username_format ~r/\A[a-z0-9][a-z0-9_]*\z/
-  @reserved_usernames ~w(
-    a about assets auth authors c contact dataset dev email-login-waiting-list explore
-    fact-checker faq h home images landing llms.txt log_in log_out mcp mcp-tools oban p
-    privacy-policy reset_password robots.txt settings sign_up sim sitemap.xml terms users v
-    verifications waiting_list welcome x
-  )
 
   schema "authors" do
     # twitter fields
@@ -113,7 +107,6 @@ defmodule YouCongress.Authors.Author do
     |> validate_format(:username, @username_format,
       message: "may contain only lowercase letters, numbers, and underscores"
     )
-    |> validate_exclusion(:username, @reserved_usernames, message: "is reserved")
     |> unique_constraint(:username, name: :authors_username_index)
   end
 

@@ -171,10 +171,9 @@ defmodule YouCongressWeb.Router do
     end
   end
 
-  # Keep this route last so application paths such as /settings take precedence.
   scope "/", YouCongressWeb do
     pipe_through(:browser)
 
-    live("/:username", AuthorLive.Show, :show)
+    live("/@:username", AuthorLive.Show, :show)
   end
 end

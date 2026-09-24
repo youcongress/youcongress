@@ -109,10 +109,10 @@ defmodule YouCongressWeb.AuthorLiveTest do
     } do
       author = author_fixture(%{username: "jane_congress", twitter_username: "janex"})
 
-      {:ok, _show_live, html} = live(conn, ~p"/jane_congress")
+      {:ok, _show_live, html} = live(conn, ~p"/@jane_congress")
 
       assert html =~ author.name
-      assert YouCongressWeb.SEO.author_path(author) == "/jane_congress"
+      assert YouCongressWeb.SEO.author_path(author) == "/@jane_congress"
     end
 
     test "suggests up to nine other authors with sourced quotes in the same halls", %{

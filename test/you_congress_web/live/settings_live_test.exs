@@ -54,7 +54,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
       assert has_element?(settings_live, "input[name='author[username]'][value='my_profile']")
     end
 
-    test "YouCongress usernames must be unique and cannot use application routes", %{
+    test "YouCongress usernames must be unique", %{
       conn: conn,
       current_user: current_user
     } do
@@ -66,10 +66,6 @@ defmodule YouCongressWeb.SettingsLiveTest do
       assert render_submit(settings_live, "save", %{
                "author" => %{"username" => "ALREADY_TAKEN"}
              }) =~ "has already been taken"
-
-      assert render_submit(settings_live, "save", %{
-               "author" => %{"username" => "settings"}
-             }) =~ "is reserved"
 
       assert Authors.get_author!(current_user.author_id).username == nil
     end
