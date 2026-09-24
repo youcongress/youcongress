@@ -23,11 +23,18 @@ defmodule YouCongressWeb.SettingsLiveTest do
 
     test "Logged users can load the page", %{conn: conn, current_user: current_user} do
       conn = log_in_user(conn, current_user)
-      {:ok, _settings_live, html} = live(conn, ~p"/settings")
+      {:ok, settings_live, html} = live(conn, ~p"/settings")
       assert html =~ "Settings"
       assert html =~ "Name: Someone"
       assert html =~ "YouCongress username"
       assert html =~ "author[username]"
+      assert html =~ "reserved as a special perk"
+
+      assert has_element?(
+               settings_live,
+               "a[href='mailto:hector@youcongress.org']",
+               "hector@youcongress.org"
+             )
     end
 
     test "users can set a normalized YouCongress username", %{
@@ -67,7 +74,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
       assert Authors.get_author!(current_user.author_id).username == nil
     end
 
-    test "YouCongress usernames must contain at least five characters", %{
+    test "YouCongress usernames must contain between five and fifteen characters", %{
       conn: conn,
       current_user: current_user
     } do
@@ -77,6 +84,10 @@ defmodule YouCongressWeb.SettingsLiveTest do
       assert render_submit(settings_live, "save", %{
                "author" => %{"username" => "four"}
              }) =~ "should be at least 5 character(s)"
+
+      assert render_submit(settings_live, "save", %{
+               "author" => %{"username" => "abcdefghijklmnop"}
+             }) =~ "should be at most 15 character(s)"
 
       assert Authors.get_author!(current_user.author_id).username == nil
     end
