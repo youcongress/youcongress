@@ -393,7 +393,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
     author_params = params["user"] |> Map.take(~w(name))
 
     with {:turnstile, {:ok, _}} <- {:turnstile, Turnstile.verify(turnstile_token)},
-         {:register, {:ok, %{user: user, author: author}}} <-
+         {:register, {:ok, %{user: user}}} <-
            {:register, Accounts.register_user(user_params, author_params)} do
       Track.event("Register via email/password", user)
 
@@ -409,24 +409,8 @@ defmodule YouCongressWeb.UserRegistrationLive do
         |> reset_email_code_state()
         |> assign_form(email_code_changeset())
 
-      # Pending Actions
-      if socket.assigns.delegate_ids != [] do
-        for id <- socket.assigns.delegate_ids do
-          YouCongress.Delegations.create_delegation(user, id)
-        end
-      end
-
-      if map_size(socket.assigns.votes) > 0 do
-        Enum.each(socket.assigns.votes, fn {_statement_id, vote_data} ->
-          YouCongress.Votes.create_or_update(%{
-            statement_id: pending_vote_statement_id(vote_data),
-            answer: pending_vote_answer(vote_data),
-            author_id: author.id,
-            user_id: user.id,
-            direct: true
-          })
-        end)
-      end
+      # Apply votes, delegations, or a Reconsider response collected before registration.
+      YouCongress.PendingActions.process(user, socket.assigns.pending_actions)
 
       {:noreply, socket}
     else
@@ -729,17 +713,6 @@ defmodule YouCongressWeb.UserRegistrationLive do
       return_to: socket.assigns[:return_to]
     })
     |> assign(:session_login_sent, true)
-  end
-
-  defp pending_vote_statement_id(vote_data) do
-    vote_data[:statement_id] || vote_data["statement_id"]
-  end
-
-  defp pending_vote_answer(vote_data) do
-    case vote_data[:answer] || vote_data["answer"] do
-      answer when is_binary(answer) -> String.to_existing_atom(answer)
-      answer -> answer
-    end
   end
 
   defp email_code_changeset(attrs \\ %{}) do

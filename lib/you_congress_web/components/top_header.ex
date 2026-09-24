@@ -33,6 +33,13 @@ defmodule YouCongressWeb.TopHeaderComponent do
             Explore
           </.link>
           <.link
+            :if={@current_user && YouCongress.Accounts.sign_up_complete?(@current_user)}
+            href={~p"/reconsider/new"}
+            class="px-3 py-2 hover:text-zinc-700 transition-colors"
+          >
+            Reconsider
+          </.link>
+          <.link
             :if={!@current_user || YouCongress.Accounts.sign_up_complete?(@current_user)}
             href={~p"/about"}
             class="px-3 py-2 hover:text-zinc-700 transition-colors"
@@ -73,6 +80,13 @@ defmodule YouCongressWeb.TopHeaderComponent do
               class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
             >
               Explore
+            </.link>
+            <.link
+              :if={@current_user && YouCongress.Accounts.sign_up_complete?(@current_user)}
+              href={~p"/reconsider/new"}
+              class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
+            >
+              Create
             </.link>
             <.link
               :if={!@current_user || YouCongress.Accounts.sign_up_complete?(@current_user)}
