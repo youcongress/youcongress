@@ -7,6 +7,17 @@ defmodule YouCongressWeb.ReconsiderLive.New do
   def mount(_params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
 
+    if is_nil(socket.assigns.current_user.author.username) do
+      {:ok,
+       socket
+       |> put_flash(:error, "Choose a YouCongress username before creating a Reconsider page.")
+       |> redirect(to: ~p"/settings")}
+    else
+      mount_form(socket)
+    end
+  end
+
+  defp mount_form(socket) do
     form =
       to_form(
         %{
@@ -34,7 +45,9 @@ defmodule YouCongressWeb.ReconsiderLive.New do
         {:noreply,
          socket
          |> put_flash(:info, "Your Reconsider page is ready to share.")
-         |> push_navigate(to: ~p"/reconsider/#{reconsideration.slug}")}
+         |> push_navigate(
+           to: ~p"/@#{socket.assigns.current_user.author.username}/r/#{reconsideration.slug}"
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,

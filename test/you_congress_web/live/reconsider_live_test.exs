@@ -5,10 +5,12 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
   import YouCongress.AccountsFixtures
   import YouCongress.StatementsFixtures
 
+  alias YouCongress.Accounts
+  alias YouCongress.Authors
   alias YouCongress.Reconsiderations
 
   setup do
-    creator = user_fixture()
+    creator = creator_fixture()
     statement = statement_fixture(%{title: "Cities should remove private cars from downtown"})
 
     {:ok, reconsideration} =
@@ -27,7 +29,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
   end
 
   test "a guest selects everything before being asked to authenticate", %{conn: conn} = context do
-    {:ok, view, html} = live(conn, ~p"/reconsider/#{context.reconsideration.slug}")
+    {:ok, view, html} = live(conn, reconsideration_path(context))
 
     assert html =~ "Rethinking city streets"
     assert html =~ "Before this article"
@@ -52,7 +54,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
        %{conn: conn} = context do
     participant = user_fixture()
     conn = log_in_user(conn, participant)
-    {:ok, view, _html} = live(conn, ~p"/reconsider/#{context.reconsideration.slug}")
+    {:ok, view, _html} = live(conn, reconsideration_path(context))
 
     params = %{
       "response" => %{
@@ -87,7 +89,11 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     }
 
     render_submit(view, "save", params)
-    assert_redirect(view, "/reconsider/a-second-city-streets-article")
+
+    assert_redirect(
+      view,
+      "/@#{context.creator.author.username}/r/a-second-city-streets-article"
+    )
   end
 
   test "creator form keeps its references when validation fails", %{conn: conn} = context do
@@ -108,5 +114,58 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
 
     assert html =~ "must be a valid HTTP or HTTPS URL"
     assert html =~ context.statement.slug
+  end
+
+  test "the legacy URL redirects permanently to the creator URL", %{conn: conn} = context do
+    conn = get(conn, ~p"/reconsider/#{context.reconsideration.slug}")
+    assert redirected_to(conn, 301) == reconsideration_path(context)
+  end
+
+  test "a normal user cannot open the creation form", %{conn: conn} do
+    conn = conn |> log_in_user(user_fixture()) |> get(~p"/reconsider/new")
+
+    assert redirected_to(conn) == ~p"/"
+    assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "creator or admin"
+  end
+
+  test "an admin can open the creation form", %{conn: conn} do
+    admin = admin_fixture() |> with_username()
+    conn = log_in_user(conn, admin)
+
+    assert {:ok, _view, html} = live(conn, ~p"/reconsider/new")
+    assert html =~ "Create a Reconsider page"
+  end
+
+  test "a creator chooses a username before creating a page", %{conn: conn} do
+    {:ok, creator_without_username} =
+      user_fixture()
+      |> Accounts.update_role("creator")
+
+    conn = log_in_user(conn, creator_without_username)
+
+    assert {:error, {:redirect, %{to: "/settings"}}} = live(conn, ~p"/reconsider/new")
+  end
+
+  defp creator_fixture do
+    {:ok, creator} =
+      user_fixture()
+      |> Accounts.update_role("creator")
+
+    with_username(creator)
+  end
+
+  defp with_username(user) do
+    username = "alice_#{System.unique_integer([:positive])}" |> String.slice(0, 15)
+
+    {:ok, author} =
+      user.author_id
+      |> Authors.get_author!()
+      |> Authors.update_author(%{username: username})
+
+    %{user | author: author}
+  end
+
+  defp reconsideration_path(context) do
+    "/@#{context.creator.author.username}/r/#{context.reconsideration.slug}"
   end
 end

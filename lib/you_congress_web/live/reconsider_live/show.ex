@@ -8,10 +8,14 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
   @answers [:for, :abstain, :against]
 
   @impl true
-  def mount(%{"slug" => slug}, session, socket) do
+  def mount(%{"username" => username, "slug" => slug}, session, socket) do
     current_user = assign_current_user(socket, session["user_token"]).assigns.current_user
-    reconsideration = Reconsiderations.get_reconsideration_by_slug!(slug)
-    return_to = ~p"/reconsider/#{reconsideration.slug}"
+
+    reconsideration =
+      Reconsiderations.get_reconsideration_by_username_and_slug!(username, slug)
+
+    return_to =
+      ~p"/@#{reconsideration.creator.username}/r/#{reconsideration.slug}"
 
     socket =
       socket

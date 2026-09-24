@@ -280,6 +280,17 @@ defmodule YouCongressWeb.UserAuth do
     end
   end
 
+  def require_creator_or_admin_user(conn, _opts) do
+    if YouCongress.Accounts.Permissions.can_create_reconsideration?(conn.assigns[:current_user]) do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You must be a creator or admin to create a Reconsider page.")
+      |> redirect(to: ~p"/")
+      |> halt()
+    end
+  end
+
   def require_admin_user(conn, _opts) do
     if YouCongress.Accounts.admin?(conn.assigns[:current_user]) do
       conn

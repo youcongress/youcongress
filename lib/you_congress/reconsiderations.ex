@@ -31,6 +31,20 @@ defmodule YouCongress.Reconsiderations do
     |> preload_experience()
   end
 
+  def get_reconsideration_by_username_and_slug!(username, slug) do
+    username = String.downcase(username)
+
+    Reconsideration
+    |> join(:inner, [reconsideration], creator in assoc(reconsideration, :creator))
+    |> where(
+      [reconsideration, creator],
+      reconsideration.slug == ^slug and reconsideration.published == true and
+        fragment("lower(?)", creator.username) == ^username
+    )
+    |> Repo.one!()
+    |> preload_experience()
+  end
+
   def get_reconsideration!(id) do
     Reconsideration
     |> Repo.get!(id)

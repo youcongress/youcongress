@@ -88,12 +88,17 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through([:browser, :require_authenticated_user])
 
-    live("/reconsider/new", ReconsiderLive.New, :new)
     live("/welcome", WelcomeLive.Index, :index)
     live("/p/:slug/add-quote", StatementLive.AddQuote, :add_quote)
 
     live("/settings", SettingsLive, :settings)
     live("/landing", HomeLive.Index, :index)
+  end
+
+  scope "/", YouCongressWeb do
+    pipe_through([:browser, :require_authenticated_user, :require_creator_or_admin_user])
+
+    live("/reconsider/new", ReconsiderLive.New, :new)
   end
 
   # Other scopes may use custom stacks.
@@ -139,7 +144,8 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through([:browser])
 
-    live("/reconsider/:slug", ReconsiderLive.Show, :show)
+    get("/reconsider/:slug", ReconsiderController, :redirect_to_creator)
+    live("/@:username/r/:slug", ReconsiderLive.Show, :show)
     live("/", LatestLive.Index, :index)
   end
 
