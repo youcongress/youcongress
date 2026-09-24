@@ -61,6 +61,11 @@ defmodule YouCongressWeb.AuthorLive.Show do
       |> Enum.sort_by(fn {_name, count} -> count end, :desc)
       |> Enum.take(15)
 
+    other_authors =
+      halls
+      |> Enum.map(fn {hall_name, _count} -> hall_name end)
+      |> Halls.list_top_authors_for_halls(exclude_author_ids: [author.id], limit: 5)
+
     name = author.name || author.twitter_username || "Anonymous user"
 
     current_user = socket.assigns.current_user
@@ -72,6 +77,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
      |> assign(:author, author)
      |> assign(:votes, votes)
      |> assign(:halls, halls)
+     |> assign(:other_authors, other_authors)
      |> assign(:hall_name, hall_name)
      |> assign(:regenerating_opinion_id, nil)
      |> assign(
