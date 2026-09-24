@@ -104,7 +104,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
       refute has_element?(show_live, "a", "Wikipedia")
     end
 
-    test "suggests up to five other authors with sourced quotes in the same halls", %{
+    test "suggests up to six other authors with sourced quotes in the same halls", %{
       conn: conn,
       author: author
     } do
@@ -131,7 +131,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
       })
 
       related_authors =
-        Enum.map(1..6, fn number ->
+        Enum.map(1..7, fn number ->
           related_author =
             author_fixture(%{
               name: "Related Author #{number}",
@@ -155,9 +155,9 @@ defmodule YouCongressWeb.AuthorLiveTest do
       {:ok, show_live, html} = live(conn, ~p"/x/#{author.twitter_username}")
 
       assert html =~ "Other authors to follow"
-      assert length(Regex.scan(~r/data-testid="other-author"/, html)) == 5
+      assert length(Regex.scan(~r/data-testid="other-author"/, html)) == 6
 
-      Enum.each(Enum.take(related_authors, 5), fn related_author ->
+      Enum.each(Enum.take(related_authors, 6), fn related_author ->
         assert has_element?(
                  show_live,
                  "#other-authors a[href='/x/#{related_author.twitter_username}']",
