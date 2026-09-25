@@ -1,7 +1,7 @@
 defmodule YouCongress.Workers.VerificationPollingWorker do
   @moduledoc """
-  Polls the LLM for the result of a verification job and, once complete, records
-  the verification and cascades to the next pipeline stage.
+  Polls the LLM for the result of a verification job and, once complete, stores
+  the untrusted result as a pending human-review proposal.
 
   Retries every minute for up to 90 minutes, mirroring the QuotatorPollingWorker.
   """
