@@ -7,7 +7,13 @@ defmodule YouCongress.Reconsiderations.Reconsideration do
   import Ecto.Changeset
 
   alias YouCongress.Authors.Author
-  alias YouCongress.Reconsiderations.{Delegate, ReconsiderationStatement, Response}
+
+  alias YouCongress.Reconsiderations.{
+    Delegate,
+    DelegateSelection,
+    ReconsiderationStatement,
+    Response
+  }
 
   schema "reconsiderations" do
     field :title, :string
@@ -20,6 +26,7 @@ defmodule YouCongress.Reconsiderations.Reconsideration do
     belongs_to :creator, Author
     has_many :reconsideration_statements, ReconsiderationStatement
     has_many :delegates, Delegate
+    has_many :delegate_selections, DelegateSelection
     has_many :responses, Response
 
     timestamps()

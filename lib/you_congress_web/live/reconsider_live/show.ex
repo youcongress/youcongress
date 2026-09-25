@@ -294,6 +294,35 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
               </div>
             </div>
           </div>
+
+          <div
+            :if={@stats.delegates != []}
+            id="delegation-results"
+            class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+          >
+            <h2 class="text-lg font-semibold text-gray-900">Delegations chosen</h2>
+            <p class="mt-1 text-sm text-gray-600">
+              How many participants chose each person through this Reconsider page.
+            </p>
+            <div class="mt-4 divide-y divide-gray-100 rounded-lg border border-gray-200">
+              <div
+                :for={delegate <- @stats.delegates}
+                id={"delegate-result-#{delegate.author_id}"}
+                class="flex items-center gap-3 px-3 py-3"
+              >
+                <img
+                  :if={delegate.author.profile_image_url}
+                  src={delegate.author.profile_image_url}
+                  alt=""
+                  class="h-9 w-9 rounded-full"
+                />
+                <span class="font-medium text-gray-900">{author_name(delegate.author)}</span>
+                <span class="ml-auto text-sm text-gray-600">
+                  {delegate.count} {if delegate.count == 1, do: "participant", else: "participants"} ({delegate.percent}%)
+                </span>
+              </div>
+            </div>
+          </div>
         </section>
       <% else %>
         <form id="reconsider-form" phx-submit="submit" class="space-y-6">

@@ -14,6 +14,7 @@ defmodule YouCongress.Reconsiderations do
 
   alias YouCongress.Reconsiderations.{
     Delegate,
+    DelegateSelection,
     Reconsideration,
     ReconsiderationStatement,
     Response
@@ -172,6 +173,14 @@ defmodule YouCongress.Reconsiderations do
         end)
 
         Enum.each(normalized_delegate_ids, fn delegate_id ->
+          %DelegateSelection{}
+          |> DelegateSelection.changeset(%{
+            reconsideration_id: reconsideration.id,
+            participant_author_id: user.author_id,
+            delegate_author_id: delegate_id
+          })
+          |> insert_or_rollback()
+
           unless Delegations.delegating?(user.author_id, delegate_id) do
             case Delegations.create_delegation(user, delegate_id) do
               {:ok, _delegation} -> :ok
@@ -254,6 +263,14 @@ defmodule YouCongress.Reconsiderations do
       |> Repo.all()
       |> Enum.group_by(& &1.statement_id)
 
+    delegate_counts =
+      DelegateSelection
+      |> where([selection], selection.reconsideration_id == ^reconsideration.id)
+      |> group_by([selection], selection.delegate_author_id)
+      |> select([selection], {selection.delegate_author_id, count(selection.id)})
+      |> Repo.all()
+      |> Map.new()
+
     statement_stats =
       Enum.map(reconsideration.reconsideration_statements, fn item ->
         counts = Map.get(per_statement, item.statement_id, %{total: 0, changed: 0})
@@ -280,7 +297,18 @@ defmodule YouCongress.Reconsiderations do
       changed_participants: changed_participants,
       unchanged_participants: total_participants - changed_participants,
       changed_percent: percent(changed_participants, total_participants),
-      statements: statement_stats
+      statements: statement_stats,
+      delegates:
+        Enum.map(reconsideration.delegates, fn delegate ->
+          count = Map.get(delegate_counts, delegate.author_id, 0)
+
+          %{
+            author_id: delegate.author_id,
+            author: delegate.author,
+            count: count,
+            percent: percent(count, total_participants)
+          }
+        end)
     }
   end
 
