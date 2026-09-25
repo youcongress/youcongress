@@ -40,7 +40,7 @@ defmodule YouCongressWeb.ResetPasswordTokenLive do
         Accounts.change_user_password(user)
         |> to_form(as: "user")
 
-      {:ok, assign(socket, form: form, token: token, user: user)}
+      {:ok, assign(socket, form: form, token: token)}
     else
       {:ok,
        socket
@@ -50,14 +50,20 @@ defmodule YouCongressWeb.ResetPasswordTokenLive do
   end
 
   def handle_event("reset_password", %{"user" => user_params}, socket) do
-    case Accounts.reset_user_password(socket.assigns.user, user_params) do
+    case Accounts.reset_user_password(socket.assigns.token, user_params) do
       {:ok, _} ->
         {:noreply,
          socket
          |> put_flash(:info, "Password reset successfully.")
          |> redirect(to: ~p"/log_in")}
 
-      {:error, changeset} ->
+      {:error, :invalid_token} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Reset password link is invalid or it has expired.")
+         |> redirect(to: ~p"/")}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :form, to_form(Map.put(changeset, :action, :insert)))}
     end
   end

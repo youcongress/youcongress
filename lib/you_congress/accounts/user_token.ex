@@ -132,6 +132,33 @@ defmodule YouCongress.Accounts.UserToken do
     end
   end
 
+  @doc """
+  Returns a locking query for a valid reset-password token and its user.
+
+  The query must be executed inside the same transaction that changes the
+  password and deletes the token.
+  """
+  def verify_reset_password_token_query(token) do
+    case Base.url_decode64(token, padding: false) do
+      {:ok, decoded_token} ->
+        hashed_token = hash_token(decoded_token)
+
+        query =
+          from token in token_and_context_query(hashed_token, "reset_password"),
+            join: user in assoc(token, :user),
+            where:
+              token.inserted_at > ago(@reset_password_validity_in_days, "day") and
+                token.sent_to == user.email,
+            select: {token, user},
+            lock: "FOR UPDATE"
+
+        {:ok, query}
+
+      :error ->
+        :error
+    end
+  end
+
   defp days_for_context("confirm"), do: @confirm_validity_in_days
   defp days_for_context("reset_password"), do: @reset_password_validity_in_days
 

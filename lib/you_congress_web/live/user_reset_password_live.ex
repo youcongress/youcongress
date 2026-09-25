@@ -42,8 +42,8 @@ defmodule YouCongressWeb.UserResetPasswordLive do
 
     form_source =
       case socket.assigns do
-        %{user: user} ->
-          Accounts.change_user_password(user)
+        %{token: _token} ->
+          Accounts.change_user_password(%Accounts.User{})
 
         _ ->
           %{}
@@ -55,26 +55,32 @@ defmodule YouCongressWeb.UserResetPasswordLive do
   # Do not log in the user after reset password to avoid a
   # leaked token giving the user access to the account.
   def handle_event("reset_password", %{"user" => user_params}, socket) do
-    case Accounts.reset_user_password(socket.assigns.user, user_params) do
+    case Accounts.reset_user_password(socket.assigns.token, user_params) do
       {:ok, _} ->
         {:noreply,
          socket
          |> put_flash(:info, "Password reset successfully.")
          |> redirect(to: ~p"/log_in")}
 
-      {:error, changeset} ->
+      {:error, :invalid_token} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Reset password link is invalid or it has expired.")
+         |> redirect(to: ~p"/")}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, Map.put(changeset, :action, :insert))}
     end
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
-    changeset = Accounts.change_user_password(socket.assigns.user, user_params)
+    changeset = Accounts.change_user_password(%Accounts.User{}, user_params)
     {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
   end
 
   defp assign_user_and_token(socket, %{"token" => token}) do
-    if user = Accounts.get_user_by_reset_password_token(token) do
-      assign(socket, user: user, token: token)
+    if Accounts.get_user_by_reset_password_token(token) do
+      assign(socket, token: token)
     else
       socket
       |> put_flash(:error, "Reset password link is invalid or it has expired.")

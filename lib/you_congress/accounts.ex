@@ -682,25 +682,35 @@ defmodule YouCongress.Accounts do
   end
 
   @doc """
-  Resets the user password.
-
-  ## Examples
-
-      iex> reset_user_password(user, %{password: "new long password", password_confirmation: "new long password"})
-      {:ok, %User{}}
-
-      iex> reset_user_password(user, %{password: "valid", password_confirmation: "not the same"})
-      {:error, %Ecto.Changeset{}}
-
+  Atomically validates and consumes a reset-password token while updating the
+  password. A token that expired or was consumed after the form mounted cannot
+  authorize the update.
   """
-  def reset_user_password(user, attrs) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.update(:user, User.password_changeset(user, attrs))
-    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, :all))
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{user: user}} -> {:ok, user}
-      {:error, :user, changeset, _} -> {:error, changeset}
+  def reset_user_password(token, attrs) when is_binary(token) do
+    with {:ok, query} <- UserToken.verify_reset_password_token_query(token) do
+      Repo.transaction(fn ->
+        case Repo.one(query) do
+          {%UserToken{}, %User{} = user} ->
+            case Repo.update(User.password_changeset(user, attrs)) do
+              {:ok, updated_user} ->
+                Repo.delete_all(UserToken.user_and_contexts_query(user, :all))
+                updated_user
+
+              {:error, changeset} ->
+                Repo.rollback({:changeset, changeset})
+            end
+
+          nil ->
+            Repo.rollback(:invalid_token)
+        end
+      end)
+      |> case do
+        {:ok, user} -> {:ok, user}
+        {:error, {:changeset, changeset}} -> {:error, changeset}
+        {:error, :invalid_token} -> {:error, :invalid_token}
+      end
+    else
+      :error -> {:error, :invalid_token}
     end
   end
 
