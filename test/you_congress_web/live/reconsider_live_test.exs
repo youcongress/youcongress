@@ -183,6 +183,27 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     assert render(view) =~ "maximum of three statements"
   end
 
+  test "statement autocomplete supports keyboard selection", %{conn: conn} = context do
+    conn = log_in_user(conn, context.creator)
+    {:ok, view, _html} = live(conn, ~p"/reconsider/new")
+
+    view
+    |> element("#statement-search")
+    |> render_change(%{"statement_search" => "private cars"})
+
+    assert has_element?(
+             view,
+             "#statement-search[aria-activedescendant='statement-result-#{context.statement.id}']"
+           )
+
+    view
+    |> element("#statement-search")
+    |> render_keydown(%{"key" => "Enter"})
+
+    assert has_element?(view, "#selected-statement-#{context.statement.id}")
+    refute has_element?(view, "#statement-results")
+  end
+
   test "delegate autocomplete ranks direct name matches first", %{conn: conn} = context do
     _ada =
       author_fixture(%{
@@ -209,6 +230,36 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
 
     assert has_element?(view, "#delegate-results button:first-child", "Elon Musk")
     assert has_element?(view, "#delegate-result-#{elon.id}")
+
+    assert has_element?(
+             view,
+             "#delegate-search[aria-activedescendant='delegate-result-#{elon.id}']"
+           )
+
+    view
+    |> element("#delegate-search")
+    |> render_keydown(%{"key" => "ArrowDown"})
+
+    refute has_element?(
+             view,
+             "#delegate-search[aria-activedescendant='delegate-result-#{elon.id}']"
+           )
+
+    view
+    |> element("#delegate-search")
+    |> render_keydown(%{"key" => "ArrowUp"})
+
+    assert has_element?(
+             view,
+             "#delegate-search[aria-activedescendant='delegate-result-#{elon.id}']"
+           )
+
+    view
+    |> element("#delegate-search")
+    |> render_keydown(%{"key" => "Enter"})
+
+    assert has_element?(view, "#selected-delegate-#{elon.id}")
+    refute has_element?(view, "#delegate-results")
   end
 
   test "the legacy URL redirects permanently to the creator URL", %{conn: conn} = context do
