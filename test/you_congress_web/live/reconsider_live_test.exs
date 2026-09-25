@@ -13,6 +13,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
   setup do
     creator = creator_fixture()
     statement = statement_fixture(%{title: "Cities should remove private cars from downtown"})
+    delegate = author_fixture(%{name: "Featured guest"})
 
     {:ok, reconsideration} =
       Reconsiderations.create_reconsideration(
@@ -23,10 +24,15 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
           "content_type" => "article"
         },
         [statement.id],
-        []
+        [delegate.id]
       )
 
-    %{creator: creator, statement: statement, reconsideration: reconsideration}
+    %{
+      creator: creator,
+      delegate: delegate,
+      statement: statement,
+      reconsideration: reconsideration
+    }
   end
 
   test "a guest selects everything before being asked to authenticate", %{conn: conn} = context do
@@ -65,7 +71,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
                    "after" => "for"
                  }
                },
-               []
+               [context.delegate.id]
              )
 
     participant = user_fixture()
@@ -100,6 +106,14 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
 
     assert has_element?(view, "#your-response-#{context.statement.id}", "Your response")
     assert has_element?(view, "#your-response-#{context.statement.id}", "Unchanged")
+    assert has_element?(view, "#delegation-results", "Delegations chosen")
+
+    assert has_element?(
+             view,
+             "#delegate-result-#{context.delegate.id}",
+             "Featured guest 1 participant (50%)"
+           )
+
     assert html =~ "self-reported result"
   end
 

@@ -94,6 +94,15 @@ defmodule YouCongress.ReconsiderationsTest do
     assert stats.changed_participants == 1
     assert stats.changed_percent == 100
 
+    assert stats.delegates == [
+             %{
+               author_id: context.delegate.id,
+               author: context.delegate,
+               count: 1,
+               percent: 100
+             }
+           ]
+
     assert Enum.find(stats.statements, &(&1.statement_id == context.first_statement.id)).changed ==
              1
 
@@ -112,6 +121,42 @@ defmodule YouCongress.ReconsiderationsTest do
                percent: 100
              }
            ]
+  end
+
+  test "counts only delegations selected through this Reconsider page", context do
+    participant_with_existing_delegation = user_fixture()
+
+    assert {:ok, _} =
+             Delegations.create_delegation(
+               participant_with_existing_delegation,
+               context.delegate.id
+             )
+
+    responses = %{
+      to_string(context.first_statement.id) => %{"before" => "against", "after" => "for"},
+      to_string(context.second_statement.id) => %{"before" => "for", "after" => "for"}
+    }
+
+    assert {:ok, _} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               context.participant,
+               responses,
+               [context.delegate.id]
+             )
+
+    assert {:ok, _} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               participant_with_existing_delegation,
+               responses,
+               []
+             )
+
+    assert [%{author_id: delegate_id, count: 1, percent: 50}] =
+             Reconsiderations.stats(context.reconsideration).delegates
+
+    assert delegate_id == context.delegate.id
   end
 
   test "groups every participant's before and after combination per statement", context do
