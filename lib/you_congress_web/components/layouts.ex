@@ -5,6 +5,7 @@ defmodule YouCongressWeb.Layouts do
   use YouCongressWeb, :html
 
   import YouCongressWeb.TopHeaderComponent
+  import YouCongressWeb.AccountCompletionBanner
   import YouCongressWeb.Components.FooterComponent
 
   embed_templates "layouts/*"

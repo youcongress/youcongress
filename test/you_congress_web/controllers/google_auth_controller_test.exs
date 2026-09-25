@@ -198,8 +198,7 @@ defmodule YouCongressWeb.GoogleAuthControllerTest do
           |> get(~p"/auth/google/callback", %{"code" => "auth_code", "state" => "valid_state"})
           |> fetch_flash()
 
-        # Should redirect to sign_up to complete profile after successful registration
-        assert redirected_to(conn) == ~p"/sign_up"
+        assert redirected_to(conn) == ~p"/"
 
         assert get_session(conn, :user_token)
 
@@ -281,7 +280,7 @@ defmodule YouCongressWeb.GoogleAuthControllerTest do
           |> get(~p"/auth/google/callback", %{"code" => "auth_code", "state" => "valid_state"})
           |> fetch_flash()
 
-        assert redirected_to(conn) == ~p"/sign_up"
+        assert redirected_to(conn) == ~p"/"
 
         assert get_session(conn, :user_token)
 

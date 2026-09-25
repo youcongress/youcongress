@@ -99,7 +99,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
 
       assert settings_live
              |> element("a", "Verify with phone")
-             |> render() =~ ~p"/sign_up"
+             |> render() =~ "phone=true"
     end
 
     test "users without a verified phone can select their country from a dropdown", %{
@@ -196,6 +196,30 @@ defmodule YouCongressWeb.SettingsLiveTest do
       {:ok, _settings_live, html} = live(conn, ~p"/settings")
 
       refute html =~ "Verify with phone"
+    end
+
+    test "users can manage the newsletter subscription", %{
+      conn: conn,
+      current_user: current_user
+    } do
+      {:ok, current_user} = Accounts.welcome_update(current_user, %{newsletter: false})
+      conn = log_in_user(conn, current_user)
+      {:ok, settings_live, html} = live(conn, ~p"/settings")
+
+      assert html =~ "Email updates"
+      assert has_element?(settings_live, "button[phx-click='subscribe_newsletter']", "Subscribe")
+
+      render_click(settings_live, "subscribe_newsletter")
+      assert Accounts.get_user!(current_user.id).newsletter
+
+      assert has_element?(
+               settings_live,
+               "button[phx-click='unsubscribe_newsletter']",
+               "Unsubscribe"
+             )
+
+      render_click(settings_live, "unsubscribe_newsletter")
+      refute Accounts.get_user!(current_user.id).newsletter
     end
 
     test "phone verified users see a locked location and cannot submit changes to it", %{

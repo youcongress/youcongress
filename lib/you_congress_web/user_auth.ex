@@ -133,7 +133,7 @@ defmodule YouCongressWeb.UserAuth do
     end
   end
 
-  def redirect_to_user_registration_if_email_or_phone_unconfirmed(conn, _opts) do
+  def redirect_to_user_registration_if_email_unconfirmed(conn, _opts) do
     user = conn.assigns[:current_user]
 
     allowed_paths = [

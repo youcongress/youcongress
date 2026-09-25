@@ -13,7 +13,7 @@ defmodule YouCongressWeb.Router do
     plug(:put_secure_browser_headers)
     plug(:fetch_current_user)
     plug(:reject_blocked_user)
-    plug(:redirect_to_user_registration_if_email_or_phone_unconfirmed)
+    plug(:redirect_to_user_registration_if_email_unconfirmed)
   end
 
   pipeline :mcp do
@@ -94,6 +94,9 @@ defmodule YouCongressWeb.Router do
 
     live("/settings", SettingsLive, :settings)
     live("/landing", HomeLive.Index, :index)
+    get("/account-completion/phone", AccountCompletionController, :phone)
+    post("/account-completion/dismiss", AccountCompletionController, :dismiss)
+    post("/account-completion/newsletter", AccountCompletionController, :subscribe)
   end
 
   scope "/", YouCongressWeb do

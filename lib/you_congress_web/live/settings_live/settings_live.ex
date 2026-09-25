@@ -83,6 +83,32 @@ defmodule YouCongressWeb.SettingsLive do
     end
   end
 
+  def handle_event("subscribe_newsletter", _params, socket) do
+    case Accounts.welcome_update(socket.assigns.current_user, %{newsletter: true}) do
+      {:ok, user} ->
+        {:noreply,
+         socket
+         |> assign(:current_user, %{user | author: socket.assigns.current_user.author})
+         |> put_flash(:info, "You are subscribed to YouCongress updates.")}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "We could not update your subscription.")}
+    end
+  end
+
+  def handle_event("unsubscribe_newsletter", _params, socket) do
+    case Accounts.welcome_update(socket.assigns.current_user, %{newsletter: false}) do
+      {:ok, user} ->
+        {:noreply,
+         socket
+         |> assign(:current_user, %{user | author: socket.assigns.current_user.author})
+         |> put_flash(:info, "You are unsubscribed from YouCongress updates.")}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "We could not update your subscription.")}
+    end
+  end
+
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     assign(socket, :form, to_form(changeset))
   end

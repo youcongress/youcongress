@@ -317,16 +317,18 @@ defmodule YouCongressWeb.UserRegistrationLive do
       |> assign(:votes, votes)
       |> assign(:pending_actions, pending_actions)
       |> assign(:return_to, return_to)
+      |> assign(:phone_setup?, params["phone"] == "true")
+      |> assign(:hide_account_completion_banner, true)
       |> assign(:embedded, session["embedded"] || false)
       |> assign(:hide_targets, session["hide_targets"] || [])
       |> assign(:reload_on_login, session["reload_on_login"] || false)
 
     current_user = socket.assigns.current_user
 
-    step = determine_registration_step(current_user)
+    step = determine_registration_step(current_user, socket.assigns.phone_setup?)
 
     if step == :done do
-      {:ok, redirect(socket, to: ReturnTo.welcome_path(return_to))}
+      {:ok, redirect(socket, to: registration_destination(socket))}
     else
       # For X users, preload their name from the author
       initial_values =
@@ -558,7 +560,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
         case Accounts.confirm_user_phone(user) do
           {:ok, _} ->
             Track.event("Phone number verified", user)
-            {:noreply, redirect(socket, to: ReturnTo.welcome_path(socket.assigns.return_to))}
+            {:noreply, redirect(socket, to: registration_destination(socket))}
 
           {:error, changeset} ->
             {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
@@ -630,15 +632,15 @@ defmodule YouCongressWeb.UserRegistrationLive do
   end
 
   def handle_event("skip_phone", _params, %{assigns: %{user: %User{} = user}} = socket) do
-    {:noreply, session_login(socket, user, ReturnTo.welcome_path(socket.assigns.return_to))}
+    {:noreply, session_login(socket, user, registration_destination(socket))}
   end
 
   def handle_event("skip_phone", _params, socket) do
-    {:noreply, redirect(socket, to: ReturnTo.welcome_path(socket.assigns.return_to))}
+    {:noreply, redirect(socket, to: registration_destination(socket))}
   end
 
   defp proceed_after_email_confirmation(socket, %User{} = user) do
-    step = determine_registration_step(user)
+    step = determine_registration_step(user, socket.assigns.phone_setup?)
 
     socket =
       socket
@@ -660,26 +662,31 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
       :done ->
         socket
-        |> session_login(user, ReturnTo.welcome_path(socket.assigns.return_to))
+        |> session_login(user, registration_destination(socket))
 
       _ ->
         socket
     end
   end
 
-  defp determine_registration_step(nil), do: :enter_email_password
+  defp determine_registration_step(nil, _phone_setup?), do: :enter_email_password
 
-  defp determine_registration_step(%User{email: nil}), do: :confirm_x_profile
+  defp determine_registration_step(%User{email: nil}, _phone_setup?), do: :confirm_x_profile
 
-  defp determine_registration_step(%User{email_confirmed_at: nil}), do: :check_email
+  defp determine_registration_step(%User{email_confirmed_at: nil}, _phone_setup?),
+    do: :check_email
 
-  defp determine_registration_step(%User{} = user) do
+  defp determine_registration_step(%User{}, false), do: :done
+
+  defp determine_registration_step(%User{} = user, true) do
     cond do
       not is_nil(user.phone_number_confirmed_at) -> :done
       phone_number_present?(user) -> :validate_phone
       true -> :enter_mobile_phone
     end
   end
+
+  defp registration_destination(socket), do: socket.assigns.return_to || ~p"/"
 
   defp changeset_for_step(:check_email, _user, _initial_values), do: email_code_changeset()
 
