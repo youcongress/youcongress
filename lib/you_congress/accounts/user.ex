@@ -16,7 +16,8 @@ defmodule YouCongress.Accounts.User do
     field :name, :string, virtual: true
     field :email_confirmed_at, :naive_datetime
     field :phone_number_confirmed_at, :naive_datetime
-    field :account_completion_banner_dismissed_at, :naive_datetime
+    field :phone_verification_prompt_dismissed_at, :naive_datetime
+    field :newsletter_subscription_prompt_dismissed_at, :naive_datetime
     field :role, :string, default: "user"
     field :newsletter, :boolean, default: false
 
@@ -33,7 +34,8 @@ defmodule YouCongress.Accounts.User do
           hashed_password: String.t(),
           email_confirmed_at: NaiveDateTime.t() | nil,
           phone_number_confirmed_at: NaiveDateTime.t() | nil,
-          account_completion_banner_dismissed_at: NaiveDateTime.t() | nil,
+          phone_verification_prompt_dismissed_at: NaiveDateTime.t() | nil,
+          newsletter_subscription_prompt_dismissed_at: NaiveDateTime.t() | nil,
           role: String.t(),
           author_id: integer() | nil,
           inserted_at: NaiveDateTime.t(),
@@ -68,9 +70,12 @@ defmodule YouCongress.Accounts.User do
     |> cast(attrs, [:newsletter])
   end
 
-  def account_completion_banner_changeset(user, attrs) do
+  def account_completion_prompt_changeset(user, attrs) do
     user
-    |> cast(attrs, [:account_completion_banner_dismissed_at])
+    |> cast(attrs, [
+      :phone_verification_prompt_dismissed_at,
+      :newsletter_subscription_prompt_dismissed_at
+    ])
   end
 
   def login_with_x_changeset(user, attrs, opts \\ []) do

@@ -35,10 +35,13 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
       {:ok, user} = Accounts.confirm_user_email(user)
       conn = log_in_user(conn, user)
 
-      {:ok, _lv, html} = live(conn, ~p"/sign_up?phone=true&return_to=/settings")
+      {:ok, lv, html} = live(conn, ~p"/sign_up?phone=true&return_to=/settings")
 
       assert html =~ "Enter your mobile phone number"
       assert html =~ "Maybe later"
+
+      render_click(lv, "skip_phone")
+      assert Accounts.get_user!(user.id).phone_verification_prompt_dismissed_at
     end
   end
 end
