@@ -324,6 +324,23 @@ defmodule YouCongress.Accounts do
     |> Repo.update()
   end
 
+  def account_completion_banner_needed?(%User{} = user) do
+    is_nil(user.account_completion_banner_dismissed_at) &&
+      (is_nil(user.phone_number_confirmed_at) || !user.newsletter)
+  end
+
+  def account_completion_banner_needed?(_user), do: false
+
+  def dismiss_account_completion_banner(%User{} = user) do
+    dismissed_at = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    user
+    |> User.account_completion_banner_changeset(%{
+      account_completion_banner_dismissed_at: dismissed_at
+    })
+    |> Repo.update()
+  end
+
   defp user_email_multi(user, email, context) do
     changeset =
       user

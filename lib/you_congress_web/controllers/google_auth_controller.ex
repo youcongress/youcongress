@@ -239,10 +239,8 @@ defmodule YouCongressWeb.GoogleAuthController do
         conn = process_pending_actions(conn, user)
         {conn, return_to} = pop_oauth_return_to(conn)
 
-        # Google provides email, so we may skip the profile completion step
-        # but still need phone verification
         conn
-        |> put_sign_up_return_to(return_to)
+        |> put_post_google_auth_return_to(user, return_to)
         |> UserAuth.log_in_user(user)
 
       {:error, :author, changeset, _} ->
@@ -288,7 +286,7 @@ defmodule YouCongressWeb.GoogleAuthController do
         {conn, return_to} = pop_oauth_return_to(conn)
 
         conn
-        |> put_sign_up_return_to(return_to)
+        |> put_post_google_auth_return_to(user, return_to)
         |> UserAuth.log_in_user(user)
 
       {:error, :author, changeset, _} ->
@@ -317,7 +315,7 @@ defmodule YouCongressWeb.GoogleAuthController do
     conn = process_pending_actions(conn, user)
     {conn, return_to} = pop_oauth_return_to(conn)
 
-    # Check if user needs to complete profile (no confirmed email or phone)
+    # A confirmed email is required; phone verification remains optional.
     if user.email_confirmed_at do
       conn
       |> maybe_put_user_return_to(return_to)
@@ -368,5 +366,13 @@ defmodule YouCongressWeb.GoogleAuthController do
 
   defp put_sign_up_return_to(conn, return_to) do
     put_session(conn, :user_return_to, ReturnTo.sign_up_path(return_to))
+  end
+
+  defp put_post_google_auth_return_to(conn, user, return_to) do
+    if user.email_confirmed_at do
+      maybe_put_user_return_to(conn, return_to)
+    else
+      put_sign_up_return_to(conn, return_to)
+    end
   end
 end
