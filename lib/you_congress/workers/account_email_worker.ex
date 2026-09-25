@@ -29,9 +29,13 @@ defmodule YouCongress.Workers.AccountEmailWorker do
   end
 
   defp deliver("registration", user, return_to) do
-    Accounts.deliver_user_registration_magic_link_instructions(user, fn token ->
-      url(~p"/log_in/magic-link/#{token}?#{return_to_query(return_to)}")
-    end)
+    Accounts.deliver_user_registration_magic_link_instructions(
+      user,
+      fn token ->
+        url(~p"/log_in/magic-link/#{token}?#{return_to_query(return_to)}")
+      end,
+      results_url: reconsider_results_url(return_to)
+    )
   end
 
   defp deliver("password_reset", user, _return_to) do
@@ -45,4 +49,16 @@ defmodule YouCongress.Workers.AccountEmailWorker do
 
   defp return_to_query(nil), do: %{}
   defp return_to_query(return_to), do: %{return_to: return_to}
+
+  defp reconsider_results_url(return_to) when is_binary(return_to) do
+    with %URI{path: path} <- URI.parse(return_to),
+         ["@" <> username, "r", slug] <- String.split(path, "/", trim: true),
+         true <- username != "" and slug != "" do
+      YouCongressWeb.Endpoint.url() <> return_to
+    else
+      _ -> nil
+    end
+  end
+
+  defp reconsider_results_url(_return_to), do: nil
 end

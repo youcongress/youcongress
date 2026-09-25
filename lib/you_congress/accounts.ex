@@ -498,9 +498,13 @@ defmodule YouCongress.Accounts do
   Delivers a short-lived, one-time email confirmation link for a new account.
   Following the link also signs the user in.
   """
-  def deliver_user_registration_magic_link_instructions(%User{} = user, magic_login_url_fun)
+  def deliver_user_registration_magic_link_instructions(
+        %User{} = user,
+        magic_login_url_fun,
+        opts \\ []
+      )
       when is_function(magic_login_url_fun, 1) do
-    deliver_user_magic_link(user, magic_login_url_fun, :registration)
+    deliver_user_magic_link(user, magic_login_url_fun, {:registration, opts})
   end
 
   defp deliver_user_magic_link(user, magic_login_url_fun, email_kind) do
@@ -511,8 +515,11 @@ defmodule YouCongress.Accounts do
     url = magic_login_url_fun.(encoded_token)
 
     case email_kind do
-      :login -> UserNotifier.deliver_magic_login_instructions(user, url)
-      :registration -> UserNotifier.deliver_registration_magic_link_instructions(user, url)
+      :login ->
+        UserNotifier.deliver_magic_login_instructions(user, url)
+
+      {:registration, opts} ->
+        UserNotifier.deliver_registration_magic_link_instructions(user, url, opts)
     end
   end
 

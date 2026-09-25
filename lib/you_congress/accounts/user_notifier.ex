@@ -206,11 +206,13 @@ defmodule YouCongress.Accounts.UserNotifier do
   @doc """
   Deliver a one-time link that confirms a new user's email and signs them in.
   """
-  def deliver_registration_magic_link_instructions(%User{} = user, url) do
+  def deliver_registration_magic_link_instructions(%User{} = user, url, opts \\ []) do
+    results_url = opts[:results_url]
+
     text_body = """
     Hi #{user.email},
 
-    Confirm your email and sign in to YouCongress by visiting the link below:
+    #{registration_text_intro(results_url)}
 
     #{url}
 
@@ -220,15 +222,35 @@ defmodule YouCongress.Accounts.UserNotifier do
     html_body =
       build_html_email(
         "Confirm your email",
-        [
-          "Thanks for signing up for YouCongress.",
-          "Use the button below within 15 minutes to confirm #{user.email} and sign in. The link can only be used once."
-        ],
-        "Confirm your email",
+        registration_paragraphs(user, results_url),
+        if(results_url, do: "Confirm email and see results", else: "Confirm your email"),
         url
       )
 
     deliver(user.email, "Confirm your YouCongress email", text_body, html_body)
+  end
+
+  defp registration_text_intro(nil) do
+    "Confirm your email and sign in to YouCongress by visiting the link below:"
+  end
+
+  defp registration_text_intro(results_url) do
+    "Confirm your email and see results from #{results_url} by visiting the link below:"
+  end
+
+  defp registration_paragraphs(user, nil) do
+    [
+      "Thanks for signing up for YouCongress.",
+      "Use the button below within 15 minutes to confirm #{user.email} and sign in. The link can only be used once."
+    ]
+  end
+
+  defp registration_paragraphs(user, results_url) do
+    [
+      "Thanks for sharing your response on YouCongress.",
+      "Confirm #{user.email} to record your response and see results from #{results_url}.",
+      "Use the button below within 15 minutes. The link can only be used once."
+    ]
   end
 
   @doc """

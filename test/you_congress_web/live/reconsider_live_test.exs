@@ -57,6 +57,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     assert html =~ "Log in with Google"
     assert html =~ "Sign up with email/password"
     assert html =~ ~s(href="/sign_up?)
+    assert html =~ URI.encode_www_form(reconsideration_path(context))
     refute html =~ "Log in with email/password"
     refute html =~ "Community result"
   end
