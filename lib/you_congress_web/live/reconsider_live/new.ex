@@ -46,9 +46,11 @@ defmodule YouCongressWeb.ReconsiderLive.New do
      |> assign(:selected_statements, [])
      |> assign(:statement_query, "")
      |> assign(:statement_results, [])
+     |> assign(:statement_selected_index, 0)
      |> assign(:selected_delegates, [])
      |> assign(:delegate_query, "")
-     |> assign(:delegate_results, [])}
+     |> assign(:delegate_results, [])
+     |> assign(:delegate_selected_index, 0)}
   end
 
   @impl true
@@ -70,7 +72,8 @@ defmodule YouCongressWeb.ReconsiderLive.New do
     {:noreply,
      socket
      |> assign(:statement_query, query)
-     |> assign(:statement_results, results)}
+     |> assign(:statement_results, results)
+     |> assign(:statement_selected_index, 0)}
   end
 
   def handle_event("add-statement", %{"id" => id}, socket) do
@@ -78,16 +81,44 @@ defmodule YouCongressWeb.ReconsiderLive.New do
          {:ok, id} <- parse_id(id),
          statement when not is_nil(statement) <-
            Enum.find(socket.assigns.statement_results, &(&1.id == id)) do
-      {:noreply,
-       socket
-       |> update(:selected_statements, &(&1 ++ [statement]))
-       |> assign(:statement_query, "")
-       |> assign(:statement_results, [])
-       |> assign(:error_message, nil)}
+      {:noreply, select_statement(socket, statement)}
     else
       _ -> {:noreply, socket}
     end
   end
+
+  def handle_event("statement-keydown", %{"key" => "ArrowDown"}, socket) do
+    {:noreply,
+     update_selected_index(
+       socket,
+       :statement_selected_index,
+       socket.assigns.statement_results,
+       1
+     )}
+  end
+
+  def handle_event("statement-keydown", %{"key" => "ArrowUp"}, socket) do
+    {:noreply,
+     update_selected_index(
+       socket,
+       :statement_selected_index,
+       socket.assigns.statement_results,
+       -1
+     )}
+  end
+
+  def handle_event("statement-keydown", %{"key" => "Enter"}, socket) do
+    case active_result(socket.assigns.statement_results, socket.assigns.statement_selected_index) do
+      nil -> {:noreply, socket}
+      statement -> {:noreply, select_statement(socket, statement)}
+    end
+  end
+
+  def handle_event("statement-keydown", %{"key" => "Escape"}, socket) do
+    {:noreply, assign(socket, :statement_results, [])}
+  end
+
+  def handle_event("statement-keydown", _params, socket), do: {:noreply, socket}
 
   def handle_event("remove-statement", %{"id" => id}, socket) do
     case parse_id(id) do
@@ -118,22 +149,52 @@ defmodule YouCongressWeb.ReconsiderLive.New do
     {:noreply,
      socket
      |> assign(:delegate_query, query)
-     |> assign(:delegate_results, results)}
+     |> assign(:delegate_results, results)
+     |> assign(:delegate_selected_index, 0)}
   end
 
   def handle_event("add-delegate", %{"id" => id}, socket) do
     with {:ok, id} <- parse_id(id),
          delegate when not is_nil(delegate) <-
            Enum.find(socket.assigns.delegate_results, &(&1.id == id)) do
-      {:noreply,
-       socket
-       |> update(:selected_delegates, &(&1 ++ [delegate]))
-       |> assign(:delegate_query, "")
-       |> assign(:delegate_results, [])}
+      {:noreply, select_delegate(socket, delegate)}
     else
       _ -> {:noreply, socket}
     end
   end
+
+  def handle_event("delegate-keydown", %{"key" => "ArrowDown"}, socket) do
+    {:noreply,
+     update_selected_index(
+       socket,
+       :delegate_selected_index,
+       socket.assigns.delegate_results,
+       1
+     )}
+  end
+
+  def handle_event("delegate-keydown", %{"key" => "ArrowUp"}, socket) do
+    {:noreply,
+     update_selected_index(
+       socket,
+       :delegate_selected_index,
+       socket.assigns.delegate_results,
+       -1
+     )}
+  end
+
+  def handle_event("delegate-keydown", %{"key" => "Enter"}, socket) do
+    case active_result(socket.assigns.delegate_results, socket.assigns.delegate_selected_index) do
+      nil -> {:noreply, socket}
+      delegate -> {:noreply, select_delegate(socket, delegate)}
+    end
+  end
+
+  def handle_event("delegate-keydown", %{"key" => "Escape"}, socket) do
+    {:noreply, assign(socket, :delegate_results, [])}
+  end
+
+  def handle_event("delegate-keydown", _params, socket), do: {:noreply, socket}
 
   def handle_event("remove-delegate", %{"id" => id}, socket) do
     case parse_id(id) do
@@ -201,6 +262,40 @@ defmodule YouCongressWeb.ReconsiderLive.New do
   end
 
   defp parse_id(_id), do: :error
+
+  defp select_statement(socket, statement) do
+    socket
+    |> update(:selected_statements, &(&1 ++ [statement]))
+    |> assign(:statement_query, "")
+    |> assign(:statement_results, [])
+    |> assign(:statement_selected_index, 0)
+    |> assign(:error_message, nil)
+  end
+
+  defp select_delegate(socket, delegate) do
+    socket
+    |> update(:selected_delegates, &(&1 ++ [delegate]))
+    |> assign(:delegate_query, "")
+    |> assign(:delegate_results, [])
+    |> assign(:delegate_selected_index, 0)
+  end
+
+  defp update_selected_index(socket, key, [], _change), do: assign(socket, key, 0)
+
+  defp update_selected_index(socket, key, results, change) do
+    current_index = Map.fetch!(socket.assigns, key)
+    next_index = (current_index + change) |> max(0) |> min(length(results) - 1)
+    assign(socket, key, next_index)
+  end
+
+  defp active_result(results, index), do: Enum.at(results, index)
+
+  defp active_option_id(prefix, results, index) do
+    case active_result(results, index) do
+      nil -> nil
+      result -> "#{prefix}-#{result.id}"
+    end
+  end
 
   defp selected_statement_refs(socket) do
     Enum.map_join(socket.assigns.selected_statements, "\n", &to_string(&1.id))
@@ -291,9 +386,18 @@ defmodule YouCongressWeb.ReconsiderLive.New do
               role="combobox"
               aria-autocomplete="list"
               aria-controls="statement-results"
-              aria-expanded={@statement_results != []}
+              aria-expanded={to_string(@statement_results != [])}
+              aria-activedescendant={
+                active_option_id(
+                  "statement-result",
+                  @statement_results,
+                  @statement_selected_index
+                )
+              }
               phx-change="search-statements"
+              phx-keydown="statement-keydown"
               phx-debounce="250"
+              onkeydown="if(['ArrowDown','ArrowUp','Enter','Escape'].includes(event.key)) event.preventDefault()"
               class="block w-full rounded-lg border-0 px-3 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
             />
 
@@ -304,13 +408,17 @@ defmodule YouCongressWeb.ReconsiderLive.New do
               class="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
             >
               <button
-                :for={statement <- @statement_results}
+                :for={{statement, index} <- Enum.with_index(@statement_results)}
                 id={"statement-result-#{statement.id}"}
                 type="button"
                 role="option"
+                aria-selected={to_string(index == @statement_selected_index)}
                 phx-click="add-statement"
                 phx-value-id={statement.id}
-                class="block w-full rounded-md px-3 py-2 text-left text-sm text-gray-900 hover:bg-indigo-50 focus:bg-indigo-50 focus:outline-none"
+                class={[
+                  "block w-full rounded-md px-3 py-2 text-left text-sm text-gray-900 hover:bg-indigo-50 focus:bg-indigo-50 focus:outline-none",
+                  index == @statement_selected_index && "bg-indigo-50"
+                ]}
               >
                 {statement.title}
               </button>
@@ -376,9 +484,18 @@ defmodule YouCongressWeb.ReconsiderLive.New do
               role="combobox"
               aria-autocomplete="list"
               aria-controls="delegate-results"
-              aria-expanded={@delegate_results != []}
+              aria-expanded={to_string(@delegate_results != [])}
+              aria-activedescendant={
+                active_option_id(
+                  "delegate-result",
+                  @delegate_results,
+                  @delegate_selected_index
+                )
+              }
               phx-change="search-delegates"
+              phx-keydown="delegate-keydown"
               phx-debounce="250"
+              onkeydown="if(['ArrowDown','ArrowUp','Enter','Escape'].includes(event.key)) event.preventDefault()"
               class="block w-full rounded-lg border-0 px-3 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
             />
 
@@ -389,13 +506,17 @@ defmodule YouCongressWeb.ReconsiderLive.New do
               class="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
             >
               <button
-                :for={delegate <- @delegate_results}
+                :for={{delegate, index} <- Enum.with_index(@delegate_results)}
                 id={"delegate-result-#{delegate.id}"}
                 type="button"
                 role="option"
+                aria-selected={to_string(index == @delegate_selected_index)}
                 phx-click="add-delegate"
                 phx-value-id={delegate.id}
-                class="block w-full rounded-md px-3 py-2 text-left hover:bg-indigo-50 focus:bg-indigo-50 focus:outline-none"
+                class={[
+                  "block w-full rounded-md px-3 py-2 text-left hover:bg-indigo-50 focus:bg-indigo-50 focus:outline-none",
+                  index == @delegate_selected_index && "bg-indigo-50"
+                ]}
               >
                 <span class="flex items-baseline gap-2">
                   <span class="text-sm font-medium text-gray-900">{author_name(delegate)}</span>
