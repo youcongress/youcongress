@@ -322,7 +322,9 @@ defmodule YouCongress.Reconsiderations do
   defp answer_sort_order(:against), do: 2
 
   defp preload_experience(reconsideration) do
-    statement_query = from rs in ReconsiderationStatement, order_by: rs.position
+    statement_query =
+      from rs in ReconsiderationStatement, order_by: rs.position, preload: [:statement]
+
     delegate_query = from d in Delegate, order_by: d.position, preload: [:author]
 
     Repo.preload(reconsideration,
