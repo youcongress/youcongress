@@ -242,9 +242,27 @@ defmodule YouCongress.Reconsiderations do
       |> Repo.all()
       |> Map.new(&{&1.statement_id, &1})
 
+    transitions_by_statement =
+      base
+      |> group_by([r], [r.statement_id, r.before_answer, r.after_answer])
+      |> select([r], %{
+        statement_id: r.statement_id,
+        before_answer: r.before_answer,
+        after_answer: r.after_answer,
+        count: count(r.id)
+      })
+      |> Repo.all()
+      |> Enum.group_by(& &1.statement_id)
+
     statement_stats =
       Enum.map(reconsideration.reconsideration_statements, fn item ->
         counts = Map.get(per_statement, item.statement_id, %{total: 0, changed: 0})
+
+        transitions =
+          transitions_by_statement
+          |> Map.get(item.statement_id, [])
+          |> Enum.map(&Map.put(&1, :percent, percent(&1.count, counts.total)))
+          |> Enum.sort_by(&transition_sort_key/1)
 
         %{
           statement_id: item.statement_id,
@@ -252,7 +270,8 @@ defmodule YouCongress.Reconsiderations do
           total: counts.total,
           changed: counts.changed,
           unchanged: counts.total - counts.changed,
-          changed_percent: percent(counts.changed, counts.total)
+          changed_percent: percent(counts.changed, counts.total),
+          transitions: transitions
         }
       end)
 
@@ -264,6 +283,15 @@ defmodule YouCongress.Reconsiderations do
       statements: statement_stats
     }
   end
+
+  defp transition_sort_key(transition) do
+    {-transition.count, answer_sort_order(transition.before_answer),
+     answer_sort_order(transition.after_answer)}
+  end
+
+  defp answer_sort_order(:for), do: 0
+  defp answer_sort_order(:abstain), do: 1
+  defp answer_sort_order(:against), do: 2
 
   defp preload_experience(reconsideration) do
     statement_query = from rs in ReconsiderationStatement, order_by: rs.position

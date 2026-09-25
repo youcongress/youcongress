@@ -51,8 +51,23 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     refute html =~ "Community result"
   end
 
-  test "an authenticated participant saves once and sees change statistics",
+  test "an authenticated participant sees community transitions separately from their response",
        %{conn: conn} = context do
+    prior_participant = user_fixture()
+
+    assert {:ok, _} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               prior_participant,
+               %{
+                 to_string(context.statement.id) => %{
+                   "before" => "against",
+                   "after" => "for"
+                 }
+               },
+               []
+             )
+
     participant = user_fixture()
     conn = log_in_user(conn, participant)
     {:ok, view, _html} = live(conn, reconsideration_path(context))
@@ -60,7 +75,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     params = %{
       "response" => %{
         "answers" => %{
-          to_string(context.statement.id) => %{"before" => "against", "after" => "for"}
+          to_string(context.statement.id) => %{"before" => "for", "after" => "for"}
         },
         "delegate_ids" => []
       }
@@ -68,8 +83,23 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
 
     html = render_submit(view, "submit", params)
     assert html =~ "Community result"
-    assert html =~ "100%"
-    assert html =~ "Changed"
+    assert html =~ "50%"
+    assert has_element?(view, "#community-transitions-#{context.statement.id}")
+
+    assert has_element?(
+             view,
+             "#transition-#{context.statement.id}-against-for",
+             "Against → For 1 response (50%)"
+           )
+
+    assert has_element?(
+             view,
+             "#transition-#{context.statement.id}-for-for",
+             "For → For 1 response (50%)"
+           )
+
+    assert has_element?(view, "#your-response-#{context.statement.id}", "Your response")
+    assert has_element?(view, "#your-response-#{context.statement.id}", "Unchanged")
     assert html =~ "self-reported result"
   end
 

@@ -231,22 +231,32 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
             <% response = @personal_responses[item.statement_id] %>
             <% statement_stat = Enum.find(@stats.statements, &(&1.statement_id == item.statement_id)) %>
             <h2 class="text-lg font-semibold text-gray-900">{item.statement_title}</h2>
-            <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
-              <span class="rounded-full bg-gray-100 px-3 py-1">
-                Before: {answer_label(response.before_answer)}
-              </span>
-              <span aria-hidden="true">→</span>
-              <span class="rounded-full bg-indigo-100 px-3 py-1 font-semibold text-indigo-800">
-                Now: {answer_label(response.after_answer)}
-              </span>
-              <span class={[
-                "ml-auto rounded-full px-3 py-1 font-semibold",
-                changed?(response) && "bg-amber-100 text-amber-800",
-                !changed?(response) && "bg-gray-100 text-gray-600"
-              ]}>
-                {if changed?(response), do: "Changed", else: "Unchanged"}
-              </span>
+
+            <div class="mt-4">
+              <h3 class="text-sm font-semibold text-gray-700">Community responses</h3>
+              <div
+                id={"community-transitions-#{item.statement_id}"}
+                class="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200"
+              >
+                <div
+                  :for={transition <- statement_stat.transitions}
+                  id={
+                    "transition-#{item.statement_id}-#{transition.before_answer}-#{transition.after_answer}"
+                  }
+                  class="flex flex-wrap items-center gap-2 px-3 py-2 text-sm"
+                >
+                  <span>{answer_label(transition.before_answer)}</span>
+                  <span class="text-gray-400" aria-hidden="true">→</span>
+                  <span class="font-semibold text-gray-900">
+                    {answer_label(transition.after_answer)}
+                  </span>
+                  <span class="ml-auto text-gray-600">
+                    {transition.count} {if transition.count == 1, do: "response", else: "responses"} ({transition.percent}%)
+                  </span>
+                </div>
+              </div>
             </div>
+
             <div class="mt-4">
               <div class="mb-1 flex justify-between text-xs text-gray-500">
                 <span>{statement_stat.changed_percent}% reported changing</span>
@@ -258,6 +268,29 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                   style={"width: #{statement_stat.changed_percent}%"}
                 >
                 </div>
+              </div>
+            </div>
+
+            <div
+              id={"your-response-#{item.statement_id}"}
+              class="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-3"
+            >
+              <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Your response</p>
+              <div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                <span class="rounded-full bg-white px-3 py-1 ring-1 ring-inset ring-gray-200">
+                  Before: {answer_label(response.before_answer)}
+                </span>
+                <span aria-hidden="true">→</span>
+                <span class="rounded-full bg-indigo-100 px-3 py-1 font-semibold text-indigo-800">
+                  Now: {answer_label(response.after_answer)}
+                </span>
+                <span class={[
+                  "ml-auto rounded-full px-3 py-1 font-semibold",
+                  changed?(response) && "bg-amber-100 text-amber-800",
+                  !changed?(response) && "bg-gray-200 text-gray-600"
+                ]}>
+                  {if changed?(response), do: "Changed", else: "Unchanged"}
+                </span>
               </div>
             </div>
           </div>

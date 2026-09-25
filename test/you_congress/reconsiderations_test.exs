@@ -99,6 +99,80 @@ defmodule YouCongress.ReconsiderationsTest do
 
     assert Enum.find(stats.statements, &(&1.statement_id == context.second_statement.id)).changed ==
              0
+
+    first_statement_stats =
+      Enum.find(stats.statements, &(&1.statement_id == context.first_statement.id))
+
+    assert first_statement_stats.transitions == [
+             %{
+               statement_id: context.first_statement.id,
+               before_answer: :against,
+               after_answer: :for,
+               count: 1,
+               percent: 100
+             }
+           ]
+  end
+
+  test "groups every participant's before and after combination per statement", context do
+    second_participant = user_fixture()
+
+    assert {:ok, _} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               context.participant,
+               %{
+                 to_string(context.first_statement.id) => %{
+                   "before" => "against",
+                   "after" => "for"
+                 },
+                 to_string(context.second_statement.id) => %{
+                   "before" => "for",
+                   "after" => "for"
+                 }
+               },
+               []
+             )
+
+    assert {:ok, _} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               second_participant,
+               %{
+                 to_string(context.first_statement.id) => %{
+                   "before" => "for",
+                   "after" => "for"
+                 },
+                 to_string(context.second_statement.id) => %{
+                   "before" => "abstain",
+                   "after" => "against"
+                 }
+               },
+               []
+             )
+
+    first_statement_stats =
+      context.reconsideration
+      |> Reconsiderations.stats()
+      |> Map.fetch!(:statements)
+      |> Enum.find(&(&1.statement_id == context.first_statement.id))
+
+    assert first_statement_stats.transitions == [
+             %{
+               statement_id: context.first_statement.id,
+               before_answer: :for,
+               after_answer: :for,
+               count: 1,
+               percent: 50
+             },
+             %{
+               statement_id: context.first_statement.id,
+               before_answer: :against,
+               after_answer: :for,
+               count: 1,
+               percent: 50
+             }
+           ]
   end
 
   test "finds a page only under its creator username", context do
