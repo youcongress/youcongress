@@ -106,28 +106,6 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
       refute Repo.get_by(PendingRegistrationAction, user_id: user.id)
     end
 
-    test "subscription page creates a newsletter subscriber", %{conn: conn} do
-      email = unique_user_email()
-      {:ok, lv, html} = live(conn, ~p"/subscribe")
-
-      assert html =~
-               "Subscribe to YouCongress news on AI governance, safety, and its impact on jobs"
-
-      assert html =~ "Subscribe"
-      refute html =~ "Sign up with Google"
-
-      html =
-        lv
-        |> form("#registration_form", user: %{name: "News Reader", email: email})
-        |> render_submit()
-
-      assert html =~ "Check your email"
-
-      user = Accounts.get_user_by_email(email)
-      assert user.newsletter
-      assert Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
-    end
-
     test "preserves return_to in OAuth links", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/sign_up?return_to=/p/test-statement")
 

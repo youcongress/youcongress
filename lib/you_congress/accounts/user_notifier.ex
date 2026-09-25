@@ -37,6 +37,20 @@ defmodule YouCongress.Accounts.UserNotifier do
     )
   end
 
+  def deliver_newsletter_confirmation(email, confirmation_url) do
+    deliver(
+      email,
+      "Confirm your YouCongress newsletter subscription",
+      "Confirm your subscription by opening this link:\n\n#{confirmation_url}\n\nIf you did not request this, you can ignore this email.",
+      build_html_email(
+        "Confirm your subscription",
+        ["Please confirm that you want to receive YouCongress news and product updates."],
+        "Confirm subscription",
+        confirmation_url
+      )
+    )
+  end
+
   defp build_html_email(title, paragraphs, button_label, button_url) do
     paragraph_markup =
       paragraphs

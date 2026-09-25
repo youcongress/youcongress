@@ -1,8 +1,8 @@
 defmodule YouCongressWeb.WelcomeLive.Index do
   use YouCongressWeb, :live_view
 
-  alias YouCongress.Accounts
   alias YouCongress.Accounts.User
+  alias YouCongress.Newsletters
   alias YouCongress.Track
   alias YouCongressWeb.ReturnTo
 
@@ -53,7 +53,14 @@ defmodule YouCongressWeb.WelcomeLive.Index do
 
   @impl true
   def handle_event("save", %{"user" => user_params}, socket) do
-    case Accounts.welcome_update(socket.assigns.current_user, user_params) do
+    newsletter? = user_params["newsletter"] in [true, "true"]
+
+    result =
+      if newsletter?,
+        do: Newsletters.subscribe_user(socket.assigns.current_user, "welcome"),
+        else: Newsletters.unsubscribe_user(socket.assigns.current_user, "welcome")
+
+    case result do
       {:ok, _} ->
         {:noreply, redirect(socket, to: socket.assigns[:return_to] || ~p"/")}
 
