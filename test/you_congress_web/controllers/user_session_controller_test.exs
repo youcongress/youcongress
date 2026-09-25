@@ -4,6 +4,7 @@ defmodule YouCongressWeb.UserSessionControllerTest do
   alias YouCongress.Repo
   alias YouCongress.Accounts
   alias YouCongress.Accounts.UserToken
+  alias YouCongress.RateLimiter
   import YouCongress.AccountsFixtures
   import YouCongress.StatementsFixtures
   import Phoenix.LiveViewTest
@@ -107,6 +108,28 @@ defmodule YouCongressWeb.UserSessionControllerTest do
       assert redirected_to(conn) == ~p"/log_in"
       refute Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
     end
+
+    test "durably limits repeated requests for one email", %{conn: conn, user: user} do
+      for _ <- 1..5 do
+        conn
+        |> recycle()
+        |> post(~p"/log_in/magic-link", %{"user" => %{"email" => user.email}})
+      end
+
+      token = Repo.get_by!(UserToken, user_id: user.id, context: "magic_login")
+
+      limited_conn =
+        conn
+        |> recycle()
+        |> post(~p"/log_in/magic-link", %{"user" => %{"email" => user.email}})
+        |> fetch_flash()
+
+      assert redirected_to(limited_conn) == ~p"/log_in"
+      assert Repo.get_by!(UserToken, user_id: user.id, context: "magic_login").id == token.id
+
+      assert Phoenix.Flash.get(limited_conn.assigns.flash, :info) ==
+               "If an account exists for that email, we'll send a sign-in link shortly."
+    end
   end
 
   describe "magic-link confirmation" do
@@ -208,6 +231,27 @@ defmodule YouCongressWeb.UserSessionControllerTest do
   end
 
   describe "POST /log_in" do
+    test "rejects a valid password after the durable identity limit is exhausted", %{
+      conn: conn
+    } do
+      password = valid_user_password()
+      email = unique_user_email()
+      {:ok, %{user: user}} = Accounts.register_user(%{"email" => email, "password" => password})
+
+      for _ <- 1..10 do
+        assert RateLimiter.allowed?(:password_login_identity, user.email, 10, 15 * 60)
+      end
+
+      conn =
+        conn
+        |> post(~p"/log_in", %{"user" => %{"email" => user.email, "password" => password}})
+        |> fetch_flash()
+
+      assert redirected_to(conn) == ~p"/log_in"
+      refute get_session(conn, :user_token)
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
+    end
+
     test "prevents login for user with spam role", %{conn: conn, user: user} do
       {:ok, blocked_user} =
         user

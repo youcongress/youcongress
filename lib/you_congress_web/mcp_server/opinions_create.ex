@@ -51,6 +51,11 @@ defmodule YouCongressWeb.MCPServer.OpinionsCreate do
       {:error, :forbidden} ->
         {:reply, Response.error(Response.tool(), @forbidden_message), frame}
 
+      {:error, :rate_limited} ->
+        {:reply,
+         Response.error(Response.tool(), "Too many opinion submissions. Please try again later."),
+         frame}
+
       {:error, :opinion, %Changeset{} = changeset, _} ->
         {:reply, creation_error_response(changeset), frame}
 

@@ -100,6 +100,10 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
+
+      {:error, :rate_limited} ->
+        {:noreply,
+         put_flash(socket, :error, "Too many submissions. Please wait before trying again.")}
     end
   end
 

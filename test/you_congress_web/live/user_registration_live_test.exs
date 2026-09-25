@@ -94,5 +94,41 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
       render_click(lv, "skip_phone")
       assert Accounts.get_user!(user.id).phone_verification_prompt_dismissed_at
     end
+
+    test "email-code attempts remain limited across LiveView remounts", %{conn: conn} do
+      user = user_fixture(%{}, %{name: "Unconfirmed user"}, false)
+
+      {:ok, email} =
+        Accounts.deliver_user_confirmation_instructions(
+          user,
+          &"https://example.com/users/confirm/#{&1}"
+        )
+
+      [_, valid_code] =
+        Regex.run(~r/confirmation code is: (\d{6})/, email.text_body)
+
+      invalid_code = if valid_code == "000000", do: "111111", else: "000000"
+
+      conn = log_in_user(conn, user)
+
+      for _ <- 1..5 do
+        {:ok, lv, html} = live(conn, ~p"/sign_up")
+        assert html =~ "Enter your confirmation code"
+
+        lv
+        |> form("#email_verification_form", user: %{email_verification_code: invalid_code})
+        |> render_submit()
+      end
+
+      {:ok, lv, _html} = live(conn, ~p"/sign_up")
+
+      html =
+        lv
+        |> form("#email_verification_form", user: %{email_verification_code: valid_code})
+        |> render_submit()
+
+      assert html =~ "Enter your confirmation code"
+      refute Accounts.get_user!(user.id).email_confirmed_at
+    end
   end
 end
