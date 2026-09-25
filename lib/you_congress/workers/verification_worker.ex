@@ -15,7 +15,10 @@ defmodule YouCongress.Workers.VerificationWorker do
   use Oban.Worker,
     queue: :verification,
     max_attempts: 1,
-    unique: [states: [:scheduled, :available], keys: [:subject, :id, :opinion_id]]
+    unique: [
+      states: [:scheduled, :available, :executing, :retryable],
+      keys: [:subject, :id, :opinion_id]
+    ]
 
   require Logger
 

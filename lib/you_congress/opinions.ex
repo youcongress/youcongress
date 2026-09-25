@@ -176,15 +176,21 @@ defmodule YouCongress.Opinions do
   end
 
   defp do_create_opinion(attrs, user_id) do
-    attrs = ContentEmbedding.put(attrs, %Opinion{})
-
     result =
-      Ecto.Multi.new()
-      |> Ecto.Multi.insert(:opinion, Opinion.changeset(%Opinion{}, attrs))
-      |> enqueue_update_ancestor_counts(attrs["ancestry"])
-      |> maybe_enqueue_update_author_public_figure(attrs)
-      |> Repo.transaction()
-      |> maybe_endorse_created_opinion(user_id)
+      case Opinion.changeset(%Opinion{}, attrs) do
+        %{valid?: false} = changeset ->
+          {:error, :opinion, changeset, %{}}
+
+        _valid_changeset ->
+          attrs = ContentEmbedding.put(attrs, %Opinion{})
+
+          Ecto.Multi.new()
+          |> Ecto.Multi.insert(:opinion, Opinion.changeset(%Opinion{}, attrs))
+          |> enqueue_update_ancestor_counts(attrs["ancestry"])
+          |> maybe_enqueue_update_author_public_figure(attrs)
+          |> Repo.transaction()
+          |> maybe_endorse_created_opinion(user_id)
+      end
 
     maybe_enqueue_quote_verification(result)
     result
@@ -270,16 +276,20 @@ defmodule YouCongress.Opinions do
 
   """
   def update_opinion(%Opinion{} = opinion, attrs, opts \\ []) when is_list(opts) do
-    attrs =
-      attrs
-      |> Opinion.normalize_attrs()
-      |> ContentEmbedding.put(opinion)
+    attrs = Opinion.normalize_attrs(attrs)
 
-    changeset = Opinion.changeset(opinion, attrs)
-    result = Repo.update(changeset)
-    maybe_update_vote_author_on_opinion_update(result, opinion, changeset)
-    maybe_reverify_quote_on_update(result, changeset, opts)
-    maybe_endorse_updated_opinion(result, changeset, opts)
+    case Opinion.changeset(opinion, attrs) do
+      %{valid?: false} = changeset ->
+        {:error, changeset}
+
+      _valid_changeset ->
+        attrs = ContentEmbedding.put(attrs, opinion)
+        changeset = Opinion.changeset(opinion, attrs)
+        result = Repo.update(changeset)
+        maybe_update_vote_author_on_opinion_update(result, opinion, changeset)
+        maybe_reverify_quote_on_update(result, changeset, opts)
+        maybe_endorse_updated_opinion(result, changeset, opts)
+    end
   end
 
   @doc """

@@ -9,6 +9,8 @@ defmodule YouCongress.VoteVerifications.VoteVerification do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias YouCongress.ContentLimits
+
   schema "vote_verifications" do
     field :status, Ecto.Enum,
       values: [
@@ -37,6 +39,8 @@ defmodule YouCongress.VoteVerifications.VoteVerification do
     verification
     |> cast(attrs, [:vote_id, :opinion_id, :user_id, :status, :comment, :model])
     |> validate_required([:vote_id, :user_id, :status])
+    |> ContentLimits.validate_text(:comment, 4_000, 8_000)
+    |> ContentLimits.validate_text(:model, 100, 400)
     |> foreign_key_constraint(:vote_id)
     |> foreign_key_constraint(:opinion_id)
     |> foreign_key_constraint(:user_id)

@@ -8,6 +8,7 @@ defmodule YouCongress.Statements.Statement do
   import Ecto.Changeset
 
   alias YouCongress.Votes.Vote
+  alias YouCongress.ContentLimits
   alias YouCongress.Statements
   alias YouCongress.Halls.Hall
   alias YouCongress.Opinions.Opinion
@@ -77,6 +78,8 @@ defmodule YouCongress.Statements.Statement do
       :updated_at
     ])
     |> validate_required([:title])
+    |> ContentLimits.validate_text(:title, 500, 2_000)
+    |> ContentLimits.validate_text(:url, 2_048, 8_192)
     |> update_change(:url, fn url -> if url, do: String.trim(url) end)
     |> validate_url()
     |> unique_constraint(:title)
