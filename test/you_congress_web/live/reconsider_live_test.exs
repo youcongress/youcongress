@@ -55,6 +55,9 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     html = render_submit(view, "submit", params)
     assert html =~ "Sign in to record your response"
     assert html =~ "Log in with Google"
+    assert html =~ "Sign up with email/password"
+    assert html =~ ~s(href="/sign_up?)
+    refute html =~ "Log in with email/password"
     refute html =~ "Community result"
   end
 

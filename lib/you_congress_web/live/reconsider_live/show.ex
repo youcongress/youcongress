@@ -468,6 +468,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
               class="mt-4"
               pending_actions={@pending_actions}
               return_to={@return_to}
+              email_action={:sign_up}
             />
           </div>
 
