@@ -41,12 +41,7 @@ defmodule YouCongressWeb.ResetPasswordLive do
         RateLimiter.allowed?(:password_reset_email_global, :global, 10_000, 24 * 60 * 60)
 
     if delivery_allowed? do
-      if user = Accounts.get_user_by_email(email) do
-        Accounts.deliver_user_reset_password_instructions(
-          user,
-          &url(~p"/reset_password/#{&1}")
-        )
-      end
+      Accounts.enqueue_account_email(:password_reset, email)
     end
 
     info =

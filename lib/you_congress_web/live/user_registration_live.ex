@@ -457,7 +457,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
            {:register, Accounts.register_passwordless_user(user_params, author_params)} do
       Track.event("Register via email magic link", user)
 
-      deliver_registration_magic_link(user, socket.assigns.return_to)
+      enqueue_registration_magic_link(user.email, socket.assigns.return_to)
 
       socket =
         socket
@@ -505,13 +505,23 @@ defmodule YouCongressWeb.UserRegistrationLive do
          |> assign_form(changeset)}
 
       {:register, {:error, :user, %Ecto.Changeset{} = changeset, _}} ->
-        changeset = Ecto.Changeset.put_change(changeset, :name, author_params["name"])
+        if Accounts.get_user_by_email(email) do
+          enqueue_registration_magic_link(email, socket.assigns.return_to)
 
-        {:noreply,
-         socket
-         |> assign(check_errors: true)
-         |> push_event("reset_turnstile", %{})
-         |> assign_form(changeset)}
+          {:noreply,
+           socket
+           |> assign(:step, :check_magic_link)
+           |> assign(:user, %User{email: User.normalize_email(email)})
+           |> assign_form(Accounts.change_passwordless_registration(%User{}))}
+        else
+          changeset = Ecto.Changeset.put_change(changeset, :name, author_params["name"])
+
+          {:noreply,
+           socket
+           |> assign(check_errors: true)
+           |> push_event("reset_turnstile", %{})
+           |> assign_form(changeset)}
+        end
 
       {:register, _} ->
         {:noreply,
@@ -778,7 +788,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
     if RateLimiter.allowed?(:registration_magic_link, user.email, 3, @delivery_window_seconds) and
          RateLimiter.allowed?(:email_delivery_global, :global, 10_000, 24 * 60 * 60) do
-      deliver_registration_magic_link(user, socket.assigns.return_to)
+      enqueue_registration_magic_link(user.email, socket.assigns.return_to)
 
       {:noreply,
        socket
@@ -879,11 +889,8 @@ defmodule YouCongressWeb.UserRegistrationLive do
     Accounts.change_user_registration(user || %User{}, initial_values)
   end
 
-  defp deliver_registration_magic_link(user, return_to) do
-    Accounts.deliver_user_registration_magic_link_instructions(user, fn token ->
-      query = if return_to, do: %{return_to: return_to}, else: %{}
-      url(~p"/log_in/magic-link/#{token}?#{query}")
-    end)
+  defp enqueue_registration_magic_link(email, return_to) do
+    Accounts.enqueue_account_email(:registration, email, return_to: return_to)
   end
 
   defp phone_number_present?(%User{phone_number: number}) when is_binary(number) do

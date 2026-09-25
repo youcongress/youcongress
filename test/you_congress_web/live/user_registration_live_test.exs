@@ -47,6 +47,29 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
       end)
     end
 
+    test "an existing email receives the same registration response without disclosure", %{
+      conn: conn
+    } do
+      existing_user = user_fixture()
+      {:ok, lv, _html} = live(conn, ~p"/sign_up")
+
+      html =
+        lv
+        |> form("#registration_form",
+          user: %{name: "Different Name", email: existing_user.email}
+        )
+        |> render_submit()
+
+      assert html =~ "Check your email"
+      refute html =~ "has already been taken"
+      assert Repo.get_by(UserToken, user_id: existing_user.id, context: "magic_login")
+
+      assert_email_sent(fn email_message ->
+        assert email_message.to == [{"", existing_user.email}]
+        assert email_message.subject == "Confirm your YouCongress email"
+      end)
+    end
+
     test "defers pre-registration votes until the magic link confirms the email", %{
       conn: conn
     } do

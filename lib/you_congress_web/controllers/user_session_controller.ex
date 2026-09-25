@@ -76,17 +76,9 @@ defmodule YouCongressWeb.UserSessionController do
         RateLimiter.allowed?(:magic_link_global, :global, 10_000, 24 * 60 * 60)
 
     if delivery_allowed? do
-      case Accounts.get_user_by_email(email) do
-        %User{} = user ->
-          unless Permissions.blocked?(user) do
-            Accounts.deliver_user_magic_login_instructions(user, fn token ->
-              magic_login_url(conn, token, user_params["return_to"])
-            end)
-          end
-
-        nil ->
-          :ok
-      end
+      Accounts.enqueue_account_email(:magic_login, email,
+        return_to: ReturnTo.sanitize(user_params["return_to"])
+      )
     end
 
     conn
@@ -169,18 +161,6 @@ defmodule YouCongressWeb.UserSessionController do
       path -> put_session(conn, :registration_return_to, path)
     end
   end
-
-  defp magic_login_url(conn, token, return_to) do
-    query =
-      %{}
-      |> maybe_put_query_param(:return_to, ReturnTo.sanitize(return_to))
-
-    url(conn, ~p"/log_in/magic-link/#{token}?#{query}")
-  end
-
-  defp maybe_put_query_param(query, _key, nil), do: query
-  defp maybe_put_query_param(query, _key, ""), do: query
-  defp maybe_put_query_param(query, key, value), do: Map.put(query, key, value)
 
   defp blocked_account_message do
     "Your account has been blocked as it seemed spam. If you're a real person or a useful bot, please contact support@youcongress.org if this is an error."
