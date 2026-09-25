@@ -7,7 +7,7 @@ defmodule YouCongressWeb.ReconsiderLive.New do
 
   @search_limit 8
   @minimum_query_length 2
-  @maximum_statements 5
+  @maximum_statements 3
 
   @impl true
   def mount(_params, session, socket) do
@@ -40,6 +40,7 @@ defmodule YouCongressWeb.ReconsiderLive.New do
     {:ok,
      socket
      |> assign(:page_title, "Create a Reconsider page")
+     |> assign(:maximum_statements, @maximum_statements)
      |> assign(:form, form)
      |> assign(:error_message, nil)
      |> assign(:selected_statements, [])
@@ -257,7 +258,7 @@ defmodule YouCongressWeb.ReconsiderLive.New do
         />
         <div id="statement-picker" class="space-y-3">
           <label for="statement-search" class="block text-sm font-semibold leading-6 text-zinc-800">
-            YouCongress statements (1–5)
+            YouCongress statements (1–3)
           </label>
 
           <div :if={@selected_statements != []} id="selected-statements" class="space-y-2">
@@ -279,7 +280,7 @@ defmodule YouCongressWeb.ReconsiderLive.New do
             </div>
           </div>
 
-          <div :if={length(@selected_statements) < 5} class="relative">
+          <div :if={length(@selected_statements) < @maximum_statements} class="relative">
             <input
               id="statement-search"
               name="statement_search"
@@ -316,13 +317,16 @@ defmodule YouCongressWeb.ReconsiderLive.New do
             </div>
           </div>
 
-          <p :if={length(@selected_statements) == 5} class="text-xs font-medium text-indigo-700">
-            You have selected the maximum of five statements.
+          <p
+            :if={length(@selected_statements) == @maximum_statements}
+            class="text-xs font-medium text-indigo-700"
+          >
+            You have selected the maximum of three statements.
           </p>
           <p
             :if={
               searchable?(@statement_query) && @statement_results == [] &&
-                length(@selected_statements) < 5
+                length(@selected_statements) < @maximum_statements
             }
             id="no-statement-results"
             class="text-xs text-gray-500"
@@ -330,7 +334,7 @@ defmodule YouCongressWeb.ReconsiderLive.New do
             No matching statements found.
           </p>
           <p class="text-xs text-gray-500">
-            Type at least two characters, then select a statement. You can add up to five.
+            Type at least two characters, then select a statement. You can add up to three.
           </p>
         </div>
 
@@ -412,9 +416,6 @@ defmodule YouCongressWeb.ReconsiderLive.New do
             class="text-xs text-gray-500"
           >
             No matching people found.
-          </p>
-          <p class="text-xs text-gray-500">
-            Your own YouCongress profile is included automatically.
           </p>
         </div>
 

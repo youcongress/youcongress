@@ -41,7 +41,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
         "answers" => %{
           to_string(context.statement.id) => %{"before" => "against", "after" => "for"}
         },
-        "delegate_ids" => [to_string(context.creator.author_id)]
+        "delegate_ids" => []
       }
     }
 
@@ -62,7 +62,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
         "answers" => %{
           to_string(context.statement.id) => %{"before" => "against", "after" => "for"}
         },
-        "delegate_ids" => [to_string(context.creator.author_id)]
+        "delegate_ids" => []
       }
     }
 
@@ -164,6 +164,23 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     |> render_click()
 
     refute has_element?(view, "#selected-delegate-#{delegate.id}")
+  end
+
+  test "the statement picker stops at three selections", %{conn: conn} = context do
+    second_statement = statement_fixture(%{title: "Nuclear power should be expanded rapidly"})
+    third_statement = statement_fixture(%{title: "Cities should build more tram lines"})
+
+    conn = log_in_user(conn, context.creator)
+    {:ok, view, html} = live(conn, ~p"/reconsider/new")
+
+    assert html =~ "YouCongress statements (1–3)"
+
+    select_statement(view, context.statement, "private cars")
+    select_statement(view, second_statement, "nuclear power")
+    select_statement(view, third_statement, "tram lines")
+
+    refute has_element?(view, "#statement-search")
+    assert render(view) =~ "maximum of three statements"
   end
 
   test "the legacy URL redirects permanently to the creator URL", %{conn: conn} = context do

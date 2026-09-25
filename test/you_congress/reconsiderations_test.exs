@@ -63,7 +63,7 @@ defmodule YouCongress.ReconsiderationsTest do
                context.reconsideration,
                context.participant,
                responses,
-               [context.creator.author_id, context.delegate.id]
+               [context.delegate.id]
              )
 
     assert length(saved) == 2
@@ -87,7 +87,6 @@ defmodule YouCongress.ReconsiderationsTest do
     assert first_response.before_answer == :against
     assert first_response.after_answer == :for
 
-    assert Delegations.delegating?(context.participant.author_id, context.creator.author_id)
     assert Delegations.delegating?(context.participant.author_id, context.delegate.id)
 
     stats = Reconsiderations.stats(context.reconsideration)
@@ -186,10 +185,29 @@ defmodule YouCongress.ReconsiderationsTest do
              context.first_statement.id
            ]
 
-    assert Enum.map(reconsideration.delegates, & &1.author_id) == [
-             context.creator.author_id,
-             context.delegate.id
-           ]
+    assert Enum.map(reconsideration.delegates, & &1.author_id) == [context.delegate.id]
+  end
+
+  test "rejects experiences with more than three statements", context do
+    third_statement = statement_fixture(%{title: "The third proposal should pass"})
+    fourth_statement = statement_fixture(%{title: "The fourth proposal should pass"})
+
+    assert {:error, "Choose between one and three statements."} =
+             Reconsiderations.create_reconsideration(
+               context.creator,
+               %{
+                 "title" => "Too many questions",
+                 "content_url" => "https://example.com/too-many",
+                 "content_type" => "article"
+               },
+               [
+                 context.first_statement.id,
+                 context.second_statement.id,
+                 third_statement.id,
+                 fourth_statement.id
+               ],
+               []
+             )
   end
 
   test "pending authenticated actions save the complete Reconsider submission", context do
@@ -225,9 +243,21 @@ defmodule YouCongress.ReconsiderationsTest do
 
     creator_as_participant = context.creator
 
+    {:ok, reconsideration_with_creator} =
+      Reconsiderations.create_reconsideration(
+        context.creator,
+        %{
+          "title" => "An explicitly listed creator",
+          "content_url" => "https://example.com/creator",
+          "content_type" => "article"
+        },
+        [context.first_statement.id, context.second_statement.id],
+        [context.creator.author_id]
+      )
+
     assert {:ok, _} =
              Reconsiderations.submit_response(
-               context.reconsideration,
+               reconsideration_with_creator,
                creator_as_participant,
                responses,
                [creator_as_participant.author_id]
