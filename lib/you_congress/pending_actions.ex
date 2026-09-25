@@ -16,9 +16,8 @@ defmodule YouCongress.PendingActions do
   def process(%User{} = user, nil), do: maybe_process_staged(user)
 
   def process(%User{} = user, pending_json) when is_binary(pending_json) do
-    with {:ok, payload} <- Jason.decode(pending_json) do
-      process(user, payload)
-    else
+    case Jason.decode(pending_json) do
+      {:ok, payload} -> process(user, payload)
       _ -> {:error, :invalid_pending_actions}
     end
   end
@@ -111,8 +110,7 @@ defmodule YouCongress.PendingActions do
 
   defp process_payload(user, %{"delegate_ids" => delegate_ids, "votes" => votes}) do
     with :ok <- create_delegations(user, delegate_ids),
-         :ok <- create_votes(user, votes),
-         do: :ok
+         do: create_votes(user, votes)
   end
 
   defp process_payload(_user, _payload), do: {:error, :invalid_pending_actions}

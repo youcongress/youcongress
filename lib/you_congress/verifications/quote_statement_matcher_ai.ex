@@ -21,9 +21,8 @@ defmodule YouCongress.Verifications.QuoteStatementMatcherAI do
   def submit(%Opinion{} = opinion, statements) when is_list(statements) do
     opinion = YouCongress.Repo.preload(opinion, :author)
 
-    with {:ok, data} <- ask_gpt(prompt(opinion, statements)),
-         {:ok, job_id} <- extract_job_id(data) do
-      {:ok, job_id}
+    with {:ok, data} <- ask_gpt(prompt(opinion, statements)) do
+      extract_job_id(data)
     end
   end
 

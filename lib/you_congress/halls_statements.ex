@@ -102,7 +102,7 @@ defmodule YouCongress.HallsStatements do
       |> select([hs], hs.hall_id)
       |> Repo.one()
 
-    if(hall_id) do
+    if hall_id do
       Halls.get_hall!(hall_id)
     end
   end

@@ -1,4 +1,5 @@
 defmodule YouCongressWeb.AccountCompletionBanner do
+  @moduledoc false
   use YouCongressWeb, :html
 
   alias YouCongress.Accounts

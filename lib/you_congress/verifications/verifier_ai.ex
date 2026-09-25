@@ -36,9 +36,8 @@ defmodule YouCongress.Verifications.VerifierAI do
   def submit(subject_type, subject, opts) do
     with {:ok, %{prompt: prompt, schema: schema, name: name, system: system} = spec} <-
            build(subject_type, subject, opts),
-         {:ok, data} <- ask_gpt(prompt, schema, name, system, spec[:web_search] || false),
-         {:ok, job_id} <- extract_job_id(data) do
-      {:ok, job_id}
+         {:ok, data} <- ask_gpt(prompt, schema, name, system, spec[:web_search] || false) do
+      extract_job_id(data)
     end
   end
 

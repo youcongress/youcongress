@@ -231,31 +231,30 @@ defmodule YouCongressWeb.StatementLive.HallsInputComponent do
     # Try to get main_hall from form data (if user already set it)
     main_hall = Phoenix.HTML.Form.input_value(form, :main_hall)
 
-    cond do
-      is_binary(main_hall) and main_hall != "" ->
-        main_hall
+    if is_binary(main_hall) and main_hall != "" do
+      main_hall
+    else
+      main_hall_from_associations(form.data, selected_halls)
+    end
+  end
 
-      # Try to get from halls_statements association
-      true ->
-        statement = form.data
+  defp main_hall_from_associations(
+         %{halls_statements: halls_statements} = statement,
+         selected_halls
+       )
+       when is_list(halls_statements) do
+    case Enum.find(halls_statements, & &1.is_main) do
+      nil -> List.first(selected_halls)
+      main_hs -> main_hall_name(statement, main_hs, selected_halls)
+    end
+  end
 
-        case statement do
-          %{halls_statements: halls_statements} when is_list(halls_statements) ->
-            main_hs = Enum.find(halls_statements, & &1.is_main)
+  defp main_hall_from_associations(_statement, selected_halls), do: List.first(selected_halls)
 
-            if main_hs do
-              # Find the hall name by id
-              case Enum.find(statement.halls || [], &(&1.id == main_hs.hall_id)) do
-                nil -> List.first(selected_halls)
-                hall -> hall.name
-              end
-            else
-              List.first(selected_halls)
-            end
-
-          _ ->
-            List.first(selected_halls)
-        end
+  defp main_hall_name(statement, main_hs, selected_halls) do
+    case Enum.find(statement.halls || [], &(&1.id == main_hs.hall_id)) do
+      nil -> List.first(selected_halls)
+      hall -> hall.name
     end
   end
 

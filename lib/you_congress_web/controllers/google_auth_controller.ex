@@ -75,16 +75,14 @@ defmodule YouCongressWeb.GoogleAuthController do
 
     conn = delete_session(conn, :google_oauth_state)
 
-    cond do
-      is_nil(stored_state) or state != stored_state ->
-        Logger.warning("Google OAuth state mismatch: expected=#{stored_state}, got=#{state}")
+    if is_nil(stored_state) or state != stored_state do
+      Logger.warning("Google OAuth state mismatch: expected=#{stored_state}, got=#{state}")
 
-        conn
-        |> put_flash(:error, "Authentication failed. Please try again.")
-        |> redirect(to: ~p"/log_in")
-
-      true ->
-        handle_token_exchange(conn, code, callback_url)
+      conn
+      |> put_flash(:error, "Authentication failed. Please try again.")
+      |> redirect(to: ~p"/log_in")
+    else
+      handle_token_exchange(conn, code, callback_url)
     end
   end
 

@@ -505,91 +505,41 @@ defmodule YouCongressWeb.UserRegistrationLive do
     end
   end
 
+  def handle_event(
+        "verify_email",
+        %{"user" => %{"email_verification_code" => _code}},
+        %{assigns: %{user: nil}} = socket
+      ) do
+    {:noreply, socket}
+  end
+
   def handle_event("verify_email", %{"user" => %{"email_verification_code" => code}}, socket) do
     user = socket.assigns.user
+    socket = maybe_unlock_email_code(socket)
+    normalized_code = normalize_code(code)
+    changeset = email_code_changeset(%{"email_verification_code" => normalized_code})
 
-    if is_nil(user) do
-      {:noreply, socket}
-    else
-      socket = maybe_unlock_email_code(socket)
-      normalized_code = normalize_code(code)
-      changeset = email_code_changeset(%{"email_verification_code" => normalized_code})
+    cond do
+      not changeset.valid? ->
+        {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
 
-      cond do
-        not changeset.valid? ->
-          {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
+      email_code_locked?(socket.assigns.email_code_locked_until) ->
+        verification_error(socket, changeset, "Please wait before trying again.")
 
-        email_code_locked?(socket.assigns.email_code_locked_until) ->
-          locked_changeset =
-            Ecto.Changeset.add_error(
-              changeset,
-              :email_verification_code,
-              "Please wait before trying again."
-            )
+      not RateLimiter.allowed?(
+        :email_verification_check,
+        user.id,
+        5,
+        @verification_window_seconds
+      ) ->
+        verification_error(
+          socket,
+          changeset,
+          "Too many attempts. Please wait before trying again."
+        )
 
-          {:noreply, socket |> assign(check_errors: true) |> assign_form(locked_changeset)}
-
-        not RateLimiter.allowed?(
-          :email_verification_check,
-          user.id,
-          5,
-          @verification_window_seconds
-        ) ->
-          limited_changeset =
-            Ecto.Changeset.add_error(
-              changeset,
-              :email_verification_code,
-              "Too many attempts. Please wait before trying again."
-            )
-
-          {:noreply, socket |> assign(check_errors: true) |> assign_form(limited_changeset)}
-
-        true ->
-          case Accounts.confirm_user_with_code(user, normalized_code) do
-            {:ok, updated_user} ->
-              Track.event("Email verified", updated_user)
-
-              {:noreply, proceed_after_email_confirmation(socket, updated_user)}
-
-            {:error, :already_confirmed} ->
-              {:noreply, proceed_after_email_confirmation(socket, user)}
-
-            {:error, :expired} ->
-              expired_changeset =
-                Ecto.Changeset.add_error(
-                  changeset,
-                  :email_verification_code,
-                  "This code has expired. Request a new one and try again."
-                )
-
-              {:noreply, socket |> assign(check_errors: true) |> assign_form(expired_changeset)}
-
-            {:error, :invalid_code} ->
-              socket = increment_email_code_attempts(socket)
-
-              message =
-                if email_code_locked?(socket.assigns.email_code_locked_until) do
-                  "Too many attempts. Please wait before trying again."
-                else
-                  "Invalid verification code"
-                end
-
-              invalid_changeset =
-                Ecto.Changeset.add_error(changeset, :email_verification_code, message)
-
-              {:noreply, socket |> assign(check_errors: true) |> assign_form(invalid_changeset)}
-
-            {:error, _reason} ->
-              generic_changeset =
-                Ecto.Changeset.add_error(
-                  changeset,
-                  :email_verification_code,
-                  "We couldn't verify that code. Please try again."
-                )
-
-              {:noreply, socket |> assign(check_errors: true) |> assign_form(generic_changeset)}
-          end
-      end
+      true ->
+        confirm_email_code(socket, user, normalized_code, changeset)
     end
   end
 
@@ -788,6 +738,44 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
   def handle_event("skip_phone", _params, socket) do
     {:noreply, redirect(socket, to: registration_destination(socket))}
+  end
+
+  defp confirm_email_code(socket, user, normalized_code, changeset) do
+    case Accounts.confirm_user_with_code(user, normalized_code) do
+      {:ok, updated_user} ->
+        Track.event("Email verified", updated_user)
+        {:noreply, proceed_after_email_confirmation(socket, updated_user)}
+
+      {:error, :already_confirmed} ->
+        {:noreply, proceed_after_email_confirmation(socket, user)}
+
+      {:error, :expired} ->
+        verification_error(
+          socket,
+          changeset,
+          "This code has expired. Request a new one and try again."
+        )
+
+      {:error, :invalid_code} ->
+        socket = increment_email_code_attempts(socket)
+        verification_error(socket, changeset, invalid_code_message(socket))
+
+      {:error, _reason} ->
+        verification_error(socket, changeset, "We couldn't verify that code. Please try again.")
+    end
+  end
+
+  defp verification_error(socket, changeset, message) do
+    changeset = Ecto.Changeset.add_error(changeset, :email_verification_code, message)
+    {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
+  end
+
+  defp invalid_code_message(socket) do
+    if email_code_locked?(socket.assigns.email_code_locked_until) do
+      "Too many attempts. Please wait before trying again."
+    else
+      "Invalid verification code"
+    end
   end
 
   defp proceed_after_email_confirmation(socket, %User{} = user) do

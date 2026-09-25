@@ -21,9 +21,8 @@ defmodule YouCongress.Opinions.Quotes.FreshQuoteFinderAI do
     statements = Keyword.get(opts, :statements, [])
     prompt = get_prompt(recent_quotes, statements, now, limit)
 
-    with {:ok, data} <- ask_gpt(prompt, @model),
-         {:ok, job_id} <- extract_job_id(data) do
-      {:ok, job_id}
+    with {:ok, data} <- ask_gpt(prompt, @model) do
+      extract_job_id(data)
     end
   end
 

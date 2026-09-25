@@ -153,16 +153,29 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
     author = quote_data["author"] || quote_data[:author] || %{}
     statement_id = normalize_id(quote_data["statement_id"] || quote_data[:statement_id])
 
+    with :ok <- validate_required_quote_fields(quote, source_url, date, date_precision, user_id),
+         :ok <- validate_quote_coverage(quote_data, quote, statement_id) do
+      build_attrs(quote, source_url, date, author, statement_id)
+    end
+  end
+
+  defp validate_required_quote_fields(quote, source_url, date, date_precision, user_id) do
     cond do
       blank?(quote) -> {:skip, :missing_quote}
       blank?(source_url) -> {:skip, :missing_source_url}
       blank?(date) -> {:skip, :missing_date}
       date_precision != "day" -> {:skip, :date_precision_not_day}
       is_nil(user_id) -> {:skip, :missing_user_id}
+      true -> :ok
+    end
+  end
+
+  defp validate_quote_coverage(quote_data, quote, statement_id) do
+    cond do
       not KeyIdeaCoverage.valid?(quote_data, quote) -> {:skip, :incomplete_key_idea_coverage}
       is_nil(statement_id) -> {:skip, :missing_coverage_statement}
       is_nil(Statements.get_statement(statement_id)) -> {:skip, :unknown_coverage_statement}
-      true -> build_attrs(quote, source_url, date, author, statement_id)
+      true -> :ok
     end
   end
 

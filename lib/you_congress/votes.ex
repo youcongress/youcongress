@@ -148,49 +148,11 @@ defmodule YouCongress.Votes do
     limit_opt = Keyword.get(opts, :limit)
     offset_opt = Keyword.get(opts, :offset)
 
-    base_query =
-      Vote
-      |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
-      |> join(:inner, [v, a], o in YouCongress.Opinions.Opinion, on: v.opinion_id == o.id)
-      |> join(:left, [v, a, o], os in OpinionStatement,
-        on: os.opinion_id == o.id and os.statement_id == v.statement_id
-      )
-      |> where(
-        [v, a, o, os],
-        v.statement_id == ^statement_id and not is_nil(v.opinion_id) and
-          v.id not in ^exclude_ids and
-          v.twin in ^twin_options
-      )
-
-    query =
-      case source_filter do
-        :quotes ->
-          where(base_query, [v, a, o, os], not (is_nil(o.source_url) and is_nil(o.source_text)))
-
-        :users ->
-          where(base_query, [v, a, o, os], is_nil(o.source_url) and is_nil(o.source_text))
-
-        _ ->
-          base_query
-      end
-
-    query =
-      if answer do
-        query
-        |> where([v, a, o, os], v.answer == ^answer)
-      else
-        query
-      end
-
-    query =
-      case author_country do
-        nil -> query
-        :unknown -> where(query, [v, a, o, os], is_nil(a.country_id))
-        :eu -> where(query, [v, a, o, os], a.country_id in ^Countries.eu_member_ids())
-        country_id -> where(query, [v, a, o, os], a.country_id == ^country_id)
-      end
-
-    query
+    statement_id
+    |> votes_with_opinion_query(exclude_ids, twin_options)
+    |> filter_by_source(source_filter)
+    |> filter_by_answer(answer)
+    |> filter_by_author_country(author_country)
     |> order_by([v, a, o, os], [
       {:desc,
        fragment(
@@ -225,6 +187,42 @@ defmodule YouCongress.Votes do
     |> Repo.all()
     |> with_alternate_sourced_opinions(statement_id)
   end
+
+  defp votes_with_opinion_query(statement_id, exclude_ids, twin_options) do
+    Vote
+    |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
+    |> join(:inner, [v, a], o in YouCongress.Opinions.Opinion, on: v.opinion_id == o.id)
+    |> join(:left, [v, a, o], os in OpinionStatement,
+      on: os.opinion_id == o.id and os.statement_id == v.statement_id
+    )
+    |> where(
+      [v, a, o, os],
+      v.statement_id == ^statement_id and not is_nil(v.opinion_id) and
+        v.id not in ^exclude_ids and v.twin in ^twin_options
+    )
+  end
+
+  defp filter_by_source(query, :quotes),
+    do: where(query, [v, a, o, os], not (is_nil(o.source_url) and is_nil(o.source_text)))
+
+  defp filter_by_source(query, :users),
+    do: where(query, [v, a, o, os], is_nil(o.source_url) and is_nil(o.source_text))
+
+  defp filter_by_source(query, _source_filter), do: query
+
+  defp filter_by_answer(query, nil), do: query
+  defp filter_by_answer(query, answer), do: where(query, [v, a, o, os], v.answer == ^answer)
+
+  defp filter_by_author_country(query, nil), do: query
+
+  defp filter_by_author_country(query, :unknown),
+    do: where(query, [v, a, o, os], is_nil(a.country_id))
+
+  defp filter_by_author_country(query, :eu),
+    do: where(query, [v, a, o, os], a.country_id in ^Countries.eu_member_ids())
+
+  defp filter_by_author_country(query, country_id),
+    do: where(query, [v, a, o, os], a.country_id == ^country_id)
 
   defp maybe_limit(query, nil), do: query
   defp maybe_limit(query, limit), do: limit(query, ^limit)
