@@ -8,6 +8,7 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
   alias YouCongress.HallsStatements
   alias YouCongress.Opinions
   alias YouCongress.Statements
+  alias YouCongress.Statements.Synthesis
 
   defp enable_synthesis_flag do
     original = Application.fetch_env(:you_congress, :feature_flags)
@@ -236,7 +237,7 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
     end
 
     test "hidden below the quote floor", %{conn: conn} do
-      statement = statement_with_quotes(24)
+      statement = statement_with_quotes(Synthesis.min_quotes() - 1)
       [o1] = cited_opinions(statement, 1)
       statement = put_synthesis(statement, [o1.id], [])
       enable_synthesis_flag()

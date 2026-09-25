@@ -157,7 +157,7 @@ defmodule YouCongress.HallsTest do
   end
 
   describe "all_stats/0" do
-    test "counts sourced quotes that are not attached to a statement" do
+    test "uses dataset counts while ranking all sourced quotes" do
       statement = statement_fixture()
       linked_author = add_quote(statement, "Linked Author", nil)
       unlinked_author = author_fixture(%{name: "Unlinked Author"})
@@ -167,8 +167,8 @@ defmodule YouCongress.HallsTest do
 
       stats = Halls.all_stats()
 
-      assert stats.quote_count == 2
-      assert stats.statement_count == 1
+      assert stats.quote_count == 0
+      assert stats.statement_count == 0
 
       assert stats.top_authors
              |> Enum.map(& &1.id)
