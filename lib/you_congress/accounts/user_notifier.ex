@@ -190,6 +190,34 @@ defmodule YouCongress.Accounts.UserNotifier do
   end
 
   @doc """
+  Deliver a one-time link that confirms a new user's email and signs them in.
+  """
+  def deliver_registration_magic_link_instructions(%User{} = user, url) do
+    text_body = """
+    Hi #{user.email},
+
+    Confirm your email and sign in to YouCongress by visiting the link below:
+
+    #{url}
+
+    This link expires in 15 minutes and can only be used once. If you didn't create an account, you can safely ignore this email.
+    """
+
+    html_body =
+      build_html_email(
+        "Confirm your email",
+        [
+          "Thanks for signing up for YouCongress.",
+          "Use the button below within 15 minutes to confirm #{user.email} and sign in. The link can only be used once."
+        ],
+        "Confirm your email",
+        url
+      )
+
+    deliver(user.email, "Confirm your YouCongress email", text_body, html_body)
+  end
+
+  @doc """
   Deliver instructions to reset a user password.
   """
   def deliver_reset_password_instructions(user, url) do

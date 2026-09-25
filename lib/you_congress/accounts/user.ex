@@ -59,7 +59,7 @@ defmodule YouCongress.Accounts.User do
 
   def passwordless_registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :author_id, :signup_method])
+    |> cast(attrs, [:email, :author_id, :newsletter, :signup_method])
     |> validate_email(opts)
     |> validate_inclusion(:signup_method, @signup_methods)
   end

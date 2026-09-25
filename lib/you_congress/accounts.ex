@@ -490,14 +490,29 @@ defmodule YouCongress.Accounts do
   """
   def deliver_user_magic_login_instructions(%User{} = user, magic_login_url_fun)
       when is_function(magic_login_url_fun, 1) do
+    deliver_user_magic_link(user, magic_login_url_fun, :login)
+  end
+
+  @doc """
+  Delivers a short-lived, one-time email confirmation link for a new account.
+  Following the link also signs the user in.
+  """
+  def deliver_user_registration_magic_link_instructions(%User{} = user, magic_login_url_fun)
+      when is_function(magic_login_url_fun, 1) do
+    deliver_user_magic_link(user, magic_login_url_fun, :registration)
+  end
+
+  defp deliver_user_magic_link(user, magic_login_url_fun, email_kind) do
     Repo.delete_all(UserToken.user_and_contexts_query(user, ["magic_login"]))
     {encoded_token, user_token} = UserToken.build_magic_login_token(user)
     Repo.insert!(user_token)
 
-    UserNotifier.deliver_magic_login_instructions(
-      user,
-      magic_login_url_fun.(encoded_token)
-    )
+    url = magic_login_url_fun.(encoded_token)
+
+    case email_kind do
+      :login -> UserNotifier.deliver_magic_login_instructions(user, url)
+      :registration -> UserNotifier.deliver_registration_magic_link_instructions(user, url)
+    end
   end
 
   @doc """
