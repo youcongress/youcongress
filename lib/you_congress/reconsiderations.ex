@@ -76,11 +76,11 @@ defmodule YouCongress.Reconsiderations do
       delegate_ids |> Enum.map(&normalize_id/1) |> Enum.reject(&is_nil/1) |> Enum.uniq()
 
     statements = records_in_order(Statement, statement_ids)
-    delegates = records_in_order(Author, Enum.uniq([user.author_id | delegate_ids]))
+    delegates = records_in_order(Author, delegate_ids)
 
     with :ok <- validate_statement_count(statements),
          true <- length(statements) == length(statement_ids),
-         true <- length(delegates) == length(Enum.uniq([user.author_id | delegate_ids])) do
+         true <- length(delegates) == length(delegate_ids) do
       attrs =
         attrs
         |> Map.new()
@@ -350,8 +350,8 @@ defmodule YouCongress.Reconsiderations do
     Enum.map(ids, &Map.get(records, &1)) |> Enum.reject(&is_nil/1)
   end
 
-  defp validate_statement_count(statements) when length(statements) in 1..5, do: :ok
-  defp validate_statement_count(_), do: {:error, "Choose between one and five statements."}
+  defp validate_statement_count(statements) when length(statements) in 1..3, do: :ok
+  defp validate_statement_count(_), do: {:error, "Choose between one and three statements."}
 
   defp normalize_responses(responses) when is_map(responses) do
     responses
