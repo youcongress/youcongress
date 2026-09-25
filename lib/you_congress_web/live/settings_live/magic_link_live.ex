@@ -20,12 +20,6 @@ defmodule YouCongressWeb.MagicLinkLive do
         class="mt-6"
       >
         <input :if={@return_to} type="hidden" name="return_to" value={@return_to} />
-        <input
-          :if={@pending_actions}
-          type="hidden"
-          name="pending_actions"
-          value={@pending_actions}
-        />
         <:actions>
           <.button phx-disable-with="Signing in..." class="w-full bg-indigo-500 hover:bg-indigo-700">
             Sign in
@@ -45,7 +39,6 @@ defmodule YouCongressWeb.MagicLinkLive do
      assign(socket,
        token: token,
        return_to: ReturnTo.sanitize(params["return_to"]),
-       pending_actions: params["pending_actions"],
        form: to_form(%{}, as: "magic_link")
      )}
   end

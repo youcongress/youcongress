@@ -5,8 +5,12 @@ defmodule YouCongressWeb.UserSessionControllerTest do
   alias YouCongress.Accounts
   alias YouCongress.Accounts.UserToken
   import YouCongress.AccountsFixtures
+  import YouCongress.StatementsFixtures
   import Phoenix.LiveViewTest
   import Ecto.Changeset
+  import Swoosh.TestAssertions
+
+  alias YouCongress.Votes
 
   setup do
     %{user: user_fixture()}
@@ -64,6 +68,34 @@ defmodule YouCongressWeb.UserSessionControllerTest do
                Phoenix.Flash.get(conn.assigns.flash, :info)
     end
 
+    test "does not copy requester-supplied actions into the emailed link", %{
+      conn: conn,
+      user: user
+    } do
+      pending_actions =
+        Jason.encode!(%{
+          delegate_ids: [],
+          votes: %{"1" => %{statement_id: 1, answer: "for"}}
+        })
+
+      conn =
+        post(conn, ~p"/log_in/magic-link", %{
+          "user" => %{
+            "email" => user.email,
+            "pending_actions" => pending_actions
+          }
+        })
+
+      assert redirected_to(conn) == ~p"/log_in"
+
+      assert_email_sent(fn email_message ->
+        refute email_message.text_body =~ "pending_actions"
+        refute email_message.html_body =~ "pending_actions"
+        refute email_message.text_body =~ URI.encode_www_form(pending_actions)
+        true
+      end)
+    end
+
     test "does not issue a link for a blocked account", %{conn: conn, user: user} do
       {:ok, blocked_user} = Accounts.update_role(user, "blocked")
 
@@ -78,18 +110,30 @@ defmodule YouCongressWeb.UserSessionControllerTest do
   end
 
   describe "magic-link confirmation" do
-    test "a click logs in, consumes the token, and honors a safe return path", %{
+    test "GET shows a confirmation without consuming the token", %{
       conn: conn,
       user: user
     } do
       token = magic_login_token(user)
 
-      conn =
-        get(conn, ~p"/log_in/magic-link/#{token}?return_to=/settings")
+      {:ok, _view, html} =
+        live(conn, ~p"/log_in/magic-link/#{token}?return_to=/settings")
+
+      assert html =~ "Continue to YouCongress"
+      assert html =~ ~s(action="/log_in/magic-link/#{token}")
+      assert Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
+    end
+
+    test "POST logs in, consumes the token, and honors a safe return path", %{
+      conn: conn,
+      user: user
+    } do
+      token = magic_login_token(user)
+
+      conn = post(conn, ~p"/log_in/magic-link/#{token}", %{"return_to" => "/settings"})
 
       assert redirected_to(conn) == ~p"/settings"
       assert get_session(conn, :user_token)
-      refute Phoenix.Flash.get(conn.assigns.flash, :info)
       refute Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
     end
 
@@ -101,7 +145,7 @@ defmodule YouCongressWeb.UserSessionControllerTest do
           Accounts.deliver_user_registration_magic_link_instructions(user, url)
         end)
 
-      conn = get(conn, ~p"/log_in/magic-link/#{token}")
+      conn = post(conn, ~p"/log_in/magic-link/#{token}")
 
       assert redirected_to(conn) == ~p"/"
       assert get_session(conn, :user_token)
@@ -113,7 +157,7 @@ defmodule YouCongressWeb.UserSessionControllerTest do
     test "rejects an invalid token", %{conn: conn} do
       conn =
         conn
-        |> get(~p"/log_in/magic-link/invalid")
+        |> post(~p"/log_in/magic-link/invalid")
         |> fetch_flash()
 
       assert redirected_to(conn) == ~p"/log_in"
@@ -127,13 +171,39 @@ defmodule YouCongressWeb.UserSessionControllerTest do
       token = magic_login_token(user)
 
       conn =
-        get(
+        post(
           conn,
-          ~p"/log_in/magic-link/#{token}?return_to=https%3A%2F%2Fevil.example%2Fphishing"
+          ~p"/log_in/magic-link/#{token}",
+          %{"return_to" => "https://evil.example/phishing"}
         )
 
       assert redirected_to(conn) == ~p"/"
       assert get_session(conn, :user_token)
+    end
+
+    test "ignores pending actions submitted with a valid magic token", %{
+      conn: conn,
+      user: user
+    } do
+      statement = statement_fixture()
+      token = magic_login_token(user)
+
+      pending_actions =
+        Jason.encode!(%{
+          delegate_ids: [],
+          votes: %{
+            to_string(statement.id) => %{statement_id: statement.id, answer: "for"}
+          }
+        })
+
+      conn =
+        post(conn, ~p"/log_in/magic-link/#{token}", %{
+          "pending_actions" => pending_actions
+        })
+
+      assert redirected_to(conn) == ~p"/"
+      assert get_session(conn, :user_token)
+      refute Votes.get_by(%{author_id: user.author_id, statement_id: statement.id})
     end
   end
 
