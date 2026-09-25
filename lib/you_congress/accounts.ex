@@ -523,6 +523,7 @@ defmodule YouCongress.Accounts do
     with {:ok, query} <- UserToken.verify_magic_login_token_query(token),
          {:ok, %User{} = user} <-
            Repo.transaction(fn -> consume_magic_login_token_in_transaction(query) end) do
+      _ = YouCongress.PendingActions.process_staged(user)
       {:ok, user}
     else
       _ -> :error
@@ -606,6 +607,7 @@ defmodule YouCongress.Accounts do
   defp do_confirm_user_with_code(user, code) do
     with {:ok, _token} <- fetch_active_confirmation_token(user, code),
          {:ok, %{user: confirmed_user}} <- Repo.transaction(confirm_user_multi(user)) do
+      _ = YouCongress.PendingActions.process_staged(confirmed_user)
       {:ok, confirmed_user}
     else
       {:error, reason} -> {:error, reason}
@@ -742,7 +744,15 @@ defmodule YouCongress.Accounts do
   """
   def confirm_user_email(%User{} = user) do
     changeset = User.email_confirm_changeset(user)
-    Repo.update(changeset)
+
+    case Repo.update(changeset) do
+      {:ok, confirmed_user} = result ->
+        _ = YouCongress.PendingActions.process_staged(confirmed_user)
+        result
+
+      {:error, _changeset} = error ->
+        error
+    end
   end
 
   @doc """

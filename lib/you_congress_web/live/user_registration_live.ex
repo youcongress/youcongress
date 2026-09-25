@@ -465,7 +465,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
         |> assign(:user, user)
         |> assign_form(Accounts.change_passwordless_registration(user))
 
-      # Apply votes, delegations, or a Reconsider response collected before registration.
+      # Persist pre-registration intent. It is applied only after email confirmation.
       YouCongress.PendingActions.process(user, socket.assigns.pending_actions)
 
       {:noreply, socket}
