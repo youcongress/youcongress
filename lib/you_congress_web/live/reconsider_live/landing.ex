@@ -219,7 +219,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
               <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">
                 Example results
               </p>
-              <p class="mt-2 text-4xl font-bold text-gray-900">42%</p>
+              <p class="mt-2 text-4xl font-bold text-gray-900">75%</p>
               <p class="mt-1 text-sm text-gray-700">
                 of 60 participants changed their position.
               </p>
@@ -234,11 +234,11 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
                 <div class="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200 text-sm">
                   <div class="flex items-center gap-2 px-3 py-2">
                     <span>Against</span><span class="text-gray-400">→</span><strong>For</strong>
-                    <span class="ml-auto text-gray-600">18 (30%)</span>
+                    <span class="ml-auto text-gray-600">38 (63%)</span>
                   </div>
                   <div class="flex items-center gap-2 px-3 py-2">
                     <span>For</span><span class="text-gray-400">→</span><strong>For</strong>
-                    <span class="ml-auto text-gray-600">24 (40%)</span>
+                    <span class="ml-auto text-gray-600">10 (17%)</span>
                   </div>
                   <div class="flex items-center gap-2 px-3 py-2">
                     <span>Abstain</span><span class="text-gray-400">→</span><strong>For</strong>
@@ -246,7 +246,17 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
                   </div>
                   <div class="flex items-center gap-2 px-3 py-2">
                     <span>Against</span><span class="text-gray-400">→</span><strong>Against</strong>
-                    <span class="ml-auto text-gray-600">11 (18%)</span>
+                    <span class="ml-auto text-gray-600">5 (8%)</span>
+                  </div>
+                </div>
+
+                <div id="example-change-bar" class="mt-4">
+                  <div class="mb-1 flex justify-between text-xs text-gray-500">
+                    <span>75% reported changing</span>
+                    <span>60 completed</span>
+                  </div>
+                  <div class="h-2 overflow-hidden rounded-full bg-gray-100">
+                    <div class="h-full rounded-full bg-indigo-600" style="width: 75%"></div>
                   </div>
                 </div>
               </div>
