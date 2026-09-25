@@ -183,6 +183,34 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     assert render(view) =~ "maximum of three statements"
   end
 
+  test "delegate autocomplete ranks direct name matches first", %{conn: conn} = context do
+    _ada =
+      author_fixture(%{
+        name: "Ada Colau",
+        username: "ada_colau",
+        bio: "Former mayor of Barcelona"
+      })
+
+    elon =
+      author_fixture(%{
+        name: "Elon Musk",
+        username: "elon_musk",
+        bio: "Technology entrepreneur"
+      })
+
+    conn = log_in_user(conn, context.creator)
+    {:ok, view, html} = live(conn, ~p"/reconsider/new")
+
+    assert html =~ "People from the article/video viewers may delegate to (optional)"
+
+    view
+    |> element("#delegate-search")
+    |> render_change(%{"delegate_search" => "elon"})
+
+    assert has_element?(view, "#delegate-results button:first-child", "Elon Musk")
+    assert has_element?(view, "#delegate-result-#{elon.id}")
+  end
+
   test "the legacy URL redirects permanently to the creator URL", %{conn: conn} = context do
     conn = get(conn, ~p"/reconsider/#{context.reconsideration.slug}")
     assert redirected_to(conn, 301) == reconsideration_path(context)
