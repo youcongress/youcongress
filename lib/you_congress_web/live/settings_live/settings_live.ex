@@ -83,6 +83,18 @@ defmodule YouCongressWeb.SettingsLive do
     end
   end
 
+  def handle_event("revoke_api_key", %{"id" => id}, socket) do
+    with {api_key_id, ""} <- Integer.parse(id),
+         :ok <- Accounts.revoke_api_key_for_user(socket.assigns.current_user, api_key_id) do
+      {:noreply,
+       socket
+       |> assign_api_keys()
+       |> put_flash(:info, "API key revoked.")}
+    else
+      _ -> {:noreply, put_flash(socket, :error, "Unable to revoke that API key.")}
+    end
+  end
+
   def handle_event("subscribe_newsletter", _params, socket) do
     case Accounts.welcome_update(socket.assigns.current_user, %{newsletter: true}) do
       {:ok, user} ->

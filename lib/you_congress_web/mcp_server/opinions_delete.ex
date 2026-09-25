@@ -2,7 +2,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsDelete do
   @moduledoc """
   Delete an existing opinion through the MCP server.
 
-  The caller must provide a valid API key via the `?key=` query param and have
+  The caller must provide a valid API key via an `Authorization: Bearer YOUR_KEY` header and have
   permission to edit the target opinion.
   """
 
@@ -14,7 +14,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsDelete do
   alias YouCongress.Opinions
   alias YouCongress.MCP.ToolUsageTracker
 
-  @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
+  @missing_key_message "API key is required. Send it as an Authorization: Bearer YOUR_KEY header."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @forbidden_message "Your account is not allowed to delete this opinion."
   @not_found_message "Opinion not found."

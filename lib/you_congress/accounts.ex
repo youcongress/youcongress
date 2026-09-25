@@ -811,6 +811,20 @@ defmodule YouCongress.Accounts do
     end
   end
 
+  @doc "Revokes an API key only when it belongs to the requesting user."
+  def revoke_api_key_for_user(nil, _api_key_id), do: {:error, :unauthorized}
+
+  def revoke_api_key_for_user(%User{id: user_id}, api_key_id) when is_integer(api_key_id) do
+    from(api_key in ApiKey, where: api_key.id == ^api_key_id and api_key.user_id == ^user_id)
+    |> Repo.delete_all()
+    |> case do
+      {1, _} -> :ok
+      {0, _} -> {:error, :not_found}
+    end
+  end
+
+  def revoke_api_key_for_user(%User{}, _api_key_id), do: {:error, :not_found}
+
   @doc """
   Fetches the user that owns the provided API key token.
 

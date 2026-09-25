@@ -239,7 +239,8 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
                    frame
                  )
 
-        assert message == "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
+        assert message ==
+                 "API key is required. Send it as an Authorization: Bearer YOUR_KEY header."
       end)
     end
   end
@@ -319,7 +320,10 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
     ]
 
     with_mocks(base_mocks ++ extra_mocks) do
-      frame = Anubis.Server.Frame.new(%{query_params: %{"key" => key}})
+      frame = %Anubis.Server.Frame{
+        context: %Anubis.Server.Context{headers: %{"authorization" => "Bearer #{key}"}}
+      }
+
       fun.(frame)
     end
   end

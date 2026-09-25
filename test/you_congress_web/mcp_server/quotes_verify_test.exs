@@ -168,7 +168,10 @@ defmodule YouCongressWeb.MCPServer.QuotesVerifyTest do
          error: fn :tool, message -> {:error, message} end
        ]}
     ]) do
-      frame = Anubis.Server.Frame.new(%{query_params: %{"key" => key}})
+      frame = %Anubis.Server.Frame{
+        context: %Anubis.Server.Context{headers: %{"authorization" => "Bearer #{key}"}}
+      }
+
       fun.(frame)
     end
   end

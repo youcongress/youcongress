@@ -5,7 +5,7 @@ defmodule YouCongressWeb.MCPServer.StatementsCreate do
   Provide both a `title` and a `nice_slug`. The `nice_slug` becomes the public URL segment,
   so the AI reads it as `youcongress.org/p/[nice_slug]`.
 
-  The caller must provide a valid API key via the `?key=` query param and own a role
+  The caller must provide a valid API key via an `Authorization: Bearer YOUR_KEY` header and own a role
   that passes `YouCongress.Accounts.Permissions.can_create_statement?/1`.
   """
 
@@ -17,7 +17,7 @@ defmodule YouCongressWeb.MCPServer.StatementsCreate do
   alias YouCongress.Statements
   alias YouCongress.MCP.ToolUsageTracker
 
-  @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
+  @missing_key_message "API key is required. Send it as an Authorization: Bearer YOUR_KEY header."
   @forbidden_message "Your account is not allowed to create statements."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
 

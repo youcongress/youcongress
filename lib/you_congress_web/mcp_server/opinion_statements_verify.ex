@@ -4,7 +4,7 @@ defmodule YouCongressWeb.MCPServer.OpinionStatementsVerify do
 
   This checks the relevance of the opinion-statement link, separately from whether
   the quote itself is authentic. The caller must provide a valid API key via the
-  `?key=` query param and have permission to verify opinions.
+  `Authorization: Bearer YOUR_KEY` header and have permission to verify opinions.
   """
 
   use Anubis.Server.Component, type: :tool
@@ -16,7 +16,7 @@ defmodule YouCongressWeb.MCPServer.OpinionStatementsVerify do
   alias YouCongress.OpinionStatementVerifications
   alias YouCongress.MCP.ToolUsageTracker
 
-  @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
+  @missing_key_message "API key is required. Send it as an Authorization: Bearer YOUR_KEY header."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @forbidden_message "Your account is not allowed to verify opinions."
   @not_found_message "No opinion-statement link found for the given opinion_id and statement_id."

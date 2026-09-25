@@ -228,7 +228,7 @@ defmodule YouCongressWeb.PageController do
     read-only tools; a key (from the user's Settings page) unlocks write access.
 
     - MCP endpoint (Streamable HTTP): #{mcp_url}
-    - With a key: #{mcp_url}?key=YOUR_API_KEY
+    - Authentication for keyed tools: `Authorization: Bearer YOUR_API_KEY`
     - Human-readable tool docs: #{url(~p"/mcp-tools")}
     - Claude setup guide: #{url(~p"/mcp/claude")}
 

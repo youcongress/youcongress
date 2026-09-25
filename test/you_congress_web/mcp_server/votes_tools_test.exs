@@ -13,7 +13,7 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
   alias YouCongressWeb.MCPServer.VotesEdit
   alias YouCongressWeb.MCPServer.VotesVerify
 
-  @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
+  @missing_key_message "API key is required. Send it as an Authorization: Bearer YOUR_KEY header."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @not_found_message "Vote not found."
 
@@ -350,7 +350,10 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
          error: fn :tool, message -> {:error, message} end
        ]}
     ]) do
-      frame = Anubis.Server.Frame.new(%{query_params: %{"key" => key}})
+      frame = %Anubis.Server.Frame{
+        context: %Anubis.Server.Context{headers: %{"authorization" => "Bearer #{key}"}}
+      }
+
       fun.(frame)
     end
   end

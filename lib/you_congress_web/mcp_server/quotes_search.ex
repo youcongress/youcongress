@@ -7,7 +7,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
   general semantic similarity search across all statements, returning quotes
   ranked by how closely their meaning matches the query (each with a similarity
   score, 0.0 to 1.0). Cross-statement semantic search requires a valid API key
-  (pass `?key=YOUR_KEY` in the MCP request URL).
+  (send `Authorization: Bearer YOUR_KEY` with the MCP request).
   """
 
   use Anubis.Server.Component, type: :tool
@@ -25,7 +25,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
   # verification_status; the rest mirror the Opinion verification_status enum.
   @statuses ~w(unverified verified ai_verified ai_unverifiable endorsed disputed unverifiable)
 
-  @missing_key_message "Cross-statement semantic search requires an API key. Pass ?key=YOUR_KEY in the MCP request URL, or provide a statement_id to keyword-search within a single statement."
+  @missing_key_message "Cross-statement semantic search requires an API key. Send it as an Authorization: Bearer YOUR_KEY header, or provide a statement_id to keyword-search within a single statement."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API, or provide a statement_id to keyword-search within a single statement."
 
   schema do

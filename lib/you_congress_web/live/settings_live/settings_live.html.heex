@@ -127,7 +127,9 @@
   <h2 class="text-xl font-semibold">API keys</h2>
   <p class="mt-1 text-sm text-zinc-600">
     Create API keys to access the YouCongress API. Choose a descriptive name and whether the
-    key should be read-only or allow write operations.
+    key should be read-only or allow write operations. Send the key only in an
+    <code>Authorization: Bearer YOUR_API_KEY</code>
+    header, never in a URL.
   </p>
 
   <%= if @last_api_key_token do %>
@@ -163,6 +165,7 @@
             <th class="px-4 py-2">Access</th>
             <th class="px-4 py-2">API key</th>
             <th class="px-4 py-2">Created</th>
+            <th class="px-4 py-2"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-zinc-100 bg-white text-zinc-800">
@@ -173,6 +176,17 @@
               <td class="px-4 py-3 font-mono text-xs">{masked_token(api_key)}</td>
               <td class="px-4 py-3 text-zinc-500">
                 {Calendar.strftime(api_key.inserted_at, "%Y-%m-%d %H:%M")}
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button
+                  type="button"
+                  phx-click="revoke_api_key"
+                  phx-value-id={api_key.id}
+                  data-confirm="Revoke this API key? Clients using it will immediately lose access."
+                  class="font-semibold text-rose-600 hover:text-rose-800"
+                >
+                  Revoke
+                </button>
               </td>
             </tr>
           <% end %>
