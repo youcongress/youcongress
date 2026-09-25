@@ -5,6 +5,8 @@ defmodule YouCongress.Authors.Author do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias YouCongress.WikipediaUrl
+
   @username_format ~r/\A[a-z0-9][a-z0-9_]*\z/
 
   schema "authors" do
@@ -122,27 +124,15 @@ defmodule YouCongress.Authors.Author do
         changeset
 
       wikipedia_url ->
-        cond do
-          not starts_with_https(wikipedia_url) ->
-            add_error(changeset, :wikipedia_url, "must start with https://")
-
-          not contains_wikipedia_wiki(wikipedia_url) ->
-            add_error(
-              changeset,
-              :wikipedia_url,
-              "must be a valid Wikipedia URL containing '.wikipedia.org/wiki/'"
-            )
-
-          true ->
-            changeset
+        if WikipediaUrl.valid?(wikipedia_url) do
+          changeset
+        else
+          add_error(
+            changeset,
+            :wikipedia_url,
+            "must be a valid HTTPS Wikipedia article URL"
+          )
         end
     end
-  end
-
-  defp starts_with_https("https://" <> _), do: true
-  defp starts_with_https(_), do: false
-
-  defp contains_wikipedia_wiki(url) do
-    String.contains?(url, ".wikipedia.org/wiki/")
   end
 end

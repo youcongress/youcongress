@@ -10,6 +10,8 @@ defmodule YouCongress.Wikidata.WikidataApi do
 
   @behaviour YouCongress.Wikidata
 
+  alias YouCongress.WikipediaUrl
+
   @receive_timeout 30_000
 
   # Wikimedia's User-Agent policy requires a descriptive UA with contact info;
@@ -33,7 +35,7 @@ defmodule YouCongress.Wikidata.WikidataApi do
   @spec get_wikidata_id(String.t()) ::
           {:ok, String.t() | nil} | {:error, term()}
   def get_wikidata_id(wikipedia_url) when is_binary(wikipedia_url) do
-    with {:ok, host, title} <- parse_url(wikipedia_url),
+    with {:ok, %{host: host, title: title}} <- WikipediaUrl.parse(wikipedia_url),
          {:ok, body} <- fetch(host, title) do
       {:ok, extract_wikibase_item(body)}
     end
@@ -100,18 +102,6 @@ defmodule YouCongress.Wikidata.WikidataApi do
 
   defp extract_claim(_, _, _), do: nil
 
-  defp parse_url(wikipedia_url) do
-    uri = URI.parse(wikipedia_url)
-
-    with host when is_binary(host) <- uri.host,
-         "/wiki/" <> encoded_title <- uri.path || "",
-         title when title != "" <- URI.decode(encoded_title) do
-      {:ok, host, title}
-    else
-      _ -> {:error, :invalid_url}
-    end
-  end
-
   defp fetch(host, title) do
     url = "https://#{host}/w/api.php"
 
@@ -155,7 +145,8 @@ defmodule YouCongress.Wikidata.WikidataApi do
     [
       headers: [{"user-agent", @user_agent}],
       receive_timeout: @receive_timeout,
-      max_retries: 1
+      max_retries: 1,
+      max_redirects: 0
     ] ++ extra
   end
 end
