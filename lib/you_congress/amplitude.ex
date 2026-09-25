@@ -18,7 +18,10 @@ defmodule YouCongress.Amplitude do
   end
 
   @doc """
-  Queue an event to be sent to Amplitude asynchronously.
+  Queue a consented event to be sent to Amplitude asynchronously.
+
+  The caller must pass `analytics_consent: true`. Without that explicit marker,
+  the event is discarded.
   """
   def track_event(event_type, user_id, event_properties \\ %{})
 
@@ -27,13 +30,14 @@ defmodule YouCongress.Amplitude do
   end
 
   def track_event(event_type, user_id, event_properties, opts) do
-    if enabled?() do
+    if enabled?() and analytics_consent?(opts) do
       args =
         %{
           "event_type" => event_type,
           "user_id" => normalize_user_id(user_id),
           "event_properties" => normalize_properties(event_properties),
-          "device_id" => normalize_device_id(Keyword.get(opts, :device_id))
+          "device_id" => normalize_device_id(Keyword.get(opts, :device_id)),
+          "analytics_consent" => true
         }
         |> drop_nil_values()
 
@@ -46,7 +50,10 @@ defmodule YouCongress.Amplitude do
   end
 
   @doc """
-  Send an event to Amplitude immediately.
+  Send a consented event to Amplitude immediately.
+
+  The caller must pass `analytics_consent: true`. Without that explicit marker,
+  the event is discarded.
   """
   def deliver_event(event_type, user_id, event_properties \\ %{})
 
@@ -55,8 +62,8 @@ defmodule YouCongress.Amplitude do
   end
 
   def deliver_event(event_type, user_id, event_properties, opts) do
-    case Application.get_env(:you_congress, :amplitude_api_key) do
-      key when is_binary(key) and key != "" ->
+    case {Application.get_env(:you_congress, :amplitude_api_key), analytics_consent?(opts)} do
+      {key, true} when is_binary(key) and key != "" ->
         payload =
           %{
             "api_key" => key,
@@ -120,6 +127,8 @@ defmodule YouCongress.Amplitude do
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  defp analytics_consent?(opts), do: Keyword.get(opts, :analytics_consent, false) == true
 
   defp normalize_delivery_result({:ok, %Finch.Response{status: status} = response})
        when status in 200..299 do

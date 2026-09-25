@@ -8,6 +8,7 @@ defmodule YouCongressWeb.UserAuth do
   import Phoenix.Controller
 
   alias YouCongress.Accounts
+  alias YouCongress.AnalyticsConsent
   alias YouCongressWeb.ReturnTo
 
   # Make the remember me cookie valid for 60 days.
@@ -213,10 +214,12 @@ defmodule YouCongressWeb.UserAuth do
       end
   """
   def on_mount(:mount_current_user, _params, session, socket) do
+    set_analytics_consent(session)
     {:cont, mount_current_user(socket, session)}
   end
 
   def on_mount(:refresh_current_user, _params, session, socket) do
+    set_analytics_consent(session)
     user_token = session["user_token"]
     socket = mount_current_user(socket, session)
 
@@ -237,6 +240,8 @@ defmodule YouCongressWeb.UserAuth do
   end
 
   def on_mount(:ensure_authenticated, _params, session, socket) do
+    set_analytics_consent(session)
+
     authorize_live_socket(
       socket,
       session["user_token"],
@@ -248,6 +253,7 @@ defmodule YouCongressWeb.UserAuth do
   end
 
   def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
+    set_analytics_consent(session)
     socket = mount_current_user(socket, session)
 
     if socket.assigns.current_user do
@@ -263,6 +269,10 @@ defmodule YouCongressWeb.UserAuth do
         Accounts.get_user_by_session_token(user_token)
       end
     end)
+  end
+
+  defp set_analytics_consent(session) do
+    AnalyticsConsent.set_for_process(session["analytics_consent"] == true)
   end
 
   defp refresh_current_user_on_event(nil, _event, _params, socket) do

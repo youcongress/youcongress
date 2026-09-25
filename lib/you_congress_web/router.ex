@@ -7,6 +7,7 @@ defmodule YouCongressWeb.Router do
   pipeline :browser do
     plug(:accepts, ["html", "xml"])
     plug(:fetch_session)
+    plug(YouCongressWeb.Plugs.AnalyticsConsent)
     plug(:fetch_live_flash)
     plug(:put_root_layout, html: {YouCongressWeb.Layouts, :root})
     plug(:protect_from_forgery)

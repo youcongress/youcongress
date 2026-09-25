@@ -6,12 +6,18 @@ defmodule YouCongressWeb.PageControllerTest do
   test "GET / loads successfully", %{conn: conn} do
     conn = get(conn, ~p"/")
 
-    assert html_response(conn, 200) =~ "YouCongress"
+    html = html_response(conn, 200)
+    assert html =~ "YouCongress"
+    assert html =~ ~s(id="cookie-banner")
+    assert html =~ "we send usage events to Amplitude"
+    assert html =~ "We only do this if you accept"
   end
 
   test "GET /privacy loads successfully", %{conn: conn} do
     conn = get(conn, ~p"/privacy-policy")
-    assert html_response(conn, 200) =~ "Privacy Policy"
+    html = html_response(conn, 200)
+    assert html =~ "Privacy Policy"
+    assert html =~ "We do not send usage events to Amplitude unless you select"
   end
 
   test "GET /terms loads successfully", %{conn: conn} do
