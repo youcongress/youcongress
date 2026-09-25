@@ -4,6 +4,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
   alias YouCongress.Delegations
   alias YouCongress.Reconsiderations
   alias YouCongressWeb.Components.LoginButtons
+  alias YouCongressWeb.SEO
 
   @answers [:for, :abstain, :against]
 
@@ -230,7 +231,14 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
           >
             <% response = @personal_responses[item.statement_id] %>
             <% statement_stat = Enum.find(@stats.statements, &(&1.statement_id == item.statement_id)) %>
-            <h2 class="text-lg font-semibold text-gray-900">{item.statement_title}</h2>
+            <h2 class="text-lg font-semibold text-gray-900">
+              <.link
+                href={~p"/p/#{item.statement.slug}"}
+                class="hover:text-indigo-600 hover:underline"
+              >
+                {item.statement_title}
+              </.link>
+            </h2>
 
             <div class="mt-4">
               <h3 class="text-sm font-semibold text-gray-700">Community responses</h3>
@@ -310,13 +318,18 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                 id={"delegate-result-#{delegate.author_id}"}
                 class="flex items-center gap-3 px-3 py-3"
               >
-                <img
-                  :if={delegate.author.profile_image_url}
-                  src={delegate.author.profile_image_url}
-                  alt=""
-                  class="h-9 w-9 rounded-full"
-                />
-                <span class="font-medium text-gray-900">{author_name(delegate.author)}</span>
+                <.link
+                  href={SEO.author_path(delegate.author)}
+                  class="flex min-w-0 items-center gap-3 hover:text-indigo-600"
+                >
+                  <img
+                    :if={delegate.author.profile_image_url}
+                    src={delegate.author.profile_image_url}
+                    alt=""
+                    class="h-9 w-9 rounded-full"
+                  />
+                  <span class="truncate font-medium">{author_name(delegate.author)}</span>
+                </.link>
                 <span class="ml-auto text-sm text-gray-600">
                   {delegate.count} {if delegate.count == 1, do: "participant", else: "participants"} ({delegate.percent}%)
                 </span>

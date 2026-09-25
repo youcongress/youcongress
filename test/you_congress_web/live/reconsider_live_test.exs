@@ -9,6 +9,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
   alias YouCongress.Accounts
   alias YouCongress.Authors
   alias YouCongress.Reconsiderations
+  alias YouCongressWeb.SEO
 
   setup do
     creator = creator_fixture()
@@ -90,6 +91,12 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     html = render_submit(view, "submit", params)
     assert html =~ "Community result"
     assert html =~ "50%"
+
+    assert has_element?(
+             view,
+             "#result-#{context.statement.id} h2 a[href='/p/#{context.statement.slug}']"
+           )
+
     assert has_element?(view, "#community-transitions-#{context.statement.id}")
 
     assert has_element?(
@@ -112,6 +119,12 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
              view,
              "#delegate-result-#{context.delegate.id}",
              "Featured guest 1 participant (50%)"
+           )
+
+    assert has_element?(
+             view,
+             "#delegate-result-#{context.delegate.id} a[href='#{SEO.author_path(context.delegate)}']",
+             "Featured guest"
            )
 
     assert html =~ "self-reported result"
