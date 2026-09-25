@@ -94,6 +94,7 @@ defmodule YouCongressWeb.PageControllerTest do
     body = response(conn, 200)
 
     assert get_resp_header(conn, "content-type") == ["application/xml; charset=utf-8"]
+    assert body =~ "<loc>#{YouCongressWeb.Endpoint.url()}#{~p"/reconsider"}</loc>"
     assert body =~ "<loc>#{YouCongressWeb.Endpoint.url()}#{~p"/p/#{statement.slug}"}</loc>"
     assert body =~ ~r"<lastmod>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z</lastmod>"
   end

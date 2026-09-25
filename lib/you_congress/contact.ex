@@ -15,10 +15,11 @@ defmodule YouCongress.Contact do
     field :name, :string
     field :email, :string
     field :website, :string
+    field :subject, :string
     field :body, :string
   end
 
-  @fields ~w(name email website body)a
+  @fields ~w(name email website subject body)a
   @required_fields ~w(name email body)a
 
   def changeset(contact, attrs \\ %{}) do
@@ -32,9 +33,11 @@ defmodule YouCongress.Contact do
       message: "must be a valid http or https URL"
     )
     |> validate_format(:name, ~r/\A[^\r\n]+\z/, message: "must be on one line")
+    |> validate_format(:subject, ~r/\A[^\r\n]+\z/, message: "must be on one line")
     |> validate_length(:name, max: 100)
     |> validate_length(:email, max: 160)
     |> validate_length(:website, max: 500)
+    |> validate_length(:subject, max: 200)
     |> validate_length(:body, max: 10_000)
   end
 
@@ -43,7 +46,7 @@ defmodule YouCongress.Contact do
     |> to("hi@youcongress.org")
     |> from({"YouCongress", "hello@youcongress.org"})
     |> reply_to(contact.email)
-    |> subject("Contact form by #{contact.name}")
+    |> subject(contact.subject || "Contact form by #{contact.name}")
     |> text_body(
       "Name: #{contact.name}\nEmail: #{contact.email}\nWebsite or social media: #{contact.website || "Not provided"}\n\n#{contact.body}"
     )
