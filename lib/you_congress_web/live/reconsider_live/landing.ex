@@ -135,7 +135,13 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
               <h3 class="mt-1 text-xl font-bold text-gray-900">
                 The case for building more nuclear energy
               </h3>
-              <p class="mt-1 text-sm text-gray-500">Article by Example Climate Review</p>
+              <p class="mt-1 text-sm text-gray-500">Video by Example Climate Review</p>
+              <span
+                id="example-video-link"
+                class="mt-3 inline-flex rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-semibold text-indigo-700"
+              >
+                Watch the original video ↗
+              </span>
             </div>
 
             <div class="space-y-5 p-5">
@@ -146,7 +152,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
 
                 <div class="mt-4 grid gap-4">
                   <div>
-                    <p class="mb-2 text-sm font-semibold text-gray-700">Before this article</p>
+                    <p class="mb-2 text-sm font-semibold text-gray-700">Before this video</p>
                     <div class="grid grid-cols-3 gap-2 text-center text-xs font-medium">
                       <span class="rounded-lg border border-gray-200 px-2 py-2">For</span>
                       <span class="rounded-lg border border-gray-200 px-2 py-2">Abstain</span>
@@ -171,11 +177,31 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
               <div class="rounded-xl border border-gray-200 p-4">
                 <p class="font-semibold text-gray-900">Who would you trust to represent you?</p>
                 <p class="mt-1 text-xs text-gray-500">Optional global delegation</p>
-                <div class="mt-3 flex items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
-                  <span class="flex h-5 w-5 items-center justify-center rounded border border-indigo-600 bg-indigo-600 text-xs font-bold text-white">
-                    ✓
-                  </span>
-                  <span class="text-sm font-medium text-gray-900">Featured energy expert</span>
+                <div class="mt-3 space-y-2">
+                  <div
+                    id="example-delegate-energy-expert"
+                    class="flex items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 p-3"
+                  >
+                    <span class="flex h-5 w-5 items-center justify-center rounded border border-indigo-600 bg-indigo-600 text-xs font-bold text-white">
+                      ✓
+                    </span>
+                    <span>
+                      <span class="block text-sm font-medium text-gray-900">Dr. Maya Chen</span>
+                      <span class="block text-xs text-gray-500">
+                        Energy expert featured in the video
+                      </span>
+                    </span>
+                  </div>
+                  <div
+                    id="example-delegate-policy-researcher"
+                    class="flex items-center gap-3 rounded-lg border border-gray-200 p-3"
+                  >
+                    <span class="h-5 w-5 rounded border border-gray-300 bg-white"></span>
+                    <span>
+                      <span class="block text-sm font-medium text-gray-900">Alex Rivera</span>
+                      <span class="block text-xs text-gray-500">Climate policy researcher</span>
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -227,9 +253,15 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
 
               <div class="rounded-lg border border-gray-200 p-4">
                 <p class="text-sm font-semibold text-gray-900">Delegations chosen</p>
-                <div class="mt-2 flex items-center gap-3 text-sm">
-                  <span class="font-medium">Featured energy expert</span>
-                  <span class="ml-auto text-gray-600">14 participants (23%)</span>
+                <div class="mt-2 divide-y divide-gray-100 text-sm">
+                  <div class="flex items-center gap-3 py-2">
+                    <span class="font-medium">Dr. Maya Chen</span>
+                    <span class="ml-auto text-gray-600">14 participants (23%)</span>
+                  </div>
+                  <div class="flex items-center gap-3 py-2">
+                    <span class="font-medium">Alex Rivera</span>
+                    <span class="ml-auto text-gray-600">9 participants (15%)</span>
+                  </div>
                 </div>
               </div>
 

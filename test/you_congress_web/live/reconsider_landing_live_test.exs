@@ -25,7 +25,16 @@ defmodule YouCongressWeb.ReconsiderLandingLiveTest do
     assert has_element?(
              view,
              "#reconsider-voting-example",
-             "Before this article"
+             "Before this video"
+           )
+
+    assert has_element?(view, "#example-video-link", "Watch the original video")
+    assert has_element?(view, "#example-delegate-energy-expert", "Dr. Maya Chen")
+
+    assert has_element?(
+             view,
+             "#example-delegate-policy-researcher",
+             "Alex Rivera"
            )
 
     assert has_element?(
@@ -35,6 +44,7 @@ defmodule YouCongressWeb.ReconsiderLandingLiveTest do
            )
 
     assert has_element?(view, "#reconsider-results-example", "14 participants (23%)")
+    assert has_element?(view, "#reconsider-results-example", "9 participants (15%)")
 
     contact_path = ~p"/contact?#{%{subject: @contact_subject, body: @contact_body}}"
 
