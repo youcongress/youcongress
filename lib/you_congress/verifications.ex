@@ -6,10 +6,13 @@ defmodule YouCongress.Verifications do
   import Ecto.Query, warn: false
   alias YouCongress.Repo
 
+  alias YouCongress.Accounts.User
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Verifications.Verification
   alias YouCongress.Opinions.Opinion
   alias YouCongress.VerificationStatus
+
+  @ai_statuses ~w(ai_verified ai_unverifiable disputed unverifiable unverified)a
 
   def list_verifications(opts \\ []) do
     query = build_query(opts)
@@ -19,22 +22,38 @@ defmodule YouCongress.Verifications do
   def get_verification!(id), do: Repo.get!(Verification, id)
 
   @doc """
-  Creates a verification for an opinion by a user.
+  Creates a human verification for an opinion by an authenticated actor.
   Always inserts a new record to preserve the full history.
-  Enforces that only the opinion author or a verifier can set "endorsed" status.
+  The actor identity and human model are derived here rather than trusted from attrs.
   """
-  def create_verification(attrs) do
+  def create_verification(%User{} = actor, attrs) do
     opinion_id = attrs[:opinion_id] || attrs["opinion_id"]
-    user_id = attrs[:user_id] || attrs["user_id"]
     status = attrs[:status] || attrs["status"]
+    opinion = if opinion_id, do: Repo.get(Opinion, opinion_id)
 
-    with :ok <- validate_endorsed(status, opinion_id, user_id) do
-      %Verification{}
-      |> Verification.changeset(attrs)
-      |> Repo.insert()
-      |> tap_ok(fn _ -> update_opinion_verification_status(opinion_id) end)
+    with :ok <- authorize_human_verification(actor, opinion, status) do
+      attrs
+      |> human_attrs(actor)
+      |> insert_verification(opinion_id)
     end
   end
+
+  def create_verification(_actor, _attrs), do: {:error, :forbidden}
+
+  @doc false
+  def create_ai_verification(%User{} = actor, attrs) do
+    status = attrs[:status] || attrs["status"]
+
+    if Permissions.can_verify_opinion?(actor) and
+         (status in @ai_statuses or status in Enum.map(@ai_statuses, &Atom.to_string/1)) do
+      opinion_id = attrs[:opinion_id] || attrs["opinion_id"]
+      insert_verification(system_attrs(attrs, actor), opinion_id)
+    else
+      ai_verification_error(actor, status)
+    end
+  end
+
+  def create_ai_verification(_actor, _attrs), do: {:error, :forbidden}
 
   def update_opinion_verification_status(opinion_id) do
     cached_status =
@@ -45,23 +64,51 @@ defmodule YouCongress.Verifications do
     |> Repo.update_all(set: [verification_status: cached_status])
   end
 
-  defp validate_endorsed(status, opinion_id, user_id)
-       when status in [:endorsed, "endorsed"] do
-    opinion = Repo.get!(Opinion, opinion_id) |> Repo.preload(:author)
-    user = Repo.get!(YouCongress.Accounts.User, user_id)
+  defp authorize_human_verification(_actor, _opinion, status)
+       when status in [:ai_verified, :ai_unverifiable, "ai_verified", "ai_unverifiable"],
+       do: {:error, :invalid_human_status}
 
-    if author_endorsing?(opinion, user) || Permissions.can_verify_opinion?(user) do
-      :ok
-    else
-      {:error, :only_author_can_endorse}
+  defp authorize_human_verification(%User{} = actor, opinion, status) do
+    cond do
+      Permissions.can_verify_opinion?(actor) -> :ok
+      status in [:endorsed, "endorsed"] and author_endorsing?(opinion, actor) -> :ok
+      status in [:endorsed, "endorsed"] -> {:error, :only_author_can_endorse}
+      true -> {:error, :forbidden}
     end
   end
 
-  defp validate_endorsed(_status, _opinion_id, _user_id), do: :ok
+  defp human_attrs(attrs, actor) do
+    attrs
+    |> Map.drop([:user_id, "user_id", :model, "model"])
+    |> Map.put(:user_id, actor.id)
+    |> Map.put(:model, "human")
+  end
 
-  defp author_endorsing?(opinion, user) do
+  defp system_attrs(attrs, actor) do
+    attrs
+    |> Map.drop([:user_id, "user_id"])
+    |> Map.put(:user_id, actor.id)
+  end
+
+  defp ai_verification_error(actor, status) do
+    if Permissions.can_verify_opinion?(actor) and
+         status not in @ai_statuses and status not in ["ai_verified", "ai_unverifiable"],
+       do: {:error, :invalid_ai_status},
+       else: {:error, :forbidden}
+  end
+
+  defp insert_verification(attrs, opinion_id) do
+    %Verification{}
+    |> Verification.changeset(attrs)
+    |> Repo.insert()
+    |> tap_ok(fn _ -> update_opinion_verification_status(opinion_id) end)
+  end
+
+  defp author_endorsing?(%Opinion{} = opinion, user) do
     opinion.author_id && user.author_id && opinion.author_id == user.author_id
   end
+
+  defp author_endorsing?(_opinion, _user), do: false
 
   defp tap_ok({:ok, result}, fun) do
     fun.(result)

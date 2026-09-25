@@ -8,10 +8,10 @@ defmodule YouCongress.VerificationsTest do
   import YouCongress.OpinionsFixtures
   import YouCongress.AccountsFixtures
 
-  describe "create_verification/1" do
+  describe "create_verification/2" do
     test "creates a verification and updates opinion cached status" do
       opinion = opinion_fixture()
-      user = user_fixture()
+      user = admin_fixture()
 
       attrs = %{
         opinion_id: opinion.id,
@@ -20,7 +20,9 @@ defmodule YouCongress.VerificationsTest do
         comment: "Looks correct"
       }
 
-      assert {:ok, %Verification{} = verification} = Verifications.create_verification(attrs)
+      assert {:ok, %Verification{} = verification} =
+               Verifications.create_verification(user, attrs)
+
       assert verification.opinion_id == opinion.id
       assert verification.user_id == user.id
       assert verification.status == :verified
@@ -33,10 +35,10 @@ defmodule YouCongress.VerificationsTest do
 
     test "allows multiple verifications for the same opinion by the same user" do
       opinion = opinion_fixture()
-      user = user_fixture()
+      user = admin_fixture()
 
       assert {:ok, _} =
-               Verifications.create_verification(%{
+               Verifications.create_verification(user, %{
                  opinion_id: opinion.id,
                  user_id: user.id,
                  status: :verified,
@@ -44,7 +46,7 @@ defmodule YouCongress.VerificationsTest do
                })
 
       assert {:ok, _} =
-               Verifications.create_verification(%{
+               Verifications.create_verification(user, %{
                  opinion_id: opinion.id,
                  user_id: user.id,
                  status: :disputed,
@@ -61,11 +63,11 @@ defmodule YouCongress.VerificationsTest do
 
     test "unverified status sets opinion cached status to nil" do
       opinion = opinion_fixture()
-      user = user_fixture()
+      user = admin_fixture()
 
       # First verify
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :verified,
@@ -76,7 +78,7 @@ defmodule YouCongress.VerificationsTest do
 
       # Then set to unverified
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :unverified,
@@ -92,7 +94,7 @@ defmodule YouCongress.VerificationsTest do
       other_user = user_fixture()
 
       assert {:error, :only_author_can_endorse} =
-               Verifications.create_verification(%{
+               Verifications.create_verification(other_user, %{
                  opinion_id: opinion.id,
                  user_id: other_user.id,
                  status: :endorsed,
@@ -105,7 +107,7 @@ defmodule YouCongress.VerificationsTest do
       admin = admin_fixture()
 
       assert {:ok, %Verification{status: :endorsed}} =
-               Verifications.create_verification(%{
+               Verifications.create_verification(admin, %{
                  opinion_id: opinion.id,
                  user_id: admin.id,
                  status: :endorsed,
@@ -116,11 +118,11 @@ defmodule YouCongress.VerificationsTest do
     end
 
     test "allows endorsed status when user is the opinion author" do
-      user = user_fixture()
+      user = admin_fixture()
       opinion = opinion_fixture(%{author_id: user.author_id, user_id: user.id})
 
       assert {:ok, %Verification{status: :endorsed}} =
-               Verifications.create_verification(%{
+               Verifications.create_verification(user, %{
                  opinion_id: opinion.id,
                  user_id: user.id,
                  status: :endorsed,
@@ -129,16 +131,18 @@ defmodule YouCongress.VerificationsTest do
     end
 
     test "requires all fields" do
+      admin = admin_fixture()
+
       assert {:error, %Ecto.Changeset{}} =
-               Verifications.create_verification(%{})
+               Verifications.create_verification(admin, %{})
     end
 
     test "AI verification updates opinion cached status to ai_verified" do
       opinion = opinion_fixture()
-      user = user_fixture()
+      user = admin_fixture()
 
       {:ok, verification} =
-        Verifications.create_verification(%{
+        Verifications.create_ai_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :ai_verified,
@@ -154,10 +158,10 @@ defmodule YouCongress.VerificationsTest do
 
     test "AI unverifiable status updates cached status to ai_unverifiable" do
       opinion = opinion_fixture()
-      user = user_fixture()
+      user = admin_fixture()
 
       {:ok, verification} =
-        Verifications.create_verification(%{
+        Verifications.create_ai_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :ai_unverifiable,
@@ -171,11 +175,11 @@ defmodule YouCongress.VerificationsTest do
 
     test "human verification updates cached status even when AI verification exists" do
       opinion = opinion_fixture()
-      user = user_fixture()
+      user = admin_fixture()
 
       # First: AI verification
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_ai_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :ai_verified,
@@ -187,7 +191,7 @@ defmodule YouCongress.VerificationsTest do
 
       # Then: human verification
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :verified,
@@ -199,10 +203,10 @@ defmodule YouCongress.VerificationsTest do
 
     test "defaults model to human" do
       opinion = opinion_fixture()
-      user = user_fixture()
+      user = admin_fixture()
 
       {:ok, verification} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :verified,
@@ -211,16 +215,75 @@ defmodule YouCongress.VerificationsTest do
 
       assert verification.model == "human"
     end
+
+    test "rejects non-verifier roles and does not trust a forged user id" do
+      opinion = opinion_fixture()
+      admin = admin_fixture()
+
+      for role <- ["user", "creator", "blocked", "spam"] do
+        user = user_fixture(%{role: role})
+
+        assert {:error, :forbidden} =
+                 Verifications.create_verification(user, %{
+                   opinion_id: opinion.id,
+                   user_id: admin.id,
+                   status: :verified,
+                   model: "forged-model"
+                 })
+      end
+
+      assert Verifications.list_verifications(opinion_id: opinion.id) == []
+    end
+
+    test "rejects AI-labelled writes from an ordinary actor" do
+      opinion = opinion_fixture()
+      user = user_fixture()
+
+      assert {:error, :forbidden} =
+               Verifications.create_ai_verification(user, %{
+                 opinion_id: opinion.id,
+                 status: :ai_verified,
+                 model: "forged-model"
+               })
+    end
+
+    test "derives the verifier and model from the authenticated actor" do
+      opinion = opinion_fixture()
+      admin = admin_fixture()
+      other_admin = admin_fixture()
+
+      assert {:ok, verification} =
+               Verifications.create_verification(admin, %{
+                 opinion_id: opinion.id,
+                 user_id: other_admin.id,
+                 status: :verified,
+                 model: "forged-model"
+               })
+
+      assert verification.user_id == admin.id
+      assert verification.model == "human"
+    end
+
+    test "human callers cannot create AI-labelled verification states" do
+      opinion = opinion_fixture()
+      admin = admin_fixture()
+
+      assert {:error, :invalid_human_status} =
+               Verifications.create_verification(admin, %{
+                 opinion_id: opinion.id,
+                 status: :ai_verified
+               })
+    end
   end
 
   describe "list_verifications/1" do
     test "filters by opinion_id" do
       opinion1 = opinion_fixture()
       opinion2 = opinion_fixture()
-      user = user_fixture()
+      user = admin_fixture()
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion1.id,
           user_id: user.id,
           status: :verified,
@@ -228,7 +291,7 @@ defmodule YouCongress.VerificationsTest do
         })
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion2.id,
           user_id: user.id,
           status: :disputed,
@@ -244,10 +307,10 @@ defmodule YouCongress.VerificationsTest do
       opinion1 = opinion_fixture()
       opinion2 = opinion_fixture()
       opinion3 = opinion_fixture()
-      user = user_fixture()
+      user = admin_fixture()
 
       for opinion <- [opinion1, opinion2, opinion3] do
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :verified,
@@ -261,10 +324,10 @@ defmodule YouCongress.VerificationsTest do
 
     test "supports ordering and limit" do
       opinion = opinion_fixture()
-      user = user_fixture()
+      user = admin_fixture()
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :verified,
@@ -272,7 +335,7 @@ defmodule YouCongress.VerificationsTest do
         })
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :disputed,
@@ -294,10 +357,10 @@ defmodule YouCongress.VerificationsTest do
   describe "get_verification!/1" do
     test "returns the verification with given id" do
       opinion = opinion_fixture()
-      user = user_fixture()
+      user = admin_fixture()
 
       {:ok, verification} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :verified,

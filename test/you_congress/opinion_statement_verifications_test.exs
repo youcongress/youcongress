@@ -14,7 +14,7 @@ defmodule YouCongress.OpinionStatementVerificationsTest do
   # Builds an opinion-statement link whose quote authenticity is already
   # positive, so the progressive relevance gate is satisfied.
   defp verified_link_fixture do
-    user = user_fixture()
+    user = admin_fixture()
     opinion = opinion_fixture(%{user_id: user.id})
     statement = statement_fixture()
     {:ok, _} = YouCongress.Opinions.add_opinion_to_statement(opinion, statement, user.id)
@@ -25,7 +25,7 @@ defmodule YouCongress.OpinionStatementVerificationsTest do
 
   # Same link, but the quote is NOT verified yet (gate should block relevance).
   defp unverified_link_fixture do
-    user = user_fixture()
+    user = admin_fixture()
     opinion = opinion_fixture(%{user_id: user.id})
     statement = statement_fixture()
     {:ok, _} = YouCongress.Opinions.add_opinion_to_statement(opinion, statement, user.id)
@@ -35,7 +35,7 @@ defmodule YouCongress.OpinionStatementVerificationsTest do
 
   defp verify_quote(opinion, user) do
     {:ok, _} =
-      Verifications.create_verification(%{
+      Verifications.create_verification(user, %{
         opinion_id: opinion.id,
         user_id: user.id,
         status: :verified,
@@ -45,7 +45,7 @@ defmodule YouCongress.OpinionStatementVerificationsTest do
 
   defp relevance_status(os_id), do: Repo.get!(OpinionStatement, os_id).verification_status
 
-  describe "create_verification/1" do
+  describe "create_verification/2" do
     test "creates a verification and caches relevance status on the join" do
       {os, _opinion, user} = verified_link_fixture()
 
@@ -57,7 +57,7 @@ defmodule YouCongress.OpinionStatementVerificationsTest do
       }
 
       assert {:ok, %OpinionStatementVerification{} = v} =
-               OpinionStatementVerifications.create_verification(attrs)
+               OpinionStatementVerifications.create_verification(user, attrs)
 
       assert v.opinion_statement_id == os.id
       assert v.status == :verified
@@ -96,8 +96,10 @@ defmodule YouCongress.OpinionStatementVerificationsTest do
     end
 
     test "requires all fields" do
+      admin = admin_fixture()
+
       assert {:error, %Ecto.Changeset{}} =
-               OpinionStatementVerifications.create_verification(%{})
+               OpinionStatementVerifications.create_verification(admin, %{})
     end
 
     test "blocks relevance verification while the quote is unverified" do
@@ -112,15 +114,35 @@ defmodule YouCongress.OpinionStatementVerificationsTest do
 
       assert {:ok, _} = relevance(os, user, :unverified, "Reset")
     end
+
+    test "rejects an ordinary user even when attrs claim a moderator identity" do
+      {os, _opinion, _admin} = verified_link_fixture()
+      user = user_fixture()
+      admin = admin_fixture()
+
+      assert {:error, :forbidden} =
+               OpinionStatementVerifications.create_verification(user, %{
+                 opinion_statement_id: os.id,
+                 user_id: admin.id,
+                 status: :verified,
+                 model: "forged-model"
+               })
+    end
   end
 
   defp relevance(os, user, status, comment, model \\ "human") do
-    OpinionStatementVerifications.create_verification(%{
+    attrs = %{
       opinion_statement_id: os.id,
       user_id: user.id,
       status: status,
       comment: comment,
       model: model
-    })
+    }
+
+    if status in [:ai_verified, :ai_unverifiable] do
+      OpinionStatementVerifications.create_ai_verification(user, attrs)
+    else
+      OpinionStatementVerifications.create_verification(user, attrs)
+    end
   end
 end

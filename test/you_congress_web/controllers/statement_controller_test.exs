@@ -45,11 +45,11 @@ defmodule YouCongressWeb.StatementControllerTest do
           answer: :against
         })
 
-      user = user_fixture()
+      user = admin_fixture()
 
       # Two quote verifications: only the latest one must be exported.
       {:ok, _old} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :unverifiable,
@@ -57,7 +57,7 @@ defmodule YouCongressWeb.StatementControllerTest do
         })
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :verified,
@@ -67,7 +67,7 @@ defmodule YouCongressWeb.StatementControllerTest do
       opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
 
       {:ok, _} =
-        OpinionStatementVerifications.create_verification(%{
+        OpinionStatementVerifications.create_ai_verification(user, %{
           opinion_statement_id: opinion_statement.id,
           user_id: user.id,
           status: :ai_verified,
@@ -75,7 +75,7 @@ defmodule YouCongressWeb.StatementControllerTest do
         })
 
       {:ok, _} =
-        VoteVerifications.create_verification(%{
+        VoteVerifications.create_verification(user, %{
           vote_id: vote.id,
           user_id: user.id,
           status: :verified,

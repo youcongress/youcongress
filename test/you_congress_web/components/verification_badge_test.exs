@@ -41,4 +41,20 @@ defmodule YouCongressWeb.Components.VerificationBadgeTest do
     assert html =~ ~s|phx-click="toggle-dropdown"|
     refute html =~ ~s|href="/c/42"|
   end
+
+  test "forged verification events from an ordinary user are rejected" do
+    socket = %Phoenix.LiveView.Socket{
+      assigns: %{
+        __changed__: %{},
+        current_user: user(),
+        show_dropdown: true,
+        selected_status: :verified,
+        comment: "forged"
+      }
+    }
+
+    assert {:noreply, socket} = VerificationBadge.handle_event("confirm-status", %{}, socket)
+    refute socket.assigns.show_dropdown
+    assert socket.assigns.selected_status == nil
+  end
 end

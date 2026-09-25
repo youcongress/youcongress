@@ -63,19 +63,18 @@ defmodule YouCongressWeb.QuoteReviewLive.Index do
 
   def handle_event("confirm-status", _, socket) do
     %{opinion_id: opinion_id, status: status, comment: comment} = socket.assigns.verifying
-    user_id = socket.assigns.current_user.id
+    user = socket.assigns.current_user
 
     status_atom = String.to_existing_atom(status)
     comment = if comment == "", do: String.capitalize(status), else: comment
 
     attrs = %{
       opinion_id: opinion_id,
-      user_id: user_id,
       status: status_atom,
       comment: comment
     }
 
-    case Verifications.create_verification(attrs) do
+    case Verifications.create_verification(user, attrs) do
       {:ok, _} ->
         {:noreply,
          socket

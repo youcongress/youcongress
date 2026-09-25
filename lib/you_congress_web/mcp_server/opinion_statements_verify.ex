@@ -57,7 +57,8 @@ defmodule YouCongressWeb.MCPServer.OpinionStatementsVerify do
            model: sanitize_model(model),
            user_id: user.id
          },
-         {:ok, verification} <- OpinionStatementVerifications.create_verification(attrs) do
+         {:ok, verification} <-
+           OpinionStatementVerifications.create_ai_verification(user, attrs) do
       data = %{
         verification: %{
           id: verification.id,

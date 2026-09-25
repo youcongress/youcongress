@@ -414,7 +414,7 @@ defmodule YouCongress.AuthorsTest do
       survivor = author_fixture()
       duplicate = author_fixture()
       statement = statement_fixture()
-      verifier = user_fixture()
+      verifier = admin_fixture()
 
       survivor_vote =
         vote_fixture(%{
@@ -433,7 +433,7 @@ defmodule YouCongress.AuthorsTest do
         })
 
       assert {:ok, verification} =
-               VoteVerifications.create_verification(%{
+               VoteVerifications.create_verification(verifier, %{
                  vote_id: duplicate_vote.id,
                  user_id: verifier.id,
                  status: :verified,
@@ -633,7 +633,8 @@ defmodule YouCongress.AuthorsTest do
     test "get_author_by_twitter_id_str_or_username/2 does not fall back to a recycled username" do
       _author = author_fixture(twitter_id_str: "original-id", twitter_username: "recycled_name")
 
-      assert Authors.get_author_by_twitter_id_str_or_username("new-owner-id", "recycled_name") == nil
+      assert Authors.get_author_by_twitter_id_str_or_username("new-owner-id", "recycled_name") ==
+               nil
     end
 
     test "get_author_by_twitter_id_str_or_username/2 returns nil for both nil" do

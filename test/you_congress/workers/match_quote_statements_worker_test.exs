@@ -93,7 +93,7 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
   end
 
   defp set_system_user do
-    user = user_fixture()
+    user = admin_fixture()
     put_env_restore(:verification_user_id, user.id)
     user
   end
@@ -353,7 +353,7 @@ defmodule YouCongress.Workers.MatchQuoteStatementsWorkerTest do
       statement = statement_fixture(%{title: "Frontier AI labs should publish safety cases"})
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_ai_verification(system_user, %{
           opinion_id: quote.id,
           user_id: system_user.id,
           status: :ai_verified,

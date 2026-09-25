@@ -19,7 +19,7 @@ defmodule YouCongress.Statements.QuotesCsvTest do
   # A statement with one author whose vote points at `quote`. Returns everything
   # needed to attach further quotes or verifications.
   defp setup_statement do
-    user = user_fixture()
+    user = admin_fixture()
     author = author_fixture()
     statement = statement_fixture()
     opinion = add_quote(statement, author, user, "Main quote content")
@@ -49,36 +49,38 @@ defmodule YouCongress.Statements.QuotesCsvTest do
   end
 
   defp verify_quote(opinion, user, status, model \\ "human") do
+    attrs = %{opinion_id: opinion.id, user_id: user.id, status: status, model: model}
+
     {:ok, _} =
-      Verifications.create_verification(%{
-        opinion_id: opinion.id,
-        user_id: user.id,
-        status: status,
-        model: model
-      })
+      if model != "human",
+        do: Verifications.create_ai_verification(user, attrs),
+        else: Verifications.create_verification(user, attrs)
   end
 
   defp verify_relevance(opinion, statement, user, status, model \\ "human") do
     os = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
 
+    attrs = %{opinion_statement_id: os.id, user_id: user.id, status: status, model: model}
+
     {:ok, _} =
-      OpinionStatementVerifications.create_verification(%{
-        opinion_statement_id: os.id,
-        user_id: user.id,
-        status: status,
-        model: model
-      })
+      if model != "human",
+        do: OpinionStatementVerifications.create_ai_verification(user, attrs),
+        else: OpinionStatementVerifications.create_verification(user, attrs)
   end
 
   defp verify_vote(vote, opinion, user, status, model \\ "human") do
+    attrs = %{
+      vote_id: vote.id,
+      opinion_id: opinion.id,
+      user_id: user.id,
+      status: status,
+      model: model
+    }
+
     {:ok, _} =
-      VoteVerifications.create_verification(%{
-        vote_id: vote.id,
-        opinion_id: opinion.id,
-        user_id: user.id,
-        status: status,
-        model: model
-      })
+      if model != "human",
+        do: VoteVerifications.create_ai_verification(user, attrs),
+        else: VoteVerifications.create_verification(user, attrs)
   end
 
   defp verify_pipeline(ctx, opinion, status, model \\ "human") do

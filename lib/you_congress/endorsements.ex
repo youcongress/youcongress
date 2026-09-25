@@ -77,35 +77,29 @@ defmodule YouCongress.Endorsements do
   end
 
   defp create_opinion_endorsement(opinion, user) do
-    Verifications.create_verification(%{
+    Verifications.create_verification(user, %{
       opinion_id: opinion.id,
-      user_id: user.id,
       status: :endorsed,
-      comment: "Author endorsed",
-      model: "human"
+      comment: "Author endorsed"
     })
     |> ignore_verification_result()
   end
 
   defp create_opinion_statement_endorsement(opinion_statement, user) do
-    OpinionStatementVerifications.create_verification(%{
+    OpinionStatementVerifications.create_verification(user, %{
       opinion_statement_id: opinion_statement.id,
-      user_id: user.id,
       status: :endorsed,
-      comment: "Author endorsed statement relation",
-      model: "human"
+      comment: "Author endorsed statement relation"
     })
     |> ignore_verification_result()
   end
 
   defp create_vote_endorsement(vote, user) do
-    VoteVerifications.create_verification(%{
+    VoteVerifications.create_verification(user, %{
       vote_id: vote.id,
       opinion_id: vote.opinion_id,
-      user_id: user.id,
       status: :endorsed,
-      comment: "Author endorsed vote answer",
-      model: "human"
+      comment: "Author endorsed vote answer"
     })
     |> ignore_verification_result()
   end
