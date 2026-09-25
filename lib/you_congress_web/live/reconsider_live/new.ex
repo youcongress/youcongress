@@ -270,6 +270,7 @@ defmodule YouCongressWeb.ReconsiderLive.New do
     |> assign(:statement_results, [])
     |> assign(:statement_selected_index, 0)
     |> assign(:error_message, nil)
+    |> push_event("clear-autocomplete", %{id: "statement-search"})
   end
 
   defp select_delegate(socket, delegate) do
@@ -278,6 +279,7 @@ defmodule YouCongressWeb.ReconsiderLive.New do
     |> assign(:delegate_query, "")
     |> assign(:delegate_results, [])
     |> assign(:delegate_selected_index, 0)
+    |> push_event("clear-autocomplete", %{id: "delegate-search"})
   end
 
   defp update_selected_index(socket, key, [], _change), do: assign(socket, key, 0)
