@@ -63,7 +63,7 @@ defmodule YouCongressWeb.UserSessionController do
       %User{} = user ->
         unless Permissions.blocked?(user) do
           Accounts.deliver_user_magic_login_instructions(user, fn token ->
-            magic_login_url(conn, token, user_params)
+            magic_login_url(conn, token, user_params["return_to"])
           end)
         end
 
@@ -97,8 +97,6 @@ defmodule YouCongressWeb.UserSessionController do
           |> put_flash(:error, blocked_account_message())
           |> redirect(to: ~p"/log_in")
         else
-          handle_pending_actions(user, params["pending_actions"])
-
           conn
           |> maybe_put_user_return_to(params["return_to"])
           |> UserAuth.log_in_user(user)
@@ -156,11 +154,10 @@ defmodule YouCongressWeb.UserSessionController do
     end
   end
 
-  defp magic_login_url(conn, token, user_params) do
+  defp magic_login_url(conn, token, return_to) do
     query =
       %{}
-      |> maybe_put_query_param(:return_to, ReturnTo.sanitize(user_params["return_to"]))
-      |> maybe_put_query_param(:pending_actions, user_params["pending_actions"])
+      |> maybe_put_query_param(:return_to, ReturnTo.sanitize(return_to))
 
     url(conn, ~p"/log_in/magic-link/#{token}?#{query}")
   end
