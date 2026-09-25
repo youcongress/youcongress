@@ -179,6 +179,22 @@ defmodule YouCongress.AuthorsTest do
       assert {:error, %Ecto.Changeset{}} = Authors.create_author(@invalid_attrs)
     end
 
+    test "create_author/1 rejects Wikipedia URLs that could target another host" do
+      malicious_urls = [
+        "https://127.0.0.1/wiki/Test?.wikipedia.org/wiki/",
+        "https://en.wikipedia.org.evil.example/wiki/Test",
+        "https://evil.example@en.wikipedia.org/wiki/Test",
+        "https://en.wikipedia.org:444/wiki/Test"
+      ]
+
+      for wikipedia_url <- malicious_urls do
+        assert {:error, changeset} =
+                 Authors.create_author(%{twin_origin: false, wikipedia_url: wikipedia_url})
+
+        assert "must be a valid HTTPS Wikipedia article URL" in errors_on(changeset).wikipedia_url
+      end
+    end
+
     test "find_by_name_or_create/1 returns a stable existing author when names are duplicated" do
       first_author = author_fixture(name: "Brad Smith", twitter_username: "brad_smith_one")
       _second_author = author_fixture(name: "Brad Smith", twitter_username: "brad_smith_two")

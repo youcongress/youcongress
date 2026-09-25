@@ -198,7 +198,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
 
       with_mocked_response_and_key(api_key.token, fn frame ->
         assert {:reply, {:error, message}, ^frame} = AuthorsCreate.execute(params, frame)
-        assert message =~ "wikipedia_url must be a valid Wikipedia URL"
+        assert message =~ "wikipedia_url must be a valid HTTPS Wikipedia article URL"
       end)
     end
   end
@@ -295,7 +295,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
 
       with_mocked_response_and_key(api_key.token, fn frame ->
         assert {:reply, {:error, message}, ^frame} = AuthorsUpdate.execute(params, frame)
-        assert message =~ "wikipedia_url must start with https://"
+        assert message =~ "wikipedia_url must be a valid HTTPS Wikipedia article URL"
       end)
     end
   end
