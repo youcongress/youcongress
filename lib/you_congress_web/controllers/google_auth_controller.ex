@@ -126,8 +126,16 @@ defmodule YouCongressWeb.GoogleAuthController do
 
   defp handle_user_info(conn, access_token) do
     case GoogleAPI.fetch_user_info(access_token) do
-      {:ok, google_user_data} ->
+      {:ok, %{email_verified: true, email: email} = google_user_data}
+      when is_binary(email) and email != "" ->
         handle_user_lookup_or_create(conn, google_user_data)
+
+      {:ok, _google_user_data} ->
+        Logger.warning("Google authentication rejected because the email is not verified")
+
+        conn
+        |> put_flash(:error, "Google must verify your email before you can sign in.")
+        |> redirect(to: ~p"/log_in")
 
       {:error, reason} ->
         Logger.error("Google user info fetch failed: #{reason}")
