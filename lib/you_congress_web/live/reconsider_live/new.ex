@@ -345,7 +345,13 @@ defmodule YouCongressWeb.ReconsiderLive.New do
           label="Short description"
           placeholder="What should viewers consider?"
         />
-        <.input field={@form[:content_url]} type="url" label="Article or video URL" required />
+        <.input
+          field={@form[:content_url]}
+          type="url"
+          label="Article or video URL"
+          placeholder="https://..."
+          required
+        />
         <.input
           field={@form[:content_type]}
           type="select"

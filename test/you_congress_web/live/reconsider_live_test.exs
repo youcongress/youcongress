@@ -78,6 +78,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     {:ok, view, html} = live(conn, ~p"/reconsider/new")
     assert html =~ "Create a Reconsider page"
     refute html =~ "For creators"
+    assert has_element?(view, "#reconsideration_content_url[placeholder='https://...']")
 
     select_statement(view, context.statement, "private cars")
 
