@@ -47,6 +47,30 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
       end)
     end
 
+    test "a Reconsider signup email links back to its results", %{conn: conn} do
+      email = unique_user_email()
+      return_to = "/@jejej/r/could-ai-lead-to-human-extinction"
+      results_url = YouCongressWeb.Endpoint.url() <> return_to
+      {:ok, lv, _html} = live(conn, ~p"/sign_up?#{%{return_to: return_to}}")
+
+      lv
+      |> form("#registration_form", user: %{name: "Reconsider participant", email: email})
+      |> render_submit()
+
+      assert_email_sent(fn email_message ->
+        assert email_message.text_body =~
+                 "Confirm your email and see results from #{results_url}"
+
+        assert email_message.html_body =~
+                 "Confirm #{email} to record your response and see results from #{results_url}."
+
+        assert email_message.html_body =~ ">Confirm email and see results</a>"
+
+        assert email_message.text_body =~
+                 "return_to=%2F%40jejej%2Fr%2Fcould-ai-lead-to-human-extinction"
+      end)
+    end
+
     test "an existing email receives the same registration response without disclosure", %{
       conn: conn
     } do
