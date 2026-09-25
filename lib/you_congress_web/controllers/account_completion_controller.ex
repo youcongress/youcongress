@@ -2,6 +2,7 @@ defmodule YouCongressWeb.AccountCompletionController do
   use YouCongressWeb, :controller
 
   alias YouCongress.Accounts
+  alias YouCongress.Newsletters
   alias YouCongressWeb.ReturnTo
 
   def dismiss_phone(conn, params) do
@@ -15,7 +16,7 @@ defmodule YouCongressWeb.AccountCompletionController do
   end
 
   def subscribe(conn, params) do
-    {:ok, _user} = Accounts.welcome_update(conn.assigns.current_user, %{newsletter: true})
+    {:ok, _user} = Newsletters.subscribe_user(conn.assigns.current_user, "account_completion")
 
     conn
     |> put_flash(:info, "You are subscribed to YouCongress updates.")

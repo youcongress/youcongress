@@ -56,7 +56,8 @@ defmodule YouCongressWeb.Router do
     get("/email-login-waiting-list", PageController, :email_login_waiting_list)
     get("/email-login-waiting-list/thanks", PageController, :email_login_waiting_list_thanks)
     live("/sign_up", UserRegistrationLive, :new)
-    live("/subscribe", UserRegistrationLive, :subscribe)
+    live("/subscribe", NewsletterLive, :new)
+    live("/newsletter/confirm/:token", NewsletterConfirmationLive, :show)
     live("/reset_password/:token", ResetPasswordTokenLive, :edit)
 
     # Legacy redirection from /v/:slug to /p/:slug

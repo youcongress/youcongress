@@ -3,6 +3,7 @@ defmodule YouCongressWeb.SettingsLive do
 
   alias YouCongress.Accounts.ApiKey
   alias YouCongress.{Accounts, Authors, Countries}
+  alias YouCongress.Newsletters
 
   @impl true
   def mount(_params, session, socket) do
@@ -96,7 +97,7 @@ defmodule YouCongressWeb.SettingsLive do
   end
 
   def handle_event("subscribe_newsletter", _params, socket) do
-    case Accounts.welcome_update(socket.assigns.current_user, %{newsletter: true}) do
+    case Newsletters.subscribe_user(socket.assigns.current_user, "settings") do
       {:ok, user} ->
         {:noreply,
          socket
@@ -109,9 +110,7 @@ defmodule YouCongressWeb.SettingsLive do
   end
 
   def handle_event("unsubscribe_newsletter", _params, socket) do
-    with {:ok, user} <-
-           Accounts.welcome_update(socket.assigns.current_user, %{newsletter: false}),
-         {:ok, user} <- Accounts.dismiss_newsletter_subscription_prompt(user) do
+    with {:ok, user} <- Newsletters.unsubscribe_user(socket.assigns.current_user, "settings") do
       {:noreply,
        socket
        |> assign(:current_user, %{user | author: socket.assigns.current_user.author})

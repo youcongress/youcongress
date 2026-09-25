@@ -5,7 +5,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
   import YouCongress.AccountsFixtures
   import YouCongress.CountriesFixtures
 
-  alias YouCongress.{Accounts, Authors}
+  alias YouCongress.{Accounts, Authors, Newsletters}
   alias YouCongress.Accounts.UserToken
   alias YouCongress.Repo
 
@@ -213,6 +213,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
 
       render_click(settings_live, "subscribe_newsletter")
       assert Accounts.get_user!(current_user.id).newsletter
+      assert Newsletters.latest_consent(current_user.email).action == :subscribe
 
       assert has_element?(
                settings_live,
@@ -224,6 +225,9 @@ defmodule YouCongressWeb.SettingsLiveTest do
       user = Accounts.get_user!(current_user.id)
       refute user.newsletter
       assert user.newsletter_subscription_prompt_dismissed_at
+      consent = Newsletters.latest_consent(current_user.email)
+      assert consent.action == :unsubscribe
+      assert consent.source == "settings"
     end
 
     test "users can create and revoke their own API keys", %{
