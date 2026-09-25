@@ -162,13 +162,41 @@ defmodule YouCongress.Accounts.UserNotifier do
   end
 
   @doc """
+  Deliver a one-time magic link for signing in.
+  """
+  def deliver_magic_login_instructions(%User{} = user, url) do
+    text_body = """
+    Hi #{user.email},
+
+    Sign in to YouCongress by visiting the link below:
+
+    #{url}
+
+    This link expires in 15 minutes and can only be used once. If you didn't request it, you can safely ignore this email.
+    """
+
+    html_body =
+      build_html_email(
+        "Sign in to YouCongress",
+        [
+          "We received a request to sign in to #{user.email}.",
+          "Use the button below within 15 minutes. The link can only be used once."
+        ],
+        "Sign in to YouCongress",
+        url
+      )
+
+    deliver(user.email, "Your YouCongress sign-in link", text_body, html_body)
+  end
+
+  @doc """
   Deliver instructions to reset a user password.
   """
   def deliver_reset_password_instructions(user, url) do
     text_body = """
     Hi #{user.email},
 
-    You can reset your password by visiting the link below:
+    You can set a new password by visiting the link below:
 
     #{url}
 
@@ -177,16 +205,16 @@ defmodule YouCongress.Accounts.UserNotifier do
 
     html_body =
       build_html_email(
-        "Reset your password",
+        "Set a new password",
         [
-          "We received a request to reset the password for #{user.email}.",
+          "We received a request to set a new password for #{user.email}.",
           "Click the button below to create a new password. This link expires shortly for your security."
         ],
-        "Reset password",
+        "Set password",
         url
       )
 
-    deliver(user.email, "Reset password instructions", text_body, html_body)
+    deliver(user.email, "Set your YouCongress password", text_body, html_body)
   end
 
   @doc """

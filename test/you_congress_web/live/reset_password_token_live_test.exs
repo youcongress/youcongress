@@ -24,6 +24,17 @@ defmodule YouCongressWeb.ResetPasswordTokenLiveTest do
       assert html =~ "Reset Password"
     end
 
+    test "allows a logged-in user to open a password setup link", %{
+      conn: conn,
+      token: token,
+      user: user
+    } do
+      conn = log_in_user(conn, user)
+
+      assert {:ok, _lv, html} = live(conn, ~p"/reset_password/#{token}")
+      assert html =~ "Reset Password"
+    end
+
     test "redirects if reset password token is invalid", %{conn: conn} do
       {:error, {:redirect, %{to: path, flash: flash}}} = live(conn, ~p"/reset_password/invalid")
 

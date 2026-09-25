@@ -105,6 +105,31 @@ defmodule YouCongress.AccountsTest do
     end
   end
 
+  describe "register_passwordless_user/2" do
+    test "registers an email user without a password" do
+      email = "Passwordless.User#{System.unique_integer()}@Example.com"
+
+      assert {:ok, %{user: user, author: author}} =
+               Accounts.register_passwordless_user(
+                 %{"email" => email},
+                 %{"name" => "Passwordless User"}
+               )
+
+      assert user.email == String.downcase(email)
+      assert user.hashed_password == nil
+      assert user.email_confirmed_at == nil
+      assert author.name == "Passwordless User"
+    end
+
+    test "validates email without requiring a password" do
+      assert {:error, :user, changeset, _changes} =
+               Accounts.register_passwordless_user(%{"email" => "invalid"})
+
+      assert "must have the @ sign and no spaces" in errors_on(changeset).email
+      refute Map.has_key?(errors_on(changeset), :password)
+    end
+  end
+
   describe "change_user_registration/2" do
     test "returns a changeset" do
       assert %Ecto.Changeset{} = changeset = Accounts.change_user_registration(%User{})
@@ -125,6 +150,15 @@ defmodule YouCongress.AccountsTest do
       assert get_change(changeset, :email) == email
       assert get_change(changeset, :password) == password
       assert is_nil(get_change(changeset, :hashed_password))
+    end
+  end
+
+  describe "change_passwordless_registration/2" do
+    test "requires email but not password" do
+      changeset = Accounts.change_passwordless_registration(%User{})
+
+      assert changeset.required == [:email]
+      refute :password in changeset.required
     end
   end
 
@@ -377,6 +411,81 @@ defmodule YouCongress.AccountsTest do
     test "returns error for expired token", %{token: token} do
       {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
       assert Accounts.consume_live_login_token(token) == :error
+    end
+  end
+
+  describe "deliver_user_magic_login_instructions/2" do
+    test "sends a hashed, short-lived login token" do
+      user = user_fixture()
+
+      token =
+        extract_user_token(fn url ->
+          Accounts.deliver_user_magic_login_instructions(user, url)
+        end)
+
+      {:ok, decoded_token} = Base.url_decode64(token, padding: false)
+
+      assert user_token =
+               Repo.get_by(UserToken,
+                 token: UserToken.hash_token(decoded_token),
+                 context: "magic_login"
+               )
+
+      assert user_token.user_id == user.id
+      assert user_token.sent_to == user.email
+    end
+
+    test "invalidates older magic links when a new one is requested" do
+      user = user_fixture()
+
+      first_token =
+        extract_user_token(fn url ->
+          Accounts.deliver_user_magic_login_instructions(user, url)
+        end)
+
+      _second_token =
+        extract_user_token(fn url ->
+          Accounts.deliver_user_magic_login_instructions(user, url)
+        end)
+
+      assert Accounts.consume_magic_login_token(first_token) == :error
+    end
+  end
+
+  describe "consume_magic_login_token/1" do
+    setup do
+      user = user_fixture(%{}, %{}, false)
+
+      token =
+        extract_user_token(fn url ->
+          Accounts.deliver_user_magic_login_instructions(user, url)
+        end)
+
+      %{user: user, token: token}
+    end
+
+    test "returns the user, confirms the email, and deletes the token", %{
+      user: user,
+      token: token
+    } do
+      assert {:ok, returned_user} = Accounts.consume_magic_login_token(token)
+      assert returned_user.id == user.id
+      assert returned_user.email_confirmed_at
+      refute Repo.get_by(UserToken, context: "magic_login", user_id: user.id)
+    end
+
+    test "can only be used once", %{token: token} do
+      assert {:ok, _user} = Accounts.consume_magic_login_token(token)
+      assert Accounts.consume_magic_login_token(token) == :error
+    end
+
+    test "returns an error for an invalid token" do
+      assert Accounts.consume_magic_login_token("invalid") == :error
+    end
+
+    test "returns an error for an expired token", %{token: token} do
+      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      assert Accounts.consume_magic_login_token(token) == :error
     end
   end
 

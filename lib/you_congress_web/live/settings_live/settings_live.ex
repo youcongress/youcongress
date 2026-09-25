@@ -110,6 +110,20 @@ defmodule YouCongressWeb.SettingsLive do
     end
   end
 
+  def handle_event("send_password_setup_instructions", _params, socket) do
+    Accounts.deliver_user_reset_password_instructions(
+      socket.assigns.current_user,
+      &url(~p"/reset_password/#{&1}")
+    )
+
+    {:noreply,
+     put_flash(
+       socket,
+       :info,
+       "We sent a password setup link to #{socket.assigns.current_user.email}."
+     )}
+  end
+
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     assign(socket, :form, to_form(changeset))
   end
@@ -164,6 +178,8 @@ defmodule YouCongressWeb.SettingsLive do
 
   defp profile_text_fields(%{hashed_password: hashed_password}) when not is_nil(hashed_password),
     do: [:name, :bio]
+
+  defp profile_text_fields(%{signup_method: "email"}), do: [:name, :bio]
 
   defp profile_text_fields(_current_user), do: []
 

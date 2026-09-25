@@ -6,6 +6,8 @@ defmodule YouCongressWeb.SettingsLiveTest do
   import YouCongress.CountriesFixtures
 
   alias YouCongress.{Accounts, Authors}
+  alias YouCongress.Accounts.UserToken
+  alias YouCongress.Repo
 
   defp create_user(_) do
     current_user = user_fixture(%{}, %{name: "Someone"})
@@ -222,6 +224,35 @@ defmodule YouCongressWeb.SettingsLiveTest do
       user = Accounts.get_user!(current_user.id)
       refute user.newsletter
       assert user.newsletter_subscription_prompt_dismissed_at
+    end
+
+    test "passwordless email users can edit their profile and request a password setup link", %{
+      conn: conn
+    } do
+      email = unique_user_email()
+
+      {:ok, %{user: current_user}} =
+        Accounts.register_passwordless_user(
+          %{"email" => email},
+          %{"name" => "Passwordless User", "bio" => "Old bio"}
+        )
+
+      {:ok, current_user} = Accounts.confirm_user_email(current_user)
+      conn = log_in_user(conn, current_user)
+      {:ok, settings_live, html} = live(conn, ~p"/settings")
+
+      assert html =~ "Set a password"
+      assert has_element?(settings_live, "input[name='author[name]']")
+
+      render_submit(settings_live, "save", %{
+        "author" => %{"name" => "Updated User", "bio" => "Updated bio"}
+      })
+
+      assert Authors.get_author!(current_user.author_id).name == "Updated User"
+
+      html = render_click(settings_live, "send_password_setup_instructions")
+      assert html =~ "We sent a password setup link to #{email}."
+      assert Repo.get_by(UserToken, user_id: current_user.id, context: "reset_password")
     end
 
     test "phone verified users see a locked location and cannot submit changes to it", %{

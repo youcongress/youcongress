@@ -34,7 +34,7 @@ const SessionLogin = {
     if (!targets.length) return
 
     const step = this.el.dataset.step
-    const shouldShow = !step || step === "enter_email_password"
+    const shouldShow = !step || step === "enter_email"
     targets.forEach(id => {
       const container = document.getElementById(id)
       if (container) {
