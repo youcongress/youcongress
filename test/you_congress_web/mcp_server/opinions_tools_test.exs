@@ -361,7 +361,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       statement = statement_fixture()
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(admin, %{
           opinion_id: opinion.id,
           user_id: admin.id,
           status: :verified,
@@ -395,7 +395,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
       statement = statement_fixture()
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(admin, %{
           opinion_id: opinion.id,
           user_id: admin.id,
           status: :verified,

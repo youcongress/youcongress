@@ -338,11 +338,11 @@ defmodule YouCongressWeb.OpinionLiveTest do
     end
 
     test "shows verification history on opinion show page", %{conn: conn} do
-      user = user_fixture()
+      user = user_fixture(%{role: "moderator"})
       opinion = opinion_fixture(%{content: "Verified opinion"})
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :verified,
@@ -357,11 +357,11 @@ defmodule YouCongressWeb.OpinionLiveTest do
     end
 
     test "displays AI verification model in history", %{conn: conn} do
-      user = user_fixture()
+      user = admin_fixture()
       opinion = opinion_fixture(%{content: "AI verified opinion"})
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_ai_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :ai_verified,
@@ -376,7 +376,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
     end
 
     test "verification history updates after badge verification", %{conn: conn} do
-      user = user_fixture()
+      user = user_fixture(%{role: "moderator"})
       conn = log_in_user(conn, user)
 
       opinion =
@@ -402,7 +402,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
       # Create a verification directly
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :disputed,
@@ -419,12 +419,12 @@ defmodule YouCongressWeb.OpinionLiveTest do
     end
 
     test "verification history shows multiple entries", %{conn: conn} do
-      user1 = user_fixture()
-      user2 = user_fixture()
+      user1 = user_fixture(%{role: "moderator"})
+      user2 = user_fixture(%{role: "moderator"})
       opinion = opinion_fixture(%{content: "Multi-verified opinion"})
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user1, %{
           opinion_id: opinion.id,
           user_id: user1.id,
           status: :verified,
@@ -432,7 +432,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
         })
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user2, %{
           opinion_id: opinion.id,
           user_id: user2.id,
           status: :disputed,
@@ -448,7 +448,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
     end
 
     test "shows relation and vote verification histories for each statement", %{conn: conn} do
-      user = user_fixture()
+      user = user_fixture(%{role: "moderator"})
       author = author_fixture(%{name: "Quote Author"})
       statement = statement_fixture(%{title: "We should deliberate publicly"})
 
@@ -472,7 +472,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
         })
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :verified,
@@ -482,7 +482,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
       opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
 
       {:ok, _} =
-        OpinionStatementVerifications.create_verification(%{
+        OpinionStatementVerifications.create_verification(user, %{
           opinion_statement_id: opinion_statement.id,
           user_id: user.id,
           status: :verified,
@@ -490,7 +490,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
         })
 
       {:ok, _} =
-        VoteVerifications.create_verification(%{
+        VoteVerifications.create_verification(user, %{
           vote_id: vote.id,
           user_id: user.id,
           status: :disputed,
@@ -540,7 +540,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
     test "shows quote-specific vote history when the vote is backed by another quote",
          %{conn: conn} do
-      user = user_fixture()
+      user = user_fixture(%{role: "moderator"})
       author = author_fixture(%{name: "Quote Author"})
       statement = statement_fixture(%{title: "We should deliberate publicly"})
 
@@ -574,7 +574,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
         })
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: shown_quote.id,
           user_id: user.id,
           status: :verified,
@@ -584,7 +584,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
       shown_relation = OpinionsStatements.get_opinion_statement(shown_quote.id, statement.id)
 
       {:ok, _} =
-        OpinionStatementVerifications.create_verification(%{
+        OpinionStatementVerifications.create_verification(user, %{
           opinion_statement_id: shown_relation.id,
           user_id: user.id,
           status: :verified,
@@ -592,7 +592,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
         })
 
       {:ok, _} =
-        VoteVerifications.create_verification(%{
+        VoteVerifications.create_verification(user, %{
           vote_id: vote.id,
           opinion_id: shown_quote.id,
           user_id: user.id,
@@ -601,7 +601,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
         })
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: voted_quote.id,
           user_id: user.id,
           status: :verified,
@@ -611,7 +611,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
       voted_relation = OpinionsStatements.get_opinion_statement(voted_quote.id, statement.id)
 
       {:ok, _} =
-        OpinionStatementVerifications.create_verification(%{
+        OpinionStatementVerifications.create_verification(user, %{
           opinion_statement_id: voted_relation.id,
           user_id: user.id,
           status: :verified,
@@ -619,7 +619,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
         })
 
       {:ok, _} =
-        VoteVerifications.create_verification(%{
+        VoteVerifications.create_verification(user, %{
           vote_id: vote.id,
           user_id: user.id,
           status: :verified,
@@ -721,7 +721,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
       opinion_statement = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :verified,
@@ -729,7 +729,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
         })
 
       {:ok, _} =
-        OpinionStatementVerifications.create_verification(%{
+        OpinionStatementVerifications.create_verification(user, %{
           opinion_statement_id: opinion_statement.id,
           user_id: user.id,
           status: :verified,
@@ -873,7 +873,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
       shown_relation = OpinionsStatements.get_opinion_statement(shown_quote.id, statement.id)
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: voted_quote.id,
           user_id: user.id,
           status: :verified,
@@ -881,7 +881,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
         })
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: shown_quote.id,
           user_id: user.id,
           status: :verified,
@@ -889,7 +889,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
         })
 
       {:ok, _} =
-        OpinionStatementVerifications.create_verification(%{
+        OpinionStatementVerifications.create_verification(user, %{
           opinion_statement_id: shown_relation.id,
           user_id: user.id,
           status: :verified,
@@ -923,7 +923,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
     end
 
     test "regular users do not see AI verification enqueue buttons", %{conn: conn} do
-      reviewer = user_fixture()
+      reviewer = user_fixture(%{role: "moderator"})
       regular_user = user_fixture()
       author = author_fixture(%{name: "Quote Author"})
       conn = log_in_user(conn, regular_user)
@@ -949,7 +949,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
       })
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(reviewer, %{
           opinion_id: opinion.id,
           user_id: reviewer.id,
           status: :verified,

@@ -81,7 +81,7 @@ defmodule YouCongress.Workers.VerificationWorkerTest do
     opinion = opinion_fixture()
     opinion_id = opinion.id
     verification_job_id = "fake:quote:#{opinion.id}"
-    user = user_fixture()
+    user = admin_fixture()
     put_env_restore(:verification_user_id, user.id)
 
     {:ok, verification_job} =

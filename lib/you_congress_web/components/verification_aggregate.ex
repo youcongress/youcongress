@@ -181,27 +181,39 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
   end
 
   def handle_event("toggle-dropdown", _, socket) do
-    show_dropdown = !socket.assigns.show_dropdown
+    if authorized?(socket) do
+      show_dropdown = !socket.assigns.show_dropdown
 
-    socket =
-      socket
-      |> assign(:show_dropdown, show_dropdown)
-      |> maybe_clear_editor(show_dropdown)
+      socket =
+        socket
+        |> assign(:show_dropdown, show_dropdown)
+        |> maybe_clear_editor(show_dropdown)
 
-    {:noreply, socket}
+      {:noreply, socket}
+    else
+      {:noreply, close_editor(socket)}
+    end
   end
 
   def handle_event("pick-status", %{"subject" => subject, "status" => status}, socket) do
-    {:noreply,
-     assign(socket,
-       selected_subject: String.to_existing_atom(subject),
-       selected_status: String.to_existing_atom(status),
-       comment: ""
-     )}
+    if authorized?(socket) do
+      {:noreply,
+       assign(socket,
+         selected_subject: String.to_existing_atom(subject),
+         selected_status: String.to_existing_atom(status),
+         comment: ""
+       )}
+    else
+      {:noreply, close_editor(socket)}
+    end
   end
 
   def handle_event("update-comment", %{"value" => comment}, socket) do
-    {:noreply, assign(socket, :comment, comment)}
+    if authorized?(socket) do
+      {:noreply, assign(socket, :comment, comment)}
+    else
+      {:noreply, close_editor(socket)}
+    end
   end
 
   def handle_event("cancel-status", _, socket) do
@@ -209,25 +221,31 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
   end
 
   def handle_event("confirm-status", _, socket) do
-    %{selected_subject: subject, selected_status: status} = socket.assigns
-    {:noreply, verify(socket, subject, status)}
+    if authorized?(socket) do
+      %{selected_subject: subject, selected_status: status} = socket.assigns
+      {:noreply, verify(socket, subject, status)}
+    else
+      {:noreply, close_editor(socket)}
+    end
   end
 
   def handle_event("verify", %{"subject" => subject, "status" => status}, socket) do
-    status = String.to_existing_atom(status)
-    subject = String.to_existing_atom(subject)
-    {:noreply, verify(socket, subject, status)}
+    if authorized?(socket) do
+      status = String.to_existing_atom(status)
+      subject = String.to_existing_atom(subject)
+      {:noreply, verify(socket, subject, status)}
+    else
+      {:noreply, close_editor(socket)}
+    end
   end
 
   defp verify(socket, :quote, status) do
     %{opinion: opinion, current_user: user} = socket.assigns
 
-    case Verifications.create_verification(%{
+    case Verifications.create_verification(user, %{
            opinion_id: opinion.id,
-           user_id: user.id,
            status: status,
-           comment: verification_comment(socket, status),
-           model: "human"
+           comment: verification_comment(socket, status)
          }) do
       {:ok, _} ->
         opinion = %{opinion | verification_status: cache(status)}
@@ -246,12 +264,10 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
   defp verify(socket, :relevance, status) do
     %{opinion_statement: os, current_user: user} = socket.assigns
 
-    case OpinionStatementVerifications.create_verification(%{
+    case OpinionStatementVerifications.create_verification(user, %{
            opinion_statement_id: os.id,
-           user_id: user.id,
            status: status,
-           comment: verification_comment(socket, status),
-           model: "human"
+           comment: verification_comment(socket, status)
          }) do
       {:ok, _} ->
         os = %{os | verification_status: cache(status)}
@@ -270,13 +286,11 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
   defp verify(socket, :vote, status) do
     %{opinion: opinion, vote: vote, current_user: user} = socket.assigns
 
-    case VoteVerifications.create_verification(%{
+    case VoteVerifications.create_verification(user, %{
            vote_id: vote.id,
            opinion_id: opinion.id,
-           user_id: user.id,
            status: status,
-           comment: verification_comment(socket, status),
-           model: "human"
+           comment: verification_comment(socket, status)
          }) do
       {:ok, _} ->
         vote = %{vote | verification_status: cache(status)}
@@ -310,6 +324,15 @@ defmodule YouCongressWeb.Components.VerificationAggregate do
   defp clear_editor(socket) do
     assign(socket, selected_subject: nil, selected_status: nil, comment: "")
   end
+
+  defp close_editor(socket) do
+    socket
+    |> assign(:show_dropdown, false)
+    |> clear_editor()
+  end
+
+  defp authorized?(socket),
+    do: Permissions.can_verify_opinion?(socket.assigns.current_user)
 
   defp notify_saved(subject_type, id) do
     send(self(), {:verification_saved, subject_type, id})

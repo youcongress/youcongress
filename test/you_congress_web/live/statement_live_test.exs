@@ -1224,7 +1224,7 @@ defmodule YouCongressWeb.StatementLiveTest do
       conn: conn,
       statement: statement
     } do
-      verifier = user_fixture()
+      verifier = admin_fixture()
       author = author_fixture(%{name: "Quote Status Carousel Author"})
 
       disputed_primary =
@@ -1263,7 +1263,7 @@ defmodule YouCongressWeb.StatementLiveTest do
         })
 
       {:ok, _} =
-        YouCongress.VoteVerifications.create_verification(%{
+        YouCongress.VoteVerifications.create_ai_verification(verifier, %{
           vote_id: vote.id,
           opinion_id: verified_alternate.id,
           user_id: verifier.id,

@@ -22,10 +22,10 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
       ai_disputed_quote = quote_fixture(statement, "Carbon quote disputed by AI.")
       unverified_quote = quote_fixture(statement, "Carbon quote waiting for review.")
 
-      reviewer = user_fixture()
+      reviewer = admin_fixture()
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(reviewer, %{
           opinion_id: human_quote.id,
           user_id: reviewer.id,
           status: :verified,
@@ -33,7 +33,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
         })
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_ai_verification(reviewer, %{
           opinion_id: ai_quote.id,
           user_id: reviewer.id,
           status: :ai_verified,
@@ -42,7 +42,7 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
         })
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(reviewer, %{
           opinion_id: ai_disputed_quote.id,
           user_id: reviewer.id,
           status: :disputed,
@@ -90,7 +90,8 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
            json: fn :tool, data -> {:json, data} end,
            error: fn :tool, message -> {:error, message} end
          ]},
-        {Opinions, [:passthrough], [get_by_content_similarity: fn _query, _opts -> [similar_quote] end]}
+        {Opinions, [:passthrough],
+         [get_by_content_similarity: fn _query, _opts -> [similar_quote] end]}
       ]) do
         assert {:reply, {:json, %{matches: matches, more_quotes: []}}, ^frame} =
                  QuotesSearch.execute(%{query: "carbon tax"}, frame)

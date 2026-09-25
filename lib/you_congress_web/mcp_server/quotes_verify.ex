@@ -50,7 +50,7 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
            source: "mcp",
            user_id: user.id
          },
-         {:ok, verification} <- Verifications.create_verification(attrs) do
+         {:ok, verification} <- Verifications.create_ai_verification(user, attrs) do
       maybe_enqueue_relation_verifications(opinion_id, normalized_status)
 
       data = %{

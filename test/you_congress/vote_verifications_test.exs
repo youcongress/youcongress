@@ -17,7 +17,7 @@ defmodule YouCongress.VoteVerificationsTest do
   # A vote backed by a quote, with authenticity + relevance both verified so the
   # progressive vote gate is satisfied.
   defp verified_vote_fixture do
-    user = user_fixture()
+    user = admin_fixture()
     author = author_fixture()
     statement = statement_fixture()
     opinion = opinion_fixture(%{author_id: author.id, user_id: user.id})
@@ -39,7 +39,7 @@ defmodule YouCongress.VoteVerificationsTest do
 
   # Same setup, but no prerequisites verified yet.
   defp unverified_vote_fixture do
-    user = user_fixture()
+    user = admin_fixture()
     author = author_fixture()
     statement = statement_fixture()
     opinion = opinion_fixture(%{author_id: author.id, user_id: user.id})
@@ -58,7 +58,7 @@ defmodule YouCongress.VoteVerificationsTest do
 
   defp verify_quote(opinion, user) do
     {:ok, _} =
-      Verifications.create_verification(%{
+      Verifications.create_verification(user, %{
         opinion_id: opinion.id,
         user_id: user.id,
         status: :verified,
@@ -70,7 +70,7 @@ defmodule YouCongress.VoteVerificationsTest do
     os = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
 
     {:ok, _} =
-      OpinionStatementVerifications.create_verification(%{
+      OpinionStatementVerifications.create_verification(user, %{
         opinion_statement_id: os.id,
         user_id: user.id,
         status: :verified,
@@ -79,18 +79,24 @@ defmodule YouCongress.VoteVerificationsTest do
   end
 
   defp vote(vote, user, status, comment, model \\ "human") do
-    VoteVerifications.create_verification(%{
+    attrs = %{
       vote_id: vote.id,
       user_id: user.id,
       status: status,
       comment: comment,
       model: model
-    })
+    }
+
+    if status in [:ai_verified, :ai_unverifiable] do
+      VoteVerifications.create_ai_verification(user, attrs)
+    else
+      VoteVerifications.create_verification(user, attrs)
+    end
   end
 
   defp reload_vote_status(vote_id), do: Repo.get!(Vote, vote_id).verification_status
 
-  describe "create_verification/1" do
+  describe "create_verification/2" do
     test "creates a verification and caches the status on the vote" do
       %{vote: v, user: user} = verified_vote_fixture()
 
@@ -174,7 +180,7 @@ defmodule YouCongress.VoteVerificationsTest do
     end
 
     test "can verify a vote in the context of a non-current quote" do
-      user = user_fixture()
+      user = admin_fixture()
       author = author_fixture()
       statement = statement_fixture()
 
@@ -196,7 +202,7 @@ defmodule YouCongress.VoteVerificationsTest do
       verify_relevance(old_quote, statement, user)
 
       assert {:ok, verification} =
-               VoteVerifications.create_verification(%{
+               VoteVerifications.create_verification(user, %{
                  vote_id: vote.id,
                  opinion_id: old_quote.id,
                  user_id: user.id,
@@ -210,10 +216,24 @@ defmodule YouCongress.VoteVerificationsTest do
     end
 
     test "requires all fields" do
-      %{vote: v} = verified_vote_fixture()
+      %{vote: v, user: user} = verified_vote_fixture()
 
       assert {:error, %Ecto.Changeset{}} =
-               VoteVerifications.create_verification(%{vote_id: v.id})
+               VoteVerifications.create_verification(user, %{vote_id: v.id})
+    end
+
+    test "rejects an ordinary user even when attrs claim a moderator identity" do
+      %{vote: vote} = verified_vote_fixture()
+      user = user_fixture()
+      admin = admin_fixture()
+
+      assert {:error, :forbidden} =
+               VoteVerifications.create_verification(user, %{
+                 vote_id: vote.id,
+                 user_id: admin.id,
+                 status: :verified,
+                 model: "forged-model"
+               })
     end
   end
 end

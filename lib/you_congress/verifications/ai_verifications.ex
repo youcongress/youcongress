@@ -21,6 +21,7 @@ defmodule YouCongress.Verifications.AIVerifications do
   require Logger
 
   alias YouCongress.Repo
+  alias YouCongress.Accounts.User
   alias YouCongress.Authors
   alias YouCongress.FeatureFlags
   alias YouCongress.Opinions
@@ -55,11 +56,14 @@ defmodule YouCongress.Verifications.AIVerifications do
         :ok
 
       user_id ->
-        do_record(subject, id, result, model(result), user_id, opts)
+        case Repo.get(User, user_id) do
+          %User{} = actor -> do_record(subject, id, result, model(result), actor, opts)
+          nil -> Logger.warning("verification_user_id does not identify an existing user")
+        end
     end
   end
 
-  defp do_record("quote", opinion_id, result, model, user_id, opts) do
+  defp do_record("quote", opinion_id, result, model, actor, opts) do
     status = normalize_status(result["status"])
 
     if QuoteCorrectionLoop.allow_correction?(opts) do
@@ -72,23 +76,23 @@ defmodule YouCongress.Verifications.AIVerifications do
           :ok
 
         :unchanged ->
-          record_quote_verification(opinion_id, status, result, model, user_id)
+          record_quote_verification(opinion_id, status, result, model, actor)
 
         {:multiple_individual_authors, author_name} ->
           result = put_multi_author_comment(result, author_name)
-          record_quote_verification(opinion_id, :disputed, result, model, user_id)
+          record_quote_verification(opinion_id, :disputed, result, model, actor)
 
         {:error, reason} ->
           Logger.error("Failed to apply quote correction for ##{opinion_id}: #{inspect(reason)}")
 
-          record_quote_verification(opinion_id, status, result, model, user_id)
+          record_quote_verification(opinion_id, status, result, model, actor)
       end
     else
-      record_quote_verification(opinion_id, status, result, model, user_id)
+      record_quote_verification(opinion_id, status, result, model, actor)
     end
   end
 
-  defp do_record("relevance", opinion_statement_id, result, model, user_id, _opts) do
+  defp do_record("relevance", opinion_statement_id, result, model, actor, _opts) do
     status = normalize_status(result["status"])
 
     case Repo.get(OpinionStatement, opinion_statement_id) do
@@ -109,11 +113,10 @@ defmodule YouCongress.Verifications.AIVerifications do
           opinion_statement_id: opinion_statement_id,
           status: status,
           comment: comment(result),
-          model: model,
-          user_id: user_id
+          model: model
         }
 
-        case OpinionStatementVerifications.create_verification(attrs) do
+        case OpinionStatementVerifications.create_ai_verification(actor, attrs) do
           {:ok, _} ->
             if VerificationStatus.positive?(status) && automatic_verifications_enabled?(),
               do: enqueue_votes(opinion_statement)
@@ -130,7 +133,7 @@ defmodule YouCongress.Verifications.AIVerifications do
     end
   end
 
-  defp do_record("vote", vote_id, result, model, user_id, opts) do
+  defp do_record("vote", vote_id, result, model, actor, opts) do
     case Repo.get(Vote, vote_id) do
       nil ->
         :ok
@@ -143,8 +146,7 @@ defmodule YouCongress.Verifications.AIVerifications do
           vote_id: vote_id,
           opinion_id: opinion_id,
           comment: comment(result),
-          model: model,
-          user_id: user_id
+          model: model
         }
 
         if correct_answer do
@@ -153,23 +155,22 @@ defmodule YouCongress.Verifications.AIVerifications do
             Votes.update_vote(vote, %{answer: correct_answer})
           end
 
-          create_vote_verification(Map.put(attrs, :status, :ai_verified), vote_id)
+          create_vote_verification(actor, Map.put(attrs, :status, :ai_verified), vote_id)
         else
-          create_vote_verification(Map.put(attrs, :status, :ai_unverifiable), vote_id)
+          create_vote_verification(actor, Map.put(attrs, :status, :ai_unverifiable), vote_id)
         end
     end
   end
 
-  defp record_quote_verification(opinion_id, status, result, model, user_id) do
+  defp record_quote_verification(opinion_id, status, result, model, actor) do
     attrs = %{
       opinion_id: opinion_id,
       status: status,
       comment: comment(result),
-      model: model,
-      user_id: user_id
+      model: model
     }
 
-    case Verifications.create_verification(attrs) do
+    case Verifications.create_ai_verification(actor, attrs) do
       {:ok, _} ->
         if VerificationStatus.positive?(status) && automatic_verifications_enabled?(),
           do: enqueue_relevance(opinion_id)
@@ -182,8 +183,8 @@ defmodule YouCongress.Verifications.AIVerifications do
     end
   end
 
-  defp create_vote_verification(attrs, vote_id) do
-    case VoteVerifications.create_verification(attrs) do
+  defp create_vote_verification(actor, attrs, vote_id) do
+    case VoteVerifications.create_ai_verification(actor, attrs) do
       {:ok, _} ->
         :ok
 

@@ -322,7 +322,7 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
   end
 
   defp set_system_user do
-    user = user_fixture()
+    user = admin_fixture()
     put_env_restore(:verification_user_id, user.id)
     user
   end
@@ -495,7 +495,7 @@ defmodule YouCongress.Verifications.AIVerificationsTest do
       %{opinion: opinion, statement: statement, vote: vote} = build_quote_with_vote(:against)
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_ai_verification(system_user, %{
           opinion_id: opinion.id,
           user_id: system_user.id,
           status: :ai_verified,

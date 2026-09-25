@@ -49,7 +49,7 @@ defmodule YouCongressWeb.MCPServer.VotesVerify do
            model: sanitize_model(model),
            user_id: user.id
          },
-         {:ok, verification} <- VoteVerifications.create_verification(attrs) do
+         {:ok, verification} <- VoteVerifications.create_ai_verification(user, attrs) do
       data = %{
         verification: %{
           id: verification.id,

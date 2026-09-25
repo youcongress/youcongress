@@ -523,12 +523,12 @@ defmodule YouCongress.OpinionsTest do
 
   describe "add_opinion_to_statement/3" do
     test "enqueues relevance verification when linking a verified quote" do
-      user = user_fixture()
+      user = admin_fixture()
       opinion = opinion_fixture(%{user_id: user.id})
       statement = statement_fixture()
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :verified,
@@ -550,12 +550,12 @@ defmodule YouCongress.OpinionsTest do
     test "does not enqueue relevance verification when automatic verifications are disabled" do
       disable_automatic_verifications()
 
-      user = user_fixture()
+      user = admin_fixture()
       opinion = opinion_fixture(%{user_id: user.id})
       statement = statement_fixture()
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :verified,

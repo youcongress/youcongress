@@ -145,32 +145,52 @@ defmodule YouCongressWeb.Components.VerificationBadge do
   defp opinion_id(_subject_type, _subject), do: nil
 
   def handle_event("toggle-dropdown", _, socket) do
-    show = !socket.assigns.show_dropdown
+    if authorized?(socket) do
+      show = !socket.assigns.show_dropdown
 
-    {:noreply,
-     socket
-     |> assign(:show_dropdown, show)
-     |> assign(:selected_status, nil)
-     |> assign(:comment, "")}
+      {:noreply,
+       socket
+       |> assign(:show_dropdown, show)
+       |> assign(:selected_status, nil)
+       |> assign(:comment, "")}
+    else
+      {:noreply, close_dropdown(socket)}
+    end
   end
 
   def handle_event("pick-status", %{"status" => status}, socket) do
-    {:noreply,
-     socket
-     |> assign(:selected_status, String.to_existing_atom(status))
-     |> assign(:comment, "")}
+    if authorized?(socket) do
+      {:noreply,
+       socket
+       |> assign(:selected_status, String.to_existing_atom(status))
+       |> assign(:comment, "")}
+    else
+      {:noreply, close_dropdown(socket)}
+    end
   end
 
   def handle_event("update-comment", %{"key" => "Enter", "value" => value}, socket) do
-    {:noreply, socket |> assign(:comment, value) |> confirm_status()}
+    if authorized?(socket) do
+      {:noreply, socket |> assign(:comment, value) |> confirm_status()}
+    else
+      {:noreply, close_dropdown(socket)}
+    end
   end
 
   def handle_event("update-comment", %{"value" => value}, socket) do
-    {:noreply, assign(socket, :comment, value)}
+    if authorized?(socket) do
+      {:noreply, assign(socket, :comment, value)}
+    else
+      {:noreply, close_dropdown(socket)}
+    end
   end
 
   def handle_event("confirm-status", _, socket) do
-    {:noreply, confirm_status(socket)}
+    if authorized?(socket) do
+      {:noreply, confirm_status(socket)}
+    else
+      {:noreply, close_dropdown(socket)}
+    end
   end
 
   def handle_event("cancel-status", _, socket) do
@@ -215,12 +235,10 @@ defmodule YouCongressWeb.Components.VerificationBadge do
   end
 
   defp create_verification(:opinion, subject, current_user, status, comment, _opinion_id) do
-    Verifications.create_verification(%{
+    Verifications.create_verification(current_user, %{
       opinion_id: subject.id,
-      user_id: current_user.id,
       status: status,
-      comment: comment,
-      model: "human"
+      comment: comment
     })
   end
 
@@ -232,25 +250,24 @@ defmodule YouCongressWeb.Components.VerificationBadge do
          comment,
          _opinion_id
        ) do
-    OpinionStatementVerifications.create_verification(%{
+    OpinionStatementVerifications.create_verification(current_user, %{
       opinion_statement_id: subject.id,
-      user_id: current_user.id,
       status: status,
-      comment: comment,
-      model: "human"
+      comment: comment
     })
   end
 
   defp create_verification(:vote, subject, current_user, status, comment, opinion_id) do
-    VoteVerifications.create_verification(%{
+    VoteVerifications.create_verification(current_user, %{
       vote_id: subject.id,
       opinion_id: opinion_id,
-      user_id: current_user.id,
       status: status,
-      comment: comment,
-      model: "human"
+      comment: comment
     })
   end
+
+  defp authorized?(socket),
+    do: Permissions.can_verify_opinion?(socket.assigns.current_user)
 
   defp close_dropdown(socket) do
     socket

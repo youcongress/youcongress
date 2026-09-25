@@ -144,4 +144,22 @@ defmodule YouCongressWeb.Components.VerificationAggregateTest do
     assert html =~ ~s|href="/c/1"|
     refute html =~ "/faq#verify-quotes"
   end
+
+  test "forged verification events from an ordinary user are rejected" do
+    socket = %Phoenix.LiveView.Socket{
+      assigns: %{
+        __changed__: %{},
+        current_user: %User{id: 2, role: "user", author_id: nil},
+        show_dropdown: true,
+        selected_subject: :quote,
+        selected_status: :verified,
+        comment: "forged"
+      }
+    }
+
+    assert {:noreply, socket} = VerificationAggregate.handle_event("confirm-status", %{}, socket)
+    refute socket.assigns.show_dropdown
+    assert socket.assigns.selected_subject == nil
+    assert socket.assigns.selected_status == nil
+  end
 end

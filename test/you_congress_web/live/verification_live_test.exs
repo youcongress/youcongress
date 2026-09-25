@@ -10,7 +10,7 @@ defmodule YouCongressWeb.VerificationLiveTest do
   alias YouCongress.Verifications
 
   defp create_verified_opinion(_context) do
-    user = user_fixture()
+    user = user_fixture(%{role: "moderator"})
     statement = statement_fixture()
 
     opinion =
@@ -33,7 +33,7 @@ defmodule YouCongressWeb.VerificationLiveTest do
 
     # Create a verification
     {:ok, verification} =
-      Verifications.create_verification(%{
+      Verifications.create_verification(user, %{
         opinion_id: opinion.id,
         user_id: user.id,
         status: :verified,
@@ -80,10 +80,10 @@ defmodule YouCongressWeb.VerificationLiveTest do
       conn: conn,
       opinion: opinion
     } do
-      other_user = user_fixture()
+      other_user = user_fixture(%{role: "moderator"})
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_verification(other_user, %{
           opinion_id: opinion.id,
           user_id: other_user.id,
           status: :disputed,
@@ -111,10 +111,10 @@ defmodule YouCongressWeb.VerificationLiveTest do
     end
 
     test "shows AI model for automated verifications", %{conn: conn, opinion: opinion} do
-      ai_user = user_fixture()
+      ai_user = admin_fixture()
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_ai_verification(ai_user, %{
           opinion_id: opinion.id,
           user_id: ai_user.id,
           status: :ai_verified,
@@ -129,10 +129,10 @@ defmodule YouCongressWeb.VerificationLiveTest do
     end
 
     test "shows AI unverifiable badge", %{conn: conn, opinion: opinion} do
-      ai_user = user_fixture()
+      ai_user = admin_fixture()
 
       {:ok, _} =
-        Verifications.create_verification(%{
+        Verifications.create_ai_verification(ai_user, %{
           opinion_id: opinion.id,
           user_id: ai_user.id,
           status: :ai_unverifiable,
@@ -149,7 +149,7 @@ defmodule YouCongressWeb.VerificationLiveTest do
   describe "/verifications pagination" do
     test "paginates with Load more", %{conn: conn} do
       statement = statement_fixture()
-      user = user_fixture()
+      user = user_fixture(%{role: "moderator"})
 
       # Create 25 opinions with verifications
       Enum.each(1..25, fn i ->
@@ -168,7 +168,7 @@ defmodule YouCongressWeb.VerificationLiveTest do
 
         YouCongress.Opinions.add_opinion_to_statement(opinion, statement.id)
 
-        Verifications.create_verification(%{
+        Verifications.create_verification(user, %{
           opinion_id: opinion.id,
           user_id: user.id,
           status: :verified,
