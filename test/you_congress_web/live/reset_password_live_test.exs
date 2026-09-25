@@ -6,6 +6,7 @@ defmodule YouCongressWeb.ResetPasswordLiveTest do
   alias YouCongress.Repo
 
   alias YouCongress.Accounts
+  alias YouCongress.RateLimiter
 
   describe "Reset password page" do
     test "renders reset password page", %{conn: conn} do
@@ -45,6 +46,26 @@ defmodule YouCongressWeb.ResetPasswordLiveTest do
                "If your email is in our system"
 
       assert Repo.all(Accounts.UserToken) == []
+    end
+
+    test "does not send another token after the durable email limit is exhausted", %{
+      conn: conn
+    } do
+      user = user_fixture()
+
+      for _ <- 1..5 do
+        assert RateLimiter.allowed?(:password_reset_email, user.email, 5, 60 * 60)
+      end
+
+      {:ok, lv, _html} = live(conn, ~p"/reset_password")
+
+      {:ok, _conn} =
+        lv
+        |> form("#reset_password_form", user: %{email: user.email})
+        |> render_submit()
+        |> follow_redirect(conn, "/")
+
+      refute Repo.get_by(Accounts.UserToken, user_id: user.id, context: "reset_password")
     end
   end
 end

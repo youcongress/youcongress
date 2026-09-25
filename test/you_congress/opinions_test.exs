@@ -13,11 +13,30 @@ defmodule YouCongress.OpinionsTest do
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements
+  alias YouCongress.RateLimiter
   alias YouCongress.Verifications
   alias YouCongress.Votes
   alias YouCongress.Workers.VerificationWorker
 
   @embedding_dimensions 1536
+
+  test "create_opinion enforces the durable per-user content limit" do
+    user = user_fixture()
+
+    for _ <- 1..60 do
+      assert RateLimiter.allowed?(:opinion_creation, user.id, 60, 60 * 60)
+    end
+
+    assert {:error, :rate_limited} =
+             Opinions.create_opinion(%{
+               content: "This should not be persisted",
+               author_id: user.author_id,
+               user_id: user.id,
+               twin: false
+             })
+
+    refute Opinions.get_by(content: "This should not be persisted")
+  end
 
   defp disable_automatic_verifications do
     original = Application.fetch_env(:you_congress, :feature_flags)
@@ -308,7 +327,9 @@ defmodule YouCongress.OpinionsTest do
                    "descendants_count" => 999,
                    "likes_count" => 999,
                    "content_embedding" => embedding([1.0])
-                 }, actor_user: owner)
+                 },
+                 actor_user: owner
+               )
 
       assert updated.content == "edited content"
       assert updated.user_id == owner.id

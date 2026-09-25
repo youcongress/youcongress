@@ -1,6 +1,7 @@
 defmodule YouCongressWeb.ResetPasswordLive do
   use YouCongressWeb, :live_view
   alias YouCongress.Accounts
+  alias YouCongress.RateLimiter
 
   def render(assigns) do
     ~H"""
@@ -35,11 +36,17 @@ defmodule YouCongressWeb.ResetPasswordLive do
   end
 
   def handle_event("send_reset_instructions", %{"user" => %{"email" => email}}, socket) do
-    if user = Accounts.get_user_by_email(email) do
-      Accounts.deliver_user_reset_password_instructions(
-        user,
-        &url(~p"/reset_password/#{&1}")
-      )
+    delivery_allowed? =
+      RateLimiter.allowed?(:password_reset_email, email, 5, 60 * 60) and
+        RateLimiter.allowed?(:password_reset_email_global, :global, 10_000, 24 * 60 * 60)
+
+    if delivery_allowed? do
+      if user = Accounts.get_user_by_email(email) do
+        Accounts.deliver_user_reset_password_instructions(
+          user,
+          &url(~p"/reset_password/#{&1}")
+        )
+      end
     end
 
     info =

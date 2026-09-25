@@ -7,12 +7,15 @@ defmodule YouCongressWeb.UserRegistrationLive do
   alias YouCongress.Accounts
   alias YouCongress.Accounts.User
   alias YouCongress.Accounts.SmsVerification
+  alias YouCongress.RateLimiter
   alias YouCongress.Track
   alias YouCongress.Turnstile
   alias YouCongressWeb.ReturnTo
 
   @max_email_code_attempts 3
   @email_code_lock_seconds 60
+  @verification_window_seconds 15 * 60
+  @delivery_window_seconds 60 * 60
 
   def render(assigns) do
     ~H"""
@@ -441,8 +444,15 @@ defmodule YouCongressWeb.UserRegistrationLive do
       |> maybe_subscribe_to_newsletter(socket.assigns.subscription_mode)
 
     author_params = params["user"] |> Map.take(~w(name))
+    email = user_params["email"]
 
     with {:turnstile, {:ok, _}} <- {:turnstile, Turnstile.verify(turnstile_token)},
+         {:rate_limit, :ok} <-
+           {:rate_limit,
+            RateLimiter.check(:registration_email, email, 3, @delivery_window_seconds)},
+         {:global_rate_limit, :ok} <-
+           {:global_rate_limit,
+            RateLimiter.check(:registration_global, :global, 5_000, 24 * 60 * 60)},
          {:register, {:ok, %{user: user}}} <-
            {:register, Accounts.register_passwordless_user(user_params, author_params)} do
       Track.event("Register via email magic link", user)
@@ -460,6 +470,28 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
       {:noreply, socket}
     else
+      {:rate_limit, {:error, {:rate_limited, _retry_after}}} ->
+        changeset =
+          %User{}
+          |> Accounts.change_passwordless_registration(params["user"] || %{})
+          |> Map.put(:action, :validate)
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Too many requests. Please wait before trying again.")
+         |> assign_form(changeset)}
+
+      {:global_rate_limit, {:error, {:rate_limited, _retry_after}}} ->
+        changeset =
+          %User{}
+          |> Accounts.change_passwordless_registration(params["user"] || %{})
+          |> Map.put(:action, :validate)
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Registration is temporarily busy. Please try again later.")
+         |> assign_form(changeset)}
+
       {:turnstile, {:error, _reason}} ->
         changeset =
           %User{}
@@ -513,6 +545,21 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
           {:noreply, socket |> assign(check_errors: true) |> assign_form(locked_changeset)}
 
+        not RateLimiter.allowed?(
+          :email_verification_check,
+          user.id,
+          5,
+          @verification_window_seconds
+        ) ->
+          limited_changeset =
+            Ecto.Changeset.add_error(
+              changeset,
+              :email_verification_code,
+              "Too many attempts. Please wait before trying again."
+            )
+
+          {:noreply, socket |> assign(check_errors: true) |> assign_form(limited_changeset)}
+
         true ->
           case Accounts.confirm_user_with_code(user, normalized_code) do
             {:ok, updated_user} ->
@@ -565,7 +612,28 @@ defmodule YouCongressWeb.UserRegistrationLive do
   def handle_event("save_phone_number", %{"user" => %{"phone_number" => phone_number}}, socket) do
     phone_number = String.replace(phone_number, ~r/\s|\(|\)/, "")
 
-    with {:ok, user} <-
+    with :ok <-
+           RateLimiter.check(
+             :phone_verification_delivery,
+             phone_number,
+             5,
+             @delivery_window_seconds
+           ),
+         :ok <-
+           RateLimiter.check(
+             :phone_verification_delivery_account,
+             socket.assigns.user.id,
+             5,
+             @delivery_window_seconds
+           ),
+         :ok <-
+           RateLimiter.check(
+             :phone_verification_delivery_global,
+             :global,
+             1_000,
+             24 * 60 * 60
+           ),
+         {:ok, user} <-
            Accounts.update_user_phone_number(socket.assigns.user, phone_number),
          {:ok, _} <- SmsVerification.send_verification_code(phone_number) do
       Track.event("Phone number saved", user)
@@ -599,7 +667,25 @@ defmodule YouCongressWeb.UserRegistrationLive do
   def handle_event("verify_phone", %{"user" => %{"phone_verification_code" => code}}, socket) do
     user = socket.assigns.user
 
-    case SmsVerification.check_verification_code(user.phone_number, code) do
+    result =
+      with :ok <-
+             RateLimiter.check(
+               :phone_verification_check,
+               user.phone_number,
+               5,
+               @verification_window_seconds
+             ),
+           :ok <-
+             RateLimiter.check(
+               :phone_verification_check_account,
+               user.id,
+               5,
+               @verification_window_seconds
+             ) do
+        SmsVerification.check_verification_code(user.phone_number, code)
+      end
+
+    case result do
       {:ok, _response} ->
         case Accounts.confirm_user_phone(user) do
           {:ok, _} ->
@@ -609,6 +695,17 @@ defmodule YouCongressWeb.UserRegistrationLive do
           {:error, changeset} ->
             {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
         end
+
+      {:error, {:rate_limited, _retry_after}} ->
+        changeset =
+          user
+          |> Accounts.change_user_phone_number(%{phone_number: user.phone_number})
+          |> Ecto.Changeset.add_error(
+            :phone_verification_code,
+            "Too many attempts. Please wait before trying again."
+          )
+
+        {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
 
       {:error, reason} ->
         changeset =
@@ -662,21 +759,33 @@ defmodule YouCongressWeb.UserRegistrationLive do
   def handle_event("resend_email", _params, socket) do
     user = socket.assigns.user
 
-    Accounts.deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
+    if RateLimiter.allowed?(:confirmation_email, user.email, 3, @delivery_window_seconds) and
+         RateLimiter.allowed?(:email_delivery_global, :global, 10_000, 24 * 60 * 60) do
+      Accounts.deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
 
-    {:noreply,
-     socket
-     |> reset_email_code_state()
-     |> assign_form(email_code_changeset())
-     |> put_flash(:info, "A new verification code has been sent to your email.")}
+      {:noreply,
+       socket
+       |> reset_email_code_state()
+       |> assign_form(email_code_changeset())
+       |> put_flash(:info, "A new verification code has been sent to your email.")}
+    else
+      {:noreply, put_flash(socket, :error, "Too many requests. Please wait before trying again.")}
+    end
   end
 
   def handle_event("resend_magic_link", _params, socket) do
-    deliver_registration_magic_link(socket.assigns.user, socket.assigns.return_to)
+    user = socket.assigns.user
 
-    {:noreply,
-     socket
-     |> put_flash(:info, "A new sign-in link has been sent to your email.")}
+    if RateLimiter.allowed?(:registration_magic_link, user.email, 3, @delivery_window_seconds) and
+         RateLimiter.allowed?(:email_delivery_global, :global, 10_000, 24 * 60 * 60) do
+      deliver_registration_magic_link(user, socket.assigns.return_to)
+
+      {:noreply,
+       socket
+       |> put_flash(:info, "A new sign-in link has been sent to your email.")}
+    else
+      {:noreply, put_flash(socket, :error, "Too many requests. Please wait before trying again.")}
+    end
   end
 
   def handle_event("resend_phone_code", _params, socket) do

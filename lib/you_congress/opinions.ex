@@ -155,9 +155,28 @@ defmodule YouCongress.Opinions do
     attrs =
       attrs
       |> Opinion.normalize_attrs()
-      |> ContentEmbedding.put(%Opinion{})
 
     user_id = value_from_attrs(attrs, :user_id)
+
+    within_user_budget? =
+      is_nil(user_id) or
+        YouCongress.RateLimiter.allowed?(:opinion_creation, user_id, 60, 60 * 60)
+
+    if within_user_budget? and
+         YouCongress.RateLimiter.allowed?(
+           :opinion_creation_global,
+           :global,
+           50_000,
+           24 * 60 * 60
+         ) do
+      do_create_opinion(attrs, user_id)
+    else
+      {:error, :rate_limited}
+    end
+  end
+
+  defp do_create_opinion(attrs, user_id) do
+    attrs = ContentEmbedding.put(attrs, %Opinion{})
 
     result =
       Ecto.Multi.new()

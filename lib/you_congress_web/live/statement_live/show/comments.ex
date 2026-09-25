@@ -70,6 +70,10 @@ defmodule YouCongressWeb.StatementLive.Show.Comments do
 
       {:noreply, socket}
     else
+      {:error, :rate_limited} ->
+        {:noreply,
+         put_flash(socket, :error, "Too many submissions. Please wait before trying again.")}
+
       {:error, error} ->
         Logger.error("Error creating vote: #{inspect(error)}")
         {:noreply, put_flash(socket, :error, "Error. Please try again.")}
@@ -122,6 +126,10 @@ defmodule YouCongressWeb.StatementLive.Show.Comments do
 
       {:noreply, socket}
     else
+      {:error, :rate_limited} ->
+        {:noreply,
+         put_flash(socket, :error, "Too many submissions. Please wait before trying again.")}
+
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Error. Please try again.")}
     end

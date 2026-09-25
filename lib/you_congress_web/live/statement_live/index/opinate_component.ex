@@ -174,6 +174,14 @@ defmodule YouCongressWeb.StatementLive.Index.OpinateComponent do
        |> assign(:vote, vote)
        |> assign(:form, form)}
     else
+      {:error, :rate_limited} ->
+        send(
+          self(),
+          {:put_flash, :error, "Too many submissions. Please wait before trying again."}
+        )
+
+        {:noreply, socket}
+
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
 

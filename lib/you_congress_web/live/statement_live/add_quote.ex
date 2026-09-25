@@ -128,6 +128,10 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
              |> assign(:find_quotes_in_progress, true)
              |> clear_flash()}
 
+          {:error, :rate_limited} ->
+            {:noreply,
+             put_flash(socket, :error, "AI quote search limit reached. Please try again later.")}
+
           {:error, reason} ->
             Logger.error("Failed to enqueue quote discovery: #{inspect(reason)}")
             {:noreply, put_flash(socket, :error, "Unable to start AI quote search.")}
@@ -381,6 +385,10 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
 
       {:noreply, socket}
     else
+      {:error, :rate_limited} ->
+        {:noreply,
+         put_flash(socket, :error, "Too many submissions. Please wait before trying again.")}
+
       {:error, :forbidden} ->
         {:noreply,
          put_flash(socket, :error, "You are not allowed to change this author's public vote.")}
@@ -447,6 +455,10 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
 
       {:noreply, socket}
     else
+      {:error, :rate_limited} ->
+        {:noreply,
+         put_flash(socket, :error, "Too many submissions. Please wait before trying again.")}
+
       {:error, :forbidden} ->
         {:noreply,
          put_flash(socket, :error, "You are not allowed to change this author's public vote.")}

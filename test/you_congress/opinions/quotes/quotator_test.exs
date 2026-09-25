@@ -303,5 +303,18 @@ defmodule YouCongress.Opinions.Quotes.QuotatorTest do
         assert_enqueued(worker: QuotatorWorker, args: %{"statement_id" => statement.id})
       end)
     end
+
+    test "durably limits quote discovery requests per user" do
+      statement = statement_fixture()
+      user = user_fixture()
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        for _ <- 1..10 do
+          assert {:ok, _job} = Quotator.enqueue_find_quotes(statement.id, user.id)
+        end
+
+        assert {:error, :rate_limited} = Quotator.enqueue_find_quotes(statement.id, user.id)
+      end)
+    end
   end
 end

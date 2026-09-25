@@ -50,14 +50,27 @@ defmodule YouCongress.Opinions.Quotes.Quotator do
   """
   def enqueue_find_quotes(statement_id, user_id)
       when is_integer(statement_id) and is_integer(user_id) do
-    case active_quote_job(statement_id) do
-      nil ->
-        %{statement_id: statement_id, user_id: user_id}
-        |> QuotatorWorker.new()
-        |> Oban.insert()
+    within_user_budget? =
+      YouCongress.RateLimiter.allowed?(:ai_quote_discovery, user_id, 10, 60 * 60)
 
-      %Oban.Job{} = job ->
-        {:ok, %{job | conflict?: true}}
+    if within_user_budget? and
+         YouCongress.RateLimiter.allowed?(
+           :ai_quote_discovery_global,
+           :global,
+           500,
+           24 * 60 * 60
+         ) do
+      case active_quote_job(statement_id) do
+        nil ->
+          %{statement_id: statement_id, user_id: user_id}
+          |> QuotatorWorker.new()
+          |> Oban.insert()
+
+        %Oban.Job{} = job ->
+          {:ok, %{job | conflict?: true}}
+      end
+    else
+      {:error, :rate_limited}
     end
   end
 

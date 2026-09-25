@@ -5,6 +5,7 @@ defmodule YouCongressWeb.UserSessionController do
   alias YouCongress.Accounts.User
   alias YouCongressWeb.UserAuth
   alias YouCongress.Accounts.Permissions
+  alias YouCongress.RateLimiter
   alias YouCongressWeb.ReturnTo
 
   def create(conn, %{"_action" => "registered"} = params) do
@@ -24,9 +25,19 @@ defmodule YouCongressWeb.UserSessionController do
   defp create(conn, %{"user" => user_params}, info) do
     %{"email" => email, "password" => password} = user_params
 
-    user = Accounts.get_user_by_email(email)
+    login_allowed? =
+      RateLimiter.allowed?(:password_login_identity, email, 10, 15 * 60) and
+        RateLimiter.allowed?(:password_login_ip, client_ip(conn), 50, 15 * 60)
+
+    user = if login_allowed?, do: Accounts.get_user_by_email(email)
 
     cond do
+      not login_allowed? ->
+        conn
+        |> put_flash(:error, "Invalid email or password")
+        |> put_flash(:email, String.slice(email, 0, 160))
+        |> redirect(to: ~p"/log_in")
+
       user && Permissions.blocked?(user) ->
         # Check password to avoid timing attacks
         _ = User.valid_password?(user, password)
@@ -59,16 +70,23 @@ defmodule YouCongressWeb.UserSessionController do
 
   def request_magic_link(conn, %{"user" => %{"email" => email} = user_params})
       when is_binary(email) do
-    case Accounts.get_user_by_email(email) do
-      %User{} = user ->
-        unless Permissions.blocked?(user) do
-          Accounts.deliver_user_magic_login_instructions(user, fn token ->
-            magic_login_url(conn, token, user_params["return_to"])
-          end)
-        end
+    delivery_allowed? =
+      RateLimiter.allowed?(:magic_link_email, email, 5, 60 * 60) and
+        RateLimiter.allowed?(:magic_link_ip, client_ip(conn), 20, 60 * 60) and
+        RateLimiter.allowed?(:magic_link_global, :global, 10_000, 24 * 60 * 60)
 
-      nil ->
-        :ok
+    if delivery_allowed? do
+      case Accounts.get_user_by_email(email) do
+        %User{} = user ->
+          unless Permissions.blocked?(user) do
+            Accounts.deliver_user_magic_login_instructions(user, fn token ->
+              magic_login_url(conn, token, user_params["return_to"])
+            end)
+          end
+
+        nil ->
+          :ok
+      end
     end
 
     conn
@@ -168,5 +186,11 @@ defmodule YouCongressWeb.UserSessionController do
 
   defp blocked_account_message do
     "Your account has been blocked as it seemed spam. If you're a real person or a useful bot, please contact support@youcongress.org if this is an error."
+  end
+
+  defp client_ip(%Plug.Conn{remote_ip: remote_ip}) do
+    remote_ip
+    |> :inet.ntoa()
+    |> to_string()
   end
 end
