@@ -16,6 +16,11 @@ defmodule YouCongress.Statements.QuotesCsv do
   annotations — including the `source_text` citations we write — are CC BY 4.0,
   while quote text and author bios are third-party content that remains its
   rights holders' property.
+
+  Every textual cell is spreadsheet-safe: values that could be interpreted as
+  formulas are prefixed with a single quote. This export is intended for both
+  spreadsheet use and machine consumption; no raw, formula-preserving variant
+  is exposed.
   """
 
   import Ecto.Query, warn: false
@@ -134,9 +139,22 @@ defmodule YouCongress.Statements.QuotesCsv do
 
   defp dump([headers | rows]) do
     ([headers] ++ @license_rows ++ rows)
+    |> Enum.map(fn row -> Enum.map(row, &spreadsheet_safe/1) end)
     |> CSV.dump_to_iodata()
     |> IO.iodata_to_binary()
   end
+
+  # Spreadsheet programs may evaluate cells whose first meaningful character
+  # is one of these formula sigils. CSV quoting does not prevent evaluation, so
+  # put a literal apostrophe before the complete value, including any leading
+  # whitespace, Unicode formatting marks, or control characters.
+  @formula_prefix ~r/\A[\s\p{Cc}\p{Cf}]*[=+\-@]/u
+
+  defp spreadsheet_safe(value) when is_binary(value) do
+    if Regex.match?(@formula_prefix, value), do: "'" <> value, else: value
+  end
+
+  defp spreadsheet_safe(value), do: value
 
   defp rows(%Statement{} = statement) do
     votes_by_author = votes_by_author(statement.id)
@@ -248,7 +266,14 @@ defmodule YouCongress.Statements.QuotesCsv do
     |> Map.new(fn {key, list} -> {key, VerificationStatus.latest_authoritative(list)} end)
   end
 
-  defp row(statement, opinion, vote, quote_verification, relevance_verification, vote_verification) do
+  defp row(
+         statement,
+         opinion,
+         vote,
+         quote_verification,
+         relevance_verification,
+         vote_verification
+       ) do
     author = opinion.author
 
     [
