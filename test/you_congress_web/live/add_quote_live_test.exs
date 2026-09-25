@@ -39,7 +39,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
     test "adds a quote with twitter username in URL", %{conn: conn, statement: statement} do
       author = author_fixture(%{twitter_username: "someone"})
-      current_user = user_fixture()
+      current_user = user_fixture(%{role: "creator"})
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
@@ -81,7 +81,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
 
     test "adds a quote without passing username as a param", %{conn: conn, statement: statement} do
       author = author_fixture(%{twitter_username: "someone"})
-      current_user = user_fixture()
+      current_user = user_fixture(%{role: "creator"})
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
@@ -170,7 +170,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
     end
 
     test "creates an author and adds a quote", %{conn: conn, statement: statement} do
-      current_user = user_fixture()
+      current_user = user_fixture(%{role: "creator"})
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
@@ -242,7 +242,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
           twitter_username: nil
         })
 
-      current_user = user_fixture()
+      current_user = user_fixture(%{role: "creator"})
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
@@ -288,7 +288,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
           twitter_username: nil
         })
 
-      current_user = user_fixture()
+      current_user = user_fixture(%{role: "creator"})
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
@@ -335,7 +335,7 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
     end
 
     test "creates an author with wikipedia URL only", %{conn: conn, statement: statement} do
-      current_user = user_fixture()
+      current_user = user_fixture(%{role: "creator"})
       conn = log_in_user(conn, current_user)
 
       {:ok, add_quote_live, html} =
@@ -395,6 +395,87 @@ defmodule YouCongressWeb.AddQuoteLiveTest do
       assert opinion.source_url == "http://example.com/newton_quote"
       assert opinion.user_id == current_user.id
       assert opinion.twin == false
+    end
+
+    test "ordinary users cannot create public-figure authors", %{conn: conn, statement: statement} do
+      current_user = user_fixture()
+      conn = log_in_user(conn, current_user)
+
+      {:ok, add_quote_live, _html} = live(conn, ~p"/p/#{statement.slug}/add-quote")
+
+      add_quote_live
+      |> form("form", twitter_username: "unauthorized_public_figure")
+      |> render_submit()
+
+      html =
+        add_quote_live
+        |> form("form",
+          name: "Unauthorized Public Figure",
+          bio: "Should not be created"
+        )
+        |> render_submit()
+
+      assert html =~ "You are not allowed to create public-figure profiles."
+      refute Authors.get_author_by(twitter_username: "unauthorized_public_figure")
+    end
+
+    test "ordinary users cannot replace another author's canonical vote", %{
+      conn: conn,
+      statement: statement
+    } do
+      author = author_fixture(%{twitter_username: "protected_author"})
+      original_opinion = YouCongress.OpinionsFixtures.opinion_fixture(%{author_id: author.id})
+
+      {:ok, vote} =
+        Votes.create_vote(%{
+          statement_id: statement.id,
+          author_id: author.id,
+          opinion_id: original_opinion.id,
+          answer: :for
+        })
+
+      attacker = user_fixture()
+      conn = log_in_user(conn, attacker)
+
+      {:ok, add_quote_live, _html} =
+        live(conn, ~p"/p/#{statement.slug}/add-quote?twitter_username=protected_author")
+
+      assert add_quote_live
+             |> form("form",
+               opinion: "A forged replacement quote",
+               source_url: "https://example.com/forged",
+               agree_rate: "Against"
+             )
+             |> render_submit()
+
+      unchanged_vote = Votes.get_vote!(vote.id)
+      assert unchanged_vote.answer == :for
+      assert unchanged_vote.opinion_id == original_opinion.id
+      refute Enum.any?(Opinions.list_opinions(), &(&1.content == "A forged replacement quote"))
+    end
+
+    test "users can add a sourced quote for their own author identity", %{
+      conn: conn,
+      statement: statement
+    } do
+      current_user = user_fixture()
+      author = Authors.get_author!(current_user.author_id)
+      conn = log_in_user(conn, current_user)
+
+      {:ok, add_quote_live, _html} =
+        live(conn, ~p"/p/#{statement.slug}/add-quote?a=#{author.id}")
+
+      add_quote_live
+      |> form("form",
+        opinion: "My own sourced statement",
+        source_url: "https://example.com/my-statement",
+        agree_rate: "For"
+      )
+      |> render_submit()
+
+      vote = Votes.get_by(%{statement_id: statement.id, author_id: author.id})
+      assert vote.answer == :for
+      assert Opinions.get_opinion!(vote.opinion_id).content == "My own sourced statement"
     end
   end
 end

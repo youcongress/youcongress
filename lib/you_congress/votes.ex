@@ -6,6 +6,8 @@ defmodule YouCongress.Votes do
   import Ecto.Query, warn: false
 
   alias YouCongress.Countries
+  alias YouCongress.Accounts.Permissions
+  alias YouCongress.Accounts.User
   alias YouCongress.DelegationVotes
   alias YouCongress.Endorsements
   alias YouCongress.Authors.Author
@@ -492,6 +494,24 @@ defmodule YouCongress.Votes do
   end
 
   @doc """
+  Creates a vote on behalf of an authenticated actor after enforcing permission
+  to edit the target author's canonical vote.
+  """
+  def create_vote(%User{} = actor, attrs) do
+    author_id = attrs[:author_id] || attrs["author_id"]
+
+    if Permissions.can_edit_vote?(%{author_id: author_id}, actor) do
+      attrs
+      |> actor_attrs(actor)
+      |> create_vote()
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  def create_vote(_actor, _attrs), do: {:error, :forbidden}
+
+  @doc """
   Updates a vote.
 
   ## Examples
@@ -511,6 +531,32 @@ defmodule YouCongress.Votes do
     |> Repo.update()
     |> maybe_endorse_vote(user_id)
     |> maybe_refresh_vote_side_effects_after_update(vote)
+  end
+
+  @doc """
+  Updates a canonical vote on behalf of an authenticated actor after enforcing
+  permission for the vote's author.
+  """
+  def update_vote(%User{} = actor, %Vote{} = vote, attrs) do
+    if Permissions.can_edit_vote?(vote, actor) do
+      attrs =
+        attrs
+        |> Map.drop([:author_id, "author_id"])
+        |> Map.put(:author_id, vote.author_id)
+        |> actor_attrs(actor)
+
+      update_vote(vote, attrs)
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  def update_vote(_actor, _vote, _attrs), do: {:error, :forbidden}
+
+  defp actor_attrs(attrs, actor) do
+    attrs
+    |> Map.drop([:user_id, "user_id"])
+    |> Map.put(:user_id, actor.id)
   end
 
   @doc """

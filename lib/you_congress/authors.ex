@@ -9,6 +9,7 @@ defmodule YouCongress.Authors do
   alias YouCongress.Repo
 
   alias YouCongress.Authors.Author
+  alias YouCongress.Accounts.Permissions
   alias YouCongress.Accounts.User
   alias YouCongress.Countries
   alias YouCongress.Delegations.Delegation
@@ -223,6 +224,25 @@ defmodule YouCongress.Authors do
         {:error, unknown_country_changeset(author, attrs, country)}
     end
   end
+
+  @doc """
+  Creates an author on behalf of an authenticated actor after enforcing the
+  author-creation policy. Caller-supplied ownership metadata is ignored.
+  """
+  def create_author(%User{} = actor, attrs) do
+    if Permissions.can_create_authors?(actor) do
+      attrs =
+        attrs
+        |> Map.drop([:user_id, "user_id"])
+        |> Map.put(:user_id, actor.id)
+
+      create_author(attrs)
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  def create_author(_actor, _attrs), do: {:error, :forbidden}
 
   @doc """
   Finds a author by name or creates a new one.
