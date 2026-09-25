@@ -12,6 +12,7 @@ defmodule YouCongressWeb.Components.LoginButtons do
   attr :class, :string, default: ""
   attr :pending_actions, :string, default: nil
   attr :return_to, :string, default: nil
+  attr :email_action, :atom, values: [:log_in, :sign_up], default: :log_in
 
   def render(assigns) do
     pending_actions = assigns.pending_actions
@@ -21,7 +22,7 @@ defmodule YouCongressWeb.Components.LoginButtons do
       assigns
       |> assign(:google_href, ReturnTo.auth_path(:google, pending_actions, return_to))
       |> assign(:x_href, ReturnTo.auth_path(:x, pending_actions, return_to))
-      |> assign(:email_href, ReturnTo.log_in_path(pending_actions, return_to))
+      |> assign(:email_href, email_path(assigns.email_action, pending_actions, return_to))
 
     ~H"""
     <div class={@class}>
@@ -65,10 +66,20 @@ defmodule YouCongressWeb.Components.LoginButtons do
           href={@email_href}
           class="inline-flex items-center py-1.5 px-3 text-sm text-gray-600 hover:text-indigo-600 hover:underline"
         >
-          Log in with email/password
+          {if @email_action == :sign_up,
+            do: "Sign up with email/password",
+            else: "Log in with email/password"}
         </.link>
       </div>
     </div>
     """
+  end
+
+  defp email_path(:sign_up, pending_actions, return_to) do
+    ReturnTo.sign_up_path(return_to, pending_actions)
+  end
+
+  defp email_path(:log_in, pending_actions, return_to) do
+    ReturnTo.log_in_path(pending_actions, return_to)
   end
 end
