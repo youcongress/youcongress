@@ -226,6 +226,32 @@ defmodule YouCongressWeb.SettingsLiveTest do
       assert user.newsletter_subscription_prompt_dismissed_at
     end
 
+    test "users can create and revoke their own API keys", %{
+      conn: conn,
+      current_user: current_user
+    } do
+      conn = log_in_user(conn, current_user)
+      {:ok, settings_live, _html} = live(conn, ~p"/settings")
+
+      html =
+        settings_live
+        |> form("#api-key-form", api_key: %{name: "My MCP client", scope: "write"})
+        |> render_submit()
+
+      assert html =~ "Copy your new API key now"
+      [api_key] = Accounts.list_api_keys_for_user(current_user)
+
+      assert has_element?(
+               settings_live,
+               "button[phx-click='revoke_api_key'][phx-value-id='#{api_key.id}']",
+               "Revoke"
+             )
+
+      html = render_click(settings_live, "revoke_api_key", %{"id" => to_string(api_key.id)})
+      assert html =~ "API key revoked."
+      assert Accounts.list_api_keys_for_user(current_user) == []
+    end
+
     test "passwordless email users can edit their profile and request a password setup link", %{
       conn: conn
     } do

@@ -13,7 +13,7 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
   alias YouCongressWeb.MCPServer.AuthorsSearch
   alias YouCongressWeb.MCPServer.AuthorsUpdate
 
-  @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
+  @missing_key_message "API key is required. Send it as an Authorization: Bearer YOUR_KEY header."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @create_forbidden_message "Your account is not allowed to create authors."
   @update_forbidden_message "Your account is not allowed to edit this author."
@@ -327,7 +327,10 @@ defmodule YouCongressWeb.MCPServer.AuthorsToolsTest do
          error: fn :tool, message -> {:error, message} end
        ]}
     ]) do
-      frame = Anubis.Server.Frame.new(%{query_params: %{"key" => key}})
+      frame = %Anubis.Server.Frame{
+        context: %Anubis.Server.Context{headers: %{"authorization" => "Bearer #{key}"}}
+      }
+
       fun.(frame)
     end
   end

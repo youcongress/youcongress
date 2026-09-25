@@ -81,7 +81,10 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
       similar_quote = %{quote | similarity: 0.91}
 
       api_key = api_key_fixture(user_fixture())
-      frame = Anubis.Server.Frame.new(%{query_params: %{"key" => api_key.token}})
+
+      frame = %Anubis.Server.Frame{
+        context: %Anubis.Server.Context{headers: %{"authorization" => "Bearer #{api_key.token}"}}
+      }
 
       with_mocks([
         {Anubis.Server.Response, [],

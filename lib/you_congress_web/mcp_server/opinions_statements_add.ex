@@ -2,7 +2,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
   @moduledoc """
   Attach an existing opinion to a statement through the MCP server.
 
-  The caller must supply a valid API key via the `?key=` query param and have
+  The caller must supply a valid API key via an `Authorization: Bearer YOUR_KEY` header and have
   permission to manage statement opinions.
   """
 
@@ -16,7 +16,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsAdd do
   alias YouCongress.Statements
   alias YouCongress.Votes
 
-  @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
+  @missing_key_message "API key is required. Send it as an Authorization: Bearer YOUR_KEY header."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @forbidden_message "Your account is not allowed to attach opinions to statements."
   @opinion_not_found "Opinion not found."

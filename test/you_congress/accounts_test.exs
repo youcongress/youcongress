@@ -549,6 +549,22 @@ defmodule YouCongress.AccountsTest do
     test "returns an error for unknown tokens" do
       assert {:error, :invalid_api_key} = Accounts.get_user_by_api_key("invalid")
     end
+
+    test "allows owners to revoke keys and prevents revoking another user's key" do
+      owner = user_fixture()
+      other_user = user_fixture()
+
+      {:ok, api_key} =
+        Accounts.create_api_key_for_user(owner, %{"name" => "CLI", "scope" => :write})
+
+      assert {:error, :not_found} =
+               Accounts.revoke_api_key_for_user(other_user, api_key.id)
+
+      assert {:ok, _owner} = Accounts.get_user_by_api_key(api_key.token)
+      assert :ok = Accounts.revoke_api_key_for_user(owner, api_key.id)
+      assert {:error, :invalid_api_key} = Accounts.get_user_by_api_key(api_key.token)
+      refute Repo.get(ApiKey, api_key.id)
+    end
   end
 
   describe "deliver_user_confirmation_instructions/2" do

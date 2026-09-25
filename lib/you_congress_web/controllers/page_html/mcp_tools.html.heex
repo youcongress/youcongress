@@ -91,17 +91,18 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt), and vice versa. --%>
               Settings</.link>&nbsp;to create an API key. Choose
             <strong>read-write</strong>
             scope if you want to create or edit data, or <strong>read-only</strong>
-            for browsing. Then add the server with your key appended:
+            for browsing. Keep the server URL unchanged and configure this HTTP authorization
+            header in your MCP client:
           </p>
           <div class="mt-2 flex items-center gap-2 rounded-lg bg-gray-100 border border-gray-200">
-            <pre class="flex-1 text-sm overflow-x-auto m-0"><code id="mcp-tools-url-keyed" class="block px-3 py-2">https://youcongress.org/mcp?key=YOUR_API_KEY</code></pre>
+            <pre class="flex-1 text-sm overflow-x-auto m-0"><code id="mcp-tools-url-keyed" class="block px-3 py-2">Authorization: Bearer YOUR_API_KEY</code></pre>
             <button
               type="button"
               class="px-3 py-2 shrink-0 text-gray-500 hover:text-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 border-l border-gray-200"
               data-copy-target="mcp-tools-url-keyed"
-              aria-label="Copy URL"
+              aria-label="Copy authorization header"
             >
-              <span class="sr-only">Copy URL</span>
+              <span class="sr-only">Copy authorization header</span>
               <svg
                 class="h-5 w-5"
                 viewBox="0 0 24 24"
@@ -528,7 +529,7 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt), and vice versa. --%>
             all quotes by meaning (semantic similarity), with each result ranked by a
             <code class="bg-gray-100 px-1 rounded">similarity</code>
             score. Cross-statement semantic search requires an API key
-            (<code class="bg-gray-100 px-1 rounded">?key=YOUR_KEY</code>).
+            (<code class="bg-gray-100 px-1 rounded">Authorization: Bearer YOUR_KEY</code>).
           </dd>
         </div>
         <div class="pl-4">

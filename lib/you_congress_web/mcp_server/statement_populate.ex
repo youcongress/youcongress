@@ -13,7 +13,7 @@ defmodule YouCongressWeb.MCPServer.StatementPopulate do
   alias YouCongress.Statements
   alias YouCongress.MCP.ToolUsageTracker
 
-  @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
+  @missing_key_message "API key is required. Send it as an Authorization: Bearer YOUR_KEY header."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @forbidden_message "Only administrators can trigger automated quote discovery."
   @not_found_message "Statement not found."
