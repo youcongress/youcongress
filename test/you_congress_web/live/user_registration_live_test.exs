@@ -4,10 +4,13 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
   import Phoenix.LiveViewTest
   import Swoosh.TestAssertions
   import YouCongress.AccountsFixtures
+  import YouCongress.StatementsFixtures
 
   alias YouCongress.Accounts
   alias YouCongress.Accounts.UserToken
+  alias YouCongress.PendingActions.PendingRegistrationAction
   alias YouCongress.Repo
+  alias YouCongress.Votes
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do
@@ -42,6 +45,42 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
         assert email_message.text_body =~ "Confirm your email"
         assert email_message.html_body =~ ">Confirm your email</a>"
       end)
+    end
+
+    test "defers pre-registration votes until the magic link confirms the email", %{
+      conn: conn
+    } do
+      email = unique_user_email()
+      statement = statement_fixture()
+
+      pending_actions =
+        Jason.encode!(%{
+          delegate_ids: [],
+          votes: %{
+            statement.id => %{statement_id: statement.id, answer: "for"}
+          }
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/sign_up?pending_actions=#{pending_actions}")
+
+      lv
+      |> form("#registration_form", user: %{name: "Pending Voter", email: email})
+      |> render_submit()
+
+      user = Accounts.get_user_by_email(email)
+      refute user.email_confirmed_at
+      refute Votes.get_by(%{author_id: user.author_id, statement_id: statement.id})
+      assert Repo.get_by(PendingRegistrationAction, user_id: user.id)
+
+      token =
+        extract_user_token(fn url_fun ->
+          Accounts.deliver_user_registration_magic_link_instructions(user, url_fun)
+        end)
+
+      assert {:ok, confirmed_user} = Accounts.consume_magic_login_token(token)
+      assert confirmed_user.email_confirmed_at
+      assert Votes.get_by(%{author_id: user.author_id, statement_id: statement.id}).answer == :for
+      refute Repo.get_by(PendingRegistrationAction, user_id: user.id)
     end
 
     test "subscription page creates a newsletter subscriber", %{conn: conn} do

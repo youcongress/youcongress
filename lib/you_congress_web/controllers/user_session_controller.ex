@@ -127,8 +127,6 @@ defmodule YouCongressWeb.UserSessionController do
     end
   end
 
-  defp handle_pending_actions(_user, nil), do: :ok
-
   defp handle_pending_actions(user, pending_json) do
     YouCongress.PendingActions.process(user, pending_json)
   end
