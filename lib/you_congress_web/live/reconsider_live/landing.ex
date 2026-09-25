@@ -110,6 +110,145 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
         </div>
       </section>
 
+      <section id="reconsider-example" aria-labelledby="reconsider-example-title" class="mt-16">
+        <div class="text-center">
+          <p class="text-sm font-semibold uppercase tracking-wide text-indigo-700">
+            Illustrative preview
+          </p>
+          <h2 id="reconsider-example-title" class="mt-2 text-2xl font-bold text-gray-900">
+            See a Reconsider page in action
+          </h2>
+          <p class="mt-2 text-gray-600">
+            This static example shows what an audience member completes and what everyone sees next.
+          </p>
+        </div>
+
+        <div class="mt-8 grid items-start gap-8 lg:grid-cols-2">
+          <article
+            id="reconsider-voting-example"
+            class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+          >
+            <div class="border-b border-gray-200 bg-gray-50 px-5 py-4">
+              <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                Example voting page
+              </p>
+              <h3 class="mt-1 text-xl font-bold text-gray-900">
+                The case for building more nuclear energy
+              </h3>
+              <p class="mt-1 text-sm text-gray-500">Article by Example Climate Review</p>
+            </div>
+
+            <div class="space-y-5 p-5">
+              <div class="rounded-xl border border-gray-200 p-4">
+                <p class="font-semibold text-gray-900">
+                  Nuclear energy should play a larger role in electricity generation.
+                </p>
+
+                <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <p class="mb-2 text-sm font-semibold text-gray-700">Before this article</p>
+                    <div class="grid grid-cols-3 gap-2 text-center text-xs font-medium">
+                      <span class="rounded-lg border border-gray-200 px-2 py-2">For</span>
+                      <span class="rounded-lg border border-gray-200 px-2 py-2">Abstain</span>
+                      <span class="rounded-lg border border-red-600 bg-red-50 px-2 py-2 text-red-800">
+                        Against
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="mb-2 text-sm font-semibold text-gray-700">Now</p>
+                    <div class="grid grid-cols-3 gap-2 text-center text-xs font-medium">
+                      <span class="rounded-lg border border-green-600 bg-green-50 px-2 py-2 text-green-800">
+                        For
+                      </span>
+                      <span class="rounded-lg border border-gray-200 px-2 py-2">Abstain</span>
+                      <span class="rounded-lg border border-gray-200 px-2 py-2">Against</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-xl border border-gray-200 p-4">
+                <p class="font-semibold text-gray-900">Who would you trust to represent you?</p>
+                <p class="mt-1 text-xs text-gray-500">Optional global delegation</p>
+                <div class="mt-3 flex items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+                  <span class="flex h-5 w-5 items-center justify-center rounded border border-indigo-600 bg-indigo-600 text-xs font-bold text-white">
+                    ✓
+                  </span>
+                  <span class="text-sm font-medium text-gray-900">Featured energy expert</span>
+                </div>
+              </div>
+
+              <div class="rounded-lg bg-indigo-600 px-5 py-3 text-center font-semibold text-white">
+                Save my response
+              </div>
+            </div>
+          </article>
+
+          <article
+            id="reconsider-results-example"
+            class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+          >
+            <div class="border-b border-indigo-200 bg-indigo-50 px-5 py-5 text-center">
+              <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                Example results
+              </p>
+              <p class="mt-2 text-4xl font-bold text-gray-900">42%</p>
+              <p class="mt-1 text-sm text-gray-700">
+                of 60 participants changed their position.
+              </p>
+            </div>
+
+            <div class="space-y-5 p-5">
+              <div>
+                <h3 class="font-semibold text-gray-900">
+                  Nuclear energy should play a larger role in electricity generation.
+                </h3>
+                <p class="mt-3 text-sm font-semibold text-gray-700">Community responses</p>
+                <div class="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200 text-sm">
+                  <div class="flex items-center gap-2 px-3 py-2">
+                    <span>Against</span><span class="text-gray-400">→</span><strong>For</strong>
+                    <span class="ml-auto text-gray-600">18 (30%)</span>
+                  </div>
+                  <div class="flex items-center gap-2 px-3 py-2">
+                    <span>For</span><span class="text-gray-400">→</span><strong>For</strong>
+                    <span class="ml-auto text-gray-600">24 (40%)</span>
+                  </div>
+                  <div class="flex items-center gap-2 px-3 py-2">
+                    <span>Abstain</span><span class="text-gray-400">→</span><strong>For</strong>
+                    <span class="ml-auto text-gray-600">7 (12%)</span>
+                  </div>
+                  <div class="flex items-center gap-2 px-3 py-2">
+                    <span>Against</span><span class="text-gray-400">→</span><strong>Against</strong>
+                    <span class="ml-auto text-gray-600">11 (18%)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-lg border border-gray-200 p-4">
+                <p class="text-sm font-semibold text-gray-900">Delegations chosen</p>
+                <div class="mt-2 flex items-center gap-3 text-sm">
+                  <span class="font-medium">Featured energy expert</span>
+                  <span class="ml-auto text-gray-600">14 participants (23%)</span>
+                </div>
+              </div>
+
+              <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Your response
+                </p>
+                <div class="mt-2 flex items-center gap-2 text-sm">
+                  <span>Against</span><span class="text-gray-400">→</span><strong>For</strong>
+                  <span class="ml-auto rounded-full bg-amber-100 px-2 py-1 font-semibold text-amber-800">
+                    Changed
+                  </span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <section class="mt-16 rounded-2xl bg-indigo-50 px-6 py-10 text-center sm:px-10">
         <p class="text-sm font-semibold uppercase tracking-wide text-indigo-700">Currently in beta</p>
         <h2 class="mt-2 text-2xl font-bold text-gray-900">Want to try it with your audience?</h2>

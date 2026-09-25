@@ -20,6 +20,21 @@ defmodule YouCongressWeb.ReconsiderLandingLiveTest do
     assert html =~ "Discover whether your content changes minds"
     assert html =~ "Currently in beta"
     assert html =~ "How it works"
+    assert has_element?(view, "#reconsider-example", "See a Reconsider page in action")
+
+    assert has_element?(
+             view,
+             "#reconsider-voting-example",
+             "Before this article"
+           )
+
+    assert has_element?(
+             view,
+             "#reconsider-results-example",
+             "42% of 60 participants changed their position."
+           )
+
+    assert has_element?(view, "#reconsider-results-example", "14 participants (23%)")
 
     contact_path = ~p"/contact?#{%{subject: @contact_subject, body: @contact_body}}"
 
