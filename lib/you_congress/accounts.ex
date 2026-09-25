@@ -10,6 +10,7 @@ defmodule YouCongress.Accounts do
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors.Author
   alias YouCongress.Countries
+  alias YouCongress.Workers.AccountEmailWorker
 
   ## Database getters
 
@@ -660,6 +661,23 @@ defmodule YouCongress.Accounts do
     {encoded_token, user_token} = UserToken.build_email_token(user, "reset_password")
     Repo.insert!(user_token)
     UserNotifier.deliver_reset_password_instructions(user, reset_password_url_fun.(encoded_token))
+  end
+
+  @doc """
+  Enqueues a public account email request without first disclosing whether the
+  normalized address belongs to an account. The worker performs the lookup.
+  """
+  def enqueue_account_email(kind, email, opts \\ [])
+      when kind in [:magic_login, :registration, :password_reset] and is_binary(email) do
+    args = %{
+      "kind" => Atom.to_string(kind),
+      "email" => User.normalize_email(String.trim(email)),
+      "return_to" => opts[:return_to]
+    }
+
+    args
+    |> AccountEmailWorker.new()
+    |> Oban.insert()
   end
 
   @doc """

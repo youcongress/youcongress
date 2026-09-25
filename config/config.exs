@@ -89,6 +89,7 @@ config :you_congress, Oban,
   plugins: oban_plugins,
   queues: [
     default: 10,
+    mailers: 5,
     amplitude: 5,
     verification: 3,
     verification_polling: 5,
