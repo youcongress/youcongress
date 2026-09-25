@@ -144,7 +144,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
                   Nuclear energy should play a larger role in electricity generation.
                 </p>
 
-                <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <div class="mt-4 grid gap-4">
                   <div>
                     <p class="mb-2 text-sm font-semibold text-gray-700">Before this article</p>
                     <div class="grid grid-cols-3 gap-2 text-center text-xs font-medium">
