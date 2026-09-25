@@ -126,6 +126,49 @@ function setupCopyButtons() {
 
 setupCopyButtons()
 
+const COOKIE_CONSENT_NAME = "youcongress_cookie_consent"
+const COOKIE_CONSENT_MAX_AGE = 60 * 60 * 24 * 365
+
+function readCookie(name) {
+  const prefix = `${encodeURIComponent(name)}=`
+  const cookie = document.cookie.split("; ").find((item) => item.startsWith(prefix))
+  return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null
+}
+
+function writeCookieConsent(value) {
+  const secure = window.location.protocol === "https:" ? "; Secure" : ""
+  document.cookie = `${encodeURIComponent(COOKIE_CONSENT_NAME)}=${encodeURIComponent(value)}; Path=/; Max-Age=${COOKIE_CONSENT_MAX_AGE}; SameSite=Lax${secure}`
+}
+
+function setupCookieBanner() {
+  const banner = document.getElementById("cookie-banner")
+  if (!banner) return
+
+  const showBanner = () => {
+    banner.style.removeProperty("display")
+    banner.querySelector("[data-cookie-consent='accepted']")?.focus()
+  }
+
+  if (!readCookie(COOKIE_CONSENT_NAME)) showBanner()
+
+  document.addEventListener("click", (event) => {
+    const settingsButton = event.target.closest("[data-cookie-settings]")
+    if (settingsButton) {
+      showBanner()
+      return
+    }
+
+    const consentButton = event.target.closest("[data-cookie-consent]")
+    if (!consentButton) return
+
+    banner.style.display = "none"
+    writeCookieConsent(consentButton.dataset.cookieConsent)
+    window.location.reload()
+  })
+}
+
+setupCookieBanner()
+
 window.addEventListener("phx:clear-autocomplete", (event) => {
   const inputId = event.detail && event.detail.id
   const input = inputId && document.getElementById(inputId)
