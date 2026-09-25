@@ -12,6 +12,9 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
   alias YouCongress.Opinions
   alias YouCongress.HallsStatements
+  alias YouCongress.Accounts.User
+  alias YouCongress.Authors
+  alias YouCongress.Repo
 
   @create_attrs %{
     bio: "some bio",
@@ -77,6 +80,24 @@ defmodule YouCongressWeb.AuthorLiveTest do
       html = render(index_live)
       assert html =~ "Author created successfully"
       assert html =~ "some bio"
+    end
+
+    test "rejects an admin event after the mounted user is demoted", %{
+      conn: conn,
+      author: author
+    } do
+      admin = admin_fixture()
+      conn = log_in_user(conn, admin)
+      {:ok, index_live, _html} = live(conn, ~p"/authors")
+
+      # Bypass update_role/2 so this specifically exercises the per-event
+      # database refresh rather than the proactive session disconnect.
+      assert {:ok, _user} = Repo.update(User.role_changeset(admin, %{role: "user"}))
+
+      render_click(index_live, "delete", %{"id" => to_string(author.id)})
+
+      assert_redirect(index_live, ~p"/")
+      assert Authors.get_author!(author.id)
     end
   end
 
