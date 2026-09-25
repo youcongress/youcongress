@@ -69,6 +69,42 @@ defmodule YouCongressWeb.UserLoginLive do
         </.header>
       <% end %>
 
+      <.simple_form
+        for={@form}
+        id="magic_link_form"
+        action={~p"/log_in/magic-link"}
+        phx-update="ignore"
+        class="mt-6"
+      >
+        <.input field={@form[:email]} type="email" label="Email" required />
+        <%= if @pending_actions do %>
+          <input type="hidden" name="user[pending_actions]" value={@pending_actions} />
+        <% end %>
+        <%= if @return_to do %>
+          <input type="hidden" name="user[return_to]" value={@return_to} />
+        <% end %>
+        <:actions>
+          <.button phx-disable-with="Sending link..." class="w-full bg-indigo-500 hover:bg-indigo-700">
+            Email me a sign-in link
+          </.button>
+        </:actions>
+      </.simple_form>
+
+      <p class="mt-3 text-center text-sm text-gray-500">
+        We'll email you a secure link that expires in 15 minutes.
+      </p>
+
+      <div class="mt-6">
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-300"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="bg-white px-2 text-gray-500">or use your password</span>
+          </div>
+        </div>
+      </div>
+
       <.simple_form for={@form} id="login_form" action={~p"/log_in"} phx-update="ignore" class="mt-6">
         <.input field={@form[:email]} type="email" label="Email" required />
         <.input field={@form[:password]} type="password" label="Password" required />

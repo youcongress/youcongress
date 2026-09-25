@@ -10,6 +10,7 @@ defmodule YouCongress.Accounts.UserToken do
   @rand_size 32
   @confirmation_code_length 6
   @live_login_validity_in_minutes 10
+  @magic_login_validity_in_minutes 15
 
   # It is very important to keep the reset password token expiry short,
   # since someone with access to the email may take over the account.
@@ -155,6 +156,10 @@ defmodule YouCongress.Accounts.UserToken do
     build_hashed_token(user, "live_login", user.email)
   end
 
+  def build_magic_login_token(user) do
+    build_hashed_token(user, "magic_login", user.email)
+  end
+
   defp generate_code do
     1..@confirmation_code_length
     |> Enum.map(fn _ ->
@@ -204,6 +209,27 @@ defmodule YouCongress.Accounts.UserToken do
             join: user in assoc(token, :user),
             where: token.inserted_at > ago(@live_login_validity_in_minutes, "minute"),
             select: {token, user}
+
+        {:ok, query}
+
+      :error ->
+        :error
+    end
+  end
+
+  def verify_magic_login_token_query(token) do
+    case Base.url_decode64(token, padding: false) do
+      {:ok, decoded_token} ->
+        hashed_token = hash_token(decoded_token)
+
+        query =
+          from token in token_and_context_query(hashed_token, "magic_login"),
+            join: user in assoc(token, :user),
+            where:
+              token.inserted_at > ago(@magic_login_validity_in_minutes, "minute") and
+                token.sent_to == user.email,
+            select: {token, user},
+            lock: "FOR UPDATE"
 
         {:ok, query}
 

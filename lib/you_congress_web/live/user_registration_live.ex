@@ -24,7 +24,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
       data-hide-targets={Enum.join(@hide_targets || [], ",")}
       data-reload-on-login={@reload_on_login}
     >
-      <%= if @step == :enter_email_password do %>
+      <%= if @step == :enter_email do %>
         <%= unless @embedded do %>
           <div class="mt-6 space-y-3">
             <.link
@@ -92,7 +92,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
         <.simple_form
           for={@form}
           id="registration_form"
-          phx-submit="save_email_password"
+          phx-submit="save_email"
           phx-change="validate"
           method="post"
         >
@@ -102,7 +102,6 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
           <.input field={@form[:name]} type="text" label="Name" required />
           <.input field={@form[:email]} type="email" label="Email" required />
-          <.input field={@form[:password]} type="password" label="Password" required />
 
           <div
             :if={@turnstile_site_key}
@@ -115,7 +114,9 @@ defmodule YouCongressWeb.UserRegistrationLive do
           </div>
 
           <:actions>
-            <.button phx-disable-with="Creating account..." class="w-full">Create Account</.button>
+            <.button phx-disable-with="Sending sign-in link..." class="w-full">
+              Continue with email
+            </.button>
           </:actions>
         </.simple_form>
       <% end %>
@@ -146,6 +147,26 @@ defmodule YouCongressWeb.UserRegistrationLive do
             <.button phx-disable-with="Saving..." class="w-full">Continue</.button>
           </:actions>
         </.simple_form>
+      <% end %>
+
+      <%= if @step == :check_magic_link do %>
+        <.header class="text-center">
+          Check your email
+          <:subtitle>
+            We sent a secure sign-in link to {@user.email}. It expires in 15 minutes and can only be used once.
+          </:subtitle>
+        </.header>
+
+        <div class="mt-6 rounded-md bg-blue-50 p-4 text-sm text-blue-900">
+          Open the link in the email to verify your address and finish creating your account.
+        </div>
+
+        <div class="mt-4 text-center text-sm text-gray-600">
+          <p>Didn't get the email? Check your spam folder or request a new link.</p>
+          <.link href="#" phx-click="resend_magic_link" class="text-blue-600 hover:underline">
+            Resend sign-in link
+          </.link>
+        </div>
       <% end %>
 
       <%= if @step == :check_email do %>
@@ -389,27 +410,23 @@ defmodule YouCongressWeb.UserRegistrationLive do
     {delegate_ids, votes, pending_actions}
   end
 
-  def handle_event("save_email_password", params, socket) do
+  def handle_event("save_email", params, socket) do
     turnstile_token = params["cf-turnstile-response"]
-    user_params = params["user"] |> Map.take(~w(email password))
+    user_params = params["user"] |> Map.take(~w(email))
     author_params = params["user"] |> Map.take(~w(name))
 
     with {:turnstile, {:ok, _}} <- {:turnstile, Turnstile.verify(turnstile_token)},
          {:register, {:ok, %{user: user}}} <-
-           {:register, Accounts.register_user(user_params, author_params)} do
-      Track.event("Register via email/password", user)
+           {:register, Accounts.register_passwordless_user(user_params, author_params)} do
+      Track.event("Register via email magic link", user)
 
-      Accounts.deliver_user_confirmation_instructions(
-        user,
-        &url(~p"/users/confirm/#{&1}")
-      )
+      deliver_registration_magic_link(user, socket.assigns.return_to)
 
       socket =
         socket
-        |> assign(:step, :check_email)
+        |> assign(:step, :check_magic_link)
         |> assign(:user, user)
-        |> reset_email_code_state()
-        |> assign_form(email_code_changeset())
+        |> assign_form(Accounts.change_passwordless_registration(user))
 
       # Apply votes, delegations, or a Reconsider response collected before registration.
       YouCongress.PendingActions.process(user, socket.assigns.pending_actions)
@@ -419,7 +436,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
       {:turnstile, {:error, _reason}} ->
         changeset =
           %User{}
-          |> Accounts.change_user_registration(params["user"] || %{})
+          |> Accounts.change_passwordless_registration(params["user"] || %{})
           |> Map.put(:action, :validate)
 
         {:noreply,
@@ -580,7 +597,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
-    changeset = Accounts.change_user_registration(%User{}, user_params)
+    changeset = Accounts.change_passwordless_registration(%User{}, user_params)
     {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
   end
 
@@ -624,6 +641,14 @@ defmodule YouCongressWeb.UserRegistrationLive do
      |> reset_email_code_state()
      |> assign_form(email_code_changeset())
      |> put_flash(:info, "A new verification code has been sent to your email.")}
+  end
+
+  def handle_event("resend_magic_link", _params, socket) do
+    deliver_registration_magic_link(socket.assigns.user, socket.assigns.return_to)
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "A new sign-in link has been sent to your email.")}
   end
 
   def handle_event("resend_phone_code", _params, socket) do
@@ -675,7 +700,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
     end
   end
 
-  defp determine_registration_step(nil, _phone_setup?), do: :enter_email_password
+  defp determine_registration_step(nil, _phone_setup?), do: :enter_email
 
   defp determine_registration_step(%User{email: nil}, _phone_setup?), do: :confirm_x_profile
 
@@ -696,6 +721,10 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
   defp changeset_for_step(:check_email, _user, _initial_values), do: email_code_changeset()
 
+  defp changeset_for_step(:enter_email, user, initial_values) do
+    Accounts.change_passwordless_registration(user || %User{}, initial_values)
+  end
+
   defp changeset_for_step(:enter_mobile_phone, user, _initial_values) do
     Accounts.change_user_phone_number(user || %User{})
   end
@@ -708,6 +737,13 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
   defp changeset_for_step(_step, user, initial_values) do
     Accounts.change_user_registration(user || %User{}, initial_values)
+  end
+
+  defp deliver_registration_magic_link(user, return_to) do
+    Accounts.deliver_user_magic_login_instructions(user, fn token ->
+      query = if return_to, do: %{return_to: return_to}, else: %{}
+      url(~p"/log_in/magic-link/#{token}?#{query}")
+    end)
   end
 
   defp phone_number_present?(%User{phone_number: number}) when is_binary(number) do

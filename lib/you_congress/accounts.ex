@@ -134,6 +134,7 @@ defmodule YouCongress.Accounts do
   """
   def register_user(user_attrs, author_attrs \\ %{}) do
     author_attrs = Map.put(author_attrs, "twin_origin", false)
+    user_attrs = Map.put(user_attrs, "signup_method", "email")
 
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:author, Author.changeset(%Author{}, author_attrs))
@@ -143,8 +144,28 @@ defmodule YouCongress.Accounts do
     |> Repo.transaction()
   end
 
+  @doc """
+  Registers an email user without a password. The email must be verified before
+  the account can be used.
+  """
+  def register_passwordless_user(user_attrs, author_attrs \\ %{}) do
+    author_attrs = Map.put(author_attrs, "twin_origin", false)
+    user_attrs = Map.put(user_attrs, "signup_method", "email")
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:author, Author.changeset(%Author{}, author_attrs))
+    |> Ecto.Multi.insert(:user, fn %{author: author} ->
+      User.passwordless_registration_changeset(
+        %User{},
+        Map.put(user_attrs, "author_id", author.id)
+      )
+    end)
+    |> Repo.transaction()
+  end
+
   def x_register_user(user_attrs, author_attrs \\ %{}) do
     author_attrs = Map.put(author_attrs, :twin_origin, false)
+    user_attrs = Map.put(user_attrs, "signup_method", "x")
 
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:author, Author.changeset(%Author{}, author_attrs))
@@ -160,6 +181,7 @@ defmodule YouCongress.Accounts do
   """
   def x_register_user_with_existing_author(user_attrs, %Author{} = author, author_update_attrs) do
     author_update_attrs = Map.put(author_update_attrs, :twin_origin, false)
+    user_attrs = Map.put(user_attrs, "signup_method", "x")
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:author, Author.changeset(author, author_update_attrs))
@@ -178,7 +200,7 @@ defmodule YouCongress.Accounts do
   """
   def google_register_user(user_attrs, author_attrs \\ %{}) do
     author_attrs = Map.put(author_attrs, :twin_origin, false)
-    user_attrs = stringify_keys(user_attrs)
+    user_attrs = user_attrs |> stringify_keys() |> Map.put("signup_method", "google")
 
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:author, Author.changeset(%Author{}, author_attrs))
@@ -198,7 +220,7 @@ defmodule YouCongress.Accounts do
         author_update_attrs
       ) do
     author_update_attrs = Map.put(author_update_attrs, :twin_origin, false)
-    user_attrs = stringify_keys(user_attrs)
+    user_attrs = user_attrs |> stringify_keys() |> Map.put("signup_method", "google")
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:author, Author.changeset(author, author_update_attrs))
@@ -233,6 +255,10 @@ defmodule YouCongress.Accounts do
   """
   def change_user_registration(%User{} = user, attrs \\ %{}) do
     User.password_registration_changeset(user, attrs, hash_password: false, validate_email: false)
+  end
+
+  def change_passwordless_registration(%User{} = user, attrs \\ %{}) do
+    User.passwordless_registration_changeset(user, attrs, validate_email: false)
   end
 
   ## Settings
@@ -455,6 +481,54 @@ defmodule YouCongress.Accounts do
       {:ok, user}
     else
       _ -> :error
+    end
+  end
+
+  @doc """
+  Delivers a short-lived, one-time link that can be exchanged for a session.
+  Only the newest magic link for a user remains valid.
+  """
+  def deliver_user_magic_login_instructions(%User{} = user, magic_login_url_fun)
+      when is_function(magic_login_url_fun, 1) do
+    Repo.delete_all(UserToken.user_and_contexts_query(user, ["magic_login"]))
+    {encoded_token, user_token} = UserToken.build_magic_login_token(user)
+    Repo.insert!(user_token)
+
+    UserNotifier.deliver_magic_login_instructions(
+      user,
+      magic_login_url_fun.(encoded_token)
+    )
+  end
+
+  @doc """
+  Consumes a one-time magic login token. Using the link also confirms that the
+  user controls the email address.
+  """
+  def consume_magic_login_token(token) when is_binary(token) do
+    with {:ok, query} <- UserToken.verify_magic_login_token_query(token),
+         {:ok, %User{} = user} <-
+           Repo.transaction(fn -> consume_magic_login_token_in_transaction(query) end) do
+      {:ok, user}
+    else
+      _ -> :error
+    end
+  end
+
+  defp consume_magic_login_token_in_transaction(query) do
+    case Repo.one(query) do
+      {%UserToken{} = token_record, %User{} = user} ->
+        Repo.delete!(token_record)
+
+        if user.email_confirmed_at do
+          user
+        else
+          confirmed_user = Repo.update!(User.email_confirm_changeset(user))
+          Repo.delete_all(UserToken.user_and_contexts_query(user, ["confirm"]))
+          confirmed_user
+        end
+
+      nil ->
+        Repo.rollback(:invalid_or_expired_token)
     end
   end
 

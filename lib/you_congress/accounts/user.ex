@@ -7,6 +7,7 @@ defmodule YouCongress.Accounts.User do
   import Ecto.Changeset
 
   @user_roles ["user", "creator", "moderator", "admin", "spam", "blocked", "waiting_list"]
+  @signup_methods ["email", "x", "google"]
 
   schema "users" do
     field :email, :string
@@ -20,6 +21,7 @@ defmodule YouCongress.Accounts.User do
     field :newsletter_subscription_prompt_dismissed_at, :naive_datetime
     field :role, :string, default: "user"
     field :newsletter, :boolean, default: false
+    field :signup_method, :string
 
     belongs_to :author, YouCongress.Authors.Author
     has_many :api_keys, YouCongress.Accounts.ApiKey
@@ -31,7 +33,7 @@ defmodule YouCongress.Accounts.User do
           email: String.t(),
           phone_number: String.t() | nil,
           password: String.t() | nil,
-          hashed_password: String.t(),
+          hashed_password: String.t() | nil,
           email_confirmed_at: NaiveDateTime.t() | nil,
           phone_number_confirmed_at: NaiveDateTime.t() | nil,
           phone_verification_prompt_dismissed_at: NaiveDateTime.t() | nil,
@@ -40,7 +42,8 @@ defmodule YouCongress.Accounts.User do
           author_id: integer() | nil,
           inserted_at: NaiveDateTime.t(),
           updated_at: NaiveDateTime.t(),
-          newsletter: boolean()
+          newsletter: boolean(),
+          signup_method: String.t() | nil
         }
 
   def normalize_email(email) when is_binary(email), do: String.downcase(email)
@@ -48,21 +51,31 @@ defmodule YouCongress.Accounts.User do
 
   def password_registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password, :author_id])
+    |> cast(attrs, [:email, :password, :author_id, :signup_method])
     |> validate_email(opts)
     |> validate_password(opts)
+    |> validate_inclusion(:signup_method, @signup_methods)
+  end
+
+  def passwordless_registration_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:email, :author_id, :signup_method])
+    |> validate_email(opts)
+    |> validate_inclusion(:signup_method, @signup_methods)
   end
 
   def twitter_registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :author_id, :role])
+    |> cast(attrs, [:email, :author_id, :role, :signup_method])
     |> validate_optional_email(opts)
+    |> validate_inclusion(:signup_method, @signup_methods)
   end
 
   def google_registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :author_id, :role])
+    |> cast(attrs, [:email, :author_id, :role, :signup_method])
     |> validate_optional_email(opts)
+    |> validate_inclusion(:signup_method, @signup_methods)
   end
 
   def welcome_changeset(user, attrs) do

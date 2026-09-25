@@ -5,6 +5,8 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
   import YouCongress.AccountsFixtures
 
   alias YouCongress.Accounts
+  alias YouCongress.Accounts.UserToken
+  alias YouCongress.Repo
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do
@@ -12,7 +14,27 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
 
       assert html =~ "Register for an account"
       assert html =~ "Log in"
-      assert html =~ "Create Account"
+      assert html =~ "Continue with email"
+      refute html =~ ~s(type="password")
+    end
+
+    test "creates a passwordless account and emails a magic link", %{conn: conn} do
+      email = unique_user_email()
+      {:ok, lv, _html} = live(conn, ~p"/sign_up?return_to=/settings")
+
+      html =
+        lv
+        |> form("#registration_form", user: %{name: "New User", email: email})
+        |> render_submit()
+
+      assert html =~ "Check your email"
+      assert html =~ "expires in 15 minutes"
+
+      user = Accounts.get_user_by_email(email)
+      assert user
+      assert user.hashed_password == nil
+      assert user.email_confirmed_at == nil
+      assert Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
     end
 
     test "preserves return_to in OAuth links", %{conn: conn} do

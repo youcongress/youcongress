@@ -3,6 +3,7 @@ defmodule YouCongressWeb.UserSessionControllerTest do
 
   alias YouCongress.Repo
   alias YouCongress.Accounts
+  alias YouCongress.Accounts.UserToken
   import YouCongress.AccountsFixtures
   import Phoenix.LiveViewTest
   import Ecto.Changeset
@@ -18,6 +19,115 @@ defmodule YouCongressWeb.UserSessionControllerTest do
       {:ok, _view, html} = live(conn, ~p"/log_in")
 
       assert html =~ ~s(href="/auth/google?return_to=%2Fp%2Ftest-statement")
+    end
+
+    test "offers magic-link login", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/log_in")
+
+      assert html =~ ~s(id="magic_link_form")
+      assert html =~ "Email me a sign-in link"
+    end
+  end
+
+  describe "POST /log_in/magic-link" do
+    test "creates a magic login token without disclosing account existence", %{
+      conn: conn,
+      user: user
+    } do
+      conn =
+        conn
+        |> post(~p"/log_in/magic-link", %{
+          "user" => %{
+            "email" => user.email,
+            "return_to" => "/p/ai-alignment-public-deliberation"
+          }
+        })
+        |> fetch_flash()
+
+      assert redirected_to(conn) == ~p"/log_in"
+      assert Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "If an account exists for that email, we'll send a sign-in link shortly."
+
+      missing_conn =
+        conn
+        |> recycle()
+        |> post(~p"/log_in/magic-link", %{
+          "user" => %{"email" => "missing@example.com"}
+        })
+        |> fetch_flash()
+
+      assert redirected_to(missing_conn) == ~p"/log_in"
+
+      assert Phoenix.Flash.get(missing_conn.assigns.flash, :info) ==
+               Phoenix.Flash.get(conn.assigns.flash, :info)
+    end
+
+    test "does not issue a link for a blocked account", %{conn: conn, user: user} do
+      {:ok, blocked_user} = Accounts.update_role(user, "blocked")
+
+      conn =
+        post(conn, ~p"/log_in/magic-link", %{
+          "user" => %{"email" => blocked_user.email}
+        })
+
+      assert redirected_to(conn) == ~p"/log_in"
+      refute Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
+    end
+  end
+
+  describe "magic-link confirmation" do
+    test "shows a confirmation page without consuming the link", %{conn: conn, user: user} do
+      token = magic_login_token(user)
+
+      {:ok, _view, html} =
+        live(conn, ~p"/log_in/magic-link/#{token}?return_to=/settings")
+
+      assert html =~ ~s(id="magic_link_confirmation_form")
+      assert html =~ "Continue to YouCongress"
+      assert Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
+    end
+
+    test "logs in, consumes the token, and honors a safe return path", %{
+      conn: conn,
+      user: user
+    } do
+      token = magic_login_token(user)
+
+      conn =
+        post(conn, ~p"/log_in/magic-link/#{token}", %{
+          "return_to" => "/settings"
+        })
+
+      assert redirected_to(conn) == ~p"/settings"
+      assert get_session(conn, :user_token)
+      refute Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
+    end
+
+    test "rejects an invalid token", %{conn: conn} do
+      conn =
+        conn
+        |> post(~p"/log_in/magic-link/invalid")
+        |> fetch_flash()
+
+      assert redirected_to(conn) == ~p"/log_in"
+      refute get_session(conn, :user_token)
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "This sign-in link is invalid or has expired."
+    end
+
+    test "rejects an unsafe return path", %{conn: conn, user: user} do
+      token = magic_login_token(user)
+
+      conn =
+        post(conn, ~p"/log_in/magic-link/#{token}", %{
+          "return_to" => "https://evil.example/phishing"
+        })
+
+      assert redirected_to(conn) == ~p"/"
+      assert get_session(conn, :user_token)
     end
   end
 
@@ -109,5 +219,11 @@ defmodule YouCongressWeb.UserSessionControllerTest do
       assert redirected_to(conn) == ~p"/"
       refute get_session(conn, :user_token)
     end
+  end
+
+  defp magic_login_token(user) do
+    extract_user_token(fn url ->
+      Accounts.deliver_user_magic_login_instructions(user, url)
+    end)
   end
 end

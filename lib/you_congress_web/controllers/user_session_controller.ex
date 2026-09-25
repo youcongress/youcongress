@@ -57,6 +57,61 @@ defmodule YouCongressWeb.UserSessionController do
     end
   end
 
+  def request_magic_link(conn, %{"user" => %{"email" => email} = user_params})
+      when is_binary(email) do
+    case Accounts.get_user_by_email(email) do
+      %User{} = user ->
+        unless Permissions.blocked?(user) do
+          Accounts.deliver_user_magic_login_instructions(user, fn token ->
+            magic_login_url(conn, token, user_params)
+          end)
+        end
+
+      nil ->
+        :ok
+    end
+
+    conn
+    |> put_flash(
+      :info,
+      "If an account exists for that email, we'll send a sign-in link shortly."
+    )
+    |> put_flash(:email, String.slice(email, 0, 160))
+    |> redirect(to: ~p"/log_in")
+  end
+
+  def request_magic_link(conn, _params) do
+    conn
+    |> put_flash(
+      :info,
+      "If an account exists for that email, we'll send a sign-in link shortly."
+    )
+    |> redirect(to: ~p"/log_in")
+  end
+
+  def confirm_magic_link(conn, %{"token" => token} = params) do
+    case Accounts.consume_magic_login_token(token) do
+      {:ok, user} ->
+        if Permissions.blocked?(user) do
+          conn
+          |> put_flash(:error, blocked_account_message())
+          |> redirect(to: ~p"/log_in")
+        else
+          handle_pending_actions(user, params["pending_actions"])
+
+          conn
+          |> maybe_put_user_return_to(params["return_to"])
+          |> put_flash(:info, "Welcome back!")
+          |> UserAuth.log_in_user(user)
+        end
+
+      :error ->
+        conn
+        |> put_flash(:error, "This sign-in link is invalid or has expired.")
+        |> redirect(to: ~p"/log_in")
+    end
+  end
+
   defp handle_pending_actions(_user, nil), do: :ok
 
   defp handle_pending_actions(user, pending_json) do
@@ -100,5 +155,22 @@ defmodule YouCongressWeb.UserSessionController do
       nil -> conn
       path -> put_session(conn, :registration_return_to, path)
     end
+  end
+
+  defp magic_login_url(conn, token, user_params) do
+    query =
+      %{}
+      |> maybe_put_query_param(:return_to, ReturnTo.sanitize(user_params["return_to"]))
+      |> maybe_put_query_param(:pending_actions, user_params["pending_actions"])
+
+    url(conn, ~p"/log_in/magic-link/#{token}?#{query}")
+  end
+
+  defp maybe_put_query_param(query, _key, nil), do: query
+  defp maybe_put_query_param(query, _key, ""), do: query
+  defp maybe_put_query_param(query, key, value), do: Map.put(query, key, value)
+
+  defp blocked_account_message do
+    "Your account has been blocked as it seemed spam. If you're a real person or a useful bot, please contact support@youcongress.org if this is an error."
   end
 end
