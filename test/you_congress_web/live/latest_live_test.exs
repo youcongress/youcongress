@@ -63,6 +63,13 @@ defmodule YouCongressWeb.LatestLiveTest do
       assert html =~ "Ada Lovelace"
       assert html =~ ~s(href="/subscribe")
       assert html =~ "Subscribe to news"
+
+      assert html =~
+               ~r{href="/explore"[^>]*>Explore</a>,\s*<a[^>]*href="/explore"[^>]*>search</a>}
+
+      assert html =~ ~r{href="/dataset"[^>]*>download</a>}
+      assert html =~ "Pope Leo XIV</a>, and others."
+      refute html =~ ">more</a>"
     end
 
     test "hides the subscription link for a logged-in subscriber", %{conn: conn} do

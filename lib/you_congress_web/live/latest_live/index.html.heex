@@ -6,9 +6,9 @@
       Follow the latest sourced positions from experts, policymakers and public figures.
     </p>
     <p class="text-sm text-gray-500">
-      <.link href={~p"/explore"} class="text-blue-600 hover:text-blue-800">
-        Explore or search
-      </.link>
+      <.link href={~p"/explore"} class="text-blue-600 hover:text-blue-800">Explore</.link>,
+      <.link href={~p"/explore"} class="text-blue-600 hover:text-blue-800">search</.link>
+      or <.link href={~p"/dataset"} class="text-blue-600 hover:text-blue-800">download</.link>
       the {@sourced_position_count} sourced positions from <.link
         href={~p"/x/Yoshua_Bengio"}
         class="text-blue-600 hover:text-blue-800"
@@ -18,8 +18,7 @@
       >Demis Hassabis</.link>, <.link
         href={~p"/x/andrewyng"}
         class="text-blue-600 hover:text-blue-800"
-      >Andrew Ng</.link>, <.link href={~p"/a/3966"} class="text-blue-600 hover:text-blue-800">Pope Leo XIV</.link>,
-      and <.link href={~p"/explore"} class="text-blue-600 hover:text-blue-800">more</.link>.
+      >Andrew Ng</.link>, <.link href={~p"/a/3966"} class="text-blue-600 hover:text-blue-800">Pope Leo XIV</.link>, and others.
     </p>
     <div :if={is_nil(@current_user) or !@current_user.newsletter} class="mt-4">
       <.link
