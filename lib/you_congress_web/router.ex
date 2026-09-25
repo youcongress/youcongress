@@ -56,6 +56,7 @@ defmodule YouCongressWeb.Router do
     get("/email-login-waiting-list", PageController, :email_login_waiting_list)
     get("/email-login-waiting-list/thanks", PageController, :email_login_waiting_list_thanks)
     live("/sign_up", UserRegistrationLive, :new)
+    live("/subscribe", UserRegistrationLive, :subscribe)
     live("/reset_password/:token", ResetPasswordTokenLive, :edit)
 
     # Legacy redirection from /v/:slug to /p/:slug
@@ -167,9 +168,9 @@ defmodule YouCongressWeb.Router do
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{YouCongressWeb.UserAuth, :redirect_if_user_is_authenticated}] do
       live("/log_in", UserLoginLive, :new)
-      live("/log_in/magic-link/:token", MagicLinkLive, :show)
     end
 
+    get("/log_in/magic-link/:token", UserSessionController, :confirm_magic_link)
     post("/log_in", UserSessionController, :create)
     post("/log_in/magic-link", UserSessionController, :request_magic_link)
     post("/log_in/magic-link/:token", UserSessionController, :confirm_magic_link)

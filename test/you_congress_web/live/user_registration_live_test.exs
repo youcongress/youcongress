@@ -2,6 +2,7 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
   use YouCongressWeb.ConnCase
 
   import Phoenix.LiveViewTest
+  import Swoosh.TestAssertions
   import YouCongress.AccountsFixtures
 
   alias YouCongress.Accounts
@@ -34,6 +35,34 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
       assert user
       assert user.hashed_password == nil
       assert user.email_confirmed_at == nil
+      assert Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
+
+      assert_email_sent(fn email_message ->
+        assert email_message.subject == "Confirm your YouCongress email"
+        assert email_message.text_body =~ "Confirm your email"
+        assert email_message.html_body =~ ">Confirm your email</a>"
+      end)
+    end
+
+    test "subscription page creates a newsletter subscriber", %{conn: conn} do
+      email = unique_user_email()
+      {:ok, lv, html} = live(conn, ~p"/subscribe")
+
+      assert html =~
+               "Subscribe to YouCongress news on AI governance, safety, and its impact on jobs"
+
+      assert html =~ "Subscribe"
+      refute html =~ "Sign up with Google"
+
+      html =
+        lv
+        |> form("#registration_form", user: %{name: "News Reader", email: email})
+        |> render_submit()
+
+      assert html =~ "Check your email"
+
+      user = Accounts.get_user_by_email(email)
+      assert user.newsletter
       assert Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
     end
 

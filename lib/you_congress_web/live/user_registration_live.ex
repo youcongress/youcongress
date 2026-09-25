@@ -26,7 +26,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
     >
       <%= if @step == :enter_email do %>
         <%= unless @embedded do %>
-          <div class="mt-6 space-y-3">
+          <div :if={!@subscription_mode} class="mt-6 space-y-3">
             <.link
               href={ReturnTo.auth_path(:google, @pending_actions, @return_to)}
               class="w-full inline-flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-gray-700 text-sm font-medium hover:bg-gray-50"
@@ -64,7 +64,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
             <% end %>
           </div>
 
-          <div class="my-4">
+          <div :if={!@subscription_mode} class="my-4">
             <div class="relative">
               <div class="absolute inset-0 flex items-center">
                 <div class="w-full border-t border-gray-300"></div>
@@ -75,19 +75,28 @@ defmodule YouCongressWeb.UserRegistrationLive do
             </div>
           </div>
 
-          <.header class="text-center">
-            Sign up
-            <:subtitle>
-              Already registered?
-              <.link
-                navigate={ReturnTo.log_in_path(@pending_actions, @return_to)}
-                class="font-semibold text-brand hover:underline"
-              >
-                Log in
-              </.link>
-              to your account now.
-            </:subtitle>
-          </.header>
+          <%= if @subscription_mode do %>
+            <.header class="text-center">
+              Subscribe to YouCongress news on AI governance, safety, and its impact on jobs
+              <:subtitle>
+                Get news and product updates. Your free YouCongress account also lets you vote and choose delegates.
+              </:subtitle>
+            </.header>
+          <% else %>
+            <.header class="text-center">
+              Sign up
+              <:subtitle>
+                Already registered?
+                <.link
+                  navigate={ReturnTo.log_in_path(@pending_actions, @return_to)}
+                  class="font-semibold text-brand hover:underline"
+                >
+                  Log in
+                </.link>
+                to your account now.
+              </:subtitle>
+            </.header>
+          <% end %>
         <% end %>
         <.simple_form
           for={@form}
@@ -114,8 +123,13 @@ defmodule YouCongressWeb.UserRegistrationLive do
           </div>
 
           <:actions>
-            <.button phx-disable-with="Sending sign-in link..." class="w-full">
-              Continue with email
+            <.button
+              phx-disable-with={
+                if @subscription_mode, do: "Subscribing...", else: "Sending sign-in link..."
+              }
+              class="w-full"
+            >
+              {if @subscription_mode, do: "Subscribe", else: "Continue with email"}
             </.button>
           </:actions>
         </.simple_form>
@@ -153,12 +167,12 @@ defmodule YouCongressWeb.UserRegistrationLive do
         <.header class="text-center">
           Check your email
           <:subtitle>
-            We sent a secure sign-in link to {@user.email}. It expires in 15 minutes and can only be used once.
+            We sent a secure confirmation link to {@user.email}. It expires in 15 minutes and can only be used once.
           </:subtitle>
         </.header>
 
         <div class="mt-6 rounded-md bg-blue-50 p-4 text-sm text-blue-900">
-          Open the link in the email to verify your address and finish creating your account.
+          Open the link to confirm your address and sign in automatically.
         </div>
 
         <div class="mt-4 text-center text-sm text-gray-600">
@@ -324,6 +338,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
   def mount(params, session, socket) do
     params = normalize_params(params)
     socket = assign_current_user(socket, session["user_token"])
+    subscription_mode = socket.assigns.live_action == :subscribe
 
     {delegate_ids, votes, pending_actions} = pending_actions(params, session)
 
@@ -338,6 +353,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
       |> assign(:votes, votes)
       |> assign(:pending_actions, pending_actions)
       |> assign(:return_to, return_to)
+      |> assign(:subscription_mode, subscription_mode)
       |> assign(:phone_setup?, params["phone"] == "true")
       |> assign(:hide_account_completion_banner, true)
       |> assign(:embedded, session["embedded"] || false)
@@ -371,7 +387,13 @@ defmodule YouCongressWeb.UserRegistrationLive do
         |> assign(:email_code_locked_until, nil)
         |> assign(:session_login_sent, current_user != nil)
         |> assign(:check_errors, false)
-        |> assign(:page_title, "Register for an account")
+        |> assign(
+          :page_title,
+          if(subscription_mode,
+            do: "Subscribe to YouCongress news",
+            else: "Register for an account"
+          )
+        )
         |> assign(:turnstile_site_key, turnstile_site_key)
         |> assign_form(changeset)
 
@@ -412,7 +434,12 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
   def handle_event("save_email", params, socket) do
     turnstile_token = params["cf-turnstile-response"]
-    user_params = params["user"] |> Map.take(~w(email))
+
+    user_params =
+      params["user"]
+      |> Map.take(~w(email))
+      |> maybe_subscribe_to_newsletter(socket.assigns.subscription_mode)
+
     author_params = params["user"] |> Map.take(~w(name))
 
     with {:turnstile, {:ok, _}} <- {:turnstile, Turnstile.verify(turnstile_token)},
@@ -597,6 +624,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
+    user_params = maybe_subscribe_to_newsletter(user_params, socket.assigns.subscription_mode)
     changeset = Accounts.change_passwordless_registration(%User{}, user_params)
     {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
   end
@@ -719,6 +747,9 @@ defmodule YouCongressWeb.UserRegistrationLive do
 
   defp registration_destination(socket), do: socket.assigns.return_to || ~p"/"
 
+  defp maybe_subscribe_to_newsletter(params, true), do: Map.put(params, "newsletter", true)
+  defp maybe_subscribe_to_newsletter(params, false), do: params
+
   defp changeset_for_step(:check_email, _user, _initial_values), do: email_code_changeset()
 
   defp changeset_for_step(:enter_email, user, initial_values) do
@@ -740,7 +771,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
   end
 
   defp deliver_registration_magic_link(user, return_to) do
-    Accounts.deliver_user_magic_login_instructions(user, fn token ->
+    Accounts.deliver_user_registration_magic_link_instructions(user, fn token ->
       query = if return_to, do: %{return_to: return_to}, else: %{}
       url(~p"/log_in/magic-link/#{token}?#{query}")
     end)

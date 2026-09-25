@@ -101,7 +101,6 @@ defmodule YouCongressWeb.UserSessionController do
 
           conn
           |> maybe_put_user_return_to(params["return_to"])
-          |> put_flash(:info, "Welcome back!")
           |> UserAuth.log_in_user(user)
         end
 

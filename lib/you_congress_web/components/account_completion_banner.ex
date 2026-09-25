@@ -9,9 +9,14 @@ defmodule YouCongressWeb.AccountCompletionBanner do
   attr :return_to, :string, default: nil
 
   def account_completion_banner(%{current_user: %User{} = user} = assigns) do
+    prompt = Accounts.account_completion_prompt(user)
+    {step_label, step_aria_label} = step_progress(prompt, user)
+
     assigns =
       assigns
-      |> assign(:prompt, Accounts.account_completion_prompt(user))
+      |> assign(:prompt, prompt)
+      |> assign(:step_label, step_label)
+      |> assign(:step_aria_label, step_aria_label)
       |> assign(:return_to, ReturnTo.sanitize(assigns.return_to))
 
     ~H"""
@@ -32,7 +37,7 @@ defmodule YouCongressWeb.AccountCompletionBanner do
             Optional · Phone verification helps reduce spam and abuse.
           </p>
           <p :if={@prompt == :newsletter} class="mt-0.5 text-indigo-800">
-            Optional · Subscribe to occasional news and product updates.
+            Optional · Subscribe to news and product updates.
           </p>
         </div>
 
@@ -61,9 +66,9 @@ defmodule YouCongressWeb.AccountCompletionBanner do
           </.link>
           <span
             class="text-xs font-medium text-indigo-500"
-            aria-label={if @prompt == :phone, do: "Step 1 of 2", else: "Step 2 of 2"}
+            aria-label={@step_aria_label}
           >
-            {if @prompt == :phone, do: "1/2", else: "2/2"}
+            {@step_label}
           </span>
         </div>
       </div>
@@ -75,6 +80,16 @@ defmodule YouCongressWeb.AccountCompletionBanner do
     ~H"""
     """
   end
+
+  defp step_progress(:phone, %User{
+         newsletter: false,
+         newsletter_subscription_prompt_dismissed_at: nil
+       }),
+       do: {"1/2", "Step 1 of 2"}
+
+  defp step_progress(:phone, %User{}), do: {"1/1", "Step 1 of 1"}
+  defp step_progress(:newsletter, %User{}), do: {"2/2", "Step 2 of 2"}
+  defp step_progress(nil, %User{}), do: {nil, nil}
 
   defp dismiss_path(:phone, return_to) do
     ~p"/account-completion/dismiss-phone?#{%{return_to: return_to}}"

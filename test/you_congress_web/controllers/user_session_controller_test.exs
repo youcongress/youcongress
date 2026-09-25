@@ -78,37 +78,42 @@ defmodule YouCongressWeb.UserSessionControllerTest do
   end
 
   describe "magic-link confirmation" do
-    test "shows a confirmation page without consuming the link", %{conn: conn, user: user} do
-      token = magic_login_token(user)
-
-      {:ok, _view, html} =
-        live(conn, ~p"/log_in/magic-link/#{token}?return_to=/settings")
-
-      assert html =~ ~s(id="magic_link_confirmation_form")
-      assert html =~ "Continue to YouCongress"
-      assert Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
-    end
-
-    test "logs in, consumes the token, and honors a safe return path", %{
+    test "a click logs in, consumes the token, and honors a safe return path", %{
       conn: conn,
       user: user
     } do
       token = magic_login_token(user)
 
       conn =
-        post(conn, ~p"/log_in/magic-link/#{token}", %{
-          "return_to" => "/settings"
-        })
+        get(conn, ~p"/log_in/magic-link/#{token}?return_to=/settings")
 
       assert redirected_to(conn) == ~p"/settings"
       assert get_session(conn, :user_token)
+      refute Phoenix.Flash.get(conn.assigns.flash, :info)
+      refute Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
+    end
+
+    test "a registration link confirms the email and logs in", %{conn: conn} do
+      user = user_fixture(%{}, %{}, false)
+
+      token =
+        extract_user_token(fn url ->
+          Accounts.deliver_user_registration_magic_link_instructions(user, url)
+        end)
+
+      conn = get(conn, ~p"/log_in/magic-link/#{token}")
+
+      assert redirected_to(conn) == ~p"/"
+      assert get_session(conn, :user_token)
+      refute Phoenix.Flash.get(conn.assigns.flash, :info)
+      assert Accounts.get_user!(user.id).email_confirmed_at
       refute Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
     end
 
     test "rejects an invalid token", %{conn: conn} do
       conn =
         conn
-        |> post(~p"/log_in/magic-link/invalid")
+        |> get(~p"/log_in/magic-link/invalid")
         |> fetch_flash()
 
       assert redirected_to(conn) == ~p"/log_in"
@@ -122,9 +127,10 @@ defmodule YouCongressWeb.UserSessionControllerTest do
       token = magic_login_token(user)
 
       conn =
-        post(conn, ~p"/log_in/magic-link/#{token}", %{
-          "return_to" => "https://evil.example/phishing"
-        })
+        get(
+          conn,
+          ~p"/log_in/magic-link/#{token}?return_to=https%3A%2F%2Fevil.example%2Fphishing"
+        )
 
       assert redirected_to(conn) == ~p"/"
       assert get_session(conn, :user_token)

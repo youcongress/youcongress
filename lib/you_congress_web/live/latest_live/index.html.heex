@@ -21,6 +21,14 @@
       >Andrew Ng</.link>, <.link href={~p"/a/3966"} class="text-blue-600 hover:text-blue-800">Pope Leo XIV</.link>,
       and <.link href={~p"/explore"} class="text-blue-600 hover:text-blue-800">more</.link>.
     </p>
+    <div :if={is_nil(@current_user) or !@current_user.newsletter} class="mt-4">
+      <.link
+        navigate={~p"/subscribe"}
+        class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      >
+        Subscribe to news
+      </.link>
+    </div>
   </div>
 </div>
 

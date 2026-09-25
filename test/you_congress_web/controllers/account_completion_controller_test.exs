@@ -32,7 +32,7 @@ defmodule YouCongressWeb.AccountCompletionControllerTest do
     conn = recycle(conn)
     newsletter_html = conn |> get(~p"/about") |> html_response(200)
     assert newsletter_html =~ "Get YouCongress updates"
-    assert newsletter_html =~ "Optional · Subscribe to occasional news and product updates."
+    assert newsletter_html =~ "Optional · Subscribe to news and product updates."
     assert newsletter_html =~ "2/2"
     assert newsletter_html =~ "Subscribe"
     refute newsletter_html =~ "Verify your phone"
@@ -57,6 +57,20 @@ defmodule YouCongressWeb.AccountCompletionControllerTest do
 
     assert redirected_to(conn) == ~p"/settings"
     assert Accounts.get_user!(user.id).newsletter
+  end
+
+  test "phone prompt is the only step when the user is already subscribed", %{
+    conn: conn,
+    user: user
+  } do
+    {:ok, _user} = Accounts.welcome_update(user, %{newsletter: true})
+
+    phone_html = conn |> get(~p"/about") |> html_response(200)
+
+    assert phone_html =~ "Verify your phone"
+    assert phone_html =~ ~s(aria-label="Step 1 of 1")
+    assert phone_html =~ "1/1"
+    refute phone_html =~ ~s(aria-label="Step 1 of 2")
   end
 
   test "external return paths are rejected", %{conn: conn} do

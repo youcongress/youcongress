@@ -8,6 +8,8 @@ defmodule YouCongress.AuthorsFixtures do
   Generate a author.
   """
   def author_fixture(attrs \\ %{}) do
+    unique_id = System.unique_integer([:positive, :monotonic])
+
     attrs =
       attrs
       |> Map.new()
@@ -20,10 +22,8 @@ defmodule YouCongress.AuthorsFixtures do
         twin_origin: true,
         public_figure: true,
         name: Faker.Person.name() |> String.replace("'", ""),
-        twitter_username: Faker.Internet.user_name(),
-        wikipedia_url:
-          "https://en.wikipedia.org/wiki/" <>
-            String.replace(Faker.Internet.user_name(), ~r/[^a-zA-Z0-9_]/, "_")
+        twitter_username: "user#{unique_id}",
+        wikipedia_url: "https://en.wikipedia.org/wiki/Test_Author_#{unique_id}"
       })
       |> YouCongress.Authors.create_author()
 

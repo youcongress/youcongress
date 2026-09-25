@@ -11,6 +11,7 @@ defmodule YouCongressWeb.LatestLiveTest do
   import YouCongressWeb.ConnCase
 
   alias YouCongress.Opinions
+  alias YouCongress.Accounts
   alias YouCongress.Opinions.Opinion
   alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Repo
@@ -60,6 +61,25 @@ defmodule YouCongressWeb.LatestLiveTest do
       assert html =~ "AI Safety Statement"
       assert html =~ "A very recent opinion"
       assert html =~ "Ada Lovelace"
+      assert html =~ ~s(href="/subscribe")
+      assert html =~ "Subscribe to news"
+    end
+
+    test "hides the subscription link for a logged-in subscriber", %{conn: conn} do
+      user = user_fixture()
+      {:ok, user} = Accounts.welcome_update(user, %{newsletter: true})
+
+      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/")
+
+      refute has_element?(view, ~s(a[href="/subscribe"]), "Subscribe to news")
+    end
+
+    test "shows the subscription link for a logged-in non-subscriber", %{conn: conn} do
+      user = user_fixture()
+
+      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/")
+
+      assert has_element?(view, ~s(a[href="/subscribe"]), "Subscribe to news")
     end
 
     test "shows only the newest opinion per statement, not one per answer", %{conn: conn} do
