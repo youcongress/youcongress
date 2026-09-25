@@ -717,9 +717,60 @@ defmodule YouCongress.Accounts do
   end
 
   def update_role(user, role) do
-    user
-    |> User.role_changeset(%{role: role})
-    |> Repo.update()
+    Repo.transaction(fn ->
+      current_user =
+        from(user in User, where: user.id == ^user.id, lock: "FOR UPDATE")
+        |> Repo.one!()
+
+      case Repo.update(User.role_changeset(current_user, %{role: role})) do
+        {:ok, updated_user} ->
+          session_tokens =
+            if current_user.role != updated_user.role do
+              tokens =
+                from(token in UserToken,
+                  where: token.user_id == ^updated_user.id and token.context == "session",
+                  select: token.token
+                )
+                |> Repo.all()
+
+              Repo.delete_all(
+                from(token in UserToken,
+                  where: token.user_id == ^updated_user.id and token.context == "session"
+                )
+              )
+
+              if Permissions.blocked?(updated_user) do
+                Repo.delete_all(
+                  from(api_key in ApiKey, where: api_key.user_id == ^updated_user.id)
+                )
+              end
+
+              tokens
+            else
+              []
+            end
+
+          {updated_user, session_tokens}
+
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
+    |> case do
+      {:ok, {updated_user, session_tokens}} ->
+        Enum.each(session_tokens, fn token ->
+          YouCongressWeb.Endpoint.broadcast(
+            "users_sessions:#{Base.url_encode64(token)}",
+            "disconnect",
+            %{}
+          )
+        end)
+
+        {:ok, updated_user}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   def admin?(%User{role: "admin"}), do: true

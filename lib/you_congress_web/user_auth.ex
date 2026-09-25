@@ -216,19 +216,35 @@ defmodule YouCongressWeb.UserAuth do
     {:cont, mount_current_user(socket, session)}
   end
 
-  def on_mount(:ensure_authenticated, _params, session, socket) do
+  def on_mount(:refresh_current_user, _params, session, socket) do
+    user_token = session["user_token"]
     socket = mount_current_user(socket, session)
 
-    if socket.assigns.current_user do
-      {:cont, socket}
-    else
-      socket =
-        socket
-        |> Phoenix.LiveView.put_flash(:error, "You must log in to access this page.")
-        |> Phoenix.LiveView.redirect(to: ~p"/log_in")
+    case authorize_refreshed_live_user(socket, socket.assigns.current_user) do
+      {:cont, socket} ->
+        socket =
+          maybe_attach_event_hook(
+            socket,
+            :refresh_current_user,
+            &refresh_current_user_on_event(user_token, &1, &2, &3)
+          )
 
-      {:halt, socket}
+        {:cont, socket}
+
+      {:halt, socket} ->
+        {:halt, socket}
     end
+  end
+
+  def on_mount(:ensure_authenticated, _params, session, socket) do
+    authorize_live_socket(
+      socket,
+      session["user_token"],
+      :authenticated,
+      &present?/1,
+      "You must log in to access this page.",
+      ~p"/log_in"
+    )
   end
 
   def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
@@ -248,6 +264,117 @@ defmodule YouCongressWeb.UserAuth do
       end
     end)
   end
+
+  defp refresh_current_user_on_event(nil, _event, _params, socket) do
+    authorize_refreshed_live_user(socket, nil)
+  end
+
+  defp refresh_current_user_on_event(user_token, _event, _params, socket) do
+    authorize_refreshed_live_user(socket, Accounts.get_user_by_session_token(user_token))
+  end
+
+  defp authorize_refreshed_live_user(socket, user) do
+    access = required_live_access(socket)
+
+    cond do
+      Accounts.Permissions.blocked?(user) ->
+        {:halt, live_access_denied(socket, "Your account is blocked.", ~p"/")}
+
+      access_allowed?(access, user) ->
+        {:cont, Phoenix.Component.assign(socket, :current_user, user)}
+
+      access == :authenticated ->
+        {:halt,
+         live_access_denied(
+           socket,
+           "Your session has expired. Please log in again.",
+           ~p"/log_in"
+         )}
+
+      true ->
+        {:halt, live_access_denied(socket, access_denied_message(access), ~p"/")}
+    end
+  end
+
+  defp authorize_live_socket(socket, user_token, hook_name, policy, message, path) do
+    user = user_token && Accounts.get_user_by_session_token(user_token)
+
+    if policy.(user) and !Accounts.Permissions.blocked?(user) do
+      socket =
+        socket
+        |> Phoenix.Component.assign(:current_user, user)
+        |> maybe_attach_event_hook(hook_name, fn _event, _params, socket ->
+          refreshed_user = user_token && Accounts.get_user_by_session_token(user_token)
+
+          if policy.(refreshed_user) and !Accounts.Permissions.blocked?(refreshed_user) do
+            {:cont, Phoenix.Component.assign(socket, :current_user, refreshed_user)}
+          else
+            {:halt, live_access_denied(socket, message, path)}
+          end
+        end)
+
+      {:cont, socket}
+    else
+      {:halt,
+       socket
+       |> Phoenix.Component.assign(:current_user, user)
+       |> live_access_denied(message, path)}
+    end
+  end
+
+  defp maybe_attach_event_hook(%{private: %{lifecycle: _}} = socket, name, callback) do
+    Phoenix.LiveView.attach_hook(socket, name, :handle_event, callback)
+  end
+
+  defp maybe_attach_event_hook(socket, _name, _callback), do: socket
+
+  defp required_live_access(%{view: view, assigns: assigns}) do
+    case {view, assigns[:live_action]} do
+      {YouCongressWeb.AuthorLive.Index, _} -> :admin
+      {YouCongressWeb.AuthorLive.Show, :edit} -> :admin
+      {YouCongressWeb.StatementLive.Index, :new} -> :admin
+      {YouCongressWeb.StatementLive.Show, :edit} -> :admin
+      {YouCongressWeb.QuoteReviewLive.Index, _} -> :admin_or_moderator
+      {YouCongressWeb.ReconsiderLive.New, _} -> :creator_or_admin
+      {YouCongressWeb.WelcomeLive.Index, _} -> :authenticated
+      {YouCongressWeb.StatementLive.AddQuote, _} -> :authenticated
+      {YouCongressWeb.SettingsLive, _} -> :authenticated
+      {YouCongressWeb.HomeLive.Index, _} -> :authenticated
+      _ -> :public
+    end
+  end
+
+  defp required_live_access(_socket), do: :public
+
+  defp access_allowed?(:public, _user), do: true
+  defp access_allowed?(:authenticated, user), do: present?(user)
+  defp access_allowed?(:admin, user), do: Accounts.admin?(user)
+  defp access_allowed?(:admin_or_moderator, user), do: admin_or_moderator?(user)
+
+  defp access_allowed?(:creator_or_admin, user),
+    do: Accounts.Permissions.can_create_reconsideration?(user)
+
+  defp access_denied_message(:admin), do: "You must be an admin to access this page."
+
+  defp access_denied_message(:admin_or_moderator),
+    do: "You must be an admin or moderator to access this page."
+
+  defp access_denied_message(:creator_or_admin),
+    do: "You must be a creator or admin to create a Reconsider page."
+
+  defp live_access_denied(socket, message, path) do
+    socket
+    |> Phoenix.LiveView.put_flash(:error, message)
+    |> Phoenix.LiveView.redirect(to: path)
+  end
+
+  defp present?(nil), do: false
+  defp present?(_user), do: true
+
+  defp admin_or_moderator?(%Accounts.User{role: role}) when role in ["admin", "moderator"],
+    do: true
+
+  defp admin_or_moderator?(_user), do: false
 
   @doc """
   Used for routes that require the user to not be authenticated.

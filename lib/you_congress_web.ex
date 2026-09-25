@@ -54,6 +54,8 @@ defmodule YouCongressWeb do
       use Phoenix.LiveView,
         layout: {YouCongressWeb.Layouts, :app}
 
+      on_mount {YouCongressWeb.UserAuth, :refresh_current_user}
+
       unquote(html_helpers())
 
       import YouCongressWeb.LiveHelpers, only: [assign_current_user: 2, record_guest_vote: 2]

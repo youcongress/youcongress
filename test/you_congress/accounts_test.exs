@@ -633,6 +633,36 @@ defmodule YouCongress.AccountsTest do
       assert user.role == "admin"
       assert Accounts.get_user!(user.id).role == "admin"
     end
+
+    test "revokes every session and disconnects its sockets when a role changes" do
+      user = admin_fixture()
+      first_token = Accounts.generate_user_session_token(user)
+      second_token = Accounts.generate_user_session_token(user)
+
+      Enum.each([first_token, second_token], fn token ->
+        YouCongressWeb.Endpoint.subscribe("users_sessions:#{Base.url_encode64(token)}")
+      end)
+
+      assert {:ok, updated_user} = Accounts.update_role(user, "user")
+      assert updated_user.role == "user"
+      refute Accounts.get_user_by_session_token(first_token)
+      refute Accounts.get_user_by_session_token(second_token)
+
+      assert_receive %Phoenix.Socket.Broadcast{event: "disconnect"}
+      assert_receive %Phoenix.Socket.Broadcast{event: "disconnect"}
+    end
+
+    test "revokes API keys when an account is blocked" do
+      user = user_fixture()
+
+      {:ok, api_key} =
+        Accounts.create_api_key_for_user(user, %{"name" => "Automation", "scope" => :write})
+
+      assert {:ok, blocked_user} = Accounts.update_role(user, "blocked")
+      assert blocked_user.role == "blocked"
+      assert {:error, :invalid_api_key} = Accounts.get_user_by_api_key(api_key.token)
+      refute Repo.get(ApiKey, api_key.id)
+    end
   end
 
   describe "x_register_user/2" do
