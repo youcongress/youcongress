@@ -8,6 +8,8 @@ defmodule YouCongress.Opinions.Opinion do
 
   import Ecto.Changeset
 
+  alias YouCongress.ContentLimits
+
   @date_precisions [:day, :month, :year]
   @user_editable_fields [:content, :source_url, :source_text, :author_id, :date, :date_precision]
 
@@ -99,6 +101,9 @@ defmodule YouCongress.Opinions.Opinion do
       :date_precision
     ])
     |> validate_required([:content, :twin])
+    |> ContentLimits.validate_text(:content, 10_000, 20_000)
+    |> ContentLimits.validate_text(:source_text, 50_000, 100_000)
+    |> ContentLimits.validate_text(:source_url, 2_048, 8_192)
     |> default_date_precision()
     |> truncate_date_to_precision()
     |> validate_date_pair()

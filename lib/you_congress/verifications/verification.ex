@@ -6,6 +6,8 @@ defmodule YouCongress.Verifications.Verification do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias YouCongress.ContentLimits
+
   schema "verifications" do
     field :status, Ecto.Enum,
       values: [
@@ -31,6 +33,8 @@ defmodule YouCongress.Verifications.Verification do
     verification
     |> cast(attrs, [:opinion_id, :user_id, :status, :comment, :model])
     |> validate_required([:opinion_id, :user_id, :status])
+    |> ContentLimits.validate_text(:comment, 4_000, 8_000)
+    |> ContentLimits.validate_text(:model, 100, 400)
     |> foreign_key_constraint(:opinion_id)
     |> foreign_key_constraint(:user_id)
   end

@@ -38,6 +38,39 @@ defmodule YouCongress.OpinionsTest do
     refute Opinions.get_by(content: "This should not be persisted")
   end
 
+  test "rejects oversized quote text before requesting an embedding" do
+    oversized_content = String.duplicate("a", 10_001)
+
+    with_mock Embeddings, embed: fn _text -> flunk("embedding should not be requested") end do
+      assert {:error, :opinion, changeset, %{}} =
+               Opinions.create_opinion(%{
+                 content: oversized_content,
+                 source_url: "https://example.com/source",
+                 twin: false
+               })
+
+      assert %{content: [_]} = errors_on(changeset)
+      refute Opinions.get_by(content: oversized_content)
+    end
+  end
+
+  test "rejects an oversized quote update before requesting an embedding" do
+    opinion =
+      opinion_fixture(%{
+        content: "original quote",
+        source_url: "https://example.com/source"
+      })
+
+    with_mock Embeddings, embed: fn _text -> flunk("embedding should not be requested") end do
+      assert {:error, changeset} =
+               Opinions.update_opinion(opinion, %{content: String.duplicate("🙂", 6_000)})
+
+      assert %{content: [message]} = errors_on(changeset)
+      assert message =~ "bytes"
+      assert Opinions.get_opinion!(opinion.id).content == "original quote"
+    end
+  end
+
   defp disable_automatic_verifications do
     original = Application.fetch_env(:you_congress, :feature_flags)
 

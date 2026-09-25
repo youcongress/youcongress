@@ -5,6 +5,7 @@ defmodule YouCongress.Authors.Author do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias YouCongress.ContentLimits
   alias YouCongress.WikipediaUrl
 
   @username_format ~r/\A[a-z0-9][a-z0-9_]*\z/
@@ -64,6 +65,7 @@ defmodule YouCongress.Authors.Author do
     ])
     |> validate_required([:twin_origin])
     |> validate_required_if_twin_origin()
+    |> validate_content_limits()
     |> validate_username()
     |> unique_constraint(:twitter_username)
     |> unique_constraint(:twitter_username, name: :authors_twitter_url_index)
@@ -79,6 +81,7 @@ defmodule YouCongress.Authors.Author do
 
     author
     |> cast(attrs, allowed_fields)
+    |> validate_content_limits()
     |> validate_username()
     |> foreign_key_constraint(:country_id)
   end
@@ -92,6 +95,20 @@ defmodule YouCongress.Authors.Author do
 
   defp normalize_profile_field!(field) do
     raise ArgumentError, "unsupported profile field: #{inspect(field)}"
+  end
+
+  defp validate_content_limits(changeset) do
+    changeset
+    |> ContentLimits.validate_text(:name, 200, 800)
+    |> ContentLimits.validate_text(:bio, 5_000, 10_000)
+    |> ContentLimits.validate_text(:description, 5_000, 10_000)
+    |> ContentLimits.validate_text(:location, 500, 2_000)
+    |> ContentLimits.validate_text(:profile_image_url, 2_048, 8_192)
+    |> ContentLimits.validate_text(:wikipedia_url, 2_048, 8_192)
+    |> ContentLimits.validate_text(:twitter_username, 100, 400)
+    |> ContentLimits.validate_text(:twitter_id_str, 255, 1_020)
+    |> ContentLimits.validate_text(:google_id, 255, 1_020)
+    |> ContentLimits.validate_text(:wikidata, 100, 400)
   end
 
   def validate_required_if_twin_origin(changeset) do
