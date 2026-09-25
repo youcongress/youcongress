@@ -23,19 +23,16 @@ defmodule YouCongressWeb.AccountCompletionBanner do
     >
       <div class="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-            Optional · {if @prompt == :phone, do: "1/2", else: "2/2"}
-          </p>
           <p class="font-semibold">
             {if @prompt == :phone,
               do: "Verify your phone",
-              else: "Get occasional YouCongress updates"}
+              else: "Get YouCongress updates"}
           </p>
           <p :if={@prompt == :phone} class="mt-0.5 text-indigo-800">
-            Phone verification helps reduce spam and abuse.
+            Optional · Phone verification helps reduce spam and abuse.
           </p>
           <p :if={@prompt == :newsletter} class="mt-0.5 text-indigo-800">
-            Subscribe to occasional news and product updates.
+            Optional · Subscribe to occasional news and product updates.
           </p>
         </div>
 
@@ -62,6 +59,12 @@ defmodule YouCongressWeb.AccountCompletionBanner do
           >
             Not now
           </.link>
+          <span
+            class="text-xs font-medium text-indigo-500"
+            aria-label={if @prompt == :phone, do: "Step 1 of 2", else: "Step 2 of 2"}
+          >
+            {if @prompt == :phone, do: "1/2", else: "2/2"}
+          </span>
         </div>
       </div>
     </aside>
