@@ -40,8 +40,11 @@ defmodule YouCongressWeb.ReconsiderLandingLiveTest do
     assert has_element?(
              view,
              "#reconsider-results-example",
-             "42% of 60 participants changed their position."
+             "75% of 60 participants changed their position."
            )
+
+    assert has_element?(view, "#example-change-bar", "75% reported changing 60 completed")
+    assert has_element?(view, "#example-change-bar div[style='width: 75%']")
 
     assert has_element?(view, "#reconsider-results-example", "14 participants (23%)")
     assert has_element?(view, "#reconsider-results-example", "9 participants (15%)")
