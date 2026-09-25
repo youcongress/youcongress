@@ -100,6 +100,27 @@ defmodule YouCongress.AuthorsTest do
       assert author.wikipedia_url == "https://en.wikipedia.org/wiki/whatever"
     end
 
+    test "create_author/2 enforces the actor's author-creation permission" do
+      ordinary_user = user_fixture()
+
+      attrs = %{
+        name: "Policy Controlled Author",
+        bio: "Created only by a permitted actor",
+        twitter_username: "policy_controlled_author",
+        twin_origin: false
+      }
+
+      assert {:error, :forbidden} = Authors.create_author(ordinary_user, attrs)
+      refute Authors.get_author_by(twitter_username: "policy_controlled_author")
+
+      creator = user_fixture(%{role: "creator"})
+
+      assert {:ok, %Author{} = author} =
+               Authors.create_author(creator, Map.put(attrs, :user_id, ordinary_user.id))
+
+      assert author.twitter_username == "policy_controlled_author"
+    end
+
     test "create_author/1 returns changeset error for duplicate twitter username" do
       country = country_fixture(name: "Duplicate Username Country")
 

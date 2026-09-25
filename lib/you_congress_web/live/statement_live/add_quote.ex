@@ -211,7 +211,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
       twin_origin: false
     }
 
-    case Authors.create_author(args) do
+    case Authors.create_author(socket.assigns.current_user, args) do
       {:ok, author} ->
         statement = socket.assigns.statement
 
@@ -225,7 +225,11 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
 
         {:noreply, socket}
 
-      {:error, changeset} ->
+      {:error, :forbidden} ->
+        {:noreply,
+         put_flash(socket, :error, "You are not allowed to create public-figure profiles.")}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
         error_message =
           Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} ->
             msg
@@ -258,6 +262,14 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
     source_text = Map.get(params, "source_text")
 
     cond do
+      is_nil(author) or
+          not Permissions.can_edit_vote?(
+            %{author_id: author && author.id},
+            socket.assigns.current_user
+          ) ->
+        {:noreply,
+         put_flash(socket, :error, "You are not allowed to change this author's public vote.")}
+
       blank?(source_url) and blank?(source_text) ->
         {:noreply,
          socket
@@ -351,7 +363,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
              user_id: current_user.id
            }),
          {:ok, _vote} <-
-           Votes.create_vote(%{
+           Votes.create_vote(current_user, %{
              statement_id: statement.id,
              author_id: author.id,
              answer: answer,
@@ -369,6 +381,10 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
 
       {:noreply, socket}
     else
+      {:error, :forbidden} ->
+        {:noreply,
+         put_flash(socket, :error, "You are not allowed to change this author's public vote.")}
+
       {:error, changeset} ->
         error_message =
           Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} ->
@@ -414,7 +430,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
              user_id: current_user.id
            }),
          {:ok, _vote} <-
-           Votes.update_vote(vote, %{
+           Votes.update_vote(current_user, vote, %{
              opinion_id: opinion.id,
              answer: answer,
              user_id: current_user.id,
@@ -431,6 +447,10 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
 
       {:noreply, socket}
     else
+      {:error, :forbidden} ->
+        {:noreply,
+         put_flash(socket, :error, "You are not allowed to change this author's public vote.")}
+
       {:error, changeset} ->
         error_message =
           Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} ->

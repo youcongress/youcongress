@@ -137,6 +137,42 @@ defmodule YouCongress.VotesTest do
       assert {:ok, %Vote{}} = Votes.create_vote(valid_attrs)
     end
 
+    test "actor-aware vote writes enforce ownership and ignore forged actor metadata" do
+      owner = user_fixture()
+      attacker = user_fixture()
+      statement = statement_fixture()
+
+      attrs = %{
+        author_id: owner.author_id,
+        statement_id: statement.id,
+        answer: :for,
+        user_id: attacker.id
+      }
+
+      assert {:error, :forbidden} = Votes.create_vote(attacker, attrs)
+      refute Votes.get_by(%{author_id: owner.author_id, statement_id: statement.id})
+
+      assert {:ok, %Vote{} = vote} = Votes.create_vote(owner, attrs)
+      assert Votes.get_vote!(vote.id).verification_status == :endorsed
+
+      assert {:error, :forbidden} =
+               Votes.update_vote(attacker, vote, %{answer: :against, user_id: owner.id})
+
+      unchanged_vote = Votes.get_vote!(vote.id)
+      assert unchanged_vote.answer == :for
+
+      assert {:ok, %Vote{} = updated_vote} =
+               Votes.update_vote(owner, vote, %{
+                 answer: :against,
+                 author_id: attacker.author_id,
+                 user_id: attacker.id
+               })
+
+      assert updated_vote.answer == :against
+      assert updated_vote.author_id == owner.author_id
+      assert Votes.get_vote!(updated_vote.id).verification_status == :endorsed
+    end
+
     test "list_top_sourced_statement_authors/2 returns wikipedia authors ordered by followers count" do
       unique = System.unique_integer([:positive])
       statement = statement_fixture()
