@@ -219,7 +219,9 @@ defmodule YouCongressWeb.SettingsLiveTest do
              )
 
       render_click(settings_live, "unsubscribe_newsletter")
-      refute Accounts.get_user!(current_user.id).newsletter
+      user = Accounts.get_user!(current_user.id)
+      refute user.newsletter
+      assert user.newsletter_subscription_prompt_dismissed_at
     end
 
     test "phone verified users see a locked location and cannot submit changes to it", %{

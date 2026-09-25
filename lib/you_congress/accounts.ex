@@ -324,20 +324,35 @@ defmodule YouCongress.Accounts do
     |> Repo.update()
   end
 
-  def account_completion_banner_needed?(%User{} = user) do
-    is_nil(user.account_completion_banner_dismissed_at) &&
-      (is_nil(user.phone_number_confirmed_at) || !user.newsletter)
+  def account_completion_prompt(%User{} = user) do
+    cond do
+      is_nil(user.phone_number_confirmed_at) &&
+          is_nil(user.phone_verification_prompt_dismissed_at) ->
+        :phone
+
+      !user.newsletter && is_nil(user.newsletter_subscription_prompt_dismissed_at) ->
+        :newsletter
+
+      true ->
+        nil
+    end
   end
 
-  def account_completion_banner_needed?(_user), do: false
+  def account_completion_prompt(_user), do: nil
 
-  def dismiss_account_completion_banner(%User{} = user) do
+  def dismiss_phone_verification_prompt(%User{} = user) do
+    dismiss_account_completion_prompt(user, :phone_verification_prompt_dismissed_at)
+  end
+
+  def dismiss_newsletter_subscription_prompt(%User{} = user) do
+    dismiss_account_completion_prompt(user, :newsletter_subscription_prompt_dismissed_at)
+  end
+
+  defp dismiss_account_completion_prompt(%User{} = user, field) do
     dismissed_at = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     user
-    |> User.account_completion_banner_changeset(%{
-      account_completion_banner_dismissed_at: dismissed_at
-    })
+    |> User.account_completion_prompt_changeset(%{field => dismissed_at})
     |> Repo.update()
   end
 

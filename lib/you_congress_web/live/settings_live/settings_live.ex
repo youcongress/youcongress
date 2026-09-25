@@ -97,14 +97,15 @@ defmodule YouCongressWeb.SettingsLive do
   end
 
   def handle_event("unsubscribe_newsletter", _params, socket) do
-    case Accounts.welcome_update(socket.assigns.current_user, %{newsletter: false}) do
-      {:ok, user} ->
-        {:noreply,
-         socket
-         |> assign(:current_user, %{user | author: socket.assigns.current_user.author})
-         |> put_flash(:info, "You are unsubscribed from YouCongress updates.")}
-
-      {:error, _changeset} ->
+    with {:ok, user} <-
+           Accounts.welcome_update(socket.assigns.current_user, %{newsletter: false}),
+         {:ok, user} <- Accounts.dismiss_newsletter_subscription_prompt(user) do
+      {:noreply,
+       socket
+       |> assign(:current_user, %{user | author: socket.assigns.current_user.author})
+       |> put_flash(:info, "You are unsubscribed from YouCongress updates.")}
+    else
+      {:error, _reason} ->
         {:noreply, put_flash(socket, :error, "We could not update your subscription.")}
     end
   end

@@ -95,7 +95,14 @@ defmodule YouCongressWeb.Router do
     live("/settings", SettingsLive, :settings)
     live("/landing", HomeLive.Index, :index)
     get("/account-completion/phone", AccountCompletionController, :phone)
-    post("/account-completion/dismiss", AccountCompletionController, :dismiss)
+    post("/account-completion/dismiss-phone", AccountCompletionController, :dismiss_phone)
+
+    post(
+      "/account-completion/dismiss-newsletter",
+      AccountCompletionController,
+      :dismiss_newsletter
+    )
+
     post("/account-completion/newsletter", AccountCompletionController, :subscribe)
   end
 

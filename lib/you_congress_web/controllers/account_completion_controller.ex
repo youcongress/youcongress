@@ -4,8 +4,13 @@ defmodule YouCongressWeb.AccountCompletionController do
   alias YouCongress.Accounts
   alias YouCongressWeb.ReturnTo
 
-  def dismiss(conn, params) do
-    {:ok, _user} = Accounts.dismiss_account_completion_banner(conn.assigns.current_user)
+  def dismiss_phone(conn, params) do
+    {:ok, _user} = Accounts.dismiss_phone_verification_prompt(conn.assigns.current_user)
+    redirect(conn, to: destination(conn, params))
+  end
+
+  def dismiss_newsletter(conn, params) do
+    {:ok, _user} = Accounts.dismiss_newsletter_subscription_prompt(conn.assigns.current_user)
     redirect(conn, to: destination(conn, params))
   end
 

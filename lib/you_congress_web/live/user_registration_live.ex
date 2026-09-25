@@ -632,7 +632,13 @@ defmodule YouCongressWeb.UserRegistrationLive do
   end
 
   def handle_event("skip_phone", _params, %{assigns: %{user: %User{} = user}} = socket) do
-    {:noreply, session_login(socket, user, registration_destination(socket))}
+    case Accounts.dismiss_phone_verification_prompt(user) do
+      {:ok, user} ->
+        {:noreply, session_login(socket, user, registration_destination(socket))}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "We could not save that choice. Please try again.")}
+    end
   end
 
   def handle_event("skip_phone", _params, socket) do
