@@ -79,19 +79,7 @@ defmodule YouCongress.Workers.MatchQuoteStatementsPollingWorker do
       |> Enum.map(&normalize_match/1)
       |> Enum.reject(&is_nil/1)
       |> Enum.uniq_by(fn {statement_id, _answer} -> statement_id end)
-      |> Enum.reduce([], fn {statement_id, answer}, matched_statement_ids ->
-        case Map.fetch(statements_by_id, statement_id) do
-          {:ok, statement} ->
-            if persist_match(opinion, statement, answer, user_id) do
-              [statement_id | matched_statement_ids]
-            else
-              matched_statement_ids
-            end
-
-          :error ->
-            matched_statement_ids
-        end
-      end)
+      |> Enum.reduce([], &persist_candidate_match(&1, &2, statements_by_id, opinion, user_id))
       |> Enum.reverse()
     else
       nil -> []
@@ -99,6 +87,21 @@ defmodule YouCongress.Workers.MatchQuoteStatementsPollingWorker do
   end
 
   defp persist_matches(_opinion_id, _statement_ids, _matches), do: []
+
+  defp persist_candidate_match(
+         {statement_id, answer},
+         matched_statement_ids,
+         statements_by_id,
+         opinion,
+         user_id
+       ) do
+    with {:ok, statement} <- Map.fetch(statements_by_id, statement_id),
+         true <- persist_match(opinion, statement, answer, user_id) do
+      [statement_id | matched_statement_ids]
+    else
+      _ -> matched_statement_ids
+    end
+  end
 
   defp load_quote(opinion_id) do
     case Opinions.get_opinion(normalize_id(opinion_id)) do

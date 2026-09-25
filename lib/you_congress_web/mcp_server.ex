@@ -1,4 +1,5 @@
 defmodule YouCongressWeb.MCPServer do
+  @moduledoc false
   use Anubis.Server,
     name: "YouCongress",
     version: "1.0.0",

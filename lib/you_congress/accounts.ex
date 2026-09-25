@@ -606,9 +606,10 @@ defmodule YouCongress.Accounts do
   Confirms a user using a six-digit verification code.
   """
   def confirm_user_with_code(%User{} = user, code) when is_binary(code) do
-    cond do
-      user.email_confirmed_at -> {:error, :already_confirmed}
-      true -> do_confirm_user_with_code(user, code)
+    if user.email_confirmed_at do
+      {:error, :already_confirmed}
+    else
+      do_confirm_user_with_code(user, code)
     end
   end
 
@@ -714,30 +715,36 @@ defmodule YouCongress.Accounts do
   authorize the update.
   """
   def reset_user_password(token, attrs) when is_binary(token) do
-    with {:ok, query} <- UserToken.verify_reset_password_token_query(token) do
-      Repo.transaction(fn ->
-        case Repo.one(query) do
-          {%UserToken{}, %User{} = user} ->
-            case Repo.update(User.password_changeset(user, attrs)) do
-              {:ok, updated_user} ->
-                Repo.delete_all(UserToken.user_and_contexts_query(user, :all))
-                updated_user
-
-              {:error, changeset} ->
-                Repo.rollback({:changeset, changeset})
-            end
-
-          nil ->
-            Repo.rollback(:invalid_token)
-        end
-      end)
-      |> case do
-        {:ok, user} -> {:ok, user}
-        {:error, {:changeset, changeset}} -> {:error, changeset}
-        {:error, :invalid_token} -> {:error, :invalid_token}
-      end
-    else
+    case UserToken.verify_reset_password_token_query(token) do
+      {:ok, query} -> reset_user_password_transaction(query, attrs)
       :error -> {:error, :invalid_token}
+    end
+  end
+
+  defp reset_user_password_transaction(query, attrs) do
+    Repo.transaction(fn -> reset_user_password_in_transaction(query, attrs) end)
+    |> case do
+      {:ok, user} -> {:ok, user}
+      {:error, {:changeset, changeset}} -> {:error, changeset}
+      {:error, :invalid_token} -> {:error, :invalid_token}
+    end
+  end
+
+  defp reset_user_password_in_transaction(query, attrs) do
+    case Repo.one(query) do
+      {%UserToken{}, %User{} = user} -> update_password_and_consume_tokens(user, attrs)
+      nil -> Repo.rollback(:invalid_token)
+    end
+  end
+
+  defp update_password_and_consume_tokens(user, attrs) do
+    case Repo.update(User.password_changeset(user, attrs)) do
+      {:ok, updated_user} ->
+        Repo.delete_all(UserToken.user_and_contexts_query(user, :all))
+        updated_user
+
+      {:error, changeset} ->
+        Repo.rollback({:changeset, changeset})
     end
   end
 
@@ -749,31 +756,7 @@ defmodule YouCongress.Accounts do
 
       case Repo.update(User.role_changeset(current_user, %{role: role})) do
         {:ok, updated_user} ->
-          session_tokens =
-            if current_user.role != updated_user.role do
-              tokens =
-                from(token in UserToken,
-                  where: token.user_id == ^updated_user.id and token.context == "session",
-                  select: token.token
-                )
-                |> Repo.all()
-
-              Repo.delete_all(
-                from(token in UserToken,
-                  where: token.user_id == ^updated_user.id and token.context == "session"
-                )
-              )
-
-              if Permissions.blocked?(updated_user) do
-                Repo.delete_all(
-                  from(api_key in ApiKey, where: api_key.user_id == ^updated_user.id)
-                )
-              end
-
-              tokens
-            else
-              []
-            end
+          session_tokens = invalidate_sessions_if_role_changed(current_user, updated_user)
 
           {updated_user, session_tokens}
 
@@ -796,6 +779,29 @@ defmodule YouCongress.Accounts do
       {:error, changeset} ->
         {:error, changeset}
     end
+  end
+
+  defp invalidate_sessions_if_role_changed(%{role: role}, %{role: role}), do: []
+
+  defp invalidate_sessions_if_role_changed(_current_user, updated_user) do
+    tokens =
+      from(token in UserToken,
+        where: token.user_id == ^updated_user.id and token.context == "session",
+        select: token.token
+      )
+      |> Repo.all()
+
+    Repo.delete_all(
+      from(token in UserToken,
+        where: token.user_id == ^updated_user.id and token.context == "session"
+      )
+    )
+
+    if Permissions.blocked?(updated_user) do
+      Repo.delete_all(from(api_key in ApiKey, where: api_key.user_id == ^updated_user.id))
+    end
+
+    tokens
   end
 
   def admin?(%User{role: "admin"}), do: true

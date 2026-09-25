@@ -212,14 +212,15 @@ defmodule YouCongress.Authors do
   def create_author(attrs \\ %{}) do
     author = %Author{}
 
-    with {:ok, attrs} <- resolve_country_attrs(attrs) do
-      changeset = reset_wikidata_if_url_changed(Author.changeset(author, attrs))
+    case resolve_country_attrs(attrs) do
+      {:ok, attrs} ->
+        changeset = reset_wikidata_if_url_changed(Author.changeset(author, attrs))
 
-      changeset
-      |> Repo.insert()
-      |> maybe_enqueue_x_profile_data_fetch()
-      |> maybe_enqueue_wikidata_fetch(wikipedia_url_changed?(changeset))
-    else
+        changeset
+        |> Repo.insert()
+        |> maybe_enqueue_x_profile_data_fetch()
+        |> maybe_enqueue_wikidata_fetch(wikipedia_url_changed?(changeset))
+
       {:error, :unknown_country, country, attrs} ->
         {:error, unknown_country_changeset(author, attrs, country)}
     end
@@ -362,33 +363,36 @@ defmodule YouCongress.Authors do
         %Author{twin_enabled: true} = author_before,
         %{"twin_enabled" => "false"} = attrs
       ) do
-    with {:ok, attrs} <- resolve_country_attrs(attrs) do
-      update_author_and_delete_twin_options(author_before, attrs)
-    else
+    case resolve_country_attrs(attrs) do
+      {:ok, attrs} ->
+        update_author_and_delete_twin_options(author_before, attrs)
+
       {:error, :unknown_country, country, attrs} ->
         {:error, unknown_country_changeset(author_before, attrs, country)}
     end
   end
 
   def update_author(%Author{twin_enabled: true} = author_before, %{twin_enabled: false} = attrs) do
-    with {:ok, attrs} <- resolve_country_attrs(attrs) do
-      update_author_and_delete_twin_options(author_before, attrs)
-    else
+    case resolve_country_attrs(attrs) do
+      {:ok, attrs} ->
+        update_author_and_delete_twin_options(author_before, attrs)
+
       {:error, :unknown_country, country, attrs} ->
         {:error, unknown_country_changeset(author_before, attrs, country)}
     end
   end
 
   def update_author(%Author{} = author_before, attrs) do
-    with {:ok, attrs} <- resolve_country_attrs(attrs) do
-      changeset = reset_wikidata_if_url_changed(Author.changeset(author_before, attrs))
-      twitter_username_changed? = twitter_username_changed?(changeset)
+    case resolve_country_attrs(attrs) do
+      {:ok, attrs} ->
+        changeset = reset_wikidata_if_url_changed(Author.changeset(author_before, attrs))
+        twitter_username_changed? = twitter_username_changed?(changeset)
 
-      changeset
-      |> Repo.update()
-      |> maybe_enqueue_x_profile_data_fetch(twitter_username_changed?)
-      |> maybe_enqueue_wikidata_fetch(wikipedia_url_changed?(changeset))
-    else
+        changeset
+        |> Repo.update()
+        |> maybe_enqueue_x_profile_data_fetch(twitter_username_changed?)
+        |> maybe_enqueue_wikidata_fetch(wikipedia_url_changed?(changeset))
+
       {:error, :unknown_country, country, attrs} ->
         {:error, unknown_country_changeset(author_before, attrs, country)}
     end
@@ -412,16 +416,18 @@ defmodule YouCongress.Authors do
     do: {:error, :no_twitter_username}
 
   def set_x_profile_data(%Author{twitter_username: twitter_username} = author) do
-    with {:ok, x_user_data} <- YouCongress.X.XAPI.fetch_user_by_username(twitter_username) do
-      attrs = x_profile_attrs(author, x_user_data)
+    case YouCongress.X.XAPI.fetch_user_by_username(twitter_username) do
+      {:ok, x_user_data} ->
+        attrs = x_profile_attrs(author, x_user_data)
 
-      if map_size(attrs) > 0 do
-        update_author_from_x_profile(author, attrs)
-      else
-        {:error, :no_profile_image}
-      end
-    else
-      {:error, reason} -> {:error, reason}
+        if map_size(attrs) > 0 do
+          update_author_from_x_profile(author, attrs)
+        else
+          {:error, :no_profile_image}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -1061,11 +1067,12 @@ defmodule YouCongress.Authors do
 
   def update_profile_author(%Author{} = author, attrs, allowed_fields)
       when is_list(allowed_fields) do
-    with {:ok, attrs} <- resolve_country_attrs(attrs) do
-      author
-      |> Author.profile_changeset(attrs, allowed_fields)
-      |> Repo.update()
-    else
+    case resolve_country_attrs(attrs) do
+      {:ok, attrs} ->
+        author
+        |> Author.profile_changeset(attrs, allowed_fields)
+        |> Repo.update()
+
       {:error, :unknown_country, country, attrs} ->
         {:error, unknown_country_changeset(author, attrs, country)}
     end
@@ -1223,15 +1230,13 @@ defmodule YouCongress.Authors do
   defp resolve_country_attrs(attrs) do
     {country, attrs} = pop_country(attrs)
 
-    cond do
-      blank?(country) or country_id_present?(attrs) ->
-        {:ok, attrs}
-
-      true ->
-        case Countries.get_country_by_name_or_iso(country) do
-          nil -> {:error, :unknown_country, country, attrs}
-          country -> {:ok, Map.put(attrs, :country_id, country.id)}
-        end
+    if blank?(country) or country_id_present?(attrs) do
+      {:ok, attrs}
+    else
+      case Countries.get_country_by_name_or_iso(country) do
+        nil -> {:error, :unknown_country, country, attrs}
+        country -> {:ok, Map.put(attrs, :country_id, country.id)}
+      end
     end
   end
 

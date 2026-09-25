@@ -392,94 +392,7 @@ defmodule YouCongress.Statements.StatementQueries do
   def get_top_votes_by_answer_for_statements(statement_ids, opts) when is_list(statement_ids) do
     order_by = Keyword.get(opts, :order_by, :likes)
 
-    ranking_query =
-      case order_by do
-        :quote_date ->
-          from v in Vote,
-            join: o in assoc(v, :opinion),
-            join: a in assoc(v, :author),
-            left_join: os in YouCongress.OpinionsStatements.OpinionStatement,
-            on: os.opinion_id == o.id and os.statement_id == v.statement_id,
-            where:
-              v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
-                a.public_figure == true,
-            select: %{
-              vote_id: v.id,
-              statement_id: v.statement_id,
-              answer: v.answer,
-              rank:
-                fragment(
-                  "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY ? DESC NULLS LAST, CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC, ? DESC)",
-                  v.statement_id,
-                  v.answer,
-                  o.date,
-                  o.verification_status,
-                  os.verification_status,
-                  v.verification_status,
-                  o.verification_status,
-                  o.id,
-                  v.id
-                )
-            }
-
-        :recency ->
-          from v in Vote,
-            join: o in assoc(v, :opinion),
-            join: a in assoc(v, :author),
-            left_join: os in YouCongress.OpinionsStatements.OpinionStatement,
-            on: os.opinion_id == o.id and os.statement_id == v.statement_id,
-            where:
-              v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
-                a.public_figure == true,
-            select: %{
-              vote_id: v.id,
-              statement_id: v.statement_id,
-              answer: v.answer,
-              rank:
-                fragment(
-                  "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC)",
-                  v.statement_id,
-                  v.answer,
-                  o.verification_status,
-                  os.verification_status,
-                  v.verification_status,
-                  o.verification_status,
-                  o.id
-                )
-            }
-
-        _ ->
-          from v in Vote,
-            join: o in assoc(v, :opinion),
-            join: a in assoc(v, :author),
-            left_join: os in YouCongress.OpinionsStatements.OpinionStatement,
-            on: os.opinion_id == o.id and os.statement_id == v.statement_id,
-            where:
-              v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
-                a.public_figure == true,
-            select: %{
-              vote_id: v.id,
-              statement_id: v.statement_id,
-              answer: v.answer,
-              rank:
-                fragment(
-                  "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC NULLS LAST, ? DESC, ? DESC, CASE WHEN ? IS NOT NULL THEN 1 WHEN ? IS NOT NULL THEN 2 WHEN ? = FALSE THEN 3 ELSE 4 END, ? DESC)",
-                  v.statement_id,
-                  v.answer,
-                  o.verification_status,
-                  os.verification_status,
-                  v.verification_status,
-                  o.verification_status,
-                  o.date,
-                  o.likes_count,
-                  o.descendants_count,
-                  coalesce(o.source_url, o.source_text),
-                  a.wikipedia_url,
-                  v.twin,
-                  o.id
-                )
-            }
-      end
+    ranking_query = top_votes_ranking_query(statement_ids, order_by)
 
     ranked_votes_query =
       from rv in subquery(ranking_query),
@@ -504,6 +417,95 @@ defmodule YouCongress.Statements.StatementQueries do
         vote -> Map.update(acc, statement_id, %{answer => vote}, &Map.put(&1, answer, vote))
       end
     end)
+  end
+
+  defp top_votes_ranking_query(statement_ids, :quote_date) do
+    from v in Vote,
+      join: o in assoc(v, :opinion),
+      join: a in assoc(v, :author),
+      left_join: os in YouCongress.OpinionsStatements.OpinionStatement,
+      on: os.opinion_id == o.id and os.statement_id == v.statement_id,
+      where:
+        v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
+          a.public_figure == true,
+      select: %{
+        vote_id: v.id,
+        statement_id: v.statement_id,
+        answer: v.answer,
+        rank:
+          fragment(
+            "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY ? DESC NULLS LAST, CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC, ? DESC)",
+            v.statement_id,
+            v.answer,
+            o.date,
+            o.verification_status,
+            os.verification_status,
+            v.verification_status,
+            o.verification_status,
+            o.id,
+            v.id
+          )
+      }
+  end
+
+  defp top_votes_ranking_query(statement_ids, :recency) do
+    from v in Vote,
+      join: o in assoc(v, :opinion),
+      join: a in assoc(v, :author),
+      left_join: os in YouCongress.OpinionsStatements.OpinionStatement,
+      on: os.opinion_id == o.id and os.statement_id == v.statement_id,
+      where:
+        v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
+          a.public_figure == true,
+      select: %{
+        vote_id: v.id,
+        statement_id: v.statement_id,
+        answer: v.answer,
+        rank:
+          fragment(
+            "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC)",
+            v.statement_id,
+            v.answer,
+            o.verification_status,
+            os.verification_status,
+            v.verification_status,
+            o.verification_status,
+            o.id
+          )
+      }
+  end
+
+  defp top_votes_ranking_query(statement_ids, _order_by) do
+    from v in Vote,
+      join: o in assoc(v, :opinion),
+      join: a in assoc(v, :author),
+      left_join: os in YouCongress.OpinionsStatements.OpinionStatement,
+      on: os.opinion_id == o.id and os.statement_id == v.statement_id,
+      where:
+        v.statement_id in ^statement_ids and not is_nil(v.opinion_id) and
+          a.public_figure == true,
+      select: %{
+        vote_id: v.id,
+        statement_id: v.statement_id,
+        answer: v.answer,
+        rank:
+          fragment(
+            "ROW_NUMBER() OVER (PARTITION BY ?, ? ORDER BY CASE WHEN ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') AND ? IN ('verified', 'ai_verified', 'endorsed') THEN 2 WHEN ? IN ('verified', 'ai_verified', 'endorsed') THEN 1 ELSE 0 END DESC, ? DESC NULLS LAST, ? DESC, ? DESC, CASE WHEN ? IS NOT NULL THEN 1 WHEN ? IS NOT NULL THEN 2 WHEN ? = FALSE THEN 3 ELSE 4 END, ? DESC)",
+            v.statement_id,
+            v.answer,
+            o.verification_status,
+            os.verification_status,
+            v.verification_status,
+            o.verification_status,
+            o.date,
+            o.likes_count,
+            o.descendants_count,
+            coalesce(o.source_url, o.source_text),
+            a.wikipedia_url,
+            v.twin,
+            o.id
+          )
+      }
   end
 
   @doc """

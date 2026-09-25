@@ -35,9 +35,8 @@ defmodule YouCongress.Statements.SynthesisAI do
 
   @impl true
   def submit(statement, votes) do
-    with {:ok, data} <- ask_gpt(prompt(statement, votes)),
-         {:ok, job_id} <- extract_job_id(data) do
-      {:ok, job_id}
+    with {:ok, data} <- ask_gpt(prompt(statement, votes)) do
+      extract_job_id(data)
     end
   end
 

@@ -121,8 +121,7 @@ defmodule YouCongress.Votes.VoteFrequencies do
 
     statement_id
     |> Votes.country_result_vote_rows()
-    |> Enum.filter(&include_vote?(&1, filters))
-    |> Enum.filter(&dated?/1)
+    |> Enum.filter(&(include_vote?(&1, filters) and dated?(&1)))
     |> Enum.group_by(&year_key/1)
     |> Enum.map(fn {year, rows} ->
       counts = Enum.frequencies_by(rows, & &1.answer)

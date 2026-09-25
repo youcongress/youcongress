@@ -283,7 +283,6 @@ defmodule YouCongress.Opinions.Quotes.QuotatorAI do
 
     %{
       quotes: quotes,
-      # TODO: Calculate cost if needed
       cost: 0.0
     }
   end

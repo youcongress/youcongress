@@ -146,55 +146,61 @@ defmodule YouCongress.Reconsiderations do
       normalized_delegate_ids = Enum.reject(normalized_delegate_ids, &(&1 == user.author_id))
 
       Repo.transaction(fn ->
-        saved_responses =
-          Enum.map(normalized_responses, fn {statement_id, answers} ->
-            %Response{}
-            |> Response.changeset(%{
-              reconsideration_id: reconsideration.id,
-              statement_id: statement_id,
-              author_id: user.author_id,
-              before_answer: answers.before,
-              after_answer: answers.after
-            })
-            |> insert_or_rollback()
-          end)
-
-        Enum.each(normalized_responses, fn {statement_id, answers} ->
-          case Votes.create_or_update(%{
-                 statement_id: statement_id,
-                 answer: answers.after,
-                 author_id: user.author_id,
-                 user_id: user.id,
-                 direct: true
-               }) do
-            {:ok, _vote} -> :ok
-            {:error, reason} -> Repo.rollback(reason)
-          end
-        end)
-
-        Enum.each(normalized_delegate_ids, fn delegate_id ->
-          %DelegateSelection{}
-          |> DelegateSelection.changeset(%{
-            reconsideration_id: reconsideration.id,
-            participant_author_id: user.author_id,
-            delegate_author_id: delegate_id
-          })
-          |> insert_or_rollback()
-
-          unless Delegations.delegating?(user.author_id, delegate_id) do
-            case Delegations.create_delegation(user, delegate_id) do
-              {:ok, _delegation} -> :ok
-              {:error, reason} -> Repo.rollback(reason)
-            end
-          end
-        end)
-
-        saved_responses
+        persist_response(reconsideration, user, normalized_responses, normalized_delegate_ids)
       end)
       |> unwrap_transaction()
     else
       true -> {:error, :already_submitted}
       {:error, _reason} = error -> error
+    end
+  end
+
+  defp persist_response(reconsideration, user, responses, delegate_ids) do
+    saved_responses = Enum.map(responses, &persist_answer(reconsideration, user, &1))
+    Enum.each(responses, &persist_vote(user, &1))
+    Enum.each(delegate_ids, &persist_delegate_selection(reconsideration, user, &1))
+    saved_responses
+  end
+
+  defp persist_answer(reconsideration, user, {statement_id, answers}) do
+    %Response{}
+    |> Response.changeset(%{
+      reconsideration_id: reconsideration.id,
+      statement_id: statement_id,
+      author_id: user.author_id,
+      before_answer: answers.before,
+      after_answer: answers.after
+    })
+    |> insert_or_rollback()
+  end
+
+  defp persist_vote(user, {statement_id, answers}) do
+    case Votes.create_or_update(%{
+           statement_id: statement_id,
+           answer: answers.after,
+           author_id: user.author_id,
+           user_id: user.id,
+           direct: true
+         }) do
+      {:ok, _vote} -> :ok
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp persist_delegate_selection(reconsideration, user, delegate_id) do
+    %DelegateSelection{}
+    |> DelegateSelection.changeset(%{
+      reconsideration_id: reconsideration.id,
+      participant_author_id: user.author_id,
+      delegate_author_id: delegate_id
+    })
+    |> insert_or_rollback()
+
+    unless Delegations.delegating?(user.author_id, delegate_id) do
+      case Delegations.create_delegation(user, delegate_id) do
+        {:ok, _delegation} -> :ok
+        {:error, reason} -> Repo.rollback(reason)
+      end
     end
   end
 

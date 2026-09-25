@@ -328,21 +328,36 @@ defmodule YouCongressWeb.UserAuth do
 
   defp maybe_attach_event_hook(socket, _name, _callback), do: socket
 
-  defp required_live_access(%{view: view, assigns: assigns}) do
-    case {view, assigns[:live_action]} do
-      {YouCongressWeb.AuthorLive.Index, _} -> :admin
-      {YouCongressWeb.AuthorLive.Show, :edit} -> :admin
-      {YouCongressWeb.StatementLive.Index, :new} -> :admin
-      {YouCongressWeb.StatementLive.Show, :edit} -> :admin
-      {YouCongressWeb.QuoteReviewLive.Index, _} -> :admin_or_moderator
-      {YouCongressWeb.ReconsiderLive.New, _} -> :creator_or_admin
-      {YouCongressWeb.WelcomeLive.Index, _} -> :authenticated
-      {YouCongressWeb.StatementLive.AddQuote, _} -> :authenticated
-      {YouCongressWeb.SettingsLive, _} -> :authenticated
-      {YouCongressWeb.HomeLive.Index, _} -> :authenticated
-      _ -> :public
-    end
-  end
+  defp required_live_access(%{view: YouCongressWeb.AuthorLive.Index}), do: :admin
+
+  defp required_live_access(%{
+         view: YouCongressWeb.AuthorLive.Show,
+         assigns: %{live_action: :edit}
+       }),
+       do: :admin
+
+  defp required_live_access(%{
+         view: YouCongressWeb.StatementLive.Index,
+         assigns: %{live_action: :new}
+       }),
+       do: :admin
+
+  defp required_live_access(%{
+         view: YouCongressWeb.StatementLive.Show,
+         assigns: %{live_action: :edit}
+       }),
+       do: :admin
+
+  defp required_live_access(%{view: YouCongressWeb.QuoteReviewLive.Index}),
+    do: :admin_or_moderator
+
+  defp required_live_access(%{view: YouCongressWeb.ReconsiderLive.New}),
+    do: :creator_or_admin
+
+  defp required_live_access(%{view: YouCongressWeb.WelcomeLive.Index}), do: :authenticated
+  defp required_live_access(%{view: YouCongressWeb.StatementLive.AddQuote}), do: :authenticated
+  defp required_live_access(%{view: YouCongressWeb.SettingsLive}), do: :authenticated
+  defp required_live_access(%{view: YouCongressWeb.HomeLive.Index}), do: :authenticated
 
   defp required_live_access(_socket), do: :public
 

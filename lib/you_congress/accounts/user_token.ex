@@ -188,12 +188,10 @@ defmodule YouCongress.Accounts.UserToken do
   end
 
   defp generate_code do
-    1..@confirmation_code_length
-    |> Enum.map(fn _ ->
+    Enum.map_join(1..@confirmation_code_length, fn _ ->
       <<byte>> = :crypto.strong_rand_bytes(1)
       Integer.to_string(rem(byte, 10))
     end)
-    |> Enum.join()
   end
 
   @doc """

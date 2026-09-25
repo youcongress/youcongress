@@ -53,8 +53,7 @@ defmodule YouCongress.Accounts.UserNotifier do
 
   defp build_html_email(title, paragraphs, button_label, button_url) do
     paragraph_markup =
-      paragraphs
-      |> Enum.map(fn
+      Enum.map_join(paragraphs, "\n", fn
         {:code, code} ->
           text = html_escape_text(code)
 
@@ -65,7 +64,6 @@ defmodule YouCongress.Accounts.UserNotifier do
 
           "<p style=\"margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #0f172a;\">#{text}</p>"
       end)
-      |> Enum.join("\n")
 
     button_markup =
       case {button_label, button_url} do

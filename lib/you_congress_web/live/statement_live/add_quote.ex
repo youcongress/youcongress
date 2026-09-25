@@ -281,16 +281,20 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
          |> assign(:errors, %{source: ["can't be blank"]})}
 
       true ->
+        source = %{
+          url: source_url,
+          text: source_text,
+          date: date,
+          date_precision: date_precision
+        }
+
         add_quote_with_source(
           socket,
           statement,
           author,
           answer,
           opinion,
-          source_url,
-          source_text,
-          date,
-          date_precision
+          source
         )
     end
   end
@@ -301,10 +305,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
          author,
          answer,
          opinion,
-         source_url,
-         source_text,
-         date,
-         date_precision
+         source
        ) do
     case Votes.get_by(statement_id: statement.id, author_id: author.id) do
       nil ->
@@ -313,10 +314,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
           author,
           answer,
           opinion,
-          source_url,
-          source_text,
-          date,
-          date_precision,
+          source,
           socket
         )
 
@@ -326,10 +324,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
           author,
           answer,
           opinion,
-          source_url,
-          source_text,
-          date,
-          date_precision,
+          source,
           socket
         )
     end
@@ -340,10 +335,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
          author,
          answer,
          opinion,
-         source_url,
-         source_text,
-         date,
-         date_precision,
+         source,
          socket
        ) do
     %{assigns: %{current_user: current_user}} = socket
@@ -352,10 +344,10 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
            Opinions.create_opinion(%{
              content: opinion,
              author_id: author.id,
-             source_url: source_url,
-             source_text: source_text,
-             date: date,
-             date_precision: date_precision,
+             source_url: source.url,
+             source_text: source.text,
+             date: source.date,
+             date_precision: source.date_precision,
              user_id: current_user.id,
              direct: true,
              twin: false
@@ -411,10 +403,7 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
          author,
          answer,
          opinion,
-         source_url,
-         source_text,
-         date,
-         date_precision,
+         source,
          socket
        ) do
     %{assigns: %{current_user: current_user, statement: statement}} = socket
@@ -423,10 +412,10 @@ defmodule YouCongressWeb.StatementLive.AddQuote do
            Opinions.create_opinion(%{
              content: opinion,
              author_id: author.id,
-             source_url: source_url,
-             source_text: source_text,
-             date: date,
-             date_precision: date_precision,
+             source_url: source.url,
+             source_text: source.text,
+             date: source.date,
+             date_precision: source.date_precision,
              user_id: current_user.id,
              direct: true,
              twin: false

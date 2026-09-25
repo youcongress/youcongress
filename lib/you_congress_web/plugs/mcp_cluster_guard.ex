@@ -32,9 +32,10 @@ defmodule YouCongressWeb.Plugs.MCPClusterGuard do
       |> get_req_header("mcp-session-id")
       |> List.first()
 
-    cond do
-      is_binary(header_session) and header_session != "" -> header_session
-      true -> conn.cookies["_you_congress_mcp_session"]
+    if is_binary(header_session) and header_session != "" do
+      header_session
+    else
+      conn.cookies["_you_congress_mcp_session"]
     end
   end
 
