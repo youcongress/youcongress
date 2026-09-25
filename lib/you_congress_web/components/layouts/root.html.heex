@@ -78,6 +78,7 @@
   <body class="bg-white antialiased">
     {@inner_content}
     <div
+      :if={assigns[:current_user]}
       id="cookie-banner"
       class="fixed bottom-4 left-4 right-4 z-50 rounded-lg border border-zinc-200 bg-white p-4 shadow-xl sm:left-auto sm:w-96"
       role="dialog"
@@ -88,8 +89,8 @@
       <div>
         <p class="font-semibold text-zinc-900">Your privacy choices</p>
         <p id="cookie-banner-description" class="mt-1 text-sm leading-5 text-zinc-600">
-          With your permission, we send usage events to Amplitude to understand how YouCongress
-          is used. We only do this if you accept. <a
+          With your permission, we use optional analytics to understand how YouCongress is used
+          and improve the site. We only do this if you accept. <a
             href={~p"/privacy-policy"}
             class="font-medium text-blue-700 underline hover:text-blue-800"
           >Learn more</a>.

@@ -8,9 +8,19 @@ defmodule YouCongressWeb.PageControllerTest do
 
     html = html_response(conn, 200)
     assert html =~ "YouCongress"
+    refute html =~ ~s(id="cookie-banner")
+    refute html =~ "Cookie settings"
+  end
+
+  test "GET / shows analytics choices to a logged-in user", %{conn: conn} do
+    conn = conn |> log_in_as_user() |> get(~p"/")
+    html = html_response(conn, 200)
+
     assert html =~ ~s(id="cookie-banner")
-    assert html =~ "we send usage events to Amplitude"
+    assert html =~ "we use optional analytics"
     assert html =~ "We only do this if you accept"
+    assert html =~ "Cookie settings"
+    refute html =~ "usage events to Amplitude"
   end
 
   test "GET /privacy loads successfully", %{conn: conn} do
