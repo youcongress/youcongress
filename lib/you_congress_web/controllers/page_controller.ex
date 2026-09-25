@@ -45,6 +45,7 @@ defmodule YouCongressWeb.PageController do
           url(~p"/explore"),
           url(~p"/about"),
           url(~p"/faq"),
+          url(~p"/reconsider"),
           url(~p"/mcp-tools"),
           url(~p"/dataset")
         ],

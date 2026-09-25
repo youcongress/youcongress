@@ -17,6 +17,21 @@ defmodule YouCongressWeb.ContactLiveTest do
       assert html =~ "http://example.com/c/42"
     end
 
+    test "prefills a subject and message from URL parameters", %{conn: conn} do
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/contact?#{%{subject: "Reconsider beta access", body: "I'd like to try it."}}"
+        )
+
+      assert has_element?(
+               view,
+               "#contact_subject[value='Reconsider beta access']"
+             )
+
+      assert has_element?(view, "#contact_body", "I'd like to try it.")
+    end
+
     test "prefills the signed-in user's name and email", %{conn: conn} do
       user =
         YouCongress.AccountsFixtures.user_fixture()
@@ -71,6 +86,7 @@ defmodule YouCongressWeb.ContactLiveTest do
             name: "Ada Lovelace",
             email: "ada@example.com",
             website: "https://example.com/ada",
+            subject: "Partnership question",
             body: "Can you help?"
           }
         )
@@ -81,7 +97,7 @@ defmodule YouCongressWeb.ContactLiveTest do
       assert_email_sent(
         to: "hi@youcongress.org",
         reply_to: "ada@example.com",
-        subject: "Contact form by Ada Lovelace",
+        subject: "Partnership question",
         text_body: ~r/Name: Ada Lovelace.*https:\/\/example.com\/ada.*Can you help\?/s
       )
     end
