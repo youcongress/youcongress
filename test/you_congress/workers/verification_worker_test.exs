@@ -7,6 +7,7 @@ defmodule YouCongress.Workers.VerificationWorkerTest do
   import YouCongress.OpinionsFixtures
 
   alias YouCongress.Opinions
+  alias YouCongress.Verifications.AIVerifications
   alias YouCongress.Workers.VerificationPollingWorker
   alias YouCongress.Workers.VerificationWorker
 
@@ -118,7 +119,13 @@ defmodule YouCongress.Workers.VerificationWorkerTest do
 
     assert polling_job_id == job.id
 
-    assert Opinions.get_opinion!(opinion.id).verification_status == :ai_verified
+    assert Opinions.get_opinion!(opinion.id).verification_status == nil
+
+    assert [proposal] =
+             AIVerifications.list_proposals(subject: "quote", subject_id: opinion.id)
+
+    assert proposal.review_status == :pending
+    assert proposal.result["status"] == "ai_verified"
   end
 
   test "stores submission and polling failures in metadata" do
