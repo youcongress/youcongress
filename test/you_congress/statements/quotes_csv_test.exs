@@ -194,6 +194,39 @@ defmodule YouCongress.Statements.QuotesCsvTest do
     assert content in quotes
   end
 
+  test "neutralizes spreadsheet formulas after whitespace and control characters" do
+    ctx = setup_statement()
+
+    dangerous_values = [
+      "=1+1",
+      "+1+1",
+      "-1+1",
+      "@SUM(A1:A2)",
+      " \t=HYPERLINK(\"https://example.test\", \"quoted, value\")",
+      "\n+1+1",
+      "\u0001-1+1",
+      "\uFEFF@SUM(A1:A2)"
+    ]
+
+    Enum.each(dangerous_values, fn content ->
+      quote = add_quote(ctx.statement, ctx.author, ctx.user, content)
+      verify_pipeline(ctx, quote, :verified)
+    end)
+
+    safe_content = " ordinary text"
+    safe_quote = add_quote(ctx.statement, ctx.author, ctx.user, safe_content)
+    verify_pipeline(ctx, safe_quote, :verified)
+
+    exported = ctx.statement |> csv_rows() |> Enum.map(&quote_column/1)
+
+    Enum.each(dangerous_values, fn value ->
+      assert ("'" <> value) in exported
+      refute value in exported
+    end)
+
+    assert safe_content in exported
+  end
+
   test "vote verifications stamped for another quote do not leak into a row" do
     ctx = setup_statement()
     verify_pipeline(ctx, ctx.opinion, :verified)
