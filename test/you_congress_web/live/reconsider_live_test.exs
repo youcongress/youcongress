@@ -200,6 +200,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     |> element("#statement-search")
     |> render_keydown(%{"key" => "Enter"})
 
+    assert_push_event(view, "clear-autocomplete", %{id: "statement-search"})
     assert has_element?(view, "#selected-statement-#{context.statement.id}")
     refute has_element?(view, "#statement-results")
   end
@@ -258,6 +259,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     |> element("#delegate-search")
     |> render_keydown(%{"key" => "Enter"})
 
+    assert_push_event(view, "clear-autocomplete", %{id: "delegate-search"})
     assert has_element?(view, "#selected-delegate-#{elon.id}")
     refute has_element?(view, "#delegate-results")
   end

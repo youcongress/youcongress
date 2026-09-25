@@ -125,3 +125,10 @@ function setupCopyButtons() {
 }
 
 setupCopyButtons()
+
+window.addEventListener("phx:clear-autocomplete", (event) => {
+  const inputId = event.detail && event.detail.id
+  const input = inputId && document.getElementById(inputId)
+
+  if (input) input.value = ""
+})
