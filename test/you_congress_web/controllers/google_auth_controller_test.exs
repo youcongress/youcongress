@@ -188,6 +188,70 @@ defmodule YouCongressWeb.GoogleAuthControllerTest do
       end
     end
 
+    test "rejects an unverified Google email before linking or login", %{conn: conn} do
+      x_author_attrs = %{
+        name: "Existing User",
+        twitter_username: "existing_user",
+        twitter_id_str: "twitter_existing",
+        twin_origin: false
+      }
+
+      user = user_fixture(%{email: @google_user_data.email}, x_author_attrs)
+      author = YouCongress.Repo.preload(user, :author).author
+      unverified_data = %{@google_user_data | email_verified: false}
+
+      with_mock GoogleAPI,
+        fetch_token: fn _code, _url -> {:ok, "access_token"} end,
+        fetch_user_info: fn _token -> {:ok, unverified_data} end do
+        capture_log(fn ->
+          conn =
+            conn
+            |> init_test_session(%{google_oauth_state: "valid_state"})
+            |> get(~p"/auth/google/callback", %{
+              "code" => "auth_code",
+              "state" => "valid_state"
+            })
+            |> fetch_flash()
+
+          assert redirected_to(conn) == ~p"/log_in"
+          refute get_session(conn, :user_token)
+
+          assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+                   "Google must verify your email before you can sign in."
+
+          assert is_nil(Authors.get_author!(author.id).google_id)
+        end)
+      end
+    end
+
+    test "rejects an unverified email for an already linked Google identity", %{conn: conn} do
+      author_attrs = %{
+        name: "Existing Google User",
+        google_id: @google_user_data.google_id,
+        twin_origin: false
+      }
+
+      google_user_fixture(%{email: @google_user_data.email}, author_attrs)
+      unverified_data = %{@google_user_data | email_verified: false}
+
+      with_mock GoogleAPI,
+        fetch_token: fn _code, _url -> {:ok, "access_token"} end,
+        fetch_user_info: fn _token -> {:ok, unverified_data} end do
+        capture_log(fn ->
+          conn =
+            conn
+            |> init_test_session(%{google_oauth_state: "valid_state"})
+            |> get(~p"/auth/google/callback", %{
+              "code" => "auth_code",
+              "state" => "valid_state"
+            })
+
+          assert redirected_to(conn) == ~p"/log_in"
+          refute get_session(conn, :user_token)
+        end)
+      end
+    end
+
     test "creates new user and author for new Google user", %{conn: conn} do
       with_mock GoogleAPI,
         fetch_token: fn _code, _url -> {:ok, "access_token"} end,
