@@ -1111,6 +1111,55 @@ defmodule YouCongress.Authors do
                   ilike(a.bio, ^term_pattern)
           end)
 
+        {:order_by_search_relevance, search}, query ->
+          normalized =
+            search
+            |> String.trim()
+            |> String.trim_leading("@")
+            |> String.downcase()
+
+          prefix_pattern = "#{normalized}%"
+          contains_pattern = "%#{normalized}%"
+
+          from a in query,
+            order_by: [
+              asc:
+                fragment(
+                  """
+                  CASE
+                    WHEN lower(coalesce(?, '')) = ? OR lower(coalesce(?, '')) = ? THEN 0
+                    WHEN coalesce(?, '') ILIKE ? THEN 1
+                    WHEN coalesce(?, '') ILIKE ? THEN 2
+                    WHEN coalesce(?, '') ILIKE ? THEN 3
+                    WHEN coalesce(?, '') ILIKE ? THEN 4
+                    WHEN coalesce(?, '') ILIKE ? OR coalesce(?, '') ILIKE ? THEN 5
+                    WHEN coalesce(?, '') ILIKE ? THEN 6
+                    ELSE 7
+                  END
+                  """,
+                  a.name,
+                  ^normalized,
+                  a.username,
+                  ^normalized,
+                  a.name,
+                  ^prefix_pattern,
+                  a.username,
+                  ^prefix_pattern,
+                  a.twitter_username,
+                  ^prefix_pattern,
+                  a.name,
+                  ^contains_pattern,
+                  a.username,
+                  ^contains_pattern,
+                  a.twitter_username,
+                  ^contains_pattern,
+                  a.bio,
+                  ^contains_pattern
+                ),
+              asc: fragment("lower(coalesce(?, ''))", a.name),
+              asc: a.id
+            ]
+
         {:country_id, nil}, query ->
           where(query, [author], is_nil(author.country_id))
 

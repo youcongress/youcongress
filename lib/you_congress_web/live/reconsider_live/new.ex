@@ -107,7 +107,7 @@ defmodule YouCongressWeb.ReconsiderLive.New do
 
         Authors.list_authors(
           search: String.trim(query),
-          order_by: [asc: :name, asc: :id],
+          order_by_search_relevance: query,
           limit: @search_limit
         )
         |> Enum.reject(&(&1.id in excluded_ids))
@@ -340,7 +340,7 @@ defmodule YouCongressWeb.ReconsiderLive.New do
 
         <div id="delegate-picker" class="space-y-3">
           <label for="delegate-search" class="block text-sm font-semibold leading-6 text-zinc-800">
-            Other people viewers may delegate to (optional)
+            People from the article/video viewers may delegate to (optional)
           </label>
 
           <div :if={@selected_delegates != []} id="selected-delegates" class="flex flex-wrap gap-2">
