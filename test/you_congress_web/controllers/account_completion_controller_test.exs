@@ -35,6 +35,8 @@ defmodule YouCongressWeb.AccountCompletionControllerTest do
     assert newsletter_html =~ "Optional · Subscribe to news and product updates."
     assert newsletter_html =~ "2/2"
     assert newsletter_html =~ "Subscribe"
+    assert newsletter_html =~ ~s(href="/subscribe")
+    refute newsletter_html =~ ~s(href="/account-completion/newsletter)
     refute newsletter_html =~ "Verify your phone"
 
     conn = post(conn, ~p"/account-completion/dismiss-newsletter?return_to=/about")

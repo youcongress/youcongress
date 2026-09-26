@@ -25,7 +25,10 @@ defmodule YouCongress.Newsletters do
     |> validate_length(:email, max: 160)
   end
 
-  def request_subscription(attrs, source) when is_binary(source) do
+  def request_subscription(attrs, source, current_user \\ nil)
+
+  def request_subscription(attrs, source, current_user)
+      when is_binary(source) and (is_nil(current_user) or is_struct(current_user, User)) do
     changeset = change_request(attrs)
 
     if changeset.valid? do
@@ -36,7 +39,8 @@ defmodule YouCongress.Newsletters do
         email: email,
         action: :subscribe,
         source: source,
-        expires_at: DateTime.add(now, @confirmation_validity_seconds, :second)
+        expires_at: DateTime.add(now, @confirmation_validity_seconds, :second),
+        user_id: current_user && current_user.id
       }
 
       Repo.transaction(fn ->
@@ -101,7 +105,10 @@ defmodule YouCongress.Newsletters do
 
       case consent do
         %NewsletterConsent{} ->
-          user = Accounts.get_user_by_email(consent.email)
+          user =
+            if consent.user_id,
+              do: Repo.get(User, consent.user_id),
+              else: Accounts.get_user_by_email(consent.email)
 
           consent =
             Repo.update!(
@@ -158,10 +165,12 @@ defmodule YouCongress.Newsletters do
 
       updated_user = current_user |> change(attrs) |> Repo.update!()
 
-      unless match?(%NewsletterConsent{action: ^action}, latest_consent(updated_user.email)) do
+      consent_email = subscription_email(current_user, subscribed?)
+
+      unless match?(%NewsletterConsent{action: ^action}, latest_consent(consent_email)) do
         %NewsletterConsent{}
         |> NewsletterConsent.changeset(%{
-          email: updated_user.email,
+          email: consent_email,
           action: action,
           source: source,
           confirmed_at: now,
@@ -178,6 +187,19 @@ defmodule YouCongress.Newsletters do
     do: user |> change(newsletter: subscribed?) |> Repo.update!()
 
   defp maybe_update_user_subscription(nil, _subscribed?), do: :ok
+
+  defp subscription_email(user, true), do: user.email
+
+  defp subscription_email(user, false) do
+    from(consent in NewsletterConsent,
+      where: consent.user_id == ^user.id and not is_nil(consent.confirmed_at),
+      order_by: [desc: consent.confirmed_at, desc: consent.id],
+      select: consent.email,
+      limit: 1
+    )
+    |> Repo.one()
+    |> Kernel.||(user.email)
+  end
 
   defp normalize_email(email), do: email |> String.trim() |> User.normalize_email()
   defp hash_token(token), do: :crypto.hash(:sha256, token)

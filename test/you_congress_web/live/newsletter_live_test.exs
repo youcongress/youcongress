@@ -83,15 +83,32 @@ defmodule YouCongressWeb.NewsletterLiveTest do
   end
 
   describe "authenticated subscription" do
-    test "updates the preference directly and records one idempotent consent event", %{conn: conn} do
+    test "offers an Explore action when already subscribed", %{conn: conn} do
+      user = user_fixture()
+      {:ok, user} = Accounts.welcome_update(user, %{newsletter: true})
+      conn = log_in_user(conn, user)
+
+      {:ok, view, html} = live(conn, ~p"/subscribe")
+
+      assert html =~ "You are already subscribed."
+      assert has_element?(view, ~s(a[href="/explore"]), "Explore")
+      refute has_element?(view, "#newsletter-form")
+    end
+
+    test "prefills the form and subscribes the account email directly", %{conn: conn} do
       user = user_fixture()
       conn = log_in_user(conn, user)
       {:ok, view, html} = live(conn, ~p"/subscribe")
 
-      assert html =~ "Subscribe"
-      refute html =~ ~s(id="newsletter-form")
+      assert html =~ ~s(id="newsletter-form")
+      assert has_element?(view, ~s(input[name="user[email]"][value="#{user.email}"]))
 
-      assert render_click(view, "subscribe") =~ "Your newsletter subscription is confirmed."
+      html =
+        view
+        |> form("#newsletter-form", user: %{email: user.email})
+        |> render_submit()
+
+      assert html =~ "Your newsletter subscription is confirmed."
       assert Accounts.get_user!(user.id).newsletter
 
       consent = Newsletters.latest_consent(user.email)
@@ -106,6 +123,45 @@ defmodule YouCongressWeb.NewsletterLiveTest do
                from(consent in NewsletterConsent, where: consent.email == ^user.email),
                :count
              ) == 1
+    end
+
+    test "allows a different email and requires it to be confirmed", %{conn: conn} do
+      user = user_fixture()
+      alternate_email = unique_user_email()
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/subscribe")
+
+      html =
+        view
+        |> form("#newsletter-form", user: %{email: alternate_email})
+        |> render_submit()
+
+      assert html =~ "Check your email"
+      refute Accounts.get_user!(user.id).newsletter
+
+      pending = Repo.get_by!(NewsletterConsent, email: alternate_email)
+      assert pending.user_id == user.id
+      assert pending.source == "subscribe_page_authenticated"
+      refute pending.confirmed_at
+
+      {:email, email} = assert_email_sent()
+      [_, token] = Regex.run(~r{/newsletter/confirm/([A-Za-z0-9_-]+)}, email.text_body)
+
+      {:ok, confirmation_view, _html} = live(conn, ~p"/newsletter/confirm/#{token}")
+      render_click(confirmation_view, "confirm")
+
+      assert Accounts.get_user!(user.id).newsletter
+      consent = Newsletters.latest_consent(alternate_email)
+      assert consent.user_id == user.id
+      assert consent.confirmed_at
+
+      assert {:ok, _user} =
+               user.id
+               |> Accounts.get_user!()
+               |> Newsletters.unsubscribe_user("alternate_email_test")
+
+      refute Accounts.get_user!(user.id).newsletter
+      assert Newsletters.latest_consent(alternate_email).action == :unsubscribe
     end
   end
 end
