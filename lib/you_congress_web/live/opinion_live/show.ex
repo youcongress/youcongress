@@ -13,6 +13,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.VerificationStatus
   alias YouCongress.Track
   alias YouCongress.Delegations
+  alias YouCongress.Halls
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongressWeb.Components.VerificationAggregate
   alias YouCongress.Statements
@@ -417,7 +418,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   end
 
   defp load_opinion!(socket, opinion_id) do
-    opinion = Opinions.get_opinion!(opinion_id, preload: [:author, :statements])
+    opinion = Opinions.get_opinion!(opinion_id, preload: [:author, statements: [:halls]])
 
     opinion_with_votes =
       opinion
@@ -431,8 +432,42 @@ defmodule YouCongressWeb.OpinionLive.Show do
         preload: [user: [:author]]
       )
 
-    assign(socket, opinion: opinion_with_votes, verifications: verifications)
+    assign(socket,
+      opinion: opinion_with_votes,
+      verifications: verifications,
+      other_opinion_votes: other_opinion_votes(opinion_with_votes),
+      other_authors: other_authors(opinion_with_votes)
+    )
   end
+
+  defp other_opinion_votes(%{author_id: author_id, id: opinion_id})
+       when is_integer(author_id) do
+    [author_id]
+    |> Votes.list_recent_votes_by_author_ids(limit: 12)
+    |> Map.get(author_id, [])
+    |> Enum.filter(fn vote ->
+      vote.opinion && vote.statement && vote.opinion.id != opinion_id
+    end)
+    |> Enum.uniq_by(& &1.opinion_id)
+    |> Enum.take(3)
+  end
+
+  defp other_opinion_votes(_opinion), do: []
+
+  defp other_authors(%{author_id: author_id, statements: statements})
+       when is_integer(author_id) and is_list(statements) do
+    hall_names =
+      statements
+      |> Enum.flat_map(& &1.halls)
+      |> Enum.map(& &1.name)
+
+    Halls.list_top_authors_for_halls(hall_names,
+      exclude_author_ids: [author_id],
+      limit: 6
+    )
+  end
+
+  defp other_authors(_opinion), do: []
 
   defp load_statement_verification_histories(%{statements: statements} = opinion)
        when is_list(statements) and statements != [] do
