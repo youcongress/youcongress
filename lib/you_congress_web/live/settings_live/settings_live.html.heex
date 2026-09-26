@@ -128,9 +128,8 @@
   <h2 class="text-xl font-semibold">API keys</h2>
   <p class="mt-1 text-sm text-zinc-600">
     Create API keys to access the YouCongress API. Choose a descriptive name and whether the
-    key should be read-only or allow write operations. Send the key only in an
-    <code>Authorization: Bearer YOUR_API_KEY</code>
-    header, never in a URL.
+    key should be read-only or allow write operations. Append <code>?key=YOUR_API_KEY</code>
+    to the MCP server URL.
   </p>
 
   <%= if @last_api_key_token do %>

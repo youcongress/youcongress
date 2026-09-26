@@ -87,8 +87,7 @@ defmodule YouCongressWeb.PageControllerTest do
 
     assert html =~ "YouCongress MCP Tools"
     assert html =~ "How to Connect"
-    assert html =~ "Authorization: Bearer YOUR_API_KEY"
-    refute html =~ "?key="
+    assert html =~ "https://youcongress.org/mcp?key=YOUR_API_KEY"
   end
 
   test "GET /mcp/claude shows the Claude setup guide", %{conn: conn} do
@@ -105,8 +104,7 @@ defmodule YouCongressWeb.PageControllerTest do
 
     assert html =~ "Use YouCongress from ChatGPT"
     assert html =~ "https://youcongress.org/mcp"
-    assert html =~ "Authorization: Bearer YOUR_API_KEY"
-    refute html =~ "?key="
+    assert html =~ "https://youcongress.org/mcp?key=YOUR_API_KEY"
     assert html =~ "Log In to Get Started"
   end
 
@@ -181,7 +179,6 @@ defmodule YouCongressWeb.PageControllerTest do
     assert body =~ "Llms statement title"
     assert body =~ "## MCP server (for AI agents)"
     assert body =~ url(~p"/mcp")
-    assert body =~ "Authorization: Bearer YOUR_API_KEY"
-    refute body =~ "?key="
+    assert body =~ "?key=YOUR_API_KEY"
   end
 end

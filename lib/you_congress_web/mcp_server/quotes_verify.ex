@@ -2,7 +2,7 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
   @moduledoc """
   Verify a quote (opinion) through the MCP server.
 
-  The caller must provide a valid API key via an `Authorization: Bearer YOUR_KEY` header and have
+  The caller must provide a valid API key via the `?key=` query param and have
   permission to verify opinions.
   """
 
@@ -20,7 +20,7 @@ defmodule YouCongressWeb.MCPServer.QuotesVerify do
   alias YouCongress.Verifications
   alias YouCongress.Workers.VerificationWorker
 
-  @missing_key_message "API key is required. Send it as an Authorization: Bearer YOUR_KEY header."
+  @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @forbidden_message "Your account is not allowed to verify opinions."
   @allowed_statuses ~w(ai_verified ai_unverifiable disputed unverifiable unverified)

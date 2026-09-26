@@ -5,7 +5,7 @@ defmodule YouCongressWeb.MCPServer.VotesVerify do
   This checks the vote independently from whether the quote is authentic or whether
   it is relevant to the statement. The verification is tied to the opinion the vote
   currently references, so it stops applying if the vote later points to a newer
-  opinion. The caller must provide a valid API key via an `Authorization: Bearer YOUR_KEY` header and
+  opinion. The caller must provide a valid API key via the `?key=` query param and
   have permission to verify opinions.
   """
 
@@ -18,7 +18,7 @@ defmodule YouCongressWeb.MCPServer.VotesVerify do
   alias YouCongress.VoteVerifications
   alias YouCongress.MCP.ToolUsageTracker
 
-  @missing_key_message "API key is required. Send it as an Authorization: Bearer YOUR_KEY header."
+  @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @forbidden_message "Your account is not allowed to verify opinions."
   @not_found_message "No vote found for the given vote_id."

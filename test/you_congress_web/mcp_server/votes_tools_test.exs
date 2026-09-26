@@ -13,7 +13,7 @@ defmodule YouCongressWeb.MCPServer.VotesToolsTest do
   alias YouCongressWeb.MCPServer.VotesEdit
   alias YouCongressWeb.MCPServer.VotesVerify
 
-  @missing_key_message "API key is required. Send it as an Authorization: Bearer YOUR_KEY header."
+  @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @not_found_message "Vote not found."
 
