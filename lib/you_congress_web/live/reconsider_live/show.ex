@@ -542,7 +542,9 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
             type="submit"
             class="w-full rounded-lg bg-indigo-600 px-5 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-500"
           >
-            {if @current_user, do: "Save my response", else: "Record my response"}
+            {if @current_user,
+              do: "Save my response",
+              else: "Record my response and see results"}
           </button>
 
           <p class="text-center text-xs text-gray-500">
