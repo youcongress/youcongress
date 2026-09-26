@@ -488,6 +488,24 @@ defmodule YouCongress.Opinions do
       {:id_greater_than, id}, query ->
         from q in query, where: q.id > ^id
 
+      {:quote_date_cursor, {:desc, nil, id}}, query ->
+        from q in query, where: is_nil(q.date) and q.id < ^id
+
+      {:quote_date_cursor, {:desc, date, id}}, query ->
+        from q in query,
+          where:
+            is_nil(q.date) or q.date < ^date or
+              (q.date == ^date and q.id < ^id)
+
+      {:quote_date_cursor, {:asc, nil, id}}, query ->
+        from q in query, where: is_nil(q.date) and q.id > ^id
+
+      {:quote_date_cursor, {:asc, date, id}}, query ->
+        from q in query,
+          where:
+            is_nil(q.date) or q.date > ^date or
+              (q.date == ^date and q.id > ^id)
+
       {:author_ids, author_ids}, query ->
         from q in query, where: q.author_id in ^author_ids
 

@@ -93,6 +93,46 @@ defmodule YouCongressWeb.MCPServer.QuotesListTest do
       end)
     end
 
+    test "orders by quote date descending and paginates in that order" do
+      oldest = opinion_fixture(content: "Oldest", date: ~D[2020-01-01])
+      newest = opinion_fixture(content: "Newest", date: ~D[2025-01-01])
+      middle = opinion_fixture(content: "Middle", date: ~D[2023-01-01])
+      undated = opinion_fixture(content: "Undated")
+
+      with_mocked_response(fn ->
+        assert {:reply, {:json, %{quotes: payload}}, :frame} =
+                 QuotesList.execute(%{order_by: "date"}, :frame)
+
+        assert Enum.map(payload, & &1.opinion_id) == [newest.id, middle.id, oldest.id, undated.id]
+
+        assert {:reply, {:json, %{quotes: next_page}}, :frame} =
+                 QuotesList.execute(%{order_by: "date", last_id: middle.id}, :frame)
+
+        assert Enum.map(next_page, & &1.opinion_id) == [oldest.id, undated.id]
+      end)
+    end
+
+    test "orders by quote date ascending and paginates in that order" do
+      oldest = opinion_fixture(content: "Oldest", date: ~D[2020-01-01])
+      newest = opinion_fixture(content: "Newest", date: ~D[2025-01-01])
+      middle = opinion_fixture(content: "Middle", date: ~D[2023-01-01])
+      undated = opinion_fixture(content: "Undated")
+
+      with_mocked_response(fn ->
+        params = %{order_by: "date", order: "asc"}
+
+        assert {:reply, {:json, %{quotes: payload}}, :frame} =
+                 QuotesList.execute(params, :frame)
+
+        assert Enum.map(payload, & &1.opinion_id) == [oldest.id, middle.id, newest.id, undated.id]
+
+        assert {:reply, {:json, %{quotes: next_page}}, :frame} =
+                 QuotesList.execute(Map.put(params, :last_id, middle.id), :frame)
+
+        assert Enum.map(next_page, & &1.opinion_id) == [newest.id, undated.id]
+      end)
+    end
+
     test "returns nil last_id when there are no quotes" do
       with_mocked_response(fn ->
         assert {:reply, {:json, %{quotes: [], last_id: nil}}, :frame} =
