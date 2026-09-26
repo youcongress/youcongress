@@ -248,6 +248,28 @@ defmodule YouCongressWeb.SEOMetaTest do
     end
   end
 
+  describe "Reconsider landing page" do
+    test "has dedicated social-card metadata", %{conn: conn} do
+      conn = get(conn, ~p"/reconsider")
+      html = html_response(conn, 200)
+
+      assert html =~
+               ~s(<meta content="Reconsider — measure how minds change / YouCongress" property="og:title")
+
+      assert html =~
+               ~s(<meta name="twitter:title" content="Reconsider — measure how minds change / YouCongress")
+
+      assert html =~
+               ~s(<link rel="canonical" href="#{YouCongressWeb.Endpoint.url()}/reconsider">)
+
+      assert_social_card(
+        html,
+        "/images/social-reconsider.png",
+        "Reconsider by YouCongress — measure how articles and videos change minds"
+      )
+    end
+  end
+
   describe "opinion page" do
     test "quote page gets title, Quotation JSON-LD and blockquote", %{conn: conn} do
       author = author_fixture(%{name: "Quote Person"})
