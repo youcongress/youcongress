@@ -113,14 +113,15 @@
   >
     Subscribe
   </button>
-  <button
+  <.link
     :if={@current_user.newsletter}
-    type="button"
-    phx-click="unsubscribe_newsletter"
-    class="mt-3 rounded-md bg-white px-4 py-2 text-sm font-semibold text-zinc-700 ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50"
+    href="https://youcongress.substack.com"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="mt-3 inline-flex rounded-md bg-white px-4 py-2 text-sm font-semibold text-zinc-700 ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50"
   >
-    Unsubscribe
-  </button>
+    Manage newsletter on Substack
+  </.link>
 </section>
 
 <section class="mt-10">
