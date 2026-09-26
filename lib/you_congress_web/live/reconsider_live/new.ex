@@ -244,7 +244,7 @@ defmodule YouCongressWeb.ReconsiderLive.New do
   end
 
   defp changeset_error(changeset) do
-    case Ecto.Changeset.traverse_errors(changeset, fn {message, _opts} -> message end) do
+    case Ecto.Changeset.traverse_errors(changeset, &translate_error/1) do
       errors when map_size(errors) == 0 -> "Please check the information and try again."
       errors -> errors |> Map.values() |> List.flatten() |> List.first()
     end
