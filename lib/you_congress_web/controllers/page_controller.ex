@@ -258,7 +258,7 @@ defmodule YouCongressWeb.PageController do
 
     Quotes & verification (sourced opinions):
     - quotes_search: keyword search within a statement (public), or semantic search across all quotes (requires an API key)
-    - quotes_list: list quotes with author, source, status and vote
+    - quotes_list: list quotes with author, source, status and vote; order_by can be id (default) or the quote's date
     - quotes_random_unverified: random quotes needing reviewable verification work, excluding quote-level disputed/unverifiable rows
     - quotes_recent_unverified: recent quotes needing reviewable verification work, excluding quote-level disputed/unverifiable rows
     - quotes_verify: verify a quote is authentic (really said, accurately transcribed) (moderator/admin)

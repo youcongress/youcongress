@@ -541,9 +541,10 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt), and vice versa. --%>
           </dt>
           <dd class="text-gray-700">
             List quotes (up to 100 per page), each with its author, source, verification status
-            and vote. Optional: <code class="bg-gray-100 px-1 rounded">order</code>
-            ("desc" by id, newest first by default, or "asc");
-            <code class="bg-gray-100 px-1 rounded">last_id</code>
+            and vote. Optional: <code class="bg-gray-100 px-1 rounded">order_by</code>
+            ("id" by default, or "date" for the date of the quote, with undated quotes last);
+            <code class="bg-gray-100 px-1 rounded">order</code>
+            ("desc" by default, or "asc"); <code class="bg-gray-100 px-1 rounded">last_id</code>
             (pass the <code class="bg-gray-100 px-1 rounded">last_id</code>
             from a previous response to get the next page).
           </dd>

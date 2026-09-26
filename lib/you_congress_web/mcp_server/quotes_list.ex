@@ -1,7 +1,9 @@
 defmodule YouCongressWeb.MCPServer.QuotesList do
   @moduledoc """
   List quotes on YouCongress.
-  Returns up to 100 quotes ordered by id ("desc" by default, newest first, or "asc").
+  Returns up to 100 quotes ordered by id by default, or by the date of the quote
+  when `order_by` is "date". `order` controls the direction ("desc" by default,
+  or "asc"). Quotes without a date are returned last when ordering by date.
   Pass the last_id from a previous response to get the next page.
   """
 
@@ -16,6 +18,7 @@ defmodule YouCongressWeb.MCPServer.QuotesList do
 
   schema do
     field :last_id, :integer
+    field :order_by, :string, default: "id"
     field :order, :string, default: "desc"
   end
 
@@ -26,7 +29,7 @@ defmodule YouCongressWeb.MCPServer.QuotesList do
 
     opinions =
       [only_quotes: true, limit: @limit, order_by: order_by(params), preload: :author]
-      |> ListPagination.maybe_paginate(params)
+      |> maybe_paginate(params)
       |> Opinions.list_opinions()
 
     vote_map = votes_by_opinion(opinions)
@@ -40,11 +43,29 @@ defmodule YouCongressWeb.MCPServer.QuotesList do
   end
 
   defp order_by(params) do
-    case ListPagination.order(params) do
-      :asc -> [asc: :id]
-      :desc -> [desc: :id]
+    case {Map.get(params, :order_by, "id"), ListPagination.order(params)} do
+      {"date", :asc} -> [asc_nulls_last: :date, asc: :id]
+      {"date", :desc} -> [desc_nulls_last: :date, desc: :id]
+      {_, :asc} -> [asc: :id]
+      {_, :desc} -> [desc: :id]
     end
   end
+
+  defp maybe_paginate(opts, %{order_by: "date", last_id: last_id} = params) do
+    case Opinions.get_opinion(last_id) do
+      nil ->
+        ListPagination.maybe_paginate(opts, params)
+
+      opinion ->
+        Keyword.put(
+          opts,
+          :quote_date_cursor,
+          {ListPagination.order(params), opinion.date, last_id}
+        )
+    end
+  end
+
+  defp maybe_paginate(opts, params), do: ListPagination.maybe_paginate(opts, params)
 
   defp votes_by_opinion([]), do: %{}
 
