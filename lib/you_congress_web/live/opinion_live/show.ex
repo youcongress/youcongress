@@ -443,17 +443,94 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
   defp other_opinion_votes(%{author_id: author_id, id: opinion_id})
        when is_integer(author_id) do
-    [author_id]
-    |> Votes.list_recent_votes_by_author_ids(limit: 12)
-    |> Map.get(author_id, [])
-    |> Enum.filter(fn vote ->
-      vote.opinion && vote.statement && vote.opinion.id != opinion_id
-    end)
-    |> Enum.uniq_by(& &1.opinion_id)
-    |> Enum.take(3)
+    load_other_opinion_votes(author_id, opinion_id, nil, [], MapSet.new())
   end
 
   defp other_opinion_votes(_opinion), do: []
+
+  defp load_other_opinion_votes(_author_id, _opinion_id, _cursor, cards, _used_statement_ids)
+       when length(cards) >= 3,
+       do: Enum.reverse(cards)
+
+  defp load_other_opinion_votes(author_id, opinion_id, cursor, cards, used_statement_ids) do
+    opts = [
+      author_ids: [author_id],
+      exclude_ids: [opinion_id],
+      only_quotes: true,
+      twin: false,
+      has_statements: true,
+      order_by: [desc_nulls_last: :date, desc: :id],
+      preload: [:statements],
+      limit: 50
+    ]
+
+    opts = if cursor, do: Keyword.put(opts, :quote_date_cursor, cursor), else: opts
+    opinions = Opinions.list_opinions(opts)
+
+    statement_ids =
+      opinions
+      |> Enum.flat_map(& &1.statements)
+      |> Enum.map(& &1.id)
+      |> Enum.uniq()
+
+    votes_by_statement_id =
+      Votes.list_votes(
+        author_ids: [author_id],
+        statement_ids: statement_ids,
+        twin: false,
+        preload: [:statement]
+      )
+      |> Map.new(&{&1.statement_id, &1})
+
+    {cards, used_statement_ids} =
+      Enum.reduce(opinions, {cards, used_statement_ids}, fn
+        _opinion, {cards, used_statement_ids} when length(cards) >= 3 ->
+          {cards, used_statement_ids}
+
+        opinion, {cards, used_statement_ids} = acc ->
+          statement =
+            opinion.statements
+            |> Enum.sort_by(& &1.id)
+            |> Enum.find(fn statement ->
+              Map.has_key?(votes_by_statement_id, statement.id) and
+                not MapSet.member?(used_statement_ids, statement.id)
+            end)
+
+          if statement do
+            vote =
+              votes_by_statement_id
+              |> Map.fetch!(statement.id)
+              |> Map.put(:opinion, opinion)
+              |> Map.put(:statement, statement)
+
+            {[vote | cards], MapSet.put(used_statement_ids, statement.id)}
+          else
+            acc
+          end
+      end)
+
+    case List.last(opinions) do
+      nil ->
+        Enum.reverse(cards)
+
+      _last_opinion when length(cards) >= 3 ->
+        Enum.reverse(cards)
+
+      _last_opinion when length(opinions) < 50 ->
+        Enum.reverse(cards)
+
+      last_opinion ->
+        cursor = {:desc, last_opinion.date, last_opinion.id}
+
+        load_other_opinion_votes(
+          author_id,
+          opinion_id,
+          cursor,
+          cards,
+          used_statement_ids
+        )
+    end
+  end
 
   defp other_authors(%{author_id: author_id, statements: statements})
        when is_integer(author_id) and is_list(statements) do

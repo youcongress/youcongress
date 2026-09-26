@@ -473,7 +473,7 @@
           current_user={@current_user}
           show_vote={false}
           show_opinion={true}
-          liked={vote.opinion_id in @liked_opinion_ids}
+          liked={vote.opinion.id in @liked_opinion_ids}
           liked_opinion_ids={@liked_opinion_ids}
           delegating?={false}
           delegable={false}

@@ -107,8 +107,16 @@ defmodule YouCongressWeb.OpinionLiveTest do
               answer: if(number == 4, do: :against, else: :abstain)
             })
 
-          %{opinion: opinion, vote: vote}
+          %{opinion: opinion, statement: statement, vote: vote}
         end)
+
+      newest_same_statement =
+        add_sourced_opinion(
+          author,
+          List.last(other_items).statement,
+          "Newest quote for other statement 4",
+          ~D[2026-01-01]
+        )
 
       suggested_authors =
         Enum.map(1..7, fn number ->
@@ -132,9 +140,10 @@ defmodule YouCongressWeb.OpinionLiveTest do
         end)
 
       {:ok, view, html} = live(conn, ~p"/c/#{current_opinion.id}")
+      other_opinions_html = view |> element("#other-opinions") |> render()
 
       assert html =~ "Other opinions from Featured Author"
-      assert length(Regex.scan(~r/data-testid="other-opinion"/, html)) == 3
+      assert length(Regex.scan(~r/data-testid="other-opinion"/, other_opinions_html)) == 3
       assert has_element?(view, "#other-opinions a[href='/@featured_author']", "See all")
 
       assert has_element?(
@@ -144,9 +153,25 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
       assert html =~ "Other statement 4"
       assert html =~ "votes Against"
-      assert html =~ "Other opinion 4"
+      assert other_opinions_html =~ newest_same_statement.content
+      refute other_opinions_html =~ List.last(other_items).opinion.content
+      assert length(Regex.scan(~r/Other statement 4/, other_opinions_html)) == 1
 
-      latest_item = List.last(other_items)
+      expected_contents = [
+        newest_same_statement.content,
+        Enum.at(other_items, 2).opinion.content,
+        Enum.at(other_items, 1).opinion.content
+      ]
+
+      positions =
+        Enum.map(expected_contents, fn content ->
+          {position, _length} = :binary.match(other_opinions_html, content)
+          position
+        end)
+
+      assert positions == Enum.sort(positions)
+
+      latest_item = %{opinion: newest_same_statement, vote: List.last(other_items).vote}
       opinion_scope = "#other-opinions [data-testid='vote-card-#{latest_item.vote.id}']"
 
       assert has_element?(
@@ -173,7 +198,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
                "Unverified"
              )
 
-      refute html =~ List.first(other_items).opinion.content
+      refute other_opinions_html =~ List.first(other_items).opinion.content
 
       assert html =~ "Other authors to follow"
       assert length(Regex.scan(~r/data-testid="other-author"/, html)) == 6
