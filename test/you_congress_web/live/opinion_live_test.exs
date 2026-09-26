@@ -8,7 +8,9 @@ defmodule YouCongressWeb.OpinionLiveTest do
   import YouCongress.StatementsFixtures
   import YouCongress.VotesFixtures
   import YouCongress.AccountsFixtures
+  import YouCongress.HallsFixtures
 
+  alias YouCongress.HallsStatements
   alias YouCongress.Opinions
   alias YouCongress.OpinionsStatements
   alias YouCongress.OpinionStatementVerifications
@@ -58,6 +60,109 @@ defmodule YouCongressWeb.OpinionLiveTest do
   end
 
   describe "Show" do
+    test "shows other opinions by the author and related authors", %{conn: conn} do
+      author =
+        author_fixture(%{
+          name: "Featured Author",
+          username: "featured_author",
+          profile_image_url: "https://example.com/featured-author.jpg"
+        })
+
+      hall = hall_fixture(%{name: "opinion-page-recommendations"})
+      current_statement = statement_fixture(title: "Current statement")
+
+      assert {:ok, _statement} =
+               HallsStatements.sync!(current_statement.id, %{
+                 main_tag: hall.name,
+                 other_tags: []
+               })
+
+      current_opinion =
+        add_sourced_opinion(author, current_statement, "Current featured opinion", ~D[2025-01-01])
+
+      vote_fixture(%{
+        author_id: author.id,
+        statement_id: current_statement.id,
+        opinion_id: current_opinion.id,
+        answer: :for
+      })
+
+      other_opinions =
+        Enum.map(1..4, fn number ->
+          statement = statement_fixture(title: "Other statement #{number}")
+
+          opinion =
+            add_sourced_opinion(
+              author,
+              statement,
+              "Other opinion #{number}",
+              Date.new!(2020 + number, 1, 1)
+            )
+
+          vote_fixture(%{
+            author_id: author.id,
+            statement_id: statement.id,
+            opinion_id: opinion.id,
+            answer: if(number == 4, do: :against, else: :abstain)
+          })
+
+          opinion
+        end)
+
+      suggested_authors =
+        Enum.map(1..7, fn number ->
+          number_label = number |> Integer.to_string() |> String.pad_leading(2, "0")
+
+          suggested_author =
+            author_fixture(%{
+              name: "Suggested #{number_label}",
+              twitter_username: "suggested_#{number_label}",
+              profile_image_url: "https://example.com/suggested-#{number_label}.jpg"
+            })
+
+          add_sourced_opinion(
+            suggested_author,
+            current_statement,
+            "Suggested opinion #{number_label}",
+            ~D[2024-01-01]
+          )
+
+          suggested_author
+        end)
+
+      {:ok, view, html} = live(conn, ~p"/c/#{current_opinion.id}")
+
+      assert html =~ "Other opinions from Featured Author"
+      assert length(Regex.scan(~r/data-testid="other-opinion"/, html)) == 3
+      assert has_element?(view, "#other-opinions a[href='/@featured_author']", "See all")
+
+      assert has_element?(
+               view,
+               "#other-opinions img[src='https://example.com/featured-author.jpg']"
+             )
+
+      assert html =~ "Other statement 4"
+      assert html =~ "votes Against"
+      assert html =~ "Other opinion 4"
+      refute html =~ List.first(other_opinions).content
+
+      assert html =~ "Other authors to follow"
+      assert length(Regex.scan(~r/data-testid="other-author"/, html)) == 6
+
+      Enum.each(Enum.take(suggested_authors, 6), fn suggested_author ->
+        assert has_element?(
+                 view,
+                 "#other-authors a[href='/x/#{suggested_author.twitter_username}']",
+                 suggested_author.name
+               )
+      end)
+
+      refute has_element?(
+               view,
+               "#other-authors a[href='/x/#{List.last(suggested_authors).twitter_username}']"
+             )
+    end
+
     test "renders the source passage for a source_text-only quote", %{conn: conn} do
       author = author_fixture(%{name: "Book Author"})
 
@@ -1195,5 +1300,20 @@ defmodule YouCongressWeb.OpinionLiveTest do
       unchanged_opinion = Opinions.get_opinion!(opinion.id)
       assert unchanged_opinion.content == "Owner's opinion"
     end
+  end
+
+  defp add_sourced_opinion(author, statement, content, date) do
+    opinion =
+      opinion_fixture(%{
+        author_id: author.id,
+        content: content,
+        source_url: "https://example.com/#{System.unique_integer([:positive])}",
+        date: date,
+        date_precision: :day
+      })
+
+    {:ok, opinion} = Opinions.update_opinion(opinion, %{twin: false})
+    {:ok, _opinion} = Opinions.add_opinion_to_statement(opinion, statement.id)
+    opinion
   end
 end
