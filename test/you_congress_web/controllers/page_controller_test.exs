@@ -95,6 +95,11 @@ defmodule YouCongressWeb.PageControllerTest do
     html = html_response(conn, 200)
 
     assert html =~ "Use YouCongress from Claude"
+    assert html =~ "Access write tools"
+    assert html =~ "Authorization"
+    assert html =~ "Bearer YOUR_API_KEY"
+    assert html =~ "https://youcongress.org/mcp?key=YOUR_API_KEY"
+    assert html =~ "Less safe"
     assert html =~ "Log In to Get Started"
   end
 

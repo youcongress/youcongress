@@ -74,6 +74,28 @@
         Adding YouCongress as a custom connector in Claude
       </p>
     </div>
+
+    <div class="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+      <h3 class="font-semibold text-lg">Access write tools</h3>
+      <p class="mt-2 text-gray-700 leading-relaxed">
+        Public read-only tools work without an API key. To create or edit data, first create an API
+        key in <.link href="/settings" class="underline text-blue-600 hover:text-blue-800">
+          Settings</.link>, then authenticate in one of these ways:
+      </p>
+      <ul class="mt-3 space-y-2 list-disc pl-6 text-gray-700">
+        <li>
+          <strong>Recommended:</strong>
+          configure the connector's <code class="bg-white px-1 rounded">Authorization</code>
+          header as <code class="bg-white px-1 rounded">Bearer YOUR_API_KEY</code>.
+        </li>
+        <li>
+          <strong>Less safe:</strong>
+          put the key in the connector URL as <code class="bg-white px-1 rounded">https://youcongress.org/mcp?key=YOUR_API_KEY</code>.
+          URLs may be stored in configuration, logs, or browser history, so prefer the header when
+          available.
+        </li>
+      </ul>
+    </div>
   </section>
 
   <section>
