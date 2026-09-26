@@ -28,6 +28,9 @@ defmodule YouCongressWeb.PageControllerTest do
     html = html_response(conn, 200)
     assert html =~ "Privacy Policy"
     assert html =~ "We do not send usage events to Amplitude unless you select"
+    assert html =~ "We use Substack Inc. to manage newsletter subscriptions"
+    assert html =~ "AI governance, AI safety, and the impact of AI on jobs"
+    assert html =~ ~s(href="https://substack.com/privacy")
   end
 
   test "GET /terms loads successfully", %{conn: conn} do
