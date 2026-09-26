@@ -52,8 +52,7 @@ defmodule YouCongressWeb.AccountCompletionBanner do
           </.link>
           <.link
             :if={@prompt == :newsletter}
-            href={~p"/account-completion/newsletter?#{%{return_to: @return_to}}"}
-            method="post"
+            href={~p"/subscribe"}
             class="rounded-md bg-white px-3 py-1.5 font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-300 hover:bg-indigo-100"
           >
             Subscribe
