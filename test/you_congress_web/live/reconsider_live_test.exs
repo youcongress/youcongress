@@ -180,6 +180,25 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     assert has_element?(view, "#selected-statement-#{context.statement.id}")
   end
 
+  test "creator form interpolates validation limits", %{conn: conn} = context do
+    conn = log_in_user(conn, context.creator)
+    {:ok, view, _html} = live(conn, ~p"/reconsider/new")
+    select_statement(view, context.statement, "private cars")
+
+    html =
+      render_submit(view, "save", %{
+        "reconsideration" => %{
+          "title" => "A long description",
+          "description" => String.duplicate("a", 1_001),
+          "content_url" => "https://example.com/long-description",
+          "content_type" => "article"
+        }
+      })
+
+    assert html =~ "should be at most 1000 character(s)"
+    refute html =~ "%{count}"
+  end
+
   test "statements and delegates can be searched, selected, and removed",
        %{
          conn: conn
