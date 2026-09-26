@@ -136,7 +136,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
       assert YouCongressWeb.SEO.author_path(author) == "/@jane_congress"
     end
 
-    test "suggests up to six other authors with sourced quotes in the same halls", %{
+    test "suggests up to nine other authors with sourced quotes in the same halls", %{
       conn: conn,
       author: author
     } do
@@ -189,9 +189,9 @@ defmodule YouCongressWeb.AuthorLiveTest do
       {:ok, show_live, html} = live(conn, ~p"/x/#{author.twitter_username}")
 
       assert html =~ "Other authors to follow"
-      assert length(Regex.scan(~r/data-testid="other-author"/, html)) == 6
+      assert length(Regex.scan(~r/data-testid="other-author"/, html)) == 9
 
-      Enum.each(Enum.take(related_authors, 6), fn related_author ->
+      Enum.each(Enum.take(related_authors, 9), fn related_author ->
         assert has_element?(
                  show_live,
                  "#other-authors a[href='/x/#{related_author.twitter_username}']",
@@ -208,7 +208,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       refute has_element?(
                show_live,
-               "#other-authors a[href='/x/#{Enum.at(related_authors, 6).twitter_username}']"
+               "#other-authors a[href='/x/#{List.last(related_authors).twitter_username}']"
              )
 
       refute has_element?(
