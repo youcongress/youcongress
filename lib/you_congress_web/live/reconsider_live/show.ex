@@ -248,7 +248,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
           Created on YouCongress by {author_name(@reconsideration.creator)}
         </p>
         <%= if embed_url = youtube_embed_url(@reconsideration) do %>
-          <div class="mt-6 aspect-video overflow-hidden rounded-xl bg-black shadow-sm">
+          <div class="mx-auto mt-6 aspect-video max-w-xl overflow-hidden rounded-xl bg-black shadow-sm">
             <iframe
               id="reconsider-youtube-video"
               class="h-full w-full"

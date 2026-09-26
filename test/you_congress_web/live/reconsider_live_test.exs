@@ -87,6 +87,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
              "#reconsider-youtube-video[src='https://www.youtube-nocookie.com/embed/RIJJB5B2lHU']"
            )
 
+    assert has_element?(view, ".mx-auto.max-w-xl #reconsider-youtube-video")
     refute html =~ "Open the original video"
   end
 
