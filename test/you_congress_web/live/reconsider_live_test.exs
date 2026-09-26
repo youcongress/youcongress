@@ -41,6 +41,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
 
     assert html =~ "Rethinking city streets"
     assert html =~ "Before this article"
+    assert has_element?(view, "#reconsider-creator-attribution", "Created on YouCongress by")
     refute html =~ "Sign in to record your response"
 
     params = %{
@@ -60,6 +61,58 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     assert html =~ URI.encode_www_form(reconsideration_path(context))
     refute html =~ "Log in with email/password"
     refute html =~ "Community result"
+  end
+
+  test "embeds a YouTube video instead of linking to the original video",
+       %{
+         conn: conn
+       } = context do
+    {:ok, reconsideration} =
+      Reconsiderations.create_reconsideration(
+        context.creator,
+        %{
+          "title" => "A case presented on video",
+          "content_url" => "https://www.youtube.com/watch?v=RIJJB5B2lHU",
+          "content_type" => "video"
+        },
+        [context.statement.id],
+        []
+      )
+
+    {:ok, view, html} =
+      live(conn, "/@#{context.creator.author.username}/r/#{reconsideration.slug}")
+
+    assert has_element?(
+             view,
+             "#reconsider-youtube-video[src='https://www.youtube-nocookie.com/embed/RIJJB5B2lHU']"
+           )
+
+    refute html =~ "Open the original video"
+  end
+
+  test "keeps the original link for non-YouTube videos", %{conn: conn} = context do
+    {:ok, reconsideration} =
+      Reconsiderations.create_reconsideration(
+        context.creator,
+        %{
+          "title" => "A video hosted elsewhere",
+          "content_url" => "https://example.com/video",
+          "content_type" => "video"
+        },
+        [context.statement.id],
+        []
+      )
+
+    {:ok, view, _html} =
+      live(conn, "/@#{context.creator.author.username}/r/#{reconsideration.slug}")
+
+    assert has_element?(
+             view,
+             "a[href='https://example.com/video']",
+             "Open the original video"
+           )
+
+    refute has_element?(view, "#reconsider-youtube-video")
   end
 
   test "an authenticated participant sees community transitions separately from their response",
@@ -141,6 +194,11 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     refute html =~ "For creators"
     assert has_element?(view, "#reconsideration_content_url[placeholder='https://...']")
 
+    assert has_element?(
+             view,
+             "#reconsideration_hide_creator_attribution:not([checked])"
+           )
+
     select_statement(view, context.statement, "private cars")
 
     params = %{
@@ -148,16 +206,19 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
         "title" => "A second city-streets article",
         "description" => "Consider the evidence.",
         "content_url" => "https://example.com/second-article",
-        "content_type" => "article"
+        "content_type" => "article",
+        "hide_creator_attribution" => "true"
       }
     }
 
     render_submit(view, "save", params)
 
-    assert_redirect(
-      view,
-      "/@#{context.creator.author.username}/r/a-second-city-streets-article"
-    )
+    path = "/@#{context.creator.author.username}/r/a-second-city-streets-article"
+    assert_redirect(view, path)
+
+    {:ok, show_view, show_html} = live(conn, path)
+    refute has_element?(show_view, "#reconsider-creator-attribution")
+    refute show_html =~ "Created on YouCongress by"
   end
 
   test "creator form keeps its references when validation fails", %{conn: conn} = context do

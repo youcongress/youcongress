@@ -21,6 +21,7 @@ defmodule YouCongress.Reconsiderations.Reconsideration do
     field :description, :string
     field :content_url, :string
     field :content_type, Ecto.Enum, values: [:article, :video]
+    field :hide_creator_attribution, :boolean, default: false
     field :published, :boolean, default: true
 
     belongs_to :creator, Author
@@ -40,6 +41,7 @@ defmodule YouCongress.Reconsiderations.Reconsideration do
       :description,
       :content_url,
       :content_type,
+      :hide_creator_attribution,
       :creator_id,
       :published
     ])

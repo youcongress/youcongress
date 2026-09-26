@@ -31,6 +31,7 @@ defmodule YouCongressWeb.ReconsiderLive.New do
           "description" => "",
           "content_url" => "",
           "content_type" => "article",
+          "hide_creator_attribution" => false,
           "statement_refs" => "",
           "delegate_refs" => ""
         },
@@ -358,6 +359,11 @@ defmodule YouCongressWeb.ReconsiderLive.New do
           label="Content type"
           options={[{"Article", "article"}, {"Video", "video"}]}
           required
+        />
+        <.input
+          field={@form[:hide_creator_attribution]}
+          type="checkbox"
+          label="Hide creator attribution"
         />
         <div id="statement-picker" class="space-y-3">
           <label for="statement-search" class="block text-sm font-semibold leading-6 text-zinc-800">

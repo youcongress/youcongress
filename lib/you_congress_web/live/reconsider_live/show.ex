@@ -180,6 +180,52 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
   defp content_label(%{content_type: :video}), do: "video"
   defp content_label(_), do: "article"
 
+  defp youtube_embed_url(%{content_type: :video, content_url: content_url}) do
+    with %URI{host: host} = uri <- URI.parse(content_url),
+         host when is_binary(host) <- normalize_host(host),
+         video_id when is_binary(video_id) <- youtube_video_id(uri, host),
+         true <- valid_youtube_video_id?(video_id) do
+      "https://www.youtube-nocookie.com/embed/#{video_id}"
+    else
+      _ -> nil
+    end
+  end
+
+  defp youtube_embed_url(_reconsideration), do: nil
+
+  defp normalize_host(host) do
+    host
+    |> String.downcase()
+    |> String.trim_leading("www.")
+  end
+
+  defp youtube_video_id(uri, "youtu.be"), do: first_path_segment(uri.path)
+
+  defp youtube_video_id(uri, host) when host in ["youtube.com", "m.youtube.com"] do
+    case String.split(uri.path || "", "/", trim: true) do
+      [prefix, video_id | _rest] when prefix in ["embed", "live", "shorts", "v"] ->
+        video_id
+
+      _other ->
+        uri.query
+        |> Kernel.||("")
+        |> URI.decode_query()
+        |> Map.get("v")
+    end
+  end
+
+  defp youtube_video_id(_uri, _host), do: nil
+
+  defp first_path_segment(path) do
+    path
+    |> Kernel.||("")
+    |> String.split("/", trim: true)
+    |> List.first()
+  end
+
+  defp valid_youtube_video_id?(video_id),
+    do: String.match?(video_id, ~r/^[A-Za-z0-9_-]{11}$/)
+
   defp default_description(reconsideration) do
     "Did this #{content_label(reconsideration)} change your mind? Record your before and now positions."
   end
@@ -194,17 +240,37 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
         <p class="mt-3 text-gray-600">
           {@reconsideration.description || default_description(@reconsideration)}
         </p>
-        <p class="mt-2 text-sm text-gray-500">
+        <p
+          :if={!@reconsideration.hide_creator_attribution}
+          id="reconsider-creator-attribution"
+          class="mt-2 text-sm text-gray-500"
+        >
           Created on YouCongress by {author_name(@reconsideration.creator)}
         </p>
-        <.link
-          href={@reconsideration.content_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="mt-5 inline-flex items-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
-        >
-          Open the original {content_label(@reconsideration)} ↗
-        </.link>
+        <%= if embed_url = youtube_embed_url(@reconsideration) do %>
+          <div class="mt-6 aspect-video overflow-hidden rounded-xl bg-black shadow-sm">
+            <iframe
+              id="reconsider-youtube-video"
+              class="h-full w-full"
+              src={embed_url}
+              title={"YouTube video: #{@reconsideration.title}"}
+              loading="lazy"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+            >
+            </iframe>
+          </div>
+        <% else %>
+          <.link
+            href={@reconsideration.content_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="mt-5 inline-flex items-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
+          >
+            Open the original {content_label(@reconsideration)} ↗
+          </.link>
+        <% end %>
       </div>
 
       <%= if @completed do %>
