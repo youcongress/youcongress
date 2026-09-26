@@ -81,7 +81,7 @@ defmodule YouCongress.MCP.ToolUsageTrackerTest do
       end
     end
 
-    test "does not accept an API key from query parameters" do
+    test "accepts an API key from the MCP URL query parameters" do
       user = user_fixture()
 
       {:ok, api_key} =
@@ -90,7 +90,7 @@ defmodule YouCongress.MCP.ToolUsageTrackerTest do
       frame = %Frame{assigns: %{query_params: %{"key" => api_key.token}}}
 
       with_mock YouCongress.Amplitude, track_event: fn _, _, _, _ -> :ok end do
-        assert {:error, :missing_api_key} =
+        assert {:ok, ^user} =
                  ToolUsageTracker.track(YouCongressWeb.MCPServer.StatementsSearch, frame)
       end
     end

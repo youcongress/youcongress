@@ -239,8 +239,7 @@ defmodule YouCongressWeb.MCPServer.StatementsToolsTest do
                    frame
                  )
 
-        assert message ==
-                 "API key is required. Send it as an Authorization: Bearer YOUR_KEY header."
+        assert message == "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
       end)
     end
   end

@@ -2,7 +2,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsRemove do
   @moduledoc """
   Remove the association between an opinion and a statement through the MCP server.
 
-  The caller must provide a valid API key via an `Authorization: Bearer YOUR_KEY` header and have
+  The caller must provide a valid API key via the `?key=` query param and have
   permission to manage statement opinions.
   """
 
@@ -15,7 +15,7 @@ defmodule YouCongressWeb.MCPServer.OpinionsStatementsRemove do
   alias YouCongress.Statements
   alias YouCongress.MCP.ToolUsageTracker
 
-  @missing_key_message "API key is required. Send it as an Authorization: Bearer YOUR_KEY header."
+  @missing_key_message "API key is required. Pass ?key=YOUR_KEY in the MCP request URL."
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @forbidden_message "Your account is not allowed to remove opinions from statements."
   @opinion_not_found "Opinion not found."

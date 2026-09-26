@@ -18,7 +18,7 @@ defmodule YouCongress.MCP.ToolUsageTracker do
   Tracks the tool invocation and returns the Accounts.get_user_by_api_key/1 result.
   """
   def track(tool_module, frame, opts \\ []) do
-    key = get_bearer_token(frame)
+    key = get_api_key(frame)
 
     user_result =
       opts[:user_result] ||
@@ -114,6 +114,10 @@ defmodule YouCongress.MCP.ToolUsageTracker do
 
   defp get_client_info(_frame), do: %{}
 
+  defp get_api_key(frame) do
+    get_bearer_token(frame) || get_query_param(frame, "key")
+  end
+
   defp get_bearer_token(%Frame{context: %{headers: headers}}) when is_map(headers) do
     headers
     |> Map.get("authorization")
@@ -134,6 +138,15 @@ defmodule YouCongress.MCP.ToolUsageTracker do
   end
 
   defp parse_bearer_token(_value), do: nil
+
+  defp get_query_param(%Frame{assigns: assigns}, key) do
+    case assigns[:query_params] do
+      %{} = params -> Map.get(params, key)
+      _ -> nil
+    end
+  end
+
+  defp get_query_param(_frame, _key), do: nil
 
   defp normalize_map_keys(nil), do: %{}
 
