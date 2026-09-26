@@ -463,15 +463,24 @@
         {vote.statement.title}
       </.link>
 
-      <.link
-        href={~p"/c/#{vote.opinion.id}"}
-        class="mt-3 block text-sm leading-6 text-gray-600 hover:text-gray-900"
-      >
-        <blockquote :if={Opinion.quote?(vote.opinion)} cite={vote.opinion.source_url}>
-          {vote.opinion.content}
-        </blockquote>
-        <span :if={!Opinion.quote?(vote.opinion)}>{vote.opinion.content}</span>
-      </.link>
+      <div class="mt-3 text-sm leading-6 text-gray-600">
+        <.live_component
+          module={VoteComponent}
+          id={"other-opinion-#{vote.id}"}
+          statement={vote.statement}
+          vote={vote}
+          author={@opinion.author}
+          current_user={@current_user}
+          show_vote={false}
+          show_opinion={true}
+          liked={vote.opinion_id in @liked_opinion_ids}
+          liked_opinion_ids={@liked_opinion_ids}
+          delegating?={false}
+          delegable={false}
+          regenerating_opinion_id={nil}
+          page={:author_show}
+        />
+      </div>
     </article>
   </div>
 </section>

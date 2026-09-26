@@ -87,7 +87,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
         answer: :for
       })
 
-      other_opinions =
+      other_items =
         Enum.map(1..4, fn number ->
           statement = statement_fixture(title: "Other statement #{number}")
 
@@ -99,14 +99,15 @@ defmodule YouCongressWeb.OpinionLiveTest do
               Date.new!(2020 + number, 1, 1)
             )
 
-          vote_fixture(%{
-            author_id: author.id,
-            statement_id: statement.id,
-            opinion_id: opinion.id,
-            answer: if(number == 4, do: :against, else: :abstain)
-          })
+          vote =
+            vote_fixture(%{
+              author_id: author.id,
+              statement_id: statement.id,
+              opinion_id: opinion.id,
+              answer: if(number == 4, do: :against, else: :abstain)
+            })
 
-          opinion
+          %{opinion: opinion, vote: vote}
         end)
 
       suggested_authors =
@@ -144,7 +145,35 @@ defmodule YouCongressWeb.OpinionLiveTest do
       assert html =~ "Other statement 4"
       assert html =~ "votes Against"
       assert html =~ "Other opinion 4"
-      refute html =~ List.first(other_opinions).content
+
+      latest_item = List.last(other_items)
+      opinion_scope = "#other-opinions [data-testid='vote-card-#{latest_item.vote.id}']"
+
+      assert has_element?(
+               view,
+               "#{opinion_scope} a[href='#{latest_item.opinion.source_url}'][target='_blank']",
+               "source"
+             )
+
+      assert has_element?(
+               view,
+               "#{opinion_scope} img[src='/images/heart.svg'][phx-click='like']"
+             )
+
+      assert has_element?(view, "#{opinion_scope} img[src='/images/x.svg'][alt='Share on X']")
+
+      assert has_element?(
+               view,
+               "#{opinion_scope} [data-testid='added-at-inline-#{latest_item.vote.id}']"
+             )
+
+      assert has_element?(
+               view,
+               "#{opinion_scope} a[href='/c/#{latest_item.opinion.id}']",
+               "Unverified"
+             )
+
+      refute html =~ List.first(other_items).opinion.content
 
       assert html =~ "Other authors to follow"
       assert length(Regex.scan(~r/data-testid="other-author"/, html)) == 6
