@@ -254,10 +254,10 @@ defmodule YouCongressWeb.SEOMetaTest do
       html = html_response(conn, 200)
 
       assert html =~
-               ~s(<meta content="Reconsider — measure how minds change / YouCongress" property="og:title")
+               ~s(<meta content="Reconsider: measure how minds change / YouCongress" property="og:title")
 
       assert html =~
-               ~s(<meta name="twitter:title" content="Reconsider — measure how minds change / YouCongress")
+               ~s(<meta name="twitter:title" content="Reconsider: measure how minds change / YouCongress")
 
       assert html =~
                ~s(<link rel="canonical" href="#{YouCongressWeb.Endpoint.url()}/reconsider">)
@@ -265,7 +265,7 @@ defmodule YouCongressWeb.SEOMetaTest do
       assert_social_card(
         html,
         "/images/social-reconsider.png",
-        "Reconsider by YouCongress — measure how articles and videos change minds"
+        "Reconsider by YouCongress: measure how articles and videos change minds"
       )
     end
   end

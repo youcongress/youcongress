@@ -17,7 +17,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
     {:ok,
      socket
      |> assign_current_user(session["user_token"])
-     |> assign(:page_title, "Reconsider — measure how minds change")
+     |> assign(:page_title, "Reconsider: measure how minds change")
      |> assign(:canonical_url, url(~p"/reconsider"))
      |> assign(
        :page_description,
@@ -26,7 +26,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
      |> assign(:page_image, url(~p"/images/social-reconsider.png"))
      |> assign(
        :page_image_alt,
-       "Reconsider by YouCongress — measure how articles and videos change minds"
+       "Reconsider by YouCongress: measure how articles and videos change minds"
      )
      |> assign(:page_image_width, 1731)
      |> assign(:page_image_height, 909)}
@@ -44,8 +44,8 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
           Discover whether your content changes minds
         </h1>
         <p class="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600">
-          Pair an article or video with before-and-after voting on relevant YouCongress statements—
-          policy proposals or claims—to see how your audience's views change.
+          Pair an article or video with before-and-after voting on relevant YouCongress statements,
+          policy proposals or claims, to see how your audience's views change.
         </p>
         <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
           <.link
