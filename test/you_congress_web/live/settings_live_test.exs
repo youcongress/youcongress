@@ -200,7 +200,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
       refute html =~ "Verify with phone"
     end
 
-    test "users can manage the newsletter subscription", %{
+    test "users can subscribe and manage the newsletter on Substack", %{
       conn: conn,
       current_user: current_user
     } do
@@ -217,17 +217,11 @@ defmodule YouCongressWeb.SettingsLiveTest do
 
       assert has_element?(
                settings_live,
-               "button[phx-click='unsubscribe_newsletter']",
-               "Unsubscribe"
+               ~s(a[href="https://youcongress.substack.com"][target="_blank"]),
+               "Manage newsletter on Substack"
              )
 
-      render_click(settings_live, "unsubscribe_newsletter")
-      user = Accounts.get_user!(current_user.id)
-      refute user.newsletter
-      assert user.newsletter_subscription_prompt_dismissed_at
-      consent = Newsletters.latest_consent(current_user.email)
-      assert consent.action == :unsubscribe
-      assert consent.source == "settings"
+      refute has_element?(settings_live, "button[phx-click='unsubscribe_newsletter']")
     end
 
     test "users can create and revoke their own API keys", %{

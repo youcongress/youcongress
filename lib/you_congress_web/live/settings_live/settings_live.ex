@@ -109,19 +109,6 @@ defmodule YouCongressWeb.SettingsLive do
     end
   end
 
-  def handle_event("unsubscribe_newsletter", _params, socket) do
-    case Newsletters.unsubscribe_user(socket.assigns.current_user, "settings") do
-      {:ok, user} ->
-        {:noreply,
-         socket
-         |> assign(:current_user, %{user | author: socket.assigns.current_user.author})
-         |> put_flash(:info, "You are unsubscribed from YouCongress updates.")}
-
-      {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, "We could not update your subscription.")}
-    end
-  end
-
   def handle_event("send_password_setup_instructions", _params, socket) do
     Accounts.deliver_user_reset_password_instructions(
       socket.assigns.current_user,
