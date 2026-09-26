@@ -15,6 +15,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
   alias YouCongress.Delegations
   alias YouCongress.Halls
   alias YouCongressWeb.OpinionLive.OpinionComponent
+  alias YouCongressWeb.StatementLive.VoteComponent
   alias YouCongressWeb.Components.VerificationAggregate
   alias YouCongress.Statements
   alias YouCongress.OpinionsStatements
