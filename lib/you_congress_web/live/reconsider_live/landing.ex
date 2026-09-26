@@ -44,8 +44,8 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
           Discover whether your content changes minds
         </h1>
         <p class="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600">
-          Reconsider lets your readers or viewers record what they believed before your article or
-          video, what they believe now, and optionally who they trust to represent them.
+          Pair an article or video with before-and-after voting to see how your audience's views
+          change.
         </p>
         <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
           <.link
