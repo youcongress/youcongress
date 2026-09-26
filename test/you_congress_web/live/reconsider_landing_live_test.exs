@@ -18,6 +18,7 @@ defmodule YouCongressWeb.ReconsiderLandingLiveTest do
     {:ok, view, html} = live(conn, ~p"/reconsider")
 
     assert html =~ "Discover whether your content changes minds"
+    assert html =~ "policy proposals or claims"
     assert html =~ "Currently in beta"
     assert html =~ "How it works"
     assert has_element?(view, "#reconsider-example", "See a Reconsider page in action")
