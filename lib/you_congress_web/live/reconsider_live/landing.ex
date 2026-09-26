@@ -44,8 +44,8 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
           Discover whether your content changes minds
         </h1>
         <p class="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600">
-          Pair an article or video with before-and-after voting to see how your audience's views
-          change.
+          Pair an article or video with before-and-after voting on relevant YouCongress statements—
+          policy proposals or claims—to see how your audience's views change.
         </p>
         <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
           <.link
