@@ -541,7 +541,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
 
     Halls.list_top_authors_for_halls(hall_names,
       exclude_author_ids: [author_id],
-      limit: 6
+      limit: 9
     )
   end
 
