@@ -35,8 +35,10 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
   @impl true
   def render(assigns) do
     ~H"""
-    <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-16">
-      <section class="mx-auto max-w-3xl text-center">
+    <main class="mx-auto max-w-5xl px-4 pb-10 sm:px-6 sm:pb-16">
+      <.motion_ad contact_path={beta_contact_path()} />
+
+      <section class="mx-auto mt-12 max-w-3xl text-center sm:mt-16">
         <span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
           Beta
         </span>
@@ -314,6 +316,169 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
         </.link>
       </section>
     </main>
+    """
+  end
+
+  attr :contact_path, :string, required: true
+
+  defp motion_ad(assigns) do
+    ~H"""
+    <section
+      class="reconsider-motion-ad-shell mx-auto max-w-2xl"
+      aria-labelledby="reconsider-motion-ad-title"
+    >
+      <h2 id="reconsider-motion-ad-title" class="sr-only">
+        How Reconsider measures a change of mind
+      </h2>
+      <div
+        id="reconsider-motion-ad"
+        class="reconsider-motion-ad"
+        phx-hook="ReconsiderMotionAd"
+        phx-update="ignore"
+        role="region"
+        aria-label="Animated introduction to Reconsider"
+      >
+        <div class="reconsider-motion-ad__header">
+          <div class="reconsider-motion-ad__brand">
+            <strong>YouCongress</strong><span aria-hidden="true">/</span><em>Reconsider</em>
+          </div>
+          <span class="reconsider-motion-ad__example" data-ad-example hidden>
+            Illustrative example
+          </span>
+        </div>
+
+        <div class="reconsider-motion-ad__stage" aria-live="off">
+          <div class="reconsider-motion-ad__scene reconsider-motion-ad__scene--intro" data-ad-scene>
+            <p class="reconsider-motion-ad__display ad-up">You hit publish.</p>
+            <p class="reconsider-motion-ad__display ad-up ad-delay-1">
+              <em>Did it change a single mind?</em>
+            </p>
+            <p class="reconsider-motion-ad__support ad-fade ad-delay-2">Now you can find out.</p>
+          </div>
+
+          <div class="reconsider-motion-ad__scene" data-ad-scene hidden>
+            <p class="reconsider-motion-ad__eyebrow ad-fade">Step 1 · Vote before</p>
+            <p class="reconsider-motion-ad__statement ad-up">Slow down AI development.</p>
+            <div
+              class="reconsider-motion-ad__choices ad-up ad-delay-short"
+              aria-label="Example vote: Against"
+            >
+              <span>For</span><span>Abstain</span><span class="ad-pick-against">Against</span>
+            </div>
+            <p class="reconsider-motion-ad__support ad-fade ad-delay-2">
+              Your audience shares where they stand first.
+            </p>
+          </div>
+
+          <div class="reconsider-motion-ad__scene" data-ad-scene hidden>
+            <p class="reconsider-motion-ad__eyebrow ad-fade">Step 2 · Read or watch</p>
+            <div class="reconsider-motion-ad__video ad-pop">
+              <span class="reconsider-motion-ad__play" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M8 5.5v13L18.5 12z" /></svg>
+              </span>
+              <p>Should we slow down AI development?</p>
+              <small>Video by Example Tech Review</small>
+              <span class="reconsider-motion-ad__video-track"><span></span></span>
+            </div>
+            <p class="reconsider-motion-ad__support ad-fade ad-delay-1">
+              Your article or video does its work.
+            </p>
+          </div>
+
+          <div class="reconsider-motion-ad__scene" data-ad-scene hidden>
+            <p class="reconsider-motion-ad__eyebrow ad-fade">Step 3 · Vote now</p>
+            <p class="reconsider-motion-ad__statement ad-fade">Slow down AI development.</p>
+            <div class="reconsider-motion-ad__choices" aria-label="Example vote changes to For">
+              <span class="ad-pick-for">For</span><span>Abstain</span><span class="ad-unpick">Against</span>
+            </div>
+            <div class="reconsider-motion-ad__change">
+              <span class="ad-fade ad-delay-2">Against</span>
+              <svg viewBox="0 0 160 40" aria-hidden="true">
+                <path class="ad-draw" d="M4 20h148M136 6l16 14-16 14" />
+              </svg>
+              <strong class="ad-pop ad-delay-3">For</strong>
+            </div>
+          </div>
+
+          <div class="reconsider-motion-ad__scene" data-ad-scene hidden>
+            <p class="reconsider-motion-ad__eyebrow ad-fade">Step 4 · See how minds moved</p>
+            <div class="reconsider-motion-ad__result">
+              <strong><span data-ad-percentage>0</span>%</strong>
+              <p class="ad-fade ad-delay-1">of 60 participants changed their position</p>
+            </div>
+            <div class="reconsider-motion-ad__rows">
+              <div class="reconsider-motion-ad__row ad-up" style="--row-width: 63%; --row-delay: 1.5s">
+                <span>Against → <strong>For</strong></span><i><b></b></i><span>38 · 63%</span>
+              </div>
+              <div
+                class="reconsider-motion-ad__row ad-up"
+                style="--row-width: 17%; --row-delay: 1.75s"
+              >
+                <span>For → <strong>For</strong></span><i><b></b></i><span>10 · 17%</span>
+              </div>
+              <div class="reconsider-motion-ad__row ad-up" style="--row-width: 12%; --row-delay: 2s">
+                <span>Abstain → <strong>For</strong></span><i><b></b></i><span>7 · 12%</span>
+              </div>
+              <div
+                class="reconsider-motion-ad__row ad-up reconsider-motion-ad__row--against"
+                style="--row-width: 8%; --row-delay: 2.25s"
+              >
+                <span>Against → <strong>Against</strong></span><i><b></b></i><span>5 · 8%</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="reconsider-motion-ad__scene reconsider-motion-ad__scene--outro"
+            data-ad-scene
+            hidden
+          >
+            <p class="reconsider-motion-ad__wordmark ad-up">Reconsider</p>
+            <p class="reconsider-motion-ad__byline ad-up ad-delay-short">by YouCongress</p>
+            <p class="reconsider-motion-ad__tagline ad-up ad-delay-1">
+              Discover whether your content changes minds.
+            </p>
+            <div class="reconsider-motion-ad__cta ad-up ad-delay-2">
+              <a href={@contact_path}>Ask to try the beta</a>
+              <span>youcongress.org/reconsider</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="reconsider-motion-ad__controls">
+          <div class="reconsider-motion-ad__timeline" aria-hidden="true">
+            <span><i data-ad-segment></i></span>
+            <span><i data-ad-segment></i></span>
+            <span><i data-ad-segment></i></span>
+            <span><i data-ad-segment></i></span>
+            <span><i data-ad-segment></i></span>
+            <span><i data-ad-segment></i></span>
+          </div>
+          <button type="button" data-ad-replay aria-label="Replay from the start">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 3-6.7M3 3v6h6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="reconsider-motion-ad__toggle"
+            data-ad-toggle
+            aria-label="Pause animation"
+          >
+            <svg data-ad-pause-icon viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 5v14M16 5v14" />
+            </svg>
+            <svg data-ad-play-icon viewBox="0 0 24 24" aria-hidden="true" hidden>
+              <path d="M7 5v14l12-7z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <p class="sr-only">
+        Reconsider asks readers or viewers how they feel before and after an article or video, then
+        shows how many participants changed their position.
+      </p>
+    </section>
     """
   end
 
