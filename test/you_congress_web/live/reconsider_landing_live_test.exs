@@ -52,6 +52,31 @@ defmodule YouCongressWeb.ReconsiderLandingLiveTest do
 
     contact_path = ~p"/contact?#{%{subject: @contact_subject, body: @contact_body}}"
 
+    assert has_element?(view, "#reconsider-motion-ad[phx-hook='ReconsiderMotionAd']")
+    assert has_element?(view, "#reconsider-motion-ad [data-ad-scene]", "You hit publish.")
+
+    assert has_element?(
+             view,
+             "#reconsider-motion-ad [data-ad-scene]",
+             "Step 4 · See how minds moved"
+           )
+
+    assert has_element?(
+             view,
+             "#reconsider-motion-ad [data-ad-replay][aria-label='Replay from the start']"
+           )
+
+    assert has_element?(
+             view,
+             "#reconsider-motion-ad [data-ad-toggle][aria-label='Pause animation']"
+           )
+
+    assert has_element?(
+             view,
+             "#reconsider-motion-ad a[href='#{contact_path}']",
+             "Ask to try the beta"
+           )
+
     assert has_element?(
              view,
              "#reconsider-beta-contact[href='#{contact_path}']",
