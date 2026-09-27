@@ -6,6 +6,10 @@
 @import "sim.css";
 
 /* Reconsider motion ad */
+.reconsider-motion-ad-shell {
+  width: min(100%, calc(100svh - 4rem));
+}
+
 .reconsider-motion-ad {
   --reconsider-ink: #15151a;
   --reconsider-paper: #f3efe6;
