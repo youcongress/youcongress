@@ -119,7 +119,7 @@ defmodule YouCongressWeb.OpinionLiveTest do
         )
 
       suggested_authors =
-        Enum.map(1..7, fn number ->
+        Enum.map(1..10, fn number ->
           number_label = number |> Integer.to_string() |> String.pad_leading(2, "0")
 
           suggested_author =
@@ -201,9 +201,9 @@ defmodule YouCongressWeb.OpinionLiveTest do
       refute other_opinions_html =~ List.first(other_items).opinion.content
 
       assert html =~ "Other authors to follow"
-      assert length(Regex.scan(~r/data-testid="other-author"/, html)) == 6
+      assert length(Regex.scan(~r/data-testid="other-author"/, html)) == 9
 
-      Enum.each(Enum.take(suggested_authors, 6), fn suggested_author ->
+      Enum.each(Enum.take(suggested_authors, 9), fn suggested_author ->
         assert has_element?(
                  view,
                  "#other-authors a[href='/x/#{suggested_author.twitter_username}']",
