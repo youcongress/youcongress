@@ -264,8 +264,10 @@ defmodule YouCongressWeb.SEOMetaTest do
 
       assert_social_card(
         html,
-        "/images/social-reconsider.png",
-        "Reconsider by YouCongress: measure how articles and videos change minds"
+        "/images/social-reconsider-v2.png",
+        "Reconsider by YouCongress: measure how articles and videos change minds",
+        1200,
+        630
       )
     end
   end
@@ -315,7 +317,7 @@ defmodule YouCongressWeb.SEOMetaTest do
 
   # Bluesky, LinkedIn and WhatsApp read the Open Graph fields; X reads the
   # twitter:* fields. Both families intentionally point at the same card.
-  defp assert_social_card(html, image_path, alt, width \\ 1731) do
+  defp assert_social_card(html, image_path, alt, width \\ 1731, height \\ 909) do
     image_url = YouCongressWeb.Endpoint.url() <> image_path
 
     assert html =~ ~s(<meta property="og:image" content="#{image_url}")
@@ -323,7 +325,7 @@ defmodule YouCongressWeb.SEOMetaTest do
     assert html =~ ~s(<meta property="og:image:secure_url" content="#{image_url}")
     assert html =~ ~s(<meta property="og:image:type" content="image/png")
     assert html =~ ~s(<meta property="og:image:width" content="#{width}")
-    assert html =~ ~s(<meta property="og:image:height" content="909")
+    assert html =~ ~s(<meta property="og:image:height" content="#{height}")
     assert html =~ ~s(<meta property="og:image:alt" content="#{alt}")
     assert html =~ ~s(<meta name="twitter:card" content="summary_large_image")
     assert html =~ ~s(<meta name="twitter:image" content="#{image_url}")
