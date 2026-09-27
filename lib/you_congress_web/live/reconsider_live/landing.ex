@@ -23,13 +23,13 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
        :page_description,
        "Pair an article or video with before-and-after voting to see how your audience's views change."
      )
-     |> assign(:page_image, url(~p"/images/social-reconsider.png"))
+     |> assign(:page_image, url(~p"/images/social-reconsider-v2.png"))
      |> assign(
        :page_image_alt,
        "Reconsider by YouCongress: measure how articles and videos change minds"
      )
-     |> assign(:page_image_width, 1731)
-     |> assign(:page_image_height, 909)}
+     |> assign(:page_image_width, 1200)
+     |> assign(:page_image_height, 630)}
   end
 
   @impl true
