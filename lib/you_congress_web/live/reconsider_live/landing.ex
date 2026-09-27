@@ -35,8 +35,10 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
   @impl true
   def render(assigns) do
     ~H"""
-    <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-16">
-      <section class="mx-auto max-w-3xl text-center">
+    <main class="mx-auto max-w-5xl px-4 pb-10 sm:px-6 sm:pb-16">
+      <.motion_ad contact_path={beta_contact_path()} />
+
+      <section class="mx-auto mt-12 max-w-3xl text-center sm:mt-16">
         <span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
           Beta
         </span>
@@ -67,8 +69,6 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
           </.link>
         </div>
       </section>
-
-      <.motion_ad contact_path={beta_contact_path()} />
 
       <section aria-labelledby="how-reconsider-works" class="mt-16">
         <h2 id="how-reconsider-works" class="text-center text-2xl font-bold text-gray-900">
@@ -323,7 +323,10 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
 
   defp motion_ad(assigns) do
     ~H"""
-    <section class="mx-auto mt-16 max-w-3xl" aria-labelledby="reconsider-motion-ad-title">
+    <section
+      class="reconsider-motion-ad-shell mx-auto max-w-2xl"
+      aria-labelledby="reconsider-motion-ad-title"
+    >
       <h2 id="reconsider-motion-ad-title" class="sr-only">
         How Reconsider measures a change of mind
       </h2>
