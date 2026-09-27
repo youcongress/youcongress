@@ -25,6 +25,7 @@ import QuoteMenu from "./hooks/quote_menu"
 import Turnstile from "./hooks/turnstile"
 import SessionLogin from "./hooks/session_login"
 import InfiniteScroll from "./hooks/infinite_scroll"
+import ReconsiderMotionAd from "./hooks/reconsider_motion_ad"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 
@@ -32,7 +33,8 @@ let Hooks = {
   QuoteMenu: QuoteMenu,
   Turnstile: Turnstile,
   SessionLogin: SessionLogin,
-  InfiniteScroll: InfiniteScroll
+  InfiniteScroll: InfiniteScroll,
+  ReconsiderMotionAd: ReconsiderMotionAd
 };
 
 let liveSocket = new LiveSocket("/live", Socket, {
