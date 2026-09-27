@@ -95,7 +95,7 @@ defmodule YouCongressWeb.ContactLiveTest do
       assert html =~ "Your message has been sent."
 
       assert_email_sent(
-        to: "hi@youcongress.org",
+        to: "hello@youcongress.org",
         reply_to: "ada@example.com",
         subject: "Partnership question",
         text_body: ~r/Name: Ada Lovelace.*https:\/\/example.com\/ada.*Can you help\?/s

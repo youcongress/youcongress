@@ -8,7 +8,11 @@ defmodule YouCongress.Contact do
   import Ecto.Changeset
   import Swoosh.Email
 
+  require Logger
+
   alias YouCongress.Mailer
+
+  @contact_email "hello@youcongress.org"
 
   @primary_key false
   embedded_schema do
@@ -42,14 +46,24 @@ defmodule YouCongress.Contact do
   end
 
   def deliver(%__MODULE__{} = contact) do
-    new()
-    |> to("hi@youcongress.org")
-    |> from({"YouCongress", "hello@youcongress.org"})
-    |> reply_to(contact.email)
-    |> subject(contact.subject || "Contact form by #{contact.name}")
-    |> text_body(
-      "Name: #{contact.name}\nEmail: #{contact.email}\nWebsite or social media: #{contact.website || "Not provided"}\n\n#{contact.body}"
-    )
-    |> Mailer.deliver()
+    email =
+      new()
+      |> to(@contact_email)
+      |> from({"YouCongress", @contact_email})
+      |> reply_to(contact.email)
+      |> subject(contact.subject || "Contact form by #{contact.name}")
+      |> text_body(
+        "Name: #{contact.name}\nEmail: #{contact.email}\nWebsite or social media: #{contact.website || "Not provided"}\n\n#{contact.body}"
+      )
+
+    case Mailer.deliver(email) do
+      {:ok, metadata} = result ->
+        Logger.info("Contact email accepted by mailer: #{inspect(metadata)}")
+        result
+
+      {:error, reason} = result ->
+        Logger.error("Contact email delivery failed: #{inspect(reason)}")
+        result
+    end
   end
 end
