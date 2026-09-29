@@ -10,14 +10,14 @@
         </dt>
         <dd class="mt-4 lg:col-span-7 lg:mt-0">
           <p class="text-base leading-7 text-gray-600">
-            YouCongress is a non-profit and <.link
+            YouCongress is a non-profit, <.link
               class="underline"
               target="_blank"
               href="https://github.com/youcongress/youcongress"
-            >open source</.link>&nbsp;platform for building source-grounded knowledge bases around hard public questions. We gather verifiable quotes and claims, preserve source provenance, and use liquid democracy to make expert and citizen preferences visible and legible. We offer a practical coordination tool that provides decision support to help leaders choose policies aligned with both public and expert values. The first large focus is AI governance.
+            >open-source</.link>&nbsp;platform for building source-grounded knowledge bases around hard public questions. We preserve the provenance of sourced quotes and claims, and use liquid democracy to make expert and citizen preferences visible. It offers decision support rather than binding referendums. Our initial focus is AI governance.
           </p>
           <p class="text-base leading-7 text-gray-600 pt-4">
-            Forecasters ask "What will happen?" We ask "What should we do?" or "What would we love to happen even when unlikely?" Inspired by Scott Alexander's "Moloch" - the idea that misaligned incentives can push everyone toward outcomes nobody wants - YouCongress makes shared preferences visible and legible. By pairing direct voting, optional delegation, and sourced expertise, we offer a practical coordination tool: not binding referendums, but decision support that helps leaders choose policies aligned with public and expert values. Starting with AI governance and AI safety.
+            Forecasters ask "What will happen?" We ask "What should we do?" and "What would we love to happen even when unlikely?" Inspired by Scott Alexander's idea of "Moloch"—misaligned incentives pushing everyone toward outcomes nobody wants—YouCongress makes shared preferences visible. It combines direct voting, optional delegation, and sourced expertise to help leaders understand public and expert values.
           </p>
           <p class="text-base leading-7 text-gray-600 pt-4">
             More about this on our <.link
@@ -83,9 +83,7 @@
         </dt>
         <dd class="mt-4 lg:col-span-7 lg:mt-0">
           <p class="text-base leading-7 text-gray-600">
-            YouCongress users can choose a list of delegates, similar to following others on social media.
-            However, here, users' votes align with the majority of their delegates unless they vote personally.
-            For example, if a user has five delegates who have voted on an issue, and three of them vote in favor while two vote against, the user's vote will automatically be in favor too. This holds unless the user votes directly, in which case the delegates' votes don't matter.
+            YouCongress users can choose a list of delegates, similar to following others on social media. Unless they vote directly, their vote follows the most common answer among their delegates. For example, if five delegates vote on an issue and three vote in favor while two vote against, the user's delegated vote is in favor. If the delegate votes are tied, no delegated vote is recorded. A direct vote always takes precedence over delegation.
           </p>
           <p class="text-base leading-7 text-gray-600 ">
             Future enhancements will introduce additional <.link
@@ -95,7 +93,7 @@
             >delegation mechanisms</.link>, including topic-specific delegation. This will enable users to appoint delegates for votes concerning specific areas such as their local community, economic matters, AI-related issues, and more.
           </p>
           <p class="text-base leading-7 text-gray-600 pt-4">
-            Users will be able to filter the results by direct votes and delegated votes. This way, if one is only interested in direct votes, the platform will remain useful.
+            In country and year result views, users can filter results by direct and delegated votes. This keeps the platform useful for people who want to consider direct votes separately.
           </p>
         </dd>
       </div>
@@ -106,10 +104,10 @@
         </dt>
         <dd class="mt-4 lg:col-span-7 lg:mt-0">
           <p class="text-base leading-7 text-gray-600">
-            YouCongress allows users to add real quotes from notable figures and experts, then link them to the claims and policy proposals they bear on.
+            Signed-in users can add real quotes from notable figures and experts, then link them to the claims and policy proposals they bear on.
           </p>
           <p class="text-base leading-7 text-gray-600 pt-4">
-            All quotes must be accompanied by a source URL so anyone can verify that the public figure or expert actually said that. This ensures the integrity and trustworthiness of the information shared on the platform.
+            Every sourced quote must include a source URL or, for books, PDFs, and paywalled sources, a sufficiently identifying source passage. This lets readers check the attribution and context.
           </p>
           <p class="text-base leading-7 text-gray-600 pt-4">
             These sourced quotes help inform voters and investigators by providing expert perspectives, documented positions, and reusable provenance on various topics.
@@ -123,10 +121,10 @@
         </dt>
         <dd class="mt-4 lg:col-span-7 lg:mt-0">
           <p class="text-base leading-7 text-gray-600">
-            Sourced quotes on YouCongress can be checked across three layers: whether the quote is authentic, whether it is relevant to the policy or claim where it appears, and whether the vote inferred from it is correct. On statement pages, the badge summarizes those checks together.
+            Sourced quotes on YouCongress can be checked across three layers: whether the quote is authentic, whether it is relevant to the policy or claim where it appears, and whether the vote inferred from it is correct. Each check has its own status; on statement pages, one badge summarizes them together.
           </p>
           <p class="text-base leading-7 text-gray-600 pt-4">
-            Verification badges can be:
+            An individual verification can be:
           </p>
           <ul class="list-disc pl-5 text-base leading-7 text-gray-600">
             <li>
@@ -151,6 +149,9 @@
               <strong>Unverified</strong>: no current positive, disputed, or unverifiable verification is recorded yet, or a reviewer cleared the status.
             </li>
           </ul>
+          <p class="text-base leading-7 text-gray-600 pt-4">
+            On a statement page, the combined badge displays an AI Unverifiable check as Unverifiable.
+          </p>
           <p class="text-base leading-7 text-gray-600 pt-4">
             A quote can still appear while some checks are pending. Downstream checks, such as relation and vote-answer verification, depend on the quote itself first being confirmed by a positive status like Endorsed, Verified, or AI Verified.
           </p>
@@ -218,17 +219,19 @@
         </dt>
         <dd class="mt-4 lg:col-span-7 lg:mt-0">
           <p class="text-base   leading-7 text-gray-600">
-            Sure, welcome to YouCongress!
-          </p>
-          <p class="text-base leading-7 text-gray-600 pt-4">
-            The easiest way to start is by adding sourced quotes to statements (policy proposals and claims), checking whether existing quotes support the claims attached to them, or suggesting important missing perspectives.
+            You can contribute by adding sourced quotes to statements (policy proposals and claims) or suggesting important missing perspectives. To help review quotes, email us at <.link
+              href="mailto:verify@youcongress.org"
+              class="underline"
+            >
+              verify@youcongress.org
+            </.link>.
           </p>
           <p class="text-base leading-7 text-gray-600 pt-4">
             If you're a developer, you can contribute on our open source codebase on <.link
               href="https://github.com/youcongress/youcongress"
               target="_blank"
               class="underline"
-            >GitHub</.link>&nbsp;Also, feel free to contact us at
+            >GitHub</.link>. You can also contact us at
             <.link href="mailto:hello@youcongress.org" target="_blank" class="underline">
               hello@youcongress.org
             </.link>
