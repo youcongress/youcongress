@@ -63,6 +63,9 @@ defmodule YouCongressWeb.LatestLiveTest do
       assert html =~ "Ada Lovelace"
       assert html =~ ~s(href="/subscribe")
       assert html =~ "Subscribe to news"
+      assert html =~ "Want to see how articles and videos change minds?"
+      assert html =~ ~s(href="/reconsider")
+      assert html =~ "Check out Reconsider."
 
       assert html =~
                ~r{href="/explore"[^>]*>Explore</a>,\s*<a[^>]*href="/explore"[^>]*>search</a>}
