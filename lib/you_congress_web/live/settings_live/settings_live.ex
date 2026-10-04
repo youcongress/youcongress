@@ -14,56 +14,24 @@ defmodule YouCongressWeb.SettingsLive do
       |> assign_profile_author()
       |> assign_country_options()
 
-    changeset =
-      Authors.change_profile_author(
-        socket.assigns.profile_author,
-        profile_allowed_fields(socket.assigns.current_user)
-      )
-
-    {:ok, assign_form(socket, changeset)}
+    {:ok, assign_profile_forms(socket)}
   end
 
   @impl true
-  def handle_event("validate", %{"author" => author_params}, socket) do
-    author_params = profile_author_params(author_params, socket)
-
-    changeset =
-      author(socket)
-      |> Authors.change_profile_author(
-        author_params,
-        profile_allowed_fields(socket.assigns.current_user)
-      )
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign_form(socket, changeset)}
+  def handle_event("validate_username", %{"author" => author_params}, socket) do
+    {:noreply, validate_profile_form(socket, author_params, [:username])}
   end
 
-  def handle_event("save", %{"author" => author_params}, socket) do
-    author_params = profile_author_params(author_params, socket)
+  def handle_event("validate_profile", %{"author" => author_params}, socket) do
+    {:noreply, validate_profile_form(socket, author_params, profile_fields(socket))}
+  end
 
-    case Authors.update_profile_author(
-           author(socket),
-           author_params,
-           profile_allowed_fields(socket.assigns.current_user)
-         ) do
-      {:ok, author} ->
-        author = Authors.preload(author, [:country])
+  def handle_event("save_username", %{"author" => author_params}, socket) do
+    update_profile(socket, author_params, [:username], :username_form)
+  end
 
-        {:noreply,
-         socket
-         |> assign_profile_author(author)
-         |> assign(:current_user, %{socket.assigns.current_user | author: author})
-         |> assign_form(
-           Authors.change_profile_author(
-             author,
-             profile_allowed_fields(socket.assigns.current_user)
-           )
-         )
-         |> put_flash(:info, "Settings updated successfully")}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign_form(socket, changeset)}
-    end
+  def handle_event("save_profile", %{"author" => author_params}, socket) do
+    update_profile(socket, author_params, profile_fields(socket), :profile_form)
   end
 
   def handle_event("create_api_key", %{"api_key" => api_key_params}, socket) do
@@ -123,8 +91,60 @@ defmodule YouCongressWeb.SettingsLive do
      )}
   end
 
-  defp assign_form(socket, %Ecto.Changeset{} = changeset) do
-    assign(socket, :form, to_form(changeset))
+  defp validate_profile_form(socket, author_params, allowed_fields) do
+    changeset =
+      author(socket)
+      |> Authors.change_profile_author(
+        profile_author_params(author_params, allowed_fields),
+        allowed_fields
+      )
+      |> Map.put(:action, :validate)
+
+    assign_profile_form(socket, allowed_fields, changeset)
+  end
+
+  defp update_profile(socket, author_params, allowed_fields, form_name) do
+    author_params = profile_author_params(author_params, allowed_fields)
+
+    case Authors.update_profile_author(
+           author(socket),
+           author_params,
+           allowed_fields
+         ) do
+      {:ok, author} ->
+        author = Authors.preload(author, [:country])
+
+        {:noreply,
+         socket
+         |> assign_profile_author(author)
+         |> assign(:current_user, %{socket.assigns.current_user | author: author})
+         |> assign_profile_forms()
+         |> put_flash(:info, "Settings updated successfully")}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, form_name, to_form(changeset))}
+    end
+  end
+
+  defp assign_profile_forms(socket) do
+    socket
+    |> assign_username_form(Authors.change_profile_author(author(socket), [:username]))
+    |> assign_profile_form(
+      profile_fields(socket),
+      Authors.change_profile_author(author(socket), profile_fields(socket))
+    )
+  end
+
+  defp assign_username_form(socket, %Ecto.Changeset{} = changeset) do
+    assign(socket, :username_form, to_form(changeset))
+  end
+
+  defp assign_profile_form(socket, [:username], %Ecto.Changeset{} = changeset) do
+    assign_username_form(socket, changeset)
+  end
+
+  defp assign_profile_form(socket, _allowed_fields, %Ecto.Changeset{} = changeset) do
+    assign(socket, :profile_form, to_form(changeset))
   end
 
   defp assign_api_keys(socket) do
@@ -161,11 +181,14 @@ defmodule YouCongressWeb.SettingsLive do
 
   defp author(socket), do: socket.assigns.profile_author
 
-  defp profile_author_params(params, socket) when is_map(params) do
-    allowed_fields = profile_allowed_fields(socket.assigns.current_user)
+  defp profile_author_params(params, allowed_fields) when is_map(params) do
     allowed_keys = allowed_fields ++ Enum.map(allowed_fields, &Atom.to_string/1)
 
     Map.take(params, allowed_keys)
+  end
+
+  defp profile_fields(socket) do
+    profile_allowed_fields(socket.assigns.current_user) -- [:username]
   end
 
   defp profile_allowed_fields(current_user) do

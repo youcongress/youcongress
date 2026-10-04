@@ -11,9 +11,14 @@
     Log out
   </.link>
 </div>
-<.simple_form for={@form} id="author-form" phx-change="validate" phx-submit="save">
+<.simple_form
+  for={@username_form}
+  id="username-form"
+  phx-change="validate_username"
+  phx-submit="save_username"
+>
   <.input
-    field={@form[:username]}
+    field={@username_form[:username]}
     label="YouCongress username"
     placeholder="your_username"
   />
@@ -21,19 +26,22 @@
     Your profile URL will be youcongress.org/@your_username. Use 5–15 lowercase letters,
     numbers, or underscores.
   </p>
-  <p class="mt-2 text-sm text-zinc-500">
-    Three- and four-character usernames are reserved as a special perk for YouCongress donors
-    and supporters. Interested? Email <.link
-      href="mailto:hector@youcongress.org"
-      class="font-medium text-blue-600 hover:underline"
-    >
-      hector@youcongress.org
-    </.link>.
-  </p>
 
+  <:actions>
+    <.button phx-disable-with="Saving...">Save</.button>
+  </:actions>
+</.simple_form>
+
+<.simple_form
+  for={@profile_form}
+  id="profile-form"
+  class="mt-8"
+  phx-change="validate_profile"
+  phx-submit="save_profile"
+>
   <%= if :name in profile_allowed_fields(@current_user) do %>
-    <.input field={@form[:name]} label="Name" />
-    <.input field={@form[:bio]} label="One-line bio" />
+    <.input field={@profile_form[:name]} label="Name" />
+    <.input field={@profile_form[:bio]} label="One-line bio" />
   <% else %>
     <div>
       <ul class="text-sm">
@@ -59,7 +67,7 @@
   <% else %>
     <.input
       type="select"
-      field={@form[:country_id]}
+      field={@profile_form[:country_id]}
       label="Country"
       prompt="Select your country"
       options={@country_options}

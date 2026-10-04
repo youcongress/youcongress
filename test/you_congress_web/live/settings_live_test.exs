@@ -30,13 +30,9 @@ defmodule YouCongressWeb.SettingsLiveTest do
       assert html =~ "Name: Someone"
       assert html =~ "YouCongress username"
       assert html =~ "author[username]"
-      assert html =~ "reserved as a special perk"
-
-      assert has_element?(
-               settings_live,
-               "a[href='mailto:hector@youcongress.org']",
-               "hector@youcongress.org"
-             )
+      assert has_element?(settings_live, "#username-form")
+      assert has_element?(settings_live, "#profile-form")
+      refute html =~ "reserved as a special perk"
     end
 
     test "users can set a normalized YouCongress username", %{
@@ -47,7 +43,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
       {:ok, settings_live, _html} = live(conn, ~p"/settings")
 
       html =
-        render_submit(settings_live, "save", %{
+        render_submit(settings_live, "save_username", %{
           "author" => %{"username" => "  My_Profile  "}
         })
 
@@ -65,7 +61,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
       conn = log_in_user(conn, current_user)
       {:ok, settings_live, _html} = live(conn, ~p"/settings")
 
-      assert render_submit(settings_live, "save", %{
+      assert render_submit(settings_live, "save_username", %{
                "author" => %{"username" => "ALREADY_TAKEN"}
              }) =~ "has already been taken"
 
@@ -79,11 +75,11 @@ defmodule YouCongressWeb.SettingsLiveTest do
       conn = log_in_user(conn, current_user)
       {:ok, settings_live, _html} = live(conn, ~p"/settings")
 
-      assert render_submit(settings_live, "save", %{
+      assert render_submit(settings_live, "save_username", %{
                "author" => %{"username" => "four"}
              }) =~ "should be at least 5 character(s)"
 
-      assert render_submit(settings_live, "save", %{
+      assert render_submit(settings_live, "save_username", %{
                "author" => %{"username" => "abcdefghijklmnop"}
              }) =~ "should be at most 15 character(s)"
 
@@ -118,11 +114,12 @@ defmodule YouCongressWeb.SettingsLiveTest do
       assert html =~ "author[country_id]"
       assert html =~ "Settings Dropdown Spain"
 
-      render_submit(settings_live, "save", %{
+      render_submit(settings_live, "save_profile", %{
         "author" => %{
           "name" => "Spoofed Name",
           "bio" => "Spoofed bio",
           "country_id" => country.id,
+          "username" => "spoofed_username",
           "twitter_username" => "spoofed_x",
           "google_id" => "spoofed_google",
           "public_figure" => "true",
@@ -135,6 +132,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
       assert author.name == "Someone"
       assert author.bio != "Spoofed bio"
       assert author.country_id == country.id
+      assert author.username == nil
       refute author.twitter_username == "spoofed_x"
       refute author.google_id == "spoofed_google"
       refute author.public_figure
@@ -162,7 +160,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
       conn = log_in_user(conn, current_user)
       {:ok, settings_live, _html} = live(conn, ~p"/settings")
 
-      render_submit(settings_live, "save", %{
+      render_submit(settings_live, "save_profile", %{
         "author" => %{
           "name" => "Updated Password User",
           "bio" => "Updated bio",
@@ -268,7 +266,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
       assert html =~ "Set a password"
       assert has_element?(settings_live, "input[name='author[name]']")
 
-      render_submit(settings_live, "save", %{
+      render_submit(settings_live, "save_profile", %{
         "author" => %{"name" => "Updated User", "bio" => "Updated bio"}
       })
 
@@ -304,7 +302,7 @@ defmodule YouCongressWeb.SettingsLiveTest do
       assert html =~ "Set from your verified phone number."
       refute html =~ "author[country_id]"
 
-      render_submit(settings_live, "save", %{
+      render_submit(settings_live, "save_profile", %{
         "author" => %{
           "name" => "Changed",
           "country_id" => submitted_country.id,
