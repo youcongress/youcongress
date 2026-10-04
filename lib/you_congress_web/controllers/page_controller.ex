@@ -145,6 +145,40 @@ defmodule YouCongressWeb.PageController do
     |> send_resp(200, build_llms_txt())
   end
 
+  @doc """
+  Returns `OK` when a positively verified quote has a date no older than
+  yesterday; otherwise returns the ISO-8601 date of the latest such quote.
+
+  Quotes store a `date`, rather than a timestamp, so yesterday is the oldest
+  date that can be considered within the last 24 hours.
+  """
+  def status_24h(conn, _params) do
+    oldest_recent_date = Date.add(Date.utc_today(), -1)
+
+    latest_quote =
+      Opinions.get_opinion(
+        only_quotes: true,
+        statuses: [:endorsed, :verified, :ai_verified],
+        order_by: [desc_nulls_last: :date, desc: :id]
+      )
+
+    body =
+      case latest_quote do
+        %{date: %Date{} = date} when date >= oldest_recent_date ->
+          "OK"
+
+        %{date: %Date{} = date} ->
+          Date.to_iso8601(date)
+
+        _ ->
+          "No verified quote date available"
+      end
+
+    conn
+    |> put_resp_content_type("text/plain")
+    |> send_resp(200, body)
+  end
+
   # When changing the tool list here, also update the human docs at /mcp-tools
   # (page_html/mcp_tools.html.heex), and vice versa.
   defp build_llms_txt do
