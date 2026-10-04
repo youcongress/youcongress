@@ -39,6 +39,18 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
   end
 
   @impl true
+  def handle_params(params, _url, socket) do
+    if socket.assigns.is_creator and params["results"] == "true" do
+      {:noreply,
+       socket
+       |> assign(:show_results, true)
+       |> assign(:stats, Reconsiderations.stats(socket.assigns.reconsideration))}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_event("submit", %{"response" => params}, socket) do
     params = normalize_form_params(params)
 
@@ -109,6 +121,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
   defp assign_participation(%{assigns: %{current_user: nil}} = socket) do
     socket
     |> assign(:completed, false)
+    |> assign(:show_results, false)
     |> assign(:personal_responses, %{})
     |> assign(:stats, nil)
     |> assign(:existing_delegate_ids, [])
@@ -121,6 +134,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
 
     socket
     |> assign(:completed, responses != [])
+    |> assign(:show_results, responses != [])
     |> assign(:personal_responses, Map.new(responses, &{&1.statement_id, &1}))
     |> assign(:stats, if(responses == [], do: nil, else: Reconsiderations.stats(reconsideration)))
     |> assign(:existing_delegate_ids, Delegations.delegate_ids_by_deleguee_id(author_id))
@@ -267,6 +281,13 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
         >
           <.icon name="hero-link" class="h-4 w-4" /> Copy link
         </button>
+        <.link
+          id="reconsider-see-results"
+          patch={~p"/@#{@reconsideration.creator.username}/r/#{@reconsideration.slug}?results=true"}
+          class="inline-flex flex-none items-center justify-center rounded-md border border-indigo-300 bg-white px-3 py-2 text-sm font-semibold text-indigo-700 shadow-sm hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        >
+          See results
+        </.link>
       </section>
 
       <div class="mb-8 text-center">
@@ -308,7 +329,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
         <% end %>
       </div>
 
-      <%= if @completed do %>
+      <%= if @show_results do %>
         <section id="reconsider-results" class="space-y-6">
           <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-6 text-center">
             <p class="text-sm font-semibold uppercase tracking-wide text-indigo-700">
@@ -381,6 +402,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
             </div>
 
             <div
+              :if={response}
               id={"your-response-#{item.statement_id}"}
               class="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-3"
             >
