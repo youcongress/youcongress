@@ -73,6 +73,28 @@ defmodule YouCongress.Accounts.UserNotifier do
     deliver("hector@youcongress.org", "New YouCongress signup", text_body, html_body)
   end
 
+  @doc """
+  Notifies the YouCongress team when a Reconsider page is created.
+  """
+  def deliver_reconsideration_created_notification(creator_name, reconsideration_url) do
+    text_body = """
+    A new Reconsider page was created on YouCongress.
+
+    Creator: #{creator_name}
+    Page: #{reconsideration_url}
+    """
+
+    html_body =
+      build_html_email(
+        "New Reconsider page",
+        ["A new Reconsider page was created on YouCongress.", "Creator: #{creator_name}"],
+        "View Reconsider page",
+        reconsideration_url
+      )
+
+    deliver("hector@youcongress.org", "New YouCongress Reconsider page", text_body, html_body)
+  end
+
   defp build_html_email(title, paragraphs, button_label, button_url) do
     paragraph_markup =
       Enum.map_join(paragraphs, "\n", fn

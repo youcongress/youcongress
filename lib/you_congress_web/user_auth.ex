@@ -362,7 +362,7 @@ defmodule YouCongressWeb.UserAuth do
     do: :admin_or_moderator
 
   defp required_live_access(%{view: YouCongressWeb.ReconsiderLive.New}),
-    do: :creator_or_admin
+    do: :authenticated
 
   defp required_live_access(%{view: YouCongressWeb.WelcomeLive.Index}), do: :authenticated
   defp required_live_access(%{view: YouCongressWeb.StatementLive.AddQuote}), do: :authenticated
@@ -376,16 +376,10 @@ defmodule YouCongressWeb.UserAuth do
   defp access_allowed?(:admin, user), do: Accounts.admin?(user)
   defp access_allowed?(:admin_or_moderator, user), do: admin_or_moderator?(user)
 
-  defp access_allowed?(:creator_or_admin, user),
-    do: Accounts.Permissions.can_create_reconsideration?(user)
-
   defp access_denied_message(:admin), do: "You must be an admin to access this page."
 
   defp access_denied_message(:admin_or_moderator),
     do: "You must be an admin or moderator to access this page."
-
-  defp access_denied_message(:creator_or_admin),
-    do: "You must be a creator or admin to create a Reconsider page."
 
   defp live_access_denied(socket, message, path) do
     socket
@@ -428,17 +422,6 @@ defmodule YouCongressWeb.UserAuth do
       |> put_flash(:error, "You must log in to access this page.")
       |> maybe_store_return_to()
       |> redirect(to: ~p"/log_in")
-      |> halt()
-    end
-  end
-
-  def require_creator_or_admin_user(conn, _opts) do
-    if YouCongress.Accounts.Permissions.can_create_reconsideration?(conn.assigns[:current_user]) do
-      conn
-    else
-      conn
-      |> put_flash(:error, "You must be a creator or admin to create a Reconsider page.")
-      |> redirect(to: ~p"/")
       |> halt()
     end
   end

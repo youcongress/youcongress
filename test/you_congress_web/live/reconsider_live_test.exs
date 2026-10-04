@@ -229,8 +229,9 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     assert html =~ "self-reported result"
   end
 
-  test "an authenticated creator can build a shareable page", %{conn: conn} = context do
-    conn = log_in_user(conn, context.creator)
+  test "an authenticated user can build a shareable page", %{conn: conn} = context do
+    user = user_fixture() |> with_username()
+    conn = log_in_user(conn, user)
     {:ok, view, html} = live(conn, ~p"/reconsider/new")
     assert html =~ "Create a Reconsider page"
     refute html =~ "For creators"
@@ -255,7 +256,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
 
     render_submit(view, "save", params)
 
-    path = "/@#{context.creator.author.username}/r/a-second-city-streets-article"
+    path = "/@#{user.author.username}/r/a-second-city-streets-article"
     assert_redirect(view, path)
 
     {:ok, show_view, show_html} = live(conn, path)
@@ -453,11 +454,12 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     assert redirected_to(conn, 301) == reconsideration_path(context)
   end
 
-  test "a normal user cannot open the creation form", %{conn: conn} do
-    conn = conn |> log_in_user(user_fixture()) |> get(~p"/reconsider/new")
+  test "a normal user can open the creation form", %{conn: conn} do
+    user = user_fixture() |> with_username()
+    conn = log_in_user(conn, user)
 
-    assert redirected_to(conn) == ~p"/"
-    assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "creator or admin"
+    assert {:ok, _view, html} = live(conn, ~p"/reconsider/new")
+    assert html =~ "Create a Reconsider page"
   end
 
   test "an admin can open the creation form", %{conn: conn} do
@@ -468,12 +470,10 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     assert html =~ "Create a Reconsider page"
   end
 
-  test "a creator chooses a username before creating a page", %{conn: conn} do
-    {:ok, creator_without_username} =
-      user_fixture()
-      |> Accounts.update_role("creator")
+  test "a user chooses a username before creating a page", %{conn: conn} do
+    user_without_username = user_fixture()
 
-    conn = log_in_user(conn, creator_without_username)
+    conn = log_in_user(conn, user_without_username)
 
     assert {:error, {:redirect, %{to: "/settings"}}} = live(conn, ~p"/reconsider/new")
   end

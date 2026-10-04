@@ -9,8 +9,7 @@ defmodule YouCongress.Accounts.Permissions do
   def can_create_statement?(%User{role: "creator"}), do: true
   def can_create_statement?(_), do: false
 
-  def can_create_reconsideration?(%User{role: role}) when role in ["creator", "admin"],
-    do: true
+  def can_create_reconsideration?(%User{}), do: true
 
   def can_create_reconsideration?(_), do: false
 

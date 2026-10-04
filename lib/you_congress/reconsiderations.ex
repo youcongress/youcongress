@@ -23,6 +23,8 @@ defmodule YouCongress.Reconsiderations do
   alias YouCongress.Repo
   alias YouCongress.Statements.Statement
   alias YouCongress.Votes
+  alias YouCongress.Workers.ReconsiderationCreatedNotificationWorker
+  alias YouCongressWeb.Endpoint
 
   @answers [:for, :against, :abstain]
 
@@ -120,13 +122,23 @@ defmodule YouCongress.Reconsiderations do
           |> insert_or_rollback()
         end)
 
-        get_reconsideration!(reconsideration.id)
+        reconsideration = get_reconsideration!(reconsideration.id)
+        enqueue_created_notification(reconsideration)
+        reconsideration
       end)
       |> unwrap_transaction()
     else
       false -> {:error, "One or more statements or people could not be found."}
       {:error, _reason} = error -> error
     end
+  end
+
+  defp enqueue_created_notification(%Reconsideration{creator: creator} = reconsideration) do
+    ReconsiderationCreatedNotificationWorker.new(%{
+      "creator_name" => creator.name || creator.username || "Not provided",
+      "reconsideration_url" => Endpoint.url() <> "/@#{creator.username}/r/#{reconsideration.slug}"
+    })
+    |> Oban.insert!()
   end
 
   def submit_response(
