@@ -1,5 +1,6 @@
 defmodule YouCongress.ReconsiderationsTest do
   use YouCongress.DataCase, async: true
+  use Oban.Testing, repo: YouCongress.Repo
 
   import YouCongress.AccountsFixtures
   import YouCongress.AuthorsFixtures
@@ -305,6 +306,32 @@ defmodule YouCongress.ReconsiderationsTest do
            ]
 
     assert Enum.map(reconsideration.delegates, & &1.author_id) == [context.delegate.id]
+  end
+
+  test "queues a notification with the creator name and page URL", context do
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      assert {:ok, reconsideration} =
+               Reconsiderations.create_reconsideration(
+                 context.creator,
+                 %{
+                   "title" => "A newly created page",
+                   "content_url" => "https://example.com/newly-created",
+                   "content_type" => "article"
+                 },
+                 [context.first_statement.id],
+                 []
+               )
+
+      assert_enqueued(
+        worker: YouCongress.Workers.ReconsiderationCreatedNotificationWorker,
+        args: %{
+          "creator_name" => context.creator.author.name,
+          "reconsideration_url" =>
+            YouCongressWeb.Endpoint.url() <>
+              "/@#{context.creator.author.username}/r/#{reconsideration.slug}"
+        }
+      )
+    end)
   end
 
   test "rejects experiences with more than three statements", context do

@@ -112,7 +112,7 @@ defmodule YouCongressWeb.Router do
   end
 
   scope "/", YouCongressWeb do
-    pipe_through([:browser, :require_authenticated_user, :require_creator_or_admin_user])
+    pipe_through([:browser, :require_authenticated_user])
 
     live("/reconsider/new", ReconsiderLive.New, :new)
   end
