@@ -124,6 +124,47 @@ defmodule YouCongress.ReconsiderationsTest do
            ]
   end
 
+  test "removing a response also removes its current votes and selected delegates", context do
+    responses = %{
+      to_string(context.first_statement.id) => %{"before" => "against", "after" => "for"},
+      to_string(context.second_statement.id) => %{"before" => "for", "after" => "against"}
+    }
+
+    assert {:ok, _} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               context.participant,
+               responses,
+               [context.delegate.id]
+             )
+
+    assert {:ok, :removed} =
+             Reconsiderations.remove_response(context.reconsideration, context.participant)
+
+    refute Reconsiderations.participated?(
+             context.reconsideration.id,
+             context.participant.author_id
+           )
+
+    assert Reconsiderations.responses_for_author(
+             context.reconsideration.id,
+             context.participant.author_id
+           ) == []
+
+    assert Votes.get_by(
+             author_id: context.participant.author_id,
+             statement_id: context.first_statement.id
+           ) == nil
+
+    assert Votes.get_by(
+             author_id: context.participant.author_id,
+             statement_id: context.second_statement.id
+           ) == nil
+
+    refute Delegations.delegating?(context.participant.author_id, context.delegate.id)
+    assert Reconsiderations.stats(context.reconsideration).total_participants == 0
+  end
+
   test "counts only delegations selected through this Reconsider page", context do
     participant_with_existing_delegation = user_fixture()
 

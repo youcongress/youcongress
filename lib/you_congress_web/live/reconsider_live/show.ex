@@ -72,6 +72,30 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
     {:noreply, put_flash(socket, :error, "Choose a before and now answer for every statement.")}
   end
 
+  def handle_event("remove-response", _params, %{assigns: %{current_user: nil}} = socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("remove-response", _params, socket) do
+    case Reconsiderations.remove_response(
+           socket.assigns.reconsideration,
+           socket.assigns.current_user
+         ) do
+      {:ok, :removed} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Your response and delegations have been removed.")
+         |> assign_participation()}
+
+      {:error, :not_submitted} ->
+        {:noreply, assign_participation(socket)}
+
+      {:error, _reason} ->
+        {:noreply,
+         put_flash(socket, :error, "We could not remove your response. Please try again.")}
+    end
+  end
+
   defp submit_or_authenticate(%{assigns: %{current_user: nil}} = socket, params) do
     payload = %{
       delegate_ids: [],
@@ -471,6 +495,18 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                 </span>
               </div>
             </div>
+          </div>
+
+          <div :if={@completed} id="reconsider-response-actions" class="pt-2 text-center">
+            <button
+              id="remove-reconsider-response"
+              type="button"
+              phx-click="remove-response"
+              data-confirm="Remove your response and delegations? This will also remove your current votes on these statements."
+              class="text-sm font-semibold text-red-700 hover:text-red-600 hover:underline"
+            >
+              Remove my response and delegations
+            </button>
           </div>
         </section>
       <% else %>
