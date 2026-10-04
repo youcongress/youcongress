@@ -46,7 +46,10 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
        |> assign(:show_results, true)
        |> assign(:stats, Reconsiderations.stats(socket.assigns.reconsideration))}
     else
-      {:noreply, socket}
+      {:noreply,
+       socket
+       |> assign(:show_results, socket.assigns.completed)
+       |> assign(:stats, if(socket.assigns.completed, do: socket.assigns.stats, else: nil))}
     end
   end
 
@@ -258,6 +261,14 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
     "Did this #{content_label(reconsideration)} change your mind? Record your before and now positions."
   end
 
+  defp results_toggle_path(reconsideration, true, false) do
+    ~p"/@#{reconsideration.creator.username}/r/#{reconsideration.slug}"
+  end
+
+  defp results_toggle_path(reconsideration, _show_results, _completed) do
+    ~p"/@#{reconsideration.creator.username}/r/#{reconsideration.slug}?results=true"
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -275,6 +286,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
         <button
           type="button"
           data-copy-current-url
+          data-copy-url={@return_to}
           data-copy-success-label="Link copied!"
           aria-label="Copy link to your Reconsider page"
           class="inline-flex flex-none items-center justify-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
@@ -282,11 +294,12 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
           <.icon name="hero-link" class="h-4 w-4" /> Copy link
         </button>
         <.link
+          :if={!@completed}
           id="reconsider-see-results"
-          patch={~p"/@#{@reconsideration.creator.username}/r/#{@reconsideration.slug}?results=true"}
+          patch={results_toggle_path(@reconsideration, @show_results, @completed)}
           class="inline-flex flex-none items-center justify-center rounded-md border border-indigo-300 bg-white px-3 py-2 text-sm font-semibold text-indigo-700 shadow-sm hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
-          See results
+          {if @show_results and not @completed, do: "Hide results", else: "See results"}
         </.link>
       </section>
 

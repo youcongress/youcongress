@@ -85,7 +85,11 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
              "Add a link or button to this page in your article."
            )
 
-    assert has_element?(view, "#reconsider-share-banner [data-copy-current-url]", "Copy link")
+    assert has_element?(
+             view,
+             "#reconsider-share-banner [data-copy-current-url][data-copy-url='#{reconsideration_path(context)}']",
+             "Copy link"
+           )
   end
 
   test "the creator can see results without submitting a response", %{conn: conn} = context do
@@ -117,6 +121,38 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     assert_patch(view, reconsideration_path(context) <> "?results=true")
     assert has_element?(view, "#reconsider-results", "Community result")
     refute has_element?(view, "#your-response-#{context.statement.id}")
+    assert has_element?(view, "#reconsider-see-results", "Hide results")
+
+    view
+    |> element("#reconsider-see-results")
+    |> render_click()
+
+    assert_patch(view, reconsideration_path(context))
+    refute has_element?(view, "#reconsider-results")
+    assert has_element?(view, "#reconsider-see-results", "See results")
+  end
+
+  test "the creator who has submitted a response does not see a results toggle",
+       %{conn: conn} =
+         context do
+    assert {:ok, _} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               context.creator,
+               %{
+                 to_string(context.statement.id) => %{
+                   "before" => "against",
+                   "after" => "for"
+                 }
+               },
+               []
+             )
+
+    conn = log_in_user(conn, context.creator)
+    {:ok, view, _html} = live(conn, reconsideration_path(context))
+
+    assert has_element?(view, "#reconsider-results", "Community result")
+    refute has_element?(view, "#reconsider-see-results")
   end
 
   test "the creator sees video sharing instructions for a video page", %{conn: conn} = context do
