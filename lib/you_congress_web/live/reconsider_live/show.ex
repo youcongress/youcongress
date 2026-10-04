@@ -22,6 +22,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
       socket
       |> assign(:current_user, current_user)
       |> assign(:reconsideration, reconsideration)
+      |> assign(:is_creator, creator?(current_user, reconsideration))
       |> assign(:return_to, return_to)
       |> assign(:answers, @answers)
       |> assign(:form_params, %{"answers" => %{}, "delegate_ids" => []})
@@ -180,6 +181,19 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
   defp content_label(%{content_type: :video}), do: "video"
   defp content_label(_), do: "article"
 
+  defp creator?(%{author_id: author_id}, %{creator_id: author_id}) when not is_nil(author_id),
+    do: true
+
+  defp creator?(_current_user, _reconsideration), do: false
+
+  defp share_instruction(%{content_type: :video}) do
+    "Add this link to your video's description or pin it in a comment."
+  end
+
+  defp share_instruction(_reconsideration) do
+    "Add a link or button to this page in your article."
+  end
+
   defp youtube_embed_url(%{content_type: :video, content_url: content_url}) do
     with %URI{host: host} = uri <- URI.parse(content_url),
          host when is_binary(host) <- normalize_host(host),
@@ -234,6 +248,27 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+      <section
+        :if={@is_creator}
+        id="reconsider-share-banner"
+        aria-label="Share your Reconsider page"
+        class="mb-8 flex flex-col gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 sm:flex-row sm:items-center"
+      >
+        <div class="flex-1 text-sm text-indigo-950">
+          <p class="font-semibold">Share this link with your audience</p>
+          <p class="mt-0.5 text-indigo-800">{share_instruction(@reconsideration)}</p>
+        </div>
+        <button
+          type="button"
+          data-copy-current-url
+          data-copy-success-label="Link copied!"
+          aria-label="Copy link to your Reconsider page"
+          class="inline-flex flex-none items-center justify-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        >
+          <.icon name="hero-link" class="h-4 w-4" /> Copy link
+        </button>
+      </section>
+
       <div class="mb-8 text-center">
         <p class="mb-2 text-sm font-semibold uppercase tracking-wide text-indigo-600">Reconsider</p>
         <h1 class="text-3xl font-bold tracking-tight text-gray-900">{@reconsideration.title}</h1>

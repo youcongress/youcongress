@@ -42,6 +42,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     assert html =~ "Rethinking city streets"
     assert html =~ "Before this article"
     assert has_element?(view, "#reconsider-creator-attribution", "Created on YouCongress by")
+    refute has_element?(view, "#reconsider-share-banner")
     refute html =~ "Sign in to record your response"
 
     params = %{
@@ -61,6 +62,46 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     assert html =~ URI.encode_www_form(reconsideration_path(context))
     refute html =~ "Log in with email/password"
     refute html =~ "Community result"
+  end
+
+  test "the creator sees a share banner with article instructions", %{conn: conn} = context do
+    conn = log_in_user(conn, context.creator)
+    {:ok, view, _html} = live(conn, reconsideration_path(context))
+
+    assert has_element?(view, "#reconsider-share-banner", "Share this link with your audience")
+
+    assert has_element?(
+             view,
+             "#reconsider-share-banner",
+             "Add a link or button to this page in your article."
+           )
+
+    assert has_element?(view, "#reconsider-share-banner [data-copy-current-url]", "Copy link")
+  end
+
+  test "the creator sees video sharing instructions for a video page", %{conn: conn} = context do
+    {:ok, reconsideration} =
+      Reconsiderations.create_reconsideration(
+        context.creator,
+        %{
+          "title" => "A case presented on video",
+          "content_url" => "https://www.youtube.com/watch?v=RIJJB5B2lHU",
+          "content_type" => "video"
+        },
+        [context.statement.id],
+        []
+      )
+
+    conn = log_in_user(conn, context.creator)
+
+    {:ok, view, _html} =
+      live(conn, "/@#{context.creator.author.username}/r/#{reconsideration.slug}")
+
+    assert has_element?(
+             view,
+             "#reconsider-share-banner",
+             "Add this link to your video's description or pin it in a comment."
+           )
   end
 
   test "embeds a YouTube video instead of linking to the original video",
