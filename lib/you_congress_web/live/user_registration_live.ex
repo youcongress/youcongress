@@ -669,8 +669,7 @@ defmodule YouCongressWeb.UserRegistrationLive do
     email = params["email"]
     name = params["name"]
 
-    with {:ok, user} <- Accounts.update_x_user_email(user, email),
-         {:ok, _author} <- YouCongress.Authors.update_author(user.author, %{name: name}) do
+    with {:ok, user} <- Accounts.complete_x_user_profile(user, email, name) do
       Track.event("X profile completed", user)
 
       Accounts.deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))

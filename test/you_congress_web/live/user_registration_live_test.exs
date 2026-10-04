@@ -41,6 +41,13 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
       assert Repo.get_by(UserToken, user_id: user.id, context: "magic_login")
 
       assert_email_sent(fn email_message ->
+        assert email_message.to == [{"", "hector@youcongress.org"}]
+        assert email_message.subject == "New YouCongress signup"
+        assert email_message.text_body =~ "Name: New User"
+        assert email_message.text_body =~ "Email: #{email}"
+      end)
+
+      assert_email_sent(fn email_message ->
         assert email_message.subject == "Confirm your YouCongress email"
         assert email_message.text_body =~ "Confirm your email"
         assert email_message.html_body =~ ">Confirm your email</a>"
@@ -56,6 +63,12 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
       lv
       |> form("#registration_form", user: %{name: "Reconsider participant", email: email})
       |> render_submit()
+
+      assert_email_sent(fn email_message ->
+        assert email_message.subject == "New YouCongress signup"
+        assert email_message.text_body =~ "Name: Reconsider participant"
+        assert email_message.text_body =~ "Email: #{email}"
+      end)
 
       assert_email_sent(fn email_message ->
         assert email_message.text_body =~

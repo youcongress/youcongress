@@ -10,7 +10,7 @@ defmodule YouCongress.Accounts do
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors.Author
   alias YouCongress.Countries
-  alias YouCongress.Workers.AccountEmailWorker
+  alias YouCongress.Workers.{AccountEmailWorker, NewUserSignupNotificationWorker}
 
   ## Database getters
 
@@ -142,6 +142,7 @@ defmodule YouCongress.Accounts do
     |> Ecto.Multi.insert(:user, fn %{author: author} ->
       User.password_registration_changeset(%User{}, Map.put(user_attrs, "author_id", author.id))
     end)
+    |> enqueue_new_user_signup_notification()
     |> Repo.transaction()
   end
 
@@ -161,6 +162,7 @@ defmodule YouCongress.Accounts do
         Map.put(user_attrs, "author_id", author.id)
       )
     end)
+    |> enqueue_new_user_signup_notification()
     |> Repo.transaction()
   end
 
@@ -208,6 +210,7 @@ defmodule YouCongress.Accounts do
     |> Ecto.Multi.insert(:user, fn %{author: author} ->
       User.google_registration_changeset(%User{}, Map.put(user_attrs, "author_id", author.id))
     end)
+    |> enqueue_new_user_signup_notification()
     |> Repo.transaction()
   end
 
@@ -231,7 +234,35 @@ defmodule YouCongress.Accounts do
         Map.put(user_attrs, "author_id", updated_author.id)
       )
     end)
+    |> enqueue_new_user_signup_notification()
     |> Repo.transaction()
+  end
+
+  @doc """
+  Completes an X signup by saving the user's email and confirmed display name.
+  The signup notification is stored in the same transaction as those changes.
+  """
+  def complete_x_user_profile(%User{} = user, email, name) do
+    user = Repo.preload(user, :author)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, User.x_profile_email_changeset(user, %{email: email}))
+    |> Ecto.Multi.update(:author, Author.changeset(user.author, %{name: name}))
+    |> enqueue_new_user_signup_notification()
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: updated_user}} -> {:ok, Repo.preload(updated_user, :author, force: true)}
+      {:error, _operation, changeset, _changes} -> {:error, changeset}
+    end
+  end
+
+  defp enqueue_new_user_signup_notification(multi) do
+    Oban.insert(multi, :new_user_signup_notification, fn %{user: user, author: author} ->
+      NewUserSignupNotificationWorker.new(%{
+        "name" => author.name || "Not provided",
+        "email" => user.email || "Not provided"
+      })
+    end)
   end
 
   defp stringify_keys(map) when is_map(map) do
