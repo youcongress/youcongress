@@ -475,7 +475,16 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
 
     conn = log_in_user(conn, user_without_username)
 
-    assert {:error, {:redirect, %{to: "/settings"}}} = live(conn, ~p"/reconsider/new")
+    assert {:error, {:redirect, %{to: "/settings?return_to=%2Freconsider%2Fnew"}}} =
+             live(conn, ~p"/reconsider/new")
+
+    {:ok, settings_view, _html} = live(conn, ~p"/settings?return_to=/reconsider/new")
+
+    render_submit(settings_view, "save_username", %{
+      "author" => %{"username" => "new_creator"}
+    })
+
+    assert_redirect(settings_view, "/reconsider/new")
   end
 
   defp creator_fixture do

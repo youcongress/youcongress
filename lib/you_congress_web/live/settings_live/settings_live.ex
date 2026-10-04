@@ -4,15 +4,17 @@ defmodule YouCongressWeb.SettingsLive do
   alias YouCongress.Accounts.ApiKey
   alias YouCongress.{Accounts, Authors, Countries}
   alias YouCongress.Newsletters
+  alias YouCongressWeb.ReturnTo
 
   @impl true
-  def mount(_params, session, socket) do
+  def mount(params, session, socket) do
     socket =
       socket
       |> assign_current_user(session["user_token"])
       |> assign_api_keys()
       |> assign_profile_author()
       |> assign_country_options()
+      |> assign(:return_to, ReturnTo.sanitize(params["return_to"]))
 
     {:ok, assign_profile_forms(socket)}
   end
@@ -119,7 +121,8 @@ defmodule YouCongressWeb.SettingsLive do
          |> assign_profile_author(author)
          |> assign(:current_user, %{socket.assigns.current_user | author: author})
          |> assign_profile_forms()
-         |> put_flash(:info, "Settings updated successfully")}
+         |> put_flash(:info, "Settings updated successfully")
+         |> redirect_after_username_save(allowed_fields)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form_name, to_form(changeset))}
@@ -134,6 +137,15 @@ defmodule YouCongressWeb.SettingsLive do
       Authors.change_profile_author(author(socket), profile_fields(socket))
     )
   end
+
+  defp redirect_after_username_save(socket, [:username]) do
+    case socket.assigns.return_to do
+      nil -> socket
+      return_to -> redirect(socket, to: return_to)
+    end
+  end
+
+  defp redirect_after_username_save(socket, _allowed_fields), do: socket
 
   defp assign_username_form(socket, %Ecto.Changeset{} = changeset) do
     assign(socket, :username_form, to_form(changeset))

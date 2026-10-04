@@ -17,7 +17,7 @@ defmodule YouCongressWeb.ReconsiderLive.New do
       {:ok,
        socket
        |> put_flash(:error, "Choose a YouCongress username before creating a Reconsider page.")
-       |> redirect(to: ~p"/settings")}
+       |> redirect(to: ~p"/settings?#{%{return_to: "/reconsider/new"}}")}
     else
       mount_form(socket)
     end
