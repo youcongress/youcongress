@@ -85,7 +85,9 @@ function setupCopyButtons() {
     let text = ""
 
     if (button.hasAttribute("data-copy-current-url")) {
-      text = window.location.href
+      text = button.dataset.copyUrl
+        ? new URL(button.dataset.copyUrl, window.location.origin).href
+        : window.location.href
     } else {
       const targetId = button.dataset.copyTarget
       if (!targetId) return
