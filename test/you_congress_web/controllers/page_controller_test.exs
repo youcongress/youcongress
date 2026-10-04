@@ -2,6 +2,50 @@ defmodule YouCongressWeb.PageControllerTest do
   use YouCongressWeb.ConnCase, async: true
 
   import YouCongress.StatementsFixtures
+  import YouCongress.OpinionsFixtures
+
+  describe "GET /status/24h" do
+    test "returns OK for a positively verified quote dated today", %{conn: conn} do
+      opinion_fixture(%{
+        verification_status: :verified,
+        date: Date.utc_today(),
+        date_precision: :day
+      })
+
+      conn = get(conn, ~p"/status/24h")
+
+      assert response(conn, 200) == "OK"
+      assert get_resp_header(conn, "content-type") == ["text/plain; charset=utf-8"]
+    end
+
+    test "returns the latest positive quote date when no quote is recent", %{conn: conn} do
+      latest_date = Date.add(Date.utc_today(), -2)
+
+      opinion_fixture(%{
+        verification_status: :verified,
+        date: latest_date,
+        date_precision: :day
+      })
+
+      opinion_fixture(%{
+        verification_status: :disputed,
+        date: Date.utc_today(),
+        date_precision: :day
+      })
+
+      conn = get(conn, ~p"/status/24h")
+
+      assert response(conn, 200) == Date.to_iso8601(latest_date)
+    end
+
+    test "reports that no dated verified quote exists", %{conn: conn} do
+      opinion_fixture(%{verification_status: :verified, date: nil})
+
+      conn = get(conn, ~p"/status/24h")
+
+      assert response(conn, 200) == "No verified quote date available"
+    end
+  end
 
   test "GET / loads successfully", %{conn: conn} do
     conn = get(conn, ~p"/")
