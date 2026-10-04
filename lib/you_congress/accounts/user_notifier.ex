@@ -54,20 +54,20 @@ defmodule YouCongress.Accounts.UserNotifier do
   @doc """
   Notifies the YouCongress team when a new account is created.
   """
-  def deliver_new_user_signup_notification(name, email) do
+  def deliver_new_user_signup_notification(name, profile_url) do
     text_body = """
     A new user signed up for YouCongress.
 
     Name: #{name}
-    Email: #{email}
+    Profile: #{profile_url}
     """
 
     html_body =
       build_html_email(
         "New user signup",
-        ["A new user signed up for YouCongress.", "Name: #{name}", "Email: #{email}"],
-        nil,
-        nil
+        ["A new user signed up for YouCongress.", "Name: #{name}"],
+        "View profile",
+        profile_url
       )
 
     deliver("hector@youcongress.org", "New YouCongress signup", text_body, html_body)

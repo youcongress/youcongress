@@ -11,6 +11,7 @@ defmodule YouCongress.Accounts do
   alias YouCongress.Authors.Author
   alias YouCongress.Countries
   alias YouCongress.Workers.{AccountEmailWorker, NewUserSignupNotificationWorker}
+  alias YouCongressWeb.Endpoint
 
   ## Database getters
 
@@ -257,13 +258,20 @@ defmodule YouCongress.Accounts do
   end
 
   defp enqueue_new_user_signup_notification(multi) do
-    Oban.insert(multi, :new_user_signup_notification, fn %{user: user, author: author} ->
+    Oban.insert(multi, :new_user_signup_notification, fn %{user: _user, author: author} ->
       NewUserSignupNotificationWorker.new(%{
         "name" => author.name || "Not provided",
-        "email" => user.email || "Not provided"
+        "profile_url" => profile_url(author)
       })
     end)
   end
+
+  defp profile_url(%Author{twitter_username: username})
+       when is_binary(username) and username != "" do
+    Endpoint.url() <> "/x/" <> username
+  end
+
+  defp profile_url(%Author{id: author_id}), do: Endpoint.url() <> "/a/#{author_id}"
 
   defp stringify_keys(map) when is_map(map) do
     Map.new(map, fn {k, v} -> {to_string(k), v} end)

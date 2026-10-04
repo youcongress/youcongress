@@ -44,7 +44,12 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
         assert email_message.to == [{"", "hector@youcongress.org"}]
         assert email_message.subject == "New YouCongress signup"
         assert email_message.text_body =~ "Name: New User"
-        assert email_message.text_body =~ "Email: #{email}"
+
+        assert email_message.text_body =~
+                 "Profile: #{YouCongressWeb.Endpoint.url()}/a/#{user.author_id}"
+
+        refute email_message.text_body =~ email
+        true
       end)
 
       assert_email_sent(fn email_message ->
@@ -67,7 +72,8 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
       assert_email_sent(fn email_message ->
         assert email_message.subject == "New YouCongress signup"
         assert email_message.text_body =~ "Name: Reconsider participant"
-        assert email_message.text_body =~ "Email: #{email}"
+        refute email_message.text_body =~ email
+        true
       end)
 
       assert_email_sent(fn email_message ->

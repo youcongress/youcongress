@@ -7,25 +7,35 @@ defmodule YouCongress.Workers.NewUserSignupNotificationWorkerTest do
   alias YouCongress.Accounts
   alias YouCongress.Workers.NewUserSignupNotificationWorker
 
-  test "emails Hector with the new user's name and email" do
+  test "emails Hector with the new user's name and profile link" do
     assert :ok =
              NewUserSignupNotificationWorker.perform(%Oban.Job{
-               args: %{"name" => "Ada Lovelace", "email" => "ada@example.com"}
+               args: %{
+                 "name" => "Ada Lovelace",
+                 "profile_url" => "https://youcongress.org/a/42"
+               }
              })
 
     assert_email_sent(fn email ->
       assert email.to == [{"", "hector@youcongress.org"}]
       assert email.subject == "New YouCongress signup"
       assert email.text_body =~ "Name: Ada Lovelace"
-      assert email.text_body =~ "Email: ada@example.com"
+      assert email.text_body =~ "Profile: https://youcongress.org/a/42"
       assert email.html_body =~ "Name: Ada Lovelace"
-      assert email.html_body =~ "Email: ada@example.com"
+      assert email.html_body =~ ~s(href="https://youcongress.org/a/42")
+      refute email.text_body =~ "ada@example.com"
+      refute email.html_body =~ "ada@example.com"
+      true
     end)
   end
 
   test "queues the notification after an X user provides their profile details" do
     {:ok, %{user: user}} =
-      Accounts.x_register_user(%{}, %{name: "Initial X Name", twin_origin: false})
+      Accounts.x_register_user(%{}, %{
+        name: "Initial X Name",
+        twitter_username: "initial_x_name",
+        twin_origin: false
+      })
 
     Oban.Testing.with_testing_mode(:manual, fn ->
       assert {:ok, updated_user} =
@@ -37,7 +47,10 @@ defmodule YouCongress.Workers.NewUserSignupNotificationWorkerTest do
 
     assert_enqueued(
       worker: NewUserSignupNotificationWorker,
-      args: %{"name" => "Updated X Name", "email" => "x-user@example.com"}
+      args: %{
+        "name" => "Updated X Name",
+        "profile_url" => YouCongressWeb.Endpoint.url() <> "/x/initial_x_name"
+      }
     )
   end
 end
