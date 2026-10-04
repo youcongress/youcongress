@@ -3,7 +3,7 @@ defmodule YouCongress.Reconsiderations do
   Creator-led before-and-after voting experiences.
 
   A participant's current position continues to live in `votes`. This context stores the
-  self-reported before/after pair so campaign results remain historically stable.
+  self-reported before/after pair used for campaign results.
   """
 
   import Ecto.Query, warn: false
@@ -167,6 +167,49 @@ defmodule YouCongress.Reconsiderations do
     end
   end
 
+  def remove_response(%Reconsideration{} = reconsideration, %User{} = user) do
+    responses = responses_for_author(reconsideration.id, user.author_id)
+
+    if responses == [] do
+      {:error, :not_submitted}
+    else
+      selections =
+        Repo.all(
+          from selection in DelegateSelection,
+            where:
+              selection.reconsideration_id == ^reconsideration.id and
+                selection.participant_author_id == ^user.author_id
+        )
+
+      Repo.transaction(fn ->
+        Enum.each(responses, fn response ->
+          Votes.delete_vote(%{statement_id: response.statement_id, author_id: user.author_id})
+        end)
+
+        Enum.each(selections, fn selection ->
+          remove_delegation(user, selection.delegate_author_id)
+        end)
+
+        Repo.delete_all(
+          from response in Response,
+            where:
+              response.reconsideration_id == ^reconsideration.id and
+                response.author_id == ^user.author_id
+        )
+
+        Repo.delete_all(
+          from selection in DelegateSelection,
+            where:
+              selection.reconsideration_id == ^reconsideration.id and
+                selection.participant_author_id == ^user.author_id
+        )
+
+        :removed
+      end)
+      |> unwrap_transaction()
+    end
+  end
+
   defp persist_response(reconsideration, user, responses, delegate_ids) do
     saved_responses = Enum.map(responses, &persist_answer(reconsideration, user, &1))
     Enum.each(responses, &persist_vote(user, &1))
@@ -210,6 +253,15 @@ defmodule YouCongress.Reconsiderations do
 
     unless Delegations.delegating?(user.author_id, delegate_id) do
       case Delegations.create_delegation(user, delegate_id) do
+        {:ok, _delegation} -> :ok
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end
+  end
+
+  defp remove_delegation(user, delegate_id) do
+    if Delegations.delegating?(user.author_id, delegate_id) do
+      case Delegations.delete_delegation(user, delegate_id) do
         {:ok, _delegation} -> :ok
         {:error, reason} -> Repo.rollback(reason)
       end

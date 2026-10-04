@@ -303,6 +303,21 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
            )
 
     assert html =~ "self-reported result"
+
+    assert has_element?(
+             view,
+             "#remove-reconsider-response",
+             "Remove my response and delegations"
+           )
+
+    html =
+      view
+      |> element("#remove-reconsider-response")
+      |> render_click()
+
+    assert html =~ "Your response and delegations have been removed."
+    assert has_element?(view, "#reconsider-form")
+    refute has_element?(view, "#reconsider-results")
   end
 
   test "an authenticated user can build a shareable page", %{conn: conn} = context do
