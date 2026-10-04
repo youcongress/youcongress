@@ -92,6 +92,40 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
            )
   end
 
+  test "an admin can share a reconsideration and see its results without responding",
+       %{
+         conn: conn
+       } = context do
+    participant = user_fixture()
+    admin = admin_fixture()
+
+    assert {:ok, _} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               participant,
+               %{
+                 to_string(context.statement.id) => %{
+                   "before" => "against",
+                   "after" => "for"
+                 }
+               },
+               []
+             )
+
+    conn = log_in_user(conn, admin)
+    {:ok, view, _html} = live(conn, reconsideration_path(context))
+
+    assert has_element?(view, "#reconsider-share-banner", "Share this link with your audience")
+    assert has_element?(view, "#reconsider-see-results", "See results")
+
+    view
+    |> element("#reconsider-see-results")
+    |> render_click()
+
+    assert_patch(view, reconsideration_path(context) <> "?results=true")
+    assert has_element?(view, "#reconsider-results", "Community result")
+  end
+
   test "the creator can see results without submitting a response", %{conn: conn} = context do
     participant = user_fixture()
 
