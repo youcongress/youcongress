@@ -219,7 +219,6 @@ defmodule YouCongressWeb.ReconsiderLive.New do
       {:ok, reconsideration} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Your Reconsider page is ready to share.")
          |> push_navigate(
            to: ~p"/@#{socket.assigns.current_user.author.username}/r/#{reconsideration.slug}"
          )}
