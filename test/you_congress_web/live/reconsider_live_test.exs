@@ -64,6 +64,15 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     refute html =~ "Community result"
   end
 
+  test "a visitor is directed to sign up before creating a Reconsider page", %{conn: conn} do
+    assert {:error,
+            {:redirect,
+             %{
+               flash: %{"error" => "You must sign up to access this page."},
+               to: "/sign_up?return_to=%2Freconsider%2Fnew"
+             }}} = live(conn, ~p"/reconsider/new")
+  end
+
   test "the creator sees a share banner with article instructions", %{conn: conn} = context do
     conn = log_in_user(conn, context.creator)
     {:ok, view, _html} = live(conn, reconsideration_path(context))
