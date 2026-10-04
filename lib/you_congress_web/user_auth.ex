@@ -426,6 +426,21 @@ defmodule YouCongressWeb.UserAuth do
     end
   end
 
+  @doc """
+  Used for creation routes where a visitor should be directed to registration.
+  """
+  def require_authenticated_user_or_sign_up(conn, _opts) do
+    if conn.assigns[:current_user] do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You must sign up to access this page.")
+      |> maybe_store_return_to()
+      |> redirect(to: ReturnTo.sign_up_path(current_path(conn)))
+      |> halt()
+    end
+  end
+
   def require_admin_user(conn, _opts) do
     if YouCongress.Accounts.admin?(conn.assigns[:current_user]) do
       conn
