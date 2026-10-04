@@ -51,6 +51,28 @@ defmodule YouCongress.Accounts.UserNotifier do
     )
   end
 
+  @doc """
+  Notifies the YouCongress team when a new account is created.
+  """
+  def deliver_new_user_signup_notification(name, email) do
+    text_body = """
+    A new user signed up for YouCongress.
+
+    Name: #{name}
+    Email: #{email}
+    """
+
+    html_body =
+      build_html_email(
+        "New user signup",
+        ["A new user signed up for YouCongress.", "Name: #{name}", "Email: #{email}"],
+        nil,
+        nil
+      )
+
+    deliver("hector@youcongress.org", "New YouCongress signup", text_body, html_body)
+  end
+
   defp build_html_email(title, paragraphs, button_label, button_url) do
     paragraph_markup =
       Enum.map_join(paragraphs, "\n", fn
