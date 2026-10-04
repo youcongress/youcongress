@@ -2,6 +2,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
   use YouCongressWeb, :live_view
 
   alias YouCongress.Delegations
+  alias YouCongress.Accounts
   alias YouCongress.Reconsiderations
   alias YouCongressWeb.Components.LoginButtons
   alias YouCongressWeb.SEO
@@ -22,7 +23,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
       socket
       |> assign(:current_user, current_user)
       |> assign(:reconsideration, reconsideration)
-      |> assign(:is_creator, creator?(current_user, reconsideration))
+      |> assign(:can_manage_reconsideration, manager?(current_user, reconsideration))
       |> assign(:return_to, return_to)
       |> assign(:answers, @answers)
       |> assign(:form_params, %{"answers" => %{}, "delegate_ids" => []})
@@ -40,7 +41,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
 
   @impl true
   def handle_params(params, _url, socket) do
-    if socket.assigns.is_creator and params["results"] == "true" do
+    if socket.assigns.can_manage_reconsideration and params["results"] == "true" do
       {:noreply,
        socket
        |> assign(:show_results, true)
@@ -227,6 +228,10 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
 
   defp creator?(_current_user, _reconsideration), do: false
 
+  defp manager?(current_user, reconsideration) do
+    creator?(current_user, reconsideration) or Accounts.admin?(current_user)
+  end
+
   defp share_instruction(%{content_type: :video}) do
     "Add this link to your video's description or pin it in a comment."
   end
@@ -298,7 +303,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
     ~H"""
     <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6">
       <section
-        :if={@is_creator}
+        :if={@can_manage_reconsideration}
         id="reconsider-share-banner"
         aria-label="Share your Reconsider page"
         class="mb-8 flex flex-col gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 sm:flex-row sm:items-center"
