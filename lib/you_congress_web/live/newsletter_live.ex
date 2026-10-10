@@ -15,14 +15,20 @@ defmodule YouCongressWeb.NewsletterLive do
         <:subtitle>AI governance, safety, jobs, and product updates.</:subtitle>
       </.header>
 
-      <iframe
-        id="substack-signup"
-        src="https://youcongress.substack.com/embed"
-        title="Subscribe to the YouCongress newsletter on Substack"
-        class="mt-6 h-80 w-full border border-zinc-200 bg-white"
-        scrolling="no"
-      >
-      </iframe>
+      <div class="mt-6 rounded-lg border border-zinc-200 bg-white p-6 text-center shadow-sm">
+        <p class="text-sm leading-6 text-zinc-600">
+          Subscriptions are managed securely by Substack.
+        </p>
+        <.link
+          id="substack-signup"
+          href="https://youcongress.substack.com/subscribe"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-4 inline-flex rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+        >
+          Subscribe on Substack
+        </.link>
+      </div>
     </div>
     """
   end

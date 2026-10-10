@@ -35,7 +35,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
   @impl true
   def render(assigns) do
     ~H"""
-    <main class="mx-auto max-w-5xl px-4 pb-10 sm:px-6 sm:pb-16">
+    <div class="mx-auto max-w-5xl px-4 pb-10 sm:px-6 sm:pb-16">
       <.motion_ad contact_path={beta_contact_path()} />
 
       <section class="mx-auto mt-12 max-w-3xl text-center sm:mt-16">
@@ -196,7 +196,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
                     </span>
                     <span>
                       <span class="block text-sm font-medium text-gray-900">Dr. Maya Chen</span>
-                      <span class="block text-xs text-gray-500">
+                      <span class="block text-xs text-gray-600">
                         Energy expert featured in the video
                       </span>
                     </span>
@@ -228,7 +228,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
               <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">
                 Example results
               </p>
-              <p class="mt-2 text-4xl font-bold text-gray-900">75%</p>
+              <p class="mt-2"><strong class="text-4xl text-gray-900">75%</strong></p>
               <p class="mt-1 text-sm text-gray-700">
                 of 60 participants changed their position.
               </p>
@@ -315,7 +315,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
           Contact YouCongress
         </.link>
       </section>
-    </main>
+    </div>
     """
   end
 
@@ -361,6 +361,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
             <p class="reconsider-motion-ad__statement ad-up">Slow down AI development.</p>
             <div
               class="reconsider-motion-ad__choices ad-up ad-delay-short"
+              role="group"
               aria-label="Example vote: Against"
             >
               <span>For</span><span>Abstain</span><span class="ad-pick-against">Against</span>
@@ -388,7 +389,11 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
           <div class="reconsider-motion-ad__scene" data-ad-scene hidden>
             <p class="reconsider-motion-ad__eyebrow ad-fade">Step 3 · Vote now</p>
             <p class="reconsider-motion-ad__statement ad-fade">Slow down AI development.</p>
-            <div class="reconsider-motion-ad__choices" aria-label="Example vote changes to For">
+            <div
+              class="reconsider-motion-ad__choices"
+              role="group"
+              aria-label="Example vote changes to For"
+            >
               <span class="ad-pick-for">For</span><span>Abstain</span><span class="ad-unpick">Against</span>
             </div>
             <div class="reconsider-motion-ad__change">
@@ -468,7 +473,12 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
             <svg data-ad-pause-icon viewBox="0 0 24 24" aria-hidden="true">
               <path d="M8 5v14M16 5v14" />
             </svg>
-            <svg data-ad-play-icon viewBox="0 0 24 24" aria-hidden="true" hidden>
+            <svg
+              data-ad-play-icon
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              style="display: none;"
+            >
               <path d="M7 5v14l12-7z" />
             </svg>
           </button>
