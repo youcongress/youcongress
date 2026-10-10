@@ -55,7 +55,7 @@ defmodule YouCongressWeb.LatestLiveTest do
         date_precision: :day
       )
 
-      {:ok, _view, html} = live(conn, ~p"/")
+      {:ok, view, html} = live(conn, ~p"/")
 
       assert html =~ "new in AI governance, safety, jobs and society"
       assert html =~ "AI Safety Statement"
@@ -66,6 +66,7 @@ defmodule YouCongressWeb.LatestLiveTest do
       assert html =~ "Want to see how articles and videos change minds?"
       assert html =~ ~s(href="/reconsider")
       assert html =~ "Check out Reconsider."
+      assert has_element?(view, "#latest-date-group-0 span.text-gray-600", "1")
 
       assert html =~
                ~r{href="/explore"[^>]*>Explore</a>,\s*<a[^>]*href="/explore"[^>]*>search</a>}

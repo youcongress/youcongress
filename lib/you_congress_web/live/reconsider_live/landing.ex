@@ -228,7 +228,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
               <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">
                 Example results
               </p>
-              <p class="mt-2"><strong class="text-4xl text-gray-900">75%</strong></p>
+              <div class="mt-2 text-4xl font-bold text-gray-900">75%</div>
               <p class="mt-1 text-sm text-gray-700">
                 of 60 participants changed their position.
               </p>

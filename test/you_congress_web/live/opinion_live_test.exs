@@ -148,6 +148,12 @@ defmodule YouCongressWeb.OpinionLiveTest do
 
       assert has_element?(
                view,
+               "#other-opinions article[data-testid='other-opinion'] h3",
+               "Other statement 4"
+             )
+
+      assert has_element?(
+               view,
                "#other-opinions img[src='https://example.com/featured-author.jpg']"
              )
 
