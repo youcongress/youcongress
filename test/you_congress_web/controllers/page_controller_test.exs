@@ -89,6 +89,7 @@ defmodule YouCongressWeb.PageControllerTest do
     assert html =~ "About YouCongress"
     assert html =~ ~s(href="/contact")
     assert html =~ "contact us"
+    assert html =~ ~s(href="/future-of-life-foundation-epistack-award")
   end
 
   test "GET /about loads as a user", %{conn: conn} do
@@ -97,9 +98,47 @@ defmodule YouCongressWeb.PageControllerTest do
     assert html_response(conn, 200) =~ "About YouCongress"
   end
 
+  test "GET /future-of-life-foundation-epistack-award shows the award announcement", %{conn: conn} do
+    conn = get(conn, ~p"/future-of-life-foundation-epistack-award")
+    html = html_response(conn, 200)
+
+    assert html =~ "YouCongress wins a $5,000 award"
+    assert html =~ "https://youcongress.substack.com/p/our-youcongress-entry-won-a-5000"
+    assert html =~ "https://flf.org/epistack-competition/"
+    assert html =~ ~s(href="/h/flf-epistack")
+    assert html =~ "https://www.oliversourbut.net/p/flfs-epistemic-case-study-competition"
+    assert html =~ "https://www.oliversourbut.net/"
+
+    assert html =~
+             "https://forum.effectivealtruism.org/posts/eadfvJH8HBQLgdMKQ/flf-s-epistemic-case-study-competition-results"
+
+    assert html =~
+             "https://www.lesswrong.com/posts/mxzvL3hYFCcutQqcR/flf-s-epistemic-case-study-competition-results"
+
+    assert html =~ ~s(src="/images/future-of-life-foundation-award.png")
+    assert html =~ ~s(<meta property="og:type" content="article")
+
+    assert html =~
+             ~s(<meta property="og:image" content="#{YouCongressWeb.Endpoint.url()}/images/future-of-life-foundation-award.png")
+
+    assert html =~ ~s(<meta name="twitter:card" content="summary_large_image")
+
+    assert html =~
+             ~s(<meta name="twitter:image" content="#{YouCongressWeb.Endpoint.url()}/images/future-of-life-foundation-award.png")
+
+    assert html =~
+             ~s(<meta property="og:url" content="#{YouCongressWeb.Endpoint.url()}/future-of-life-foundation-epistack-award")
+  end
+
   test "GET /faq loads successfully", %{conn: conn} do
     conn = get(conn, ~p"/faq")
-    assert html_response(conn, 200) =~ "Frequently asked questions"
+    html = html_response(conn, 200)
+
+    assert html =~ "Frequently asked questions"
+    assert html =~ "Who funds YouCongress?"
+    assert html =~ ~s(href="https://www.linkedin.com/in/hectorperezarenas/")
+    assert html =~ ~s(>self-funded</a>)
+    assert html =~ ~s(href="/future-of-life-foundation-epistack-award")
   end
 
   test "GET /faq explains verification badge states", %{conn: conn} do

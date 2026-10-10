@@ -51,6 +51,13 @@ defmodule YouCongressWeb.Router do
 
     get("/waiting_list", PageController, :waiting_list)
     get("/about", PageController, :about)
+
+    get(
+      "/future-of-life-foundation-epistack-award",
+      PageController,
+      :future_of_life_foundation_award
+    )
+
     get("/faq", PageController, :faq)
     get("/mcp-tools", PageController, :mcp_tools)
     get("/mcp/claude", PageController, :mcp_claude)
