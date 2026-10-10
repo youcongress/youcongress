@@ -44,6 +44,7 @@ defmodule YouCongressWeb.PageController do
           url(~p"/"),
           url(~p"/explore"),
           url(~p"/about"),
+          url(~p"/future-of-life-foundation-epistack-award"),
           url(~p"/faq"),
           url(~p"/reconsider"),
           url(~p"/mcp-tools"),
@@ -121,6 +122,20 @@ defmodule YouCongressWeb.PageController do
       statements: [],
       quotes: [],
       log_in_with_x_enabled: FeatureFlags.enabled?(:log_in_with_x)
+    )
+  end
+
+  def future_of_life_foundation_award(conn, _params) do
+    render(conn, :future_of_life_foundation_award,
+      page_title: "YouCongress wins $5,000 Future of Life Foundation award",
+      page_description:
+        "YouCongress received a $5,000 award in the Future of Life Foundation's Epistemic Case Study Competition.",
+      canonical_url: url(~p"/future-of-life-foundation-epistack-award"),
+      og_type: "article",
+      page_image: url(~p"/images/future-of-life-foundation-award.png"),
+      page_image_alt: "Future of Life Foundation Epistemic Case Study Competition award graphic",
+      page_image_width: 1200,
+      page_image_height: 800
     )
   end
 
