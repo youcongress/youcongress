@@ -31,6 +31,9 @@ defmodule YouCongressWeb.UserSessionControllerTest do
 
       assert html =~ ~s(id="magic_link_form")
       assert html =~ "Email me a sign-in link"
+      assert html =~ ~s(id="magic_link_email")
+      assert html =~ ~s(id="password_login_email")
+      refute html =~ ~s(id="user_email")
     end
   end
 

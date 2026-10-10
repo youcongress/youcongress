@@ -76,7 +76,13 @@ defmodule YouCongressWeb.UserLoginLive do
         phx-update="ignore"
         class="mt-6"
       >
-        <.input field={@form[:email]} type="email" label="Email" required />
+        <.input
+          field={@form[:email]}
+          id="magic_link_email"
+          type="email"
+          label="Email"
+          required
+        />
         <%= if @pending_actions do %>
           <input type="hidden" name="user[pending_actions]" value={@pending_actions} />
         <% end %>
@@ -106,7 +112,13 @@ defmodule YouCongressWeb.UserLoginLive do
       </div>
 
       <.simple_form for={@form} id="login_form" action={~p"/log_in"} phx-update="ignore" class="mt-6">
-        <.input field={@form[:email]} type="email" label="Email" required />
+        <.input
+          field={@form[:email]}
+          id="password_login_email"
+          type="email"
+          label="Email"
+          required
+        />
         <.input field={@form[:password]} type="password" label="Password" required />
 
         <:actions>
