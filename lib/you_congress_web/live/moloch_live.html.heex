@@ -1,0 +1,291 @@
+<article id="moloch" class="pb-12 text-gray-900">
+  <header class="py-12 sm:py-16">
+    <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+      <p class="font-semibold uppercase tracking-widest text-indigo-700">
+        A guide to coordination · 4 min read
+      </p>
+      <button
+        type="button"
+        data-copy-current-url
+        data-copy-url={~p"/moloch"}
+        data-copy-success-label="Link copied"
+        class="rounded-lg border border-gray-300 px-3 py-2 font-medium hover:bg-gray-50"
+      >
+        Share this guide
+      </button>
+    </div>
+    <h1 class="mt-7 max-w-3xl text-4xl font-bold leading-tight tracking-tight sm:text-6xl">
+      Moloch: Why We Race Toward Outcomes Nobody Wants
+    </h1>
+    <p class="mt-6 max-w-2xl text-xl leading-8 text-gray-600">
+      Imagine a competition where everyone would be better off cooperating, but nobody feels they can afford to stop competing.
+    </p>
+    <p class="mt-4 max-w-2xl leading-7 text-gray-600">
+      Even when everyone sees the problem, the incentives keep pushing them toward a worse outcome. That’s Moloch: a metaphor for <strong class="text-gray-900">coordination failures</strong>, where individually sensible choices add up to collective harm.
+    </p>
+    <figure class="mt-8 rounded-2xl bg-gray-950 p-6 text-white sm:p-8">
+      <div class="grid items-center gap-4 sm:grid-cols-[1fr_auto_1fr]">
+        <div class="space-y-3">
+          <p class="rounded-lg border border-gray-600 bg-gray-900 p-4">
+            “I can’t afford to fall behind.”
+          </p>
+          <p class="rounded-lg border border-gray-600 bg-gray-900 p-4">“Neither can I.”</p>
+        </div>
+        <span aria-hidden="true" class="text-center text-3xl text-indigo-300">
+          <span class="sm:hidden">↓</span><span class="hidden sm:inline">→</span>
+        </span>
+        <div class="rounded-lg border border-indigo-400 bg-indigo-950 p-5">
+          <p class="text-lg font-semibold">Everyone keeps racing.</p>
+          <p class="mt-2 text-indigo-100">Toward a result they would rather avoid.</p>
+        </div>
+      </div>
+      <figcaption class="mt-5 text-sm text-gray-300">
+        The trap: protecting your own position can make everyone’s position worse.
+      </figcaption>
+    </figure>
+    <nav
+      aria-label="In this guide"
+      class="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-indigo-700"
+    >
+      <a href="#ai-race" class="underline underline-offset-4">Try the AI race ↓</a>
+      <a href="#escape" class="underline underline-offset-4">Explore ways out</a>
+      <a href="#proposals" class="underline underline-offset-4">Investigate proposals</a>
+    </nav>
+  </header>
+
+  <section aria-labelledby="what-is-moloch" class="border-t border-gray-200 py-10">
+    <p class="text-sm font-semibold text-indigo-700">01 / Recognize the trap</p>
+    <h2 id="what-is-moloch" class="mt-2 text-3xl font-bold tracking-tight">
+      Nobody needs to be the villain.
+    </h2>
+    <p class="mt-5 leading-7 text-gray-600">
+      Picture a concert. Someone stands to see better. People behind them stand too. Soon everyone is standing, with much the same view and more tired legs. Sitting down alone now means seeing less.
+    </p>
+    <div class="my-6 grid gap-3 sm:grid-cols-3">
+      <div class="rounded-xl bg-gray-50 p-5">
+        <p class="font-semibold">One person’s incentive</p>
+        <p class="mt-2 text-gray-600">Stand up to get a better view.</p>
+      </div>
+      <div class="rounded-xl bg-gray-50 p-5">
+        <p class="font-semibold">Everyone’s response</p>
+        <p class="mt-2 text-gray-600">Stand up to avoid losing out.</p>
+      </div>
+      <div class="rounded-xl bg-indigo-50 p-5">
+        <p class="font-semibold">A possible way out</p>
+        <p class="mt-2 text-gray-600">A seated section with an enforced rule.</p>
+      </div>
+    </div>
+    <p class="leading-7 text-gray-600">
+      Recognizing the problem doesn’t remove the incentive. Changing the rules can. Competition can be useful; the problem is when it rewards choices that undermine a shared goal.
+    </p>
+    <p class="mt-4 leading-7 text-gray-600">
+      Scott Alexander popularized this metaphor in <a
+        href="https://slatestarcodex.com/2014/07/30/meditations-on-moloch/"
+        class="font-medium text-indigo-700 underline"
+      >Meditations on Moloch</a>. Related ideas include collective-action problems, races to the bottom, and <strong class="text-gray-900">multipolar traps</strong>: many competing actors getting stuck in an outcome none can fix alone.
+    </p>
+  </section>
+
+  <section
+    id="ai-race"
+    aria-labelledby="race-title"
+    class="scroll-mt-6 rounded-2xl border border-indigo-200 bg-indigo-50 p-5 sm:p-8"
+  >
+    <p class="text-sm font-semibold text-indigo-700">02 / Explore the incentives</p>
+    <h2 id="race-title" class="mt-2 text-3xl font-bold tracking-tight">
+      Two AI labs. One shared future.
+    </h2>
+    <p class="mt-4 leading-7 text-gray-700">
+      Imagine two labs developing increasingly capable AI. Both would prefer a world with strong safeguards. But each worries that taking extra time will let its competitor move ahead.
+    </p>
+    <p id="race-instructions" class="mt-4 font-medium">
+      Choose a priority for each lab. Try all four combinations.
+    </p>
+    <div aria-describedby="race-instructions" class="mt-5 grid gap-5 sm:grid-cols-2">
+      <.lab_choice lab="a" selected={@lab_a} />
+      <.lab_choice lab="b" selected={@lab_b} />
+    </div>
+    <% result = outcome(@lab_a, @lab_b) %>
+    <div
+      id="race-outcome"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      class="mt-6 rounded-xl bg-white p-5 shadow-sm sm:p-6"
+    >
+      <p class="text-xs font-semibold uppercase tracking-widest text-indigo-700">
+        What happens in this scenario
+      </p>
+      <h3 class="mt-2 text-xl font-bold">{result.title}</h3>
+      <dl class="mt-5 grid gap-5 sm:grid-cols-2">
+        <div>
+          <dt class="font-semibold">Lab A</dt>
+          <dd class="mt-1 leading-6 text-gray-600">{result.a}</dd>
+        </div>
+        <div>
+          <dt class="font-semibold">Lab B</dt>
+          <dd class="mt-1 leading-6 text-gray-600">{result.b}</dd>
+        </div>
+        <div class="border-t border-gray-200 pt-4 sm:col-span-2">
+          <dt class="font-semibold">The shared outcome</dt>
+          <dd class="mt-1 leading-6 text-gray-600">{result.shared}</dd>
+        </div>
+      </dl>
+      <p class="mt-5 rounded-lg border-l-4 border-indigo-600 bg-indigo-50 p-4 leading-7">
+        <strong>The pressure:</strong> {result.pressure}
+      </p>
+    </div>
+    <p class="mt-5 text-sm leading-6 text-gray-600">
+      <strong>A model, not a prediction.</strong>
+      These are hypothetical labs, not claims about specific companies. We assume shorter checks can confer a competitive advantage. Safety and speed do not always trade off; safer systems can also be more useful and competitive. Real outcomes depend on many actors, technical choices, and rules.
+    </p>
+    <noscript>
+      <p class="mt-4 font-medium">
+        Enable JavaScript to change the choices. If one lab chooses speed, it may pull ahead; if both do, they may increase shared risks without gaining much relative advantage.
+      </p>
+    </noscript>
+  </section>
+
+  <section id="escape" aria-labelledby="escape-title" class="scroll-mt-6 py-12">
+    <p class="text-sm font-semibold text-indigo-700">03 / Change the incentives</p>
+    <h2 id="escape-title" class="mt-2 text-3xl font-bold tracking-tight">
+      How can we escape Moloch?
+    </h2>
+    <p class="mt-4 leading-7 text-gray-600">
+      Awareness and good intentions help, but cooperation needs to be viable. These mechanisms could work together; none guarantees success.
+    </p>
+    <dl class="mt-6 divide-y divide-gray-200 border-y border-gray-200">
+      <div
+        :for={
+          {name, example, question} <- [
+            {"Transparency", "Labs could disclose evaluation methods and safety thresholds.",
+             "What can be shared without exposing sensitive information?"},
+            {"Credible commitments",
+             "Labs could agree to pause at a defined risk threshold if others do too.",
+             "What would make that promise costly to break?"},
+            {"Verification",
+             "Independent evaluators could check whether agreed safeguards are in place.",
+             "Who gets access, and what can they reliably test?"},
+            {"Institutions and agreements",
+             "Common standards and consequences for violations could reduce the penalty for acting responsibly.",
+             "Who sets the rules and makes them apply fairly?"},
+            {"Collective decision-making",
+             "Public deliberation could reveal acceptable tradeoffs and conditions for cooperation.",
+             "Whose voices are missing, and how are they included?"}
+          ]
+        }
+        class="grid gap-2 py-5 sm:grid-cols-[12rem_1fr] sm:gap-6"
+      >
+        <dt class="font-bold text-indigo-900">{name}</dt>
+        <dd>
+          <p class="leading-7 text-gray-700">{example}</p>
+          <p class="mt-1 text-sm leading-6 text-gray-500">{question}</p>
+        </dd>
+      </div>
+    </dl>
+    <p class="mt-5 leading-7 text-gray-600">
+      There is room to disagree about which mechanisms are effective or appropriate. Rules can be hard to enforce, concentrate power, or delay benefits. A useful proposal must address those costs too.
+    </p>
+  </section>
+
+  <section aria-labelledby="contribution-title" class="rounded-2xl bg-gray-50 p-6 sm:p-8">
+    <p class="text-sm font-semibold text-indigo-700">04 / Find a starting point</p>
+    <h2 id="contribution-title" class="mt-2 text-3xl font-bold tracking-tight">
+      From a shared concern to concrete proposals.
+    </h2>
+    <p class="mt-4 leading-7 text-gray-600">
+      Cooperation requires understanding both what people support and what prevents them from supporting it. YouCongress brings sourced positions and participation together so people can inspect proposals, challenge interpretations, and explore where agreement is possible.
+    </p>
+    <p class="mt-4 leading-7 text-gray-600">
+      Share an opinion, vote, or delegate to people you trust. A vote can show a preference. Understanding its reasons, conditions, and unresolved objections takes further work. Popularity alone does not establish which proposal is best.
+    </p>
+    <p class="mt-4 leading-7 text-gray-600">
+      Our long-term ambition is to help humanity overcome coordination failures, starting with the AI development race. Discovering potential areas for cooperation is one contribution.
+      <strong class="text-gray-900">
+        Revealing agreement is not the same as solving a coordination problem.
+      </strong>
+      Incentives, trust, verification, and enforceable commitments may still be needed.
+    </p>
+    <aside class="mt-6 border-l-2 border-indigo-400 pl-5">
+      <h3 class="font-semibold">What would make cooperation acceptable?</h3>
+      <p class="mt-2 leading-7 text-gray-600">
+        Someone might support a slowdown only if other major actors agree and compliance can be verified. Those conditions matter as much as the initial preference.
+      </p>
+      <p class="mt-2 text-sm leading-6 text-gray-500">
+        This is a possibility to investigate, not commitment infrastructure that YouCongress offers today.
+      </p>
+    </aside>
+    <.link
+      href={~p"/theory-of-change"}
+      class="mt-6 inline-block font-semibold text-indigo-700 underline underline-offset-4"
+    >
+      How we think this could lead to change →
+    </.link>
+  </section>
+
+  <section id="proposals" aria-labelledby="proposals-title" class="scroll-mt-6 py-12">
+    <h2 id="proposals-title" class="text-3xl font-bold tracking-tight">
+      What would make cooperation possible?
+    </h2>
+    <p class="mt-4 leading-7 text-gray-600">
+      Start with a proposal. Read the arguments, examine the sources, and decide where you stand. These are ideas to evaluate, not a package you need to endorse.
+    </p>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2">
+      <.link
+        :for={
+          {slug, title, question} <- [
+            {"slow-down-ai-development", "Slow down AI development",
+             "Would more time improve safety? At what cost?"},
+            {"ai-labs-independent-evaluators-employee-like-access",
+             "Give independent evaluators employee-like access to AI labs",
+             "What access would make independent scrutiny meaningful?"},
+            {"verification-systems-coordinated-ai-slowdown",
+             "Build the capability for a coordinated global AI slowdown",
+             "What would need to be ready if a slowdown became necessary?"},
+            {"ai-alignment-public-deliberation",
+             "Subject AI value alignment to public deliberation",
+             "Who should have a say in the values AI systems follow?"}
+          ]
+        }
+        href={~p"/p/#{slug}"}
+        class="group flex flex-col rounded-xl border border-gray-200 p-6 hover:border-indigo-400 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      >
+        <h3 class="text-lg font-semibold leading-7">{title}</h3>
+        <p class="mb-5 mt-2 text-sm leading-6 text-gray-600">{question}</p>
+        <span class="mt-auto text-sm font-semibold text-indigo-700">
+          Explore arguments &amp; participate <span aria-hidden="true">→</span>
+        </span>
+      </.link>
+    </div>
+    <.link
+      href={~p"/explore"}
+      class="mt-6 inline-block font-semibold text-indigo-700 underline underline-offset-4"
+    >
+      Explore more proposals on YouCongress
+    </.link>
+  </section>
+
+  <section aria-labelledby="reading-title" class="border-t border-gray-200 pt-8">
+    <h2 id="reading-title" class="text-xl font-bold">Further reading</h2>
+    <ul class="mt-4 space-y-4 text-sm leading-6 text-gray-600">
+      <li>
+        <a
+          href="https://slatestarcodex.com/2014/07/30/meditations-on-moloch/"
+          class="font-semibold text-indigo-700 underline"
+        >
+          Meditations on Moloch — Scott Alexander
+        </a>
+        <br />The essay that popularized the metaphor, with many more examples of competitive traps.
+      </li>
+      <li>
+        <a
+          href="https://www.nobelprize.org/prizes/economic-sciences/2009/ostrom/lecture/"
+          class="font-semibold text-indigo-700 underline"
+        >
+          Beyond Markets and States — Elinor Ostrom
+        </a>
+        <br />A Nobel lecture on how people organize to govern shared resources.
+      </li>
+    </ul>
+  </section>
+</article>

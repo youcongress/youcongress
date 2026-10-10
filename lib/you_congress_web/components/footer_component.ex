@@ -13,6 +13,7 @@ defmodule YouCongressWeb.Components.FooterComponent do
     <footer class="text-center pb-10 text-sm">
       <.link href={~p"/terms"}>Terms</.link>
       · <.link href={~p"/privacy-policy"}>Privacy</.link>
+      · <.link href={~p"/moloch"}>Understanding Moloch</.link>
       <%= if @current_user do %>
         · <button type="button" data-cookie-settings class="hover:underline">Cookie settings</button>
       <% end %>
