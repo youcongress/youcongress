@@ -49,6 +49,8 @@ defmodule YouCongressWeb.ReconsiderLandingLiveTest do
 
     assert has_element?(view, "#reconsider-results-example", "14 participants (23%)")
     assert has_element?(view, "#reconsider-results-example", "9 participants (15%)")
+    assert has_element?(view, "#reconsider-results-example div.text-4xl", "75%")
+    refute has_element?(view, "#reconsider-results-example p.text-4xl", "75%")
 
     contact_path = ~p"/contact?#{%{subject: @contact_subject, body: @contact_body}}"
 
