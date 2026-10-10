@@ -1,32 +1,34 @@
-<div class="max-w-4xl mx-auto space-y-8 py-12">
-  <!-- Header Section -->
-  <section aria-labelledby="about-heading">
-    <h1 id="about-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
+<article class="mx-auto max-w-4xl py-12 sm:py-16">
+  <header>
+    <p class="text-sm font-semibold uppercase tracking-widest text-indigo-700">
       About YouCongress
-    </h1>
-    <p class="mt-6 text-lg leading-relaxed">
-      YouCongress is a non-profit, <.link
-        class="underline text-blue-600 hover:text-blue-800"
-        target="_blank"
-        href="https://github.com/youcongress/youcongress"
-      >open-source</.link> and <.link
-        class="underline text-blue-600 hover:text-blue-800"
-        href={~p"/dataset"}
-      >open-data</.link>&nbsp;platform for building source-grounded knowledge bases around hard public questions. We gather verifiable
-      <strong>quotes</strong>
-      and <strong>claims</strong>, preserve source provenance, and use
-      <strong>liquid democracy</strong>
-      to make expert and citizen preferences visible and legible. The first large focus is
-      <strong>AI governance</strong>
-      (safety, regulation, labor impacts, compute governance, international coordination...), but the workflow is designed to generalize to other epistemic case studies where the question is who said what, why, and what follows.
     </p>
+    <h1 class="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+      Investigate difficult public questions. Together.
+    </h1>
+    <p class="mt-6 text-xl leading-8 text-gray-600">
+      YouCongress connects concrete proposals with sourced positions, lets people scrutinize the record, and makes agreement and disagreement visible through participation.
+    </p>
+    <p class="mt-4 leading-7 text-gray-600">
+      Our initial focus is AI governance: how societies can manage AI’s risks, shape its effects on jobs and work, and share its benefits. Reducing catastrophic AI risk is an important part of that mission.
+    </p>
+    <.link
+      href={~p"/explore"}
+      class="mt-7 inline-flex rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500"
+    >
+      Explore proposals <span aria-hidden="true" class="ml-2">→</span>
+    </.link>
+    <p class="mt-3 text-sm text-gray-500">Read the sources and arguments without an account.</p>
+  </header>
 
+  <section aria-labelledby="about-how" class="py-12">
+    <h2 id="about-how" class="text-2xl font-bold text-gray-900">What you can do here</h2>
     <div class="mt-8 grid gap-4 md:grid-cols-2 text-left text-gray-700">
       <div class="bg-white/80 border border-indigo-100 rounded-2xl p-6 shadow-sm">
         <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">
           Data layer
         </p>
-        <h2 class="text-xl font-semibold text-gray-900 mt-1">Verifiable sources and claims</h2>
+        <h3 class="text-xl font-semibold text-gray-900 mt-1">Verifiable sources and claims</h3>
         <p class="mt-3 text-sm text-gray-600">
           We track who said what, when, where and in relation to which policy or claim, then invite the community to help keep the record clean.
         </p>
@@ -58,9 +60,9 @@
             beta
           </span>
         </p>
-        <h2 class="text-xl font-semibold text-gray-900 mt-1">Liquid democracy for policy</h2>
+        <h3 class="text-xl font-semibold text-gray-900 mt-1">Liquid democracy for policy</h3>
         <p class="mt-3 text-sm text-gray-600">
-          The vetted source layer powers policies, claims, votes and delegations so collective preferences stay transparent.
+          The source layer connects policies and claims with votes and delegations so collective preferences stay transparent. Sources and verification status remain available to inspect.
         </p>
         <ul class="mt-4 space-y-4 text-sm">
           <li>
@@ -81,165 +83,68 @@
         </ul>
       </div>
     </div>
-
-    <%= if !@current_user do %>
-      <div class="pt-8 flex flex-col items-center justify-center gap-3 max-w-xs mx-auto">
-        <%= if @log_in_with_x_enabled do %>
-          <.link
-            href={~p"/auth/x"}
-            class="w-full inline-flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-black text-white text-sm font-medium hover:bg-gray-800"
-          >
-            <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-            </svg>
-            Log in with X
-          </.link>
-        <% end %>
-        <.link
-          href={~p"/auth/google"}
-          class="w-full inline-flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-gray-700 text-sm font-medium hover:bg-gray-50"
-        >
-          <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
-            <path
-              fill="#4285F4"
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            />
-            <path
-              fill="#34A853"
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-            />
-            <path
-              fill="#EA4335"
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-            />
-          </svg>
-          Log in with Google
-        </.link>
-        <.link
-          href={~p"/sign_up"}
-          class="text-sm text-gray-600 hover:text-indigo-600 hover:underline"
-        >
-          Sign up with email/password
-        </.link>
-      </div>
-    <% end %>
-  </section>
-  
-<!-- Why This Matters Section -->
-  <section aria-labelledby="why-heading">
-    <h2 id="why-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
-      Why This Matters
-    </h2>
-    <p class="mt-6 text-lg leading-relaxed">
-      Forecasters ask "What will happen?" We ask "What should we do?" or "What would we love to happen even when unlikely?" Inspired by Scott Alexander's "Moloch" - the idea that misaligned incentives can push everyone toward outcomes nobody wants - YouCongress makes shared preferences visible and legible. By pairing direct voting, optional delegation, and sourced expertise, we offer a practical coordination tool: not binding referendums, but decision support that helps leaders choose policies aligned with public and expert values. Starting with AI governance and AI safety.
+    <p class="mt-5 text-sm leading-6 text-gray-600">
+      Delegation currently applies across issues. Some public figures’ positions are inferred from sourced quotes; that does not mean they personally voted or joined YouCongress.
     </p>
   </section>
-  
-<!-- Reusable Knowledge Section -->
-  <section aria-labelledby="stack-heading">
-    <h2 id="stack-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
-      Built for Reusable Knowledge
-    </h2>
-    <p class="mt-6 text-lg leading-relaxed">
-      YouCongress is meant to turn one-off research into reusable public infrastructure. Today it covers the ingestion and structure layers: sources, authors, claims, vote inferences, verification status, topic tags, and stable public pages. The next step is stronger assessment: surfacing cruxes, missing perspectives, correlated evidence, and confidence updates.
-    </p>
-  </section>
-  
-<!-- Learn More Section -->
-  <div>
-    <p class="text-lg leading-relaxed">
-      For further details, see our <.link
-        href="https://www.lesswrong.com/posts/4KjiZeAWc7Yv9oyCb/tackling-moloch-how-youcongress-offers-a-novel-coordination"
-        target="_blank"
-        class="underline text-blue-600 hover:text-blue-800"
-      >LessWrong post</.link>.
-    </p>
-  </div>
-  
-<!-- How It Works Section -->
-  <section aria-labelledby="how-heading">
-    <h2 id="how-heading" class="py-6 text-xl font-bold text-center bg-blue-100 rounded-lg">
-      How It Works
-    </h2>
-    <div class="mt-6 space-y-4">
-      <div class="flex items-start space-x-3">
-        <div class="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-          <span class="text-white text-sm font-bold">1</span>
-        </div>
-        <div>
-          <h3 class="font-semibold text-lg">Sources and Claims</h3>
-          <p class="text-gray-700 leading-relaxed">
-            Each statement (policy proposals and claims) includes citations from researchers, officials, and public figures so debate stays tied to provenance.
-          </p>
-        </div>
-      </div>
 
-      <div class="flex items-start space-x-3">
-        <div class="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-          <span class="text-white text-sm font-bold">2</span>
-        </div>
-        <div>
-          <h3 class="font-semibold text-lg">Vote, delegate or add your own opinion</h3>
-          <p class="text-gray-700 leading-relaxed">
-            Vote directly or delegate to trusted experts and other users. When you don't directly vote, you'll vote with the majority of your trusted delegates. Change your votes and delegates anytime.
-          </p>
-        </div>
-      </div>
-
-      <div class="flex items-start space-x-3">
-        <div class="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-          <span class="text-white text-sm font-bold">3</span>
-        </div>
-        <div>
-          <h3 class="font-semibold text-lg">For Better Decisions</h3>
-          <p class="text-gray-700 leading-relaxed">
-            Our goal is to inform choices by parliaments, companies, funders, journalists, and citizens so decisions can track what experts and citizens prefer on concrete proposals.
-          </p>
-        </div>
-      </div>
+  <section aria-labelledby="about-why" class="rounded-2xl bg-indigo-50 p-6 sm:p-8">
+    <h2 id="about-why" class="text-2xl font-bold text-gray-900">Why we’re building this</h2>
+    <p class="mt-4 leading-7 text-gray-700">
+      Evidence is scattered across papers, interviews, speeches, and posts. Understanding a difficult question often means reconstructing the same debate from scratch. We want that work to accumulate into a shared resource that people can inspect, challenge, and improve.
+    </p>
+    <p class="mt-4 leading-7 text-gray-700">
+      Better understanding can help people identify opportunities for cooperation. But visible agreement alone does not change incentives or make institutions act. YouCongress is one contribution to that larger task.
+    </p>
+    <div class="mt-6 flex flex-wrap gap-x-6 gap-y-3 font-semibold text-indigo-700">
+      <.link href={~p"/moloch"} class="underline underline-offset-4">
+        Understand coordination failures
+      </.link>
+      <.link href={~p"/theory-of-change"} class="underline underline-offset-4">
+        Read our theory of change
+      </.link>
     </div>
   </section>
-  
-<!-- Learn More Section -->
-  <div>
-    <p class="text-lg leading-relaxed">
-      You can read more in the <.link
-        href="/faq"
-        class="underline text-blue-600 hover:text-blue-800"
-      >Frequently Asked Questions</.link>.
-    </p>
-    <p class="mt-3 text-lg leading-relaxed">
-      YouCongress won a $5,000 award from the Future of Life Foundation. <.link
-        href={~p"/future-of-life-foundation-epistack-award"}
-        class="underline text-blue-600 hover:text-blue-800"
-      >Read about the award</.link>.
-    </p>
-  </div>
-  
-<!-- Call to Action Section -->
-  <div class="flex flex-wrap items-center justify-center gap-3 text-center">
-    <%= if @current_user do %>
+
+  <section aria-labelledby="about-project" class="py-12">
+    <h2 id="about-project" class="text-2xl font-bold text-gray-900">An open project</h2>
+    <p class="mt-4 leading-7 text-gray-600">
+      YouCongress is a non-profit project built by <a
+        href="https://www.linkedin.com/in/hectorperezarenas"
+        class="font-medium text-indigo-700 underline"
+      >Hector Perez Arenas</a>. Our
       <a
-        href={~p"/explore"}
-        class="inline-block bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-md"
+        href="https://github.com/youcongress/youcongress"
+        class="font-medium text-indigo-700 underline"
       >
-        Explore Statements / Vote
+        code is open source
       </a>
-    <% else %>
-      <.link
-        href={~p"/log_in"}
-        method="get"
-        class="inline-block bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-md"
-      >
-        Get Started - Log In
+      and our <.link href={~p"/dataset"} class="font-medium text-indigo-700 underline">quote dataset is open</.link>, so others can inspect and reuse the work. AI governance is our first major focus; the approach can also be tested on other public questions.
+    </p>
+    <p class="mt-4 leading-7 text-gray-600">
+      YouCongress received a $5,000 award in the Future of Life Foundation’s Epistemic Case Study Competition. The judges highlighted its participation layer as a promising direction to explore. <.link
+        href={~p"/future-of-life-foundation-epistack-award"}
+        class="font-medium text-indigo-700 underline"
+      >Read about the award and the judges’ remarks</.link>.
+    </p>
+  </section>
+
+  <section aria-labelledby="about-join" class="border-t border-gray-200 pt-8">
+    <h2 id="about-join" class="text-2xl font-bold text-gray-900">
+      Help improve the conversation
+    </h2>
+    <p class="mt-4 leading-7 text-gray-600">
+      Bring a missing source, a well-supported objection, or a question that deserves closer examination.
+    </p>
+    <div class="mt-6 flex flex-wrap gap-5 font-semibold text-indigo-700">
+      <.link href={~p"/explore"} class="underline underline-offset-4">Explore proposals</.link>
+      <.link :if={!@current_user} href={~p"/sign_up"} class="underline underline-offset-4">
+        Join YouCongress
       </.link>
-    <% end %>
-    <span class="text-sm text-gray-600">
-      or <.link href={~p"/contact"} class="underline hover:text-indigo-600">contact us</.link>
-    </span>
-  </div>
-</div>
+      <.link href={~p"/contact"} class="underline underline-offset-4">Contact us</.link>
+      <.link href={~p"/faq"} class="underline underline-offset-4">
+        Frequently asked questions
+      </.link>
+    </div>
+  </section>
+</article>

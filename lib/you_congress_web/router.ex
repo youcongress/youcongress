@@ -42,6 +42,7 @@ defmodule YouCongressWeb.Router do
     live("/verifications", VerificationLive.Index, :index)
     live("/contact", ContactLive, :new)
     live("/reconsider", ReconsiderLive.Landing, :index)
+    live("/moloch", MolochLive, :index)
 
     get("/terms", PageController, :terms)
     get("/privacy-policy", PageController, :privacy_policy)
@@ -51,6 +52,7 @@ defmodule YouCongressWeb.Router do
 
     get("/waiting_list", PageController, :waiting_list)
     get("/about", PageController, :about)
+    get("/theory-of-change", PageController, :theory_of_change)
 
     get(
       "/future-of-life-foundation-epistack-award",

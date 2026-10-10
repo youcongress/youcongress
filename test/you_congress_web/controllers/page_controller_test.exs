@@ -4,6 +4,25 @@ defmodule YouCongressWeb.PageControllerTest do
   import YouCongress.StatementsFixtures
   import YouCongress.OpinionsFixtures
 
+  test "mission pages are public, linked, and have canonical metadata", %{conn: conn} do
+    for {path, heading, linked_path} <- [
+          {"/about", "Investigate difficult public questions.", "/theory-of-change"},
+          {"/theory-of-change", "From shared evidence to better AI governance", "/moloch"}
+        ] do
+      html = conn |> get(path) |> html_response(200)
+      document = Floki.parse_document!(html)
+      assert Floki.text(Floki.find(document, "h1")) =~ heading
+      assert length(Floki.find(document, "h1")) == 1
+
+      assert Floki.attribute(document, "link[rel=canonical]", "href") ==
+               [YouCongressWeb.Endpoint.url() <> path]
+
+      assert Floki.attribute(document, "meta[name=description]", "content") != []
+      assert Floki.find(document, "a[href='#{linked_path}']") != []
+      assert Floki.find(document, "a[href='/explore']") != []
+    end
+  end
+
   describe "GET /status/24h" do
     test "returns OK for a positively verified quote dated today", %{conn: conn} do
       opinion_fixture(%{
@@ -87,8 +106,10 @@ defmodule YouCongressWeb.PageControllerTest do
     html = html_response(conn, 200)
 
     assert html =~ "About YouCongress"
+    assert html =~ ~s(href="https://www.linkedin.com/in/hectorperezarenas")
+    assert html =~ ">Hector Perez Arenas</a>"
     assert html =~ ~s(href="/contact")
-    assert html =~ "contact us"
+    assert html =~ "Contact us"
     assert html =~ ~s(href="/future-of-life-foundation-epistack-award")
   end
 
@@ -204,6 +225,8 @@ defmodule YouCongressWeb.PageControllerTest do
 
     assert get_resp_header(conn, "content-type") == ["application/xml; charset=utf-8"]
     assert body =~ "<loc>#{YouCongressWeb.Endpoint.url()}#{~p"/reconsider"}</loc>"
+    assert body =~ "<loc>#{YouCongressWeb.Endpoint.url()}#{~p"/moloch"}</loc>"
+    assert body =~ "<loc>#{YouCongressWeb.Endpoint.url()}#{~p"/theory-of-change"}</loc>"
     assert body =~ "<loc>#{YouCongressWeb.Endpoint.url()}#{~p"/p/#{statement.slug}"}</loc>"
     assert body =~ ~r"<lastmod>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z</lastmod>"
   end

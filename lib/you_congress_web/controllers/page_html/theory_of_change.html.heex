@@ -1,0 +1,230 @@
+<article class="mx-auto max-w-4xl py-12 sm:py-16">
+  <header>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm font-semibold uppercase tracking-widest text-indigo-700">
+        Our theory of change
+      </p>
+      <button
+        type="button"
+        data-copy-current-url
+        data-copy-url={~p"/theory-of-change"}
+        data-copy-success-label="Link copied"
+        class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50"
+      >
+        Share this page
+      </button>
+    </div>
+    <h1 class="mt-5 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+      From shared evidence to better AI governance
+    </h1>
+    <p class="mt-6 text-xl leading-8 text-gray-600">
+      Can making evidence easier to inspect—and disagreements easier to understand—help societies manage AI’s risks, respond to its effects on jobs, and share its benefits?
+    </p>
+    <p class="mt-4 leading-7 text-gray-600">
+      That is the working hypothesis behind YouCongress. Our initial focus is AI governance, including safety and the impact of AI on jobs. We are building and testing parts of this process. The path from a useful knowledge base to better outcomes is an ambition, not an impact we have demonstrated.
+    </p>
+  </header>
+
+  <section aria-labelledby="change-path" class="py-10">
+    <h2 id="change-path" class="text-2xl font-bold text-gray-900">The path we want to test</h2>
+    <ol class="mt-6 space-y-3">
+      <li
+        :for={
+          {number, title, detail} <- [
+            {"1", "Organize fragmented evidence",
+             "Connect concrete proposals with attributable positions, sources, and verification status."},
+            {"2", "Enable scrutiny and informed participation",
+             "Let people inspect the record, challenge interpretations, and contribute their views."},
+            {"3", "Improve collective judgment and coordination",
+             "Clarify disagreements, identify acceptable tradeoffs, and discover possible areas for cooperation."},
+            {"4", "Inform decisions and strengthen accountability",
+             "Help institutions choose, implement, and evaluate policies for AI safety, jobs, and shared benefits."},
+            {"5", "Reduce AI harms and improve shared outcomes",
+             "Help institutions adopt effective safeguards, respond to changes in work, and distribute AI’s benefits more broadly."}
+          ]
+        }
+        class="flex gap-4 rounded-xl border border-gray-200 p-5"
+      >
+        <span
+          aria-hidden="true"
+          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-700"
+        >
+          {number}
+        </span>
+        <div>
+          <h3 class="font-bold text-gray-900">{title}</h3>
+          <p class="mt-1 leading-7 text-gray-600">{detail}</p>
+        </div>
+      </li>
+    </ol>
+    <p class="mt-5 leading-7 text-gray-600">
+      Progress between these steps is not automatic. Accurate records need relevant users; informed participation needs useful ways to handle disagreement; institutional action needs incentives, authority, and implementation. New evidence and experience should also feed back into the record.
+    </p>
+  </section>
+
+  <section aria-labelledby="change-evidence" class="border-t border-gray-200 py-8">
+    <h2 id="change-evidence" class="text-2xl font-bold text-gray-900">
+      1. Make evidence easier to inspect
+    </h2>
+    <p class="mt-4 leading-7 text-gray-600">
+      Researchers, journalists, and decision-makers should be able to understand the landscape around a proposal without separately reconstructing hundreds of sources. Keeping positions attributable makes it possible to check their context, challenge an interpretation, and contribute missing evidence.
+    </p>
+    <p class="mt-4 leading-7 text-gray-600">
+      Provenance is a starting point, not a guarantee of truth. A quote can be authentic while its claim is wrong. Coverage can also be incomplete or skewed. Scrutiny must extend to the selection of sources and the way proposals are framed.
+    </p>
+  </section>
+
+  <section aria-labelledby="change-participation" class="border-t border-gray-200 py-8">
+    <h2 id="change-participation" class="text-2xl font-bold text-gray-900">
+      2. Make disagreement more informative
+    </h2>
+    <p class="mt-4 leading-7 text-gray-600">
+      A single summary can hide important differences. People might disagree about the probability of a dangerous capability, agree about the danger but disagree about an intervention, or reason from different empirical assumptions and values.
+    </p>
+    <p class="mt-4 leading-7 text-gray-600">
+      Participation gives people ways to respond to the record. Opinions, votes, delegations, and changes of position can provide clues about reasoning. They do not reveal reasoning on their own: a changed vote might reflect new evidence, social influence, or a different interpretation of the question.
+    </p>
+    <div class="mt-5 rounded-xl bg-indigo-50 p-5">
+      <h3 class="font-bold text-gray-900">
+        The goal is better judgment, not simply greater agreement.
+      </h3>
+      <p class="mt-2 leading-7 text-gray-700">
+        Popularity does not establish truth, and participants are not necessarily representative of the public or of experts. We want to learn which objections survive scrutiny, which evidence changes minds, and whether well-supported minority arguments receive attention.
+      </p>
+    </div>
+    <h3 class="mt-7 text-lg font-bold text-gray-900">
+      Delegation when nobody can evaluate everything
+    </h3>
+    <p class="mt-3 leading-7 text-gray-600">
+      AI governance spans machine learning, cybersecurity, biology, law, economics, and international relations. YouCongress already lets people delegate to trusted people while retaining the ability to vote directly. Today those delegations apply across issues.
+    </p>
+    <p class="mt-4 leading-7 text-gray-600">
+      A future version could make trust specific to a domain and connect it more explicitly to evidence: whom do you rely on, for which questions, and why do they support an intervention? That is a direction to investigate, not an existing domain-specific delegation feature.
+    </p>
+    <aside class="mt-6 border-l-2 border-indigo-300 pl-5 text-sm leading-6 text-gray-600">
+      <p>
+        The Future of Life Foundation’s competition judges highlighted YouCongress’s interactive participation layer as an important area to explore, while noting that the entry was not a full epistemic stack. We take this as encouragement to test the approach, not proof of its impact. <a
+          href="https://www.oliversourbut.net/p/flfs-epistemic-case-study-competition"
+          class="font-medium text-indigo-700 underline"
+        >Read the judges’ assessment</a>.
+      </p>
+    </aside>
+  </section>
+
+  <section aria-labelledby="change-action" class="border-t border-gray-200 py-8">
+    <h2 id="change-action" class="text-2xl font-bold text-gray-900">
+      3. Help understanding inform action
+    </h2>
+    <p class="mt-4 leading-7 text-gray-600">
+      Meaningful agreement around a concrete proposal could make cooperation easier, especially when the strongest unresolved objections are visible too. This could concern a safety requirement, support for workers affected by AI, or how economic benefits are shared. But revealing agreement is not the same as changing incentives or securing enforceable commitments.
+    </p>
+    <div class="mt-5 rounded-xl bg-gray-50 p-6">
+      <h3 class="font-bold text-gray-900">One pathway: reducing catastrophic AI risk</h3>
+      <p class="mt-3 leading-7 text-gray-600">
+        A policy researcher examining
+        <.link
+          href={~p"/p/ai-labs-independent-evaluators-employee-like-access"}
+          class="font-medium text-indigo-700 underline"
+        >
+          independent access to AI labs
+        </.link>
+        could use YouCongress to locate sourced positions, investigate objections, and develop a better briefing. That briefing might inform a consultation, an evaluation policy, or an institutional decision.
+      </p>
+      <p class="mt-3 leading-7 text-gray-600">
+        This depends on credibility, relevance, timing, and access to the decision process. Adoption would still need to be followed by implementation and evidence that the safeguard works.
+      </p>
+    </div>
+    <h3 class="mt-7 text-lg font-bold text-gray-900">
+      A longer-term direction: accountability over time
+    </h3>
+    <p class="mt-3 leading-7 text-gray-600">
+      We would like to make it easier to trace how institutional commitments change, whether promised evaluations happen, and how experts update their positions. Dated sources are a foundation; systematic commitment tracking and compliance assessment require further work.
+    </p>
+    <h3 class="mt-7 text-lg font-bold text-gray-900">Explore the conditions for cooperation</h3>
+    <p class="mt-3 leading-7 text-gray-600">
+      Another possibility is conditional commitments: “I would support slowing frontier AI development if other major actors agreed and compliance could be independently verified.” Exploring those conditions could reveal possible agreements that unconditional votes miss. YouCongress does not currently offer infrastructure to make or enforce these commitments.
+    </p>
+    <.link
+      href={~p"/moloch"}
+      class="mt-4 inline-block font-semibold text-indigo-700 underline underline-offset-4"
+    >
+      Why coordination can fail, even with good intentions →
+    </.link>
+  </section>
+
+  <section aria-labelledby="change-status" class="border-t border-gray-200 py-8">
+    <h2 id="change-status" class="text-2xl font-bold text-gray-900">
+      What exists, and what we want to investigate
+    </h2>
+    <div class="mt-6 grid gap-5 sm:grid-cols-2">
+      <div class="rounded-xl border border-gray-200 p-6">
+        <h3 class="font-bold text-indigo-900">Current foundation</h3>
+        <ul class="mt-4 list-disc space-y-3 pl-5 leading-7 text-gray-600">
+          <li>Sourced positions and verification workflows.</li>
+          <li>Direct voting and global delegation.</li>
+          <li>
+            <.link href={~p"/reconsider"} class="text-indigo-700 underline">Reconsider</.link>: before-and-after participation, currently in beta.
+          </li>
+          <li>Source records and dated positions.</li>
+        </ul>
+      </div>
+      <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-6">
+        <h3 class="font-bold text-indigo-900">Research and future directions</h3>
+        <ul class="mt-4 list-disc space-y-3 pl-5 leading-7 text-gray-600">
+          <li>Map assumptions and unresolved objections more systematically.</li>
+          <li>Explore trust specific to a domain.</li>
+          <li>Investigate which evidence explains changes in views.</li>
+          <li>Track institutional commitments and follow-through.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="change-tests" class="border-t border-gray-200 py-8">
+    <h2 id="change-tests" class="text-2xl font-bold text-gray-900">
+      How would we know this is working?
+    </h2>
+    <p class="mt-4 leading-7 text-gray-600">
+      We want to test the links in this theory, not assume them. Useful evaluations would ask:
+    </p>
+    <ul class="mt-5 list-disc space-y-4 pl-5 leading-7 text-gray-600">
+      <li>
+        Can researchers reconstruct a debate faster, compared with their usual methods, without losing accuracy or important minority arguments?
+      </li>
+      <li>
+        Can participants explain opposing arguments and identify the actual points of disagreement more accurately?
+      </li>
+      <li>
+        Do corrections and new evidence improve the record, including its coverage of missing perspectives?
+      </li>
+      <li>
+        Is the resource used in identifiable briefings, consultations, evaluations, or institutional decisions?
+      </li>
+      <li>
+        Where AI policies change, is there evidence of a contribution from YouCongress—and of effective implementation that improves safety, outcomes for workers, or how benefits are shared?
+      </li>
+    </ul>
+    <p class="mt-5 leading-7 text-gray-600">
+      More votes, greater agreement, or more time on site would not by themselves demonstrate better judgment. Apparent consensus can reflect missing voices, shared errors, or social pressure. Evidence of downstream impact will be harder to establish than product usage.
+    </p>
+    <p class="mt-4 leading-7 text-gray-600">
+      We intend to publish what we learn, including evidence that parts of this approach do not work, and revise the theory accordingly.
+    </p>
+  </section>
+
+  <footer class="mt-3 rounded-2xl bg-indigo-950 p-6 text-white sm:p-8">
+    <p class="text-xl font-semibold leading-8">
+      Our long-term aim is to reduce the distance between knowing what should happen and getting institutions to act on it.
+    </p>
+    <p class="mt-4 leading-7 text-indigo-100">
+      Help us examine both the proposals and the assumptions behind this approach.
+    </p>
+    <div class="mt-6 flex flex-wrap gap-5 font-semibold">
+      <.link href={~p"/explore"} class="underline underline-offset-4">Explore proposals</.link>
+      <.link href={~p"/contact"} class="underline underline-offset-4">
+        Discuss a research collaboration
+      </.link>
+      <.link href={~p"/about"} class="underline underline-offset-4">About YouCongress</.link>
+    </div>
+  </footer>
+</article>

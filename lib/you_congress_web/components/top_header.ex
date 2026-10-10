@@ -13,7 +13,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
   def top_header(assigns) do
     ~H"""
     <header class="px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between border-b border-zinc-100 py-3 text-sm">
+      <div class="flex flex-wrap items-center justify-between gap-x-4 border-b border-zinc-100 py-3 text-sm">
         <div class="flex items-center gap-4">
           <.link href={~p"/"} class="text-lg font-semibold">
             YouCongress
@@ -75,8 +75,8 @@ defmodule YouCongressWeb.TopHeaderComponent do
           <% end %>
         </div>
         <!-- Mobile Navigation (Optimized Touch Targets) -->
-        <div class="md:hidden flex flex-col items-end gap-3 text-sm">
-          <div class="flex items-center gap-4">
+        <div class="md:hidden flex max-w-full flex-col items-end gap-3 text-sm">
+          <div class="flex flex-wrap items-center gap-4">
             <.github_link class="p-3" />
             <.link
               href={~p"/explore"}

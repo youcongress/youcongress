@@ -2,7 +2,6 @@ defmodule YouCongressWeb.PageController do
   use YouCongressWeb, :controller
 
   alias YouCongress.Authors
-  alias YouCongress.FeatureFlags
   alias YouCongress.Halls
   alias YouCongress.Opinions
   alias YouCongress.Statements
@@ -44,9 +43,11 @@ defmodule YouCongressWeb.PageController do
           url(~p"/"),
           url(~p"/explore"),
           url(~p"/about"),
+          url(~p"/theory-of-change"),
           url(~p"/future-of-life-foundation-epistack-award"),
           url(~p"/faq"),
           url(~p"/reconsider"),
+          url(~p"/moloch"),
           url(~p"/mcp-tools"),
           url(~p"/dataset")
         ],
@@ -115,13 +116,19 @@ defmodule YouCongressWeb.PageController do
 
   def about(conn, _params) do
     render(conn, :about,
-      search: nil,
-      search_tab: :quotes,
-      halls: [],
-      authors: [],
-      statements: [],
-      quotes: [],
-      log_in_with_x_enabled: FeatureFlags.enabled?(:log_in_with_x)
+      page_title: "About YouCongress",
+      page_description:
+        "Investigate AI governance, safety, and the impact of AI on jobs through sourced positions, scrutiny, voting, and delegation.",
+      canonical_url: url(~p"/about")
+    )
+  end
+
+  def theory_of_change(conn, _params) do
+    render(conn, :theory_of_change,
+      page_title: "Our theory of change: from shared evidence to better AI governance",
+      page_description:
+        "How YouCongress aims to connect sourced evidence and informed participation with better AI governance, safety, outcomes for workers, and shared benefits.",
+      canonical_url: url(~p"/theory-of-change")
     )
   end
 
