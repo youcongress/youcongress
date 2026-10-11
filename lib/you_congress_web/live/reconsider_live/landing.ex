@@ -1,17 +1,6 @@
 defmodule YouCongressWeb.ReconsiderLive.Landing do
   use YouCongressWeb, :live_view
 
-  @contact_subject "Reconsider beta access"
-  @contact_body """
-  Hi YouCongress team,
-
-  I'd like to try Reconsider for an article or video.
-
-  My publication or channel:
-  Link:
-  What I'd like to test:
-  """
-
   @impl true
   def mount(_params, session, socket) do
     {:ok,
@@ -36,7 +25,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-5xl px-4 pb-10 sm:px-6 sm:pb-16">
-      <.motion_ad contact_path={beta_contact_path()} />
+      <.motion_ad create_path={~p"/reconsider/new"} />
 
       <section class="mx-auto mt-12 max-w-3xl text-center sm:mt-16">
         <span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
@@ -51,19 +40,9 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
         </p>
         <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
           <.link
-            id="reconsider-beta-contact"
-            href={beta_contact_path()}
-            class="rounded-lg bg-indigo-600 px-5 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-500"
-          >
-            Ask to try Reconsider
-          </.link>
-          <.link
-            :if={
-              @current_user &&
-                YouCongress.Accounts.Permissions.can_create_reconsideration?(@current_user)
-            }
+            id="reconsider-create"
             href={~p"/reconsider/new"}
-            class="rounded-lg border border-gray-300 bg-white px-5 py-3 text-base font-semibold text-gray-800 hover:bg-gray-50"
+            class="rounded-lg bg-indigo-600 px-5 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-500"
           >
             Create a Reconsider page
           </.link>
@@ -301,25 +280,27 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
       </section>
 
       <section class="mt-16 rounded-2xl bg-indigo-50 px-6 py-10 text-center sm:px-10">
-        <p class="text-sm font-semibold uppercase tracking-wide text-indigo-700">Currently in beta</p>
+        <p class="text-sm font-semibold uppercase tracking-wide text-indigo-700">
+          Ready when you are
+        </p>
         <h2 class="mt-2 text-2xl font-bold text-gray-900">Want to try it with your audience?</h2>
         <p class="mx-auto mt-3 max-w-2xl text-gray-600">
-          Tell us about your publication, channel, article, or video. We’ll help you set up an early
-          Reconsider page and learn from the experience.
+          Create a Reconsider page for your article or video, choose the statements it covers, and
+          share it with your audience.
         </p>
         <.link
-          id="reconsider-beta-contact-secondary"
-          href={beta_contact_path()}
+          id="reconsider-create-secondary"
+          href={~p"/reconsider/new"}
           class="mt-6 inline-flex rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500"
         >
-          Contact YouCongress
+          Create a Reconsider page
         </.link>
       </section>
     </div>
     """
   end
 
-  attr :contact_path, :string, required: true
+  attr :create_path, :string, required: true
 
   defp motion_ad(assigns) do
     ~H"""
@@ -444,8 +425,8 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
               Discover whether your content changes minds.
             </p>
             <div class="reconsider-motion-ad__cta ad-up ad-delay-2">
-              <a href={@contact_path}>Ask to try the beta</a>
-              <span>youcongress.org/reconsider</span>
+              <a href={@create_path}>Create a Reconsider page</a>
+              <span>youcongress.org/reconsider/new</span>
             </div>
           </div>
         </div>
@@ -490,9 +471,5 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
       </p>
     </section>
     """
-  end
-
-  defp beta_contact_path do
-    ~p"/contact?#{%{subject: @contact_subject, body: @contact_body}}"
   end
 end
