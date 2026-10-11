@@ -555,6 +555,16 @@ defmodule YouCongressWeb.ReconsiderLive.New do
 
         <:actions>
           <.button phx-disable-with="Creating…">Create Reconsider page</.button>
+          <span class="text-sm text-gray-500">
+            or
+            <.link
+              id="reconsider-back"
+              href={~p"/reconsider"}
+              class="font-semibold text-indigo-600 hover:text-indigo-500 hover:underline"
+            >
+              back
+            </.link>
+          </span>
         </:actions>
       </.simple_form>
     </div>
