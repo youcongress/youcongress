@@ -37,7 +37,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
               @current_user && YouCongress.Accounts.sign_up_complete?(@current_user) &&
                 YouCongress.Accounts.Permissions.can_create_reconsideration?(@current_user)
             }
-            href={~p"/reconsider/new"}
+            href={~p"/reconsider"}
             class="px-3 py-2 hover:text-zinc-700 transition-colors"
           >
             Reconsider
@@ -89,7 +89,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
                 @current_user && YouCongress.Accounts.sign_up_complete?(@current_user) &&
                   YouCongress.Accounts.Permissions.can_create_reconsideration?(@current_user)
               }
-              href={~p"/reconsider/new"}
+              href={~p"/reconsider"}
               class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
             >
               Create
