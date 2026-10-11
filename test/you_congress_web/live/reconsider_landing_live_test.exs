@@ -3,23 +3,12 @@ defmodule YouCongressWeb.ReconsiderLandingLiveTest do
 
   import Phoenix.LiveViewTest
 
-  @contact_subject "Reconsider beta access"
-  @contact_body """
-  Hi YouCongress team,
-
-  I'd like to try Reconsider for an article or video.
-
-  My publication or channel:
-  Link:
-  What I'd like to test:
-  """
-
-  test "explains Reconsider and links to a prefilled beta request", %{conn: conn} do
+  test "explains Reconsider and links directly to its creation page", %{conn: conn} do
     {:ok, view, html} = live(conn, ~p"/reconsider")
 
     assert html =~ "Discover whether your content changes minds"
     assert html =~ "policy proposals or claims"
-    assert html =~ "Currently in beta"
+    assert html =~ "Ready when you are"
     assert html =~ "How it works"
     assert has_element?(view, "#reconsider-example", "See a Reconsider page in action")
 
@@ -52,7 +41,7 @@ defmodule YouCongressWeb.ReconsiderLandingLiveTest do
     assert has_element?(view, "#reconsider-results-example div.text-4xl", "75%")
     refute has_element?(view, "#reconsider-results-example p.text-4xl", "75%")
 
-    contact_path = ~p"/contact?#{%{subject: @contact_subject, body: @contact_body}}"
+    create_path = ~p"/reconsider/new"
 
     assert has_element?(view, "#reconsider-motion-ad[phx-hook='ReconsiderMotionAd']")
     assert has_element?(view, "#reconsider-motion-ad [data-ad-scene]", "You hit publish.")
@@ -75,14 +64,23 @@ defmodule YouCongressWeb.ReconsiderLandingLiveTest do
 
     assert has_element?(
              view,
-             "#reconsider-motion-ad a[href='#{contact_path}']",
-             "Ask to try the beta"
+             "#reconsider-motion-ad a[href='#{create_path}']",
+             "Create a Reconsider page"
            )
 
     assert has_element?(
              view,
-             "#reconsider-beta-contact[href='#{contact_path}']",
-             "Ask to try Reconsider"
+             "#reconsider-create[href='#{create_path}']",
+             "Create a Reconsider page"
            )
+
+    assert has_element?(
+             view,
+             "#reconsider-create-secondary[href='#{create_path}']",
+             "Create a Reconsider page"
+           )
+
+    refute html =~ "Ask to try"
+    refute html =~ "Contact YouCongress"
   end
 end
