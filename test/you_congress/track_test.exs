@@ -37,4 +37,8 @@ defmodule YouCongress.TrackTest do
       )
     end)
   end
+
+  test "Amplitude user identifier never includes the linked X username" do
+    assert Track.amplitude_user_id(123, 456) == "user_id:123"
+  end
 end
