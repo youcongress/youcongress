@@ -116,7 +116,12 @@ defmodule YouCongressWeb.PageControllerTest do
   test "GET /about loads as a user", %{conn: conn} do
     conn = log_in_as_user(conn)
     conn = get(conn, ~p"/about")
-    assert html_response(conn, 200) =~ "About YouCongress"
+    html = html_response(conn, 200)
+    document = Floki.parse_document!(html)
+
+    assert html =~ "About YouCongress"
+    assert Floki.find(document, "header a[href='/reconsider']") != []
+    assert Floki.find(document, "header a[href='/reconsider/new']") == []
   end
 
   test "GET /future-of-life-foundation-epistack-award shows the award announcement", %{conn: conn} do
