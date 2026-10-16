@@ -31,9 +31,20 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
       |> assign(:pending_actions, nil)
       |> assign(:page_title, reconsideration.title)
       |> assign(
+        :canonical_url,
+        url(~p"/@#{reconsideration.creator.username}/r/#{reconsideration.slug}")
+      )
+      |> assign(
         :page_description,
         reconsideration.description || default_description(reconsideration)
       )
+      |> assign(:page_image, url(~p"/images/social-reconsider-v2.png"))
+      |> assign(
+        :page_image_alt,
+        "Reconsider by YouCongress: measure how articles and videos change minds"
+      )
+      |> assign(:page_image_width, 1200)
+      |> assign(:page_image_height, 630)
       |> assign_participation()
 
     {:ok, socket}
