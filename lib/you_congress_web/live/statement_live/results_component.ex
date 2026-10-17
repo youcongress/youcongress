@@ -24,46 +24,73 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
   attr :year_results_filters, :map, default: %{}
   attr :year_results_target, :any, default: nil
 
+  slot :synthesis
+  slot :vote_controls
+
   def horizontal_bar(assigns) do
     assigns = assign_display_results(assigns)
 
     ~H"""
-    <div class="pt-6 pb-1 space-y-4">
-      <div class="text-sm font-semibold">
-        Results ({vote_count_label(@display_total_votes)}):
+    <div class={["pb-1 space-y-4", @vote_controls == [] && "pt-6"]}>
+      <div class={[
+        "grid gap-4",
+        @vote_controls != [] &&
+          if(@synthesis == [],
+            do: "sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-8",
+            else: "lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-x-8"
+          )
+      ]}>
+        <div :if={@synthesis != []} class="min-w-0">
+          {render_slot(@synthesis)}
+        </div>
+        <div :if={@vote_controls != []}>
+          {render_slot(@vote_controls)}
+        </div>
+        <div class="min-w-0 space-y-4">
+          <div class="text-sm font-semibold">
+            Results ({vote_count_label(@display_total_votes)}):
+          </div>
+
+          <ResultsComponent.result_row
+            label="Total"
+            total_votes={@display_total_votes}
+            vote_frequencies={@display_vote_frequencies}
+            emphasis={true}
+          />
+
+          <div
+            :if={@statement_id}
+            class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500"
+          >
+            <button
+              id={if @id, do: "#{@id}-by-country"}
+              type="button"
+              phx-click="toggle-country-results"
+              phx-value-statement_id={@statement_id}
+              phx-target={@country_results_target}
+              class="uppercase tracking-wide hover:text-gray-700"
+            >
+              By country
+            </button>
+            <span class="text-gray-300">·</span>
+            <button
+              id={if @id, do: "#{@id}-by-year"}
+              type="button"
+              phx-click="toggle-year-results"
+              phx-value-statement_id={@statement_id}
+              phx-target={@year_results_target}
+              class="uppercase tracking-wide hover:text-gray-700"
+            >
+              By year
+            </button>
+          </div>
+        </div>
       </div>
 
-      <ResultsComponent.result_row
-        label="Total"
-        total_votes={@display_total_votes}
-        vote_frequencies={@display_vote_frequencies}
-        emphasis={true}
-      />
-
-      <div :if={@statement_id} class="space-y-3">
-        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-          <button
-            id={if @id, do: "#{@id}-by-country"}
-            type="button"
-            phx-click="toggle-country-results"
-            phx-value-statement_id={@statement_id}
-            phx-target={@country_results_target}
-            class="uppercase tracking-wide hover:text-gray-700"
-          >
-            By country
-          </button>
-          <span class="text-gray-300">·</span>
-          <button
-            id={if @id, do: "#{@id}-by-year"}
-            type="button"
-            phx-click="toggle-year-results"
-            phx-value-statement_id={@statement_id}
-            phx-target={@year_results_target}
-            class="uppercase tracking-wide hover:text-gray-700"
-          >
-            By year
-          </button>
-        </div>
+      <div
+        :if={@statement_id && (@show_country_results || @show_year_results)}
+        class="space-y-3"
+      >
         <div :if={@show_country_results} class="grid gap-3 text-xs md:grid-cols-2">
           <ResultsComponent.country_filter_group
             title="Vote type"

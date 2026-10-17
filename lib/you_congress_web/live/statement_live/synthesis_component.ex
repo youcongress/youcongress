@@ -40,7 +40,7 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
       |> assign(:source_observations, source_observations)
 
     ~H"""
-    <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4" data-nosnippet>
+    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4" data-nosnippet>
       <button
         type="button"
         phx-click="toggle-synthesis"
@@ -58,9 +58,6 @@ defmodule YouCongressWeb.StatementLive.SynthesisComponent do
           </span>
         </span>
         <span class="mt-1 block font-semibold">{@synthesis["headline"]}</span>
-        <span :if={!@show_synthesis} class="mt-2 inline-block text-sm text-gray-600 underline">
-          Show insights and arguments
-        </span>
       </button>
 
       <%!-- Always in the DOM (crawlable); the toggle only flips visibility. --%>

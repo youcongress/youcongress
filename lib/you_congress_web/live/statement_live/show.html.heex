@@ -75,30 +75,7 @@
   </button>
 </div>
 
-<SynthesisComponent.card
-  :if={@show_synthesis_card?}
-  statement={@statement}
-  synthesis={@statement.synthesis}
-  show_synthesis={@show_synthesis}
-  synthesis_opinions={@synthesis_opinions}
-  can_regenerate={Permissions.can_regenerate_statement_synthesis?(@current_user)}
-  synthesis_regenerating={@synthesis_regenerating}
-/>
-
 <div class="mt-4">
-  <div class="pb-1 text-xs">
-    Cast your vote:
-  </div>
-  <.live_component
-    module={CastVoteComponent}
-    id={:cast}
-    statement={@statement}
-    current_user_vote={@current_user_vote}
-    current_user={@current_user}
-    display_results={false}
-    page={:statement_show}
-  />
-
   <ResultsComponent.horizontal_bar
     id="statement-results"
     statement_id={@statement.id}
@@ -112,7 +89,32 @@
     year_vote_frequencies={@year_vote_frequencies}
     show_year_results={@show_year_results}
     year_results_filters={@year_results_filters}
-  />
+  >
+    <:synthesis :if={@show_synthesis_card?}>
+      <SynthesisComponent.card
+        statement={@statement}
+        synthesis={@statement.synthesis}
+        show_synthesis={@show_synthesis}
+        synthesis_opinions={@synthesis_opinions}
+        can_regenerate={Permissions.can_regenerate_statement_synthesis?(@current_user)}
+        synthesis_regenerating={@synthesis_regenerating}
+      />
+    </:synthesis>
+    <:vote_controls>
+      <div class="space-y-4">
+        <div class="text-sm font-semibold">Cast Your Vote:</div>
+        <.live_component
+          module={CastVoteComponent}
+          id={:cast}
+          statement={@statement}
+          current_user_vote={@current_user_vote}
+          current_user={@current_user}
+          display_results={false}
+          page={:statement_show}
+        />
+      </div>
+    </:vote_controls>
+  </ResultsComponent.horizontal_bar>
 </div>
 
 <div class="mt-4 pb-2">
