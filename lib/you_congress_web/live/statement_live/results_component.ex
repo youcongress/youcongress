@@ -24,6 +24,7 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
   attr :year_results_filters, :map, default: %{}
   attr :year_results_target, :any, default: nil
 
+  slot :header
   slot :synthesis
   slot :vote_controls
 
@@ -36,10 +37,15 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
         "grid gap-4",
         @vote_controls != [] &&
           if(@synthesis == [],
-            do: "sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-8",
+            do:
+              if(@header == [],
+                do: "sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-8",
+                else: "sm:grid-cols-2 sm:gap-x-8"
+              ),
             else: "lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-x-8"
           )
       ]}>
+        {render_slot(@header)}
         <div :if={@synthesis != []} class="min-w-0">
           {render_slot(@synthesis)}
         </div>
