@@ -545,7 +545,7 @@ defmodule YouCongressWeb.StatementLiveTest do
       refute html =~ "Add quotes manually"
       refute html =~ "Add quotes with AI"
       refute html =~ "Invite others"
-      assert html =~ "Share this with your representatives, journalists and friends"
+      assert html =~ "Share this with friends, journalists and politicians"
       assert has_element?(show_live, "#statement-share-prompt button[data-copy-current-url]")
       refute html =~ "Find quotes"
       refute html =~ "Biased? Add more"

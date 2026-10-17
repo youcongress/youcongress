@@ -10,112 +10,116 @@
   </div>
 <% end %>
 
-<div
-  id="statement-share-prompt"
-  class="relative mb-4 flex flex-col sm:flex-row sm:items-center gap-2 rounded-md bg-indigo-50 pl-3 pr-10 py-2 ring-1 ring-inset ring-indigo-100"
+<ResultsComponent.horizontal_bar
+  id="statement-results"
+  statement_id={@statement.id}
+  total_votes={@total_votes}
+  vote_frequencies={@vote_frequencies}
+  country_vote_frequencies={@country_vote_frequencies}
+  show_country_results={@show_country_results}
+  country_results_filters={@country_results_filters}
+  selected_country={@selected_country}
+  select_country?={true}
+  year_vote_frequencies={@year_vote_frequencies}
+  show_year_results={@show_year_results}
+  year_results_filters={@year_results_filters}
 >
-  <span class="text-sm text-gray-700 flex-1">
-    Share this with your representatives, journalists and friends
-  </span>
-  <button
-    type="button"
-    data-copy-current-url
-    data-copy-success-label="Link copied!"
-    aria-label="Copy link to this statement"
-    class="inline-flex items-center justify-center gap-1 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-  >
-    <.icon name="hero-link" class="w-4 h-4" /> Copy link
-  </button>
-  <button
-    type="button"
-    phx-click={JS.hide(to: "#statement-share-prompt")}
-    aria-label="Close sharing prompt"
-    class="absolute right-2 top-2 rounded p-1 text-gray-500 hover:text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-  >
-    <.icon name="hero-x-mark" class="h-5 w-5" />
-  </button>
-</div>
-
-<div
-  :if={Enum.any?(@statement.halls, &(&1.name != "all"))}
-  class="flex flex-wrap gap-2 justify-center mb-4"
->
-  <%= for hall <- @statement.halls, hall.name != "all" do %>
-    <.link
-      href={~p"/h/#{hall.name}"}
-      class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 hover:bg-gray-100"
-    >
-      {hall.name}
-    </.link>
-  <% end %>
-</div>
-
-<div class="flex items-center justify-between gap-6 mb-2">
-  <h1 class="text-2xl font-bold text-center flex-1">
-    {@statement.title}
-    <.link
-      :if={@statement.url}
-      id="statement-url"
-      href={@statement.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Open statement link (opens in a new tab)"
-      title={@statement.url}
-      class="inline-flex align-middle ml-1 p-1 rounded text-indigo-600 hover:text-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-    >
-      <.icon name="hero-link" class="h-5 w-5" />
-    </.link>
-  </h1>
-  <div class="flex-none flex gap-2">
-    <%= if Permissions.can_edit_statement?(@statement, @current_user) do %>
-      <.link patch={~p"/p/#{@statement.slug}/show/edit"} phx-click={JS.push_focus()} class="pl-2">
-        Edit
-      </.link>
-    <% end %>
-  </div>
-</div>
-
-<div class="mt-4">
-  <ResultsComponent.horizontal_bar
-    id="statement-results"
-    statement_id={@statement.id}
-    total_votes={@total_votes}
-    vote_frequencies={@vote_frequencies}
-    country_vote_frequencies={@country_vote_frequencies}
-    show_country_results={@show_country_results}
-    country_results_filters={@country_results_filters}
-    selected_country={@selected_country}
-    select_country?={true}
-    year_vote_frequencies={@year_vote_frequencies}
-    show_year_results={@show_year_results}
-    year_results_filters={@year_results_filters}
-  >
-    <:synthesis :if={@show_synthesis_card?}>
-      <SynthesisComponent.card
-        statement={@statement}
-        synthesis={@statement.synthesis}
-        show_synthesis={@show_synthesis}
-        synthesis_opinions={@synthesis_opinions}
-        can_regenerate={Permissions.can_regenerate_statement_synthesis?(@current_user)}
-        synthesis_regenerating={@synthesis_regenerating}
-      />
-    </:synthesis>
-    <:vote_controls>
-      <div class="space-y-4">
-        <div class="text-sm font-semibold">Cast Your Vote:</div>
-        <.live_component
-          module={CastVoteComponent}
-          id={:cast}
-          statement={@statement}
-          current_user_vote={@current_user_vote}
-          current_user={@current_user}
-          display_results={false}
-          page={:statement_show}
-        />
+  <:header>
+    <div id="statement-header" class="col-span-full grid grid-cols-[subgrid] items-end gap-y-4">
+      <div
+        :if={Enum.any?(@statement.halls, &(&1.name != "all"))}
+        class={[
+          "order-2 flex min-w-0 flex-wrap items-start gap-2",
+          if(@show_synthesis_card?, do: "lg:order-1 lg:col-span-2", else: "sm:order-1")
+        ]}
+      >
+        <%= for hall <- @statement.halls, hall.name != "all" do %>
+          <.link
+            href={~p"/h/#{hall.name}"}
+            class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 hover:bg-gray-100"
+          >
+            {hall.name}
+          </.link>
+        <% end %>
       </div>
-    </:vote_controls>
-  </ResultsComponent.horizontal_bar>
-</div>
+      <div
+        id="statement-share-prompt"
+        class={[
+          "order-1 flex flex-col sm:flex-row sm:items-center gap-2 rounded-md bg-indigo-50 px-3 py-2 ring-1 ring-inset ring-indigo-100",
+          if(@show_synthesis_card?,
+            do: "lg:order-2 lg:col-start-3",
+            else: "sm:order-2 sm:col-start-2"
+          )
+        ]}
+      >
+        <span class="text-sm text-gray-700 flex-1">
+          Share this with friends, journalists and politicians
+        </span>
+        <button
+          type="button"
+          data-copy-current-url
+          data-copy-success-label="Link copied!"
+          aria-label="Copy link to this statement"
+          class="inline-flex shrink-0 items-center justify-center gap-1 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        >
+          <.icon name="hero-link" class="w-4 h-4" /> Copy link
+        </button>
+      </div>
+      <div class="order-3 col-span-full flex items-start justify-between gap-6">
+        <h1 class="text-2xl font-bold text-left flex-1">
+          {@statement.title}
+          <.link
+            :if={@statement.url}
+            id="statement-url"
+            href={@statement.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open statement link (opens in a new tab)"
+            title={@statement.url}
+            class="inline-flex align-middle ml-1 p-1 rounded text-indigo-600 hover:text-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            <.icon name="hero-link" class="h-5 w-5" />
+          </.link>
+        </h1>
+        <div class="flex-none flex gap-2">
+          <%= if Permissions.can_edit_statement?(@statement, @current_user) do %>
+            <.link
+              patch={~p"/p/#{@statement.slug}/show/edit"}
+              phx-click={JS.push_focus()}
+              class="pl-2"
+            >
+              Edit
+            </.link>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </:header>
+  <:synthesis :if={@show_synthesis_card?}>
+    <SynthesisComponent.card
+      statement={@statement}
+      synthesis={@statement.synthesis}
+      show_synthesis={@show_synthesis}
+      synthesis_opinions={@synthesis_opinions}
+      can_regenerate={Permissions.can_regenerate_statement_synthesis?(@current_user)}
+      synthesis_regenerating={@synthesis_regenerating}
+    />
+  </:synthesis>
+  <:vote_controls>
+    <div class="space-y-4">
+      <div class="text-sm font-semibold">Cast Your Vote:</div>
+      <.live_component
+        module={CastVoteComponent}
+        id={:cast}
+        statement={@statement}
+        current_user_vote={@current_user_vote}
+        current_user={@current_user}
+        display_results={false}
+        page={:statement_show}
+      />
+    </div>
+  </:vote_controls>
+</ResultsComponent.horizontal_bar>
 
 <div class="mt-4 pb-2">
   <.live_component
