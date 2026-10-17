@@ -520,7 +520,7 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}")
 
-      assert html =~ "Cast your vote:"
+      assert html =~ "Cast Your Vote:"
       assert has_element?(show_live, "button#cast-vote-for", "For")
       assert has_element?(show_live, "button#cast-vote-abstain", "Abstain")
       assert has_element?(show_live, "button#cast-vote-against", "Against")
@@ -535,20 +535,18 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ "first comment on an empty statement"
     end
 
-    test "shows statement header actions", %{
+    test "hides quote actions from guests and keeps the sharing prompt", %{
       conn: conn,
       statement: statement
     } do
       {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}")
 
-      assert html =~ "Add quotes manually"
-      assert html =~ ~s(href="/p/#{statement.slug}/add-quote")
-      assert html =~ "Invite others"
-      assert html =~ "data-copy-current-url"
-      assert html =~ "Add quotes with AI"
-      login_path = "/log_in?return_to=%2Fp%2F#{statement.slug}"
-      assert has_element?(show_live, "a[href='#{login_path}']", "Add quotes with AI")
-      assert html =~ ~s(href="#{login_path}")
+      refute has_element?(show_live, "#statement-quote-actions")
+      refute html =~ "Add quotes manually"
+      refute html =~ "Add quotes with AI"
+      refute html =~ "Invite others"
+      assert html =~ "Share this with your representatives, journalists and friends"
+      assert has_element?(show_live, "#statement-share-prompt button[data-copy-current-url]")
       refute html =~ "Find quotes"
       refute html =~ "Biased? Add more"
     end
@@ -570,7 +568,16 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       {:ok, show_live, html} = live(conn, ~p"/p/#{statement.slug}")
 
+      assert has_element?(show_live, "#statement-quote-actions")
       assert html =~ "Add quotes with AI"
+
+      assert has_element?(
+               show_live,
+               "#statement-quote-actions a[href='/p/#{statement.slug}/add-quote']",
+               "Add quotes manually"
+             )
+
+      refute html =~ "Invite others"
 
       html =
         show_live

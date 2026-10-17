@@ -108,7 +108,7 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
       assert html =~ "AI synthesis"
       assert html =~ "Synthesis headline about the debate."
       assert html =~ "Show more"
-      assert html =~ "Show insights and arguments"
+      refute html =~ "Show insights and arguments"
       refute html =~ "AI synthesis of 25 quotes"
       refute html =~ "For 25 · Abstain 0 · Against 0"
       # The body ships in the initial HTML (crawlable) but starts hidden.
@@ -176,7 +176,7 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
 
       hall_index = index_of!(html, ~s(href="/h/ai"))
       synthesis_index = index_of!(html, "AI synthesis")
-      vote_index = index_of!(html, "Cast your vote:")
+      vote_index = index_of!(html, "Cast Your Vote:")
 
       assert hall_index < synthesis_index
       assert synthesis_index < vote_index
@@ -201,7 +201,7 @@ defmodule YouCongressWeb.StatementLiveSynthesisTest do
       assert_patch(view, ~p"/p/#{statement.slug}")
       assert has_element?(view, "#synthesis-body.hidden")
       assert render(view) =~ "Show more"
-      assert render(view) =~ "Show insights and arguments"
+      refute render(view) =~ "Show insights and arguments"
     end
 
     test "opens expanded from the synthesis URL param", %{conn: conn} do
