@@ -10,45 +10,6 @@
   </div>
 <% end %>
 
-<div class="flex items-center justify-between gap-6 mb-2">
-  <h1 class="text-2xl font-bold text-center flex-1">
-    {@statement.title}
-    <.link
-      :if={@statement.url}
-      id="statement-url"
-      href={@statement.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Open statement link (opens in a new tab)"
-      title={@statement.url}
-      class="inline-flex align-middle ml-1 p-1 rounded text-indigo-600 hover:text-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-    >
-      <.icon name="hero-link" class="h-5 w-5" />
-    </.link>
-  </h1>
-  <div class="flex-none flex gap-2">
-    <%= if Permissions.can_edit_statement?(@statement, @current_user) do %>
-      <.link patch={~p"/p/#{@statement.slug}/show/edit"} phx-click={JS.push_focus()} class="pl-2">
-        Edit
-      </.link>
-    <% end %>
-  </div>
-</div>
-
-<div
-  :if={Enum.any?(@statement.halls, &(&1.name != "all"))}
-  class="flex flex-wrap gap-2 justify-center mb-4"
->
-  <%= for hall <- @statement.halls, hall.name != "all" do %>
-    <.link
-      href={~p"/h/#{hall.name}"}
-      class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 hover:bg-gray-100"
-    >
-      {hall.name}
-    </.link>
-  <% end %>
-</div>
-
 <div
   id="statement-share-prompt"
   class="relative mb-4 flex flex-col sm:flex-row sm:items-center gap-2 rounded-md bg-indigo-50 pl-3 pr-10 py-2 ring-1 ring-inset ring-indigo-100"
@@ -73,6 +34,45 @@
   >
     <.icon name="hero-x-mark" class="h-5 w-5" />
   </button>
+</div>
+
+<div
+  :if={Enum.any?(@statement.halls, &(&1.name != "all"))}
+  class="flex flex-wrap gap-2 justify-center mb-4"
+>
+  <%= for hall <- @statement.halls, hall.name != "all" do %>
+    <.link
+      href={~p"/h/#{hall.name}"}
+      class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 hover:bg-gray-100"
+    >
+      {hall.name}
+    </.link>
+  <% end %>
+</div>
+
+<div class="flex items-center justify-between gap-6 mb-2">
+  <h1 class="text-2xl font-bold text-center flex-1">
+    {@statement.title}
+    <.link
+      :if={@statement.url}
+      id="statement-url"
+      href={@statement.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Open statement link (opens in a new tab)"
+      title={@statement.url}
+      class="inline-flex align-middle ml-1 p-1 rounded text-indigo-600 hover:text-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+    >
+      <.icon name="hero-link" class="h-5 w-5" />
+    </.link>
+  </h1>
+  <div class="flex-none flex gap-2">
+    <%= if Permissions.can_edit_statement?(@statement, @current_user) do %>
+      <.link patch={~p"/p/#{@statement.slug}/show/edit"} phx-click={JS.push_focus()} class="pl-2">
+        Edit
+      </.link>
+    <% end %>
+  </div>
 </div>
 
 <div class="mt-4">
