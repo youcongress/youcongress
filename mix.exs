@@ -14,6 +14,10 @@ defmodule YouCongress.MixProject do
     ]
   end
 
+  def cli do
+    [preferred_envs: [check: :test, precommit: :test, ci: :test]]
+  end
+
   # Configuration for the OTP application.
   #
   # Type `mix help compile.app` for more information.
@@ -61,6 +65,7 @@ defmodule YouCongress.MixProject do
       {:oban_web, "~> 2.11.6"},
       {:igniter, "~> 0.5", only: [:dev]},
       {:credo, "~> 1.7.5", only: [:dev, :test]},
+      {:sobelow, "~> 0.16.0", only: [:dev, :test], runtime: false},
       {:slugify, "~> 1.3.1"},
       {:appsignal, "~> 2.17.4"},
       {:appsignal_phoenix, "~> 2.8.2"},
@@ -90,7 +95,27 @@ defmodule YouCongress.MixProject do
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind default", "esbuild default"],
-      "assets.deploy": ["tailwind default --minify", "esbuild default --minify", "phx.digest"]
+      "assets.deploy": ["tailwind default --minify", "esbuild default --minify", "phx.digest"],
+      # Fast local feedback; external dependency audits belong in precommit.
+      check: [
+        "format",
+        "compile --warnings-as-errors",
+        "assets.build",
+        "credo --strict",
+        "test",
+        "sobelow --config"
+      ],
+      # Hex 2.5.1+ checks retirements and advisories before application tasks run.
+      precommit: [
+        "hex.audit",
+        "format --check-formatted",
+        "compile --warnings-as-errors",
+        "assets.build",
+        "credo --strict",
+        "test --cover",
+        "sobelow --config"
+      ],
+      ci: ["precommit"]
     ]
   end
 end

@@ -81,6 +81,12 @@ Open [http://localhost:4000](http://localhost:4000) in your browser.
 
 ## How to contribute
 
+Run `mix check` while developing. It formats the code, compiles with warnings treated as errors, builds assets, runs strict Credo checks and tests, and scans for security issues with Sobelow.
+
+Before committing, run `mix precommit`. It first audits dependencies for retirements and security advisories, then runs the same checks without rewriting formatting and with test coverage. `mix ci` runs the same checks as `mix precommit`.
+
+All three commands use the test environment and the test database configured in `config/test.exs`. Install dependencies with `mix deps.get` and make sure PostgreSQL is running. Dependency auditing requires Hex 2.5.1 or newer (`mix local.hex` to update) and network access. Sobelow runs locally without update checks and fails on findings at any confidence level or source parsing errors. Coverage uses Mix's default 90% minimum; reports are written to `cover/`. Tests tagged `:openai_api` remain excluded.
+
 - Email hector@youcongress.org if you would like to help validate quotes found by AI agents.
 - Take an [unassigned issue](https://github.com/youcongress/youcongress/issues).
 
