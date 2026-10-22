@@ -6,6 +6,8 @@ import Config
 # which you should run after static files are built and
 # before starting your production server.
 config :you_congress, YouCongressWeb.Endpoint,
+  # Fly terminates TLS; rewrite the scheme before redirects and session cookies.
+  force_ssl: [rewrite_on: [:x_forwarded_proto], hsts: true, subdomains: false, preload: false],
   cache_static_manifest: "priv/static/cache_manifest.json",
   check_origin: [
     "https://youcongress.org",

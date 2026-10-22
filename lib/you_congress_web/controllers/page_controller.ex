@@ -15,6 +15,8 @@ defmodule YouCongressWeb.PageController do
     render(conn, :privacy_policy)
   end
 
+  # Sitemap values are XML-escaped by url_entry/3 and served as application/xml.
+  # sobelow_skip ["XSS.SendResp"]
   def sitemap(conn, _params) do
     statements = Statements.list_statements(order: :updated_at_desc, limit: 10_000)
     authors = Authors.list_authors(with_quotes: true, order_by: [desc: :id], limit: 10_000)
@@ -86,7 +88,9 @@ defmodule YouCongressWeb.PageController do
   end
 
   defp url_entry(loc, lastmod, priority) do
-    lastmod_tag = if lastmod, do: "\n    <lastmod>#{lastmod}</lastmod>", else: ""
+    loc = xml_escape(loc)
+    priority = xml_escape(priority)
+    lastmod_tag = if lastmod, do: "\n    <lastmod>#{xml_escape(lastmod)}</lastmod>", else: ""
 
     """
       <url>
@@ -95,6 +99,10 @@ defmodule YouCongressWeb.PageController do
         <priority>#{priority}</priority>
       </url>
     """
+  end
+
+  defp xml_escape(value) do
+    value |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
   end
 
   defp lastmod(record) do

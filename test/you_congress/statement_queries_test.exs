@@ -46,6 +46,36 @@ defmodule YouCongress.Statements.StatementQueriesTest do
     |> Repo.update!()
   end
 
+  test "raw SQL feeds bind hall input and keep ordering choices on fixed branches" do
+    statement = statement_fixture()
+    author = author_fixture(%{public_figure: true})
+    opinion = opinion_fixture(%{author_id: author.id, twin: false, date: ~D[2026-01-01]})
+    {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
+
+    vote =
+      vote_fixture(%{statement_id: statement.id, author_id: author.id, opinion_id: opinion.id})
+
+    set_verification_pipeline(opinion, statement, vote)
+
+    for query <- [
+          &StatementQueries.get_opinion_cards_round_robin/1,
+          &StatementQueries.get_opinion_cards_by_top_likes/1,
+          &StatementQueries.get_opinion_cards_by_recency/1,
+          &StatementQueries.get_opinion_cards_by_quote_date/1,
+          &StatementQueries.get_newest_opinion_cards/1
+        ] do
+      assert [%{statement: %{id: id}}] = query.(min_opinions: 0)
+      assert id == statement.id
+      assert query.(hall_name: "' OR 1=1 --", min_opinions: 0) == []
+      assert query.(hall_name: "'; DROP TABLE statements; --", min_opinions: 0) == []
+    end
+
+    assert StatementQueries.get_newest_opinion_cards(order_by: "o.id; DROP TABLE statements") ==
+             StatementQueries.get_newest_opinion_cards()
+
+    assert Repo.get!(YouCongress.Statements.Statement, statement.id)
+  end
+
   describe "vote share filter" do
     test "includes any response strictly above 80%, excludes empty and boundary cases, and paginates" do
       qualifying =

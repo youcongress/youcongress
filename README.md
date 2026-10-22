@@ -87,6 +87,10 @@ Before committing, run `mix precommit`. It first audits dependencies for retirem
 
 All three commands use the test environment and the test database configured in `config/test.exs`. Install dependencies with `mix deps.get` and make sure PostgreSQL is running. Dependency auditing requires Hex 2.5.1 or newer (`mix local.hex` to update) and network access. Sobelow runs locally without update checks and fails on findings at any confidence level or source parsing errors. Coverage uses Mix's default 90% minimum; reports are written to `cover/`. Tests tagged `:openai_api` remain excluded.
 
+The browser Content Security Policy is enforced on browser routes. Its allowlist supports the existing analytics, Turnstile, chart, form, and video integrations; Oban and LiveDashboard use a fresh request nonce for inline scripts. When adding a browser integration, update the policy and test it with enforcement enabled. Production HTTPS handling trusts Fly's `x-forwarded-proto` header, so the application must remain behind that trusted proxy.
+
+Sobelow honors only the documented, check-specific `sobelow_skip` annotations for reviewed parameterized SQL, escaped output, and the dynamically generated CSP. New findings still fail the scan, including low-confidence findings and parsing failures.
+
 - Email hector@youcongress.org if you would like to help validate quotes found by AI agents.
 - Take an [unassigned issue](https://github.com/youcongress/youcongress/issues).
 

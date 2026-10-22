@@ -8,6 +8,10 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
   @filter_keys [:direct, :delegated, :quotes, :email_verified, :phone_verified]
   @country_filter_fields Enum.map(@filter_keys, &String.to_atom("country_#{&1}"))
   @year_filter_fields Enum.map(@filter_keys, &String.to_atom("year_#{&1}"))
+  @filter_fields %{
+    country: Map.new(Enum.zip(@filter_keys, @country_filter_fields)),
+    year: Map.new(Enum.zip(@filter_keys, @year_filter_fields))
+  }
   @simple_fields [:synthesis, :results, :source, :answer, :country] ++
                    @country_filter_fields ++ @year_filter_fields
 
@@ -239,7 +243,7 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
       if Map.get(filters, filter) == Map.get(defaults, filter) do
         query
       else
-        Map.put(query, String.to_atom("#{group}_#{filter}"), to_string(Map.get(filters, filter)))
+        Map.put(query, @filter_fields[group][filter], to_string(Map.get(filters, filter)))
       end
     end)
   end

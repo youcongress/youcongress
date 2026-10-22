@@ -118,6 +118,8 @@ defmodule YouCongress.Statements.StatementQueries do
   - :offset - number of cards to skip
   - :limit - max cards to return
   """
+  # Interpolated fragments are fixed SQL and parameter indexes; values use bound parameters.
+  # sobelow_skip ["SQL.Query"]
   def get_opinion_cards_round_robin(opts \\ []) do
     hall_name = Keyword.get(opts, :hall_name, "all")
     top_author_ids = Keyword.get(opts, :top_author_ids, [])
@@ -263,6 +265,8 @@ defmodule YouCongress.Statements.StatementQueries do
   - :offset - number of cards to skip
   - :limit - max cards to return
   """
+  # Interpolated fragments are fixed SQL and parameter indexes; values use bound parameters.
+  # sobelow_skip ["SQL.Query"]
   def get_opinion_cards_by_top_likes(opts \\ []) do
     hall_name = Keyword.get(opts, :hall_name, "all")
     offset = Keyword.get(opts, :offset, 0)
@@ -840,6 +844,8 @@ defmodule YouCongress.Statements.StatementQueries do
     end
   end
 
+  # Private callers build SQL only from fixed fragments; all external values are bound in params.
+  # sobelow_skip ["SQL.Query"]
   defp run_opinion_cards_query(sql, params) do
     result = Repo.query!(sql, params)
 

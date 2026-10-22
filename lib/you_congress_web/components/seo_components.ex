@@ -10,6 +10,8 @@ defmodule YouCongressWeb.SEOComponents do
   """
   attr :data, :map, required: true
 
+  # HTML-safe JSON escapes <, &, and script-closing sequences before raw insertion.
+  # sobelow_skip ["XSS.Raw"]
   def json_ld(assigns) do
     ~H"""
     <script type="application/ld+json">

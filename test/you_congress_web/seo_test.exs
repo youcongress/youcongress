@@ -208,6 +208,15 @@ defmodule YouCongressWeb.SEOTest do
   end
 
   describe "json_ld component" do
+    test "hostile text remains one inert JSON script and round-trips intact" do
+      data = %{"text" => "</ScRiPt><img src=x onerror=alert(1)> & \"quotes\" \u2028\u2029"}
+      html = render_component(&YouCongressWeb.SEOComponents.json_ld/1, data: data)
+      document = Floki.parse_document!(html)
+      assert [script] = Floki.find(document, "script[type='application/ld+json']")
+      assert Floki.find(document, "img") == []
+      assert Jason.decode!(Floki.text(script, js: true)) == data
+    end
+
     test "escapes </script> in quote content" do
       html =
         render_component(&YouCongressWeb.SEOComponents.json_ld/1,

@@ -4,6 +4,8 @@ defmodule YouCongressWeb.Router do
   import Oban.Web.Router
   import YouCongressWeb.UserAuth
 
+  # ContentSecurityPolicy sets a per-request nonce policy, verified by browser/header tests.
+  # sobelow_skip ["Config.CSP"]
   pipeline :browser do
     plug(:accepts, ["html", "xml"])
     plug(:fetch_session)
@@ -12,6 +14,7 @@ defmodule YouCongressWeb.Router do
     plug(:put_root_layout, html: {YouCongressWeb.Layouts, :root})
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)
+    plug(YouCongressWeb.Plugs.ContentSecurityPolicy)
     plug(:fetch_current_user)
     plug(:reject_blocked_user)
     plug(:redirect_to_user_registration_if_email_unconfirmed)
@@ -143,7 +146,11 @@ defmodule YouCongressWeb.Router do
     scope "/dev" do
       pipe_through(:browser)
 
-      live_dashboard("/dashboard", metrics: YouCongressWeb.Telemetry)
+      live_dashboard("/dashboard",
+        metrics: YouCongressWeb.Telemetry,
+        csp_nonce_assign_key: :csp_nonce
+      )
+
       forward("/mailbox", Plug.Swoosh.MailboxPreview)
     end
   end
@@ -151,7 +158,7 @@ defmodule YouCongressWeb.Router do
   scope "/" do
     pipe_through([:browser, :require_admin_user])
 
-    oban_dashboard("/oban")
+    oban_dashboard("/oban", csp_nonce_assign_key: :csp_nonce)
   end
 
   ## Authentication routes

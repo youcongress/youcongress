@@ -1,5 +1,7 @@
 [
   exit: "low",
   private: true,
+  # Honor only the reviewed, check-specific sobelow_skip annotations in source.
+  skip: true,
   strict: true
 ]
