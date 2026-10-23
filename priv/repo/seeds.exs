@@ -23,7 +23,7 @@ defmodule YouCongress.Seeds do
   defp find_or_create_user do
     user_attrs = %{
       "email" => "admin@youcongress.org",
-      "password" => "admin:1234"
+      "password" => generated_admin_password()
     }
 
     author_attrs = %{
@@ -39,10 +39,22 @@ defmodule YouCongress.Seeds do
     end
   end
 
+  # A hardcoded seed password becomes a default credential if seeds ever run
+  # against a shared or production database, so it is generated per run and
+  # printed once below.
+  defp generated_admin_password do
+    :crypto.strong_rand_bytes(16)
+    |> Base.encode16()
+    |> String.downcase()
+  end
+
   defp create_user(user_attrs, author_attrs) do
     case Accounts.register_user(user_attrs, author_attrs) do
       {:ok, %{user: user}} ->
-        IO.puts("User #{user_attrs["email"]} created successfully.")
+        IO.puts("""
+        User #{user_attrs["email"]} created successfully.
+        Generated admin password (shown once, store it now): #{user_attrs["password"]}
+        """)
 
         make_admin(user)
 
