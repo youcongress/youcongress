@@ -49,6 +49,17 @@ defmodule YouCongressWeb.Plugs.ContentSecurityPolicyTest do
         ] do
       assert origin in directives["frame-src"]
     end
+
+    # Images may only load from the profile-photo CDNs actually in use.
+    assert directives["img-src"] == [
+             "'self'",
+             "data:",
+             "https://pbs.twimg.com",
+             "https://abs.twimg.com",
+             "https://lh3.googleusercontent.com"
+           ]
+
+    refute "https:" in directives["img-src"]
   end
 
   test "WebSocket sources use endpoint configuration, never request headers" do
