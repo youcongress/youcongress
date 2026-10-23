@@ -43,3 +43,7 @@ npm-debug.log
 .codex
 .claude
 .sprite
+
+# Local test run output
+/test_output.log
+/test_output.txt
