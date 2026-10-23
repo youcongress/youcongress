@@ -76,7 +76,8 @@ defmodule YouCongress.MixProject do
       {:castore, "~> 1.0"},
       {:req, "~> 0.7.4"},
       {:redix, "~> 1.5"},
-      {:anubis_mcp, github: "hectorperez/anubis-mcp"},
+      {:anubis_mcp,
+       github: "hectorperez/anubis-mcp", ref: "da3fb5e665f0677a5a5376bd84466117b88c5dc2"},
       {:dotenvy, "~> 1.1", only: [:dev, :test]}
     ]
   end
