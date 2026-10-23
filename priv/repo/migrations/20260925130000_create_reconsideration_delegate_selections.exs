@@ -21,6 +21,8 @@ defmodule YouCongress.Repo.Migrations.CreateReconsiderationDelegateSelections do
              [
                :reconsideration_id,
                :delegate_author_id
-             ], name: :reconsideration_delegate_selections_lookup_index)
+             ],
+             name: :reconsideration_delegate_selections_lookup_index
+           )
   end
 end
