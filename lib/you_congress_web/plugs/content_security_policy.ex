@@ -17,7 +17,7 @@ defmodule YouCongressWeb.Plugs.ContentSecurityPolicy do
         "object-src 'none'",
         "frame-ancestors 'self'",
         "form-action 'self'",
-        "script-src 'self' 'nonce-#{nonce}' https://plausible.io https://challenges.cloudflare.com https://cdn.jsdelivr.net https://tally.so",
+        "script-src 'self' 'nonce-#{nonce}' https://plausible.io https://challenges.cloudflare.com https://tally.so",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: https:",
         "font-src 'self' data:",

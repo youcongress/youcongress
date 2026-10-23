@@ -34,11 +34,13 @@ defmodule YouCongressWeb.Plugs.ContentSecurityPolicyTest do
     for origin <- [
           "https://plausible.io",
           "https://challenges.cloudflare.com",
-          "https://cdn.jsdelivr.net",
           "https://tally.so"
         ] do
       assert origin in directives["script-src"]
     end
+
+    # No CDN that mirrors arbitrary npm packages may execute on the page.
+    refute "https://cdn.jsdelivr.net" in directives["script-src"]
 
     for origin <- [
           "https://challenges.cloudflare.com",

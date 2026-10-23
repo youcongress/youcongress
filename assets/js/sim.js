@@ -1,3 +1,8 @@
+// Vendored locally from https://cdn.jsdelivr.net/npm/chart.js@4.6.1 (MIT).
+// Keeping the dependency local removes the cdn.jsdelivr.net script allowance
+// from the Content Security Policy.
+import Chart from "../vendor/chart.umd";
+
 // Constants
 const INITIAL_GDP_IN_TRILLIONS = 110;
 const INITIAL_GDP = INITIAL_GDP_IN_TRILLIONS * 1e12;
