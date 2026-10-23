@@ -149,7 +149,7 @@ defmodule YouCongressWeb.StatementLive.NewFormComponent do
 
       {:noreply, assign_form(socket, changeset)}
     else
-      case TitleRewording.generate_rewordings(statement["title"], :"gpt-4o") do
+      case TitleRewording.generate_rewordings(statement["title"], :"gpt-6-luna") do
         {:ok, suggested_titles, _} ->
           {:noreply, assign(socket, suggested_titles: suggested_titles)}
 

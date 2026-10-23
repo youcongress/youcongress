@@ -308,7 +308,12 @@ defmodule YouCongressWeb.StatementLiveTest do
     test "saves new statement and redirect to show", %{conn: conn} do
       with_mocks([
         {YouCongress.Statements.TitleRewording, [],
-         [generate_rewordings: fn _, _ -> {:ok, @suggested_titles, 0} end]}
+         [
+           generate_rewordings: fn _, model ->
+             assert model == :"gpt-6-luna"
+             {:ok, @suggested_titles, 0}
+           end
+         ]}
       ]) do
         conn = log_in_as_admin(conn)
         {:ok, index_live, _html} = live(conn, ~p"/explore")
