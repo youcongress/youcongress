@@ -183,6 +183,10 @@ defmodule YouCongressWeb.PageControllerTest do
   test "GET /email-login-waiting-list", %{conn: conn} do
     conn = get(conn, ~p"/email-login-waiting-list")
     assert html_response(conn, 200) =~ "Waiting list for email/password login - YouCongress"
+
+    # style-src is 'self' without 'unsafe-inline', so the inline <style> must
+    # carry the per-request CSP nonce or browsers would drop it.
+    assert html_response(conn, 200) =~ ~s(nonce="#{conn.assigns.csp_nonce}")
   end
 
   test "POST /email-login-waiting-list/thanks", %{conn: conn} do

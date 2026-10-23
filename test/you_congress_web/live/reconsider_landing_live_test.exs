@@ -34,7 +34,9 @@ defmodule YouCongressWeb.ReconsiderLandingLiveTest do
            )
 
     assert has_element?(view, "#example-change-bar", "75% reported changing 60 completed")
-    assert has_element?(view, "#example-change-bar div[style='width: 75%']")
+    # The progress bar width is a Tailwind class, not an inline style, so the
+    # Content Security Policy can keep style-src free of 'unsafe-inline'.
+    assert has_element?(view, "#example-change-bar div.w-3\\/4")
 
     assert has_element?(view, "#reconsider-results-example", "14 participants (23%)")
     assert has_element?(view, "#reconsider-results-example", "9 participants (15%)")

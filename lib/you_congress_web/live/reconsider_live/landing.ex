@@ -244,7 +244,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
                     <span>60 completed</span>
                   </div>
                   <div class="h-2 overflow-hidden rounded-full bg-gray-100">
-                    <div class="h-full rounded-full bg-indigo-600" style="width: 75%"></div>
+                    <div class="h-full w-3/4 rounded-full bg-indigo-600"></div>
                   </div>
                 </div>
               </div>
@@ -393,22 +393,16 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
               <p class="ad-fade ad-delay-1">of 60 participants changed their position</p>
             </div>
             <div class="reconsider-motion-ad__rows">
-              <div class="reconsider-motion-ad__row ad-up" style="--row-width: 63%; --row-delay: 1.5s">
+              <div class="reconsider-motion-ad__row ad-up reconsider-motion-ad__row--1">
                 <span>Against → <strong>For</strong></span><i><b></b></i><span>38 · 63%</span>
               </div>
-              <div
-                class="reconsider-motion-ad__row ad-up"
-                style="--row-width: 17%; --row-delay: 1.75s"
-              >
+              <div class="reconsider-motion-ad__row ad-up reconsider-motion-ad__row--2">
                 <span>For → <strong>For</strong></span><i><b></b></i><span>10 · 17%</span>
               </div>
-              <div class="reconsider-motion-ad__row ad-up" style="--row-width: 12%; --row-delay: 2s">
+              <div class="reconsider-motion-ad__row ad-up reconsider-motion-ad__row--3">
                 <span>Abstain → <strong>For</strong></span><i><b></b></i><span>7 · 12%</span>
               </div>
-              <div
-                class="reconsider-motion-ad__row ad-up reconsider-motion-ad__row--against"
-                style="--row-width: 8%; --row-delay: 2.25s"
-              >
+              <div class="reconsider-motion-ad__row ad-up reconsider-motion-ad__row--against reconsider-motion-ad__row--4">
                 <span>Against → <strong>Against</strong></span><i><b></b></i><span>5 · 8%</span>
               </div>
             </div>
@@ -458,7 +452,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
               data-ad-play-icon
               viewBox="0 0 24 24"
               aria-hidden="true"
-              style="display: none;"
+              class="hidden"
             >
               <path d="M7 5v14l12-7z" />
             </svg>

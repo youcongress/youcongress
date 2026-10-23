@@ -20,7 +20,7 @@ defmodule YouCongressWeb.Plugs.ContentSecurityPolicy do
         "frame-ancestors 'self'",
         "form-action 'self'",
         "script-src 'self' 'nonce-#{nonce}' https://plausible.io https://challenges.cloudflare.com https://tally.so",
-        "style-src 'self' 'unsafe-inline'",
+        "style-src 'self'",
         "img-src 'self' data: https://pbs.twimg.com https://abs.twimg.com https://lh3.googleusercontent.com",
         "font-src 'self' data:",
         "connect-src 'self' #{websocket_origin(endpoint.url())} https://plausible.io",

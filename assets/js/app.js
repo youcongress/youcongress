@@ -149,7 +149,7 @@ function setupCookieBanner() {
   if (!banner) return
 
   const showBanner = () => {
-    banner.style.removeProperty("display")
+    banner.classList.remove("hidden")
     banner.querySelector("[data-cookie-consent='accepted']")?.focus()
   }
 
@@ -165,7 +165,7 @@ function setupCookieBanner() {
     const consentButton = event.target.closest("[data-cookie-consent]")
     if (!consentButton) return
 
-    banner.style.display = "none"
+    banner.classList.add("hidden")
     writeCookieConsent(consentButton.dataset.cookieConsent)
     window.location.reload()
   })

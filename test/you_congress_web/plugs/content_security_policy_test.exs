@@ -30,6 +30,7 @@ defmodule YouCongressWeb.Plugs.ContentSecurityPolicyTest do
     refute "'unsafe-inline'" in directives["script-src"]
     refute "'unsafe-eval'" in directives["script-src"]
     refute "*" in directives["script-src"]
+    assert directives["style-src"] == ["'self'"]
 
     for origin <- [
           "https://plausible.io",

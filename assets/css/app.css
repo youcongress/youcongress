@@ -295,6 +295,28 @@
   background: var(--reconsider-against);
 }
 
+/* Per-row animation values (previously inline style attributes, which the
+   Content Security Policy now rejects). */
+.reconsider-motion-ad__row--1 {
+  --row-width: 63%;
+  --row-delay: 1.5s;
+}
+
+.reconsider-motion-ad__row--2 {
+  --row-width: 17%;
+  --row-delay: 1.75s;
+}
+
+.reconsider-motion-ad__row--3 {
+  --row-width: 12%;
+  --row-delay: 2s;
+}
+
+.reconsider-motion-ad__row--4 {
+  --row-width: 8%;
+  --row-delay: 2.25s;
+}
+
 .reconsider-motion-ad__wordmark {
   font-size: clamp(3rem, 13.9cqw, 9.375rem);
   line-height: 0.95;
@@ -549,4 +571,9 @@
     animation-iteration-count: 1 !important;
     animation-delay: 0s !important;
   }
+}
+
+/* Home hero decorative gradient blob (see home_live/index). */
+.home-hero-blob {
+  clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%);
 }

@@ -108,8 +108,8 @@ const ReconsiderMotionAd = {
     if (!this.toggleButton) return
 
     this.toggleButton.setAttribute("aria-label", this.playing ? "Pause animation" : "Play animation")
-    if (this.playIcon) this.playIcon.style.display = this.playing ? "none" : ""
-    if (this.pauseIcon) this.pauseIcon.style.display = this.playing ? "" : "none"
+    if (this.playIcon) this.playIcon.classList.toggle("hidden", this.playing)
+    if (this.pauseIcon) this.pauseIcon.classList.toggle("hidden", !this.playing)
     this.el.classList.toggle("is-paused", !this.playing)
   }
 }
