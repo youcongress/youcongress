@@ -1,8 +1,6 @@
 defmodule YouCongressWeb.HomeLive.Index do
   use YouCongressWeb, :live_view
 
-  require Logger
-
   alias YouCongress.Authors
   alias YouCongress.Halls
   alias YouCongress.Opinions

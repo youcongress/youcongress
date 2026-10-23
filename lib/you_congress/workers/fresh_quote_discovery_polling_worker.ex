@@ -352,8 +352,6 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
     end
   end
 
-  defp discovery_limit(_args), do: 1
-
   defp normalize_source_url(url) when is_binary(url), do: String.trim(url)
   defp normalize_source_url(url), do: url
 

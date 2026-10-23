@@ -1,8 +1,6 @@
 defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   use YouCongressWeb, :live_component
 
-  use Phoenix.VerifiedRoutes, endpoint: YouCongressWeb.Endpoint, router: YouCongressWeb.Router
-
   alias YouCongressWeb.AuthorLive
   alias YouCongressWeb.StatementLive.VoteComponent.QuoteMenu
   alias YouCongressWeb.Tools.Tooltip

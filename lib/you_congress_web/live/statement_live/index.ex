@@ -1,8 +1,6 @@
 defmodule YouCongressWeb.StatementLive.Index do
   use YouCongressWeb, :live_view
 
-  require Logger
-
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors
   alias YouCongress.Delegations

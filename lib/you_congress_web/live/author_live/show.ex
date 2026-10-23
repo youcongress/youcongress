@@ -1,8 +1,6 @@
 defmodule YouCongressWeb.AuthorLive.Show do
   use YouCongressWeb, :live_view
 
-  require Logger
-
   alias YouCongress.Accounts
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors

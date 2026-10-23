@@ -1055,7 +1055,6 @@ defmodule YouCongress.Accounts do
   defp first_users?(_), do: false
 
   # All others need to have email and confirm it (phone verification is optional)
-  defp confirmed?(%User{email: nil}), do: false
   defp confirmed?(%User{email_confirmed_at: nil}), do: false
   defp confirmed?(_), do: true
 end

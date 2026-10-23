@@ -3,7 +3,6 @@ defmodule YouCongressWeb.TopHeaderComponent do
   The top header component.
   """
 
-  use Phoenix.Component
   use YouCongressWeb, :html
 
   alias YouCongressWeb.ReturnTo

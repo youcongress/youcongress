@@ -92,7 +92,7 @@ defmodule YouCongress.VotesTest do
       author = author_fixture()
 
       votes =
-        Enum.map(1..3, fn i ->
+        Enum.map(1..3, fn _i ->
           statement = statement_fixture()
           opinion = opinion_fixture(%{author_id: author.id})
 

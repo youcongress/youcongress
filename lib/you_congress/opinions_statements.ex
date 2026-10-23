@@ -21,6 +21,8 @@ defmodule YouCongress.OpinionsStatements do
       %{1 => %Opinion{}, 2 => %Opinion{}}
 
   """
+  def get_opinions_by_statement_ids([], _current_user), do: %{}
+
   def get_opinions_by_statement_ids(statement_ids, current_user)
       when is_list(statement_ids) and not is_nil(current_user) do
     from(ov in "opinions_statements",
@@ -34,7 +36,6 @@ defmodule YouCongress.OpinionsStatements do
   end
 
   def get_opinions_by_statement_ids(_, nil), do: %{}
-  def get_opinions_by_statement_ids([], _), do: %{}
 
   @doc """
   Fetches the join row linking an opinion to a statement, or nil.

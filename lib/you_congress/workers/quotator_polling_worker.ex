@@ -114,8 +114,6 @@ defmodule YouCongress.Workers.QuotatorPollingWorker do
     :ok
   end
 
-  defp maybe_call_llm_again(_, _, _, _, _, _), do: :ok
-
   defp send_completion_email(user_id, statement_id, total_quotes_added) do
     user = Accounts.get_user!(user_id)
     statement = Statements.get_statement!(statement_id)

@@ -9,8 +9,6 @@ defmodule YouCongress.MCP.ToolUsageTracker do
   alias YouCongress.Accounts.User
   alias YouCongressWeb.MCPServer
 
-  require Macro
-
   @event_type "MCP Tool Used"
 
   @doc """
@@ -144,8 +142,6 @@ defmodule YouCongress.MCP.ToolUsageTracker do
   end
 
   defp get_query_param(_frame, _key), do: nil
-
-  defp normalize_map_keys(nil), do: %{}
 
   defp normalize_map_keys(map) when is_map(map) do
     map

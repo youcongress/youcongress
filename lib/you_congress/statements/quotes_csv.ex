@@ -252,8 +252,6 @@ defmodule YouCongress.Statements.QuotesCsv do
     |> VerificationStatus.resolve_from_list()
   end
 
-  defp latest_vote_verification(_vote_verifications, nil, _link), do: nil
-
   defp latest_vote_verification(vote_verifications, vote, link) do
     vote_verifications
     |> Map.get({vote.id, link.opinion_id}, [])

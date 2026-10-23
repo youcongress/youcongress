@@ -154,7 +154,7 @@ defmodule YouCongress.VoteVerifications do
       not Opinion.quote?(opinion) ->
         :ok
 
-      !VerificationStatus.positive?(opinion && opinion.verification_status) ->
+      !VerificationStatus.positive?(opinion.verification_status) ->
         {:error, :quote_not_verified}
 
       !VerificationStatus.positive?(opinion_statement && opinion_statement.verification_status) ->

@@ -879,12 +879,9 @@ defmodule YouCongressWeb.UserRegistrationLive do
   end
 
   defp normalize_code(value) when is_binary(value) do
-    cleaned =
-      value
-      |> String.replace(~r/[^0-9]/, "")
-      |> String.slice(0, 6)
-
-    cleaned || ""
+    value
+    |> String.replace(~r/[^0-9]/, "")
+    |> String.slice(0, 6)
   end
 
   defp normalize_code(_), do: ""

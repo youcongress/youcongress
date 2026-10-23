@@ -11,8 +11,6 @@ defmodule YouCongress.Statements.SynthesisAI do
 
   @behaviour YouCongress.Statements.Synthesis
 
-  require Logger
-
   alias YouCongress.Authors.Author
   alias YouCongress.Opinions.Opinion
 

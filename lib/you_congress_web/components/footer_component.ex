@@ -3,7 +3,6 @@ defmodule YouCongressWeb.Components.FooterComponent do
   The footer component.
   """
 
-  use Phoenix.Component
   use YouCongressWeb, :html
 
   attr :current_user, :any, default: nil
