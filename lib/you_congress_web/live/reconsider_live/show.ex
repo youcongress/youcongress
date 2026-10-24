@@ -501,6 +501,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                   <img
                     :if={delegate.author.profile_image_url}
                     src={delegate.author.profile_image_url}
+                    data-fallback-src="/images/human-avatar.svg"
                     alt=""
                     class="h-9 w-9 rounded-full"
                   />
@@ -628,6 +629,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                 <img
                   :if={delegate.author.profile_image_url}
                   src={delegate.author.profile_image_url}
+                  data-fallback-src="/images/human-avatar.svg"
                   alt=""
                   class="h-9 w-9 rounded-full"
                 />

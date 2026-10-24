@@ -4,6 +4,7 @@
     <img
       :if={@author.profile_image_url}
       src={@author.profile_image_url}
+      data-fallback-src="/images/human-avatar.svg"
       alt={@author.name || "Anonymous"}
       class="h-14 w-14 rounded-full object-cover"
     />
@@ -202,6 +203,7 @@
     >
       <img
         src={author.profile_image_url || "/images/human-avatar.svg"}
+        data-fallback-src="/images/human-avatar.svg"
         alt={author.name || "Author"}
         class="h-12 w-12 shrink-0 rounded-full object-cover"
       />

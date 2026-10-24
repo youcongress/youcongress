@@ -201,6 +201,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
       <%= if @profile_image_url do %>
         <img
           src={@profile_image_url}
+          data-fallback-src="/images/human-avatar.svg"
           alt="Avatar"
           class="inline-block h-10 w-10 min-w-[2.5rem] shrink-0 rounded-full object-cover align-middle"
         />

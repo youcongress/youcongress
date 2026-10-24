@@ -439,6 +439,7 @@
         <.link href={SEO.author_path(@opinion.author)} class="shrink-0">
           <img
             src={@opinion.author.profile_image_url || "/images/human-avatar.svg"}
+            data-fallback-src="/images/human-avatar.svg"
             alt={@opinion.author.name || "Author"}
             class="h-10 w-10 rounded-full object-cover"
           />
@@ -498,6 +499,7 @@
     >
       <img
         src={author.profile_image_url || "/images/human-avatar.svg"}
+        data-fallback-src="/images/human-avatar.svg"
         alt={author.name || "Author"}
         class="h-12 w-12 shrink-0 rounded-full object-cover"
       />

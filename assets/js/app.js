@@ -42,6 +42,28 @@ let liveSocket = new LiveSocket("/live", Socket, {
   hooks: Hooks
 })
 
+function useProfileImageFallback(image) {
+  const fallbackSrc = image.dataset.fallbackSrc
+
+  if (!fallbackSrc || image.dataset.fallbackApplied === "true") return
+
+  image.dataset.fallbackApplied = "true"
+  image.src = fallbackSrc
+}
+
+// Image error events do not bubble, so listen during capture. This also covers
+// profile images added later by LiveView patches.
+document.addEventListener("error", (event) => {
+  if (event.target instanceof HTMLImageElement && event.target.matches("[data-fallback-src]")) {
+    useProfileImageFallback(event.target)
+  }
+}, true)
+
+// A cached image may fail before this deferred script runs.
+document.querySelectorAll("img[data-fallback-src]").forEach((image) => {
+  if (image.complete && image.naturalWidth === 0) useProfileImageFallback(image)
+})
+
 // Show progress bar on live navigation and form submits
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" })
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))

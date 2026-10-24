@@ -125,6 +125,20 @@ defmodule YouCongressWeb.AuthorLiveTest do
       refute has_element?(show_live, "a", "Wikipedia")
     end
 
+    test "marks external profile images to fall back when they no longer load", %{conn: conn} do
+      stale_image_url =
+        "https://pbs.twimg.com/profile_images/1516832438818770944/missing_400x400.png"
+
+      author = author_fixture(%{profile_image_url: stale_image_url})
+
+      {:ok, show_live, _html} = live(conn, ~p"/x/#{author.twitter_username}")
+
+      assert has_element?(
+               show_live,
+               "img[src='#{stale_image_url}'][data-fallback-src='/images/human-avatar.svg']"
+             )
+    end
+
     test "displays an author at their YouCongress username and prefers it for links", %{
       conn: conn
     } do
