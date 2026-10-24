@@ -7,7 +7,7 @@ defmodule YouCongressWeb.PageControllerTest do
   test "mission pages are public, linked, and have canonical metadata", %{conn: conn} do
     for {path, heading, linked_path} <- [
           {"/about", "Improve democracy. Start with AI.", "/theory-of-change"},
-          {"/theory-of-change", "From shared evidence to better AI governance", "/moloch"}
+          {"/theory-of-change", "From shared evidence to better democracy", "/moloch"}
         ] do
       html = conn |> get(path) |> html_response(200)
       document = Floki.parse_document!(html)

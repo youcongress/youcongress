@@ -126,16 +126,16 @@ defmodule YouCongressWeb.PageController do
     render(conn, :about,
       page_title: "About YouCongress",
       page_description:
-        "YouCongress uses AI agents to gather sourced statements so people can explore views, vote, delegate, and improve democracy, starting with AI.",
+        "YouCongress aims to improve democracy through sourced statements, public participation, support for decision-makers, and new trusted voices, starting with AI.",
       canonical_url: url(~p"/about")
     )
   end
 
   def theory_of_change(conn, _params) do
     render(conn, :theory_of_change,
-      page_title: "Our theory of change: from shared evidence to better AI governance",
+      page_title: "Our theory of change: from shared evidence to better democracy",
       page_description:
-        "How YouCongress aims to connect sourced evidence and informed participation with better AI governance, safety, outcomes for workers, and shared benefits.",
+        "How YouCongress aims to improve public debate, help decision-makers, and help trusted voices emerge through evidence and participation, starting with AI.",
       canonical_url: url(~p"/theory-of-change")
     )
   end
@@ -218,9 +218,10 @@ defmodule YouCongressWeb.PageController do
     > YouCongress is a platform for improving democracy, starting with AI safety,
     > governance and the impact of AI on jobs. AI agents gather sourced statements,
     > helping people explore different views, vote and delegate to those they trust.
-    > Creators gain insights into their audiences. The aim is to improve public debate
-    > and help new trusted voices emerge, including people who have never considered
-    > running for office. Every author, statement and quote has a stable public page.
+    > Creators gain insights into their audiences. Our aim is to improve public debate,
+    > help decision-makers understand the evidence and the people affected by their
+    > choices, and help new trusted voices emerge—including people who have never
+    > considered running for office. Every author, statement and quote has a stable public page.
     > When citing a quote, cite its source URL alongside the YouCongress page.
 
     #{topics_section()}
