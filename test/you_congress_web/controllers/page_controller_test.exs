@@ -6,7 +6,7 @@ defmodule YouCongressWeb.PageControllerTest do
 
   test "mission pages are public, linked, and have canonical metadata", %{conn: conn} do
     for {path, heading, linked_path} <- [
-          {"/about", "Investigate difficult public questions.", "/theory-of-change"},
+          {"/about", "Improve democracy. Start with AI.", "/theory-of-change"},
           {"/theory-of-change", "From shared evidence to better AI governance", "/moloch"}
         ] do
       html = conn |> get(path) |> html_response(200)
@@ -106,6 +106,8 @@ defmodule YouCongressWeb.PageControllerTest do
     html = html_response(conn, 200)
 
     assert html =~ "About YouCongress"
+    assert html =~ "AI agents gather sourced statements"
+    assert html =~ "help new trusted voices emerge"
     assert html =~ ~s(href="https://www.linkedin.com/in/hectorperezarenas")
     assert html =~ ">Hector Perez Arenas</a>"
     assert html =~ ~s(href="/contact")

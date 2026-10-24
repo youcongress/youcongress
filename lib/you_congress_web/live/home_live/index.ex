@@ -24,7 +24,7 @@ defmodule YouCongressWeb.HomeLive.Index do
       )
       |> assign(
         :page_description,
-        "We structure sourced claims, quotes, votes and delegations to surface expert and citizen preferences."
+        "YouCongress uses AI agents to gather sourced statements so people can explore views, vote, delegate, and improve democracy, starting with AI."
       )
       |> assign(:skip_page_suffix, true)
       |> assign(:live_action, :new)

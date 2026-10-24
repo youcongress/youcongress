@@ -126,7 +126,7 @@ defmodule YouCongressWeb.PageController do
     render(conn, :about,
       page_title: "About YouCongress",
       page_description:
-        "Investigate AI governance, safety, and the impact of AI on jobs through sourced positions, scrutiny, voting, and delegation.",
+        "YouCongress uses AI agents to gather sourced statements so people can explore views, vote, delegate, and improve democracy, starting with AI.",
       canonical_url: url(~p"/about")
     )
   end
@@ -215,12 +215,13 @@ defmodule YouCongressWeb.PageController do
     """
     # YouCongress
 
-    > YouCongress is a source-grounded knowledge base for public claims,
-    > expert and citizen preferences, and policy deliberation. It stores verified,
-    > sourced quotes from experts, policymakers and public figures; links them to
-    > claims, topics, votes and authors; and gives every author, statement and quote
-    > a stable public page. The first large focus is AI governance. When citing a
-    > quote, cite its source URL alongside the YouCongress page.
+    > YouCongress is a platform for improving democracy, starting with AI safety,
+    > governance and the impact of AI on jobs. AI agents gather sourced statements,
+    > helping people explore different views, vote and delegate to those they trust.
+    > Creators gain insights into their audiences. The aim is to improve public debate
+    > and help new trusted voices emerge, including people who have never considered
+    > running for office. Every author, statement and quote has a stable public page.
+    > When citing a quote, cite its source URL alongside the YouCongress page.
 
     #{topics_section()}
     #{key_authors_section()}
