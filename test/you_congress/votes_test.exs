@@ -247,16 +247,22 @@ defmodule YouCongress.VotesTest do
       current_year_date = Date.new!(current_year, 1, 1)
       previous_year_date = Date.new!(current_year - 1, 12, 31)
 
-      wiki_low =
+      wiki_current_low =
         author_fixture(%{
-          wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_Low_#{unique}",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_Current_Low_#{unique}",
           followers_count: 10
         })
 
-      wiki_high =
+      wiki_current_high =
         author_fixture(%{
-          wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_High_#{unique}",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_Current_High_#{unique}",
           followers_count: 20
+        })
+
+      wiki_older_high =
+        author_fixture(%{
+          wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_Older_High_#{unique}",
+          followers_count: 10_000
         })
 
       current_year_low = author_fixture(%{wikipedia_url: nil, followers_count: 100})
@@ -264,8 +270,14 @@ defmodule YouCongress.VotesTest do
       older_high = author_fixture(%{wikipedia_url: nil, followers_count: 10_000})
       older_low = author_fixture(%{wikipedia_url: nil, followers_count: 1})
 
-      wiki_low_vote = create_vote_with_opinion(statement, wiki_low, date: previous_year_date)
-      wiki_high_vote = create_vote_with_opinion(statement, wiki_high, date: previous_year_date)
+      wiki_current_low_vote =
+        create_vote_with_opinion(statement, wiki_current_low, date: current_year_date)
+
+      wiki_current_high_vote =
+        create_vote_with_opinion(statement, wiki_current_high, date: current_year_date)
+
+      wiki_older_high_vote =
+        create_vote_with_opinion(statement, wiki_older_high, date: previous_year_date)
 
       current_year_low_vote =
         create_vote_with_opinion(statement, current_year_low, date: current_year_date)
@@ -279,8 +291,9 @@ defmodule YouCongress.VotesTest do
       assert statement.id
              |> Votes.list_votes_with_opinion(opinion_order: :top)
              |> Enum.map(& &1.id) == [
-               wiki_high_vote.id,
-               wiki_low_vote.id,
+               wiki_current_high_vote.id,
+               wiki_current_low_vote.id,
+               wiki_older_high_vote.id,
                current_year_high_vote.id,
                current_year_low_vote.id,
                older_high_vote.id,

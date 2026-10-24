@@ -168,16 +168,14 @@ defmodule YouCongress.Votes do
     next_year_start = Date.new!(current_year + 1, 1, 1)
 
     order_by(query, [v, a, o, _os], [
-      # Rank Wikipedia-linked authors first, then authors whose opinion is from
-      # the current year, and finally every other author.
       {:desc,
        fragment(
-         "CASE
-            WHEN NULLIF(BTRIM(?), '') IS NOT NULL THEN 2
-            WHEN ? >= ? AND ? < ? THEN 1
-            ELSE 0
-          END",
-         a.wikipedia_url,
+         "CASE WHEN NULLIF(BTRIM(?), '') IS NOT NULL THEN 1 ELSE 0 END",
+         a.wikipedia_url
+       )},
+      {:desc,
+       fragment(
+         "CASE WHEN ? >= ? AND ? < ? THEN 1 ELSE 0 END",
          o.date,
          ^current_year_start,
          o.date,

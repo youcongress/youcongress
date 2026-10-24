@@ -460,18 +460,18 @@ defmodule YouCongressWeb.StatementLiveTest do
       current_year_date = Date.new!(current_year, 1, 1)
       previous_year_date = Date.new!(current_year - 1, 12, 31)
 
-      wiki =
+      wiki_older =
         author_fixture(%{
-          name: "Wiki #{unique}",
-          wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_#{unique}",
-          followers_count: 10
+          name: "Wiki older #{unique}",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_Older_#{unique}",
+          followers_count: 10_000
         })
 
-      current_year_author =
+      wiki_current_year =
         author_fixture(%{
-          name: "Current year #{unique}",
-          wikipedia_url: nil,
-          followers_count: 1_000
+          name: "Wiki current year #{unique}",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_Current_Year_#{unique}",
+          followers_count: 10
         })
 
       older_author =
@@ -483,9 +483,9 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       votes =
         for {author, date} <- [
-              {wiki, previous_year_date},
+              {wiki_older, previous_year_date},
               {older_author, previous_year_date},
-              {current_year_author, current_year_date}
+              {wiki_current_year, current_year_date}
             ] do
           opinion =
             opinion_fixture(%{
@@ -507,7 +507,7 @@ defmodule YouCongressWeb.StatementLiveTest do
           })
         end
 
-      [wiki_vote, older_vote, current_year_vote] = votes
+      [wiki_older_vote, older_vote, wiki_current_year_vote] = votes
       {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}")
 
       assert has_element?(show_live, "button[role='switch'][aria-checked='false']")
@@ -521,12 +521,12 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       assert has_element?(
                show_live,
-               "#statement-opinions > div > div:first-child ul > li:nth-child(1) #vote-component-#{wiki_vote.id}"
+               "#statement-opinions > div > div:first-child ul > li:nth-child(1) #vote-component-#{wiki_current_year_vote.id}"
              )
 
       assert has_element?(
                show_live,
-               "#statement-opinions > div > div:first-child ul > li:nth-child(2) #vote-component-#{current_year_vote.id}"
+               "#statement-opinions > div > div:first-child ul > li:nth-child(2) #vote-component-#{wiki_older_vote.id}"
              )
 
       assert has_element?(
