@@ -163,9 +163,26 @@ defmodule YouCongress.Votes do
   end
 
   defp order_votes_with_opinion(query, :top) do
+    current_year = Date.utc_today().year
+    current_year_start = Date.new!(current_year, 1, 1)
+    next_year_start = Date.new!(current_year + 1, 1, 1)
+
     order_by(query, [v, a, o, _os], [
-      # Public figures with a Wikipedia page rank before authors without one.
-      {:desc, fragment("CASE WHEN ? IS NOT NULL THEN 1 ELSE 0 END", a.wikipedia_url)},
+      # Rank Wikipedia-linked authors first, then authors whose opinion is from
+      # the current year, and finally every other author.
+      {:desc,
+       fragment(
+         "CASE
+            WHEN NULLIF(BTRIM(?), '') IS NOT NULL THEN 2
+            WHEN ? >= ? AND ? < ? THEN 1
+            ELSE 0
+          END",
+         a.wikipedia_url,
+         o.date,
+         ^current_year_start,
+         o.date,
+         ^next_year_start
+       )},
       {:desc_nulls_last, a.followers_count},
       # Stable tiebreakers keep paginated reads from repeating or skipping votes.
       {:desc, o.id},

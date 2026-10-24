@@ -240,9 +240,12 @@ defmodule YouCongress.VotesTest do
              |> Enum.map(& &1.name) == ["Top Reach", "Middle Reach", "Low Reach"]
     end
 
-    test "list_votes_with_opinion/2 top order prioritizes Wikipedia then X followers" do
+    test "list_votes_with_opinion/2 top order prioritizes Wikipedia, current year, then followers" do
       unique = System.unique_integer([:positive])
       statement = statement_fixture()
+      current_year = Date.utc_today().year
+      current_year_date = Date.new!(current_year, 1, 1)
+      previous_year_date = Date.new!(current_year - 1, 12, 31)
 
       wiki_low =
         author_fixture(%{
@@ -253,18 +256,36 @@ defmodule YouCongress.VotesTest do
       wiki_high =
         author_fixture(%{
           wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_High_#{unique}",
-          followers_count: 1_000
+          followers_count: 20
         })
 
-      no_wiki = author_fixture(%{wikipedia_url: nil, followers_count: 10_000})
+      current_year_low = author_fixture(%{wikipedia_url: nil, followers_count: 100})
+      current_year_high = author_fixture(%{wikipedia_url: nil, followers_count: 1_000})
+      older_high = author_fixture(%{wikipedia_url: nil, followers_count: 10_000})
+      older_low = author_fixture(%{wikipedia_url: nil, followers_count: 1})
 
-      low_vote = create_vote_with_opinion(statement, wiki_low)
-      high_vote = create_vote_with_opinion(statement, wiki_high)
-      no_wiki_vote = create_vote_with_opinion(statement, no_wiki)
+      wiki_low_vote = create_vote_with_opinion(statement, wiki_low, date: previous_year_date)
+      wiki_high_vote = create_vote_with_opinion(statement, wiki_high, date: previous_year_date)
+
+      current_year_low_vote =
+        create_vote_with_opinion(statement, current_year_low, date: current_year_date)
+
+      current_year_high_vote =
+        create_vote_with_opinion(statement, current_year_high, date: current_year_date)
+
+      older_high_vote = create_vote_with_opinion(statement, older_high, date: previous_year_date)
+      older_low_vote = create_vote_with_opinion(statement, older_low, date: previous_year_date)
 
       assert statement.id
              |> Votes.list_votes_with_opinion(opinion_order: :top)
-             |> Enum.map(& &1.id) == [high_vote.id, low_vote.id, no_wiki_vote.id]
+             |> Enum.map(& &1.id) == [
+               wiki_high_vote.id,
+               wiki_low_vote.id,
+               current_year_high_vote.id,
+               current_year_low_vote.id,
+               older_high_vote.id,
+               older_low_vote.id
+             ]
     end
 
     test "create_vote/1 by the author marks the vote answer as endorsed" do
@@ -683,7 +704,10 @@ defmodule YouCongress.VotesTest do
       opinion_fixture(%{
         author_id: author.id,
         source_url: source_url,
-        twin: twin
+        twin: twin,
+        date: Keyword.get(opts, :date),
+        date_precision:
+          Keyword.get(opts, :date_precision, if(Keyword.has_key?(opts, :date), do: :day))
       })
 
     {:ok, vote} =

@@ -450,40 +450,50 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert occurrences(html, ~s(class="pb-12")) == per_page
     end
 
-    test "toggles between new and top opinions ordered by Wikipedia and X followers", %{
-      conn: conn,
-      statement: statement
-    } do
+    test "toggles between new and top opinions ordered by Wikipedia, current year, and followers",
+         %{
+           conn: conn,
+           statement: statement
+         } do
       unique = System.unique_integer([:positive])
+      current_year = Date.utc_today().year
+      current_year_date = Date.new!(current_year, 1, 1)
+      previous_year_date = Date.new!(current_year - 1, 12, 31)
 
-      wiki_low =
+      wiki =
         author_fixture(%{
-          name: "Wiki low #{unique}",
-          wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_Low_#{unique}",
+          name: "Wiki #{unique}",
+          wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_#{unique}",
           followers_count: 10
         })
 
-      wiki_high =
+      current_year_author =
         author_fixture(%{
-          name: "Wiki high #{unique}",
-          wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_High_#{unique}",
+          name: "Current year #{unique}",
+          wikipedia_url: nil,
           followers_count: 1_000
         })
 
-      no_wiki =
+      older_author =
         author_fixture(%{
-          name: "No wiki #{unique}",
+          name: "Older #{unique}",
           wikipedia_url: nil,
           followers_count: 10_000
         })
 
       votes =
-        for author <- [wiki_low, no_wiki, wiki_high] do
+        for {author, date} <- [
+              {wiki, previous_year_date},
+              {older_author, previous_year_date},
+              {current_year_author, current_year_date}
+            ] do
           opinion =
             opinion_fixture(%{
               author_id: author.id,
               source_url: "https://example.com/top-sort/#{author.id}",
-              twin: false
+              twin: false,
+              date: date,
+              date_precision: :day
             })
 
           {:ok, _} = Opinions.add_opinion_to_statement(opinion, statement.id)
@@ -497,7 +507,7 @@ defmodule YouCongressWeb.StatementLiveTest do
           })
         end
 
-      [low_vote, no_wiki_vote, high_vote] = votes
+      [wiki_vote, older_vote, current_year_vote] = votes
       {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}")
 
       assert has_element?(show_live, "button[role='switch'][aria-checked='false']")
@@ -511,17 +521,17 @@ defmodule YouCongressWeb.StatementLiveTest do
 
       assert has_element?(
                show_live,
-               "#statement-opinions > div > div:first-child ul > li:nth-child(1) #vote-component-#{high_vote.id}"
+               "#statement-opinions > div > div:first-child ul > li:nth-child(1) #vote-component-#{wiki_vote.id}"
              )
 
       assert has_element?(
                show_live,
-               "#statement-opinions > div > div:first-child ul > li:nth-child(2) #vote-component-#{low_vote.id}"
+               "#statement-opinions > div > div:first-child ul > li:nth-child(2) #vote-component-#{current_year_vote.id}"
              )
 
       assert has_element?(
                show_live,
-               "#statement-opinions > div > div:first-child ul > li:nth-child(3) #vote-component-#{no_wiki_vote.id}"
+               "#statement-opinions > div > div:first-child ul > li:nth-child(3) #vote-component-#{older_vote.id}"
              )
     end
 
