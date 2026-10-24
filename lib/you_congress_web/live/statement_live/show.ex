@@ -19,6 +19,7 @@ defmodule YouCongressWeb.StatementLive.Show do
   alias YouCongress.Statements.Synthesis
   alias YouCongressWeb.StatementLive.Show.Params
   alias YouCongressWeb.StatementLive.SynthesisComponent
+  alias YouCongressWeb.Components.SwitchComponent
   alias YouCongress.Votes.VoteFrequencies
   alias YouCongressWeb.ReturnTo
   alias YouCongressWeb.SEO
@@ -200,6 +201,12 @@ defmodule YouCongressWeb.StatementLive.Show do
 
   def handle_event("filter-answer", %{"answer" => answer}, socket) do
     params = Params.toggle_answer(socket.assigns.statement_page_params, answer)
+    {:noreply, patch_statement_page_params(socket, params)}
+  end
+
+  def handle_event("toggle-switch", _, socket) do
+    opinion_order = if socket.assigns.opinion_order == :top, do: :new, else: :top
+    params = Params.put(socket.assigns.statement_page_params, %{opinion_order: opinion_order})
     {:noreply, patch_statement_page_params(socket, params)}
   end
 
@@ -430,6 +437,7 @@ defmodule YouCongressWeb.StatementLive.Show do
     |> assign(:year_vote_frequencies, nil)
     |> assign(:year_results_filters, params.year_results_filters)
     |> assign(:source_filter, params.source_filter)
+    |> assign(:opinion_order, params.opinion_order)
     |> assign(:answer_filter, params.answer_filter)
   end
 

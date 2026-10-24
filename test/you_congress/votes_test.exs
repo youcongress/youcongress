@@ -240,6 +240,33 @@ defmodule YouCongress.VotesTest do
              |> Enum.map(& &1.name) == ["Top Reach", "Middle Reach", "Low Reach"]
     end
 
+    test "list_votes_with_opinion/2 top order prioritizes Wikipedia then X followers" do
+      unique = System.unique_integer([:positive])
+      statement = statement_fixture()
+
+      wiki_low =
+        author_fixture(%{
+          wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_Low_#{unique}",
+          followers_count: 10
+        })
+
+      wiki_high =
+        author_fixture(%{
+          wikipedia_url: "https://en.wikipedia.org/wiki/Wiki_High_#{unique}",
+          followers_count: 1_000
+        })
+
+      no_wiki = author_fixture(%{wikipedia_url: nil, followers_count: 10_000})
+
+      low_vote = create_vote_with_opinion(statement, wiki_low)
+      high_vote = create_vote_with_opinion(statement, wiki_high)
+      no_wiki_vote = create_vote_with_opinion(statement, no_wiki)
+
+      assert statement.id
+             |> Votes.list_votes_with_opinion(opinion_order: :top)
+             |> Enum.map(& &1.id) == [high_vote.id, low_vote.id, no_wiki_vote.id]
+    end
+
     test "create_vote/1 by the author marks the vote answer as endorsed" do
       user = user_fixture()
       statement = statement_fixture()

@@ -37,4 +37,15 @@ defmodule YouCongressWeb.StatementParamsTest do
     assert Params.to_query(state) == %{results: "country"}
     assert_raise ArgumentError, fn -> String.to_existing_atom(unknown) end
   end
+
+  test "opinion sort round-trips and defaults to new" do
+    assert Params.from_params(%{}).opinion_order == :new
+    assert Params.to_query(Params.defaults()) == %{}
+
+    state = Params.from_params(%{"sort" => "top"})
+
+    assert state.opinion_order == :top
+    assert Params.to_query(state) == %{sort: "top"}
+    assert Params.from_params(Params.to_query(state)) == state
+  end
 end

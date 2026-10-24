@@ -31,6 +31,7 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
         current_user: current_user,
         source_filter: source_filter,
         answer_filter: answer_filter,
+        opinion_order: opinion_order,
         selected_country: selected_country
       }
     } = socket
@@ -55,7 +56,14 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
         author_country: selected_country
       )
 
-    opts = votes_with_opinion_opts(exclude_ids, source_filter, answer, selected_country)
+    opts =
+      votes_with_opinion_opts(
+        exclude_ids,
+        source_filter,
+        answer,
+        selected_country,
+        opinion_order
+      )
 
     # A reload (a new vote, a "reload changes" click) refetches every page the
     # visitor has already scrolled through, so they don't lose their place.
@@ -124,6 +132,7 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
         current_user_vote: current_user_vote,
         source_filter: source_filter,
         answer_filter: answer_filter,
+        opinion_order: opinion_order,
         selected_country: selected_country,
         opinions_page: page,
         votes_from_delegates: votes_from_delegates,
@@ -133,7 +142,15 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
 
     exclude_ids = (current_user_vote && [current_user_vote.id]) || []
     answer = answer_filter_to_atom(answer_filter)
-    opts = votes_with_opinion_opts(exclude_ids, source_filter, answer, selected_country)
+
+    opts =
+      votes_with_opinion_opts(
+        exclude_ids,
+        source_filter,
+        answer,
+        selected_country,
+        opinion_order
+      )
 
     new_votes =
       Votes.list_votes_with_opinion(
@@ -153,12 +170,19 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
     |> load_delegations(current_user)
   end
 
-  defp votes_with_opinion_opts(exclude_ids, source_filter, answer, selected_country) do
+  defp votes_with_opinion_opts(
+         exclude_ids,
+         source_filter,
+         answer,
+         selected_country,
+         opinion_order
+       ) do
     opts = [
       include: [:author, opinion: :author],
       exclude_ids: exclude_ids,
       source_filter: source_filter,
-      author_country: selected_country
+      author_country: selected_country,
+      opinion_order: opinion_order
     ]
 
     if is_nil(answer), do: opts, else: [{:answer, answer} | opts]

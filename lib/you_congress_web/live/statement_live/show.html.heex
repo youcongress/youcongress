@@ -157,6 +157,11 @@
   :if={@total_opinions > 0}
   class="pb-2 text-right flex flex-wrap justify-end items-center gap-2 md:gap-0 md:space-x-4"
 >
+  <SwitchComponent.render
+    is_active={@opinion_order == :top}
+    label1="New"
+    label2="Top"
+  />
   <div class="md:hidden">
     <form phx-change="filter-answer" class="pl-2 inline">
       <select

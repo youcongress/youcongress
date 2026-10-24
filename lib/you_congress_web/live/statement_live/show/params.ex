@@ -12,7 +12,7 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
     country: Map.new(Enum.zip(@filter_keys, @country_filter_fields)),
     year: Map.new(Enum.zip(@filter_keys, @year_filter_fields))
   }
-  @simple_fields [:synthesis, :results, :source, :answer, :country] ++
+  @simple_fields [:synthesis, :results, :source, :answer, :country, :sort] ++
                    @country_filter_fields ++ @year_filter_fields
 
   @derive {
@@ -26,6 +26,7 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
     field :source, Ecto.Enum, values: [:quotes, :users, :all]
     field :answer, Ecto.Enum, values: [:for, :abstain, :against]
     field :country, :string
+    field :sort, Ecto.Enum, values: [:new, :top]
 
     field :country_direct, :boolean
     field :country_delegated, :boolean
@@ -44,6 +45,7 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
     %{
       show_synthesis: false,
       results: nil,
+      opinion_order: :new,
       source_filter: :quotes,
       answer_filter: nil,
       selected_country: nil,
@@ -112,6 +114,9 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
       %Flop.Filter{field: :country, value: value}, params ->
         put(params, %{selected_country: normalize_country(value)})
 
+      %Flop.Filter{field: :sort, value: value}, params ->
+        put(params, %{opinion_order: normalize_opinion_order(value)})
+
       %Flop.Filter{field: field, value: value}, params ->
         apply_filter_field(params, field, value)
     end)
@@ -157,6 +162,7 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
     defaults()
     |> Map.merge(params)
     |> Map.update!(:results, &normalize_results/1)
+    |> Map.update!(:opinion_order, &normalize_opinion_order/1)
     |> Map.update!(:source_filter, &normalize_source_filter/1)
     |> Map.update!(:answer_filter, &normalize_answer/1)
     |> Map.update!(:selected_country, &normalize_country/1)
@@ -167,6 +173,9 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
   defp normalize_results(results) when results in [:country, "country"], do: :country
   defp normalize_results(results) when results in [:year, "year"], do: :year
   defp normalize_results(_), do: nil
+
+  defp normalize_opinion_order(order) when order in [:top, "top"], do: :top
+  defp normalize_opinion_order(_), do: :new
 
   defp source_filter(:quotes), do: :quotes
   defp source_filter("quotes"), do: :quotes
@@ -211,6 +220,7 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
     %{}
     |> put_query(:synthesis, params.show_synthesis, "true")
     |> put_query(:results, params.results)
+    |> put_opinion_order_query(params.opinion_order)
     |> put_source_query(params.source_filter)
     |> put_answer_query(params.answer_filter)
     |> put_country_query(params.results, params.selected_country)
@@ -222,6 +232,9 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
   defp put_query(query, key, true, value), do: Map.put(query, key, value)
   defp put_query(query, _key, nil), do: query
   defp put_query(query, key, value), do: Map.put(query, key, to_string(value))
+
+  defp put_opinion_order_query(query, :top), do: Map.put(query, :sort, "top")
+  defp put_opinion_order_query(query, _), do: query
 
   defp put_source_query(query, :quotes), do: query
   defp put_source_query(query, nil), do: Map.put(query, :source, "all")

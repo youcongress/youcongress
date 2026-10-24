@@ -145,6 +145,7 @@ defmodule YouCongress.Votes do
     source_filter = Keyword.get(opts, :source_filter)
     answer = Keyword.get(opts, :answer)
     author_country = Keyword.get(opts, :author_country)
+    opinion_order = Keyword.get(opts, :opinion_order, :new)
     limit_opt = Keyword.get(opts, :limit)
     offset_opt = Keyword.get(opts, :offset)
 
@@ -153,7 +154,27 @@ defmodule YouCongress.Votes do
     |> filter_by_source(source_filter)
     |> filter_by_answer(answer)
     |> filter_by_author_country(author_country)
-    |> order_by([v, a, o, os], [
+    |> order_votes_with_opinion(opinion_order)
+    |> maybe_limit(limit_opt)
+    |> maybe_offset(offset_opt)
+    |> preload(^include_tables)
+    |> Repo.all()
+    |> with_alternate_sourced_opinions(statement_id)
+  end
+
+  defp order_votes_with_opinion(query, :top) do
+    order_by(query, [v, a, o, _os], [
+      # Public figures with a Wikipedia page rank before authors without one.
+      {:desc, fragment("CASE WHEN ? IS NOT NULL THEN 1 ELSE 0 END", a.wikipedia_url)},
+      {:desc_nulls_last, a.followers_count},
+      # Stable tiebreakers keep paginated reads from repeating or skipping votes.
+      {:desc, o.id},
+      {:desc, v.id}
+    ])
+  end
+
+  defp order_votes_with_opinion(query, _opinion_order) do
+    order_by(query, [v, a, o, os], [
       {:desc,
        fragment(
          "CASE
@@ -181,11 +202,6 @@ defmodule YouCongress.Votes do
       # Final tiebreaker so paginated reads never repeat or skip a vote.
       {:desc, v.id}
     ])
-    |> maybe_limit(limit_opt)
-    |> maybe_offset(offset_opt)
-    |> preload(^include_tables)
-    |> Repo.all()
-    |> with_alternate_sourced_opinions(statement_id)
   end
 
   defp votes_with_opinion_query(statement_id, exclude_ids, twin_options) do
