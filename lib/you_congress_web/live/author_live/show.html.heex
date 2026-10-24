@@ -70,7 +70,7 @@
     <% end %>
     <%= if @current_user && Permissions.can_edit_author?(@current_user) do %>
       <.link
-        patch={~p"/authors/#{@author}/show/edit"}
+        navigate={~p"/authors/#{@author}/show/edit"}
         phx-click={JS.push_focus()}
         class="phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3 text-sm font-semibold leading-6 text-white active:text-white/80"
       >
@@ -231,7 +231,7 @@
   :if={@live_action == :edit}
   id="author-modal"
   show
-  on_cancel={JS.patch(author_path(@author))}
+  on_cancel={JS.navigate(author_path(@author))}
 >
   <.live_component
     module={FormComponent}
@@ -239,6 +239,7 @@
     title={@page_title}
     action={@live_action}
     author={@author}
+    current_user={@current_user}
     patch={author_path(@author)}
   />
 </.modal>

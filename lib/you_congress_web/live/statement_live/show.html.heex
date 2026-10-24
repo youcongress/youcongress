@@ -84,7 +84,7 @@
         <div class="flex-none flex gap-2">
           <%= if Permissions.can_edit_statement?(@statement, @current_user) do %>
             <.link
-              patch={~p"/p/#{@statement.slug}/show/edit"}
+              navigate={~p"/p/#{@statement.slug}/show/edit"}
               phx-click={JS.push_focus()}
               class="pl-2"
             >
@@ -336,7 +336,7 @@
   :if={@live_action == :edit}
   id="statement-modal"
   show
-  on_cancel={JS.patch(~p"/p/#{@statement.slug}")}
+  on_cancel={JS.navigate(~p"/p/#{@statement.slug}")}
 >
   <.live_component
     module={YouCongressWeb.StatementLive.FormComponent}
@@ -344,6 +344,7 @@
     title={@page_title}
     action={@live_action}
     statement={@statement}
+    current_user={@current_user}
     patch={~p"/p/#{@statement}"}
     show_opinion={true}
   />

@@ -1,6 +1,8 @@
 defmodule YouCongressWeb.StatementLive.FormComponent do
   use YouCongressWeb, :live_component
 
+  alias YouCongress.Accounts
+  alias YouCongress.Accounts.Permissions
   alias YouCongress.Statements
   alias YouCongress.Repo
   alias YouCongressWeb.StatementLive.HallsInputComponent
@@ -59,19 +61,35 @@ defmodule YouCongressWeb.StatementLive.FormComponent do
 
   @impl true
   def handle_event("validate", %{"statement" => statement_params}, socket) do
-    changeset =
-      socket.assigns.statement
-      |> Statements.change_statement(statement_params)
-      |> Map.put(:action, :validate)
+    case authorize(socket, socket.assigns.action) do
+      {:ok, _user} ->
+        changeset =
+          socket.assigns.statement
+          |> Statements.change_statement(statement_params)
+          |> Map.put(:action, :validate)
 
-    {:noreply, assign_form(socket, changeset)}
+        {:noreply, assign_form(socket, changeset)}
+
+      {:error, :forbidden} ->
+        deny_access(socket)
+    end
   end
 
   def handle_event("save", %{"statement" => statement_params}, socket) do
-    save_statement(socket, socket.assigns.action, statement_params)
+    case authorize(socket, socket.assigns.action) do
+      {:ok, _user} -> save_statement(socket, socket.assigns.action, statement_params)
+      {:error, :forbidden} -> deny_access(socket)
+    end
   end
 
   def handle_event("delete", _, socket) do
+    case authorize(socket, :edit) do
+      {:ok, _user} -> delete_statement(socket)
+      {:error, :forbidden} -> deny_access(socket)
+    end
+  end
+
+  defp delete_statement(socket) do
     case Statements.delete_statement(socket.assigns.statement) do
       {:ok, _} ->
         {:noreply,
@@ -92,7 +110,7 @@ defmodule YouCongressWeb.StatementLive.FormComponent do
         {:noreply,
          socket
          |> put_flash(:info, "Statement updated successfully")
-         |> push_patch(to: ~p"/p/#{statement.slug}")}
+         |> redirect(to: ~p"/p/#{statement.slug}")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}
@@ -116,6 +134,27 @@ defmodule YouCongressWeb.StatementLive.FormComponent do
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     assign(socket, :form, to_form(changeset))
+  end
+
+  defp authorize(socket, action) do
+    with %{id: user_id} <- socket.assigns[:current_user],
+         %{} = user <- Accounts.get_user(user_id),
+         false <- Permissions.blocked?(user),
+         true <- permitted?(action, socket.assigns.statement, user) do
+      {:ok, user}
+    else
+      _ -> {:error, :forbidden}
+    end
+  end
+
+  defp permitted?(:new, _statement, user), do: Permissions.can_create_statement?(user)
+  defp permitted?(_action, statement, user), do: Permissions.can_edit_statement?(statement, user)
+
+  defp deny_access(socket) do
+    {:noreply,
+     socket
+     |> put_flash(:error, "You don't have permission to manage this statement.")
+     |> redirect(to: ~p"/")}
   end
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})

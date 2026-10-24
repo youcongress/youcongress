@@ -17,6 +17,8 @@ defmodule YouCongressWeb.StatementLiveTest do
   alias YouCongress.HallsStatements
   alias YouCongress.Opinions
   alias YouCongress.Likes
+  alias YouCongress.Accounts.User
+  alias YouCongress.Repo
   alias YouCongressWeb.StatementLive.Show.VotesLoader
 
   @create_attrs %{title: "nuclear energy"}
@@ -375,28 +377,41 @@ defmodule YouCongressWeb.StatementLiveTest do
 
     test "edits, validates, and clears a statement URL", %{conn: conn, statement: statement} do
       conn = log_in_as_admin(conn)
-      {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}/show/edit")
+      edit_path = ~p"/p/#{statement.slug}/show/edit"
+      show_path = ~p"/p/#{statement.slug}"
+      {:ok, edit_live, _html} = live(conn, edit_path)
 
-      assert has_element?(show_live, "input[type='url'][name='statement[url]']")
+      assert has_element?(edit_live, "input[type='url'][name='statement[url]']")
 
-      assert show_live
+      assert edit_live
              |> form("#statement-form", statement: %{url: "javascript:alert(1)"})
              |> render_submit() =~ "must be a valid HTTP or HTTPS URL"
 
-      show_live
-      |> form("#statement-form", statement: %{url: "https://ai-2040.com/"})
-      |> render_submit()
+      result =
+        edit_live
+        |> form("#statement-form", statement: %{url: "https://ai-2040.com/"})
+        |> render_submit()
 
-      assert_patch(show_live, ~p"/p/#{statement.slug}")
-      assert has_element?(show_live, "a#statement-url[href='https://ai-2040.com/']")
+      assert {:error, {:redirect, %{to: ^show_path}}} = result
+      {:ok, show_conn} = follow_redirect(result, conn, show_path)
+      assert html_response(show_conn, 200) =~ "href=\"https://ai-2040.com/\""
       assert Statements.get_statement!(statement.id).url == "https://ai-2040.com/"
 
-      show_live |> element("a", "Edit") |> render_click()
-      assert has_element?(show_live, "input[name='statement[url]'][value='https://ai-2040.com/']")
-      show_live |> form("#statement-form", statement: %{url: ""}) |> render_submit()
+      {:ok, show_live, _html} = live(recycle(show_conn), show_path)
+      edit_result = show_live |> element("a", "Edit") |> render_click()
+      assert {:error, {:live_redirect, %{to: ^edit_path}}} = edit_result
+      {:ok, edit_live, _html} = follow_redirect(edit_result, conn, edit_path)
 
-      assert_patch(show_live, ~p"/p/#{statement.slug}")
-      refute has_element?(show_live, "#statement-url")
+      assert has_element?(
+               edit_live,
+               "input[name='statement[url]'][value='https://ai-2040.com/']"
+             )
+
+      result = edit_live |> form("#statement-form", statement: %{url: ""}) |> render_submit()
+
+      assert {:error, {:redirect, %{to: ^show_path}}} = result
+      {:ok, show_conn} = follow_redirect(result, conn, show_path)
+      refute html_response(show_conn, 200) =~ "id=\"statement-url\""
       assert is_nil(Statements.get_statement!(statement.id).url)
     end
 
@@ -703,26 +718,45 @@ defmodule YouCongressWeb.StatementLiveTest do
       conn = log_in_as_admin(conn)
 
       {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}")
+      edit_path = ~p"/p/#{statement.slug}/show/edit"
 
-      assert show_live
-             |> element("a", "Edit")
-             |> render_click() =~ "Edit Poll"
+      edit_result = show_live |> element("a", "Edit") |> render_click()
+      assert {:error, {:live_redirect, %{to: ^edit_path}}} = edit_result
+      {:ok, edit_live, html} = follow_redirect(edit_result, conn, edit_path)
+      assert html =~ "Edit Poll"
 
-      assert_patch(show_live, ~p"/p/#{statement.slug}/show/edit")
-
-      assert show_live
+      assert edit_live
              |> form("#statement-form", statement: @invalid_attrs)
              |> render_change() =~ "can&#39;t be blank"
 
-      assert show_live
-             |> form("#statement-form", statement: @update_attrs)
-             |> render_submit()
+      result = edit_live |> form("#statement-form", statement: @update_attrs) |> render_submit()
 
-      assert_patch(show_live, ~p"/p/#{statement.slug}")
+      show_path = ~p"/p/#{statement.slug}"
+      assert {:error, {:redirect, %{to: ^show_path}}} = result
+      {:ok, show_conn} = follow_redirect(result, conn, show_path)
+      html = html_response(show_conn, 200)
 
-      html = render(show_live)
       assert html =~ "Statement updated successfully"
       assert html =~ "some updated title"
+    end
+
+    test "rejects a component save after the mounted admin is demoted", %{
+      conn: conn,
+      statement: statement
+    } do
+      admin = admin_fixture()
+      conn = log_in_user(conn, admin)
+      {:ok, edit_live, _html} = live(conn, ~p"/p/#{statement.slug}/show/edit")
+
+      assert {:ok, _user} = Repo.update(User.role_changeset(admin, %{role: "user"}))
+
+      result =
+        edit_live
+        |> form("#statement-form", statement: @update_attrs)
+        |> render_submit()
+
+      assert {:error, {:redirect, %{to: "/"}}} = result
+      assert Statements.get_statement!(statement.id).title == statement.title
     end
 
     test "deletes statement in listing", %{conn: conn, statement: statement} do

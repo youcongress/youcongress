@@ -87,14 +87,17 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through([:browser, :require_admin_user])
 
-    live("/p/new", StatementLive.Index, :new)
-    live("/p/:slug/edit", StatementLive.Show, :edit)
-    live("/p/:slug/show/edit", StatementLive.Show, :edit)
+    live_session :admin,
+      on_mount: [{YouCongressWeb.UserAuth, :ensure_admin}] do
+      live("/p/new", StatementLive.Index, :new)
+      live("/p/:slug/edit", StatementLive.Show, :edit)
+      live("/p/:slug/show/edit", StatementLive.Show, :edit)
 
-    live("/authors", AuthorLive.Index, :index)
-    live("/authors/new", AuthorLive.Index, :new)
-    live("/authors/:id/edit", AuthorLive.Show, :edit)
-    live("/authors/:id/show/edit", AuthorLive.Show, :edit)
+      live("/authors", AuthorLive.Index, :index)
+      live("/authors/new", AuthorLive.Index, :new)
+      live("/authors/:id/edit", AuthorLive.Show, :edit)
+      live("/authors/:id/show/edit", AuthorLive.Show, :edit)
+    end
   end
 
   scope "/", YouCongressWeb do

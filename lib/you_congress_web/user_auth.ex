@@ -231,6 +231,10 @@ defmodule YouCongressWeb.UserAuth do
             :refresh_current_user,
             &refresh_current_user_on_event(user_token, &1, &2, &3)
           )
+          |> maybe_attach_params_hook(
+            :refresh_current_user_on_params,
+            &refresh_current_user_on_params(user_token, &1, &2, &3)
+          )
 
         {:cont, socket}
 
@@ -249,6 +253,19 @@ defmodule YouCongressWeb.UserAuth do
       &present?/1,
       "You must log in to access this page.",
       ~p"/log_in"
+    )
+  end
+
+  def on_mount(:ensure_admin, _params, session, socket) do
+    set_analytics_consent(session)
+
+    authorize_live_socket(
+      socket,
+      session["user_token"],
+      :ensure_admin,
+      &Accounts.admin?/1,
+      "You must be an admin to access this page.",
+      ~p"/"
     )
   end
 
@@ -280,6 +297,14 @@ defmodule YouCongressWeb.UserAuth do
   end
 
   defp refresh_current_user_on_event(user_token, _event, _params, socket) do
+    authorize_refreshed_live_user(socket, Accounts.get_user_by_session_token(user_token))
+  end
+
+  defp refresh_current_user_on_params(nil, _params, _url, socket) do
+    authorize_refreshed_live_user(socket, nil)
+  end
+
+  defp refresh_current_user_on_params(user_token, _params, _url, socket) do
     authorize_refreshed_live_user(socket, Accounts.get_user_by_session_token(user_token))
   end
 
@@ -337,6 +362,16 @@ defmodule YouCongressWeb.UserAuth do
   end
 
   defp maybe_attach_event_hook(socket, _name, _callback), do: socket
+
+  defp maybe_attach_params_hook(
+         %{view: view, private: %{lifecycle: _, root_view: view}} = socket,
+         name,
+         callback
+       ) do
+    Phoenix.LiveView.attach_hook(socket, name, :handle_params, callback)
+  end
+
+  defp maybe_attach_params_hook(socket, _name, _callback), do: socket
 
   defp required_live_access(%{view: YouCongressWeb.AuthorLive.Index}), do: :admin
 

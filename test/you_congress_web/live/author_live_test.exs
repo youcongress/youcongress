@@ -363,25 +363,48 @@ defmodule YouCongressWeb.AuthorLiveTest do
       conn = log_in_as_admin(conn)
       country = country_fixture(name: "Updated Country")
       {:ok, show_live, _html} = live(conn, ~p"/x/#{author.twitter_username}")
+      edit_path = ~p"/authors/#{author}/show/edit"
 
-      assert show_live |> element("a", "Edit") |> render_click() =~
-               "Edit Author"
+      edit_result = show_live |> element("a", "Edit") |> render_click()
+      assert {:error, {:live_redirect, %{to: ^edit_path}}} = edit_result
+      {:ok, edit_live, html} = follow_redirect(edit_result, conn, edit_path)
+      assert html =~ "Edit Author"
 
-      assert_patch(show_live, ~p"/authors/#{author}/show/edit")
-
-      assert show_live
+      assert edit_live
              |> form("#author-form", author: @invalid_attrs)
              |> render_change() =~ "can&#39;t be blank"
 
-      assert show_live
-             |> form("#author-form", author: Map.put(@update_attrs, :country_id, country.id))
-             |> render_submit()
+      result =
+        edit_live
+        |> form("#author-form", author: Map.put(@update_attrs, :country_id, country.id))
+        |> render_submit()
 
-      assert_patch(show_live, ~p"/x/#{author.twitter_username}")
+      show_path = ~p"/x/#{author.twitter_username}"
+      assert {:error, {:redirect, %{to: ^show_path}}} = result
+      {:ok, show_conn} = follow_redirect(result, conn, show_path)
+      html = html_response(show_conn, 200)
 
-      html = render(show_live)
       assert html =~ "Author updated successfully"
       assert html =~ "some updated bio"
+    end
+
+    test "rejects a component save after the mounted admin is demoted", %{
+      conn: conn,
+      author: author
+    } do
+      admin = admin_fixture()
+      conn = log_in_user(conn, admin)
+      {:ok, edit_live, _html} = live(conn, ~p"/authors/#{author}/show/edit")
+
+      assert {:ok, _user} = Repo.update(User.role_changeset(admin, %{role: "user"}))
+
+      result =
+        edit_live
+        |> form("#author-form", author: @update_attrs)
+        |> render_submit()
+
+      assert {:error, {:redirect, %{to: "/"}}} = result
+      assert Authors.get_author!(author.id).name == author.name
     end
 
     test "like icon click changes from heart.svg to filled-heart.svg", %{conn: conn} do

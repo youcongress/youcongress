@@ -1,6 +1,8 @@
 defmodule YouCongressWeb.AuthorLive.FormComponent do
   use YouCongressWeb, :live_component
 
+  alias YouCongress.Accounts
+  alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors
   alias YouCongress.Countries
 
@@ -53,19 +55,28 @@ defmodule YouCongressWeb.AuthorLive.FormComponent do
 
   @impl true
   def handle_event("validate", %{"author" => author_params}, socket) do
-    changeset =
-      socket.assigns.author
-      |> Authors.change_author(author_params)
-      |> Map.put(:action, :validate)
+    case authorize(socket, socket.assigns.action) do
+      {:ok, _user} ->
+        changeset =
+          socket.assigns.author
+          |> Authors.change_author(author_params)
+          |> Map.put(:action, :validate)
 
-    {:noreply, assign_form(socket, changeset)}
+        {:noreply, assign_form(socket, changeset)}
+
+      {:error, :forbidden} ->
+        deny_access(socket)
+    end
   end
 
   def handle_event("save", %{"author" => author_params}, socket) do
-    save_author(socket, socket.assigns.action, author_params)
+    case authorize(socket, socket.assigns.action) do
+      {:ok, user} -> save_author(socket, socket.assigns.action, user, author_params)
+      {:error, :forbidden} -> deny_access(socket)
+    end
   end
 
-  defp save_author(socket, :edit, author_params) do
+  defp save_author(socket, :edit, _user, author_params) do
     case Authors.update_author(socket.assigns.author, author_params) do
       {:ok, author} ->
         notify_parent({:saved, Authors.preload(author, [:country])})
@@ -73,15 +84,15 @@ defmodule YouCongressWeb.AuthorLive.FormComponent do
         {:noreply,
          socket
          |> put_flash(:info, "Author updated successfully")
-         |> push_patch(to: socket.assigns.patch)}
+         |> redirect(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}
     end
   end
 
-  defp save_author(socket, :new, author_params) do
-    case Authors.create_author(author_params) do
+  defp save_author(socket, :new, user, author_params) do
+    case Authors.create_author(user, author_params) do
       {:ok, author} ->
         notify_parent({:saved, Authors.preload(author, [:country])})
 
@@ -97,6 +108,27 @@ defmodule YouCongressWeb.AuthorLive.FormComponent do
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     assign(socket, :form, to_form(changeset))
+  end
+
+  defp authorize(socket, action) do
+    with %{id: user_id} <- socket.assigns[:current_user],
+         %{} = user <- Accounts.get_user(user_id),
+         false <- Permissions.blocked?(user),
+         true <- permitted?(action, user) do
+      {:ok, user}
+    else
+      _ -> {:error, :forbidden}
+    end
+  end
+
+  defp permitted?(:new, user), do: Permissions.can_create_authors?(user)
+  defp permitted?(_action, user), do: Permissions.can_edit_author?(user)
+
+  defp deny_access(socket) do
+    {:noreply,
+     socket
+     |> put_flash(:error, "You don't have permission to manage authors.")
+     |> redirect(to: ~p"/")}
   end
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})

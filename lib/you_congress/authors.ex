@@ -235,7 +235,7 @@ defmodule YouCongress.Authors do
       attrs =
         attrs
         |> Map.drop([:user_id, "user_id"])
-        |> Map.put(:user_id, actor.id)
+        |> put_actor_id(actor.id)
 
       create_author(attrs)
     else
@@ -244,6 +244,14 @@ defmodule YouCongress.Authors do
   end
 
   def create_author(_actor, _attrs), do: {:error, :forbidden}
+
+  defp put_actor_id(attrs, actor_id) do
+    if Enum.any?(Map.keys(attrs), &is_binary/1) do
+      Map.put(attrs, "user_id", actor_id)
+    else
+      Map.put(attrs, :user_id, actor_id)
+    end
+  end
 
   @doc """
   Finds a author by name or creates a new one.
