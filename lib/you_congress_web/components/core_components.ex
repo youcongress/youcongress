@@ -20,6 +20,16 @@ defmodule YouCongressWeb.CoreComponents do
   import YouCongressWeb.Gettext
 
   @doc """
+  Returns a precompiled percentage-width class so progress bars work with a
+  Content Security Policy that blocks inline styles.
+  """
+  def percentage_width_class(percentage)
+      when is_integer(percentage) and percentage >= 0 and percentage <= 100,
+      do: "w-percent-#{percentage}"
+
+  def percentage_width_class(_percentage), do: "w-percent-0"
+
+  @doc """
   Renders a modal.
 
   ## Examples

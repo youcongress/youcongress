@@ -300,6 +300,8 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     html = render_submit(view, "submit", params)
     assert html =~ "Community result"
     assert html =~ "50%"
+    assert html =~ "w-percent-50"
+    refute html =~ ~s(style="width: 50%")
 
     assert has_element?(
              view,

@@ -5,6 +5,11 @@ const plugin = require("tailwindcss/plugin")
 const fs = require("fs")
 const path = require("path")
 
+const percentageWidthClasses = Array.from(
+  { length: 101 },
+  (_, percentage) => `w-percent-${percentage}`
+)
+
 module.exports = {
   content: [
     "./js/**/*.js",
@@ -34,6 +39,8 @@ module.exports = {
     "ring-green-500",
     "ring-gray-500",
     "ring-blue-500",
+    // CSP-safe widths for percentage bars. Inline style attributes are blocked.
+    ...percentageWidthClasses,
   ],
   theme: {
     extend: {
@@ -55,6 +62,16 @@ module.exports = {
           }
         }
       })
+    }),
+    plugin(function ({ addUtilities }) {
+      addUtilities(
+        Object.fromEntries(
+          percentageWidthClasses.map((className, percentage) => [
+            `.${className}`,
+            { width: `${percentage}%` }
+          ])
+        )
+      )
     }),
     // Allows prefixing tailwind classes with LiveView classes to add rules
     // only when LiveView classes are applied, for example:

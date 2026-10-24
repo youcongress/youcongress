@@ -446,10 +446,10 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                 <span>{statement_stat.total} completed</span>
               </div>
               <div class="h-2 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  class="h-full rounded-full bg-indigo-600"
-                  style={"width: #{statement_stat.changed_percent}%"}
-                >
+                <div class={[
+                  "h-full rounded-full bg-indigo-600",
+                  percentage_width_class(statement_stat.changed_percent)
+                ]}>
                 </div>
               </div>
             </div>

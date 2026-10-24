@@ -500,6 +500,8 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert html =~ "Results (1 vote):"
       assert html =~ "For 1 (100%)"
       assert html =~ "By country"
+      assert html =~ "w-percent-100"
+      refute html =~ ~s(style="width: 100%;")
     end
 
     test "guest vote auth modal keeps the statement page as return_to", %{

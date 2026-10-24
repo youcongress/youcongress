@@ -5,6 +5,7 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
   use Phoenix.Component
 
   alias YouCongressWeb.StatementLive.ResultsComponent
+  import YouCongressWeb.CoreComponents, only: [percentage_width_class: 1]
 
   @responses [:for, :abstain, :against]
 
@@ -315,10 +316,11 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
 
   def result(assigns) do
     ~H"""
-    <div
-      class={["bg-#{response_color(@response)}-500 h-full", @class]}
-      style={"width: #{@percentage || 0}%;"}
-    >
+    <div class={[
+      "bg-#{response_color(@response)}-500 h-full",
+      percentage_width_class(@percentage),
+      @class
+    ]}>
     </div>
     """
   end
