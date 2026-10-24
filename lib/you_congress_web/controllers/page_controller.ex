@@ -220,7 +220,7 @@ defmodule YouCongressWeb.PageController do
     > helping people explore different views, vote and delegate to those they trust.
     > Creators gain insights into their audiences. Our aim is to improve public debate,
     > help decision-makers understand the evidence and the people affected by their
-    > choices, and help new trusted voices emerge—including people who have never
+    > choices, and help new trusted voices emerge, including people who have never
     > considered running for office. Every author, statement and quote has a stable public page.
     > When citing a quote, cite its source URL alongside the YouCongress page.
 
