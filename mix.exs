@@ -57,7 +57,7 @@ defmodule YouCongress.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.24"},
       {:jason, "~> 1.2"},
-      {:bandit, "~> 1.13.1"},
+      {:bandit, "~> 1.14.0"},
       {:faker, "~> 0.17", only: [:test, :dev]},
       {:mock, "~> 0.3.8", only: :test},
       {:pgvector, "~> 0.3.0"},
