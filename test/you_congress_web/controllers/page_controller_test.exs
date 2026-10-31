@@ -113,6 +113,11 @@ defmodule YouCongressWeb.PageControllerTest do
     assert html =~ ~s(href="/contact")
     assert html =~ "Contact us"
     assert html =~ ~s(href="/future-of-life-foundation-epistack-award")
+
+    image_url = YouCongressWeb.Endpoint.url() <> "/images/social-home.png"
+    assert html =~ ~s(<meta property="og:image" content="#{image_url}")
+    assert html =~ ~s(<meta name="twitter:card" content="summary_large_image")
+    assert html =~ ~s(<meta name="twitter:image" content="#{image_url}")
   end
 
   test "GET /about loads as a user", %{conn: conn} do

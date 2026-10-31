@@ -127,7 +127,12 @@ defmodule YouCongressWeb.PageController do
       page_title: "About YouCongress",
       page_description:
         "YouCongress aims to improve democracy through sourced statements, public participation, support for decision-makers, and new trusted voices, starting with AI.",
-      canonical_url: url(~p"/about")
+      canonical_url: url(~p"/about"),
+      page_image: url(~p"/images/social-home.png"),
+      page_image_alt:
+        "YouCongress latest sourced positions from experts, policymakers and public figures",
+      page_image_width: 1731,
+      page_image_height: 909
     )
   end
 
