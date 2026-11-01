@@ -108,8 +108,8 @@ defmodule YouCongressWeb.PageControllerTest do
     assert html =~ "About YouCongress"
     assert html =~ "AI agents gather sourced statements"
     assert html =~ "help new trusted voices emerge"
-    assert html =~ ~s(href="https://www.linkedin.com/in/hectorperezarenas")
-    assert html =~ ">Hector Perez Arenas</a>"
+    assert html =~ ~s(href="https://hecperez.com/")
+    assert html =~ ">Hector Perez</a>"
     assert html =~ ~s(href="/contact")
     assert html =~ "Contact us"
     assert html =~ ~s(href="/future-of-life-foundation-epistack-award")
