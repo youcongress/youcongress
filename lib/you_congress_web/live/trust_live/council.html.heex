@@ -112,7 +112,7 @@
           Remove
         </button>
       </div>
-      <form :if={!@readonly} phx-change="reason" class="grid sm:grid-cols-2 gap-3 mt-2">
+      <form :if={!@readonly} phx-change="reason" class="mt-2">
         <input type="hidden" name="person_id" value={member.author_id} />
         <input
           type="hidden"
@@ -125,15 +125,6 @@
             value={member[:reason]}
             phx-debounce="400"
             maxlength="5000"
-            class="block w-full rounded border-gray-300"
-          />
-        </label>
-        <label class="text-sm">
-          Source (optional)<input
-            name="source_url"
-            type="url"
-            value={member[:source_url]}
-            phx-debounce="400"
             class="block w-full rounded border-gray-300"
           />
         </label>

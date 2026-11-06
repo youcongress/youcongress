@@ -192,7 +192,7 @@ defmodule YouCongressWeb.TrustLive.Council do
 
   def handle_event(
         "reason",
-        %{"person_id" => id, "list" => i, "reason" => reason, "source_url" => url},
+        %{"person_id" => id, "list" => i, "reason" => reason},
         socket
       ) do
     lists =
@@ -202,7 +202,7 @@ defmodule YouCongressWeb.TrustLive.Council do
           | members:
               Enum.map(l.members, fn m ->
                 if m.author_id == TrustRankings.parse_id(id),
-                  do: Map.merge(m, %{reason: reason, source_url: url}),
+                  do: Map.put(m, :reason, reason),
                   else: m
               end)
         }
