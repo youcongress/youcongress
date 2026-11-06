@@ -11,6 +11,9 @@ defmodule YouCongress.Votes.Vote do
 
   schema "votes" do
     field :direct, :boolean, default: true
+    field :revision, :integer, default: 1
+    field :origin, :string, default: "legacy"
+    field :cast_by_user_id, :id
     field :twin, :boolean, default: false
     field :answer, Ecto.Enum, values: [:for, :against, :abstain]
 
@@ -43,6 +46,8 @@ defmodule YouCongress.Votes.Vote do
     vote
     |> cast(attrs, [
       :direct,
+      :origin,
+      :cast_by_user_id,
       :twin,
       :author_id,
       :statement_id,

@@ -10,7 +10,7 @@ defmodule YouCongress.Reconsiderations do
 
   alias YouCongress.Accounts.User
   alias YouCongress.Authors.Author
-  alias YouCongress.Delegations
+  alias YouCongress.Councils
 
   alias YouCongress.Reconsiderations.{
     Delegate,
@@ -145,7 +145,8 @@ defmodule YouCongress.Reconsiderations do
         %Reconsideration{} = reconsideration,
         %User{} = user,
         responses,
-        delegate_ids
+        delegate_ids,
+        council_list_id \\ nil
       ) do
     statement_ids = Enum.map(reconsideration.reconsideration_statements, & &1.statement_id)
     allowed_delegate_ids = Enum.map(reconsideration.delegates, & &1.author_id)
@@ -158,7 +159,13 @@ defmodule YouCongress.Reconsiderations do
       normalized_delegate_ids = Enum.reject(normalized_delegate_ids, &(&1 == user.author_id))
 
       Repo.transaction(fn ->
-        persist_response(reconsideration, user, normalized_responses, normalized_delegate_ids)
+        persist_response(
+          reconsideration,
+          user,
+          normalized_responses,
+          normalized_delegate_ids,
+          council_list_id
+        )
       end)
       |> unwrap_transaction()
     else
@@ -183,11 +190,11 @@ defmodule YouCongress.Reconsiderations do
 
       Repo.transaction(fn ->
         Enum.each(responses, fn response ->
-          Votes.delete_vote(%{statement_id: response.statement_id, author_id: user.author_id})
+          remove_submitted_vote(response, user)
         end)
 
         Enum.each(selections, fn selection ->
-          remove_delegation(user, selection.delegate_author_id)
+          remove_submitted_selection(user, selection)
         end)
 
         Repo.delete_all(
@@ -210,61 +217,124 @@ defmodule YouCongress.Reconsiderations do
     end
   end
 
-  defp persist_response(reconsideration, user, responses, delegate_ids) do
-    saved_responses = Enum.map(responses, &persist_answer(reconsideration, user, &1))
-    Enum.each(responses, &persist_vote(user, &1))
-    Enum.each(delegate_ids, &persist_delegate_selection(reconsideration, user, &1))
+  defp persist_response(reconsideration, user, responses, delegate_ids, list_id) do
+    saved_responses =
+      Enum.map(responses, fn {statement_id, answers} ->
+        previous = Votes.get_by(statement_id: statement_id, author_id: user.author_id)
+
+        {:ok, vote} =
+          Votes.create_or_update(%{
+            statement_id: statement_id,
+            answer: answers.after,
+            author_id: user.author_id,
+            user_id: user.id,
+            direct: true
+          })
+
+        prior =
+          if previous && previous.direct do
+            previous
+            |> Map.take([:answer, :direct, :twin, :opinion_id, :origin, :cast_by_user_id])
+            |> Jason.encode!()
+            |> Jason.decode!()
+          end
+
+        %Response{}
+        |> Response.changeset(%{
+          reconsideration_id: reconsideration.id,
+          statement_id: statement_id,
+          author_id: user.author_id,
+          before_answer: answers.before,
+          after_answer: answers.after,
+          cast_vote_id: vote.id,
+          cast_vote_updated_at: vote.updated_at,
+          cast_vote_revision: vote.revision,
+          previous_vote: prior
+        })
+        |> insert_or_rollback()
+      end)
+
+    {:ok, council} = Councils.ensure(user.author_id)
+    selected_list_id = YouCongress.TrustRankings.parse_id(list_id)
+
+    list =
+      Enum.find(council.lists, fn l ->
+        if selected_list_id, do: l.id == selected_list_id, else: l.fallback
+      end)
+
+    if is_nil(list), do: Repo.rollback(:invalid_list)
+    original_ids = Enum.map(list.members, & &1.author_id)
+    attrs = Councils.editable(council)
+
+    lists =
+      Enum.map(attrs.lists, fn l ->
+        if l.id == list.id,
+          do: %{
+            l
+            | members: l.members ++ Enum.map(delegate_ids -- original_ids, &%{author_id: &1})
+          },
+          else: l
+      end)
+
+    council =
+      if delegate_ids == [] do
+        council
+      else
+        case Councils.save(user, %{attrs | lists: lists}) do
+          {:ok, saved} -> saved
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end
+
+    Enum.each(delegate_ids, fn delegate_id ->
+      member = Repo.get_by(YouCongress.Councils.Member, list_id: list.id, author_id: delegate_id)
+
+      %DelegateSelection{}
+      |> DelegateSelection.changeset(%{
+        reconsideration_id: reconsideration.id,
+        participant_author_id: user.author_id,
+        delegate_author_id: delegate_id,
+        council_list_id: list.id,
+        council_member_id: member.id,
+        council_version: council.version,
+        created_membership: delegate_id not in original_ids
+      })
+      |> insert_or_rollback()
+    end)
+
+    YouCongress.TrustNetwork.notify(
+      reconsideration.creator_id,
+      "reconsider:#{reconsideration.id}:#{user.author_id}",
+      "A reader responded to your Reconsider page.",
+      "/reconsider/#{reconsideration.slug}"
+    )
+
     saved_responses
   end
 
-  defp persist_answer(reconsideration, user, {statement_id, answers}) do
-    %Response{}
-    |> Response.changeset(%{
-      reconsideration_id: reconsideration.id,
-      statement_id: statement_id,
-      author_id: user.author_id,
-      before_answer: answers.before,
-      after_answer: answers.after
-    })
-    |> insert_or_rollback()
-  end
+  defp remove_submitted_vote(response, user) do
+    vote = Votes.get_by(statement_id: response.statement_id, author_id: user.author_id)
 
-  defp persist_vote(user, {statement_id, answers}) do
-    case Votes.create_or_update(%{
-           statement_id: statement_id,
-           answer: answers.after,
-           author_id: user.author_id,
-           user_id: user.id,
-           direct: true
-         }) do
-      {:ok, _vote} -> :ok
-      {:error, reason} -> Repo.rollback(reason)
-    end
-  end
-
-  defp persist_delegate_selection(reconsideration, user, delegate_id) do
-    %DelegateSelection{}
-    |> DelegateSelection.changeset(%{
-      reconsideration_id: reconsideration.id,
-      participant_author_id: user.author_id,
-      delegate_author_id: delegate_id
-    })
-    |> insert_or_rollback()
-
-    unless Delegations.delegating?(user.author_id, delegate_id) do
-      case Delegations.create_delegation(user, delegate_id) do
-        {:ok, _delegation} -> :ok
-        {:error, reason} -> Repo.rollback(reason)
+    if vote && vote.id == response.cast_vote_id && vote.revision == response.cast_vote_revision do
+      if response.previous_vote do
+        Votes.update_vote(vote, response.previous_vote)
+      else
+        Votes.delete_vote(vote)
       end
     end
   end
 
-  defp remove_delegation(user, delegate_id) do
-    if Delegations.delegating?(user.author_id, delegate_id) do
-      case Delegations.delete_delegation(user, delegate_id) do
-        {:ok, _delegation} -> :ok
-        {:error, reason} -> Repo.rollback(reason)
-      end
+  defp remove_submitted_selection(user, selection) do
+    council = Councils.get(user.author_id)
+
+    if selection.created_membership && council && council.version == selection.council_version do
+      Repo.delete_all(
+        from m in YouCongress.Councils.Member,
+          where: m.id == ^selection.council_member_id and m.list_id == ^selection.council_list_id
+      )
+
+      Councils.sync_legacy(user.author_id)
+      YouCongress.DelegationVotes.update_author_delegated_votes(user.author_id)
     end
   end
 
@@ -275,7 +345,8 @@ defmodule YouCongress.Reconsiderations do
       reconsideration,
       user,
       payload["responses"] || %{},
-      payload["delegate_ids"] || []
+      payload["delegate_ids"] || [],
+      payload["council_list_id"]
     )
   rescue
     Ecto.NoResultsError -> {:error, :not_found}

@@ -72,6 +72,8 @@ defmodule YouCongress.Delegations do
 
     case result do
       {:ok, delegation} ->
+        sync_council(delegation, :add)
+
         DelegationVotes.update_delegated_votes(%{
           deleguee_id: delegation.deleguee_id,
           delegate_id: delegation.delegate_id
@@ -129,6 +131,8 @@ defmodule YouCongress.Delegations do
 
     case result do
       {:ok, delegation} ->
+        sync_council(delegation, :remove)
+
         DelegationVotes.update_delegated_votes(%{
           deleguee_id: delegation.deleguee_id,
           delegate_id: delegation.delegate_id
@@ -171,5 +175,26 @@ defmodule YouCongress.Delegations do
 
   def get_delegation(%User{} = user, delegate_id) do
     Repo.get_by(Delegation, deleguee_id: user.author_id, delegate_id: delegate_id)
+  end
+
+  defp sync_council(delegation, action) do
+    alias YouCongress.Councils.{List, Member}
+    {:ok, council} = YouCongress.Councils.ensure(delegation.deleguee_id)
+
+    if action == :add do
+      fallback = Enum.find(council.lists, & &1.fallback)
+
+      %Member{}
+      |> Member.changeset(%{list_id: fallback.id, author_id: delegation.delegate_id})
+      |> Repo.insert(on_conflict: :nothing, conflict_target: [:list_id, :author_id])
+    else
+      ids = Repo.all(from l in List, where: l.council_id == ^council.id, select: l.id)
+
+      Repo.delete_all(
+        from m in Member, where: m.list_id in ^ids and m.author_id == ^delegation.delegate_id
+      )
+    end
+
+    council |> Ecto.Changeset.change(version: council.version + 1) |> Repo.update!()
   end
 end

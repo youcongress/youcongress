@@ -149,6 +149,11 @@ defmodule YouCongress.OpinionStatementVerifications do
 
     from(os in OpinionStatement, where: os.id == ^opinion_statement_id)
     |> Repo.update_all(set: [verification_status: cached_status])
+    |> tap(fn _ ->
+      YouCongress.DelegationVotes.refresh_opinion(
+        Repo.get!(OpinionStatement, opinion_statement_id).opinion_id
+      )
+    end)
   end
 
   defp tap_ok({:ok, result}, fun) do

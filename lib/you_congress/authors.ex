@@ -669,6 +669,7 @@ defmodule YouCongress.Authors do
         vote_counts = merge_author_votes(duplicate.id, survivor.id, now)
         delegation_counts = merge_author_delegations(duplicate.id, survivor.id, now)
 
+        YouCongress.Councils.Merge.merge(duplicate.id, survivor.id)
         ensure_author_detached!(duplicate.id)
         deleted_author = delete_duplicate_author!(duplicate)
         updated_survivor = update_survivor_profile!(survivor, profile_attrs)

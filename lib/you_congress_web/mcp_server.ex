@@ -9,6 +9,8 @@ defmodule YouCongressWeb.MCPServer do
   # (lib/you_congress_web/controllers/page_html/mcp_tools.html.heex) and the
   # AI-facing tool list in build_llms_txt/0 (page_controller.ex, served at /llms.txt).
   # component(YouCongressWeb.MCPServer.StatementsSearch)
+  component(YouCongressWeb.MCPServer.TrustNetwork)
+  component(YouCongressWeb.MCPServer.TrustRequests)
   component(YouCongressWeb.MCPServer.StatementsCreate)
   # Disabled statement populate as it's not working as well as the fresh quote discovery
   # component(YouCongressWeb.MCPServer.StatementPopulate)

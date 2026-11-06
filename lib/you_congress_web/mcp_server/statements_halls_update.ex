@@ -20,11 +20,11 @@ defmodule YouCongressWeb.MCPServer.StatementsHallsUpdate do
   @invalid_key_message "The provided API key is invalid. Create a new key in Settings > API."
   @forbidden_message "Your account is not allowed to edit this statement."
   @not_found_message "Statement not found."
-  @missing_hall_message "Provide a main_hall name (e.g. 'ai') to update halls."
+  @missing_hall_message "Provide halls (comma-separated names) to update tags."
 
   schema do
     field :statement_id, :integer, required: true
-    field :main_hall, :string, required: true
+    field :main_hall, :string
     field :other_halls, :string
     field :halls, :string
   end
@@ -34,7 +34,10 @@ defmodule YouCongressWeb.MCPServer.StatementsHallsUpdate do
     other_input = Map.get(params, :other_halls) || Map.get(params, :halls)
     user_result = ToolUsageTracker.track(__MODULE__, frame, required_scope: :write)
 
-    with {:ok, main_hall} <- normalize_main_hall(Map.get(params, :main_hall)),
+    with {:ok, main_hall} <-
+           normalize_main_hall(
+             Map.get(params, :main_hall) || List.first(normalize_other_halls(other_input))
+           ),
          other_halls <- normalize_other_halls(other_input),
          {:ok, user} <- user_result,
          statement when not is_nil(statement) <- Statements.get_statement(statement_id),

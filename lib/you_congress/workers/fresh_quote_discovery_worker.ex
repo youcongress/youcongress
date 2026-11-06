@@ -17,6 +17,10 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
+    request =
+      if args["trust_request_id"],
+        do: YouCongress.Repo.get(YouCongress.TrustNetwork.Request, args["trust_request_id"])
+
     with user_id when not is_nil(user_id) <- system_user_id(),
          recent_quotes <- FreshQuoteFinder.recent_quote_inventory(),
          statements <- FreshQuoteFinder.statement_inventory(),
@@ -24,11 +28,34 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryWorker do
            FreshQuoteFinder.find_quote(recent_quotes,
              limit: discovery_limit(args),
              statements: statements,
-             now: DateTime.utc_now()
+             now: DateTime.utc_now(),
+             review_request: request_context(request)
            ) do
-      %{"job_id" => job_id, "user_id" => user_id, "limit" => discovery_limit(args)}
+      %{
+        "job_id" => job_id,
+        "user_id" => user_id,
+        "limit" => discovery_limit(args),
+        "trust_request_id" => request && request.id
+      }
       |> FreshQuoteDiscoveryPollingWorker.new()
       |> Oban.insert()
+
+      if request do
+        request
+        |> Ecto.Changeset.change(
+          status: "reviewing",
+          attempts:
+            request.attempts ++
+              [
+                %{
+                  "at" => DateTime.to_iso8601(DateTime.utc_now()),
+                  "result" => "Search started",
+                  "job_id" => job_id
+                }
+              ]
+        )
+        |> YouCongress.Repo.update!()
+      end
 
       :ok
     else
@@ -68,5 +95,20 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryWorker do
       {int, ""} -> int
       _ -> nil
     end
+  end
+
+  defp request_context(nil), do: nil
+
+  defp request_context(request) do
+    author =
+      request.author_id && YouCongress.Repo.get(YouCongress.Authors.Author, request.author_id)
+
+    %{
+      kind: request.kind,
+      body: request.body,
+      source_url: request.source_url,
+      author: author && author.name,
+      statement_id: request.statement_id
+    }
   end
 end

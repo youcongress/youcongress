@@ -98,3 +98,42 @@ Sobelow honors only the documented, check-specific `sobelow_skip` annotations fo
 
 - [AppSignal](https://www.appsignal.com) for application monitoring.
 - [Rocket Validator](https://rocketvalidator.com) for HTML and accessibility checks.
+
+## Trust Network
+
+Participants build councils at `/council`. Lists are independently ordered and may repeat
+any topic hall or General. A permanent General fallback stays last. Lists have no
+five-person limit. Saving changes delegation and includes nominations in public trust
+rankings; publishing the council page and reasons is a separate setting.
+
+For each statement, the first list with more eligible For than Against positions decides.
+Abstentions, missing positions, and disputed/unverified inferences do not count. A direct
+vote, including Abstain, overrides the council. Delegation does not follow chains.
+Source-inferred positions need positive authenticity, relevance, and stance verification.
+Repeated selections count independently in delegation but once per participant, nominee,
+and scope in rankings.
+
+`/trust/general` provides four scoped rankings, independent nominator/nominee country
+filters, community filtering, CSV exports, and administrator-published dated snapshots.
+`/trust/compare` compares independent audiences. Joining an administrator-enabled community
+includes nominations without an additional sharing step. `/trust/recommendations` manages
+independent recommendations; these do not affect rankings unless also saved in a council.
+The contributor series and AI Trust campaign are intentionally not implemented.
+
+`/trust/requests` accepts evidence corrections, missing-position requests, and missing-person
+suggestions. Moderators review requests in the same page or with the `trust_requests` MCP
+tool. Discovery prioritizes one open evidence request each day when a verification account
+is configured. Search results remain subject to the existing verification workflow.
+`/trust/updates` shows private updates. Council settings offer daily/weekly email digests,
+off by default, with signed unsubscribe links. The daily dispatcher runs at 06:00 UTC.
+
+Deploy by running migrations before starting the new release. The additive backfill preserves
+legacy votes and delegates, creates default councils, and queues resumable `RefreshCouncilWorker`
+jobs. Each worker transactionally stores a new explanation before updating its vote projection.
+Monitor those jobs before announcing the rollout. Existing delegates are immediately included
+in aggregate General nominations; their council pages remain unpublished. Do not roll back
+the new schema after participants have edited councils without exporting their choices.
+
+Validation: `mix test test/you_congress/councils_test.exs test/you_congress_web/live/trust_live_test.exs`
+plus the repository-wide `mix precommit` checks. No external discovery or email is needed
+for tests. Start the local review server with `PORT=4006 mix phx.server`.

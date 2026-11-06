@@ -1,0 +1,313 @@
+<div
+  id="council-editor"
+  phx-hook="CouncilDraft"
+  data-guest={to_string(is_nil(@current_user))}
+  class="py-8 space-y-8"
+>
+  <div class="flex flex-wrap justify-between gap-4">
+    <div>
+      <p class="text-sm font-semibold text-indigo-700">TRUST NETWORK</p>
+      <h1 class="text-3xl font-bold mt-2">
+        {if @readonly, do: "#{@public_author.name}'s council", else: "Build your AI council"}
+      </h1>
+    </div>
+    <nav class="flex gap-4 text-sm">
+      <.link navigate={~p"/trust/general"}>Trust lists</.link><.link navigate={~p"/communities"}>Communities</.link><.link
+        :if={@current_user}
+        navigate={~p"/trust/updates"}
+      >Updates</.link>
+    </nav>
+  </div>
+  <p class="text-gray-600">
+    Try each list in order. The first list with more For than Against determines your delegated vote. Abstentions and missing or unverified positions do not count. Your direct vote always takes precedence.
+  </p>
+  <p class="rounded-lg bg-indigo-50 p-4">
+    You can repeat any topic or General, with different people in each list. The final General is always your last fallback.
+  </p>
+  <div :if={@readonly}>
+    <button phx-click="copy" class="rounded bg-indigo-700 px-4 py-2 text-white">
+      Copy into my draft
+    </button>
+    <p class="text-sm mt-2">Review and save before any choices change.</p>
+  </div>
+  <div :if={@selected_person && !@readonly} class="border rounded p-4 bg-indigo-50">
+    <p class="font-semibold">Add {@selected_person.name} to a list</p>
+    <button
+      :for={{list, i} <- Enum.with_index(@draft.lists)}
+      phx-click="add-person"
+      phx-value-id={@selected_person.id}
+      phx-value-list={i}
+      class="border rounded m-1 p-2"
+    >
+      {i + 1}. {list.name}
+    </button>
+  </div>
+  <section
+    :for={{list, i} <- Enum.with_index(@draft.lists)}
+    id={"council-list-#{i}"}
+    class="rounded-xl border p-5 space-y-4"
+  >
+    <div class="flex flex-wrap justify-between gap-3 items-center">
+      <h2 class="text-xl font-semibold">
+        {i + 1}. {list.name}
+        <span :if={list.fallback} class="text-sm text-gray-500">Final fallback</span>
+      </h2>
+      <div :if={!@readonly && !list.fallback} class="flex gap-3">
+        <button
+          phx-click="move"
+          phx-value-index={i}
+          phx-value-direction="up"
+          disabled={i == 0}
+          aria-label={"Move #{list.name} up"}
+        >
+          ↑ Up
+        </button>
+        <button
+          phx-click="move"
+          phx-value-index={i}
+          phx-value-direction="down"
+          disabled={i >= length(@draft.lists) - 2}
+          aria-label={"Move #{list.name} down"}
+        >
+          ↓ Down
+        </button>
+        <button phx-click="remove-list" phx-value-index={i} class="text-red-700">
+          Remove list
+        </button>
+      </div>
+    </div>
+    <form :if={!@readonly} phx-change="rename" class="flex gap-2 items-center">
+      <input type="hidden" name="index" value={i} /><label for={"list-name-#{i}"}>
+        List name
+      </label>
+      <input
+        id={"list-name-#{i}"}
+        name="name"
+        value={list.name}
+        maxlength="120"
+        phx-debounce="300"
+        class="rounded border-gray-300"
+      />
+    </form>
+    <p :if={list.members == []} class="text-gray-500">
+      No people selected. This list will be skipped.
+    </p>
+    <div :for={member <- list.members} class="border-t pt-3">
+      <div class="flex justify-between gap-3">
+        <.link href={~p"/a/#{member.author_id}"} class="font-semibold">
+          {person_name(@people, member.author_id)}
+        </.link>
+        <button
+          :if={!@readonly}
+          phx-click="remove-person"
+          phx-value-id={member.author_id}
+          phx-value-list={i}
+          class="text-sm text-red-700"
+        >
+          Remove
+        </button>
+      </div>
+      <form :if={!@readonly} phx-change="reason" class="grid sm:grid-cols-2 gap-3 mt-2">
+        <input type="hidden" name="person_id" value={member.author_id} /><input
+          type="hidden"
+          name="list"
+          value={i}
+        />
+        <label class="text-sm">
+          Reason (optional)<input
+            name="reason"
+            value={member[:reason]}
+            phx-debounce="400"
+            maxlength="5000"
+            class="block w-full rounded border-gray-300"
+          />
+        </label>
+        <label class="text-sm">
+          Source (optional)<input
+            name="source_url"
+            type="url"
+            value={member[:source_url]}
+            phx-debounce="400"
+            class="block w-full rounded border-gray-300"
+          />
+        </label>
+      </form>
+      <div :if={@readonly} class="text-sm mt-2">
+        <p>{member[:reason]}</p>
+        <.link
+          :if={member[:source_url] not in [nil, ""]}
+          href={member[:source_url]}
+          rel="noopener noreferrer"
+          class="text-indigo-700"
+        >
+          Source
+        </.link>
+      </div>
+    </div>
+    <form :if={!@readonly} phx-change="search" class="mt-3">
+      <input type="hidden" name="list" value={i} /><label for={"person-search-#{i}"}>
+        Find a person
+      </label>
+      <input
+        id={"person-search-#{i}"}
+        name="q"
+        value={if @active_list == i, do: @query, else: ""}
+        phx-debounce="250"
+        placeholder="Search by name"
+        class="block w-full rounded border-gray-300"
+      />
+    </form>
+    <div :if={!@readonly && @active_list == i} class="flex flex-wrap gap-2">
+      <button
+        :for={person <- @matches}
+        phx-click="add-person"
+        phx-value-id={person.id}
+        phx-value-list={i}
+        class="rounded bg-indigo-50 px-3 py-2 text-indigo-800"
+      >
+        + {person.name}
+      </button>
+    </div>
+  </section>
+  <section :if={!@readonly} class="space-y-4">
+    <h2 class="text-xl font-semibold">Add another list</h2>
+    <button phx-click="add-list" class="rounded border px-4 py-2">+ General list</button>
+    <form phx-change="search-halls">
+      <label for="hall-search">Search existing topic halls</label>
+      <input
+        id="hall-search"
+        name="q"
+        value={@hall_query}
+        phx-debounce="250"
+        class="block w-full rounded border-gray-300"
+      />
+    </form>
+    <div class="flex flex-wrap gap-2">
+      <button
+        :for={hall <- @hall_matches}
+        phx-click="add-list"
+        phx-value-hall={hall.id}
+        class="rounded border px-3 py-2"
+      >
+        + {hall.name}
+      </button>
+    </div>
+    <.link navigate={~p"/trust/requests"} class="text-indigo-700">
+      Suggest a missing person or request evidence
+    </.link>
+    <div class="rounded-lg bg-gray-50 p-5 space-y-3">
+      <p>
+        Saving determines your delegated votes and includes your nominations in global rankings and the communities you join. Repeating a person in the same topic counts as one public nomination.
+      </p>
+      <button
+        phx-click="save"
+        id="save-council"
+        class="rounded bg-indigo-700 px-5 py-3 text-white"
+      >
+        Save council
+      </button><span :if={@dirty} class="ml-3 text-sm">Unsaved changes</span>
+      <div :if={!@current_user} class="flex flex-wrap gap-3">
+        <.link
+          href={~p"/auth/google?#{%{pending_actions: pending(@draft)}}"}
+          class="text-indigo-700"
+        >
+          Continue with Google
+        </.link>
+        <.link href={~p"/auth/x?#{%{pending_actions: pending(@draft)}}"} class="text-indigo-700">
+          Continue with X
+        </.link>
+        <.link
+          href={~p"/sign_up?#{%{pending_actions: pending(@draft), return_to: "/council"}}"}
+          class="text-indigo-700"
+        >
+          Continue with email
+        </.link>
+      </div>
+    </div>
+  </section>
+  <section :if={@current_user && !@readonly} class="rounded-xl border p-5">
+    <h2 class="text-xl font-semibold">Sharing and updates</h2>
+    <form phx-submit="settings" class="mt-4 space-y-4">
+      <label class="flex gap-3">
+        <input type="checkbox" name="published" value="true" checked={@settings.published} />
+        Publish my council page, including reasons and source links
+      </label>
+      <label>
+        Email digest
+        <select name="digest" class="rounded border-gray-300">
+          <option
+            :for={value <- ["off", "daily", "weekly"]}
+            value={value}
+            selected={@settings.digest == value}
+          >
+            {String.capitalize(value)}
+          </option>
+        </select>
+      </label>
+      <button class="rounded border px-4 py-2">Save preferences</button>
+    </form>
+    <.link
+      :if={@settings.published}
+      href={~p"/a/#{@current_user.author_id}/council"}
+      class="block mt-3 text-indigo-700"
+    >
+      View my public council
+    </.link>
+  </section>
+  <section class="space-y-4">
+    <h2 class="text-xl font-semibold">Compare positions and inspect a decision</h2>
+    <form phx-change="search-statements">
+      <label for="statement-search">Find a proposal or claim</label>
+      <input
+        id="statement-search"
+        name="q"
+        value={@statement_query}
+        phx-debounce="250"
+        class="block w-full rounded border-gray-300"
+      />
+    </form>
+    <button
+      :for={statement <- @statements}
+      phx-click="inspect"
+      phx-value-id={statement.id}
+      class="block text-left text-indigo-700 py-2"
+    >
+      {statement.title}
+    </button>
+    <div :if={@statement && @explanation} class="rounded-lg border p-5 space-y-4">
+      <h3 class="text-xl font-semibold">{@statement.title}</h3>
+      <p class="text-lg">
+        Council result: {if @explanation.answer,
+          do: answer(@explanation.answer),
+          else: "No delegated vote"}
+      </p>
+      <p :if={@dirty} class="text-sm">Preview of unsaved choices.</p>
+      <div :for={trace <- @explanation.lists} class="border-t pt-3">
+        <h4 class="font-semibold">
+          {trace.name}: {trace.for} For · {trace.against} Against · {trace.excluded} excluded
+          <span :if={!trace.consulted}>(not consulted)</span>
+        </h4>
+        <ul class="mt-2 space-y-2">
+          <li :for={member <- trace.members} class="text-sm">
+            {person_name(@people, member.author_id)} — {answer(
+              member[:recorded_answer] || member.answer
+            )} · {String.replace(member.status, "_", " ")}
+            <.link
+              :if={member[:opinion_id]}
+              href={~p"/c/#{member.opinion_id}"}
+              class="ml-2 text-indigo-700"
+            >
+              Evidence and verification history
+            </.link>
+          </li>
+        </ul>
+      </div>
+      <.link
+        href={~p"/p/#{@statement.slug}"}
+        class="inline-block rounded bg-indigo-700 px-4 py-2 text-white"
+      >
+        Inspect the statement or cast my own vote
+      </.link>
+    </div>
+  </section>
+</div>

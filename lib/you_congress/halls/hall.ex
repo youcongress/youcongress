@@ -107,6 +107,8 @@ defmodule YouCongress.Halls.Hall do
   @names_str Enum.join(@names, ",")
 
   schema "halls" do
+    field :community_enabled, :boolean, default: false
+    field :organizer_id, :id
     field :name, :string
     field :description, :string
 

@@ -285,7 +285,14 @@ defmodule YouCongress.Opinions do
       _valid_changeset ->
         attrs = ContentEmbedding.put(attrs, opinion)
         changeset = Opinion.changeset(opinion, attrs)
+
+        changeset =
+          if quote_reverification_field_changed?(changeset),
+            do: Ecto.Changeset.put_change(changeset, :verification_status, nil),
+            else: changeset
+
         result = Repo.update(changeset)
+        if match?({:ok, _}, result), do: YouCongress.DelegationVotes.refresh_opinion(opinion.id)
         maybe_update_vote_author_on_opinion_update(result, opinion, changeset)
         maybe_reverify_quote_on_update(result, changeset, opts)
         maybe_endorse_updated_opinion(result, changeset, opts)

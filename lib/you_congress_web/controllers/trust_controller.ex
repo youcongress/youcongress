@@ -1,0 +1,55 @@
+defmodule YouCongressWeb.TrustController do
+  use YouCongressWeb, :controller
+  alias YouCongress.TrustRankings
+
+  def export(conn, %{"id" => id}) do
+    case TrustRankings.get_snapshot(id) do
+      nil -> send_resp(conn, 404, "Snapshot not found")
+      snapshot -> csv(conn, snapshot.result["rows"], snapshot.result["participants"])
+    end
+  end
+
+  def export(conn, %{"scope" => scope} = params) do
+    result = TrustRankings.ranking(scope, params)
+    csv(conn, result.rows, result.participants)
+  end
+
+  defp csv(conn, rows, participants) do
+    values =
+      Enum.map(rows, fn row ->
+        Enum.map([:rank, :name, :count, :share], fn key ->
+          Map.get(row, key, row[to_string(key)])
+        end) ++ [participants]
+      end)
+
+    content =
+      NimbleCSV.RFC4180.dump_to_iodata([
+        ["Rank", "Person", "Nominations", "Share (%)", "Participants"] | values
+      ])
+
+    conn
+    |> put_resp_content_type("text/csv")
+    |> put_resp_header("content-disposition", "attachment; filename=trust-ranking.csv")
+    |> send_resp(200, content)
+  end
+
+  def unsubscribe(conn, %{"token" => token}) do
+    case Phoenix.Token.verify(YouCongressWeb.Endpoint, "trust-digest", token, max_age: 31_536_000) do
+      {:ok, author_id} ->
+        import Ecto.Query
+
+        YouCongress.Repo.update_all(
+          from(c in YouCongress.Councils.Council, where: c.author_id == ^author_id),
+          set: [digest: "off"]
+        )
+
+        text(
+          conn,
+          "Email updates are now off. You can turn them on again in your council settings."
+        )
+
+      _ ->
+        send_resp(conn, 400, "This unsubscribe link is invalid or expired.")
+    end
+  end
+end

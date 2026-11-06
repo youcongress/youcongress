@@ -43,6 +43,7 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
         result = completion_result(job_id, quotes, candidate_results)
         JobMetadata.put(job, "fresh_quote_discovery", result)
 
+        finish_trust_request(args["trust_request_id"], result)
         Logger.info("Fresh quote discovery job #{job_id} saved #{result["saved_count"]} quote(s)")
         :ok
 
@@ -59,6 +60,11 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
         JobMetadata.put(job, "fresh_quote_discovery", %{
           "status" => "cancelled",
           "discovery_job_id" => job_id,
+          "reason" => format_reason(reason)
+        })
+
+        finish_trust_request(args["trust_request_id"], %{
+          "outcome" => "Search failed; human review required",
           "reason" => format_reason(reason)
         })
 
@@ -400,4 +406,27 @@ defmodule YouCongress.Workers.FreshQuoteDiscoveryPollingWorker do
   end
 
   defp blank_to_nil(_value), do: nil
+  defp finish_trust_request(nil, _result), do: :ok
+
+  defp finish_trust_request(id, result) do
+    case Repo.get(YouCongress.TrustNetwork.Request, id) do
+      nil ->
+        :ok
+
+      request ->
+        attempt =
+          Map.merge(result, %{
+            "at" => DateTime.to_iso8601(DateTime.utc_now()),
+            "result" => result["outcome"] || "Search completed"
+          })
+
+        request
+        |> Ecto.Changeset.change(
+          attempts: request.attempts ++ [attempt],
+          resolution:
+            "Discovery completed. A reviewer must check the evidence before resolving this request."
+        )
+        |> Repo.update()
+    end
+  end
 end

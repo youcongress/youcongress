@@ -62,6 +62,7 @@ defmodule YouCongress.Verifications do
 
     from(o in Opinion, where: o.id == ^opinion_id)
     |> Repo.update_all(set: [verification_status: cached_status])
+    |> tap(fn _ -> YouCongress.DelegationVotes.refresh_opinion(opinion_id) end)
   end
 
   defp authorize_human_verification(_actor, _opinion, status)

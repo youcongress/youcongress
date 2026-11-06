@@ -1,170 +1,129 @@
 defmodule YouCongress.DelegationVotes do
-  @moduledoc """
-  The DelegationVotes context.
-  """
-
-  import Ecto.Query, warn: false
-  alias YouCongress.Repo
-
-  alias YouCongress.Votes
+  @moduledoc "Materializes council decisions, keeping a compatible votes read projection."
+  import Ecto.Query
+  alias YouCongress.{Repo, Councils}
+  alias YouCongress.Councils.{Council, Decision}
   alias YouCongress.Votes.Vote
-  alias YouCongress.Delegations
   alias YouCongress.Workers.RefreshAuthorStatementDelegatedVotesWorker
 
-  @doc """
-  Updates the delegated votes of an author.
-  """
-  @spec update_author_delegated_votes(integer) :: :ok
   def update_author_delegated_votes(author_id) do
-    statement_ids_with_author_direct_votes = statement_ids_with_author_direct_votes(author_id)
-    delegate_ids = Delegations.delegate_ids_by_deleguee_id(author_id)
+    {:ok, _} = Councils.ensure(author_id)
+    ids = [author_id | Councils.delegate_ids(author_id)]
 
-    for statement_id <- statement_ids_voted_by([author_id | delegate_ids]) do
-      if statement_id in statement_ids_with_author_direct_votes do
-        {:ok, :direct_vote_exists}
-      else
-        update_votes(statement_id, author_id, delegate_ids)
-      end
-    end
+    statement_ids =
+      Repo.all(from v in Vote, where: v.author_id in ^ids, select: v.statement_id, distinct: true)
 
-    :ok
-  end
+    old_ids =
+      Repo.all(from d in Decision, where: d.author_id == ^author_id, select: d.statement_id)
 
-  def update_delegated_votes(%{deleguee_id: deleguee_id, delegate_id: delegate_id}) do
-    statement_ids_with_deleguee_direct_votes = statement_ids_with_author_direct_votes(deleguee_id)
-    delegate_ids = Delegations.delegate_ids_by_deleguee_id(deleguee_id)
-
-    for statement_id <- statement_ids_voted_by([delegate_id]) do
-      if statement_id in statement_ids_with_deleguee_direct_votes do
-        {:ok, :direct_vote_exists}
-      else
-        update_votes(statement_id, deleguee_id, delegate_ids)
-      end
-    end
+    Enum.each(
+      Enum.uniq(statement_ids ++ old_ids),
+      &update_author_statement_delegated_votes(author_id, &1)
+    )
 
     :ok
   end
+
+  def update_delegated_votes(%{deleguee_id: id}), do: update_author_delegated_votes(id)
+
+  def update_author_statement_delegated_votes(%{author_id: a, statement_id: s}),
+    do: update_author_statement_delegated_votes(a, s)
 
   def update_author_statement_delegated_votes(author_id, statement_id) do
-    if Votes.get_by(author_id: author_id, statement_id: statement_id, direct: true) do
-      :direct_vote_exists
-    else
-      delegate_ids = Delegations.delegate_ids_by_deleguee_id(author_id)
-      update_votes(statement_id, author_id, delegate_ids)
-      :ok
-    end
+    {:ok, _} = Councils.ensure(author_id)
+
+    {:ok, result} =
+      Repo.transaction(fn ->
+        Repo.one!(from c in Council, where: c.author_id == ^author_id, lock: "FOR UPDATE")
+        explanation = Councils.explain(author_id, statement_id)
+        previous = Repo.get_by(Decision, author_id: author_id, statement_id: statement_id)
+
+        attrs = %{
+          author_id: author_id,
+          statement_id: statement_id,
+          answer: explanation.answer && to_string(explanation.answer),
+          council_version: explanation.version,
+          explanation: Jason.decode!(Jason.encode!(explanation))
+        }
+
+        (previous || %Decision{}) |> Decision.changeset(attrs) |> Repo.insert_or_update!()
+        project(author_id, statement_id, explanation.answer)
+
+        if previous && previous.answer != attrs.answer do
+          YouCongress.TrustNetwork.notify(
+            author_id,
+            "decision:#{statement_id}:#{System.unique_integer([:positive])}",
+            "Your council's position changed. Inspect the updated evidence.",
+            "/council?statement=#{statement_id}"
+          )
+        end
+
+        if explanation.direct, do: :direct_vote_exists, else: :ok
+      end)
+
+    result
   end
 
-  @doc """
-  Enqueues delegated-vote refresh jobs for every author delegating to the given delegate
-  on the given statement.
-  """
-  @spec enqueue_deleguees_for_delegate_statement(integer, integer) :: :ok
+  # Conditional writes protect a concurrently cast direct vote. Canonical direct/source
+  # rows are never overwritten by the compatibility projection.
+  defp project(author_id, statement_id, nil) do
+    Repo.delete_all(
+      from v in Vote,
+        where: v.author_id == ^author_id and v.statement_id == ^statement_id and not v.direct
+    )
+  end
+
+  defp project(author_id, statement_id, answer) do
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    conflict =
+      from v in Vote,
+        where: not v.direct,
+        update: [set: [answer: ^answer, origin: "delegated", updated_at: ^now]]
+
+    Repo.insert_all(
+      Vote,
+      [
+        %{
+          author_id: author_id,
+          statement_id: statement_id,
+          answer: answer,
+          direct: false,
+          twin: false,
+          origin: "delegated",
+          inserted_at: now,
+          updated_at: now
+        }
+      ], conflict_target: [:author_id, :statement_id], on_conflict: conflict)
+  end
+
   def enqueue_deleguees_for_delegate_statement(delegate_id, statement_id) do
-    for deleguee_id <- Delegations.deleguee_ids_by_delegate_id(delegate_id) do
-      %{"author_id" => deleguee_id, "statement_id" => statement_id}
+    legacy =
+      Repo.all(
+        from d in YouCongress.Delegations.Delegation,
+          where: d.delegate_id == ^delegate_id,
+          select: d.deleguee_id
+      )
+
+    Enum.each(Enum.uniq(Councils.followers(delegate_id) ++ legacy), fn id ->
+      # Invalidate before asynchronous refresh; never leave a stale counted result.
+      Repo.delete_all(
+        from v in Vote,
+          where: v.author_id == ^id and v.statement_id == ^statement_id and not v.direct
+      )
+
+      %{author_id: id, statement_id: statement_id}
       |> RefreshAuthorStatementDelegatedVotesWorker.new()
       |> Oban.insert()
-    end
+    end)
 
     :ok
   end
 
-  defp update_votes(statement_id, author_id, delegate_ids) do
-    {in_favour, against, neutral} = get_counters(statement_id, delegate_ids)
+  def refresh_opinion(opinion_id) do
+    Repo.all(from v in Vote, where: v.opinion_id == ^opinion_id)
+    |> Enum.each(&enqueue_deleguees_for_delegate_statement(&1.author_id, &1.statement_id))
 
-    cond do
-      in_favour == 0 and against == 0 and neutral == 0 ->
-        delete_vote_if_exists(statement_id, author_id)
-
-      in_favour > against && in_favour > neutral ->
-        vote(statement_id, author_id, :for)
-
-      against > in_favour && against > neutral ->
-        vote(statement_id, author_id, :against)
-
-      neutral > in_favour && neutral > against ->
-        vote(statement_id, author_id, :abstain)
-
-      true ->
-        delete_vote_if_exists(statement_id, author_id)
-    end
-  end
-
-  @spec update_author_statement_delegated_votes(map) :: :ok | :direct_vote_exists
-  def update_author_statement_delegated_votes(%{author_id: author_id, statement_id: statement_id}) do
-    if Votes.get_by(author_id: author_id, statement_id: statement_id, direct: true) do
-      :direct_vote_exists
-    else
-      delegate_ids = Delegations.delegate_ids_by_deleguee_id(author_id)
-      update_votes(statement_id, author_id, delegate_ids)
-      :ok
-    end
-  end
-
-  defp vote(statement_id, author_id, answer) do
-    case Votes.get_by(statement_id: statement_id, author_id: author_id) do
-      nil ->
-        Votes.create_vote(%{
-          statement_id: statement_id,
-          author_id: author_id,
-          answer: answer,
-          direct: false
-        })
-
-      vote ->
-        if vote.answer != answer do
-          Votes.update_vote(vote, %{answer: answer})
-        else
-          {:ok, vote}
-        end
-    end
-  end
-
-  defp delete_vote_if_exists(statement_id, author_id) do
-    Votes.delete_vote(%{statement_id: statement_id, author_id: author_id})
-  end
-
-  @spec get_counters(integer, [integer]) :: {integer, integer, integer}
-  defp get_counters(statement_id, delegate_ids) do
-    votes = votes_from_delegates(statement_id, delegate_ids)
-
-    in_favour = count(votes, [:for])
-    against = count(votes, [:against])
-    abstain = count(votes, [:abstain])
-    {in_favour, against, abstain}
-  end
-
-  defp count(votes, responses) do
-    Enum.count(votes, fn vote ->
-      vote.answer in responses
-    end)
-  end
-
-  defp statement_ids_with_author_direct_votes(author_id) do
-    from(v in Vote,
-      where: v.author_id == ^author_id,
-      where: v.direct == true,
-      select: v.statement_id,
-      distinct: true
-    )
-    |> Repo.all()
-  end
-
-  defp statement_ids_voted_by(author_ids) do
-    from(v in Vote,
-      where: v.author_id in ^author_ids,
-      select: v.statement_id,
-      distinct: true
-    )
-    |> Repo.all()
-  end
-
-  defp votes_from_delegates(statement_id, delegate_ids) do
-    from(v in Vote,
-      where: v.statement_id == ^statement_id and v.author_id in ^delegate_ids,
-      select: v
-    )
-    |> Repo.all()
+    :ok
   end
 end

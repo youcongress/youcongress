@@ -20,6 +20,9 @@ defmodule YouCongressWeb.TopHeaderComponent do
         </div>
         <!-- Desktop Navigation -->
         <div class="hidden md:flex text-sm items-center gap-6 leading-6 text-zinc-900">
+          <.link href={~p"/council"} class="text-indigo-700">My council</.link>
+          <.link href={~p"/trust/general"}>Trust lists</.link>
+          <.link :if={@current_user} href={~p"/trust/updates"}>Updates</.link>
           <.github_link />
           <.link
             :if={@current_user && YouCongress.Accounts.sign_up_complete?(@current_user)}
@@ -76,7 +79,8 @@ defmodule YouCongressWeb.TopHeaderComponent do
         <!-- Mobile Navigation (Optimized Touch Targets) -->
         <div class="md:hidden flex max-w-full flex-col items-end gap-3 text-sm">
           <div class="flex flex-wrap items-center gap-4">
-            <.github_link class="p-3" />
+            <.link href={~p"/council"} class="py-3 text-indigo-700">Council</.link>
+            <.link href={~p"/trust/general"}>Trust lists</.link>
             <.link
               href={~p"/explore"}
               class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"

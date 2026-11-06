@@ -12,18 +12,12 @@ defmodule YouCongressWeb.StatementLive.HallsInputComponent do
       <label class="block text-sm font-medium text-gray-700">
         Halls
       </label>
-      <p class="text-xs text-gray-500 mb-2">Click on a hall to set it as the main tag</p>
+      <p class="text-xs text-gray-500 mb-2">
+        Halls are unordered topic tags. Your council order is managed separately.
+      </p>
       <div class="flex flex-wrap gap-2 mb-2">
         <%= for hall_name <- @selected_halls do %>
-          <span
-            phx-click="set_main_hall"
-            phx-value-hall={hall_name}
-            phx-target={@myself}
-            class={"inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium cursor-pointer ring-1 ring-inset #{if hall_name == @main_hall, do: "bg-indigo-100 text-indigo-700 ring-indigo-500/20", else: "bg-gray-50 text-gray-600 ring-gray-500/10 hover:bg-gray-100"}"}
-          >
-            <%= if hall_name == @main_hall do %>
-              <.icon name="hero-star-solid" class="h-3 w-3 text-indigo-500" />
-            <% end %>
+          <span class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium bg-gray-50 text-gray-600 ring-1 ring-gray-300">
             {String.replace(hall_name, "-", " ")}
             <button
               type="button"
@@ -100,7 +94,6 @@ defmodule YouCongressWeb.StatementLive.HallsInputComponent do
       <%= for hall_name <- @selected_halls do %>
         <input type="hidden" name={@form[:halls].name <> "[]"} value={hall_name} />
       <% end %>
-      <input type="hidden" name="statement[main_hall]" value={@main_hall || ""} />
     </div>
     """
   end

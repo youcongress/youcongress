@@ -514,6 +514,7 @@ defmodule YouCongress.Votes do
   """
   def create_vote(attrs \\ %{}) do
     user_id = endorsement_user_id(attrs)
+    attrs = provenance_attrs(attrs)
 
     %Vote{}
     |> Vote.changeset(attrs)
@@ -554,9 +555,11 @@ defmodule YouCongress.Votes do
   """
   def update_vote(%Vote{} = vote, attrs) do
     user_id = endorsement_user_id(attrs)
+    attrs = provenance_attrs(attrs, vote)
 
     vote
     |> Vote.changeset(attrs)
+    |> Ecto.Changeset.optimistic_lock(:revision)
     |> Repo.update()
     |> maybe_endorse_vote(user_id)
     |> maybe_refresh_vote_side_effects_after_update(vote)
@@ -1080,5 +1083,23 @@ defmodule YouCongress.Votes do
       original_vote.author_id,
       original_vote.statement_id
     )
+  end
+
+  defp provenance_attrs(attrs, vote \\ nil) do
+    attrs = Map.new(attrs, fn {k, v} -> {to_string(k), v} end)
+    actor = endorsement_user_id(attrs) && Repo.get(User, endorsement_user_id(attrs))
+    author_id = attrs["author_id"] || (vote && vote.author_id)
+    opinion_id = attrs["opinion_id"] || (vote && vote.opinion_id)
+    opinion = opinion_id && Repo.get(YouCongress.Opinions.Opinion, opinion_id)
+
+    origin =
+      cond do
+        attrs["direct"] == false -> "delegated"
+        actor && to_string(actor.author_id) == to_string(author_id) -> "self_cast"
+        opinion && YouCongress.Opinions.Opinion.quote?(opinion) -> "inferred"
+        true -> (vote && vote.origin) || "legacy"
+      end
+
+    attrs |> Map.put("origin", origin) |> Map.put("cast_by_user_id", actor && actor.id)
   end
 end

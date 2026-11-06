@@ -179,6 +179,12 @@ defmodule YouCongress.VoteVerifications do
 
     from(v in Vote, where: v.id == ^vote_id)
     |> Repo.update_all(set: [verification_status: cached_status])
+    |> tap(fn _ ->
+      YouCongress.DelegationVotes.enqueue_deleguees_for_delegate_statement(
+        vote.author_id,
+        vote.statement_id
+      )
+    end)
   end
 
   defp verification_opinion_id(attrs, vote) do

@@ -9,6 +9,10 @@ defmodule YouCongress.Reconsiderations.Response do
   alias YouCongress.Statements.Statement
 
   schema "reconsideration_responses" do
+    field :cast_vote_id, :integer
+    field :cast_vote_updated_at, :naive_datetime
+    field :cast_vote_revision, :integer
+    field :previous_vote, :map
     field :before_answer, Ecto.Enum, values: [:for, :against, :abstain]
     field :after_answer, Ecto.Enum, values: [:for, :against, :abstain]
 
@@ -25,6 +29,10 @@ defmodule YouCongress.Reconsiderations.Response do
       :reconsideration_id,
       :statement_id,
       :author_id,
+      :cast_vote_id,
+      :cast_vote_updated_at,
+      :cast_vote_revision,
+      :previous_vote,
       :before_answer,
       :after_answer
     ])

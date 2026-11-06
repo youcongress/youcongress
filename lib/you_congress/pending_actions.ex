@@ -91,6 +91,8 @@ defmodule YouCongress.PendingActions do
     end
   end
 
+  defp validate_payload(%{"council" => council}) when is_map(council), do: :ok
+
   defp validate_payload(%{"reconsideration" => reconsideration}) when is_map(reconsideration),
     do: :ok
 
@@ -99,6 +101,13 @@ defmodule YouCongress.PendingActions do
        do: :ok
 
   defp validate_payload(_payload), do: {:error, :invalid_pending_actions}
+
+  defp process_payload(user, %{"council" => council}) do
+    case YouCongress.Councils.Draft.apply(user, council) do
+      {:ok, _} -> :ok
+      error -> error
+    end
+  end
 
   defp process_payload(user, %{"reconsideration" => reconsideration}) do
     case Reconsiderations.submit_pending(user, reconsideration) do

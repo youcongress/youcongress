@@ -98,6 +98,7 @@ defmodule YouCongressWeb.MCPServer.VotesEdit do
   defp take_fields(vote) do
     %{
       vote_id: vote.id,
+      origin: vote.origin,
       statement_id: vote.statement_id,
       author_id: vote.author_id,
       answer: vote.answer && Atom.to_string(vote.answer),

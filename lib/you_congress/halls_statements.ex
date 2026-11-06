@@ -32,7 +32,7 @@ defmodule YouCongress.HallsStatements do
     statement = Statements.get_statement!(statement_id, preload: [:halls])
     classification = classification || Halls.classify!(statement.title)
     %{main_tag: main_tag, other_tags: other_tags} = classification
-    all_tags = [main_tag | other_tags]
+    all_tags = Enum.uniq(Enum.reject([main_tag | other_tags], &is_nil/1))
     {:ok, halls} = Halls.list_or_create_by_names(all_tags)
 
     link(statement, halls, main_tag)
@@ -40,7 +40,7 @@ defmodule YouCongress.HallsStatements do
 
   @spec link(Statement.t(), [Hall.t()], binary) ::
           {:ok, Statement.t()} | {:error, Ecto.Changeset.t()}
-  defp link(statement, halls, main_tag) do
+  defp link(statement, halls, _main_tag) do
     # Delete existing associations first
     delete_halls_statements(statement)
 
@@ -50,7 +50,7 @@ defmodule YouCongress.HallsStatements do
       |> HallStatement.changeset(%{
         statement_id: statement.id,
         hall_id: hall.id,
-        is_main: hall.name == main_tag
+        is_main: false
       })
       |> Repo.insert!()
     end)
@@ -89,7 +89,7 @@ defmodule YouCongress.HallsStatements do
       on: hs.statement_id == v.id,
       join: h in Hall,
       on: hs.hall_id == h.id,
-      where: h.name == ^hall_name and hs.is_main == true and v.id not in ^exclude_ids,
+      where: h.name == ^hall_name and v.id not in ^exclude_ids,
       order_by: fragment("RANDOM()"),
       limit: ^limit
     )
@@ -98,7 +98,7 @@ defmodule YouCongress.HallsStatements do
 
   def get_main_hall(statement_id) do
     hall_id =
-      from(hs in HallStatement, where: hs.statement_id == ^statement_id and hs.is_main == true)
+      from(hs in HallStatement, where: hs.statement_id == ^statement_id)
       |> select([hs], hs.hall_id)
       |> Repo.one()
 

@@ -409,16 +409,12 @@ defmodule YouCongressWeb.StatementLive.Show do
 
   defp load_random_statements(socket, statement_id) do
     random_statements_from_main_hall =
-      case HallsStatements.get_main_hall(statement_id) do
-        nil ->
-          []
-
-        main_hall ->
-          statements =
-            HallsStatements.get_random_statements_from_hall(main_hall.name, 5, [statement_id])
-
-          if Enum.empty?(statements), do: [], else: [{main_hall, statements}]
-      end
+      YouCongress.Statements.get_statement!(statement_id, preload: [:halls]).halls
+      |> Enum.sort_by(& &1.name)
+      |> Enum.map(fn hall ->
+        {hall, HallsStatements.get_random_statements_from_hall(hall.name, 3, [statement_id])}
+      end)
+      |> Enum.reject(fn {_hall, statements} -> statements == [] end)
 
     assign(socket, :random_statements_from_main_hall, random_statements_from_main_hall)
   end
