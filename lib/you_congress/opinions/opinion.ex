@@ -14,6 +14,7 @@ defmodule YouCongress.Opinions.Opinion do
   @user_editable_fields [:content, :source_url, :source_text, :author_id, :date, :date_precision]
 
   schema "opinions" do
+    field :evidence_revision, :integer, default: 1
     field :source_url, :string
     field :source_text, :string
     field :content, :string

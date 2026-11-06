@@ -46,38 +46,25 @@ defmodule YouCongressWeb.TrustLive.Index do
         comparisons: comparison_params(params, scope)
       )
 
-    socket =
-      case socket.assigns.live_action do
-        :communities ->
-          load_communities(socket, params)
-
-        :recommendations ->
-          load_recommendations(socket, params)
-
-        :requests ->
-          if socket.assigns.current_user,
-            do: assign(socket, requests: TrustNetwork.requests(socket.assigns.current_user)),
-            else: socket
-
-        :updates ->
-          if socket.assigns.current_user,
-            do: assign(socket, updates: TrustNetwork.notifications(socket.assigns.current_user)),
-            else: socket
-
-        :snapshot ->
-          assign(socket, snapshot: TrustRankings.get_snapshot(params["id"]))
-
-        :metrics ->
-          if socket.assigns.current_user && socket.assigns.current_user.role == "admin",
-            do: assign(socket, metrics: TrustNetwork.metrics(socket.assigns.current_user)),
-            else: socket
-
-        _ ->
-          socket
-      end
-
-    {:noreply, socket}
+    {:noreply, load_view(socket.assigns.live_action, socket, params)}
   end
+
+  defp load_view(:communities, socket, params), do: load_communities(socket, params)
+  defp load_view(:recommendations, socket, params), do: load_recommendations(socket, params)
+
+  defp load_view(:snapshot, socket, params),
+    do: assign(socket, snapshot: TrustRankings.get_snapshot(params["id"]))
+
+  defp load_view(:requests, %{assigns: %{current_user: user}} = socket, _) when not is_nil(user),
+    do: assign(socket, requests: TrustNetwork.requests(user))
+
+  defp load_view(:updates, %{assigns: %{current_user: user}} = socket, _) when not is_nil(user),
+    do: assign(socket, updates: TrustNetwork.notifications(user))
+
+  defp load_view(:metrics, %{assigns: %{current_user: %{role: "admin"} = user}} = socket, _),
+    do: assign(socket, metrics: TrustNetwork.metrics(user))
+
+  defp load_view(_, socket, _), do: socket
 
   defp comparison_params(params, scope) do
     groups =
@@ -205,6 +192,25 @@ defmodule YouCongressWeb.TrustLive.Index do
     end
   end
 
+  def handle_event("create-statement", %{"title" => title}, socket) do
+    case TrustNetwork.create_community_statement(
+           socket.assigns.current_user,
+           socket.assigns.community.id,
+           title
+         ) do
+      {:ok, statement} ->
+        {:noreply, push_navigate(socket, to: ~p"/p/#{statement.slug}")}
+
+      _ ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Could not create the statement. Check the title and your community permissions."
+         )}
+    end
+  end
+
   def handle_event("search-people", %{"q" => q}, socket) do
     term = "%#{q}%"
 
@@ -225,20 +231,8 @@ defmodule YouCongressWeb.TrustLive.Index do
       when not is_nil(user) do
     case TrustNetwork.recommend(user, params) do
       {:ok, recommendation} ->
-        if params["add_to_council"] == "true" do
-          {:ok, council} = YouCongress.Councils.ensure(user.author_id)
-
-          list =
-            Enum.find(council.lists, fn l ->
-              if recommendation.scope == "general",
-                do: l.fallback,
-                else:
-                  l.hall_id &&
-                    Repo.get!(YouCongress.Halls.Hall, l.hall_id).name == recommendation.scope
-            end)
-
-          if list, do: YouCongress.Councils.add_member(user, recommendation.nominee_id, list.id)
-        end
+        if params["add_to_council"] == "true",
+          do: TrustNetwork.add_recommendation_to_council(user, recommendation)
 
         {:noreply,
          load_recommendations(socket, %{})

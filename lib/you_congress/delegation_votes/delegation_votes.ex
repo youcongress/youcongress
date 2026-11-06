@@ -94,7 +94,10 @@ defmodule YouCongress.DelegationVotes do
           inserted_at: now,
           updated_at: now
         }
-      ], conflict_target: [:author_id, :statement_id], on_conflict: conflict)
+      ],
+      conflict_target: [:author_id, :statement_id],
+      on_conflict: conflict
+    )
   end
 
   def enqueue_deleguees_for_delegate_statement(delegate_id, statement_id) do
@@ -112,12 +115,37 @@ defmodule YouCongress.DelegationVotes do
           where: v.author_id == ^id and v.statement_id == ^statement_id and not v.direct
       )
 
+      Repo.delete_all(
+        from d in Decision, where: d.author_id == ^id and d.statement_id == ^statement_id
+      )
+
+      YouCongress.TrustNetwork.notify(
+        id,
+        evidence_notice_key(delegate_id, statement_id),
+        "Evidence or a position from one of your council members changed.",
+        "/council?statement=#{statement_id}"
+      )
+
       %{author_id: id, statement_id: statement_id}
       |> RefreshAuthorStatementDelegatedVotesWorker.new()
       |> Oban.insert()
     end)
 
     :ok
+  end
+
+  defp evidence_notice_key(author_id, statement_id) do
+    vote = Repo.get_by(Vote, author_id: author_id, statement_id: statement_id)
+
+    opinion =
+      if vote && vote.opinion_id, do: Repo.get(YouCongress.Opinions.Opinion, vote.opinion_id)
+
+    state =
+      {vote && {vote.id, vote.revision, vote.answer, vote.verification_status},
+       opinion && {opinion.id, opinion.evidence_revision, opinion.verification_status}}
+
+    hash = :crypto.hash(:sha256, :erlang.term_to_binary(state)) |> Base.encode16(case: :lower)
+    "evidence:#{author_id}:#{statement_id}:#{hash}"
   end
 
   def refresh_opinion(opinion_id) do

@@ -669,20 +669,21 @@ defmodule YouCongressWeb.UserRegistrationLive do
     email = params["email"]
     name = params["name"]
 
-    with {:ok, user} <- Accounts.complete_x_user_profile(user, email, name) do
-      Track.event("X profile completed", user)
+    case Accounts.complete_x_user_profile(user, email, name) do
+      {:ok, user} ->
+        Track.event("X profile completed", user)
 
-      Accounts.deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
+        Accounts.deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
 
-      socket =
-        socket
-        |> assign(:step, :check_email)
-        |> assign(:user, user)
-        |> reset_email_code_state()
-        |> assign_form(email_code_changeset())
+        socket =
+          socket
+          |> assign(:step, :check_email)
+          |> assign(:user, user)
+          |> reset_email_code_state()
+          |> assign_form(email_code_changeset())
 
-      {:noreply, socket}
-    else
+        {:noreply, socket}
+
       {:error, changeset} ->
         {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
     end

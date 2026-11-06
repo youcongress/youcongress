@@ -42,47 +42,85 @@ defmodule YouCongress.TrustNetwork do
   def add_statement(user, hall_id, statement_id) do
     hall = Repo.get!(Hall, hall_id)
 
-    if organizer?(user, hall) do
-      now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-
+    with true <- organizer?(user, hall),
+         id when not is_nil(id) <- TrustRankings.parse_id(statement_id),
+         %YouCongress.Statements.Statement{} <- Repo.get(YouCongress.Statements.Statement, id) do
       Repo.insert_all(
         YouCongress.HallsStatements.HallStatement,
-        [
-          %{
-            hall_id: hall_id,
-            statement_id: statement_id,
-            is_main: false,
-            inserted_at: now,
-            updated_at: now
-          }
-        ], on_conflict: :nothing)
+        [%{hall_id: hall_id, statement_id: id, is_main: false}],
+        on_conflict: :nothing
+      )
 
       :ok
+    else
+      false -> {:error, :forbidden}
+      _ -> {:error, :invalid_statement}
+    end
+  end
+
+  def create_community_statement(user, hall_id, title) do
+    hall = Repo.get!(Hall, hall_id)
+
+    if organizer?(user, hall) do
+      # The organizer's permission is restricted to this community. Preserve the
+      # explicit hall association rather than scheduling a classifier to replace it.
+      Repo.transaction(fn ->
+        changeset =
+          YouCongress.Statements.Statement.changeset(%YouCongress.Statements.Statement{}, %{
+            title: title,
+            user_id: user.id
+          })
+
+        case Repo.insert(changeset) do
+          {:ok, statement} ->
+            :ok = add_statement(user, hall_id, statement.id)
+            statement
+
+          {:error, error} ->
+            Repo.rollback(error)
+        end
+      end)
     else
       {:error, :forbidden}
     end
   end
 
   def community_results(hall_id) do
-    Repo.all(
-      from v in YouCongress.Votes.Vote,
-        join: m in Membership,
-        on: m.author_id == v.author_id,
+    # Canonical inferred positions are evidence about a person; they are not
+    # that community member's own ballot. Decisions remain a separate record.
+    query =
+      from m in Membership,
+        join: u in User,
+        on: u.author_id == m.author_id,
+        join: h in Hall,
+        on: h.id == m.hall_id,
         join: hs in YouCongress.HallsStatements.HallStatement,
-        on: hs.statement_id == v.statement_id,
+        on: hs.hall_id == m.hall_id,
         join: s in YouCongress.Statements.Statement,
-        on: s.id == v.statement_id,
-        where: m.hall_id == ^hall_id and hs.hall_id == ^hall_id,
-        group_by: [s.id, s.title, s.slug, v.direct, v.answer],
+        on: s.id == hs.statement_id,
+        left_join: v in YouCongress.Votes.Vote,
+        on:
+          v.author_id == m.author_id and v.statement_id == s.id and v.direct and
+            v.origin != "inferred" and not v.twin,
+        left_join: d in YouCongress.Councils.Decision,
+        on: d.author_id == m.author_id and d.statement_id == s.id,
+        where: m.hall_id == ^hall_id and h.community_enabled,
+        where: u.role not in ["spam", "blocked", "waiting_list"],
+        where: not is_nil(u.email_confirmed_at) or u.signup_method in ["google", "x"],
+        where: not is_nil(v.answer) or not is_nil(d.answer),
         select: %{
           statement_id: s.id,
           title: s.title,
           slug: s.slug,
-          direct: v.direct,
-          answer: v.answer,
-          count: count(v.id)
+          direct: not is_nil(v.answer),
+          answer: fragment("COALESCE(?::text, ?)", v.answer, d.answer)
         }
-    )
+
+    query
+    |> Repo.all()
+    |> Enum.frequencies()
+    |> Enum.map(fn {row, count} -> Map.put(row, :count, count) end)
+    |> Enum.sort_by(&{&1.title, &1.direct, &1.answer})
   end
 
   def recommend(%User{} = user, attrs) do
@@ -113,6 +151,33 @@ defmodule YouCongress.TrustNetwork do
       |> Ecto.Changeset.foreign_key_constraint(:nominee_id)
       |> Councils.validate_url()
       |> Repo.insert_or_update()
+    end
+  end
+
+  def add_recommendation_to_council(user, recommendation) do
+    {:ok, council} = Councils.ensure(user.author_id)
+
+    hall_id =
+      if recommendation.scope != "general" do
+        {:ok, hall} = YouCongress.Halls.get_or_create_by_name(recommendation.scope)
+        hall.id
+      end
+
+    list =
+      Enum.find(council.lists, fn l -> if hall_id, do: l.hall_id == hall_id, else: l.fallback end)
+
+    if list do
+      Councils.add_member(user, recommendation.nominee_id, list.id)
+    else
+      attrs = Councils.editable(council)
+
+      list = %{
+        name: recommendation.scope,
+        hall_id: hall_id,
+        members: [%{author_id: recommendation.nominee_id}]
+      }
+
+      Councils.save(user, %{attrs | lists: List.insert_at(attrs.lists, -2, list)})
     end
   end
 
@@ -178,7 +243,8 @@ defmodule YouCongress.TrustNetwork do
     result =
       request |> Request.changeset(%{status: status, resolution: resolution}) |> Repo.update()
 
-    with {:ok, _} <- result, %User{} = owner <- Repo.get(User, request.user_id) do
+    with {:ok, _} <- result,
+         %User{} = owner <- request.user_id && Repo.get(User, request.user_id) do
       notify(
         owner.author_id,
         "request:#{id}:#{status}:#{System.unique_integer([:positive])}",

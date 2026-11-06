@@ -555,13 +555,49 @@ defmodule YouCongress.Votes do
   """
   def update_vote(%Vote{} = vote, attrs) do
     user_id = endorsement_user_id(attrs)
-    attrs = provenance_attrs(attrs, vote)
 
+    Repo.transaction(fn ->
+      current = Repo.one!(from v in Vote, where: v.id == ^vote.id, lock: "FOR UPDATE")
+      attrs = provenance_attrs(attrs, current)
+
+      current
+      |> Vote.changeset(attrs)
+      |> Ecto.Changeset.put_change(:revision, current.revision + 1)
+      |> Repo.update()
+      |> maybe_endorse_vote(user_id)
+      |> maybe_refresh_vote_side_effects_after_update(current)
+    end)
+    |> case do
+      {:ok, result} -> result
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc false
+  def restore_response_vote(response, author_id) do
+    Repo.transaction(fn ->
+      vote =
+        Repo.one(
+          from v in Vote,
+            where: v.author_id == ^author_id and v.statement_id == ^response.statement_id,
+            lock: "FOR UPDATE"
+        )
+
+      if vote && vote.id == response.cast_vote_id && vote.revision == response.cast_vote_revision do
+        restore_saved_response_vote(vote, response.previous_vote)
+      end
+    end)
+  end
+
+  defp restore_saved_response_vote(vote, nil), do: delete_vote(vote)
+
+  defp restore_saved_response_vote(vote, saved) do
+    # Only the server's saved pre-response record reaches this path. Restoring
+    # provenance must not turn previously inferred evidence into a self-cast vote.
     vote
-    |> Vote.changeset(attrs)
-    |> Ecto.Changeset.optimistic_lock(:revision)
+    |> Vote.changeset(saved)
+    |> Ecto.Changeset.put_change(:revision, vote.revision + 1)
     |> Repo.update()
-    |> maybe_endorse_vote(user_id)
     |> maybe_refresh_vote_side_effects_after_update(vote)
   end
 
@@ -966,14 +1002,34 @@ defmodule YouCongress.Votes do
   end
 
   def get_current_user_vote(statement_id, author_id) do
-    Vote
-    |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
-    |> where(
-      [v, a],
-      v.statement_id == ^statement_id and v.author_id == ^author_id
-    )
-    |> preload([:opinion])
-    |> Repo.one()
+    vote =
+      Repo.get_by(Vote, author_id: author_id, statement_id: statement_id)
+      |> Repo.preload(:opinion)
+
+    if vote && vote.origin == "inferred" do
+      case Repo.get_by(YouCongress.Councils.Decision,
+             author_id: author_id,
+             statement_id: statement_id
+           ) do
+        %{answer: answer} = decision when answer in ["for", "against"] ->
+          %Vote{
+            id: -decision.id,
+            author_id: author_id,
+            statement_id: statement_id,
+            direct: false,
+            origin: "delegated",
+            answer: String.to_existing_atom(answer),
+            opinion: nil,
+            inserted_at: decision.inserted_at,
+            updated_at: decision.updated_at
+          }
+
+        _ ->
+          nil
+      end
+    else
+      vote
+    end
   end
 
   def get_vote_by_opinion_id(opinion_id) do
@@ -1087,19 +1143,38 @@ defmodule YouCongress.Votes do
 
   defp provenance_attrs(attrs, vote \\ nil) do
     attrs = Map.new(attrs, fn {k, v} -> {to_string(k), v} end)
-    actor = endorsement_user_id(attrs) && Repo.get(User, endorsement_user_id(attrs))
-    author_id = attrs["author_id"] || (vote && vote.author_id)
-    opinion_id = attrs["opinion_id"] || (vote && vote.opinion_id)
-    opinion = opinion_id && Repo.get(YouCongress.Opinions.Opinion, opinion_id)
 
-    origin =
-      cond do
-        attrs["direct"] == false -> "delegated"
-        actor && to_string(actor.author_id) == to_string(author_id) -> "self_cast"
-        opinion && YouCongress.Opinions.Opinion.quote?(opinion) -> "inferred"
-        true -> (vote && vote.origin) || "legacy"
+    actor =
+      case endorsement_user_id(attrs) do
+        nil -> nil
+        id -> Repo.get(User, id)
       end
 
-    attrs |> Map.put("origin", origin) |> Map.put("cast_by_user_id", actor && actor.id)
+    author_id = attrs["author_id"] || previous_field(vote, :author_id)
+    opinion_id = Map.get(attrs, "opinion_id", previous_field(vote, :opinion_id))
+    opinion = if opinion_id, do: Repo.get(YouCongress.Opinions.Opinion, opinion_id)
+    origin = vote_origin(attrs, actor, author_id, opinion, vote)
+
+    attrs
+    |> Map.put("origin", origin)
+    |> Map.put(
+      "cast_by_user_id",
+      if(actor, do: actor.id, else: previous_field(vote, :cast_by_user_id))
+    )
+  end
+
+  defp previous_field(nil, _key), do: nil
+  defp previous_field(vote, key), do: Map.get(vote, key)
+  defp vote_origin(%{"direct" => false}, _, _, _, _), do: "delegated"
+
+  defp vote_origin(_attrs, %User{author_id: id}, author_id, _opinion, _vote) when id == author_id,
+    do: "self_cast"
+
+  defp vote_origin(_attrs, _actor, _author_id, _opinion, %{origin: "self_cast"}), do: "self_cast"
+
+  defp vote_origin(_attrs, _actor, _author_id, opinion, vote) do
+    if YouCongress.Opinions.Opinion.quote?(opinion),
+      do: "inferred",
+      else: previous_field(vote, :origin) || "legacy"
   end
 end

@@ -234,7 +234,15 @@ defmodule YouCongress.Reconsiderations do
         prior =
           if previous && previous.direct do
             previous
-            |> Map.take([:answer, :direct, :twin, :opinion_id, :origin, :cast_by_user_id])
+            |> Map.take([
+              :answer,
+              :direct,
+              :twin,
+              :opinion_id,
+              :origin,
+              :cast_by_user_id,
+              :verification_status
+            ])
             |> Jason.encode!()
             |> Jason.decode!()
           end
@@ -312,17 +320,8 @@ defmodule YouCongress.Reconsiderations do
     saved_responses
   end
 
-  defp remove_submitted_vote(response, user) do
-    vote = Votes.get_by(statement_id: response.statement_id, author_id: user.author_id)
-
-    if vote && vote.id == response.cast_vote_id && vote.revision == response.cast_vote_revision do
-      if response.previous_vote do
-        Votes.update_vote(vote, response.previous_vote)
-      else
-        Votes.delete_vote(vote)
-      end
-    end
-  end
+  defp remove_submitted_vote(response, user),
+    do: Votes.restore_response_vote(response, user.author_id)
 
   defp remove_submitted_selection(user, selection) do
     council = Councils.get(user.author_id)

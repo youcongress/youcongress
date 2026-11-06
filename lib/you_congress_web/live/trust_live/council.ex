@@ -33,6 +33,9 @@ defmodule YouCongressWeb.TrustLive.Council do
        hall_query: "",
        hall_matches: [],
        statement: nil,
+       comparison_statements: [],
+       matrix: [],
+       understanding: nil,
        explanation: nil,
        statements: [],
        statement_query: "",
@@ -76,8 +79,15 @@ defmodule YouCongressWeb.TrustLive.Council do
 
     socket =
       case TrustRankings.parse_id(params["statement"]) do
-        nil -> socket
-        id -> assign(socket, statement: Repo.get(Statement, id)) |> preview()
+        nil ->
+          socket
+
+        id ->
+          assign(socket,
+            statement: Repo.get(Statement, id),
+            comparison_statements: [Repo.get(Statement, id)]
+          )
+          |> preview()
       end
 
     {:noreply, socket}
@@ -269,7 +279,31 @@ defmodule YouCongressWeb.TrustLive.Council do
   end
 
   def handle_event("inspect", %{"id" => id}, socket) do
-    {:noreply, assign(socket, statement: Repo.get!(Statement, id)) |> preview()}
+    statement = Repo.get!(Statement, id)
+    YouCongress.Track.event("Council evidence inspected", socket.assigns.current_user)
+    statements = Enum.uniq_by(socket.assigns.comparison_statements ++ [statement], & &1.id)
+
+    {:noreply,
+     assign(socket, statement: statement, comparison_statements: statements) |> preview()}
+  end
+
+  def handle_event("remove-comparison", %{"id" => id}, socket) do
+    statements = Enum.reject(socket.assigns.comparison_statements, &(to_string(&1.id) == id))
+    {:noreply, assign(socket, comparison_statements: statements) |> preview()}
+  end
+
+  def handle_event("understanding", %{"answer" => answer}, socket) do
+    correct = answer == "direct"
+
+    YouCongress.Track.event(
+      if(correct,
+        do: "Delegation understanding correct",
+        else: "Delegation understanding needs explanation"
+      ),
+      socket.assigns.current_user
+    )
+
+    {:noreply, assign(socket, understanding: correct)}
   end
 
   def handle_event(
@@ -355,7 +389,19 @@ defmodule YouCongressWeb.TrustLive.Council do
         Councils.positions(ids, socket.assigns.statement.id)
       )
 
-    assign(socket, explanation: explanation)
+    matrix =
+      Enum.map(socket.assigns.comparison_statements, fn statement ->
+        positions = Councils.positions(ids, statement.id)
+        result = YouCongress.Councils.Evaluator.evaluate(socket.assigns.draft.lists, positions)
+
+        own =
+          if socket.assigns.current_user,
+            do: Councils.explain(socket.assigns.current_user.author_id, statement.id).effective
+
+        %{statement: statement, positions: positions, result: result.answer, own: own}
+      end)
+
+    assign(socket, explanation: explanation, matrix: matrix)
   end
 
   def person_name(people, id) do

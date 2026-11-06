@@ -23,6 +23,7 @@ defmodule YouCongress.VoteVerifications.VoteVerification do
         :unverified
       ]
 
+    field :evidence_revision, :integer, default: 1
     field :comment, :string
     field :model, :string, default: "human"
 
@@ -37,7 +38,15 @@ defmodule YouCongress.VoteVerifications.VoteVerification do
 
   def changeset(verification, attrs) do
     verification
-    |> cast(attrs, [:vote_id, :opinion_id, :user_id, :status, :comment, :model])
+    |> cast(attrs, [
+      :vote_id,
+      :opinion_id,
+      :user_id,
+      :status,
+      :comment,
+      :model,
+      :evidence_revision
+    ])
     |> validate_required([:vote_id, :user_id, :status])
     |> ContentLimits.validate_text(:comment, 4_000, 8_000)
     |> ContentLimits.validate_text(:model, 100, 400)

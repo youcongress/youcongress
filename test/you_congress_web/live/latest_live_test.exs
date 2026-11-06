@@ -360,7 +360,7 @@ defmodule YouCongressWeb.LatestLiveTest do
       assert html =~ "/images/comment.svg"
       assert html =~ "/images/heart.svg"
       assert html =~ "/images/x.svg"
-      assert html =~ "Delegate"
+      assert html =~ "Add to council"
     end
   end
 end

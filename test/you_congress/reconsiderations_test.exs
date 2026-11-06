@@ -455,4 +455,61 @@ defmodule YouCongress.ReconsiderationsTest do
              creator_as_participant.author_id
            )
   end
+
+  test "removing a response preserves a later independent vote and pre-existing council selection",
+       context do
+    user = context.participant
+    {:ok, _} = YouCongress.Councils.add_member(user, context.delegate.id)
+
+    responses = %{
+      to_string(context.first_statement.id) => %{"before" => "against", "after" => "for"},
+      to_string(context.second_statement.id) => %{"before" => "against", "after" => "for"}
+    }
+
+    {:ok, _} =
+      Reconsiderations.submit_response(context.reconsideration, user, responses, [
+        context.delegate.id
+      ])
+
+    {:ok, _} =
+      Votes.create_or_update(%{
+        user_id: user.id,
+        author_id: user.author_id,
+        statement_id: context.first_statement.id,
+        direct: true,
+        answer: :abstain
+      })
+
+    {:ok, _} = Reconsiderations.remove_response(context.reconsideration, user)
+
+    assert Votes.get_by(author_id: user.author_id, statement_id: context.first_statement.id).answer ==
+             :abstain
+
+    assert context.delegate.id in YouCongress.Councils.delegate_ids(user.author_id)
+  end
+
+  test "removing a response restores the previous inferred position's provenance", context do
+    user = context.participant
+
+    prior =
+      YouCongress.Repo.insert!(%Votes.Vote{
+        author_id: user.author_id,
+        statement_id: context.first_statement.id,
+        answer: :against,
+        origin: "inferred"
+      })
+
+    responses = %{
+      to_string(context.first_statement.id) => %{"before" => "against", "after" => "for"},
+      to_string(context.second_statement.id) => %{"before" => "against", "after" => "for"}
+    }
+
+    {:ok, _} = Reconsiderations.submit_response(context.reconsideration, user, responses, [])
+    {:ok, _} = Reconsiderations.remove_response(context.reconsideration, user)
+    restored = Votes.get_by(author_id: user.author_id, statement_id: context.first_statement.id)
+    assert restored.id == prior.id
+    assert restored.answer == :against
+    assert restored.origin == "inferred"
+    assert is_nil(restored.cast_by_user_id)
+  end
 end

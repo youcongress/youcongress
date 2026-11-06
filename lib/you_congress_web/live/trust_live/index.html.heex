@@ -14,51 +14,68 @@
       end}
     </h1>
     <nav class="flex flex-wrap gap-4 text-sm text-indigo-700">
-      <.link navigate={~p"/council"}>My council</.link><.link navigate={~p"/trust/general"}>Trust lists</.link><.link navigate={
-        ~p"/trust/compare"
-      }>Compare groups</.link><.link navigate={~p"/communities"}>Communities</.link><.link navigate={
-        ~p"/trust/recommendations"
-      }>Recommendations</.link><.link navigate={~p"/trust/requests"}>Review evidence</.link><.link
+      <.link navigate={~p"/council"}>My council</.link>
+      <.link navigate={~p"/trust/general"}>Trust lists</.link>
+      <.link navigate={~p"/trust/compare"}>Compare groups</.link>
+      <.link navigate={~p"/communities"}>Communities</.link>
+      <.link navigate={~p"/trust/recommendations"}>Recommendations</.link>
+      <.link navigate={~p"/trust/requests"}>Review evidence</.link>
+      <.link
         :if={@current_user}
         navigate={~p"/trust/updates"}
-      >Updates</.link>
+      >
+        Updates
+      </.link>
     </nav>
   </header>
   <section :if={@live_action == :rankings} class="space-y-5">
     <form phx-change="filters" class="grid sm:grid-cols-2 gap-4 rounded-lg bg-gray-50 p-4">
       <label>
-        Scope<select name="scope" class="block w-full rounded border-gray-300"><option
+        Scope<select name="scope" class="block w-full rounded border-gray-300">
+<option
             :for={{value, label} <- @scopes}
             value={value}
             selected={value == @scope}
-          >{label}</option></select>
+          >{label}</option>
+</select>
       </label>
       <label>
-        Community<select name="community" class="block w-full rounded border-gray-300"><option value="">All YouCongress</option><option
+        Community<select name="community" class="block w-full rounded border-gray-300">
+<option value="">All YouCongress</option>
+<option
             :for={community <- @communities}
             value={community.id}
             selected={to_string(community.id) == @filters["community"]}
-          >{community.name}</option></select>
+          >{community.name}</option>
+</select>
       </label>
       <label>
-        Nominators' country<select name="nominators" class="block w-full rounded border-gray-300"><option value="">All countries</option><option
+        Nominators' country<select name="nominators" class="block w-full rounded border-gray-300">
+<option value="">All countries</option>
+<option
             value="unknown"
             selected={@filters["nominators"] == "unknown"}
-          >Unknown</option><option
+          >Unknown</option>
+<option
             :for={{name, id} <- @countries}
             value={id}
             selected={to_string(id) == @filters["nominators"]}
-          >{name}</option></select>
+          >{name}</option>
+</select>
       </label>
       <label>
-        Nominees' country<select name="nominees" class="block w-full rounded border-gray-300"><option value="">All countries</option><option
+        Nominees' country<select name="nominees" class="block w-full rounded border-gray-300">
+<option value="">All countries</option>
+<option
             value="unknown"
             selected={@filters["nominees"] == "unknown"}
-          >Unknown</option><option
+          >Unknown</option>
+<option
             :for={{name, id} <- @countries}
             value={id}
             selected={to_string(id) == @filters["nominees"]}
-          >{name}</option></select>
+          >{name}</option>
+</select>
       </label>
     </form>
     <p>
@@ -79,10 +96,13 @@
           <tr :for={row <- @result.rows} class="border-b">
             <td class="p-3">{row.rank}</td>
             <td class="p-3">
-              <.link href={~p"/a/#{row.author_id}"}>{row.name}</.link><.link
+              <.link href={~p"/a/#{row.author_id}"}>{row.name}</.link>
+              <.link
                 navigate={~p"/council?#{%{add: row.author_id}}"}
                 class="block text-sm text-indigo-700"
-              >Add to council</.link>
+              >
+                Add to council
+              </.link>
             </td>
             <td class="p-3">{row.count}</td>
             <td class="p-3">{row.share}%</td>
@@ -105,7 +125,8 @@
           maxlength="180"
           class="block rounded border-gray-300"
         />
-      </label><button class="rounded border px-3">Publish dated snapshot</button>
+      </label>
+      <button class="rounded border px-3">Publish dated snapshot</button>
     </form>
     <div :if={@snapshots != []}>
       <h2 class="text-xl font-semibold">Dated snapshots</h2>
@@ -121,11 +142,13 @@
   <section :if={@live_action == :compare} class="space-y-4">
     <form phx-change="compare" class="space-y-4">
       <label>
-        Scope<select name="scope" class="rounded border-gray-300"><option
+        Scope<select name="scope" class="rounded border-gray-300">
+<option
             :for={{value, label} <- @scopes}
             value={value}
             selected={value == @scope}
-          >{label}</option></select>
+          >{label}</option>
+</select>
       </label>
       <div class="grid md:grid-cols-2 gap-4">
         <div
@@ -137,11 +160,14 @@
             Community<select
               name={"groups[#{i}][community]"}
               class="block w-full rounded border-gray-300"
-            ><option value="">All YouCongress</option><option
+            >
+<option value="">All YouCongress</option>
+<option
                 :for={c <- @communities}
                 value={c.id}
                 selected={to_string(c.id) == group.filters["community"]}
-              >{c.name}</option></select>
+              >{c.name}</option>
+</select>
           </label>
           <label :for={
             {key, label} <- [
@@ -152,14 +178,18 @@
             {label}<select
               name={"groups[#{i}][#{key}]"}
               class="block w-full rounded border-gray-300"
-            ><option value="">All countries</option><option
+            >
+<option value="">All countries</option>
+<option
                 value="unknown"
                 selected={group.filters[key] == "unknown"}
-              >Unknown</option><option
+              >Unknown</option>
+<option
                 :for={{name, id} <- @countries}
                 value={id}
                 selected={to_string(id) == group.filters[key]}
-              >{name}</option></select>
+              >{name}</option>
+</select>
           </label>
           <p>{group.result.participants} participants</p>
           <ol class="space-y-2">
@@ -207,12 +237,15 @@
           class="rounded bg-indigo-700 px-4 py-2 text-white"
         >
           Join community
-        </button><button
+        </button>
+        <button
           :if={community.id in @memberships}
           phx-click="leave"
           phx-value-id={community.id}
           class="rounded border px-4 py-2"
-        >Leave community</button>
+        >
+          Leave community
+        </button>
       </article>
     </div>
     <p :if={@communities == []}>No communities have been enabled yet.</p>
@@ -238,7 +271,23 @@
             required
             class="block rounded border-gray-300"
           />
-        </label><button class="border rounded px-3">Add to hall</button>
+        </label>
+        <button class="border rounded px-3">Add to hall</button>
+      </form>
+      <form
+        :if={TrustNetwork.organizer?(@current_user, @community)}
+        phx-submit="create-statement"
+        class="space-y-3"
+      >
+        <label>
+          New proposal or claim<input
+            name="title"
+            required
+            maxlength="500"
+            class="block w-full rounded border-gray-300"
+          />
+        </label>
+        <button class="rounded border px-3 py-2">Create in this community</button>
       </form>
       <.link
         :if={TrustNetwork.organizer?(@current_user, @community)}
@@ -255,16 +304,26 @@
     >
       <h2 class="font-semibold">Configure participating community</h2>
       <label>
-        Hall<select name="hall_id" class="block rounded border-gray-300"><option
+        Hall<select name="hall_id" class="block rounded border-gray-300">
+<option
             :for={hall <- @admin_halls}
             value={hall.id}
-          >{hall.name}</option></select>
-      </label><label>Organizer account ID<input
-        name="organizer_id"
-        type="number"
-        min="1"
-        class="block rounded border-gray-300"
-      /></label><label class="block"><input type="checkbox" name="enabled" value="true" /> Participation confirmed; enable community</label><button class="rounded border px-4 py-2">Save community</button>
+          >{hall.name}</option>
+</select>
+      </label>
+      <label>
+        Organizer account ID<input
+          name="organizer_id"
+          type="number"
+          min="1"
+          class="block rounded border-gray-300"
+        />
+      </label>
+      <label class="block">
+        <input type="checkbox" name="enabled" value="true" />
+        Participation confirmed; enable community
+      </label>
+      <button class="rounded border px-4 py-2">Save community</button>
     </form>
   </section>
   <section :if={@live_action == :recommendations} class="space-y-5">
@@ -316,28 +375,37 @@
       <form phx-submit="recommend" class="rounded border p-5 space-y-4">
         <h2 class="text-xl font-semibold">Create or update a recommendation</h2>
         <label>
-          Person<select name="nominee_id" required class="block rounded border-gray-300"><option value="">Choose a search result</option><option
+          Person<select name="nominee_id" required class="block rounded border-gray-300">
+<option value="">Choose a search result</option>
+<option
               :for={person <- @people}
               value={person.id}
-            >{person.name}</option></select>
+            >{person.name}</option>
+</select>
         </label>
         <label>
-          Scope<select name="scope" class="block rounded border-gray-300"><option
+          Scope<select name="scope" class="block rounded border-gray-300">
+<option
               :for={{scope, label} <- @scopes}
               value={scope}
-            >{label}</option></select>
+            >{label}</option>
+</select>
         </label>
         <label class="block">
           Why this person?<textarea
             name="reason"
             maxlength="5000"
             class="block w-full rounded border-gray-300"
-          ></textarea>
-        </label><label class="block">Where should readers start?<input
-          type="url"
-          name="source_url"
-          class="block w-full rounded border-gray-300"
-        /></label>
+          >
+</textarea>
+        </label>
+        <label class="block">
+          Where should readers start?<input
+            type="url"
+            name="source_url"
+            class="block w-full rounded border-gray-300"
+          />
+        </label>
         <label class="block">
           <input type="checkbox" name="published" value="true" />
           Publish this recommendation and reason
@@ -345,7 +413,8 @@
         <label class="block">
           <input type="checkbox" name="add_to_council" value="true" />
           Also add to my first list in this scope (changes delegation and rankings)
-        </label><button class="rounded bg-indigo-700 px-4 py-2 text-white">Save recommendation</button>
+        </label>
+        <button class="rounded bg-indigo-700 px-4 py-2 text-white">Save recommendation</button>
       </form>
     </div>
   </section>
@@ -355,17 +424,28 @@
     </p>
     <form :if={@current_user} phx-submit="request" class="rounded border p-5 space-y-3">
       <label>
-        Request type<select name="kind" class="block rounded border-gray-300"><option value="correction">Correction</option><option value="missing_position">Missing position</option><option value="missing_person">Missing person</option></select>
-      </label><label class="block">Details<textarea
-        name="body"
-        required
-        maxlength="10000"
-        class="block w-full rounded border-gray-300"
-      ></textarea></label><label class="block">Source URL<input
-        name="source_url"
-        type="url"
-        class="block w-full rounded border-gray-300"
-      /></label>
+        Request type<select name="kind" class="block rounded border-gray-300">
+<option value="correction">Correction</option>
+<option value="missing_position">Missing position</option>
+<option value="missing_person">Missing person</option>
+</select>
+      </label>
+      <label class="block">
+        Details<textarea
+          name="body"
+          required
+          maxlength="10000"
+          class="block w-full rounded border-gray-300"
+        >
+</textarea>
+      </label>
+      <label class="block">
+        Source URL<input
+          name="source_url"
+          type="url"
+          class="block w-full rounded border-gray-300"
+        />
+      </label>
       <div class="flex gap-3">
         <label>
           Author ID (optional)<input
@@ -374,12 +454,15 @@
             min="1"
             class="block rounded border-gray-300"
           />
-        </label><label>Statement ID (optional)<input
-          name="statement_id"
-          type="number"
-          min="1"
-          class="block rounded border-gray-300"
-        /></label>
+        </label>
+        <label>
+          Statement ID (optional)<input
+            name="statement_id"
+            type="number"
+            min="1"
+            class="block rounded border-gray-300"
+          />
+        </label>
       </div>
       <button class="rounded bg-indigo-700 px-4 py-2 text-white">Submit request</button>
     </form>
@@ -400,7 +483,8 @@
         <p :for={attempt <- request.attempts}>{attempt["at"]}: {attempt["result"]}</p>
       </details>
       <form :if={review?(@current_user)} phx-submit="resolve" class="space-y-3">
-        <input name="request_id" type="hidden" value={request.id} /><select
+        <input name="request_id" type="hidden" value={request.id} />
+        <select
           name="status"
           class="rounded border-gray-300"
         >
@@ -411,10 +495,14 @@
           >
             {status}
           </option>
-        </select><label class="block">Review notes<textarea
-          name="resolution"
-          class="block w-full rounded border-gray-300"
-        >{request.resolution}</textarea></label><button class="rounded border px-3 py-2">Update review</button>
+        </select>
+        <label class="block">
+          Review notes<textarea
+            name="resolution"
+            class="block w-full rounded border-gray-300"
+          >{request.resolution}</textarea>
+        </label>
+        <button class="rounded border px-3 py-2">Update review</button>
       </form>
     </article>
   </section>

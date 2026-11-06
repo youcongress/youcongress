@@ -15,11 +15,13 @@ defmodule YouCongress.HallsTest do
     @invalid_attrs %{name: nil}
 
     test "list_halls/0 returns all halls" do
+      existing = Halls.list_halls()
       hall = hall_fixture()
-      assert Halls.list_halls() == [hall]
+      assert MapSet.new(Halls.list_halls()) == MapSet.new(existing ++ [hall])
     end
 
     test "list_halls/1 supports limit" do
+      existing_ids = Enum.map(Halls.list_halls(), & &1.id)
       h1 = hall_fixture(name: "alignment")
       h2 = hall_fixture(name: "governance")
       h3 = hall_fixture(name: "safety")
@@ -27,7 +29,7 @@ defmodule YouCongress.HallsTest do
       results = Halls.list_halls(limit: 2)
 
       assert length(results) == 2
-      assert Enum.all?(results, &(&1.id in [h1.id, h2.id, h3.id]))
+      assert Enum.all?(results, &(&1.id in (existing_ids ++ [h1.id, h2.id, h3.id])))
     end
 
     test "get_hall!/1 returns the hall with given id" do

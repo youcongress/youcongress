@@ -1058,7 +1058,13 @@ defmodule YouCongress.Authors do
 
   """
   def delete_author(%Author{} = author) do
-    Repo.delete(author)
+    followers = YouCongress.Councils.followers(author.id)
+    result = Repo.delete(author)
+
+    if match?({:ok, _}, result),
+      do: Enum.each(followers, &YouCongress.DelegationVotes.update_author_delegated_votes/1)
+
+    result
   end
 
   @doc """

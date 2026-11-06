@@ -12,10 +12,14 @@
       </h1>
     </div>
     <nav class="flex gap-4 text-sm">
-      <.link navigate={~p"/trust/general"}>Trust lists</.link><.link navigate={~p"/communities"}>Communities</.link><.link
+      <.link navigate={~p"/trust/general"}>Trust lists</.link>
+      <.link navigate={~p"/communities"}>Communities</.link>
+      <.link
         :if={@current_user}
         navigate={~p"/trust/updates"}
-      >Updates</.link>
+      >
+        Updates
+      </.link>
     </nav>
   </div>
   <p class="text-gray-600">
@@ -77,7 +81,8 @@
       </div>
     </div>
     <form :if={!@readonly} phx-change="rename" class="flex gap-2 items-center">
-      <input type="hidden" name="index" value={i} /><label for={"list-name-#{i}"}>
+      <input type="hidden" name="index" value={i} />
+      <label for={"list-name-#{i}"}>
         List name
       </label>
       <input
@@ -108,7 +113,8 @@
         </button>
       </div>
       <form :if={!@readonly} phx-change="reason" class="grid sm:grid-cols-2 gap-3 mt-2">
-        <input type="hidden" name="person_id" value={member.author_id} /><input
+        <input type="hidden" name="person_id" value={member.author_id} />
+        <input
           type="hidden"
           name="list"
           value={i}
@@ -145,7 +151,8 @@
       </div>
     </div>
     <form :if={!@readonly} phx-change="search" class="mt-3">
-      <input type="hidden" name="list" value={i} /><label for={"person-search-#{i}"}>
+      <input type="hidden" name="list" value={i} />
+      <label for={"person-search-#{i}"}>
         Find a person
       </label>
       <input
@@ -205,7 +212,8 @@
         class="rounded bg-indigo-700 px-5 py-3 text-white"
       >
         Save council
-      </button><span :if={@dirty} class="ml-3 text-sm">Unsaved changes</span>
+      </button>
+      <span :if={@dirty} class="ml-3 text-sm">Unsaved changes</span>
       <div :if={!@current_user} class="flex flex-wrap gap-3">
         <.link
           href={~p"/auth/google?#{%{pending_actions: pending(@draft)}}"}
@@ -274,6 +282,43 @@
     >
       {statement.title}
     </button>
+    <div :if={@matrix != []} class="overflow-x-auto rounded border">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr>
+            <th class="p-3">Person</th>
+            <th :for={column <- @matrix} class="p-3 min-w-48">
+              {column.statement.title}<button
+                phx-click="remove-comparison"
+                phx-value-id={column.statement.id}
+                class="block text-xs text-gray-500"
+              >Remove column</button>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            :for={
+              {id, person} <- Enum.sort_by(@people, fn {_id, person} -> person.name || "" end)
+            }
+            class="border-t"
+          >
+            <th class="p-3">{person.name}</th>
+            <td :for={column <- @matrix} class="p-3">
+              {answer(get_in(column.positions, [id, :recorded_answer]))}<span class="block text-xs text-gray-500">{get_in(column.positions, [id, :status]) || "missing"}</span>
+            </td>
+          </tr>
+          <tr class="border-t bg-indigo-50">
+            <th class="p-3">This council</th>
+            <td :for={column <- @matrix} class="p-3">{answer(column.result)}</td>
+          </tr>
+          <tr :if={@current_user} class="border-t">
+            <th class="p-3">My saved vote</th>
+            <td :for={column <- @matrix} class="p-3">{answer(column.own)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <div :if={@statement && @explanation} class="rounded-lg border p-5 space-y-4">
       <h3 class="text-xl font-semibold">{@statement.title}</h3>
       <p class="text-lg">
@@ -310,4 +355,24 @@
       </.link>
     </div>
   </section>
+  <details class="rounded border p-4">
+    <summary>Check your understanding (optional)</summary>
+    <form phx-submit="understanding" class="mt-3 space-y-3">
+      <p>What takes precedence over your council's result?</p>
+      <label class="block">
+        <input type="radio" name="answer" value="direct" required />
+        My direct vote, including Abstain
+      </label>
+      <label class="block">
+        <input type="radio" name="answer" value="ranking" /> The top person in the public ranking
+      </label>
+      <button class="rounded border px-3 py-2">Check answer</button>
+    </form>
+    <p :if={!is_nil(@understanding)} class="mt-3">
+      {if @understanding,
+        do: "Correct. Your direct vote always takes precedence.",
+        else:
+          "Your direct vote always takes precedence. Public rankings never determine a council vote."}
+    </p>
+  </details>
 </div>

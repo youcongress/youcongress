@@ -98,7 +98,7 @@ defmodule YouCongress.HallsStatements do
 
   def get_main_hall(statement_id) do
     hall_id =
-      from(hs in HallStatement, where: hs.statement_id == ^statement_id)
+      from(hs in HallStatement, where: hs.statement_id == ^statement_id and hs.is_main == true)
       |> select([hs], hs.hall_id)
       |> Repo.one()
 

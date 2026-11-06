@@ -18,7 +18,7 @@ defmodule YouCongressWeb.TrustController do
     values =
       Enum.map(rows, fn row ->
         Enum.map([:rank, :name, :count, :share], fn key ->
-          Map.get(row, key, row[to_string(key)])
+          safe_cell(Map.get(row, key, row[to_string(key)]))
         end) ++ [participants]
       end)
 
@@ -32,6 +32,12 @@ defmodule YouCongressWeb.TrustController do
     |> put_resp_header("content-disposition", "attachment; filename=trust-ranking.csv")
     |> send_resp(200, content)
   end
+
+  defp safe_cell(value) when is_binary(value) do
+    if String.starts_with?(value, ["=", "+", "-", "@", "\t", "\r"]), do: "'" <> value, else: value
+  end
+
+  defp safe_cell(value), do: value
 
   def unsubscribe(conn, %{"token" => token}) do
     case Phoenix.Token.verify(YouCongressWeb.Endpoint, "trust-digest", token, max_age: 31_536_000) do

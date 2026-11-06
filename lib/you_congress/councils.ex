@@ -107,6 +107,7 @@ defmodule YouCongress.Councils do
   def save(_, _), do: {:error, :forbidden}
 
   defp validate_lists!(council, lists) do
+    unless is_list(lists) and Enum.all?(lists, &is_map/1), do: Repo.rollback(:invalid_lists)
     fallback = Enum.find(council.lists, & &1.fallback)
     ids = Enum.map(lists, &value(&1, :id)) |> Enum.reject(&is_nil/1)
     owned = Enum.map(council.lists, & &1.id)
@@ -125,18 +126,32 @@ defmodule YouCongress.Councils do
     hall = if hall_id, do: Repo.get(Halls.Hall, hall_id)
     if hall_id && is_nil(hall), do: Repo.rollback(:invalid_hall)
     if existing.fallback && hall_id, do: Repo.rollback(:invalid_fallback)
-    name = String.trim(value(attrs, :name) || if(hall, do: hall.name, else: "General"))
-    if name == "" or String.length(name) > 120, do: Repo.rollback(:invalid_name)
+    name = list_name!(attrs, hall)
 
     list =
       existing
       |> List.changeset(%{council_id: council.id, hall_id: hall_id, name: name, position: index})
       |> Repo.insert_or_update!()
 
-    members = value(attrs, :members) || []
+    save_members!(council.author_id, list, value(attrs, :members) || [])
+  end
+
+  defp list_name!(attrs, hall) do
+    raw_name = value(attrs, :name) || default_name(hall)
+    unless is_binary(raw_name), do: Repo.rollback(:invalid_name)
+    name = String.trim(raw_name)
+    if name == "" or String.length(name) > 120, do: Repo.rollback(:invalid_name)
+    name
+  end
+
+  defp default_name(nil), do: "General"
+  defp default_name(hall), do: hall.name
+
+  defp save_members!(owner_id, list, members) do
+    unless is_list(members) and Enum.all?(members, &is_map/1), do: Repo.rollback(:invalid_members)
     member_ids = Enum.map(members, &value(&1, :author_id))
 
-    if council.author_id in member_ids or length(member_ids) != length(Enum.uniq(member_ids)),
+    if owner_id in member_ids or length(member_ids) != length(Enum.uniq(member_ids)),
       do: Repo.rollback(:invalid_members)
 
     found = Repo.aggregate(from(a in Authors.Author, where: a.id in ^member_ids), :count)
@@ -277,7 +292,9 @@ defmodule YouCongress.Councils do
       Enum.map(
         ids,
         &%{deleguee_id: author_id, delegate_id: &1, inserted_at: now, updated_at: now}
-      ), on_conflict: :nothing)
+      ),
+      on_conflict: :nothing
+    )
   end
 
   def positions(ids, statement_id) do
@@ -294,34 +311,8 @@ defmodule YouCongress.Councils do
   def position(vote) do
     opinion = vote.opinion
 
-    inferred =
-      vote.origin == "inferred" or
-        (opinion && YouCongress.Opinions.Opinion.quote?(opinion) && vote.origin != "self_cast")
-
-    relation =
-      if inferred && opinion,
-        do:
-          Repo.get_by(YouCongress.OpinionsStatements.OpinionStatement,
-            opinion_id: opinion.id,
-            statement_id: vote.statement_id
-          )
-
-    status =
-      cond do
-        inferred ->
-          YouCongress.VerificationStatus.aggregate(
-            opinion && opinion.verification_status,
-            relation && relation.verification_status,
-            vote.verification_status
-          )
-          |> to_string()
-
-        vote.twin ->
-          "unverified"
-
-        true ->
-          "self_cast"
-      end
+    inferred = inferred?(vote)
+    status = position_status(vote, inferred)
 
     eligible = status in ["self_cast", "verified", "endorsed", "ai_verified"]
 
@@ -338,12 +329,39 @@ defmodule YouCongress.Councils do
     }
   end
 
+  def inferred?(%{origin: "self_cast"}), do: false
+  def inferred?(%{origin: "inferred"}), do: true
+  def inferred?(%{opinion: opinion}), do: YouCongress.Opinions.Opinion.quote?(opinion)
+
+  defp position_status(vote, true) do
+    opinion = vote.opinion
+
+    relation =
+      if opinion,
+        do:
+          Repo.get_by(YouCongress.OpinionsStatements.OpinionStatement,
+            opinion_id: opinion.id,
+            statement_id: vote.statement_id
+          )
+
+    YouCongress.VerificationStatus.aggregate(
+      opinion && opinion.verification_status,
+      relation && relation.verification_status,
+      vote.verification_status
+    )
+    |> to_string()
+  end
+
+  defp position_status(%{twin: true}, false), do: "unverified"
+  defp position_status(_, false), do: "self_cast"
+
   def explain(author_id, statement_id, lists \\ nil) do
     {:ok, council} = ensure(author_id)
     lists = lists || council.lists
     ids = lists |> Enum.flat_map(&Enum.map(&1.members, fn m -> m.author_id end)) |> Enum.uniq()
     result = Evaluator.evaluate(lists, positions(ids, statement_id))
     direct = Repo.get_by(Vote, author_id: author_id, statement_id: statement_id, direct: true)
+    direct = if direct && direct.origin != "inferred", do: direct
 
     Map.merge(result, %{
       version: council.version,
