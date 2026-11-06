@@ -56,17 +56,14 @@
       </.link>
     <% else %>
       <Tooltip.delegation assigns={assigns} />
-      <.link navigate={~p"/council?#{%{add: @author.id}}"}>
-        <%= if @delegating? do %>
-          <span class="rounded-lg border-2 border-zinc-900 bg-transparent px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-900 hover:text-white transition-colors duration-200">
-            Edit council
-          </span>
-        <% else %>
-          <span class="phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3 text-sm font-semibold leading-6 text-white active:text-white/80">
-            Add to council
-          </span>
-        <% end %>
-      </.link>
+      <.live_component
+        module={YouCongressWeb.Components.CouncilBookmark}
+        id={"profile-council-#{@author.id}"}
+        author_id={@author.id}
+        name={@author.name || "this person"}
+        current_user={@current_user}
+        saved={@delegating?}
+      />
     <% end %>
     <.link href={~p"/a/#{@author.id}/council"} class="text-sm text-indigo-700">Council</.link>
     <.link href={~p"/a/#{@author.id}/recommendations"} class="text-sm text-indigo-700">

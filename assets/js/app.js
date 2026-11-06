@@ -30,9 +30,11 @@ import ReconsiderMotionAd from "./hooks/reconsider_motion_ad"
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 
 import CouncilDraft from "./hooks/council_draft"
+import CouncilBookmark from "./hooks/council_bookmark"
 
 let Hooks = {
   CouncilDraft: CouncilDraft,
+  CouncilBookmark: CouncilBookmark,
   QuoteMenu: QuoteMenu,
   Turnstile: Turnstile,
   SessionLogin: SessionLogin,

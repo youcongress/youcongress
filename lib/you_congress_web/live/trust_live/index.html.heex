@@ -97,12 +97,14 @@
             <td class="p-3">{row.rank}</td>
             <td class="p-3">
               <.link href={~p"/a/#{row.author_id}"}>{row.name}</.link>
-              <.link
-                navigate={~p"/council?#{%{add: row.author_id}}"}
-                class="block text-sm text-indigo-700"
-              >
-                Add to council
-              </.link>
+              <.live_component
+                :if={!@current_user || @current_user.author_id != row.author_id}
+                module={YouCongressWeb.Components.CouncilBookmark}
+                id={"ranking-council-#{row.author_id}"}
+                author_id={row.author_id}
+                name={row.name}
+                current_user={@current_user}
+              />
             </td>
             <td class="p-3">{row.count}</td>
             <td class="p-3">{row.share}%</td>
