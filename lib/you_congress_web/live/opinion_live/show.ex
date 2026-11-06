@@ -433,11 +433,13 @@ defmodule YouCongressWeb.OpinionLive.Show do
         preload: [user: [:author]]
       )
 
+    other_opinion_votes = other_opinion_votes(opinion_with_votes)
+
     assign(socket,
       opinion: opinion_with_votes,
       verifications: verifications,
-      other_opinion_votes: other_opinion_votes(opinion_with_votes),
-      other_authors: other_authors(opinion_with_votes)
+      other_opinion_votes: other_opinion_votes,
+      other_authors: other_authors(opinion_with_votes, other_opinion_votes)
     )
   end
 
@@ -460,7 +462,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
       twin: false,
       has_statements: true,
       order_by: [desc_nulls_last: :date, desc: :id],
-      preload: [:statements],
+      preload: [statements: [:halls]],
       limit: 50
     ]
 
@@ -532,12 +534,24 @@ defmodule YouCongressWeb.OpinionLive.Show do
     end
   end
 
-  defp other_authors(%{author_id: author_id, statements: statements})
-       when is_integer(author_id) and is_list(statements) do
+  defp other_authors(
+         %{author_id: author_id, statements: statements},
+         other_opinion_votes
+       )
+       when is_integer(author_id) and is_list(statements) and is_list(other_opinion_votes) do
     hall_names =
       statements
       |> Enum.flat_map(& &1.halls)
       |> Enum.map(& &1.name)
+
+    hall_names =
+      if hall_names == [] do
+        other_opinion_votes
+        |> Enum.flat_map(& &1.statement.halls)
+        |> Enum.map(& &1.name)
+      else
+        hall_names
+      end
 
     Halls.list_top_authors_for_halls(hall_names,
       exclude_author_ids: [author_id],
@@ -545,7 +559,7 @@ defmodule YouCongressWeb.OpinionLive.Show do
     )
   end
 
-  defp other_authors(_opinion), do: []
+  defp other_authors(_opinion, _other_opinion_votes), do: []
 
   defp load_statement_verification_histories(%{statements: statements} = opinion)
        when is_list(statements) and statements != [] do

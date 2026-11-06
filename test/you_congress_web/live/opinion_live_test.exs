@@ -223,6 +223,63 @@ defmodule YouCongressWeb.OpinionLiveTest do
              )
     end
 
+    test "uses the author's related-opinion halls when the current opinion has no statement", %{
+      conn: conn
+    } do
+      author = author_fixture(%{name: "Author With Unlinked Quote"})
+      hall = hall_fixture(%{name: "unlinked-opinion-recommendations"})
+      related_statement = statement_fixture(title: "Related statement")
+
+      assert {:ok, _statement} =
+               HallsStatements.sync!(related_statement.id, %{
+                 main_tag: hall.name,
+                 other_tags: []
+               })
+
+      current_opinion =
+        opinion_fixture(%{
+          author_id: author.id,
+          content: "Current unlinked quote",
+          source_url: "https://example.com/current-unlinked-quote",
+          date: ~D[2025-01-01],
+          date_precision: :day,
+          twin: false
+        })
+
+      related_opinion =
+        add_sourced_opinion(author, related_statement, "Related linked quote", ~D[2024-01-01])
+
+      vote_fixture(%{
+        author_id: author.id,
+        statement_id: related_statement.id,
+        opinion_id: related_opinion.id,
+        answer: :for
+      })
+
+      suggested_author =
+        author_fixture(%{
+          name: "Related Author",
+          twitter_username: "suggested_from_related_hall"
+        })
+
+      add_sourced_opinion(
+        suggested_author,
+        related_statement,
+        "Suggested related quote",
+        ~D[2023-01-01]
+      )
+
+      {:ok, view, html} = live(conn, ~p"/c/#{current_opinion.id}")
+
+      assert html =~ "Other authors to follow"
+
+      assert has_element?(
+               view,
+               "#other-authors a[href='/x/suggested_from_related_hall']",
+               suggested_author.name
+             )
+    end
+
     test "renders the source passage for a source_text-only quote", %{conn: conn} do
       author = author_fixture(%{name: "Book Author"})
 
