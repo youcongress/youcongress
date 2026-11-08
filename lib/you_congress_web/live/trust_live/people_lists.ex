@@ -48,7 +48,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
           council_list_id: target.id
         )
       else
-        socket
+        assign(socket, council_list_id: nil)
       end
 
     case socket.assigns.live_action do

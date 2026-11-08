@@ -123,6 +123,9 @@ Signed-in topic edits, reasons, names, and order save automatically. Guest topic
 and reasons survive signup; email signups take effect after confirmation. Publishing and
 invitations remain optional. Hall selection is available inside Edit, not on the Council
 overview. Each entry selects one owned private/public list or another author's public list.
+The entry editor shows the hall, selected list, and a read-only people preview. Change list
+opens the picker; Edit list opens the membership editor with a return link to that entry.
+New private lists and independent copies open directly in the list editor.
 
 `/lists` manages all named people lists. `people_lists.public` defaults to false, and
 `people_list_members` stores each list's people, reasons, source URLs, and order.

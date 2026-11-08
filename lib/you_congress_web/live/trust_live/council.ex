@@ -34,6 +34,8 @@ defmodule YouCongressWeb.TrustLive.Council do
        source_list_name: nil,
        published_list: nil,
        linked_list: nil,
+       list_owner: nil,
+       preview_people: %{},
        linked_lists: %{},
        publish_fields: %{name: "", slug: ""},
        publish_slug_custom: false,
@@ -82,7 +84,7 @@ defmodule YouCongressWeb.TrustLive.Council do
         step: step,
         ref: ref,
         referrer: referrer,
-        page_title: "My Council",
+        page_title: if(user && step == "pick", do: "Edit Council entry", else: "My Council"),
         show_public_list_picker: false,
         selected_public_list: nil
       )
@@ -98,8 +100,6 @@ defmodule YouCongressWeb.TrustLive.Council do
     socket =
       if user do
         assign(socket,
-          linked_list: PeopleLists.linked_list(user, current_list(socket.assigns.draft).id),
-          linked_lists: PeopleLists.linked_lists(user),
           counts: Discovery.vote_counts(user.author_id),
           invitations: Invitations.history(user),
           joined: Invitations.joined(user.author_id),
@@ -109,7 +109,7 @@ defmodule YouCongressWeb.TrustLive.Council do
         socket
       end
 
-    {:noreply, load_matches(socket)}
+    {:noreply, socket |> load_link() |> load_matches()}
   end
 
   @impl true
@@ -481,19 +481,8 @@ defmodule YouCongressWeb.TrustLive.Council do
            link_council: true,
            council_list_id: target.id
          }) do
-      {:ok, _} ->
-        {:noreply,
-         socket
-         |> assign(
-           draft: with_selection(own_council(user), socket.assigns.draft),
-           selected_public_list: nil,
-           show_public_list_picker: false,
-           source_list_name: nil,
-           editing_reason: nil,
-           last_added_id: nil
-         )
-         |> load_people()
-         |> load_link()}
+      {:ok, source} ->
+        {:noreply, push_navigate(socket, to: edit_list_path(source.id, target.id))}
 
       _ ->
         {:noreply,
@@ -538,6 +527,12 @@ defmodule YouCongressWeb.TrustLive.Council do
     end
   end
 
+  def handle_event("copy-selected-list", _, %{assigns: %{current_user: user}} = socket)
+      when not is_nil(user) do
+    socket = assign(socket, selected_public_list: socket.assigns.linked_list)
+    handle_event("apply-public-list", %{"copy" => "true"}, socket)
+  end
+
   def handle_event("apply-public-list", params, %{assigns: %{current_user: user}} = socket)
       when not is_nil(user) do
     source = socket.assigns.selected_public_list
@@ -552,29 +547,36 @@ defmodule YouCongressWeb.TrustLive.Council do
              params["copy"] == "true"
            ) do
         {:ok, council} ->
-          {:noreply,
-           socket
-           |> assign(
-             draft: with_selection(Councils.editable(council), draft),
-             dirty: false,
-             save_error: nil,
-             source_list_name: nil,
-             selected_public_list: nil,
-             show_public_list_picker: false,
-             editing_reason: nil,
-             last_added_id: nil
-           )
-           |> load_people()
-           |> load_matches()
-           |> load_link()
-           |> put_flash(
-             :info,
-             if(params["copy"] == "true",
-               do: "A private copy of #{source.name} is now selected.",
-               else:
-                 "#{source.name} is now selected. Updates to the list will apply to your Council."
-             )
-           )}
+          updated = with_selection(Councils.editable(council), draft)
+
+          socket =
+            socket
+            |> assign(
+              draft: updated,
+              dirty: false,
+              save_error: nil,
+              source_list_name: nil,
+              selected_public_list: nil,
+              show_public_list_picker: false,
+              editing_reason: nil,
+              last_added_id: nil
+            )
+            |> load_people()
+            |> load_link()
+
+          if params["copy"] == "true" do
+            {:noreply,
+             push_navigate(socket,
+               to: edit_list_path(current_list(updated).people_list_id, current_list(updated).id)
+             )}
+          else
+            {:noreply,
+             put_flash(
+               socket,
+               :info,
+               "#{source.name} is now selected. Updates to the list will apply to your Council."
+             )}
+          end
 
         {:error, :stale} ->
           {:noreply,
@@ -702,7 +704,7 @@ defmodule YouCongressWeb.TrustLive.Council do
 
   defp load_saved_view(socket, nil, _step), do: socket
 
-  defp load_saved_view(socket, user, step) when step in ~w(mine votes publish invite),
+  defp load_saved_view(socket, user, step) when step in ~w(mine votes publish invite pick),
     do:
       socket
       |> assign(draft: with_selection(own_council(user), socket.assigns.draft), dirty: false)
@@ -787,15 +789,23 @@ defmodule YouCongressWeb.TrustLive.Council do
   end
 
   defp load_link(socket) do
+    source =
+      PeopleLists.linked_list(socket.assigns.current_user, current_list(socket.assigns.draft).id)
+
     assign(socket,
       linked_lists: PeopleLists.linked_lists(socket.assigns.current_user),
-      linked_list:
-        PeopleLists.linked_list(
-          socket.assigns.current_user,
-          current_list(socket.assigns.draft).id
+      linked_list: source,
+      list_owner: if(source, do: Repo.get(Author, source.author_id)),
+      preview_people:
+        if(source,
+          do: Discovery.people(Enum.map(Enum.take(source.members, 5), & &1.author_id)),
+          else: %{}
         )
     )
   end
+
+  defp edit_list_path(source_id, entry_id),
+    do: ~p"/lists/#{source_id}/edit?#{%{from: "council", council_list_id: entry_id}}"
 
   defp save_topic_lists(socket, lists) do
     if socket.assigns.current_user do

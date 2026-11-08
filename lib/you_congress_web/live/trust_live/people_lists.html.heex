@@ -59,12 +59,20 @@
         </div>
       <% action when action in [:new, :edit] -> %>
         <p class="yc-breadcrumb">
-          <.link navigate={~p"/lists"} class="yc-link">← My lists</.link>
+          <.link
+            :if={@council_list_id}
+            navigate={~p"/council?#{%{step: "pick", list: @council_list_id}}"}
+            class="yc-link"
+          >
+            ← Back to Council entry
+          </.link>
+          <.link :if={!@council_list_id} navigate={~p"/lists"} class="yc-link">← My lists</.link>
         </p>
         <h1>{if @list, do: "Edit list", else: "Create a list"}</h1>
         <p class="yc-intro">
           Choose people and add your reasons. Private lists are only visible to you. Making a list public shares its people and comments, but never your Council assignments.
         </p>
+        <p :if={@list} class="yc-help">Changes to this list apply everywhere it is used.</p>
         <form
           id="public-list-editor"
           phx-hook="ListAutosave"

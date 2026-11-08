@@ -55,28 +55,38 @@ defmodule YouCongressWeb.TopicCouncilTest do
     refute Enum.any?(Councils.get(user.author_id).lists, &(&1.id == inner.id))
   end
 
-  test "editing one topic autosaves people and reasons without changing another topic", %{
+  test "entry editing shows a preview and opens the list editor with a working return link", %{
     conn: conn
   } do
     user = user_fixture()
     person = author_fixture()
     {:ok, council} = Councils.ensure(user.author_id)
-    governance = hd(council.lists)
-    {:ok, view, _} = live(log_in_user(conn, user), "/council?step=pick&list=#{governance.id}")
-    render_click(view, "add-person", %{id: person.id})
-    view |> element("#council-member-#{person.id} button", "+ Add a reason") |> render_click()
-    view |> form("#council-reason-#{person.id}", %{reason: "Policy expertise"}) |> render_change()
+    topic = hd(council.lists)
+    {:ok, _} = Councils.add_member(user, person.id, topic.id)
+    conn = log_in_user(conn, user)
+    path = "/council?list=#{topic.id}&step=pick"
+    {:ok, entry, _} = live(conn, path)
+    assert has_element?(entry, "h1", "Edit Council entry")
+    assert has_element?(entry, ".yc-entry-preview", person.name)
+    refute has_element?(entry, "#person-search")
+    refute has_element?(entry, "#council-topic-name")
+    refute has_element?(entry, ".yc-steps")
+    refute has_element?(entry, "button", "+ Add a reason")
+
+    {:ok, editor, _} =
+      entry |> element("a", "Edit list") |> render_click() |> follow_redirect(conn)
+
+    assert has_element?(editor, "a[href='#{path}']", "Back to Council entry")
+    editor |> element("#council-member-#{person.id} button", "+ Add a reason") |> render_click()
+    render_change(editor, "change", %{"reasons" => %{to_string(person.id) => "Policy expertise"}})
+
+    {:ok, returned, _} =
+      editor |> element("a", "Back to Council entry") |> render_click() |> follow_redirect(conn)
+
+    assert has_element?(returned, "h1", "Edit Council entry")
     saved = Councils.get(user.author_id)
     assert hd(hd(saved.lists).members).reason == "Policy expertise"
     assert List.last(saved.lists).members == []
-    render_click(view, "select-topic", %{index: "1"})
-    refute has_element?(view, "#council-member-#{person.id}")
-    render_click(view, "add-person", %{id: person.id})
-    saved = Councils.get(user.author_id)
-    assert hd(hd(saved.lists).members).reason == "Policy expertise"
-    assert hd(Enum.at(saved.lists, 1).members).reason == nil
-    view |> form("form[phx-change=rename-list]", %{name: "My jobs experts"}) |> render_change()
-    assert Enum.at(Councils.get(user.author_id).lists, 1).name == "My jobs experts"
   end
 
   test "hall selection saves independently of the title and rejects changing final General", %{
@@ -135,7 +145,7 @@ defmodule YouCongressWeb.TopicCouncilTest do
       })
 
     {:ok, view, _} = live(log_in_user(conn, user), "/council?step=pick&list=#{topic.id}")
-    view |> element("button", "Choose a list") |> render_click()
+    view |> element("button", "Change list") |> render_click()
     assert has_element?(view, "#public-list-option-#{own.id}")
     refute has_element?(view, "#public-list-option-#{theirs.id}")
     view |> element("#public-list-option-#{own.id} button", "Select") |> render_click()
@@ -147,7 +157,7 @@ defmodule YouCongressWeb.TopicCouncilTest do
     assert Enum.sort(Enum.map(PeopleLists.get(own.id).members, & &1.author_id)) ==
              Enum.sort([first.id, third.id])
 
-    view |> element("button", "Choose a list") |> render_click()
+    view |> element("button", "Change list") |> render_click()
     view |> form("#search-public-lists", %{scope: "all", q: "Other public"}) |> render_change()
     assert has_element?(view, "#public-list-option-#{theirs.id}", "Other public experts")
     view |> element("#public-list-option-#{theirs.id} button", "Select") |> render_click()
@@ -163,7 +173,11 @@ defmodule YouCongressWeb.TopicCouncilTest do
     assert Enum.sort(Enum.map(PeopleLists.get(own.id).members, & &1.author_id)) ==
              Enum.sort([first.id, third.id])
 
-    render_click(view, "add-person", %{id: first.id})
+    assert_redirect(
+      view,
+      "/lists/#{updated.people_list_id}/edit?from=council&council_list_id=#{topic.id}"
+    )
+
     assert Enum.map(PeopleLists.get(theirs.id).members, & &1.author_id) == [second.id]
   end
 
@@ -188,5 +202,56 @@ defmodule YouCongressWeb.TopicCouncilTest do
     assert has_element?(overview, "#topic-list-#{topic.id}", "Public list:")
     assert has_element?(overview, "#topic-list-#{topic.id} a", "Policy experts")
     refute has_element?(overview, "#topic-list-#{topic.id} h3")
+  end
+
+  test "following another owner's list offers a private copy and opens its editor", %{conn: conn} do
+    user = user_fixture()
+    owner = user_fixture()
+    person = author_fixture()
+
+    {:ok, source} =
+      PeopleLists.create(owner, %{
+        name: "Shared expertise",
+        public: true,
+        members: [%{author_id: person.id}]
+      })
+
+    {:ok, council} = Councils.ensure(user.author_id)
+    topic = hd(council.lists)
+    {:ok, _} = PeopleLists.use_for_council(user, source.id, topic.id, council.version, false)
+    conn = log_in_user(conn, user)
+    {:ok, view, _} = live(conn, "/council?step=pick&list=#{topic.id}")
+    assert has_element?(view, ".yc-entry-preview", person.name)
+    refute has_element?(view, "a", "Edit list")
+
+    {:ok, editor, _} =
+      view |> element("button", "Make a private copy") |> render_click() |> follow_redirect(conn)
+
+    copy = PeopleLists.linked_list(user, topic.id)
+    refute copy.public
+    refute copy.id == source.id
+    assert has_element?(editor, "#list-person-search")
+    assert has_element?(editor, "a", "Back to Council entry")
+  end
+
+  test "unavailable sources can be replaced by a new private list", %{conn: conn} do
+    user = user_fixture()
+    {:ok, council} = Councils.ensure(user.author_id)
+    topic = hd(council.lists)
+    {:ok, _} = PeopleLists.delete(user, topic.people_list_id)
+    conn = log_in_user(conn, user)
+    {:ok, view, _} = live(conn, "/council?step=pick&list=#{topic.id}")
+    assert has_element?(view, "#council-linked-list", "List unavailable")
+    refute has_element?(view, ".yc-entry-preview")
+    view |> element("button", "Choose a list") |> render_click()
+
+    {:ok, editor, _} =
+      view
+      |> form("#create-council-private-list", %{name: "New private picks"})
+      |> render_submit()
+      |> follow_redirect(conn)
+
+    assert has_element?(editor, "#public-list-name[value='New private picks']")
+    refute PeopleLists.linked_list(user, topic.id).public
   end
 end

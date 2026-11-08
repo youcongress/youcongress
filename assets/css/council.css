@@ -783,3 +783,20 @@
 .council-ui .yc-hall-options { margin-top:.25rem; max-height:14rem; overflow-y:auto; border:1px solid #dce0e8; border-radius:.5rem; background:#fff; }
 .council-ui .yc-hall-option { display:block; width:100%; padding:.5rem .75rem; text-align:left; font-size:.875rem; }
 .council-ui .yc-hall-option:hover, .council-ui .yc-hall-option.is-highlighted { background:#eef2ff; }
+
+/* Council entries select a hall and a reusable list; membership lives in the list editor. */
+.council-ui .yc-entry {max-width:960px;margin:0 auto}
+.council-ui .yc-entry-card {border:1px solid var(--yc-line);border-radius:12px;overflow:hidden}
+.council-ui .yc-entry-section {padding:28px}
+.council-ui .yc-entry-section + .yc-entry-section {border-top:1px solid var(--yc-line)}
+.council-ui .yc-entry-preview {padding:20px;background:var(--yc-soft);border-radius:10px}
+.council-ui .yc-entry-person {padding:14px 0}
+.council-ui .yc-entry-person + .yc-entry-person {border-top:1px solid var(--yc-line)}
+.council-ui .yc-entry-picker {margin-top:24px;padding-top:24px;border-top:1px solid var(--yc-line)}
+.council-ui .yc-entry-picker form {margin-top:16px}
+.council-ui .yc-entry-saved {color:var(--yc-green);font-size:14px}
+@media(max-width:600px){
+ .council-ui .yc-entry-section {padding:20px}
+ .council-ui .yc-entry-actions {width:100%;margin-top:12px}
+ .council-ui .yc-entry-actions .yc-btn {flex:1;text-align:center}
+}
