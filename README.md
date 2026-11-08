@@ -146,9 +146,14 @@ unless the author edits the URL field. Existing lists receive name-based slugs w
 ID appended during migration, preserving all numeric links.
 
 `/trust` (also `/trust/general`) shows the single global YouCongress Trust 30 and its positions
-on statements. While participation grows, rankings, related person pages, snapshots,
-exports, and MCP ranking access are restricted to admins. Public Council pages do not show
-ranking previews or links. Reasons come only from published people lists. Legacy community
+on statements. While participation grows, rankings, snapshots, exports, and MCP ranking
+access are restricted to admins. Public Council pages do not show ranking previews or links.
+Public reasons live at `/@username/trust` or `/a/<author_id>/trust`; old `/trust/people/<id>`
+links redirect permanently, and their `?tab=statements` links redirect to the person’s profile.
+“Where they stand” opens that profile. The reasons link appears only when an eligible public
+list includes a nonblank reason; private Council choices never affect its visibility.
+Profiles show a public-lists link (`/@username/lists` or `/a/<author_id>/lists`) only when
+the author has a published list. Legacy community
 pages redirect to the Trust List for admins and Council setup for other visitors. Historical
 snapshots and CSV exports remain available to admins.
 `/trust/requests` retains the evidence correction and missing-person workflow;

@@ -140,7 +140,7 @@ defmodule YouCongressWeb.TrustLiveTest do
     {:ok, _, html} = live(conn, "/trust")
     assert html =~ "Trusted Person"
     refute html =~ "Private reason"
-    {:ok, _, html} = live(conn, "/trust/people/#{person.id}")
+    {:ok, _, html} = live(conn, "/a/#{person.id}/trust")
     refute html =~ "Private reason"
 
     {:ok, list} =
@@ -149,11 +149,11 @@ defmodule YouCongressWeb.TrustLiveTest do
         members: [%{author_id: person.id, reason: "Shared reason"}]
       })
 
-    {:ok, _, html} = live(conn, "/trust/people/#{person.id}")
+    {:ok, _, html} = live(conn, "/a/#{person.id}/trust")
     assert html =~ "Shared reason"
     refute html =~ "Private reason"
     {:ok, _} = PeopleLists.delete(user, list.id)
-    {:ok, _, html} = live(conn, "/trust/people/#{person.id}")
+    {:ok, _, html} = live(conn, "/a/#{person.id}/trust")
     refute html =~ "Shared reason"
     refute html =~ "Private reason"
   end
@@ -254,7 +254,6 @@ defmodule YouCongressWeb.TrustLiveTest do
       for path <- [
             "/trust",
             "/trust/general",
-            "/trust/people/#{person.id}",
             "/trust/general/export.csv",
             "/trust/snapshots/#{snapshot.id}",
             "/trust/snapshots/#{snapshot.id}/export.csv",

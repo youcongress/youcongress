@@ -4,6 +4,25 @@ defmodule YouCongressWeb.TrustController do
 
   def public_lists(conn, %{"author_id" => id}), do: redirect(conn, to: ~p"/a/#{id}/lists")
 
+  def person(conn, %{"id" => raw} = params) do
+    author =
+      case TrustRankings.parse_id(raw) do
+        nil -> nil
+        id -> YouCongress.Repo.get(YouCongress.Authors.Author, id)
+      end
+
+    if author do
+      path =
+        if params["tab"] == "statements",
+          do: YouCongressWeb.AuthorPaths.profile(author),
+          else: YouCongressWeb.AuthorPaths.trust(author)
+
+      conn |> put_status(:moved_permanently) |> redirect(to: path)
+    else
+      send_resp(conn, 404, "This person is not available.")
+    end
+  end
+
   def simplified(conn, _params) do
     redirect(conn,
       to:

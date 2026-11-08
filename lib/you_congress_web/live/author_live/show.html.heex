@@ -65,10 +65,16 @@
         saved={@delegating?}
       />
     <% end %>
-    <.link href={~p"/a/#{@author.id}/lists"} class="text-sm text-indigo-700">Public lists</.link>
     <.link
-      :if={YouCongress.Accounts.admin?(@current_user)}
-      navigate={~p"/trust/people/#{@author.id}"}
+      :if={@has_public_lists}
+      navigate={YouCongressWeb.AuthorPaths.lists(@author)}
+      class="text-sm text-indigo-700"
+    >
+      Public lists
+    </.link>
+    <.link
+      :if={@has_public_reasons}
+      navigate={YouCongressWeb.AuthorPaths.trust(@author)}
       class="text-sm text-indigo-700"
     >
       Why people trust them

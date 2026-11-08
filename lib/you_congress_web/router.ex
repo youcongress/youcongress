@@ -46,6 +46,10 @@ defmodule YouCongressWeb.Router do
     live("/@:username/lists/:slug", TrustLive.PeopleLists, :show)
     live("/a/:author_id/lists/:slug", TrustLive.PeopleLists, :show)
     live("/a/:author_id/lists", TrustLive.PeopleLists, :index)
+    live("/@:username/lists", TrustLive.PeopleLists, :index)
+    live("/a/:id/trust", AuthorLive.Trust, :show)
+    live("/@:username/trust", AuthorLive.Trust, :show)
+    get("/trust/people/:id", TrustController, :person)
     get("/sim", SimController, :index)
     get("/home", PageController, :redirect_to_home)
     live("/explore", StatementLive.Index, :index)
@@ -110,7 +114,6 @@ defmodule YouCongressWeb.Router do
     live_session :admin,
       on_mount: [{YouCongressWeb.UserAuth, :ensure_admin}] do
       live("/trust", TrustLive.List, :index)
-      live("/trust/people/:id", TrustLive.List, :person)
       live("/trust/metrics", TrustLive.Index, :metrics)
       live("/trust/snapshots/:id", TrustLive.Index, :snapshot)
       live("/trust/:scope", TrustLive.List, :index)

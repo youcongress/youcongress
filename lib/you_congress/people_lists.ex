@@ -50,6 +50,9 @@ defmodule YouCongress.PeopleLists do
   defp preload(nil), do: nil
   defp preload(list), do: Repo.preload(list, :members)
 
+  def has_public_lists?(author_id),
+    do: Repo.exists?(from l in PeopleList, where: l.author_id == ^author_id)
+
   def for_author(author_id),
     do:
       Repo.all(

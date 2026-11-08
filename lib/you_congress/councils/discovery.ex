@@ -24,27 +24,43 @@ defmodule YouCongress.Councils.Discovery do
     Repo.all(query)
   end
 
+  defp public_reason_query do
+    from m in PeopleListMember,
+      join: l in PeopleList,
+      on: l.id == m.people_list_id,
+      join: a in Author,
+      on: a.id == l.author_id,
+      join: u in YouCongress.Accounts.User,
+      on: u.author_id == a.id,
+      where: u.role not in ["spam", "blocked", "waiting_list"],
+      where: not is_nil(m.reason) and fragment("btrim(?)", m.reason) != ""
+  end
+
+  def public_reason_author_ids(ids) do
+    public_reason_query()
+    |> where([m], m.author_id in ^ids)
+    |> select([m], m.author_id)
+    |> distinct(true)
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
+  def has_public_reasons?(author_id),
+    do: Repo.exists?(where(public_reason_query(), [m], m.author_id == ^author_id))
+
   def public_reasons(author_id) do
-    Repo.all(
-      from m in PeopleListMember,
-        join: l in PeopleList,
-        on: l.id == m.people_list_id,
-        join: a in Author,
-        on: a.id == l.author_id,
-        join: u in YouCongress.Accounts.User,
-        on: u.author_id == a.id,
-        where: m.author_id == ^author_id and u.role not in ["spam", "blocked", "waiting_list"],
-        where: not is_nil(m.reason) and m.reason != "",
-        order_by: [desc: m.updated_at, asc: m.id],
-        limit: 30,
-        select: %{
-          author: a,
-          reason: m.reason,
-          list_id: l.id,
-          list_name: l.name,
-          list_slug: l.slug
-        }
-    )
+    public_reason_query()
+    |> where([m], m.author_id == ^author_id)
+    |> order_by([m], desc: m.updated_at, asc: m.id)
+    |> limit(30)
+    |> select([m, l, a], %{
+      author: a,
+      reason: m.reason,
+      list_id: l.id,
+      list_name: l.name,
+      list_slug: l.slug
+    })
+    |> Repo.all()
   end
 
   def vote_counts(author_id) do

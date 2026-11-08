@@ -550,7 +550,7 @@
                 />
                 <.link
                   :if={YouCongress.Accounts.admin?(@current_user) && @ranks[member.author_id]}
-                  navigate={~p"/trust/people/#{member.author_id}"}
+                  navigate={~p"/trust"}
                   class="yc-link"
                 >
                   #{@ranks[member.author_id].rank} in Trust 30

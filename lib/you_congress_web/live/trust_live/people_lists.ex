@@ -105,8 +105,11 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
 
   defp index(socket, params) do
     user = socket.assigns.current_user
-    id = TrustRankings.parse_id(params["author_id"]) || (user && user.author_id)
-    owner = if id, do: Repo.get(YouCongress.Authors.Author, id)
+
+    owner =
+      if Map.has_key?(params, "author_id") || Map.has_key?(params, "username"),
+        do: list_owner(params),
+        else: user && Repo.get(YouCongress.Authors.Author, user.author_id)
 
     {:noreply,
      assign(socket,

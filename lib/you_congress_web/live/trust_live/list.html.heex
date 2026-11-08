@@ -1,176 +1,110 @@
 <div class="council-ui">
   <div class="yc-content">
-    <%= if @person do %>
-      <p class="yc-breadcrumb">
-        <.link navigate={~p"/trust"} class="yc-link">← YouCongress Trust 30</.link>
-      </p>
-      <div class="yc-between">
-        <div class="yc-person">
-          <.avatar person={@person} large />
-          <div>
-            <h1>{@person.name}</h1>
-            <p class="yc-gap-sm">{biography(@person)}</p>
-          </div>
-        </div>
-        <.link navigate={~p"/council?#{%{step: "pick", add: @person.id}}"} class="yc-btn primary">
-          {if @person.id in @selected, do: "Edit my Council", else: "+ Add to my Council"}
-        </.link>
-      </div>
-      <div class="yc-tabs">
-        <.link patch={~p"/trust/people/#{@person.id}"} class={@tab == "people" && "active"}>
-          Why people trust them
-        </.link>
-        <.link
-          patch={~p"/trust/people/#{@person.id}?#{%{tab: "statements"}}"}
-          class={@tab == "statements" && "active"}
-        >
-          Positions
-        </.link>
-      </div>
-      <div :if={@tab == "people"} class="yc-grid yc-gap">
-        <section>
-          <h2>Reasons from public lists</h2>
-          <p class="yc-help">
-            Shared by people who published a list. These lists do not reveal anyone’s private Council.
-          </p>
-          <div class="yc-stack yc-gap">
-            <div :for={entry <- @reasons} class="yc-panel">
-              <.person person={entry.author} subtitle={entry.list_name} />
-              <blockquote class="yc-note"><span>{entry.reason}</span></blockquote>
-              <.link
-                navigate={
-                  YouCongressWeb.PeopleListPaths.public_path(entry.author, entry.list_slug)
-                }
-                class="yc-link yc-gap-sm"
-              >
-                See {entry.list_name} →
-              </.link>
-            </div>
-            <div :if={@reasons == []} class="yc-panel soft">
-              <p>
-                No public reasons yet. If you choose this person, you can explain why in a public list.
-              </p>
-            </div>
-          </div>
-        </section>
-        <aside class="yc-panel">
-          <h3>Trust is a starting point.</h3>
-          <p class="yc-gap-sm">
-            Read their positions and the evidence behind them before deciding whether to add them to your Council.
-          </p>
-          <.link navigate={~p"/a/#{@person.id}"} class="yc-link yc-gap">
-            Read their profile →
-          </.link>
-          <hr class="yc-divider" />
-          <p class="yc-help">
-            Private Councils contribute to ranking totals, but their owners and reasons aren’t shown here.
-          </p>
-        </aside>
-      </div>
-    <% else %>
-      <p class="yc-eyebrow">The YouCongress Trust List</p>
-      <div class="yc-between">
-        <h1>YouCongress Trust 30</h1>
-        <.link navigate={~p"/council?#{%{step: "pick"}}"} class="yc-btn">
-          {if @current_user, do: "Edit my Council", else: "Pick my Council"}
-        </.link>
-      </div>
-      <p class="yc-intro">
-        The 30 people chosen by the most Councils on YouCongress. Discover who people trust, read their reasons, and see where they stand.
-      </p>
-      <p class="yc-help yc-gap">
-        {@result.participants} contributing Councils · Updated from saved choices
-      </p>
-      <div class="yc-tabs">
-        <.link patch={~p"/trust"} class={@tab == "people" && "active"}>People</.link><.link
-          patch={~p"/trust?#{%{tab: "statements"}}"}
-          class={@tab == "statements" && "active"}
-        >Where they stand</.link>
-      </div>
-      <section :if={@tab == "people"}>
-        <div class="yc-panel soft yc-gap">
-          <p>
-            Each person you save to your Council gets one nomination. Public and private Councils count equally.
-          </p>
-        </div>
-        <div :if={@result.rows != []} class="yc-list yc-gap yc-table-wrap">
-          <table class="yc-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Person</th>
-                <th>Councils</th>
-                <th>Your Council</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr :for={row <- @result.rows}>
-                <td>{row.rank}</td>
-                <td>
-                  <div class="yc-person">
-                    <.avatar person={%{name: row.name}} />
-                    <div>
-                      <.link navigate={~p"/trust/people/#{row.author_id}"} class="yc-name">
-                        {row.name}
-                      </.link>
-                      <p class="yc-help">
-                        <.link navigate={~p"/trust/people/#{row.author_id}"} class="yc-link">
-                          Read reasons →
-                        </.link>
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                <td><strong>{row.count}</strong></td>
-                <td>
-                  <.link
-                    :if={!@current_user || row.author_id != @current_user.author_id}
-                    navigate={~p"/council?#{%{step: "pick", add: row.author_id}}"}
-                    class={["yc-btn", row.author_id in @selected && "selected"]}
-                  >
-                    {if row.author_id in @selected, do: "✓ In Council", else: "+ Add"}
-                  </.link>
-                  <span
-                    :if={@current_user && row.author_id == @current_user.author_id}
-                    class="yc-badge"
-                  >
-                    You
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div :if={@result.rows == []} class="yc-panel yc-gap">
-          <h2>Help start the Trust List</h2>
-          <p class="yc-gap-sm">
-            Choose the people whose judgment you trust. The first saved Councils will appear here.
-          </p>
-          <.link navigate={~p"/council?#{%{step: "pick"}}"} class="yc-btn primary yc-gap">
-            Pick my Council →
-          </.link>
-        </div>
-        <p :if={length(@result.rows) < 30 && @result.rows != []} class="yc-help yc-gap">
-          {length(@result.rows)} people nominated so far. The list will grow to 30 as more Councils take part.
+    <p class="yc-eyebrow">The YouCongress Trust List</p>
+    <div class="yc-between">
+      <h1>YouCongress Trust 30</h1>
+      <.link navigate={~p"/council?#{%{step: "pick"}}"} class="yc-btn">
+        {if @current_user, do: "Edit my Council", else: "Pick my Council"}
+      </.link>
+    </div>
+    <p class="yc-intro">
+      The 30 people chosen by the most Councils on YouCongress. Discover who people trust, read their reasons, and see where they stand.
+    </p>
+    <p class="yc-help yc-gap">
+      {@result.participants} contributing Councils · Updated from saved choices
+    </p>
+    <div class="yc-tabs">
+      <.link patch={~p"/trust"} class={@tab == "people" && "active"}>People</.link><.link
+        patch={~p"/trust?#{%{tab: "statements"}}"}
+        class={@tab == "statements" && "active"}
+      >Where they stand</.link>
+    </div>
+    <section :if={@tab == "people"}>
+      <div class="yc-panel soft yc-gap">
+        <p>
+          Each person you save to your Council gets one nomination. Public and private Councils count equally.
         </p>
-        <div class="yc-panel soft yc-gap">
-          <h3>How Trust 30 is built</h3>
-          <p class="yc-gap-sm">
-            One Council per person. One nomination per chosen member. We count saved choices from eligible accounts with confirmed email or Google/X sign-in. People with the same number of nominations share a rank; names determine the order at the 30-person cutoff.
-          </p>
-          <p class="yc-gap-sm">
-            Publishing is optional. Private picks contribute to totals without exposing who chose whom. Trust 30 helps you discover people; it never replaces your own Council or changes your votes.
-          </p>
-        </div>
-      </section>
-    <% end %>
+      </div>
+      <div :if={@result.rows != []} class="yc-list yc-gap yc-table-wrap">
+        <table class="yc-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Person</th>
+              <th>Councils</th>
+              <th>Your Council</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :for={row <- @result.rows}>
+              <td>{row.rank}</td>
+              <td>
+                <div class="yc-person">
+                  <.avatar person={%{name: row.name}} />
+                  <div>
+                    <.link
+                      navigate={YouCongressWeb.AuthorPaths.profile(@people[row.author_id])}
+                      class="yc-name"
+                    >
+                      {row.name}
+                    </.link>
+                    <p :if={MapSet.member?(@reason_author_ids, row.author_id)} class="yc-help">
+                      <.link
+                        navigate={YouCongressWeb.AuthorPaths.trust(@people[row.author_id])}
+                        class="yc-link"
+                      >
+                        Read reasons →
+                      </.link>
+                    </p>
+                  </div>
+                </div>
+              </td>
+              <td><strong>{row.count}</strong></td>
+              <td>
+                <.link
+                  :if={!@current_user || row.author_id != @current_user.author_id}
+                  navigate={~p"/council?#{%{step: "pick", add: row.author_id}}"}
+                  class={["yc-btn", row.author_id in @selected && "selected"]}
+                >
+                  {if row.author_id in @selected, do: "✓ In Council", else: "+ Add"}
+                </.link>
+                <span
+                  :if={@current_user && row.author_id == @current_user.author_id}
+                  class="yc-badge"
+                >
+                  You
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div :if={@result.rows == []} class="yc-panel yc-gap">
+        <h2>Help start the Trust List</h2>
+        <p class="yc-gap-sm">
+          Choose the people whose judgment you trust. The first saved Councils will appear here.
+        </p>
+        <.link navigate={~p"/council?#{%{step: "pick"}}"} class="yc-btn primary yc-gap">
+          Pick my Council →
+        </.link>
+      </div>
+      <p :if={length(@result.rows) < 30 && @result.rows != []} class="yc-help yc-gap">
+        {length(@result.rows)} people nominated so far. The list will grow to 30 as more Councils take part.
+      </p>
+      <div class="yc-panel soft yc-gap">
+        <h3>How Trust 30 is built</h3>
+        <p class="yc-gap-sm">
+          One Council per person. One nomination per chosen member. We count saved choices from eligible accounts with confirmed email or Google/X sign-in. People with the same number of nominations share a rank; names determine the order at the 30-person cutoff.
+        </p>
+        <p class="yc-gap-sm">
+          Publishing is optional. Private picks contribute to totals without exposing who chose whom. Trust 30 helps you discover people; it never replaces your own Council or changes your votes.
+        </p>
+      </div>
+    </section>
     <section :if={@tab == "statements"}>
       <div class="yc-panel tint yc-gap">
         <p>
-          {if @person,
-            do: "Recorded positions from this person.",
-            else:
-              "These are the positions of Trust 30 members. Your vote still comes from your own Council unless you vote directly."}
+          These are the positions of Trust 30 members. Your vote still comes from your own Council unless you vote directly.
         </p>
       </div>
       <div class="yc-list yc-gap">

@@ -73,6 +73,8 @@ defmodule YouCongressWeb.AuthorLive.Show do
      |> assign(:return_to, ReturnTo.from_url(url))
      |> assign_page_meta(socket.assigns.live_action, author, name, halls)
      |> assign(:author, author)
+     |> assign(:has_public_lists, YouCongress.PeopleLists.has_public_lists?(author.id))
+     |> assign(:has_public_reasons, YouCongress.Councils.Discovery.has_public_reasons?(author.id))
      |> assign(:votes, votes)
      |> assign(:halls, halls)
      |> assign(:other_authors, other_authors)

@@ -305,7 +305,7 @@
         </div>
       <% :show -> %>
         <p class="yc-breadcrumb">
-          <.link navigate={~p"/a/#{@owner.id}/lists"} class="yc-link">
+          <.link navigate={YouCongressWeb.AuthorPaths.lists(@owner)} class="yc-link">
             ← {@owner.name}’s public lists
           </.link>
         </p>
