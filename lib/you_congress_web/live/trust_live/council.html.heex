@@ -320,15 +320,22 @@
       <p class="yc-intro">
         Publish a copy of your picks and reasons under a name you choose. Your Council stays private: public lists never show whether you use them to vote.
       </p>
-      <form id="publish-council-list" phx-submit="publish-list">
+      <form id="publish-council-list" phx-change="publish-change" phx-submit="publish-list">
         <label class="yc-label yc-gap" for="council-list-name">List name</label>
         <input
           id="council-list-name"
+          value={@publish_fields.name}
+          phx-debounce="300"
           class="yc-field"
           name="name"
           placeholder="e.g. People whose judgment I value"
           required
           maxlength="120"
+        />
+        <.list_slug_field
+          owner={@current_user.author}
+          slug={@publish_fields.slug}
+          error={@publish_slug_error}
         />
         <div class="yc-panel soft yc-gap">
           <.person
@@ -369,7 +376,10 @@
       </p>
       <div :if={@published_list} class="yc-panel soft yc-gap">
         <h3>Your public list: {@published_list.name}</h3>
-        <.link navigate={~p"/lists/#{@published_list.id}"} class="yc-link yc-gap-sm">
+        <.link
+          navigate={YouCongressWeb.PeopleListPaths.public_path(@published_list)}
+          class="yc-link yc-gap-sm"
+        >
           View and share your list →
         </.link>
       </div>

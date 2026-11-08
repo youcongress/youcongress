@@ -24,11 +24,11 @@ defmodule YouCongressWeb.PeopleListsTest do
     })
 
     [list] = PeopleLists.for_author(user.author_id)
-    assert_redirect(view, "/lists/#{list.id}")
+    assert_redirect(view, YouCongressWeb.PeopleListPaths.public_path(list))
     assert Councils.get(user.author_id) == council
     {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit")
     edit |> element("#public-list-editor") |> render_submit(%{name: "Careful researchers"})
-    {:ok, show, html} = live(conn, "/lists/#{list.id}")
+    {:ok, show, html} = live(conn, YouCongressWeb.PeopleListPaths.public_path(list))
     assert html =~ "Careful researchers"
     assert html =~ "Tests ideas carefully"
     show |> element("button[phx-click=delete]") |> render_click()
@@ -47,9 +47,9 @@ defmodule YouCongressWeb.PeopleListsTest do
         members: [%{author_id: person.id, reason: "Worth reading"}]
       })
 
-    {:ok, public, before} = live(conn, "/lists/#{list.id}")
+    {:ok, public, before} = live(conn, YouCongressWeb.PeopleListPaths.public_path(list))
     {:ok, _} = Councils.add_member(owner, person.id)
-    {:ok, _, after_html} = live(conn, "/lists/#{list.id}")
+    {:ok, _, after_html} = live(conn, YouCongressWeb.PeopleListPaths.public_path(list))
 
     public_content = fn html ->
       html |> Floki.parse_document!() |> Floki.find(".yc-content") |> Floki.raw_html()
@@ -71,7 +71,7 @@ defmodule YouCongressWeb.PeopleListsTest do
     assert {:error, {:live_redirect, %{to: path}}} =
              live(log_in_user(conn, viewer), "/lists/#{list.id}/edit")
 
-    assert path == "/lists/#{list.id}"
+    assert path == YouCongressWeb.PeopleListPaths.public_path(list)
 
     assert redirected_to(get(conn, "/a/#{owner.author_id}/council")) ==
              "/a/#{owner.author_id}/lists"
@@ -110,5 +110,80 @@ defmodule YouCongressWeb.PeopleListsTest do
     {:ok, guest, _} = live(conn, "/council?step=pick&use_list=#{list.id}")
     render_hook(guest, "restore-draft", %{draft: %{lists: [%{members: [%{author_id: old.id}]}]}})
     assert render(guest) =~ "0 selected"
+  end
+
+  test "editable slug preview, canonical username URL, and old links survive a rename", %{
+    conn: conn
+  } do
+    user = user_fixture()
+
+    {:ok, owner} =
+      YouCongress.Authors.update_author(YouCongress.Authors.get_author!(user.author_id), %{
+        username: "listwriter"
+      })
+
+    conn = log_in_user(conn, user)
+    {:ok, view, _} = live(conn, "/lists/new")
+    view |> form("#public-list-editor") |> render_change(%{name: "People I Trust"})
+    assert has_element?(view, "#public-list-slug[value=people-i-trust]")
+    assert has_element?(view, "#public-list-url-preview", "/@listwriter/lists/people-i-trust")
+
+    view
+    |> form("#public-list-editor")
+    |> render_change(%{"slug" => "my-picks", "_target" => ["slug"]})
+
+    view |> form("#public-list-editor") |> render_change(%{name: "Different title"})
+    assert has_element?(view, "#public-list-slug[value=my-picks]")
+    view |> form("#public-list-editor") |> render_submit()
+    [list] = PeopleLists.for_author(owner.id)
+    assert_redirect(view, "/@listwriter/lists/my-picks")
+    legacy = get(build_conn(), "/lists/#{list.id}")
+    assert legacy.status == 301
+    assert redirected_to(legacy, 301) == "/@listwriter/lists/my-picks"
+    {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit")
+    edit |> form("#public-list-editor") |> render_submit(%{slug: "new-picks"})
+    assert_redirect(edit, "/@listwriter/lists/new-picks")
+
+    assert {:error, {:live_redirect, %{to: "/@listwriter/lists/new-picks"}}} =
+             live(build_conn(), "/@listwriter/lists/my-picks")
+
+    {:ok, public, _} = live(build_conn(), "/@listwriter/lists/new-picks")
+    assert has_element?(public, "button[data-council-copy$='/@listwriter/lists/new-picks']")
+
+    assert {:error, {:live_redirect, %{to: "/@listwriter/lists/new-picks"}}} =
+             live(build_conn(), "/a/#{owner.id}/lists/my-picks")
+  end
+
+  test "duplicate slug errors preserve form content and authors without usernames can publish", %{
+    conn: conn
+  } do
+    user = user_fixture()
+    {:ok, existing} = PeopleLists.create(user, %{name: "Reserved", slug: "reserved", members: []})
+    {:ok, view, _} = live(log_in_user(conn, user), "/lists/new")
+    view |> form("#public-list-editor") |> render_submit(%{name: "My new list", slug: "reserved"})
+    assert has_element?(view, "[role=alert]", "List URL")
+    assert has_element?(view, "#public-list-name[value='My new list']")
+    assert has_element?(view, "#public-list-url-preview", "/a/#{user.author_id}/lists/reserved")
+    assert PeopleLists.for_author(user.author_id) == [existing]
+    view |> form("#public-list-editor") |> render_submit(%{slug: "available"})
+    assert_redirect(view, "/a/#{user.author_id}/lists/available")
+    {:ok, public, _} = live(build_conn(), "/a/#{user.author_id}/lists/available")
+    assert has_element?(public, "h1", "My new list")
+
+    {:ok, _} =
+      YouCongress.Authors.update_author(YouCongress.Authors.get_author!(user.author_id), %{
+        username: "newusername"
+      })
+
+    assert {:error, {:live_redirect, %{to: "/@newusername/lists/available"}}} =
+             live(build_conn(), "/a/#{user.author_id}/lists/available")
+  end
+
+  test "missing authors and slugs do not show another person's list", %{conn: conn} do
+    for path <- ["/@missinguser/lists/missing", "/a/invalid/lists/missing", "/a/0/lists/missing"] do
+      assert {:error, {:live_redirect, %{to: "/lists"}}} = live(conn, path)
+    end
+
+    assert get(conn, "/lists/0").status == 404
   end
 end

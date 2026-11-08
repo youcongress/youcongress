@@ -81,4 +81,83 @@ defmodule YouCongress.PeopleListsTest do
     assert {:error, :stale} = PeopleLists.update(user, list.id, attrs)
     assert PeopleLists.get(list.id) == updated
   end
+
+  test "slugs are generated, editable, unique per owner, and reserve historical URLs" do
+    user = user_fixture()
+    other = user_fixture()
+    {:ok, first} = PeopleLists.create(user, %{name: "People I Trust", members: []})
+    assert first.slug == "people-i-trust"
+    {:ok, second} = PeopleLists.create(user, %{name: first.name, members: []})
+    assert second.slug == "people-i-trust-2"
+    {:ok, _} = PeopleLists.create(other, %{name: "Other", slug: first.slug, members: []})
+
+    assert {:error, changeset} =
+             PeopleLists.create(user, %{name: "Duplicate", slug: first.slug, members: []})
+
+    assert errors_on(changeset).slug
+
+    {:ok, renamed} =
+      PeopleLists.update(user, first.id, %{
+        version: first.version,
+        name: "Renamed",
+        slug: "clear-thinkers",
+        members: []
+      })
+
+    assert PeopleLists.get_by_slug(user.author_id, first.slug).id == first.id
+    assert PeopleLists.get_by_slug(user.author_id, renamed.slug).id == first.id
+
+    assert {:error, changeset} =
+             PeopleLists.update(user, second.id, %{
+               version: second.version,
+               name: second.name,
+               slug: first.slug,
+               members: []
+             })
+
+    assert errors_on(changeset).slug
+    assert PeopleLists.get(second.id) == second
+
+    {:ok, reverted} =
+      PeopleLists.update(user, renamed.id, %{
+        version: renamed.version,
+        name: "Again",
+        slug: first.slug,
+        members: []
+      })
+
+    assert reverted.slug == first.slug
+    assert PeopleLists.get_by_slug(user.author_id, renamed.slug).id == first.id
+  end
+
+  test "invalid slugs fail without changing the list and changing only the name keeps its URL" do
+    user = user_fixture()
+    {:ok, list} = PeopleLists.create(user, %{name: "Original", slug: "  My-List  ", members: []})
+    assert list.slug == "my-list"
+
+    for slug <- [
+          "",
+          "../escape",
+          "two words",
+          "two--hyphens",
+          "trailing-",
+          String.duplicate("a", 81)
+        ] do
+      assert {:error, changeset} =
+               PeopleLists.update(user, list.id, %{
+                 version: list.version,
+                 name: "Changed",
+                 slug: slug,
+                 members: []
+               })
+
+      assert errors_on(changeset).slug
+      assert PeopleLists.get(list.id) == list
+    end
+
+    {:ok, updated} =
+      PeopleLists.update(user, list.id, %{version: list.version, name: "New name", members: []})
+
+    assert updated.slug == list.slug
+  end
 end

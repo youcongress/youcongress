@@ -96,11 +96,14 @@ defmodule YouCongressWeb.TrustLiveTest do
     council = Councils.get(user.author_id)
     assert length(hd(council.lists).members) == 6
     refute council.published
-    view |> element("#publish-council-list") |> render_submit(%{name: "Careful thinkers"})
+    view |> form("#publish-council-list") |> render_change(%{name: "Careful thinkers"})
+    assert has_element?(view, "#public-list-slug[value=careful-thinkers]")
+    view |> form("#publish-council-list") |> render_submit(%{slug: "trusted-voices"})
     assert render(view) =~ "Who would you invite?"
     refute Councils.public(user.author_id)
     [list] = PeopleLists.for_author(user.author_id)
-    {:ok, public, html} = live(build_conn(), "/lists/#{list.id}")
+    assert list.slug == "trusted-voices"
+    {:ok, public, html} = live(build_conn(), YouCongressWeb.PeopleListPaths.public_path(list))
     assert html =~ "Thoughtful judgment"
     refute has_element?(public, "#save-council")
     before = Councils.get(user.author_id)

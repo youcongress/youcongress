@@ -23,6 +23,9 @@ defmodule YouCongressWeb.TrustLive.Council do
        draft: draft,
        source_list_name: nil,
        published_list: nil,
+       publish_fields: %{name: "", slug: ""},
+       publish_slug_custom: false,
+       publish_slug_error: nil,
        step: "landing",
        query: "",
        matches: [],
@@ -266,8 +269,13 @@ defmodule YouCongressWeb.TrustLive.Council do
     end
   end
 
-  def handle_event("publish-list", %{"name" => name}, %{assigns: %{current_user: user}} = socket)
+  def handle_event("publish-change", params, socket) do
+    {:noreply, update_publish_fields(socket, params)}
+  end
+
+  def handle_event("publish-list", params, %{assigns: %{current_user: user}} = socket)
       when not is_nil(user) do
+    socket = update_publish_fields(socket, params)
     {:ok, council} = Councils.ensure(user.author_id)
 
     members =
@@ -276,7 +284,7 @@ defmodule YouCongressWeb.TrustLive.Council do
       |> Map.fetch!(:members)
       |> Enum.map(&Map.take(&1, [:author_id, :reason]))
 
-    case PeopleLists.create(user, %{name: name, members: members}) do
+    case PeopleLists.create(user, Map.put(socket.assigns.publish_fields, :members, members)) do
       {:ok, list} ->
         {:noreply,
          socket
@@ -284,8 +292,14 @@ defmodule YouCongressWeb.TrustLive.Council do
          |> put_flash(:info, "#{list.name} is public. Your Council stays private.")
          |> push_patch(to: ~p"/council?#{%{step: "invite"}}")}
 
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply,
+         socket
+         |> assign(publish_slug_error: YouCongressWeb.PeopleListPaths.slug_error(changeset))
+         |> put_flash(:error, "Check your list name and URL before publishing.")}
+
       _ ->
-        {:noreply, put_flash(socket, :error, "Give your list a name, up to 120 characters.")}
+        {:noreply, put_flash(socket, :error, "Could not publish this list. Please try again.")}
     end
   end
 
@@ -367,6 +381,20 @@ defmodule YouCongressWeb.TrustLive.Council do
   end
 
   def handle_event(_, _, socket), do: {:noreply, socket}
+
+  defp update_publish_fields(%{assigns: %{current_user: nil}} = socket, _params), do: socket
+
+  defp update_publish_fields(socket, params) do
+    {fields, custom?} =
+      YouCongressWeb.PeopleListPaths.edit_fields(
+        socket.assigns.publish_fields,
+        params,
+        socket.assigns.publish_slug_custom,
+        socket.assigns.current_user.author_id
+      )
+
+    assign(socket, publish_fields: fields, publish_slug_custom: custom?, publish_slug_error: nil)
+  end
 
   defp requested_step("why", _default), do: "pick"
   defp requested_step(nil, default), do: default

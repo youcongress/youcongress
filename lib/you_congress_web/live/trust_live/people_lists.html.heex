@@ -25,12 +25,17 @@
         <div class="yc-stack yc-gap">
           <article :for={list <- @lists} class="yc-panel yc-between">
             <div>
-              <.link navigate={~p"/lists/#{list.id}"} class="yc-statement-link">
+              <.link
+                navigate={PeopleListPaths.public_path(@owner, list.slug)}
+                class="yc-statement-link"
+              >
                 {list.name}
               </.link>
               <p class="yc-help">{people_count(length(list.members))} · Public list</p>
             </div>
-            <.link navigate={~p"/lists/#{list.id}"} class="yc-link">View list →</.link>
+            <.link navigate={PeopleListPaths.public_path(@owner, list.slug)} class="yc-link">
+              View list →
+            </.link>
           </article>
           <div :if={@lists == []} class="yc-panel soft">
             <h3>{if @own, do: "Create your first list", else: "No public lists yet"}</h3>
@@ -70,6 +75,7 @@
                 maxlength="120"
                 phx-debounce="300"
               />
+              <.list_slug_field owner={@owner} slug={@draft.slug} error={@slug_error} />
               <div class="yc-stack yc-gap">
                 <div :for={member <- @draft.members} class="yc-panel">
                   <div class="yc-between">
@@ -101,7 +107,11 @@
               </div>
               <div class="yc-actions">
                 <.link
-                  navigate={if @list, do: ~p"/lists/#{@list.id}", else: ~p"/lists"}
+                  navigate={
+                    if @list,
+                      do: PeopleListPaths.public_path(@owner, @list.slug),
+                      else: ~p"/lists"
+                  }
                   class="yc-link muted"
                 >
                   Cancel
@@ -153,7 +163,12 @@
         <p class="yc-eyebrow">Public people list</p>
         <div class="yc-between">
           <h1>{@list.name}</h1>
-          <button class="yc-btn" data-council-copy={public_url(@list.id)}>Share list</button>
+          <button
+            class="yc-btn"
+            data-council-copy={PeopleListPaths.public_url(@owner, @list.slug)}
+          >
+            Share list
+          </button>
         </div>
         <div class="yc-row yc-gap">
           <.avatar person={@owner} />

@@ -122,6 +122,14 @@ the other. Public pages and the MCP tool reveal no association with a private Co
 saving. Public list membership does not count as a Council nomination. Previously published
 Councils are migrated into named public lists, and all Councils become private.
 
+Public list URLs use `/@username/lists/<slug>`, with `/a/<author_id>/lists/<slug>` as
+an automatic fallback for authors without a username. Slugs are suggested from the list
+name and editable during creation, Council publishing, and later edits. They are unique
+per author; previous slugs remain reserved for their list and redirect to its current URL.
+Legacy `/lists/<id>` links redirect permanently. Renaming a list does not change its slug
+unless the author edits the URL field. Existing lists receive name-based slugs with their
+ID appended during migration, preserving all numeric links.
+
 `/trust` (also `/trust/general`) shows the single global YouCongress Trust 30 and its positions
 on statements. While participation grows, rankings, related person pages, snapshots,
 exports, and MCP ranking access are restricted to admins. Public Council pages do not show

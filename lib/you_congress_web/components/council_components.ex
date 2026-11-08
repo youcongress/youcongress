@@ -161,6 +161,42 @@ defmodule YouCongressWeb.CouncilComponents do
     """
   end
 
+  attr :owner, :map, required: true
+  attr :slug, :string, required: true
+  attr :error, :string, default: nil
+
+  def list_slug_field(assigns) do
+    ~H"""
+    <label class="yc-label yc-gap" for="public-list-slug">List URL</label>
+    <input
+      id="public-list-slug"
+      class="yc-field"
+      name="slug"
+      value={@slug}
+      placeholder="e.g. people-i-trust"
+      required
+      maxlength="80"
+      phx-debounce="300"
+      aria-invalid={to_string(!is_nil(@error))}
+      aria-describedby="public-list-slug-help"
+    />
+    <p id="public-list-slug-help" class="yc-help">
+      Use lowercase letters, numbers, and hyphens. Old links keep working if you change this.
+    </p>
+    <p :if={@error} class="text-sm text-red-700 mt-2" role="alert">List URL: {@error}</p>
+    <p id="public-list-url-preview" class="yc-help yc-break">
+      {YouCongressWeb.PeopleListPaths.public_url(
+        @owner,
+        if(@slug == "", do: "your-list", else: @slug)
+      )}
+    </p>
+    <p :if={@owner.username in [nil, ""]} class="yc-help">
+      <.link navigate={~p"/settings"} class="yc-link">Choose a username</.link>
+      to use /@username/lists/{if @slug == "", do: "your-list", else: @slug}.
+    </p>
+    """
+  end
+
   def people_count(1), do: "1 person"
   def people_count(count), do: "#{count} people"
 

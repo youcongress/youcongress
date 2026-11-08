@@ -37,7 +37,12 @@
             <div :for={entry <- @reasons} class="yc-panel">
               <.person person={entry.author} subtitle={entry.list_name} />
               <blockquote class="yc-note"><span>{entry.reason}</span></blockquote>
-              <.link navigate={~p"/lists/#{entry.list_id}"} class="yc-link yc-gap-sm">
+              <.link
+                navigate={
+                  YouCongressWeb.PeopleListPaths.public_path(entry.author, entry.list_slug)
+                }
+                class="yc-link yc-gap-sm"
+              >
                 See {entry.list_name} →
               </.link>
             </div>

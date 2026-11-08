@@ -37,7 +37,13 @@ defmodule YouCongress.Councils.Discovery do
         where: not is_nil(m.reason) and m.reason != "",
         order_by: [desc: m.updated_at, asc: m.id],
         limit: 30,
-        select: %{author: a, reason: m.reason, list_id: l.id, list_name: l.name}
+        select: %{
+          author: a,
+          reason: m.reason,
+          list_id: l.id,
+          list_name: l.name,
+          list_slug: l.slug
+        }
     )
   end
 

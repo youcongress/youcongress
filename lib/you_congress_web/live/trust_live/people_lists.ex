@@ -3,6 +3,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
   import YouCongressWeb.CouncilComponents
   alias YouCongress.{Repo, PeopleLists, Councils, TrustRankings}
   alias YouCongress.Councils.Discovery
+  alias YouCongressWeb.PeopleListPaths
 
   @impl true
   def mount(_, session, socket) do
@@ -19,7 +20,9 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
        matches: [],
        query: "",
        own: false,
-       draft: %{name: "", version: 1, members: []}
+       slug_custom: false,
+       slug_error: nil,
+       draft: %{name: "", slug: "", version: 1, members: []}
      )}
   end
 
@@ -33,12 +36,14 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
 
       :new when not is_nil(user) ->
         members = if params["from"] == "council", do: council_members(user), else: []
-        draft = %{name: "", version: 1, members: members}
+        draft = %{name: "", slug: "", version: 1, members: members}
 
         {:noreply,
          socket
          |> assign(
            draft: draft,
+           slug_custom: false,
+           slug_error: nil,
            list: nil,
            owner: user.author,
            own: true,
@@ -46,12 +51,41 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
          )
          |> load_people()}
 
-      action when action in [:show, :edit] ->
-        load_list(socket, params["id"])
+      :show ->
+        show_list(socket, params)
+
+      :edit ->
+        load_list(socket, PeopleLists.get(params["id"]))
 
       _ ->
         {:noreply,
          push_navigate(socket, to: YouCongressWeb.ReturnTo.log_in_path(nil, ~p"/lists/new"))}
+    end
+  end
+
+  defp show_list(socket, params) do
+    owner = list_owner(params)
+    list = if owner, do: PeopleLists.get_by_slug(owner.id, params["slug"])
+
+    requested =
+      if params["username"],
+        do: "/@#{params["username"]}/lists/#{params["slug"]}",
+        else: "/a/#{params["author_id"]}/lists/#{params["slug"]}"
+
+    if list && requested != PeopleListPaths.public_path(owner, list.slug) do
+      {:noreply, push_navigate(socket, to: PeopleListPaths.public_path(owner, list.slug))}
+    else
+      load_list(socket, list)
+    end
+  end
+
+  defp list_owner(%{"username" => username}),
+    do: YouCongress.Authors.get_author_by(username: username)
+
+  defp list_owner(%{"author_id" => raw}) do
+    case TrustRankings.parse_id(raw) do
+      nil -> nil
+      id -> Repo.get(YouCongress.Authors.Author, id)
     end
   end
 
@@ -69,8 +103,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
      )}
   end
 
-  defp load_list(socket, id) do
-    list = PeopleLists.get(id)
+  defp load_list(socket, list) do
     user = socket.assigns.current_user
     own = list && user && list.author_id == user.author_id
 
@@ -82,11 +115,12 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
          |> push_navigate(to: ~p"/lists")}
 
       socket.assigns.live_action == :edit && !own ->
-        {:noreply, push_navigate(socket, to: ~p"/lists/#{list.id}")}
+        {:noreply, push_navigate(socket, to: PeopleListPaths.public_path(list))}
 
       true ->
         draft = %{
           name: list.name,
+          slug: list.slug,
           version: list.version,
           members: Enum.map(list.members, &Map.take(&1, [:author_id, :reason]))
         }
@@ -98,6 +132,8 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
            owner: Repo.get!(YouCongress.Authors.Author, list.author_id),
            own: own,
            draft: draft,
+           slug_custom: true,
+           slug_error: nil,
            page_title: list.name
          )
          |> load_people()}
@@ -165,11 +201,17 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
         {:noreply,
          socket
          |> put_flash(:info, "Public list saved. Your private Council is unchanged.")
-         |> push_navigate(to: ~p"/lists/#{list.id}")}
+         |> push_navigate(to: PeopleListPaths.public_path(list))}
 
       {:error, :stale} ->
         {:noreply,
          put_flash(socket, :error, "This list changed in another window. Reload before saving.")}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply,
+         socket
+         |> assign(slug_error: PeopleListPaths.slug_error(changeset))
+         |> put_flash(:error, "Check your list name, URL, and reasons before saving.")}
 
       _ ->
         {:noreply,
@@ -206,7 +248,15 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
         &Map.put(&1, :reason, Map.get(reasons, to_string(&1.author_id), &1[:reason]))
       )
 
-    assign(socket, draft: %{draft | name: params["name"] || draft.name, members: members})
+    {draft, custom?} =
+      PeopleListPaths.edit_fields(
+        draft,
+        params,
+        socket.assigns.slug_custom,
+        socket.assigns.owner.id
+      )
+
+    assign(socket, draft: %{draft | members: members}, slug_custom: custom?, slug_error: nil)
   end
 
   defp load_people(socket),
@@ -223,6 +273,4 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
     |> Map.fetch!(:members)
     |> Enum.map(&Map.take(&1, [:author_id, :reason]))
   end
-
-  def public_url(id), do: YouCongressWeb.Endpoint.url() <> "/lists/#{id}"
 end

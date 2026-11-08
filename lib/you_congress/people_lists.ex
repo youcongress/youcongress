@@ -13,6 +13,40 @@ defmodule YouCongress.PeopleLists do
     end
   end
 
+  def get_by_slug(author_id, slug) when is_integer(author_id) and is_binary(slug) do
+    Repo.one(
+      from l in PeopleList,
+        join: s in "people_list_slugs",
+        on: s.people_list_id == l.id,
+        where: s.author_id == ^author_id and s.slug == ^slug
+    )
+    |> preload()
+  end
+
+  def get_by_slug(_, _), do: nil
+
+  def slugify(name) do
+    slug =
+      name
+      |> to_string()
+      |> Slug.slugify()
+      |> to_string()
+      |> String.slice(0, 70)
+      |> String.trim_trailing("-")
+
+    if slug == "", do: "list", else: slug
+  end
+
+  def suggest_slug(author_id, name), do: available_slug(author_id, slugify(name), 1)
+
+  defp available_slug(author_id, base, suffix) do
+    slug = if suffix == 1, do: base, else: "#{base}-#{suffix}"
+
+    if Repo.exists?(
+         from s in "people_list_slugs", where: s.author_id == ^author_id and s.slug == ^slug
+       ), do: available_slug(author_id, base, suffix + 1), else: slug
+  end
+
   defp preload(nil), do: nil
   defp preload(list), do: Repo.preload(list, :members)
 
@@ -57,6 +91,7 @@ defmodule YouCongress.PeopleLists do
         PeopleList.changeset(list, %{
           author_id: user.author_id,
           name: Councils.value(attrs, :name),
+          slug: list_slug(user, list, attrs),
           version: if(id, do: list.version + 1, else: 1)
         })
 
@@ -65,6 +100,8 @@ defmodule YouCongress.PeopleLists do
           {:ok, list} -> list
           {:error, error} -> Repo.rollback(error)
         end
+
+      reserve_slug!(list, changeset)
 
       Repo.delete_all(from m in PeopleListMember, where: m.people_list_id == ^list.id)
 
@@ -86,6 +123,38 @@ defmodule YouCongress.PeopleLists do
 
       get(list.id)
     end)
+  end
+
+  defp list_slug(user, list, attrs) do
+    Councils.value(attrs, :slug) || list.slug ||
+      suggest_slug(user.author_id, Councils.value(attrs, :name))
+  end
+
+  defp reserve_slug!(list, changeset) do
+    Repo.insert_all(
+      "people_list_slugs",
+      [
+        %{author_id: list.author_id, people_list_id: list.id, slug: list.slug}
+      ],
+      on_conflict: :nothing,
+      conflict_target: [:author_id, :slug]
+    )
+
+    claimed_by =
+      Repo.one(
+        from s in "people_list_slugs",
+          where: s.author_id == ^list.author_id and s.slug == ^list.slug,
+          select: s.people_list_id
+      )
+
+    if claimed_by != list.id do
+      changeset
+      |> Ecto.Changeset.add_error(
+        :slug,
+        "is already used by another list or one of its old links"
+      )
+      |> Repo.rollback()
+    end
   end
 
   defp owned_list!(_user, nil), do: %PeopleList{}
