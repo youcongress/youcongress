@@ -905,3 +905,6 @@
 .council-ui .yc-order-menu-content a.yc-link { color: var(--yc-purple); }
 .council-ui details > summary { cursor: pointer; }
 .council-ui .yc-selected-list { background: var(--yc-tint); }
+.council-ui .yc-order-avatars { display: flex; gap: 6px; margin-top: 10px; }
+.council-ui .yc-order-avatars a { display: inline-flex; border-radius: 50%; }
+.council-ui .yc-order-avatars .yc-avatar { width: 32px; height: 32px; font-size: 11px; }

@@ -618,6 +618,20 @@
                           length(list.members)
                         )}
                       </p>
+                      <div
+                        :if={list.members != []}
+                        class="yc-order-avatars"
+                        aria-label="People in this list"
+                      >
+                        <.link
+                          :for={member <- Enum.take(list.members, 5)}
+                          navigate={~p"/a/#{member.author_id}"}
+                          title={@people[member.author_id].name}
+                          aria-label={@people[member.author_id].name}
+                        >
+                          <.avatar person={@people[member.author_id]} />
+                        </.link>
+                      </div>
                       <p :if={list.members == []} class="yc-help">
                         {if list.fallback,
                           do: "Choose people to get started",
