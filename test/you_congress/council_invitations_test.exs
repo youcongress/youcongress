@@ -56,18 +56,42 @@ defmodule YouCongress.CouncilInvitationsTest do
     assert length(Invitations.history(user)) == 20
   end
 
-  test "referrals are signed, do not reveal private Councils, and cannot be reassigned" do
+  test "short author-ID referrals do not reveal private Councils and cannot be reassigned" do
     inviter = user_fixture()
     other = user_fixture()
     user = user_fixture()
-    token = Invitations.token(inviter.author_id)
-    assert Invitations.referrer(token).id == inviter.author_id
-    assert Invitations.referrer(token <> "tampered") == nil
-    assert :ok = Invitations.accept(user, token)
+    url = Invitations.url(inviter.author_id)
+    assert URI.parse(url).path == "/council"
+    assert URI.parse(url).query == "ref=#{inviter.author_id}"
+    ref = to_string(inviter.author_id)
+    assert Invitations.referrer(ref).id == inviter.author_id
+    assert :ok = Invitations.accept(user, ref)
     assert Councils.get(user.author_id).invited_by_id == inviter.author_id
-    assert :ok = Invitations.accept(user, Invitations.token(other.author_id))
+    assert :ok = Invitations.accept(user, to_string(other.author_id))
     assert Councils.get(user.author_id).invited_by_id == inviter.author_id
     assert Invitations.joined(inviter.author_id) == 1
     assert Councils.public(inviter.author_id) == nil
+  end
+
+  test "previously shared token links still resolve, but altered tokens do not" do
+    inviter = user_fixture()
+    token = Phoenix.Token.sign(YouCongressWeb.Endpoint, "council-invite", inviter.author_id)
+    assert Invitations.referrer(token).id == inviter.author_id
+    assert Invitations.referrer(token <> "tampered") == nil
+  end
+
+  test "invalid, unknown, blocked, and self referrals cannot assign an inviter" do
+    user = user_fixture()
+    {:ok, _} = Councils.ensure(user.author_id)
+
+    for ref <- [nil, "", "0", "-1", "123abc", "999999999999999999999999", "9223372036854775807"] do
+      assert Invitations.referrer(ref) == nil
+      assert :ok = Invitations.accept(user, ref)
+    end
+
+    assert :ok = Invitations.accept(user, to_string(user.author_id))
+    assert Councils.get(user.author_id).invited_by_id == nil
+    blocked = user_fixture() |> Ecto.Changeset.change(role: "blocked") |> Repo.update!()
+    assert Invitations.referrer(to_string(blocked.author_id)) == nil
   end
 end

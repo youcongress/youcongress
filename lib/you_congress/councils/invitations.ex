@@ -1,19 +1,16 @@
 defmodule YouCongress.Councils.Invitations do
-  @moduledoc "Opt-in Council invitations, private delivery history, and signed referrals."
+  @moduledoc "Opt-in Council invitations, private delivery history, and author-ID referrals."
   import Ecto.Query
   alias YouCongress.{Repo, Councils}
   alias YouCongress.Accounts.{User, Permissions}
   alias YouCongress.Councils.{Council, Invitation}
   alias YouCongressWeb.Endpoint
 
-  def token(author_id), do: Phoenix.Token.sign(Endpoint, "council-invite", author_id)
-
   def url(author_id),
-    do: Endpoint.url() <> "/council?" <> URI.encode_query(%{ref: token(author_id)})
+    do: Endpoint.url() <> "/council?" <> URI.encode_query(%{ref: author_id})
 
-  def referrer(token) when is_binary(token) do
-    with {:ok, id} when is_integer(id) <-
-           Phoenix.Token.verify(Endpoint, "council-invite", token, max_age: 31_536_000),
+  def referrer(ref) when is_binary(ref) do
+    with {:ok, id} <- referral_id(ref),
          %User{} = user <- Repo.get_by(User, author_id: id),
          false <- Permissions.blocked?(user) do
       Repo.get(YouCongress.Authors.Author, id)
@@ -24,8 +21,16 @@ defmodule YouCongress.Councils.Invitations do
 
   def referrer(_), do: nil
 
-  def accept(user, token) do
-    case referrer(token) do
+  defp referral_id(ref) do
+    case Integer.parse(ref) do
+      {id, ""} when id > 0 and id <= 9_223_372_036_854_775_807 -> {:ok, id}
+      # Previously shared token links continue to work.
+      _ -> Phoenix.Token.verify(Endpoint, "council-invite", ref, max_age: 31_536_000)
+    end
+  end
+
+  def accept(user, ref) do
+    case referrer(ref) do
       %{id: id} when id != user.author_id ->
         {:ok, council} = Councils.ensure(user.author_id)
 

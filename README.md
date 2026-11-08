@@ -126,7 +126,7 @@ pages redirect to this list. Historical snapshots and CSV exports remain availab
 `/trust/requests` retains the evidence correction and missing-person workflow;
 `/trust/updates` retains private updates.
 
-The invite step provides a signed referral link, sharing controls, and optional email
+The invite step provides a short author-ID referral link (`/council?ref=123`), sharing controls, and optional email
 invitations (up to 10 at once and 20 per day, with duplicate recipients suppressed).
 Development and test use local mail adapters; they do not send external mail.
 
