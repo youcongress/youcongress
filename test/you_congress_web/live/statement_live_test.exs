@@ -653,13 +653,17 @@ defmodule YouCongressWeb.StatementLiveTest do
       refute html =~ "Biased? Add more"
     end
 
-    test "header Profile sign-in link keeps the statement page as return_to", %{
+    test "header Sign up link keeps the statement page as return_to", %{
       conn: conn,
       statement: statement
     } do
-      {:ok, _show_live, html} = live(conn, ~p"/p/#{statement.slug}")
+      {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}")
 
-      assert html =~ ~s(href="/log_in?return_to=%2Fp%2F#{statement.slug}")
+      assert has_element?(
+               show_live,
+               "nav[aria-label='Main navigation'] a[href='/sign_up?return_to=%2Fp%2F#{statement.slug}']",
+               "Sign up"
+             )
     end
 
     test "shows credit purchase message when AI quote action needs permission", %{

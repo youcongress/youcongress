@@ -82,6 +82,19 @@ defmodule YouCongress.PendingActionsTest do
     refute Repo.get_by(PendingRegistrationAction, user_id: user.id)
   end
 
+  test "accepts a Council invitation after confirmation without importing a guest Council" do
+    inviter = user_fixture()
+    user = user_fixture(%{}, nil, false)
+    assert :ok = PendingActions.process(user, %{"council_ref" => to_string(inviter.author_id)})
+    assert is_nil(YouCongress.Councils.get(user.author_id))
+    assert {:ok, confirmed} = Accounts.confirm_user_email(user)
+    council = YouCongress.Councils.get(confirmed.author_id)
+    assert council.invited_by_id == inviter.author_id
+    assert Enum.all?(council.lists, &(&1.members == []))
+    assert :ok = PendingActions.process_staged(confirmed)
+    assert YouCongress.Councils.get(confirmed.author_id).invited_by_id == inviter.author_id
+  end
+
   defp vote_payload(statement_id, answer) do
     %{
       "delegate_ids" => [],

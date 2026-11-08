@@ -642,20 +642,8 @@
 .council-ui button.yc-avatar {
   border:0;
   padding:0}
-.council-ui .yc-mobile-continue {
-  display:none}
 @media(max-width:640px) {
-  .council-ui .yc-mobile-continue {
-  display:flex;
-  margin-top:22px;
-  padding:13px;
-  background:var(--yc-tint);
-  border-radius:9px;
-  gap:12px;
-  align-items:center;
-  justify-content:space-between;
-  font-size:13px}
-.council-ui .yc-statement-grid>aside {
+  .council-ui .yc-statement-grid>aside {
   order:-1}
 }
 /* App integration: content uses the shared YouCongress header and footer. */
@@ -715,8 +703,6 @@
   overflow-wrap:anywhere}
 .council-ui .yc-table-wrap {
   overflow-x:auto}
-.council-ui .yc-mobile-continue {
-  display:none}
 @media(max-width:640px) {
   .council-ui .yc-content {
   padding:28px 0 40px}
@@ -724,14 +710,6 @@
   gap:6px}
 .council-ui .yc-step:not(:last-child):after {
   display:none}
-.council-ui .yc-mobile-continue {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:12px;
-  background:var(--yc-tint);
-  border-radius:9px;
-  margin-top:20px}
 .council-ui .yc-copy-row {
   flex-wrap:wrap}
 .council-ui .yc-copy-row .yc-field {
@@ -768,7 +746,6 @@
 .council-ui form.phx-submit-loading .yc-save-idle { display: none; }
 
 /* Ordered topic Councils. */
-.council-ui .yc-topic-tabs { display:flex; flex-wrap:wrap; gap:.5rem; }
 .council-ui .yc-topic-row { display:grid; grid-template-columns:2rem minmax(12rem,1fr) 6rem auto; gap:1rem; align-items:center; }
 .council-ui .yc-topic-number { color:#5145e8; font-size:1.25rem; }
 .council-ui .yc-btn:disabled { opacity:.35; cursor:default; }
@@ -837,3 +814,94 @@
 }
 
 .council-ui .yc-council-tabs {flex-wrap:wrap;column-gap:24px;row-gap:0}
+
+/* Introduction for visitors choosing their first Council. */
+.council-ui .yc-welcome-hero {
+  display:grid;
+  grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);
+  align-items:center;
+  gap:64px;
+  padding:20px 0 48px}
+.council-ui .yc-welcome h1 {
+  max-width:650px;
+  font-size:clamp(32px,3.6vw,48px);
+  line-height:1.14;
+  letter-spacing:-1.5px}
+.council-ui .yc-welcome h1 span {
+  color:var(--yc-purple)}
+.council-ui .yc-welcome .yc-intro {
+  margin-top:24px;
+  font-size:18px}
+.council-ui .yc-welcome-benefits {
+  padding:28px;
+  border:1px solid var(--yc-line);
+  border-radius:20px;
+  background:var(--yc-soft)}
+.council-ui .yc-welcome-benefits h2 {
+  font-size:20px}
+.council-ui .yc-welcome-benefit {
+  padding-top:24px}
+.council-ui .yc-welcome-benefit + .yc-welcome-benefit {
+  margin-top:24px;
+  border-top:1px solid var(--yc-line)}
+.council-ui .yc-welcome-benefit h3 {
+  margin:14px 0 8px}
+.council-ui .yc-welcome-benefit .yc-between > span:first-child,
+.council-ui .yc-welcome-how .yc-panel > span,
+.council-ui .yc-welcome-privacy > span {
+  color:var(--yc-purple);
+  flex-shrink:0}
+.council-ui .yc-welcome-how {
+  border-top:1px solid var(--yc-line);
+  padding-top:40px;
+  scroll-margin-top:24px}
+.council-ui .yc-welcome-how .yc-panel h3 {
+  margin:16px 0 10px}
+.council-ui .yc-welcome-privacy {
+  display:flex;
+  align-items:center;
+  gap:20px;
+  margin-top:32px;
+  padding:28px;
+  border-radius:14px;
+  background:var(--yc-tint)}
+.council-ui .yc-welcome-privacy > div {
+  flex:1}
+.council-ui .yc-welcome-privacy h2 {
+  font-size:18px;
+  margin-bottom:8px}
+.council-ui .yc-welcome-privacy .yc-btn {
+  flex-shrink:0}
+@media(max-width:900px) {
+  .council-ui .yc-welcome-hero {
+    gap:28px}
+  .council-ui .yc-welcome-benefits {
+    padding:22px}
+  .council-ui .yc-welcome-privacy {
+    flex-wrap:wrap}
+}
+@media(max-width:700px) {
+  .council-ui .yc-welcome-hero {
+    grid-template-columns:1fr;
+    padding-top:0;
+    padding-bottom:32px}
+  .council-ui .yc-welcome h1 {
+    letter-spacing:-.9px}
+  .council-ui .yc-welcome .yc-intro {
+    font-size:16px}
+  .council-ui .yc-welcome-how {
+    padding-top:28px}
+  .council-ui .yc-welcome-privacy {
+    padding:22px;
+    align-items:flex-start}
+  .council-ui .yc-welcome-privacy > div {
+    flex-basis:calc(100% - 44px)}
+}
+
+.council-ui #council-candidates { max-height: 540px; overflow-y: auto; }
+.council-ui #council-people-picker .yc-stack { max-height: 600px; overflow-y: auto; }
+.council-ui #council-people-picker button { flex-shrink: 0; white-space: nowrap; }
+.council-ui .yc-order-menu-content { display: flex; flex-direction: column; gap: 12px; }
+.council-ui .yc-order-menu-content a.yc-link { color: var(--yc-purple); }
+.council-ui details > summary { cursor: pointer; }
+.council-ui .yc-selected-list { background: var(--yc-tint); }

@@ -7,6 +7,7 @@ defmodule YouCongress.Councils.Council do
     field :author_id, :id
     field :invited_by_id, :id
     field :version, :integer, default: 1
+    field :onboarding_completed, :boolean, default: false
     field :published, :boolean, default: false
     field :digest, :string, default: "off"
     has_many :lists, YouCongress.Councils.List, preload_order: [asc: :position]

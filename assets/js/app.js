@@ -30,12 +30,12 @@ import ReconsiderMotionAd from "./hooks/reconsider_motion_ad"
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 
 import ListAutosave from "./hooks/list_autosave"
-import CouncilDraft from "./hooks/council_draft"
+import CouncilUI from "./hooks/council_ui"
 import CouncilBookmark from "./hooks/council_bookmark"
 
 let Hooks = {
   ListAutosave: ListAutosave,
-  CouncilDraft: CouncilDraft,
+  CouncilUI: CouncilUI,
   CouncilBookmark: CouncilBookmark,
   QuoteMenu: QuoteMenu,
   Turnstile: Turnstile,
@@ -49,27 +49,30 @@ let liveSocket = new LiveSocket("/live", Socket, {
   hooks: Hooks
 })
 
-function useProfileImageFallback(image) {
-  const fallbackSrc = image.dataset.fallbackSrc
-
-  if (!fallbackSrc || image.dataset.fallbackApplied === "true") return
-
-  image.dataset.fallbackApplied = "true"
-  image.src = fallbackSrc
-}
-
-// Image error events do not bubble, so listen during capture. This also covers
-// profile images added later by LiveView patches.
+// Keep initials visible underneath the photo when a profile image cannot load.
+// Capture also handles images inserted later by LiveView patches.
 document.addEventListener("error", (event) => {
-  if (event.target instanceof HTMLImageElement && event.target.matches("[data-fallback-src]")) {
-    useProfileImageFallback(event.target)
+  if (event.target instanceof HTMLImageElement && event.target.matches("[data-person-image]")) {
+    event.target.classList.add("invisible")
   }
 }, true)
 
-// A cached image may fail before this deferred script runs.
-document.querySelectorAll("img[data-fallback-src]").forEach((image) => {
-  if (image.complete && image.naturalWidth === 0) useProfileImageFallback(image)
-})
+document.addEventListener("load", (event) => {
+  if (event.target instanceof HTMLImageElement && event.target.matches("[data-person-image]")) {
+    event.target.classList.remove("invisible")
+  }
+}, true)
+
+function restoreProfileImageFallbacks() {
+  document.querySelectorAll("img[data-person-image]").forEach((image) => {
+    if (image.complete && image.naturalWidth === 0) image.classList.add("invisible")
+  })
+}
+
+// Cached failures may precede this script, and LiveView patches can restore
+// the original class on an image that has already failed to load.
+restoreProfileImageFallbacks()
+document.addEventListener("phx:update", restoreProfileImageFallbacks)
 
 // Show progress bar on live navigation and form submits
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" })

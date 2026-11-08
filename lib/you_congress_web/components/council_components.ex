@@ -53,9 +53,11 @@ defmodule YouCongressWeb.CouncilComponents do
 
   def avatar(assigns) do
     ~H"""
-    <span class={["yc-avatar", @large && "big"]} aria-hidden="true">
-      {initials(@person.name)}
-    </span>
+    <.profile_avatar
+      name={@person.name}
+      image_url={Map.get(@person, :profile_image_url) || Map.get(@person, :image)}
+      class={["yc-avatar", @large && "big"]}
+    />
     """
   end
 
@@ -122,94 +124,6 @@ defmodule YouCongressWeb.CouncilComponents do
     """
   end
 
-  attr :member, :map, required: true
-  attr :person, :map, required: true
-  attr :editing_reason, :integer, default: nil
-  attr :reason_text, :string, required: true
-  attr :reason_error, :string, default: nil
-  attr :autosave, :boolean, default: false
-
-  def reason_editor(assigns) do
-    ~H"""
-    <div class="yc-gap-sm">
-      <blockquote
-        :if={@editing_reason != @member.author_id && @member[:reason] not in [nil, ""]}
-        class="yc-note"
-      >
-        <span>{@member[:reason]}</span>
-      </blockquote>
-      <form
-        :if={@editing_reason == @member.author_id}
-        id={"council-reason-#{@member.author_id}"}
-        phx-change="change-reason"
-        phx-submit="save-reason"
-        class="yc-gap-sm"
-      >
-        <label class="yc-label" for={"inline-reason-#{@member.author_id}"}>
-          Why I trust {@person.name}
-        </label>
-        <textarea
-          id={"inline-reason-#{@member.author_id}"}
-          name="reason"
-          class="yc-field"
-          rows="3"
-          maxlength="5000"
-          phx-debounce={if @autosave, do: "blur", else: "300"}
-          phx-mounted={JS.focus()}
-          aria-invalid={to_string(!is_nil(@reason_error))}
-          aria-describedby={@reason_error && "reason-error-#{@member.author_id}"}
-        >{@reason_text}</textarea>
-        <p
-          :if={@reason_error}
-          id={"reason-error-#{@member.author_id}"}
-          class="text-sm text-red-700 mt-2"
-          role="alert"
-        >
-          {@reason_error}
-        </p>
-        <div class="yc-row yc-gap-sm">
-          <button type="submit" class="yc-btn primary" phx-disable-with="Saving…">
-            {if @autosave, do: "Done", else: "Save reason"}
-          </button>
-          <button :if={!@autosave} type="button" class="yc-btn" phx-click="cancel-reason">
-            Cancel
-          </button>
-        </div>
-      </form>
-
-      <button
-        :if={@editing_reason != @member.author_id}
-        type="button"
-        phx-click="edit-reason"
-        phx-value-id={@member.author_id}
-        class="yc-link"
-      >
-        {if @member[:reason] in [nil, ""], do: "+ Add a reason", else: "Edit reason"}
-      </button>
-    </div>
-    """
-  end
-
-  attr :editing_reason, :integer, default: nil
-  attr :class, :string, default: "yc-btn primary"
-  slot :inner_block, required: true
-
-  def continue_button(assigns) do
-    ~H"""
-    <button
-      type={if @editing_reason, do: "submit", else: "button"}
-      form={@editing_reason && "council-reason-#{@editing_reason}"}
-      name="continue"
-      value="true"
-      phx-click={if is_nil(@editing_reason), do: "save"}
-      phx-disable-with="Saving…"
-      class={@class}
-    >
-      {render_slot(@inner_block)}
-    </button>
-    """
-  end
-
   attr :owner, :map, required: true
   attr :slug, :string, required: true
   attr :error, :string, default: nil
@@ -251,11 +165,7 @@ defmodule YouCongressWeb.CouncilComponents do
   def people_count(1), do: "1 person"
   def people_count(count), do: "#{count} people"
 
-  def initials(nil), do: "?"
-
-  def initials(name),
-    do:
-      name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1) |> String.upcase()
+  def initials(name), do: avatar_initials(name)
 
   def biography(person), do: YouCongressWeb.SEO.truncate(person.bio || "", 90)
   def answer(nil), do: "No position"

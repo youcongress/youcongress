@@ -9,7 +9,7 @@ defmodule YouCongressWeb.TopicCouncilTest do
     conn: conn
   } do
     user = user_fixture()
-    {:ok, view, html} = live(log_in_user(conn, user), "/council")
+    {:ok, view, html} = live(log_in_user(conn, user), "/council?step=mine")
 
     for name <- ["AI governance", "Impact on labor", "All statements"],
         do: assert(html =~ name)
@@ -101,7 +101,7 @@ defmodule YouCongressWeb.TopicCouncilTest do
     user = user_fixture()
     {:ok, council} = Councils.ensure(user.author_id)
     [topic, labor, general] = council.lists
-    {:ok, view, _} = live(log_in_user(conn, user), "/council")
+    {:ok, view, _} = live(log_in_user(conn, user), "/council?step=mine")
     refute has_element?(view, "#council-hall-#{topic.id} button")
     {:ok, view, _} = live(log_in_user(build_conn(), user), "/council?step=pick&list=#{topic.id}")
     selector = "#council-edit-hall-#{topic.id}"
@@ -167,6 +167,20 @@ defmodule YouCongressWeb.TopicCouncilTest do
     view |> form("#search-public-lists", %{scope: "all", q: "Other public"}) |> render_change()
     assert has_element?(view, "#public-list-option-#{theirs.id}", "Other public experts")
     view |> element("#public-list-option-#{theirs.id} button", "Select") |> render_click()
+
+    assert has_element?(
+             view,
+             "#public-list-option-#{theirs.id} #use-public-list",
+             "Use Other public experts?"
+           )
+
+    assert has_element?(
+             view,
+             "#public-list-option-#{theirs.id} button[aria-expanded=true]",
+             "Selected"
+           )
+
+    assert_push_event(view, "council-list-selected", %{})
     refute has_element?(view, "#use-public-list input[name=link]")
     view |> form("#use-public-list", %{copy: "true"}) |> render_submit()
     updated = hd(Councils.get(user.author_id).lists)
@@ -204,7 +218,7 @@ defmodule YouCongressWeb.TopicCouncilTest do
     {:ok, _, html} = live(build_conn(), YouCongressWeb.PeopleListPaths.public_path(published))
     refute html =~ "Linked to"
     refute html =~ "council_list_id"
-    {:ok, overview, _} = live(log_in_user(build_conn(), user), "/council")
+    {:ok, overview, _} = live(log_in_user(build_conn(), user), "/council?step=mine")
     assert has_element?(overview, "#topic-list-#{topic.id}", "Public")
     assert has_element?(overview, "#topic-list-#{topic.id} a", "Policy experts")
     refute has_element?(overview, "#topic-list-#{topic.id} h3")

@@ -469,8 +469,14 @@ defmodule YouCongressWeb.HomeLiveTest do
       assert html =~ "shrink-0"
       assert html =~ "relative top-1 inline-flex cursor-pointer"
 
-      assert html =~
-               "inline-block h-10 w-10 min-w-[2.5rem] shrink-0 rounded-full object-cover align-middle"
+      avatars = html |> Floki.parse_document!() |> Floki.find("[data-profile-avatar]")
+
+      assert Enum.any?(avatars, fn avatar ->
+               classes = Floki.attribute(avatar, "class") |> hd() |> String.split()
+
+               Enum.all?(["h-10", "w-10", "shrink-0", "rounded-full"], &(&1 in classes)) &&
+                 Floki.find(avatar, "img[src='#{profile_image_url}'].object-cover") != []
+             end)
     end
 
     test "guest can vote and sees flash message", %{conn: conn} do

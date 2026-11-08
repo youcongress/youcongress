@@ -24,6 +24,19 @@ defmodule YouCongress.Councils.Discovery do
     Repo.all(query)
   end
 
+  def most_opinions(owner_id) do
+    Repo.all(
+      from a in Author,
+        join: o in YouCongress.Opinions.Opinion,
+        on: o.author_id == a.id,
+        where: a.id != ^owner_id and not is_nil(a.name) and o.twin == false,
+        group_by: a.id,
+        order_by: [desc: count(o.id), asc: a.name, asc: a.id],
+        limit: 20,
+        select: a
+    )
+  end
+
   defp public_reason_query do
     from m in PeopleListMember,
       join: l in PeopleList,

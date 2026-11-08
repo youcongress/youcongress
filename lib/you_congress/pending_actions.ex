@@ -100,6 +100,8 @@ defmodule YouCongress.PendingActions do
        when is_list(delegate_ids) and is_map(votes),
        do: :ok
 
+  defp validate_payload(%{"council_ref" => ref}) when is_binary(ref), do: :ok
+
   defp validate_payload(_payload), do: {:error, :invalid_pending_actions}
 
   defp process_payload(user, %{"council" => council} = payload) do
@@ -121,6 +123,9 @@ defmodule YouCongress.PendingActions do
     with :ok <- create_delegations(user, delegate_ids),
          do: create_votes(user, votes)
   end
+
+  defp process_payload(user, %{"council_ref" => ref}),
+    do: YouCongress.Councils.Invitations.accept(user, ref)
 
   defp process_payload(_user, _payload), do: {:error, :invalid_pending_actions}
 

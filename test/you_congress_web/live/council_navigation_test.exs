@@ -3,7 +3,7 @@ defmodule YouCongressWeb.CouncilNavigationTest do
   import Phoenix.LiveViewTest
   import YouCongress.AccountsFixtures
 
-  test "the main navigation contains only GitHub, Council, Explore, About and Profile", %{
+  test "the main navigation shows Sign up for guests and Profile for signed-in users", %{
     conn: conn
   } do
     for user <- [nil, user_fixture(), admin_fixture()] do
@@ -13,7 +13,11 @@ defmodule YouCongressWeb.CouncilNavigationTest do
       assert length(links) == 5
 
       assert links |> Enum.drop(1) |> Enum.map(&(Floki.text(&1) |> String.trim())) ==
-               ["My Council", "Explore", "About", "Profile"]
+               ["My Council", "Explore", "About", if(user, do: "Profile", else: "Sign up")]
+
+      if is_nil(user) do
+        assert Floki.attribute(List.last(links), "href") == ["/sign_up"]
+      end
 
       assert Floki.attribute(hd(links), "href") == ["https://github.com/youcongress/youcongress"]
     end
@@ -22,7 +26,7 @@ defmodule YouCongressWeb.CouncilNavigationTest do
   test "Council tabs keep My lists accessible and Trust 30 admin-only", %{conn: conn} do
     user = user_fixture()
     conn = log_in_user(conn, user)
-    {:ok, council, _} = live(conn, "/council")
+    {:ok, council, _} = live(conn, "/council?step=mine")
     assert has_element?(council, "nav[aria-label='My Council'] a[href='/lists']", "My lists")
     refute has_element?(council, "nav[aria-label='My Council'] a[href='/trust']")
 
@@ -34,7 +38,7 @@ defmodule YouCongressWeb.CouncilNavigationTest do
 
     assert has_element?(lists, "nav[aria-label='My Council'] a[aria-current=page]", "My lists")
     assert has_element?(lists, "nav[aria-label='My Council'] a[href='/council']")
-    {:ok, admin, _} = live(log_in_user(build_conn(), admin_fixture()), "/council")
+    {:ok, admin, _} = live(log_in_user(build_conn(), admin_fixture()), "/council?step=mine")
     assert has_element?(admin, "nav[aria-label='My Council'] a[href='/trust']", "Trust 30")
   end
 

@@ -20,6 +20,7 @@
             <.link href={author_path(@author)} class="relative top-1 inline-flex cursor-pointer">
               <OpinionComponent.avatar_icon
                 is_human={!@vote.twin}
+                name={@author.name}
                 profile_image_url={@author.profile_image_url}
               />
             </.link>
@@ -55,6 +56,7 @@
         <OpinionComponent.avatar_icon
           :if={@page == :author_show}
           is_human={!@vote.twin}
+          name={@author.name}
           profile_image_url={@author.profile_image_url}
         />
         <%= if @vote.twin do %>

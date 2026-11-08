@@ -5,79 +5,61 @@ defmodule YouCongressWeb.TrustLiveTest do
   import YouCongress.AuthorsFixtures
   alias YouCongress.{Councils, TrustRankings, PeopleLists}
 
-  test "guest landing, selection, reasons, and signup preserve one draft", %{conn: conn} do
-    person = author_fixture(%{name: "A careful researcher"})
+  test "guest landing starts signup and returns to Council after confirmation", %{conn: conn} do
     {:ok, view, html} = live(conn, "/council")
-    assert html =~ "You don’t have to decide alone."
-    refute html =~ "Communities"
-    view |> element("a", "Pick my Council →") |> render_click()
-    view |> element("form[phx-change=search]") |> render_change(%{q: "careful"})
-    view |> element("button[phx-click=add-person]") |> render_click()
-    assert render(view) =~ "1 selected"
-    refute render(view) =~ "Say why"
-    assert length(Floki.find(Floki.parse_fragment!(render(view)), ".yc-steps li")) == 3
-    view |> element("#council-member-#{person.id} button", "+ Add a reason") |> render_click()
-    view |> form("#council-reason-#{person.id}", reason: "Good judgment") |> render_submit()
-    view |> element("aside button", "Continue to Publish") |> render_click()
-    assert render(view) =~ "Keep your Council."
-    assert has_element?(view, "a[href*='pending_actions']")
+    assert html =~ "If you could choose the people overseeing AI,"
+    assert html =~ "who would you choose—and why?"
+    assert html =~ "Coming soon"
+    assert html =~ "Your private Council choices contribute anonymously."
+    assert html =~ "Your Council is private. Sharing a list is optional."
+    signup = "/sign_up?return_to=%2Fcouncil"
+    assert has_element?(view, "a[href='#{signup}']", "Start choosing →")
+    assert has_element?(view, "a[href='#{signup}']", "Pick my Council →")
+    refute has_element?(view, "#person-search")
+    {:ok, registration, _} = live(conn, signup)
+    assert has_element?(registration, "a[href='/auth/google?return_to=%2Fcouncil']")
+    user = user_fixture(%{}, nil, false)
+    {:ok, confirmed} = YouCongress.Accounts.confirm_user_email(user)
+    signed_in = log_in_user(conn, confirmed)
+    assert {:error, {:redirect, %{to: "/council"}}} = live(signed_in, signup)
+    {:ok, council, _} = live(signed_in, "/council")
+    assert has_element?(council, "#council-onboarding", "Start with people you trust.")
+  end
+
+  test "old guest picking links and draft events require signup", %{conn: conn} do
+    for path <- [
+          "/council?step=pick",
+          "/council?step=join",
+          "/council?step=why",
+          "/council?use_list=1",
+          "/council?add=1"
+        ] do
+      assert {:error, {:redirect, %{to: "/sign_up?return_to=%2Fcouncil"}}} = live(conn, path)
+    end
+
+    {:ok, view, _} = live(conn, "/council")
+    render_hook(view, "restore-draft", %{draft: %{lists: []}})
+    assert_redirect(view, "/sign_up?return_to=%2Fcouncil")
+  end
+
+  test "Council invitations survive signup without a guest draft", %{conn: conn} do
+    inviter = user_fixture()
+    ref = to_string(inviter.author_id)
+    {:ok, view, _} = live(conn, "/council?ref=#{ref}")
 
     signup =
       view
-      |> element("a", "Sign up with email/password")
+      |> element("a", "Pick my Council →")
       |> render()
       |> Floki.parse_fragment!()
-      |> Floki.find("a")
       |> Floki.attribute("href")
       |> hd()
 
-    {:ok, _, html} = live(conn, signup)
-
-    auth_href =
-      html
-      |> Floki.parse_document!()
-      |> Floki.find("a[href^='/auth/google']")
-      |> Floki.attribute("href")
-      |> hd()
-
-    payload =
-      auth_href
-      |> URI.parse()
-      |> Map.fetch!(:query)
-      |> URI.decode_query()
-      |> Map.fetch!("pending_actions")
-      |> Jason.decode!()
-
-    assert hd(List.last(payload["council"]["lists"])["members"])["reason"] == "Good judgment"
-  end
-
-  test "adding people moves them out of results to the top of the Council", %{conn: conn} do
-    first = author_fixture(%{name: "Picker Move Alpha"})
-    second = author_fixture(%{name: "Picker Move Beta"})
-    {:ok, view, _} = live(conn, "/council?step=pick")
-    view |> element("form[phx-change=search]") |> render_change(%{q: "Picker Move"})
-
-    for person <- [first, second] do
-      view |> element("#council-candidate-#{person.id} button") |> render_click()
-      refute has_element?(view, "#council-candidate-#{person.id}")
-      assert has_element?(view, "#council-member-#{person.id} button", "+ Add a reason")
-    end
-
-    ids =
-      view
-      |> render()
-      |> Floki.parse_fragment!()
-      |> Floki.find("aside [id^=council-member-]")
-      |> Floki.attribute("id")
-
-    assert ids == ["council-member-#{second.id}", "council-member-#{first.id}"]
-    assert has_element?(view, "#council-candidates", "Everyone shown is already in your Council")
-    view |> element("p[role=status] button", "+ Add a reason") |> render_click()
-    assert has_element?(view, "#inline-reason-#{second.id}")
-    view |> element("#council-member-#{second.id} button", "Remove") |> render_click()
-    assert has_element?(view, "#council-candidate-#{second.id} button")
-    refute has_element?(view, "#council-member-#{second.id}")
-    refute has_element?(view, "textarea[name=reason]")
+    params = signup |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
+    assert params["return_to"] == "/council"
+    assert Jason.decode!(params["pending_actions"]) == %{"council_ref" => ref}
+    {:ok, registration, _} = live(conn, signup)
+    assert has_element?(registration, "a[href^='/auth/google?pending_actions=']")
   end
 
   test "owner saves reasons, publishes, invites, and returns to My Council", %{conn: conn} do
@@ -113,6 +95,7 @@ defmodule YouCongressWeb.TrustLiveTest do
     render_click(public, "remove-person", %{"id" => hd(people).id})
     render_click(public, "save")
     assert Councils.get(user.author_id) == before
+    :ok = Councils.complete_onboarding(user)
     {:ok, _, html} = live(conn, "/council")
     assert html =~ "My Council"
     assert html =~ "AI governance"
@@ -260,14 +243,22 @@ defmodule YouCongressWeb.TrustLiveTest do
       end
 
       for path <- ["/council", "/council?step=pick", "/a/#{person.id}"] do
-        {:ok, view, html} = live(viewer_conn, path)
-        refute has_element?(view, "a[href='/trust']")
-        refute has_element?(view, "a[href^='/trust/people/']")
-        refute html =~ "Trust 30"
+        if is_nil(viewer) && path == "/council?step=pick" do
+          assert {:error, {:redirect, %{to: "/sign_up?return_to=%2Fcouncil"}}} =
+                   live(viewer_conn, path)
+        else
+          {:ok, view, html} = live(viewer_conn, path)
+          refute has_element?(view, "a[href='/trust']")
+          refute has_element?(view, "a[href^='/trust/people/']")
+
+          if is_nil(viewer) && path == "/council",
+            do: assert(html =~ "Coming soon"),
+            else: refute(html =~ "Trust 30")
+        end
       end
     end
 
-    {:ok, view, _} = live(log_in_user(conn, admin), "/council")
+    {:ok, view, _} = live(log_in_user(conn, admin), "/council?step=mine")
     assert has_element?(view, "a[href='/trust']")
   end
 

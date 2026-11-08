@@ -27,7 +27,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
           <.link href={~p"/explore"} class="py-3 hover:text-zinc-700">Explore</.link>
           <.link href={~p"/about"} class="py-3 hover:text-zinc-700">About</.link>
           <.link href={profile_path(@current_user, @return_to)} class="py-3 hover:text-zinc-700">
-            Profile
+            {if @current_user, do: "Profile", else: "Sign up"}
           </.link>
         </nav>
       </div>
@@ -35,7 +35,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
     """
   end
 
-  defp profile_path(nil, return_to), do: ReturnTo.log_in_path(nil, return_to)
+  defp profile_path(nil, return_to), do: ReturnTo.sign_up_path(return_to)
 
   defp profile_path(user, return_to) do
     if YouCongress.Accounts.sign_up_complete?(user),

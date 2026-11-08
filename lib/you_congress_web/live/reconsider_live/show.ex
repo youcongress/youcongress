@@ -503,12 +503,10 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                   href={SEO.author_path(delegate.author)}
                   class="flex min-w-0 items-center gap-3 hover:text-indigo-600"
                 >
-                  <img
-                    :if={delegate.author.profile_image_url}
-                    src={delegate.author.profile_image_url}
-                    data-fallback-src="/images/human-avatar.svg"
-                    alt=""
-                    class="h-9 w-9 rounded-full"
+                  <.profile_avatar
+                    name={delegate.author.name}
+                    image_url={delegate.author.profile_image_url}
+                    class="h-9 w-9 text-sm"
                   />
                   <span class="truncate font-medium">{author_name(delegate.author)}</span>
                 </.link>
@@ -640,12 +638,10 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                   checked={to_string(delegate.author_id) in @form_params["delegate_ids"]}
                   class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                 />
-                <img
-                  :if={delegate.author.profile_image_url}
-                  src={delegate.author.profile_image_url}
-                  data-fallback-src="/images/human-avatar.svg"
-                  alt=""
-                  class="h-9 w-9 rounded-full"
+                <.profile_avatar
+                  name={delegate.author.name}
+                  image_url={delegate.author.profile_image_url}
+                  class="h-9 w-9 text-sm"
                 />
                 <span class="font-medium text-gray-900">{author_name(delegate.author)}</span>
                 <span

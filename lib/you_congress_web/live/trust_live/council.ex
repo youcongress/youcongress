@@ -19,6 +19,7 @@ defmodule YouCongressWeb.TrustLive.Council do
      socket
      |> assign(
        page_title: "My Council",
+       return_to: ~p"/council",
        full_width: true,
        draft: draft,
        halls: YouCongress.Halls.list_halls(),
@@ -31,7 +32,6 @@ defmodule YouCongressWeb.TrustLive.Council do
        public_list_results: [],
        selected_public_list: nil,
        save_error: nil,
-       source_list_name: nil,
        published_list: nil,
        linked_list: nil,
        list_owner: nil,
@@ -66,18 +66,28 @@ defmodule YouCongressWeb.TrustLive.Council do
   end
 
   @impl true
+  def handle_params(params, _, %{assigns: %{current_user: nil}} = socket) do
+    ref = params["ref"] || socket.assigns.ref
+
+    if params["step"] not in [nil, "landing"] || params["use_list"] || params["add"] ||
+         params["list"] do
+      {:noreply, redirect(socket, to: signup_path(ref))}
+    else
+      {:noreply, assign(socket, step: "landing", ref: ref, referrer: Invitations.referrer(ref))}
+    end
+  end
+
   def handle_params(params, _, socket) do
     user = socket.assigns.current_user
     ref = params["ref"] || socket.assigns.ref
     referrer = Invitations.referrer(ref)
-    default = if user, do: "mine", else: "landing"
+    default = if Councils.get(user.author_id).onboarding_completed, do: "mine", else: "onboarding"
     step = requested_step(params["step"], default)
 
-    allowed =
-      if user, do: ~w(landing pick publish invite mine votes), else: ~w(landing pick join)
+    allowed = ~w(landing pick people publish invite mine votes onboarding)
 
     step = if step in allowed, do: step, else: default
-    step = if params["statement"] && user, do: "votes", else: step
+    step = if params["statement"], do: "votes", else: step
 
     socket =
       socket
@@ -85,7 +95,7 @@ defmodule YouCongressWeb.TrustLive.Council do
         step: step,
         ref: ref,
         referrer: referrer,
-        page_title: if(user && step == "pick", do: "Edit Council entry", else: "My Council"),
+        page_title: if(step == "pick", do: "Edit Council entry", else: "My Council"),
         show_public_list_picker: false,
         selected_public_list: nil
       )
@@ -95,25 +105,53 @@ defmodule YouCongressWeb.TrustLive.Council do
       |> assign(editing_reason: nil, reason_text: "", reason_error: nil)
       |> load_saved_view(user, step)
 
-    socket = select_list_param(socket, params["list"])
+    socket =
+      if step == "onboarding",
+        do:
+          assign(socket,
+            draft:
+              Map.put(socket.assigns.draft, :active_index, length(socket.assigns.draft.lists) - 1)
+          ),
+        else: select_list_param(socket, params["list"])
+
     socket = socket |> use_list(params["use_list"]) |> add_from_link(params["add"])
 
     socket =
-      if user do
-        assign(socket,
-          counts: Discovery.vote_counts(user.author_id),
-          invitations: Invitations.history(user),
-          joined: Invitations.joined(user.author_id),
-          votes: if(step == "votes", do: Discovery.votes(user.author_id), else: [])
-        )
-      else
-        socket
-      end
+      assign(socket,
+        counts: Discovery.vote_counts(user.author_id),
+        invitations: Invitations.history(user),
+        joined: Invitations.joined(user.author_id),
+        votes: if(step == "votes", do: Discovery.votes(user.author_id), else: [])
+      )
 
     {:noreply, socket |> load_link() |> load_matches()}
   end
 
   @impl true
+  def handle_event(_event, _params, %{assigns: %{current_user: nil}} = socket),
+    do: {:noreply, redirect(socket, to: signup_path(socket.assigns.ref))}
+
+  def handle_event("finish-onboarding", _, socket) do
+    if socket.assigns.save_error || socket.assigns.reason_error do
+      {:noreply, put_flash(socket, :error, "Resolve the unsaved changes before continuing.")}
+    else
+      case Councils.complete_onboarding(socket.assigns.current_user) do
+        :ok ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Your Council is ready. You can vote directly whenever you like.")
+           |> push_patch(to: ~p"/council")}
+
+        _ ->
+          {:noreply, put_flash(socket, :error, "Could not finish. Please try again.")}
+      end
+    end
+  end
+
+  def handle_event("choose-people", %{"id" => id}, socket) do
+    {:noreply, push_patch(socket, to: ~p"/council?#{%{step: "people", list: id}}")}
+  end
+
   def handle_event("search", %{"q" => q}, socket),
     do: {:noreply, socket |> assign(query: String.slice(q, 0, 200)) |> load_matches()}
 
@@ -155,7 +193,7 @@ defmodule YouCongressWeb.TrustLive.Council do
         %{"id" => raw},
         %{assigns: %{step: step}} = socket
       )
-      when step in ["mine", "pick"] do
+      when step in ["mine", "pick", "people", "onboarding"] do
     case Enum.find(members(socket.assigns.draft), &(&1.author_id == TrustRankings.parse_id(raw))) do
       nil ->
         {:noreply, socket}
@@ -193,9 +231,9 @@ defmodule YouCongressWeb.TrustLive.Council do
   def handle_event(
         "save-reason",
         %{"reason" => reason} = params,
-        %{assigns: %{step: "pick", editing_reason: id}} = socket
+        %{assigns: %{step: step, editing_reason: id}} = socket
       )
-      when is_integer(id) and is_binary(reason) do
+      when step in ["pick", "people", "onboarding"] and is_integer(id) and is_binary(reason) do
     if String.length(reason) <= 5_000 do
       updated =
         Enum.map(members(socket.assigns.draft), fn member ->
@@ -278,10 +316,6 @@ defmodule YouCongressWeb.TrustLive.Council do
     handle_event("save", %{}, socket)
   end
 
-  def handle_event("save", _, %{assigns: %{current_user: nil}} = socket) do
-    {:noreply, push_patch(socket, to: ~p"/council?#{%{step: "join"}}")}
-  end
-
   def handle_event("save", _, socket) do
     case Councils.save(socket.assigns.current_user, socket.assigns.draft) do
       {:ok, council} ->
@@ -291,10 +325,8 @@ defmodule YouCongressWeb.TrustLive.Council do
          socket
          |> assign(
            draft: with_selection(Councils.editable(council), socket.assigns.draft),
-           dirty: false,
-           source_list_name: nil
+           dirty: false
          )
-         |> push_event("clear-council-draft", %{})
          |> put_flash(:info, "Your Council is saved.")
          |> push_patch(
            to: ~p"/council?#{%{step: "publish", list: current_list(socket.assigns.draft).id}}"
@@ -398,45 +430,6 @@ defmodule YouCongressWeb.TrustLive.Council do
     end
   end
 
-  def handle_event("restore-draft", _, %{assigns: %{source_list_name: name}} = socket)
-      when not is_nil(name) do
-    {:noreply,
-     push_event(socket, "store-council-draft", %{
-       draft: socket.assigns.draft,
-       ref: socket.assigns.ref
-     })}
-  end
-
-  def handle_event(
-        "restore-draft",
-        %{"draft" => attrs} = params,
-        %{assigns: %{current_user: nil}} = socket
-      ) do
-    case YouCongress.Councils.Draft.normalize(attrs) do
-      {:ok, draft} ->
-        valid =
-          Discovery.people(
-            Enum.flat_map(draft.lists, fn l -> Enum.map(l.members, & &1.author_id) end)
-          )
-
-        lists =
-          Enum.map(draft.lists, fn l ->
-            %{l | members: Enum.filter(l.members, &Map.has_key?(valid, &1.author_id))}
-          end)
-
-        socket =
-          socket
-          |> assign(draft: with_selection(%{draft | lists: lists}, socket.assigns.draft))
-          |> load_people()
-
-        ref = socket.assigns.ref || params["ref"]
-        {:noreply, assign(socket, ref: ref, referrer: Invitations.referrer(ref))}
-
-      _ ->
-        {:noreply, socket}
-    end
-  end
-
   def handle_event("select-topic", %{"index" => raw}, socket) do
     case Integer.parse(raw) do
       {index, ""} when index >= 0 and index < length(socket.assigns.draft.lists) ->
@@ -483,7 +476,11 @@ defmodule YouCongressWeb.TrustLive.Council do
            council_list_id: target.id
          }) do
       {:ok, source} ->
-        {:noreply, push_navigate(socket, to: edit_list_path(source.id, target.id))}
+        if socket.assigns.step == "onboarding" do
+          {:noreply, socket |> load_saved_view(user, "onboarding") |> load_link()}
+        else
+          {:noreply, push_navigate(socket, to: edit_list_path(source.id, target.id))}
+        end
 
       _ ->
         {:noreply,
@@ -523,8 +520,14 @@ defmodule YouCongressWeb.TrustLive.Council do
 
   def handle_event("preview-public-list", %{"id" => id}, socket) do
     case PeopleLists.get(id, socket.assigns.current_user) do
-      nil -> {:noreply, put_flash(socket, :error, "This list is no longer available.")}
-      list -> {:noreply, assign(socket, selected_public_list: list)}
+      nil ->
+        {:noreply, put_flash(socket, :error, "This list is no longer available.")}
+
+      list ->
+        {:noreply,
+         socket
+         |> assign(selected_public_list: list)
+         |> push_event("council-list-selected", %{})}
     end
   end
 
@@ -556,7 +559,6 @@ defmodule YouCongressWeb.TrustLive.Council do
               draft: updated,
               dirty: false,
               save_error: nil,
-              source_list_name: nil,
               selected_public_list: nil,
               show_public_list_picker: false,
               editing_reason: nil,
@@ -565,7 +567,7 @@ defmodule YouCongressWeb.TrustLive.Council do
             |> load_people()
             |> load_link()
 
-          if params["copy"] == "true" do
+          if params["copy"] == "true" && socket.assigns.step == "pick" do
             {:noreply,
              push_navigate(socket,
                to: edit_list_path(current_list(updated).people_list_id, current_list(updated).id)
@@ -685,8 +687,6 @@ defmodule YouCongressWeb.TrustLive.Council do
     end)
   end
 
-  defp update_publish_fields(%{assigns: %{current_user: nil}} = socket, _params), do: socket
-
   defp update_publish_fields(socket, params) do
     {fields, custom?} =
       YouCongressWeb.PeopleListPaths.edit_fields(
@@ -703,13 +703,12 @@ defmodule YouCongressWeb.TrustLive.Council do
   defp requested_step(nil, default), do: default
   defp requested_step(step, _default), do: step
 
-  defp load_saved_view(socket, nil, _step), do: socket
-
-  defp load_saved_view(socket, user, step) when step in ~w(mine votes publish invite pick),
-    do:
-      socket
-      |> assign(draft: with_selection(own_council(user), socket.assigns.draft), dirty: false)
-      |> load_people()
+  defp load_saved_view(socket, user, step)
+       when step in ~w(mine votes publish invite pick people onboarding),
+       do:
+         socket
+         |> assign(draft: with_selection(own_council(user), socket.assigns.draft), dirty: false)
+         |> load_people()
 
   defp load_saved_view(socket, _user, _step), do: socket
 
@@ -721,23 +720,9 @@ defmodule YouCongressWeb.TrustLive.Council do
         put_flash(socket, :error, "This public list is not available.")
 
       list ->
-        if socket.assigns.current_user do
-          socket
-          |> assign(selected_public_list: list, show_public_list_picker: true, step: "pick")
-          |> load_public_lists()
-        else
-          members =
-            Enum.map(list.members, &%{author_id: &1.author_id, reason: nil, source_url: nil})
-
-          socket
-          |> assign(
-            draft: put_members(socket.assigns.draft, members),
-            dirty: true,
-            source_list_name: list.name,
-            step: "pick"
-          )
-          |> load_people()
-        end
+        socket
+        |> assign(selected_public_list: list, show_public_list_picker: true, step: "pick")
+        |> load_public_lists()
     end
   end
 
@@ -750,11 +735,7 @@ defmodule YouCongressWeb.TrustLive.Council do
     end
   end
 
-  defp own_council(nil),
-    do: %{
-      version: 1,
-      lists: Enum.map(Councils.default_lists(), &Map.merge(&1, %{id: nil, members: []}))
-    }
+  defp own_council(nil), do: nil
 
   defp own_council(user) do
     {:ok, council} = Councils.ensure(user.author_id)
@@ -853,7 +834,12 @@ defmodule YouCongressWeb.TrustLive.Council do
     do: current_list(draft).available && current_list(draft).list_owner_id == user.author_id
 
   def selected?(draft, id), do: Enum.any?(members(draft), &(&1.author_id == id))
-  def pending(draft, ref), do: Jason.encode!(%{council: draft, council_ref: ref})
+
+  def signup_path(ref) do
+    pending = if ref, do: Jason.encode!(%{council_ref: ref})
+    YouCongressWeb.ReturnTo.sign_up_path(~p"/council", pending)
+  end
+
   def invite_url(user), do: Invitations.url(user.author_id)
 
   def share_href(kind, user, note) do
@@ -889,14 +875,10 @@ defmodule YouCongressWeb.TrustLive.Council do
     draft = put_members(socket.assigns.draft, members)
     socket = socket |> assign(draft: draft, dirty: true) |> load_people()
 
-    if socket.assigns.current_user,
-      do:
-        if(socket.assigns.source_list_name,
-          do: socket,
-          else: save_topic_lists(socket, draft.lists)
-        ),
-      else: push_event(socket, "store-council-draft", %{draft: draft, ref: socket.assigns.ref})
+    save_topic_lists(socket, draft.lists)
   end
+
+  defp load_people(%{assigns: %{draft: nil}} = socket), do: socket
 
   defp load_people(socket),
     do:
@@ -929,12 +911,17 @@ defmodule YouCongressWeb.TrustLive.Council do
   defp load_matches(socket) do
     matches =
       if String.trim(socket.assigns.query) == "" do
-        if YouCongress.Accounts.admin?(socket.assigns.current_user) do
-          ids = Enum.map(socket.assigns.ranking.rows, & &1.author_id)
-          people = Discovery.people(ids)
-          Enum.map(ids, &people[&1]) |> Enum.reject(&is_nil/1)
-        else
-          Discovery.search("")
+        cond do
+          socket.assigns.step == "onboarding" ->
+            Discovery.most_opinions(socket.assigns.current_user.author_id)
+
+          YouCongress.Accounts.admin?(socket.assigns.current_user) ->
+            ids = Enum.map(socket.assigns.ranking.rows, & &1.author_id)
+            people = Discovery.people(ids)
+            Enum.map(ids, &people[&1]) |> Enum.reject(&is_nil/1)
+
+          true ->
+            Discovery.search("")
         end
       else
         Discovery.search(
@@ -949,5 +936,301 @@ defmodule YouCongressWeb.TrustLive.Council do
         else: matches
 
     assign(socket, matches: matches)
+  end
+
+  def list_picker(%{state: assigns}) do
+    ~H"""
+    <div
+      :if={@show_public_list_picker}
+      id="council-public-list-picker"
+      class="yc-entry-picker"
+    >
+      <div class="yc-between">
+        <h3>{if @linked_list, do: "Change list", else: "Choose a list"}</h3>
+        <button type="button" class="yc-link" phx-click="toggle-public-list-picker">
+          Cancel
+        </button>
+      </div>
+      <form
+        id="search-public-lists"
+        phx-change="search-public-lists"
+        phx-submit="search-public-lists"
+        class="space-y-3"
+      >
+        <label for="public-list-scope" class="yc-label">Browse</label>
+        <select id="public-list-scope" name="scope" class="yc-field">
+          <option value="mine" selected={@public_list_scope == "mine"}>
+            My lists · Private and public
+          </option>
+          <option value="all" selected={@public_list_scope == "all"}>
+            Everyone’s public lists
+          </option>
+        </select>
+        <label for="public-list-search" class="yc-label">Find a list or person</label>
+        <input
+          id="public-list-search"
+          name="q"
+          value={@public_list_query}
+          class="yc-field"
+          placeholder="Search by list title or author"
+          phx-debounce="250"
+        />
+      </form>
+      <.selected_list_confirmation
+        :if={
+          @selected_public_list &&
+            !Enum.any?(@public_list_results, &(&1.id == @selected_public_list.id))
+        }
+        selected_public_list={@selected_public_list}
+      />
+      <div class="yc-list yc-gap-sm">
+        <div
+          :for={list <- @public_list_results}
+          id={"public-list-option-#{list.id}"}
+          class={[
+            "yc-list-item",
+            @selected_public_list && @selected_public_list.id == list.id && "yc-selected-list"
+          ]}
+        >
+          <div class="yc-between">
+            <div>
+              <strong>{list.name}</strong>
+              <p class="yc-help">
+                {list.author_name} · {people_count(list.count)} · {if list.public,
+                  do: "Public",
+                  else: "Private"}
+              </p>
+            </div>
+            <button
+              type="button"
+              phx-click="preview-public-list"
+              phx-value-id={list.id}
+              class="yc-btn"
+              aria-expanded={
+                to_string(!!@selected_public_list && @selected_public_list.id == list.id)
+              }
+            >
+              {if @selected_public_list && @selected_public_list.id == list.id,
+                do: "Selected ✓",
+                else: "Select"}
+            </button>
+          </div>
+          <.selected_list_confirmation
+            :if={@selected_public_list && @selected_public_list.id == list.id}
+            selected_public_list={@selected_public_list}
+          />
+        </div>
+        <p :if={@public_list_results == []} class="yc-list-item yc-help">
+          No lists found. Try another search or browse everyone’s lists.
+        </p>
+      </div>
+      <button
+        :if={length(@public_list_results) == @public_list_limit}
+        phx-click="more-public-lists"
+        class="yc-link yc-gap-sm"
+      >
+        Show more lists
+      </button>
+
+      <form
+        id="create-council-private-list"
+        phx-submit="create-private-list"
+        class="yc-panel yc-gap-sm"
+      >
+        <label for="new-private-list-name" class="yc-label">
+          Or create a new private list
+        </label>
+        <input
+          id="new-private-list-name"
+          name="name"
+          class="yc-field"
+          required
+          maxlength="120"
+          placeholder="Give your list a name"
+        />
+        <button class="yc-btn yc-gap-sm">Create and select list</button>
+      </form>
+    </div>
+    """
+  end
+
+  def selected_list_confirmation(assigns) do
+    ~H"""
+    <form
+      id="use-public-list"
+      phx-submit="apply-public-list"
+      class="yc-panel yc-gap-sm"
+    >
+      <h3>Use {@selected_public_list.name}?</h3>
+      <p class="yc-help">
+        Uses this list for this Council entry. The hall and order stay the same. The previously selected list is kept.
+      </p>
+      <.link
+        href={~p"/lists/#{@selected_public_list.id}"}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="yc-link"
+      >
+        View list ↗
+      </.link>
+      <p class="yc-help yc-gap-sm">
+        This uses the actual list. Membership updates by its owner affect your Council. The owner cannot see who uses it.
+      </p>
+      <label class="block yc-gap-sm">
+        <input type="checkbox" name="copy" value="true" /> Make a private copy instead
+        <span class="block yc-help">
+          A copy belongs to you and changes independently.
+        </span>
+      </label>
+      <button class="yc-btn purple yc-gap-sm">Use this list</button>
+    </form>
+    """
+  end
+
+  def people_picker(%{state: assigns}) do
+    ~H"""
+    <div id="council-people-picker" class="yc-gap-sm">
+      <%= if editable_list?(@draft, @current_user) do %>
+        <div class={[@step != "mine" && "yc-grid", "yc-gap-sm"]}>
+          <section :if={@step != "mine"}>
+            <form id="person-search-form" phx-change="search" phx-submit="search">
+              <label for="person-search" class="yc-label">Find a person</label>
+              <input
+                id="person-search"
+                name="q"
+                value={@query}
+                class="yc-field"
+                placeholder="Search by name"
+                phx-debounce="250"
+              />
+            </form>
+            <h3 class="yc-gap">
+              {if @query == "", do: "People to consider", else: "Search results"}
+            </h3>
+            <% candidates = Enum.reject(@matches, &selected?(@draft, &1.id)) %>
+            <div id="council-candidates" class="yc-list yc-gap-sm">
+              <div
+                :for={person <- candidates}
+                id={"council-candidate-#{person.id}"}
+                class="yc-list-item yc-between"
+                phx-remove={
+                  JS.hide(
+                    transition: {"yc-picker-fade", "yc-picker-visible", "yc-picker-hidden"},
+                    time: 180
+                  )
+                }
+              >
+                <.person person={person} subtitle={biography(person)} />
+                <button
+                  class="yc-btn"
+                  phx-click="add-person"
+                  phx-value-id={person.id}
+                  phx-disable-with="Adding…"
+                  aria-label={"Add #{person.name} to your Council"}
+                >
+                  + Add
+                </button>
+              </div>
+              <p :if={candidates == []} class="yc-list-item yc-help">
+                No more matches. Search for another person.
+              </p>
+            </div>
+          </section>
+          <aside class="yc-panel">
+            <div class="yc-between">
+              <h3>{if @step == "onboarding", do: "Your Council", else: current_list(@draft).name}</h3>
+              <span class="yc-badge purple">{length(members(@draft))} selected</span>
+            </div>
+            <span :if={current_list(@draft).fallback} class="yc-badge yc-gap-sm">All statements</span>
+            <p class="yc-help yc-gap-sm">
+              {if current_list(@draft).public,
+                do:
+                  "This is a public list. People and reasons are public; using it in your Council stays private.",
+                else: "People and reasons in this list are private."}
+            </p>
+            <p :if={members(@draft) == []} class="yc-help yc-gap">
+              Add anyone whose judgment you value. You can change your choices anytime.
+            </p>
+            <div class="yc-stack yc-gap">
+              <div :for={member <- members(@draft)} id={"council-member-#{member.author_id}"}>
+                <div class="yc-between">
+                  <.person person={@people[member.author_id]} />
+                  <button
+                    class="yc-link"
+                    phx-click="remove-person"
+                    phx-value-id={member.author_id}
+                    aria-label={"Remove #{@people[member.author_id].name}"}
+                  >
+                    Remove
+                  </button>
+                </div>
+                <%= if @editing_reason == member.author_id do %>
+                  <form
+                    id={"council-reason-#{member.author_id}"}
+                    phx-change="change-reason"
+                    phx-submit="save-reason"
+                    class="yc-gap-sm"
+                  >
+                    <label for={"reason-#{member.author_id}"} class="yc-label">
+                      Why do you trust {@people[member.author_id].name}?
+                    </label>
+                    <textarea
+                      id={"reason-#{member.author_id}"}
+                      name="reason"
+                      class="yc-field"
+                      rows="3"
+                      maxlength="5000"
+                      phx-debounce="blur"
+                    >{@reason_text}</textarea>
+                    <p :if={@reason_error} class="yc-help text-red-700" role="alert">
+                      {@reason_error}
+                    </p>
+                    <button class="yc-link yc-gap-sm">Done</button>
+                  </form>
+                <% else %>
+                  <p :if={member[:reason] && member.reason != ""} class="yc-help yc-gap-sm">
+                    {member.reason}
+                  </p>
+                  <button
+                    class="yc-link yc-gap-sm"
+                    phx-click="edit-reason"
+                    phx-value-id={member.author_id}
+                  >
+                    {if member[:reason] && member.reason != "",
+                      do: "Edit reason",
+                      else: "+ Add a reason"}
+                  </button>
+                <% end %>
+              </div>
+            </div>
+            <button
+              :if={@step == "mine"}
+              class="yc-btn purple yc-gap"
+              phx-click="choose-people"
+              phx-value-id={current_list(@draft).id}
+            >
+              + Add people
+            </button>
+            <p :if={!@save_error && !@reason_error} class="yc-help yc-gap" role="status">
+              ✓ All changes saved
+            </p>
+          </aside>
+        </div>
+      <% else %>
+        <div class="yc-panel">
+          <h3>{current_list(@draft).name}</h3>
+          <p class="yc-help yc-gap-sm">
+            This list follows its owner’s updates. Make a private copy to choose people yourself.
+          </p>
+          <div class="yc-stack yc-gap">
+            <.person :for={member <- members(@draft)} person={@people[member.author_id]} />
+          </div>
+          <button :if={@linked_list} class="yc-btn yc-gap" phx-click="copy-selected-list">
+            Make a private copy
+          </button>
+        </div>
+      <% end %>
+    </div>
+    """
   end
 end

@@ -74,6 +74,8 @@ defmodule YouCongress.Councils do
             )
 
           if legacy != [] do
+            council |> Ecto.Changeset.change(onboarding_completed: true) |> Repo.update!()
+
             PeopleLists.write!(%User{author_id: author_id}, fallback.people_list_id, %{
               version: fallback.list_version,
               members: Enum.map(legacy, &%{author_id: &1})
@@ -86,6 +88,20 @@ defmodule YouCongress.Councils do
           council
       end
     end)
+  end
+
+  def complete_onboarding(%User{} = user) do
+    if Permissions.blocked?(user) do
+      {:error, :forbidden}
+    else
+      {count, _} =
+        Repo.update_all(
+          from(c in Council, where: c.author_id == ^user.author_id),
+          set: [onboarding_completed: true]
+        )
+
+      if count == 1, do: :ok, else: {:error, :not_found}
+    end
   end
 
   def default_lists do

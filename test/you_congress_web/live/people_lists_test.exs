@@ -126,9 +126,9 @@ defmodule YouCongressWeb.PeopleListsTest do
       })
 
     assert Councils.delegate_ids(chooser.author_id) == [person.id]
-    {:ok, guest, _} = live(conn, "/council?step=pick&use_list=#{list.id}")
-    render_hook(guest, "restore-draft", %{draft: %{lists: [%{members: [%{author_id: old.id}]}]}})
-    assert render(guest) =~ "0 selected"
+
+    assert {:error, {:redirect, %{to: "/sign_up?return_to=%2Fcouncil"}}} =
+             live(conn, "/council?step=pick&use_list=#{list.id}")
   end
 
   test "editable slug preview, canonical username URL, and old links survive a rename", %{

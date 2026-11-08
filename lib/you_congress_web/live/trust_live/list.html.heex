@@ -41,7 +41,7 @@
               <td>{row.rank}</td>
               <td>
                 <div class="yc-person">
-                  <.avatar person={%{name: row.name}} />
+                  <.avatar person={%{name: row.name, image: row.image}} />
                   <div>
                     <.link
                       navigate={YouCongressWeb.AuthorPaths.profile(@people[row.author_id])}

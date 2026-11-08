@@ -1,20 +1,9 @@
-const key = "youcongress-council-draft"
 export default {
   mounted() {
-    if (this.el.dataset.guest === "true" && this.el.dataset.readonly !== "true") {
-      try {
-        const saved = JSON.parse(sessionStorage.getItem(key))
-        if (saved) this.pushEvent("restore-draft", saved.draft ? saved : {draft: saved})
-      } catch (_) { /* Storage is optional. */ }
-    }
-    if (this.el.dataset.guest !== "true" && this.el.dataset.readonly !== "true") {
-      try { sessionStorage.removeItem(key) } catch (_) {}
-    }
-    this.handleEvent("store-council-draft", payload => {
-      try { sessionStorage.setItem(key, JSON.stringify(payload)) } catch (_) {}
-    })
-    this.handleEvent("clear-council-draft", () => {
-      try { sessionStorage.removeItem(key) } catch (_) {}
+    this.handleEvent("council-list-selected", () => {
+      requestAnimationFrame(() => {
+        this.el.querySelector("#use-public-list")?.scrollIntoView({block: "nearest"})
+      })
     })
     this.handleEvent("council-person-added", ({id}) => {
       const member = document.getElementById(`council-member-${id}`)
