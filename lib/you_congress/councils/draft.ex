@@ -20,7 +20,7 @@ defmodule YouCongress.Councils.Draft do
 
           %{
             id: nil,
-            name: Councils.value(list, :name) || "General",
+            name: Councils.value(list, :name) || "All statements",
             hall_id: TrustRankings.parse_id(Councils.value(list, :hall_id)),
             fallback: index == length(lists) - 1,
             members: members

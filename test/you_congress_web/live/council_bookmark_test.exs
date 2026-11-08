@@ -12,7 +12,7 @@ defmodule YouCongressWeb.CouncilBookmarkTest do
     root = "#profile-council-#{person.id}"
     assert view |> element(root <> " > button") |> render_click() =~ "Added to your Council."
     assert person.id in Councils.delegate_ids(user.author_id)
-    assert length(Councils.get(user.author_id).lists) == 4
+    assert length(Councils.get(user.author_id).lists) == 3
     view |> element(root <> " > button") |> render_click()
     assert has_element?(view, root <> " button", "Remove from my Council")
     refute has_element?(view, root <> " input[type=checkbox]")

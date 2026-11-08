@@ -11,14 +11,20 @@ defmodule YouCongressWeb.TopicCouncilTest do
     user = user_fixture()
     {:ok, view, html} = live(log_in_user(conn, user), "/council")
 
-    for name <- ["AI governance", "Impact on jobs", "Environment", "General"],
+    for name <- ["AI governance", "Impact on labor", "All statements"],
         do: assert(html =~ name)
 
+    assert has_element?(view, "th", "Hall")
+    assert has_element?(view, "th", "List to use")
+    assert has_element?(view, "a", "Manage my lists")
+    refute has_element?(view, "a", "Publish a list")
+    assert has_element?(view, "a", "Edit entry")
+    assert has_element?(view, "details summary", "See an example")
     council = Councils.get(user.author_id)
     general = List.last(council.lists)
     refute has_element?(view, ".yc-topic-row h3")
     assert has_element?(view, "#council-hall-#{hd(council.lists).id}", "ai-governance")
-    assert has_element?(view, "#topic-list-#{general.id}", "Private list")
+    assert has_element?(view, "#topic-list-#{general.id}", "Private")
     refute has_element?(view, "#topic-list-#{general.id} button[phx-click=remove-list]")
     view |> element("button", "+ Add another hall") |> render_click()
 
@@ -51,7 +57,7 @@ defmodule YouCongressWeb.TopicCouncilTest do
     assert Enum.count(Councils.get(user.author_id).lists, &(&1.hall_id == governance.hall_id)) ==
              2
 
-    view |> element("#topic-list-#{inner.id} button", "Remove") |> render_click()
+    view |> element("#topic-list-#{inner.id} button", "Remove entry") |> render_click()
     refute Enum.any?(Councils.get(user.author_id).lists, &(&1.id == inner.id))
   end
 
@@ -94,29 +100,29 @@ defmodule YouCongressWeb.TopicCouncilTest do
   } do
     user = user_fixture()
     {:ok, council} = Councils.ensure(user.author_id)
-    [topic, _, environment, general] = council.lists
+    [topic, labor, general] = council.lists
     {:ok, view, _} = live(log_in_user(conn, user), "/council")
     refute has_element?(view, "#council-hall-#{topic.id} button")
     {:ok, view, _} = live(log_in_user(build_conn(), user), "/council?step=pick&list=#{topic.id}")
     selector = "#council-edit-hall-#{topic.id}"
     view |> element(selector <> " button", "Change hall") |> render_click()
-    view |> form(selector <> "-choices", %{query: "environment"}) |> render_change()
-    view |> element(selector <> " button[phx-click=choose]", "environment") |> render_click()
+    view |> form(selector <> "-choices", %{query: "impact-on-labor"}) |> render_change()
+    view |> element(selector <> " button[phx-click=choose]", "impact-on-labor") |> render_click()
     updated = hd(Councils.get(user.author_id).lists)
     assert updated.name == topic.name
-    assert updated.hall_id == environment.hall_id
+    assert updated.hall_id == labor.hall_id
 
-    assert Enum.count(Councils.get(user.author_id).lists, &(&1.hall_id == environment.hall_id)) ==
+    assert Enum.count(Councils.get(user.author_id).lists, &(&1.hall_id == labor.hall_id)) ==
              2
 
     refute has_element?(view, "#council-hall-#{general.id} button")
-    send(view.pid, {:council_hall_selected, general.id, to_string(environment.hall_id)})
+    send(view.pid, {:council_hall_selected, general.id, to_string(labor.hall_id)})
     render(view)
     assert List.last(Councils.get(user.author_id).lists).hall_id == nil
 
     view |> element(selector <> " button", "Change hall") |> render_click()
-    view |> form(selector <> "-choices", %{query: "general"}) |> render_change()
-    view |> element(selector <> " button[phx-click=choose]", "General") |> render_click()
+    view |> form(selector <> "-choices", %{query: "all statements"}) |> render_change()
+    view |> element(selector <> " button[phx-click=choose]", "All statements") |> render_click()
     assert hd(Councils.get(user.author_id).lists).hall_id == nil
   end
 
@@ -199,7 +205,7 @@ defmodule YouCongressWeb.TopicCouncilTest do
     refute html =~ "Linked to"
     refute html =~ "council_list_id"
     {:ok, overview, _} = live(log_in_user(build_conn(), user), "/council")
-    assert has_element?(overview, "#topic-list-#{topic.id}", "Public list:")
+    assert has_element?(overview, "#topic-list-#{topic.id}", "Public")
     assert has_element?(overview, "#topic-list-#{topic.id} a", "Policy experts")
     refute has_element?(overview, "#topic-list-#{topic.id} h3")
   end

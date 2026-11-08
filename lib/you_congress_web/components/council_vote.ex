@@ -76,7 +76,7 @@ defmodule YouCongressWeb.Components.CouncilVote do
           </details>
         </div>
         <p class="text-xs text-gray-500">
-          We check matching halls in order. Every General list applies to all statements. We compare only For and Against; abstentions and missing positions do not count. A tie, or no For or Against positions, moves on to the next matching list.
+          We check matching halls in order. Lists set to All statements apply to every statement. We compare only For and Against; abstentions and missing positions do not count. A tie, or no For or Against positions, moves on to the next matching list.
         </p>
         <p class="text-xs text-gray-500">
           Only direct votes and verified sourced positions count. If no list has a majority, no Council vote is cast. Your direct vote always takes priority.

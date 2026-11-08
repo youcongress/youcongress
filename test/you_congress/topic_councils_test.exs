@@ -16,6 +16,20 @@ defmodule YouCongress.TopicCouncilsTest do
     vote_fixture(%{author_id: yes.id, statement_id: statement.id, answer: :for})
     vote_fixture(%{author_id: no.id, statement_id: statement.id, answer: :against})
     {:ok, council} = Councils.ensure(user.author_id)
+    {:ok, environment_hall} = YouCongress.Halls.get_or_create_by_name("environment")
+    attrs = Councils.editable(council)
+
+    {:ok, council} =
+      Councils.save(user, %{
+        attrs
+        | lists:
+            List.insert_at(attrs.lists, -2, %{
+              name: "Environment",
+              hall_id: environment_hall.id,
+              members: []
+            })
+      })
+
     [gov, jobs, environment, general] = Councils.editable(council).lists
 
     assert {:ok, _} =

@@ -101,14 +101,14 @@ Sobelow honors only the documented, check-specific `sobelow_skip` annotations fo
 
 ## Trust Network
 
-Participants manage ordered private Council lists at `/council`. The four defaults are
-AI governance, Impact on jobs, Environment, and General. Existing picks remain in the final
-General list. Any existing hall can be added repeatedly, including extra General lists;
+Participants manage ordered private Council lists at `/council`. New Councils start with
+ai-governance, impact-on-labor, and All statements. Existing Councils keep their saved
+assignments and lists. Any existing hall can be added repeatedly, including All statements;
 custom names distinguish small trusted groups. Lists can be reordered or removed, except
-for the permanent final General list. Its people and name remain editable.
+for the permanent final All statements entry. Its people and name remain editable.
 
 For each statement, only lists matching one of its hall tags are consulted, in saved order.
-Every General list applies to every statement, including an extra General placed first.
+Every All statements entry applies to every statement, including an extra one placed first.
 The first matching list with more For than Against, or more Against than For, decides.
 Abstentions, missing positions, and disputed/unverified evidence do not count toward the majority.
 Ties (including zero For and zero Against) move on to the next matching list.
@@ -121,8 +121,9 @@ recalculation for affected Councils.
 
 Signed-in topic edits, reasons, names, and order save automatically. Guest topic selections
 and reasons survive signup; email signups take effect after confirmation. Publishing and
-invitations remain optional. Hall selection is available inside Edit, not on the Council
-overview. Each entry selects one owned private/public list or another author's public list.
+invitations remain optional. The overview separates Hall and List to use, groups list ownership, visibility and people
+count together, and keeps removal in an entry menu. Hall selection is available inside
+Edit entry, not on the Council overview. Each entry selects one owned private/public list or another author's public list.
 The entry editor shows the hall, selected list, and a read-only people preview. Change list
 opens the picker; Edit list opens the membership editor with a return link to that entry.
 New private lists and independent copies open directly in the list editor.

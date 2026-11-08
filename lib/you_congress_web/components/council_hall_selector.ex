@@ -5,7 +5,7 @@ defmodule YouCongressWeb.Components.CouncilHallSelector do
   @impl true
   def update(assigns, socket) do
     options =
-      [%{id: "general", label: "General", description: "All statements"}] ++
+      [%{id: "general", label: "All statements", description: "Applies to every statement"}] ++
         (assigns.halls
          |> Enum.reject(&(&1.name == "general"))
          |> Enum.sort_by(& &1.name)
@@ -34,7 +34,7 @@ defmodule YouCongressWeb.Components.CouncilHallSelector do
         <span class="inline-flex items-center gap-1 rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-gray-300">
           {@selected_option.label}
         </span>
-        <span :if={!@selected_option.description} class="text-xs text-gray-500">hall</span>
+        <span :if={!@selected_option.description && !@fixed} class="text-xs text-gray-500">hall</span>
         <span :if={@selected_option.description} class="text-xs text-gray-500">
           {@selected_option.description}
         </span>

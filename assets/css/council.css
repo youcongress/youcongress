@@ -800,3 +800,42 @@
  .council-ui .yc-entry-actions {width:100%;margin-top:12px}
  .council-ui .yc-entry-actions .yc-btn {flex:1;text-align:center}
 }
+
+/* Hall assignments and their source lists remain visually separate. */
+.council-ui .yc-overview-nav {display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid var(--yc-line);margin-top:24px}
+.council-ui .yc-overview-nav .yc-tabs {margin:0;border:0;flex:1}
+.council-ui .yc-order-table-wrap {border:1px solid var(--yc-line);border-radius:10px}
+.council-ui .yc-order-table {width:100%;border-collapse:collapse;text-align:left}
+.council-ui .yc-order-table th {text-transform:uppercase;font-size:12px;color:var(--yc-muted);padding:12px 18px;background:var(--yc-soft)}
+.council-ui .yc-order-table td {padding:20px 18px;border-top:1px solid var(--yc-line);vertical-align:middle}
+.council-ui .yc-order-number {width:65px;font-weight:700;font-size:18px}
+.council-ui .yc-order-hall {width:23%}
+.council-ui .yc-order-table .yc-hall-selector {margin:0}
+.council-ui .yc-order-table .yc-hall-selector > div {align-items:flex-start;flex-direction:column;gap:4px}
+.council-ui .yc-order-table .yc-hall-selector span {font-size:13px}
+.council-ui .yc-order-list {overflow-wrap:anywhere}
+.council-ui .yc-order-actions {width:280px}
+.council-ui .yc-order-actions .yc-row {flex-wrap:nowrap;gap:8px;justify-content:flex-end}
+.council-ui .yc-order-actions .yc-btn {white-space:nowrap;padding:9px 12px}
+.council-ui .yc-order-fallback {background:var(--yc-soft)}
+.council-ui .yc-order-menu {position:relative}
+.council-ui .yc-order-menu summary {list-style:none;cursor:pointer;padding:8px;font-size:20px}
+.council-ui .yc-order-menu summary::-webkit-details-marker {display:none}
+.council-ui .yc-order-menu-content {position:absolute;right:0;top:100%;z-index:10;background:var(--yc-bg);border:1px solid var(--yc-line);border-radius:8px;padding:14px;white-space:nowrap;box-shadow:0 4px 14px #0001}
+.council-ui .yc-order-menu-content .yc-link {color:var(--yc-red)}
+.council-ui .yc-order-example summary {cursor:pointer}
+.council-ui .yc-mobile-label {display:none}
+@media(max-width:850px){
+ .council-ui .yc-overview-nav {flex-wrap:wrap;padding-bottom:14px;gap:12px}
+ .council-ui .yc-overview-nav .yc-tabs {flex-basis:100%}
+ .council-ui .yc-order-table,.council-ui .yc-order-table tbody {display:block}
+ .council-ui .yc-order-table thead {display:none}
+ .council-ui .yc-order-row {display:grid;grid-template-columns:38px minmax(0,1fr);gap:12px;padding:18px}
+ .council-ui .yc-order-row + .yc-order-row {border-top:1px solid var(--yc-line)}
+ .council-ui .yc-order-table td {border:0;padding:0;width:auto}
+ .council-ui .yc-order-number {grid-column:1;grid-row:1 / 4}
+ .council-ui .yc-order-hall,.council-ui .yc-order-list,.council-ui .yc-order-actions {grid-column:2}
+ .council-ui .yc-mobile-label {display:block;font-size:11px;font-weight:600;color:var(--yc-muted);margin-bottom:5px;text-transform:uppercase}
+ .council-ui .yc-order-number .yc-mobile-label {display:none}
+ .council-ui .yc-order-actions .yc-row {justify-content:flex-start;flex-wrap:wrap}
+}

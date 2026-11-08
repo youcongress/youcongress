@@ -18,10 +18,15 @@ defmodule YouCongress.CouncilsTest do
 
     assert Enum.map(council.lists, & &1.name) == [
              "AI governance",
-             "Impact on jobs",
-             "Environment",
-             "General"
+             "Impact on labor",
+             "All statements"
            ]
+
+    assert Enum.map(council.lists, fn l ->
+             if l.hall_id, do: YouCongress.Halls.get_hall!(l.hall_id).name, else: nil
+           end) == ["ai-governance", "impact-on-labor", nil]
+
+    assert List.last(council.lists).fallback
 
     assert Councils.explain(user.author_id, statement.id).answer == nil
     attrs = Councils.editable(council)

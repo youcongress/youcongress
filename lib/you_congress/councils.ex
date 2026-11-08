@@ -92,14 +92,13 @@ defmodule YouCongress.Councils do
     Enum.map(
       [
         {"ai-governance", "AI governance"},
-        {"impact-on-jobs", "Impact on jobs"},
-        {"environment", "Environment"}
+        {"impact-on-labor", "Impact on labor"}
       ],
       fn {slug, name} ->
         {:ok, hall} = Halls.get_or_create_by_name(slug)
         %{hall_id: hall.id, name: name, fallback: false}
       end
-    ) ++ [%{hall_id: nil, name: "General", fallback: true}]
+    ) ++ [%{hall_id: nil, name: "All statements", fallback: true}]
   end
 
   def save(%User{} = user, attrs) do
@@ -242,7 +241,7 @@ defmodule YouCongress.Councils do
         {value(m, :author_id), value(m, :reason), value(m, :source_url)}
       end)
 
-  defp default_name(nil), do: "General"
+  defp default_name(nil), do: "All statements"
   defp default_name(hall), do: hall.name
 
   def validate_url(changeset) do

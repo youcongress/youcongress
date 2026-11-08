@@ -37,6 +37,7 @@ defmodule YouCongressWeb.TrustLive.Council do
        list_owner: nil,
        preview_people: %{},
        linked_lists: %{},
+       list_owners: %{},
        publish_fields: %{name: "", slug: ""},
        publish_slug_custom: false,
        publish_slug_error: nil,
@@ -601,12 +602,12 @@ defmodule YouCongressWeb.TrustLive.Council do
 
     if hall || params["hall_id"] == "general" do
       name = String.trim(params["name"] || "")
-      name = if name == "", do: if(hall, do: hall_label(hall), else: "General"), else: name
+      name = if name == "", do: if(hall, do: hall_label(hall), else: "All statements"), else: name
       list = %{id: nil, hall_id: hall && hall.id, name: name, fallback: false, members: []}
       lists = List.insert_at(socket.assigns.draft.lists, -2, list)
       {:noreply, save_topic_lists(socket, lists) |> assign(show_add_hall: false)}
     else
-      {:noreply, put_flash(socket, :error, "Choose an existing hall or General.")}
+      {:noreply, put_flash(socket, :error, "Choose an existing hall or All statements.")}
     end
   end
 
@@ -766,7 +767,7 @@ defmodule YouCongressWeb.TrustLive.Council do
   def current_list(draft), do: Enum.at(draft.lists, active_index(draft))
   def members(draft), do: current_list(draft).members
   def hall_label(%{name: "ai-governance"}), do: "AI governance"
-  def hall_label(%{name: "impact-on-jobs"}), do: "Impact on jobs"
+  def hall_label(%{name: "impact-on-labor"}), do: "Impact on labor"
   def hall_label(hall), do: YouCongress.Tools.StringUtils.titleize_hall(hall.name)
 
   defp with_selection(draft, previous),
@@ -792,8 +793,11 @@ defmodule YouCongressWeb.TrustLive.Council do
     source =
       PeopleLists.linked_list(socket.assigns.current_user, current_list(socket.assigns.draft).id)
 
+    links = PeopleLists.linked_lists(socket.assigns.current_user)
+
     assign(socket,
-      linked_lists: PeopleLists.linked_lists(socket.assigns.current_user),
+      linked_lists: links,
+      list_owners: Discovery.people(Enum.map(Map.values(links), & &1.author_id)),
       linked_list: source,
       list_owner: if(source, do: Repo.get(Author, source.author_id)),
       preview_people:
