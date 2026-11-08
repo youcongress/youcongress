@@ -19,6 +19,7 @@ defmodule YouCongressWeb.PeopleListsTest do
     view |> element("#council-member-#{person.id} button", "+ Add a reason") |> render_click()
 
     render_submit(view, "save", %{
+      "public" => "true",
       "name" => "People worth reading",
       "reasons" => %{to_string(person.id) => "Tests ideas carefully"}
     })
@@ -27,7 +28,11 @@ defmodule YouCongressWeb.PeopleListsTest do
     assert_redirect(view, YouCongressWeb.PeopleListPaths.public_path(list))
     assert Councils.get(user.author_id) == council
     {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit")
-    edit |> element("#public-list-editor") |> render_change(%{name: "Careful researchers"})
+
+    edit
+    |> element("#public-list-editor")
+    |> render_change(%{public: "true", name: "Careful researchers"})
+
     {:ok, show, html} = live(conn, YouCongressWeb.PeopleListPaths.public_path(list))
     assert html =~ "Careful researchers"
     assert html =~ "Tests ideas carefully"
@@ -43,6 +48,7 @@ defmodule YouCongressWeb.PeopleListsTest do
 
     {:ok, list} =
       PeopleLists.create(owner, %{
+        public: true,
         name: "My reading list",
         members: [%{author_id: person.id, reason: "Worth reading"}]
       })
@@ -97,17 +103,20 @@ defmodule YouCongressWeb.PeopleListsTest do
 
     {:ok, list} =
       PeopleLists.create(owner, %{
+        public: true,
         name: "Starting points",
         members: [%{author_id: person.id, reason: "Someone else’s words"}]
       })
 
     {:ok, _} = Councils.add_member(chooser, old.id)
     {:ok, view, html} = live(log_in_user(conn, chooser), "/council?step=pick&use_list=#{list.id}")
-    assert html =~ "Copied people from"
+    assert html =~ "Use Starting points?"
     assert Councils.delegate_ids(chooser.author_id) == [old.id]
-    render_click(view, "save")
+    view |> form("#use-public-list", %{copy: "true"}) |> render_submit()
     assert Councils.delegate_ids(chooser.author_id) == [person.id]
-    refute hd(List.last(Councils.get(chooser.author_id).lists).members).reason
+
+    assert hd(List.last(Councils.get(chooser.author_id).lists).members).reason ==
+             "Someone else’s words"
 
     {:ok, _} =
       PeopleLists.update(owner, list.id, %{
@@ -134,7 +143,11 @@ defmodule YouCongressWeb.PeopleListsTest do
 
     conn = log_in_user(conn, user)
     {:ok, view, _} = live(conn, "/lists/new")
-    view |> form("#public-list-editor") |> render_change(%{name: "People I Trust"})
+
+    view
+    |> form("#public-list-editor")
+    |> render_change(%{public: "true", name: "People I Trust"})
+
     assert has_element?(view, "#public-list-slug[value=people-i-trust]")
     assert has_element?(view, "#public-list-url-preview", "/@listwriter/lists/people-i-trust")
 
@@ -142,9 +155,12 @@ defmodule YouCongressWeb.PeopleListsTest do
     |> form("#public-list-editor")
     |> render_change(%{"slug" => "my-picks", "_target" => ["slug"]})
 
-    view |> form("#public-list-editor") |> render_change(%{name: "Different title"})
+    view
+    |> form("#public-list-editor")
+    |> render_change(%{public: "true", name: "Different title"})
+
     assert has_element?(view, "#public-list-slug[value=my-picks]")
-    view |> form("#public-list-editor") |> render_submit()
+    view |> form("#public-list-editor") |> render_submit(%{public: "true"})
     [list] = PeopleLists.for_author(owner.id)
     assert_redirect(view, "/@listwriter/lists/my-picks")
     legacy = get(build_conn(), "/lists/#{list.id}")
@@ -169,9 +185,16 @@ defmodule YouCongressWeb.PeopleListsTest do
     conn: conn
   } do
     user = user_fixture()
-    {:ok, existing} = PeopleLists.create(user, %{name: "Reserved", slug: "reserved", members: []})
+
+    {:ok, existing} =
+      PeopleLists.create(user, %{public: true, name: "Reserved", slug: "reserved", members: []})
+
     {:ok, view, _} = live(log_in_user(conn, user), "/lists/new")
-    view |> form("#public-list-editor") |> render_submit(%{name: "My new list", slug: "reserved"})
+
+    view
+    |> form("#public-list-editor")
+    |> render_submit(%{public: "true", name: "My new list", slug: "reserved"})
+
     assert has_element?(view, "[role=alert]", "List URL")
     assert has_element?(view, "#public-list-name[value='My new list']")
     assert has_element?(view, "#public-list-url-preview", "/a/#{user.author_id}/lists/reserved")
@@ -204,7 +227,10 @@ defmodule YouCongressWeb.PeopleListsTest do
     user = user_fixture()
     first = author_fixture(%{name: "Picker List Alpha"})
     second = author_fixture(%{name: "Picker List Beta"})
-    {:ok, list} = PeopleLists.create(user, %{name: "Editable", members: [], link_council: true})
+
+    {:ok, list} =
+      PeopleLists.create(user, %{public: true, name: "Editable", members: [], link_council: true})
+
     {:ok, view, _} = live(log_in_user(conn, user), "/lists/#{list.id}/edit")
     refute has_element?(view, "button", "Save public list")
     assert has_element?(view, "h3", "People to consider")
@@ -239,7 +265,7 @@ defmodule YouCongressWeb.PeopleListsTest do
              List.last(Councils.get(user.author_id).lists).members,
              &(&1.author_id == second.id)
            ).reason ==
-             nil
+             "Autosaved public reason"
 
     render_submit(view, "save", %{
       "action" => "close-reason",
@@ -257,13 +283,13 @@ defmodule YouCongressWeb.PeopleListsTest do
     conn: conn
   } do
     user = user_fixture()
-    {:ok, list} = PeopleLists.create(user, %{name: "Original", members: []})
+    {:ok, list} = PeopleLists.create(user, %{public: true, name: "Original", members: []})
     conn = log_in_user(conn, user)
     {:ok, view, _} = live(conn, "/lists/#{list.id}/edit")
-    view |> form("#public-list-editor") |> render_change(%{name: ""})
+    view |> form("#public-list-editor") |> render_change(%{public: "true", name: ""})
     assert has_element?(view, "#list-autosave-status", "Not saved")
     assert PeopleLists.get(list.id).name == "Original"
-    view |> form("#public-list-editor") |> render_change(%{name: "Corrected"})
+    view |> form("#public-list-editor") |> render_change(%{public: "true", name: "Corrected"})
     assert PeopleLists.get(list.id).name == "Corrected"
     assert has_element?(view, "#list-autosave-status", "All changes saved")
     current = PeopleLists.get(list.id)
@@ -275,62 +301,57 @@ defmodule YouCongressWeb.PeopleListsTest do
         members: []
       })
 
-    view |> form("#public-list-editor") |> render_change(%{name: "Keep this unsaved text"})
+    view
+    |> form("#public-list-editor")
+    |> render_change(%{public: "true", name: "Keep this unsaved text"})
+
     assert has_element?(view, "#list-autosave-status", "changed in another window")
     assert has_element?(view, "#public-list-name[value='Keep this unsaved text']")
     assert PeopleLists.get(list.id).name == "Another window"
   end
 
-  test "Update list previews private Council changes and checkbox unlinks without changing votes",
-       %{conn: conn} do
-    user = user_fixture()
-    first = author_fixture()
-    second = author_fixture()
-    {:ok, _} = Councils.add_member(user, first.id)
+  test "list visibility autosaves and private lists are hidden from other users", %{conn: conn} do
+    owner = user_fixture()
+    other = user_fixture()
+    person = author_fixture()
 
-    {:ok, list} =
-      PeopleLists.create(user, %{
-        name: "Linked picks",
-        members: [%{author_id: first.id}],
+    {:ok, source} =
+      PeopleLists.create(owner, %{
+        public: true,
+        name: "Shared picks",
+        members: [%{author_id: person.id, reason: "A reason"}],
         link_council: true
       })
 
-    {:ok, council} = Councils.add_member(user, second.id)
-    conn = log_in_user(conn, user)
-    {:ok, mine, _} = live(conn, "/council?step=pick")
-    assert has_element?(mine, "#council-linked-list", "Linked picks")
-    assert has_element?(mine, "a[href='/lists/#{list.id}/edit?from=council']", "Update list")
-    {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit?from=council")
-    assert has_element?(edit, "#list-council-link[checked]")
-    assert has_element?(edit, "#list-council-review")
-    assert has_element?(edit, "button", "Save public list")
-    edit |> form("#public-list-editor") |> render_change(%{name: "Previewed name"})
-    assert PeopleLists.get(list.id).name == "Linked picks"
-    assert has_element?(edit, "#council-member-#{second.id}")
-    assert length(PeopleLists.get(list.id).members) == 2
-    edit |> form("#public-list-editor") |> render_submit()
-    assert length(PeopleLists.get(list.id).members) == 2
-    assert Councils.get(user.author_id) == council
-    {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit")
-    edit |> form("#public-list-editor") |> render_change(%{link_council: "false"})
-    assert PeopleLists.linked_list(user) == nil
-    assert Councils.get(user.author_id) == council
-    {:ok, mine, _} = live(conn, "/council?step=pick")
-    refute has_element?(mine, "#council-linked-list")
-    {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit")
-    edit |> form("#public-list-editor") |> render_change(%{link_council: "true"})
-    assert PeopleLists.linked_list(user).id == list.id
+    {:ok, view, _} = live(log_in_user(conn, owner), "/lists/#{source.id}/edit")
+    view |> form("#public-list-editor", %{public: "false"}) |> render_change()
+    refute PeopleLists.get(source.id, owner).public
+    assert PeopleLists.get(source.id, other) == nil
+    assert PeopleLists.for_author(owner.author_id) == []
+    refute YouCongress.Councils.Discovery.has_public_reasons?(person.id)
+
+    assert {:error, {:live_redirect, %{to: "/lists"}}} =
+             live(
+               log_in_user(build_conn(), other),
+               YouCongressWeb.PeopleListPaths.public_path(source)
+             )
+
+    {:ok, profile, _} = live(build_conn(), "/a/#{owner.author_id}/lists")
+    refute render(profile) =~ "Shared picks"
+    view |> form("#public-list-editor", %{public: "true"}) |> render_change()
+    assert PeopleLists.get(source.id).public
+    assert YouCongress.Councils.Discovery.has_public_reasons?(person.id)
   end
 
-  test "publishing a list copied from My Council links it automatically", %{conn: conn} do
+  test "a new list defaults to private", %{conn: conn} do
     user = user_fixture()
-    person = author_fixture()
-    {:ok, council} = Councils.add_member(user, person.id)
-    {:ok, view, _} = live(log_in_user(conn, user), "/lists/new?from=council")
-    assert has_element?(view, "#list-council-link[checked]")
-    view |> form("#public-list-editor") |> render_submit(%{name: "My picks"})
-    assert PeopleLists.linked_list(user).name == "My picks"
-    assert Councils.get(user.author_id) == council
+    {:ok, view, _} = live(log_in_user(conn, user), "/lists/new")
+    assert has_element?(view, "#list-visibility option[value=false][selected]")
+    view |> form("#public-list-editor", %{name: "My private picks"}) |> render_submit()
+    lists = PeopleLists.for_author(user.author_id, user)
+    source = Enum.find(lists, &(&1.name == "My private picks"))
+    refute source.public
+    assert PeopleLists.get(source.id) == nil
   end
 
   test "saving a reason before naming a new list keeps its slug automatic", %{conn: conn} do
@@ -357,7 +378,7 @@ defmodule YouCongressWeb.PeopleListsTest do
     render_change(view, "change", %{"name" => "Mobile picks", "slug" => "", "_target" => ["name"]})
 
     assert has_element?(view, "#public-list-slug[value=mobile-picks]")
-    view |> form("#public-list-editor") |> render_submit()
+    view |> form("#public-list-editor") |> render_submit(%{public: "true"})
     [list] = PeopleLists.for_author(user.author_id)
     assert hd(list.members).reason == "Early note"
     assert list.slug == "mobile-picks"

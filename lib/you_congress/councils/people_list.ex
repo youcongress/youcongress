@@ -5,6 +5,7 @@ defmodule YouCongress.Councils.PeopleList do
 
   schema "people_lists" do
     field :author_id, :id
+    field :public, :boolean, default: false
     field :name, :string
     field :slug, :string
     field :version, :integer, default: 1
@@ -17,7 +18,7 @@ defmodule YouCongress.Councils.PeopleList do
 
   def changeset(record, attrs) do
     record
-    |> cast(attrs, [:author_id, :name, :slug, :version])
+    |> cast(attrs, [:author_id, :name, :slug, :version, :public])
     |> update_change(:name, &trim/1)
     |> update_change(:slug, &normalize_slug/1)
     |> validate_required([:author_id, :name, :slug])

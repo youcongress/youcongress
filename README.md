@@ -121,32 +121,32 @@ recalculation for affected Councils.
 
 Signed-in topic edits, reasons, names, and order save automatically. Guest topic selections
 and reasons survive signup; email signups take effect after confirmation. Publishing and
-invitations remain optional. Copying a public list remains a reviewable draft until saved.
-Migration `20261108180000` preserves existing choices, reasons, public-list links, and votes;
-it adds empty defaults and queues normal vote recalculation. Returning to a single-list
-schema requires a separate data-preserving migration rather than a destructive rollback.
+invitations remain optional. Hall selection is available inside Edit, not on the Council
+overview. Each entry selects one owned private/public list or another author's public list.
 
-`/lists` manages named public lists of people and reasons. Publishing Council picks
-privately links the new list to the selected topic Council list. The owner can choose or remove that
-link with the list editor's checkbox. Each topic Council list can have one public list linked to it; the editor selects the target.
-Linking an existing public list uses its people only in that Council list. Saved additions and removals synchronize both ways
-in one transaction, refresh Council votes, and invalidate stale editors. Reasons remain
-separate: Council-only reasons are never automatically copied to the public list, and
-public-list reasons never overwrite private Council reasons. “Update list” previews a
-copy of Council people and reasons for explicit publication. Deleting or unlinking the
-list leaves the saved Council intact. Lists containing their owner cannot be linked,
-because Council members cannot include oneself.
+`/lists` manages all named people lists. `people_lists.public` defaults to false, and
+`people_list_members` stores each list's people, reasons, source URLs, and order.
+`council_lists` stores only the private hall assignment, position, fallback flag, and
+`people_list_id`. The same list can serve multiple entries or Councils. Editing an owned
+list from either screen changes the same record and refreshes all dependent Council votes.
+Reasons follow the list's visibility; publishing makes the list and its reasons public.
+Private lists are accessible only to their owner. Public pages and MCP responses never
+expose which Councils use a list. A user's own entry in a list is ignored by their Council.
 
-The link is stored as private account data, outside the public list schema; public pages
-and the MCP tool reveal no association with a Council. The list picker uses search and
-suggestions on the left, selected people with inline reasons on the right. Existing lists
-save adds/removals, reasons, metadata, and link changes automatically, with visible save
-errors and optimistic version checks. Reasons save after a typing pause; URL edits save
-on blur. Navigation links flush pending edits before leaving. New lists and the Council
-reason-publication preview retain their explicit publish/save step.
-“Use these picks” copies a public list into a Council draft; it does not link to another
-author's list. Unlinked public lists do not contribute Council nominations. Previously
-published Councils were migrated into named public lists, with all Councils private.
+Selecting someone else's public list follows its live membership and reasons without
+edit permission. The picker also offers an independent private copy. If the source is
+deleted or becomes private, other users' assignments become unavailable and evaluation
+continues to the next matching entry. Owners can continue using their own private lists.
+The picker can create a new private list directly. Existing lists autosave membership,
+reasons, names, URLs, and visibility with optimistic version checks and visible errors.
+Reasons save after a typing pause; URL edits save on blur. Navigation flushes pending edits.
+Creating a list and publishing from Council retain explicit confirmation buttons.
+
+Migration `20261108195000` keeps existing public lists public and converts unlinked Council
+collections into private people lists. Existing linked lists become direct references;
+any differing private Council notes are preserved in a separate private list. It preserves
+reconsideration member references, removes the old membership/link tables, and queues vote
+recalculation. A schema rollback requires a separate data-preserving migration.
 
 Public list URLs use `/@username/lists/<slug>`, with `/a/<author_id>/lists/<slug>` as
 an automatic fallback for authors without a username. Slugs are suggested from the list
@@ -167,8 +167,7 @@ Profiles show a public-lists link (`/@username/lists` or `/a/<author_id>/lists`)
 the author has a published list. Legacy community
 pages redirect to the Trust List for admins and Council setup for other visitors. Historical
 snapshots and CSV exports remain available to admins.
-`/trust/requests` retains the evidence correction and missing-person workflow;
-`/trust/updates` retains private updates.
+`/trust/updates` retains private updates. The former `/trust/requests` page is removed.
 
 The invite step provides a short author-ID referral link (`/council?ref=123`), sharing controls, and optional email
 invitations (up to 10 at once and 20 per day, with duplicate recipients suppressed).

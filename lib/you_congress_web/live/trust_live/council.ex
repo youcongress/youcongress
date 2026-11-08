@@ -23,10 +23,18 @@ defmodule YouCongressWeb.TrustLive.Council do
        draft: draft,
        halls: YouCongress.Halls.list_halls(),
        show_add_hall: false,
+       new_hall_id: nil,
+       show_public_list_picker: false,
+       public_list_query: "",
+       public_list_scope: "mine",
+       public_list_limit: 30,
+       public_list_results: [],
+       selected_public_list: nil,
        save_error: nil,
        source_list_name: nil,
        published_list: nil,
        linked_list: nil,
+       linked_lists: %{},
        publish_fields: %{name: "", slug: ""},
        publish_slug_custom: false,
        publish_slug_error: nil,
@@ -67,7 +75,17 @@ defmodule YouCongressWeb.TrustLive.Council do
 
     step = if step in allowed, do: step, else: default
     step = if params["statement"] && user, do: "votes", else: step
-    socket = socket |> assign(step: step, ref: ref, referrer: referrer, page_title: "My Council")
+
+    socket =
+      socket
+      |> assign(
+        step: step,
+        ref: ref,
+        referrer: referrer,
+        page_title: "My Council",
+        show_public_list_picker: false,
+        selected_public_list: nil
+      )
 
     socket =
       socket
@@ -81,6 +99,7 @@ defmodule YouCongressWeb.TrustLive.Council do
       if user do
         assign(socket,
           linked_list: PeopleLists.linked_list(user, current_list(socket.assigns.draft).id),
+          linked_lists: PeopleLists.linked_lists(user),
           counts: Discovery.vote_counts(user.author_id),
           invitations: Invitations.history(user),
           joined: Invitations.joined(user.author_id),
@@ -311,17 +330,12 @@ defmodule YouCongressWeb.TrustLive.Council do
       Enum.find(council.lists, &(&1.id == current_list(socket.assigns.draft).id)) ||
         Enum.find(council.lists, & &1.fallback)
 
-    members =
-      selected
-      |> Map.fetch!(:members)
-      |> Enum.map(&Map.take(&1, [:author_id, :reason]))
-
-    case PeopleLists.create(
+    case PeopleLists.update(
            user,
+           selected.people_list_id,
            Map.merge(socket.assigns.publish_fields, %{
-             members: members,
-             link_council: true,
-             council_list_id: selected.id
+             public: true,
+             version: selected.list_version
            })
          ) do
       {:ok, list} ->
@@ -452,6 +466,130 @@ defmodule YouCongressWeb.TrustLive.Council do
     end
   end
 
+  def handle_event(
+        "create-private-list",
+        %{"name" => name},
+        %{assigns: %{current_user: user}} = socket
+      )
+      when not is_nil(user) do
+    target = current_list(socket.assigns.draft)
+
+    case PeopleLists.create(user, %{
+           name: name,
+           public: false,
+           members: [],
+           link_council: true,
+           council_list_id: target.id
+         }) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> assign(
+           draft: with_selection(own_council(user), socket.assigns.draft),
+           selected_public_list: nil,
+           show_public_list_picker: false,
+           source_list_name: nil,
+           editing_reason: nil,
+           last_added_id: nil
+         )
+         |> load_people()
+         |> load_link()}
+
+      _ ->
+        {:noreply,
+         put_flash(socket, :error, "Give the private list a name up to 120 characters.")}
+    end
+  end
+
+  def handle_event("toggle-public-list-picker", _, socket) do
+    {:noreply,
+     socket
+     |> assign(
+       show_public_list_picker: !socket.assigns.show_public_list_picker,
+       selected_public_list: nil
+     )
+     |> load_public_lists()}
+  end
+
+  def handle_event("search-public-lists", params, socket) do
+    scope = if params["scope"] == "all", do: "all", else: "mine"
+
+    {:noreply,
+     socket
+     |> assign(
+       public_list_query: String.slice(params["q"] || "", 0, 120),
+       public_list_scope: scope,
+       public_list_limit: 30
+     )
+     |> load_public_lists()}
+  end
+
+  def handle_event("more-public-lists", _, socket),
+    do:
+      {:noreply,
+       socket
+       |> assign(public_list_limit: socket.assigns.public_list_limit + 30)
+       |> load_public_lists()}
+
+  def handle_event("preview-public-list", %{"id" => id}, socket) do
+    case PeopleLists.get(id, socket.assigns.current_user) do
+      nil -> {:noreply, put_flash(socket, :error, "This list is no longer available.")}
+      list -> {:noreply, assign(socket, selected_public_list: list)}
+    end
+  end
+
+  def handle_event("apply-public-list", params, %{assigns: %{current_user: user}} = socket)
+      when not is_nil(user) do
+    source = socket.assigns.selected_public_list
+    draft = socket.assigns.draft
+
+    if source do
+      case PeopleLists.use_for_council(
+             user,
+             source.id,
+             current_list(draft).id,
+             draft.version,
+             params["copy"] == "true"
+           ) do
+        {:ok, council} ->
+          {:noreply,
+           socket
+           |> assign(
+             draft: with_selection(Councils.editable(council), draft),
+             dirty: false,
+             save_error: nil,
+             source_list_name: nil,
+             selected_public_list: nil,
+             show_public_list_picker: false,
+             editing_reason: nil,
+             last_added_id: nil
+           )
+           |> load_people()
+           |> load_matches()
+           |> load_link()
+           |> put_flash(
+             :info,
+             if(params["copy"] == "true",
+               do: "A private copy of #{source.name} is now selected.",
+               else:
+                 "#{source.name} is now selected. Updates to the list will apply to your Council."
+             )
+           )}
+
+        {:error, :stale} ->
+          {:noreply,
+           assign(socket,
+             save_error: "Your Council changed in another window. Reload before continuing."
+           )}
+
+        _ ->
+          {:noreply, put_flash(socket, :error, "Could not use this list. Please try again.")}
+      end
+    else
+      {:noreply, socket}
+    end
+  end
+
   def handle_event("toggle-add-hall", _, socket),
     do: {:noreply, assign(socket, show_add_hall: !socket.assigns.show_add_hall)}
 
@@ -501,6 +639,43 @@ defmodule YouCongressWeb.TrustLive.Council do
 
   def handle_event(_, _, socket), do: {:noreply, socket}
 
+  @impl true
+  def handle_info({:council_hall_selected, list_id, raw_hall}, socket) do
+    with true <- not is_nil(socket.assigns.current_user),
+         true <- socket.assigns.step == "pick" || list_id == :new,
+         {:ok, hall_id} <- selected_hall(socket.assigns.halls, raw_hall) do
+      {:noreply, change_list_hall(socket, list_id, hall_id)}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  defp selected_hall(_, "general"), do: {:ok, nil}
+
+  defp selected_hall(halls, raw) do
+    case Enum.find(halls, &(to_string(&1.id) == raw && &1.name != "general")) do
+      nil -> :error
+      hall -> {:ok, hall.id}
+    end
+  end
+
+  defp change_list_hall(socket, :new, hall_id), do: assign(socket, new_hall_id: hall_id)
+
+  defp change_list_hall(socket, list_id, hall_id) do
+    lists = socket.assigns.draft.lists
+
+    if Enum.any?(lists, &(&1.id == list_id && !&1.fallback)) do
+      updated =
+        Enum.map(lists, fn list ->
+          if list.id == list_id, do: %{list | hall_id: hall_id}, else: list
+        end)
+
+      save_topic_lists(socket, updated)
+    else
+      socket
+    end
+  end
+
   defp update_member_reason(draft, id, reason) do
     Enum.map(members(draft), fn member ->
       if member.author_id == id, do: Map.put(member, :reason, reason), else: member
@@ -538,26 +713,28 @@ defmodule YouCongressWeb.TrustLive.Council do
   defp use_list(socket, nil), do: socket
 
   defp use_list(socket, raw) do
-    case PeopleLists.get(raw) do
+    case PeopleLists.get(raw, socket.assigns.current_user) do
       nil ->
         put_flash(socket, :error, "This public list is not available.")
 
       list ->
-        owner = socket.assigns.current_user && socket.assigns.current_user.author_id
+        if socket.assigns.current_user do
+          socket
+          |> assign(selected_public_list: list, show_public_list_picker: true, step: "pick")
+          |> load_public_lists()
+        else
+          members =
+            Enum.map(list.members, &%{author_id: &1.author_id, reason: nil, source_url: nil})
 
-        members =
-          list.members
-          |> Enum.reject(&(&1.author_id == owner))
-          |> Enum.map(&%{author_id: &1.author_id, reason: nil, source_url: nil})
-
-        socket
-        |> assign(
-          draft: put_members(socket.assigns.draft, members),
-          dirty: true,
-          source_list_name: list.name,
-          step: "pick"
-        )
-        |> load_people()
+          socket
+          |> assign(
+            draft: put_members(socket.assigns.draft, members),
+            dirty: true,
+            source_list_name: list.name,
+            step: "pick"
+          )
+          |> load_people()
+        end
     end
   end
 
@@ -611,6 +788,7 @@ defmodule YouCongressWeb.TrustLive.Council do
 
   defp load_link(socket) do
     assign(socket,
+      linked_lists: PeopleLists.linked_lists(socket.assigns.current_user),
       linked_list:
         PeopleLists.linked_list(
           socket.assigns.current_user,
@@ -634,6 +812,12 @@ defmodule YouCongressWeb.TrustLive.Council do
           |> load_people()
           |> load_link()
 
+        {:error, :read_only_list} ->
+          assign(socket,
+            save_error:
+              "This list belongs to someone else. Make a private copy to edit its people or comments."
+          )
+
         {:error, :stale} ->
           assign(socket,
             save_error: "Your Council changed in another window. Reload before continuing."
@@ -648,6 +832,11 @@ defmodule YouCongressWeb.TrustLive.Council do
       socket
     end
   end
+
+  def editable_list?(_draft, nil), do: true
+
+  def editable_list?(draft, user),
+    do: current_list(draft).available && current_list(draft).list_owner_id == user.author_id
 
   def selected?(draft, id), do: Enum.any?(members(draft), &(&1.author_id == id))
   def pending(draft, ref), do: Jason.encode!(%{council: draft, council_ref: ref})
@@ -705,6 +894,23 @@ defmodule YouCongressWeb.TrustLive.Council do
             end)
           )
       )
+
+  defp load_public_lists(socket) do
+    user = socket.assigns.current_user
+    owner = if socket.assigns.public_list_scope == "mine", do: user && user.author_id
+
+    results =
+      if user,
+        do:
+          PeopleLists.search_public(socket.assigns.public_list_query,
+            author_id: owner,
+            viewer_id: user.author_id,
+            limit: socket.assigns.public_list_limit
+          ),
+        else: []
+
+    assign(socket, public_list_results: results)
+  end
 
   defp load_matches(socket) do
     matches =

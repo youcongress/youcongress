@@ -151,6 +151,7 @@ defmodule YouCongressWeb.TrustLiveTest do
 
     {:ok, list} =
       PeopleLists.create(user, %{
+        public: true,
         name: "Public picks",
         members: [%{author_id: person.id, reason: "Shared reason"}]
       })

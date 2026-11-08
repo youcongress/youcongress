@@ -14,12 +14,17 @@ defmodule YouCongress.PeopleListsTest do
 
     {:ok, one} =
       PeopleLists.create(user, %{
+        public: true,
         name: "  Thinkers  ",
         members: [%{author_id: first.id, reason: "Public reason"}]
       })
 
     {:ok, two} =
-      PeopleLists.create(user, %{name: "Researchers", members: [%{author_id: second.id}]})
+      PeopleLists.create(user, %{
+        public: true,
+        name: "Researchers",
+        members: [%{author_id: second.id}]
+      })
 
     assert one.name == "Thinkers"
     assert length(PeopleLists.for_author(user.author_id)) == 2
@@ -48,19 +53,25 @@ defmodule YouCongress.PeopleListsTest do
     user = user_fixture()
     other = user_fixture()
     person = author_fixture()
-    assert {:error, _} = PeopleLists.create(user, %{name: "  ", members: []})
+    assert {:error, _} = PeopleLists.create(user, %{public: true, name: "  ", members: []})
 
     assert {:error, _} =
-             PeopleLists.create(user, %{name: String.duplicate("x", 121), members: []})
+             PeopleLists.create(user, %{
+               public: true,
+               name: String.duplicate("x", 121),
+               members: []
+             })
 
     assert {:error, :invalid_members} =
              PeopleLists.create(user, %{
+               public: true,
                name: "Duplicates",
                members: [%{author_id: person.id}, %{author_id: person.id}]
              })
 
     {:ok, list} =
       PeopleLists.create(user, %{
+        public: true,
         name: "Original",
         members: [%{author_id: person.id, reason: "Kept"}]
       })
@@ -85,14 +96,21 @@ defmodule YouCongress.PeopleListsTest do
   test "slugs are generated, editable, unique per owner, and reserve historical URLs" do
     user = user_fixture()
     other = user_fixture()
-    {:ok, first} = PeopleLists.create(user, %{name: "People I Trust", members: []})
+    {:ok, first} = PeopleLists.create(user, %{public: true, name: "People I Trust", members: []})
     assert first.slug == "people-i-trust"
-    {:ok, second} = PeopleLists.create(user, %{name: first.name, members: []})
+    {:ok, second} = PeopleLists.create(user, %{public: true, name: first.name, members: []})
     assert second.slug == "people-i-trust-2"
-    {:ok, _} = PeopleLists.create(other, %{name: "Other", slug: first.slug, members: []})
+
+    {:ok, _} =
+      PeopleLists.create(other, %{public: true, name: "Other", slug: first.slug, members: []})
 
     assert {:error, changeset} =
-             PeopleLists.create(user, %{name: "Duplicate", slug: first.slug, members: []})
+             PeopleLists.create(user, %{
+               public: true,
+               name: "Duplicate",
+               slug: first.slug,
+               members: []
+             })
 
     assert errors_on(changeset).slug
 
@@ -132,7 +150,10 @@ defmodule YouCongress.PeopleListsTest do
 
   test "invalid slugs fail without changing the list and changing only the name keeps its URL" do
     user = user_fixture()
-    {:ok, list} = PeopleLists.create(user, %{name: "Original", slug: "  My-List  ", members: []})
+
+    {:ok, list} =
+      PeopleLists.create(user, %{public: true, name: "Original", slug: "  My-List  ", members: []})
+
     assert list.slug == "my-list"
 
     for slug <- [
@@ -161,14 +182,15 @@ defmodule YouCongress.PeopleListsTest do
     assert updated.slug == list.slug
   end
 
-  test "private links require ownership, survive independent edits, and clear on deletion" do
+  test "Council references require ownership to edit and become unavailable on deletion" do
     user = user_fixture()
     other = user_fixture()
     person = author_fixture()
-    {:ok, council} = Councils.add_member(user, person.id)
+    {:ok, _} = Councils.add_member(user, person.id)
 
     {:ok, list} =
       PeopleLists.create(user, %{
+        public: true,
         name: "Linked",
         members: [%{author_id: person.id}],
         link_council: true
@@ -177,7 +199,7 @@ defmodule YouCongress.PeopleListsTest do
     assert PeopleLists.linked_list(user).id == list.id
     assert PeopleLists.linked_list(other) == nil
     assert PeopleLists.linked_list(nil) == nil
-    assert Councils.get(user.author_id) == council
+    assert List.last(Councils.get(user.author_id).lists).people_list_id == list.id
 
     assert {:error, :forbidden} =
              PeopleLists.update(other, list.id, %{
@@ -187,7 +209,9 @@ defmodule YouCongress.PeopleListsTest do
                link_council: true
              })
 
-    assert {:error, _} = PeopleLists.create(user, %{name: "", members: [], link_council: true})
+    assert {:error, _} =
+             PeopleLists.create(user, %{public: true, name: "", members: [], link_council: true})
+
     assert PeopleLists.linked_list(user).id == list.id
 
     {:ok, updated} =
@@ -198,9 +222,9 @@ defmodule YouCongress.PeopleListsTest do
       })
 
     assert PeopleLists.linked_list(user).id == list.id
-    assert Councils.get(user.author_id) == council
+    assert List.last(Councils.get(user.author_id).lists).people_list_id == list.id
     {:ok, _} = PeopleLists.delete(user, updated.id)
     assert PeopleLists.linked_list(user) == nil
-    assert Councils.get(user.author_id) == council
+    refute List.last(Councils.get(user.author_id).lists).available
   end
 end

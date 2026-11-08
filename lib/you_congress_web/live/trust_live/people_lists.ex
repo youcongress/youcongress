@@ -22,18 +22,13 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
        own: false,
        slug_custom: false,
        slug_error: nil,
-       linked: false,
-       original_linked: false,
        council_list_id: nil,
-       original_council_list_id: nil,
-       council_lists: [],
-       reviewing_council: false,
        editing_reason: nil,
        reason_text: "",
        last_added_id: nil,
        autosave: false,
        save_error: nil,
-       draft: %{name: "", slug: "", version: 1, members: []}
+       draft: %{name: "", slug: "", public: false, version: 1, members: []}
      )}
   end
 
@@ -42,7 +37,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
     user = socket.assigns.current_user
 
     socket =
-      if user do
+      if user && params["from"] == "council" do
         {:ok, council} = Councils.ensure(user.author_id)
 
         target =
@@ -50,9 +45,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
             Enum.find(council.lists, & &1.fallback)
 
         assign(socket,
-          council_lists: council.lists,
-          council_list_id: target.id,
-          original_council_list_id: target.id
+          council_list_id: target.id
         )
       else
         socket
@@ -68,15 +61,12 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
             do: council_members(user, socket.assigns.council_list_id),
             else: []
 
-        draft = %{name: "", slug: "", version: 1, members: members}
+        draft = %{name: "", slug: "", public: false, version: 1, members: members}
 
         {:noreply,
          socket
          |> assign(
            draft: draft,
-           linked: params["from"] == "council",
-           original_linked: false,
-           reviewing_council: params["from"] == "council",
            matches: Discovery.search(""),
            slug_custom: false,
            slug_error: nil,
@@ -85,7 +75,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
            save_error: nil,
            owner: user.author,
            own: true,
-           page_title: "Create a public list"
+           page_title: "Create a list"
          )
          |> load_people()}
 
@@ -93,7 +83,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
         show_list(socket, params)
 
       :edit ->
-        load_list(socket, PeopleLists.get(params["id"]), params["from"])
+        load_list(socket, PeopleLists.get(params["id"], user), params["from"])
 
       _ ->
         {:noreply,
@@ -103,7 +93,9 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
 
   defp show_list(socket, params) do
     owner = list_owner(params)
-    list = if owner, do: PeopleLists.get_by_slug(owner.id, params["slug"])
+
+    list =
+      if owner, do: PeopleLists.get_by_slug(owner.id, params["slug"], socket.assigns.current_user)
 
     requested =
       if params["username"],
@@ -139,7 +131,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
      assign(socket,
        owner: owner,
        own: user && owner && user.author_id == owner.id,
-       lists: if(owner, do: PeopleLists.for_author(owner.id), else: []),
+       lists: if(owner, do: PeopleLists.for_author(owner.id, user), else: []),
        page_title: "People lists"
      )}
   end
@@ -149,7 +141,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
     own = list && user && list.author_id == user.author_id
 
     cond do
-      is_nil(list) ->
+      is_nil(list) || !PeopleLists.accessible?(list, user) ->
         {:noreply,
          socket
          |> put_flash(:error, "This list is not available.")
@@ -163,33 +155,20 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
     end
   end
 
-  defp render_list(socket, list, user, own, source) do
-    linked_id = if own, do: PeopleLists.linked_council_list_id(user, list.id)
-    target_id = linked_id || socket.assigns.council_list_id
-    linked = not is_nil(linked_id)
-    reviewing = own && socket.assigns.live_action == :edit && source == "council" && linked
-
+  defp render_list(socket, list, _user, own, _source) do
     draft = %{
       name: list.name,
+      public: list.public,
       slug: list.slug,
       version: list.version,
-      members:
-        if(reviewing,
-          do: council_members(user, target_id),
-          else: Enum.map(list.members, &Map.take(&1, [:author_id, :reason]))
-        )
+      members: Enum.map(list.members, &Map.take(&1, [:author_id, :reason, :source_url]))
     }
 
     {:noreply,
      socket
      |> assign(
-       autosave: socket.assigns.live_action == :edit && !reviewing,
+       autosave: socket.assigns.live_action == :edit,
        save_error: nil,
-       linked: linked,
-       original_linked: linked,
-       council_list_id: target_id,
-       original_council_list_id: target_id,
-       reviewing_council: reviewing,
        editing_reason: nil,
        reason_text: "",
        last_added_id: nil,
@@ -300,11 +279,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
   def handle_event("save", params, socket) do
     socket = socket |> update_draft(params) |> save_draft_reason()
 
-    attrs =
-      Map.merge(socket.assigns.draft, %{
-        link_council: socket.assigns.linked,
-        council_list_id: socket.assigns.council_list_id
-      })
+    attrs = socket.assigns.draft
 
     result =
       if socket.assigns.list,
@@ -322,20 +297,9 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
          socket
          |> put_flash(
            :info,
-           if(socket.assigns.linked,
-             do: "Public list saved. Its people are synced with your Council.",
-             else: "Public list saved."
-           )
+           "List saved."
          )
          |> push_navigate(to: PeopleListPaths.public_path(list))}
-
-      {:error, :self_in_linked_list} ->
-        {:noreply,
-         put_flash(
-           socket,
-           :error,
-           "A linked list cannot include yourself. Remove yourself or unlink it from your Council."
-         )}
 
       {:error, :stale} ->
         {:noreply,
@@ -362,7 +326,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
       {:ok, _} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Public list deleted. Your private Council is unchanged.")
+         |> put_flash(:info, "List deleted. Council entries that used it are now unavailable.")
          |> push_navigate(to: ~p"/lists")}
 
       _ ->
@@ -373,23 +337,17 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
   def handle_event(_, _, socket), do: {:noreply, socket}
 
   defp update_draft(socket, params) do
-    target =
-      Enum.find(
-        socket.assigns.council_lists,
-        &(&1.id == TrustRankings.parse_id(params["council_list_id"]))
-      )
-
-    socket = if target, do: assign(socket, council_list_id: target.id), else: socket
     draft = socket.assigns.draft
+
+    draft =
+      if Map.has_key?(params, "public"),
+        do: %{draft | public: params["public"] == "true"},
+        else: draft
+
     reasons = params["reasons"] || %{}
 
     reason_text =
       Map.get(reasons, to_string(socket.assigns.editing_reason), socket.assigns.reason_text)
-
-    linked =
-      if Map.has_key?(params, "link_council"),
-        do: params["link_council"] == "true",
-        else: socket.assigns.linked
 
     {draft, custom?} =
       PeopleListPaths.edit_fields(
@@ -420,7 +378,6 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
       draft: draft,
       slug_custom: custom?,
       slug_error: nil,
-      linked: linked,
       reason_text: reason_text
     )
   end
@@ -428,9 +385,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
   defp maybe_autosave(%{assigns: %{autosave: false}} = socket), do: socket
 
   defp maybe_autosave(socket) do
-    if socket.assigns.draft == saved_draft(socket.assigns.list) &&
-         socket.assigns.linked == socket.assigns.original_linked &&
-         socket.assigns.council_list_id == socket.assigns.original_council_list_id do
+    if socket.assigns.draft == saved_draft(socket.assigns.list) do
       assign(socket, save_error: nil, slug_error: nil)
     else
       persist_autosave(socket)
@@ -440,32 +395,23 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
   defp saved_draft(list) do
     %{
       name: list.name,
+      public: list.public,
       slug: list.slug,
       version: list.version,
-      members: Enum.map(list.members, &Map.take(&1, [:author_id, :reason]))
+      members: Enum.map(list.members, &Map.take(&1, [:author_id, :reason, :source_url]))
     }
   end
 
   defp persist_autosave(socket) do
-    attrs =
-      Map.merge(socket.assigns.draft, %{
-        link_council: socket.assigns.linked,
-        council_list_id: socket.assigns.council_list_id
-      })
+    attrs = socket.assigns.draft
 
     case PeopleLists.update(socket.assigns.current_user, socket.assigns.list.id, attrs) do
       {:ok, list} ->
-        linked? =
-          not is_nil(PeopleLists.linked_council_list_id(socket.assigns.current_user, list.id))
-
         draft = saved_draft(list)
 
         assign(socket,
           list: list,
           draft: draft,
-          linked: linked?,
-          original_linked: linked?,
-          original_council_list_id: socket.assigns.council_list_id,
           save_error: nil,
           slug_error: nil
         )
@@ -480,12 +426,6 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
         assign(socket,
           save_error:
             "Not saved: this list changed in another window or through your Council. Reload to get the latest version; your edits are still shown here."
-        )
-
-      {:error, :self_in_linked_list} ->
-        assign(socket,
-          save_error:
-            "Not saved: a linked list cannot include yourself. Remove yourself or unlink the list."
         )
 
       _ ->
@@ -520,6 +460,6 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
     council.lists
     |> Enum.find(&(&1.id == list_id))
     |> Map.fetch!(:members)
-    |> Enum.map(&Map.take(&1, [:author_id, :reason]))
+    |> Enum.map(&Map.take(&1, [:author_id, :reason, :source_url]))
   end
 end

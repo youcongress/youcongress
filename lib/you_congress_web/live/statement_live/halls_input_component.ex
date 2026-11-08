@@ -13,7 +13,7 @@ defmodule YouCongressWeb.StatementLive.HallsInputComponent do
         Halls
       </label>
       <p class="text-xs text-gray-500 mb-2">
-        Halls are unordered topic tags. Your Council applies across every statement.
+        Halls are unordered topic tags. Your Council checks lists for matching halls in your saved order; General applies to every statement.
       </p>
       <div class="flex flex-wrap gap-2 mb-2">
         <%= for hall_name <- @selected_halls do %>

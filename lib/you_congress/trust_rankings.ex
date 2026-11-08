@@ -2,7 +2,7 @@ defmodule YouCongress.TrustRankings do
   @moduledoc "Direct council nominations, deduplicated across repeated lists of the same scope."
   import Ecto.Query
   alias YouCongress.{Repo, Councils}
-  alias YouCongress.Councils.{Council, List, Member}
+  alias YouCongress.Councils.{Council, List, PeopleListMember}
   alias YouCongress.Authors.Author
   alias YouCongress.Accounts.User
   alias YouCongress.TrustNetwork.{Membership, Snapshot}
@@ -20,10 +20,11 @@ defmodule YouCongress.TrustRankings do
     if valid_scope?(scope) do
       query =
         from c in Council,
+          as: :council,
           join: l in List,
           on: l.council_id == c.id,
-          join: m in Member,
-          on: m.list_id == l.id,
+          join: m in PeopleListMember,
+          on: m.people_list_id == l.people_list_id,
           join: participant in Author,
           on: participant.id == c.author_id,
           join: user in User,
@@ -32,6 +33,13 @@ defmodule YouCongress.TrustRankings do
           on: nominee.id == m.author_id,
           left_join: h in YouCongress.Halls.Hall,
           on: h.id == l.hall_id,
+          where: m.author_id != c.author_id,
+          where:
+            l.people_list_id in subquery(
+              from p in YouCongress.Councils.PeopleList,
+                where: p.public or p.author_id == parent_as(:council).author_id,
+                select: p.id
+            ),
           where: user.role not in ["spam", "blocked", "waiting_list"],
           where: not is_nil(user.email_confirmed_at) or user.signup_method in ["google", "x"],
           select: %{

@@ -37,7 +37,10 @@ defmodule YouCongressWeb.MCPServer.TrustNetworkTest do
 
   test "public list API never reveals the private Council link" do
     user = user_fixture()
-    {:ok, list} = YouCongress.PeopleLists.create(user, %{name: "Public picks", members: []})
+
+    {:ok, list} =
+      YouCongress.PeopleLists.create(user, %{public: true, name: "Public picks", members: []})
+
     frame = %Anubis.Server.Frame{assigns: %{query_params: %{}}}
 
     with_mock Anubis.Server.Response, tool: fn -> :tool end, json: fn :tool, data -> data end do

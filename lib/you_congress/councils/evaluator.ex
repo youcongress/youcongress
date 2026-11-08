@@ -19,10 +19,14 @@ defmodule YouCongress.Councils.Evaluator do
         against_count = Enum.count(members, &(&1.answer == :against))
         threshold = div(for_count + against_count, 2) + 1
         matching = is_nil(list.hall_id) || list.hall_id in hall_ids
-        consulted = matching && is_nil(answer)
+        consulted = Map.get(list, :available, true) && matching && is_nil(answer)
 
         result = majority(for_count, against_count, threshold)
-        status = list_status(matching, answer, result)
+
+        status =
+          if Map.get(list, :available, true),
+            do: list_status(matching, answer, result),
+            else: :unavailable
 
         trace = %{
           id: list.id,

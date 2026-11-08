@@ -22,7 +22,7 @@ export default {
       for (const [key, value] of new FormData(this.el)) {
         const reason = key.match(/^reasons\[(\d+)\]$/)
         if (reason) params.reasons[reason[1]] = value
-        else if (["name", "slug", "link_council", "council_list_id"].includes(key)) params[key] = value
+        else if (["name", "slug", "public"].includes(key)) params[key] = value
       }
       this.pushEvent("flush-autosave", params, ({saved}) => {
         this.navigating = false

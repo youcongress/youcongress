@@ -25,6 +25,7 @@ defmodule YouCongressWeb.AuthorTrustTest do
 
     {:ok, list} =
       PeopleLists.create(owner, %{
+        public: true,
         name: "Thoughtful people",
         members: [%{author_id: person.id, reason: "   "}]
       })
@@ -71,6 +72,7 @@ defmodule YouCongressWeb.AuthorTrustTest do
 
     {:ok, list} =
       PeopleLists.create(owner, %{
+        public: true,
         name: "Careful thinkers",
         members: [%{author_id: person.id, reason: "Checks assumptions"}]
       })
@@ -119,6 +121,7 @@ defmodule YouCongressWeb.AuthorTrustTest do
 
     {:ok, _} =
       PeopleLists.create(owner, %{
+        public: true,
         name: "Picks",
         members: [%{author_id: person.id, reason: "Hidden reason"}]
       })
@@ -142,6 +145,7 @@ defmodule YouCongressWeb.AuthorTrustTest do
 
     {:ok, _} =
       PeopleLists.create(owner, %{
+        public: true,
         name: "Picks",
         members: [%{author_id: person.id, reason: "Public evidence"}]
       })

@@ -6,162 +6,239 @@ defmodule YouCongress.LinkedPeopleListsTest do
   import YouCongress.VotesFixtures
   alias YouCongress.{Councils, PeopleLists, Votes}
 
-  defp save_council(user, members) do
-    draft = Councils.get(user.author_id) |> Councils.editable()
-    Councils.save(user, %{draft | lists: [%{List.last(draft.lists) | members: members}]})
+  defp choose_source(user, source, copy? \\ false) do
+    {:ok, council} = Councils.ensure(user.author_id)
+
+    PeopleLists.use_for_council(
+      user,
+      source.id,
+      List.last(council.lists).id,
+      council.version,
+      copy?
+    )
   end
 
-  test "saved memberships synchronize both ways but reasons stay separate and stale editors fail" do
+  test "private lists are the same records used by Councils and reasons edit in both directions" do
     user = user_fixture()
-    first = author_fixture()
-    second = author_fixture()
-    {:ok, _} = Councils.add_member(user, first.id)
-    {:ok, _} = save_council(user, [%{author_id: first.id, reason: "Private first"}])
+    person = author_fixture()
+    {:ok, council} = Councils.add_member(user, person.id)
+    target = List.last(council.lists)
+    assert PeopleLists.get(target.people_list_id) == nil
+    source = PeopleLists.get(target.people_list_id, user)
+    refute source.public
 
-    {:ok, list} =
-      PeopleLists.create(user, %{
-        name: "Shared",
-        link_council: true,
-        members: [%{author_id: first.id, reason: "Public first"}]
+    {:ok, source} =
+      PeopleLists.update(user, source.id, %{
+        version: source.version,
+        members: [%{author_id: person.id, reason: "Private reasoning"}]
       })
 
-    {:ok, council} =
-      save_council(user, [
-        %{author_id: first.id, reason: "Private first"},
-        %{author_id: second.id, reason: "Never publish automatically"}
-      ])
+    updated = Councils.get(user.author_id)
+    assert hd(List.last(updated.lists).members).reason == "Private reasoning"
+    assert {:error, :stale} = Councils.save(user, Councils.editable(council))
+    attrs = Councils.editable(updated)
 
-    updated = PeopleLists.get(list.id)
+    lists =
+      Enum.map(attrs.lists, fn l ->
+        if l.fallback,
+          do: %{l | members: [%{author_id: person.id, reason: "Updated in Council"}]},
+          else: l
+      end)
 
-    assert Enum.map(updated.members, &{&1.author_id, &1.reason}) == [
-             {first.id, "Public first"},
-             {second.id, nil}
-           ]
-
-    assert updated.version == list.version + 1
+    assert {:ok, _} = Councils.save(user, %{attrs | lists: lists})
+    assert hd(PeopleLists.get(source.id, user).members).reason == "Updated in Council"
 
     assert {:error, :stale} =
-             PeopleLists.update(user, list.id, %{
-               version: list.version,
-               name: list.name,
-               members: []
-             })
+             PeopleLists.update(user, source.id, %{version: source.version, members: []})
+  end
 
-    {:ok, updated} =
-      PeopleLists.update(user, list.id, %{
-        version: updated.version,
-        name: list.name,
-        members: [%{author_id: second.id, reason: "Public second"}]
+  test "a public source is read-only for followers and changes recalculate their votes" do
+    owner = user_fixture()
+    follower = user_fixture()
+    yes = author_fixture()
+    no = author_fixture()
+    statement = statement_fixture()
+    vote_fixture(%{author_id: yes.id, statement_id: statement.id, answer: :for})
+    vote_fixture(%{author_id: no.id, statement_id: statement.id, answer: :against})
+
+    {:ok, source} =
+      PeopleLists.create(owner, %{
+        public: true,
+        name: "Shared experts",
+        members: [%{author_id: yes.id}]
       })
 
-    assert Councils.delegate_ids(user.author_id) == [second.id]
+    {:ok, council} = choose_source(follower, source)
+    assert List.last(council.lists).people_list_id == source.id
+    assert Votes.get_by(author_id: follower.author_id, statement_id: statement.id).answer == :for
+    assert {:error, :read_only_list} = Councils.add_member(follower, no.id)
 
-    assert hd(List.last(Councils.get(user.author_id).lists).members).reason ==
-             "Never publish automatically"
+    assert {:error, :forbidden} =
+             PeopleLists.update(follower, source.id, %{version: source.version, members: []})
 
-    assert {:error, :stale} = Councils.save(user, Councils.editable(council))
+    {:ok, source} =
+      PeopleLists.update(owner, source.id, %{
+        version: source.version,
+        members: [%{author_id: no.id}]
+      })
 
-    {:ok, _} = save_council(user, [%{author_id: second.id, reason: "New private note"}])
-    assert PeopleLists.get(list.id) == updated
-    {:ok, _} = save_council(user, [])
-    assert PeopleLists.get(list.id).members == []
-    latest = PeopleLists.get(list.id)
+    assert Votes.get_by(author_id: follower.author_id, statement_id: statement.id).answer ==
+             :against
+
+    {:ok, _} = PeopleLists.update(owner, source.id, %{version: source.version, public: false})
+    refute List.last(Councils.get(follower.author_id).lists).available
+    assert List.last(Councils.get(follower.author_id).lists).members == []
+    assert Votes.get_by(author_id: follower.author_id, statement_id: statement.id) == nil
+    assert PeopleLists.get(source.id, follower) == nil
+  end
+
+  test "a private copy is independent and deleting its source marks the assignment unavailable" do
+    owner = user_fixture()
+    follower = user_fixture()
+    person = author_fixture()
+
+    {:ok, source} =
+      PeopleLists.create(owner, %{
+        public: true,
+        name: "Source",
+        members: [%{author_id: person.id, reason: "Evidence"}]
+      })
+
+    {:ok, council} = choose_source(follower, source, true)
+    copy_id = List.last(council.lists).people_list_id
+    refute copy_id == source.id
+    copy = PeopleLists.get(copy_id, follower)
+    refute copy.public
+    assert hd(copy.members).reason == "Evidence"
+    {:ok, _} = PeopleLists.update(owner, source.id, %{version: source.version, members: []})
+    assert Councils.delegate_ids(follower.author_id) == [person.id]
+    {:ok, _} = PeopleLists.delete(follower, copy_id)
+    assert List.last(Councils.get(follower.author_id).lists).people_list_id == nil
+    refute List.last(Councils.get(follower.author_id).lists).available
+  end
+
+  test "one list may serve multiple entries without duplicated memberships" do
+    user = user_fixture()
+    person = author_fixture()
+    {:ok, source} = PeopleLists.create(user, %{name: "Private experts", members: []})
+    {:ok, council} = choose_source(user, source)
+
+    {:ok, council} =
+      PeopleLists.use_for_council(user, source.id, hd(council.lists).id, council.version, false)
+
+    {:ok, _} = Councils.add_member(user, person.id, hd(council.lists).id)
+    latest = Councils.get(user.author_id)
+    assert hd(hd(latest.lists).members).author_id == person.id
+    assert hd(List.last(latest.lists).members).author_id == person.id
+    assert length(PeopleLists.get(source.id, user).members) == 1
+  end
+
+  test "selection rejects private sources, foreign slots, and stale Council versions" do
+    owner = user_fixture()
+    viewer = user_fixture()
+    {:ok, private} = PeopleLists.create(owner, %{name: "Secret list", members: []})
+    {:ok, public} = PeopleLists.create(owner, %{public: true, name: "Public list", members: []})
+    {:ok, council} = Councils.ensure(viewer.author_id)
+    {:ok, theirs} = Councils.ensure(owner.author_id)
+    target = List.last(council.lists)
+
+    assert {:error, :not_found} =
+             PeopleLists.use_for_council(viewer, private.id, target.id, council.version, false)
+
+    assert {:error, :invalid_list} =
+             PeopleLists.use_for_council(
+               viewer,
+               public.id,
+               hd(theirs.lists).id,
+               council.version,
+               false
+             )
+
+    assert {:error, :stale} =
+             PeopleLists.use_for_council(viewer, public.id, target.id, council.version - 1, false)
+
+    assert PeopleLists.get(private.id, viewer) == nil
+    refute PeopleLists.has_public_lists?(viewer.author_id)
+  end
+
+  test "an unavailable source falls through to the next matching list" do
+    owner = user_fixture()
+    follower = user_fixture()
+    yes = author_fixture()
+    no = author_fixture()
+    statement = statement_fixture()
+    vote_fixture(%{author_id: yes.id, statement_id: statement.id, answer: :for})
+    vote_fixture(%{author_id: no.id, statement_id: statement.id, answer: :against})
+
+    {:ok, source} =
+      PeopleLists.create(owner, %{
+        public: true,
+        name: "First choice",
+        members: [%{author_id: no.id}]
+      })
+
+    {:ok, council} = Councils.add_member(follower, yes.id)
+    attrs = Councils.editable(council)
+
+    {:ok, council} =
+      Councils.save(follower, %{
+        attrs
+        | lists: List.update_at(attrs.lists, 0, &%{&1 | hall_id: nil})
+      })
 
     {:ok, _} =
-      PeopleLists.update(user, list.id, %{
-        version: latest.version,
-        name: list.name,
-        members: [%{author_id: first.id, reason: "Only public"}]
-      })
+      PeopleLists.use_for_council(
+        follower,
+        source.id,
+        hd(council.lists).id,
+        council.version,
+        false
+      )
 
-    assert hd(List.last(Councils.get(user.author_id).lists).members).reason == nil
+    assert Votes.get_by(author_id: follower.author_id, statement_id: statement.id).answer ==
+             :against
+
+    {:ok, _} = PeopleLists.update(owner, source.id, %{version: source.version, public: false})
+    assert Votes.get_by(author_id: follower.author_id, statement_id: statement.id).answer == :for
+
+    {:ok, source} =
+      PeopleLists.update(owner, source.id, %{version: source.version + 1, public: true})
+
+    assert Votes.get_by(author_id: follower.author_id, statement_id: statement.id).answer ==
+             :against
+
+    {:ok, _} = PeopleLists.delete(owner, source.id)
+    assert Votes.get_by(author_id: follower.author_id, statement_id: statement.id).answer == :for
   end
 
-  test "linking and editing refresh votes; unlinking stops sync and deletion keeps the Council" do
-    user = user_fixture()
-    first = author_fixture()
-    second = author_fixture()
-    statement = statement_fixture()
-    vote_fixture(%{author_id: first.id, statement_id: statement.id, answer: :for})
-    vote_fixture(%{author_id: second.id, statement_id: statement.id, answer: :against})
+  test "merging Council owners preserves shared source lists without editing or draining them" do
+    owner = user_fixture()
+    duplicate = user_fixture()
+    survivor = user_fixture()
+    person = author_fixture()
 
-    {:ok, list} =
-      PeopleLists.create(user, %{
-        name: "Voting picks",
-        link_council: true,
-        members: [%{author_id: first.id}]
+    {:ok, source} =
+      PeopleLists.create(owner, %{
+        public: true,
+        name: "Shared",
+        members: [%{author_id: survivor.author_id}]
       })
 
-    assert Votes.get_by(author_id: user.author_id, statement_id: statement.id).answer == :for
+    {:ok, _} = choose_source(survivor, source)
+    {:ok, duplicate_council} = Councils.add_member(duplicate, person.id)
+    original = List.last(duplicate_council.lists).people_list_id
 
-    {:ok, list} =
-      PeopleLists.update(user, list.id, %{
-        version: list.version,
-        name: list.name,
-        members: [%{author_id: second.id}]
-      })
+    assert {:ok, :ok} =
+             YouCongress.Repo.transaction(fn ->
+               YouCongress.Councils.Merge.merge(duplicate.author_id, survivor.author_id)
+             end)
 
-    assert Votes.get_by(author_id: user.author_id, statement_id: statement.id).answer == :against
-
-    {:ok, list} =
-      PeopleLists.update(user, list.id, %{version: list.version, name: list.name, members: []})
-
-    assert Votes.get_by(author_id: user.author_id, statement_id: statement.id) == nil
-
-    {:ok, list} =
-      PeopleLists.update(user, list.id, %{
-        version: list.version,
-        name: list.name,
-        members: [%{author_id: first.id}]
-      })
-
-    {:ok, list} =
-      PeopleLists.update(user, list.id, %{
-        version: list.version,
-        name: list.name,
-        link_council: false,
-        members: []
-      })
-
-    assert Councils.delegate_ids(user.author_id) == [first.id]
-    {:ok, _} = Councils.add_member(user, second.id)
-    assert PeopleLists.get(list.id).members == []
-    {:ok, _} = PeopleLists.delete(user, list.id)
-    assert Enum.sort(Councils.delegate_ids(user.author_id)) == Enum.sort([first.id, second.id])
-  end
-
-  test "link replacement leaves old lists alone and invalid linked membership rolls back" do
-    user = user_fixture()
-    first = author_fixture()
-    second = author_fixture()
-
-    {:ok, original} =
-      PeopleLists.create(user, %{
-        name: "Original",
-        members: [%{author_id: first.id}],
-        link_council: true
-      })
-
-    {:ok, replacement} =
-      PeopleLists.create(user, %{
-        name: "Replacement",
-        members: [%{author_id: second.id}],
-        link_council: true
-      })
-
-    assert PeopleLists.linked_list(user).id == replacement.id
-    assert Councils.delegate_ids(user.author_id) == [second.id]
-    assert PeopleLists.get(original.id) == original
-
-    assert {:error, :self_in_linked_list} =
-             PeopleLists.update(user, replacement.id, %{
-               version: replacement.version,
-               name: "Invalid",
-               members: [%{author_id: user.author_id}]
-             })
-
-    assert PeopleLists.get(replacement.id) == replacement
-    assert Councils.delegate_ids(user.author_id) == [second.id]
-    assert PeopleLists.linked_list(user).id == replacement.id
+    council = Councils.get(survivor.author_id)
+    assert List.last(council.lists).people_list_id == source.id
+    assert List.last(council.lists).members == []
+    assert hd(PeopleLists.get(source.id).members).author_id == survivor.author_id
+    preserved = PeopleLists.get(original, survivor)
+    assert hd(preserved.members).author_id == person.id
+    assert Enum.any?(council.lists, &(&1.people_list_id == original && !&1.fallback))
   end
 end

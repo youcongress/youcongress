@@ -295,7 +295,11 @@ defmodule YouCongress.Reconsiderations do
       end
 
     Enum.each(delegate_ids, fn delegate_id ->
-      member = Repo.get_by(YouCongress.Councils.Member, list_id: list.id, author_id: delegate_id)
+      member =
+        Repo.get_by(YouCongress.Councils.PeopleListMember,
+          people_list_id: list.people_list_id,
+          author_id: delegate_id
+        )
 
       %DelegateSelection{}
       |> DelegateSelection.changeset(%{
@@ -328,12 +332,14 @@ defmodule YouCongress.Reconsiderations do
 
     if selection.created_membership && council && council.version == selection.council_version do
       Repo.delete_all(
-        from m in YouCongress.Councils.Member,
-          where: m.id == ^selection.council_member_id and m.list_id == ^selection.council_list_id
+        from m in YouCongress.Councils.PeopleListMember,
+          join: l in YouCongress.Councils.List,
+          on: l.people_list_id == m.people_list_id,
+          where: m.id == ^selection.council_member_id and l.id == ^selection.council_list_id
       )
 
-      Councils.sync_legacy(user.author_id)
-      YouCongress.DelegationVotes.update_author_delegated_votes(user.author_id)
+      selected = Enum.find(council.lists, &(&1.id == selection.council_list_id))
+      if selected, do: YouCongress.PeopleLists.refresh_dependents([selected.people_list_id])
     end
   end
 

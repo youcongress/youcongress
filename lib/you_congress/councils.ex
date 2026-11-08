@@ -1,14 +1,39 @@
 defmodule YouCongress.Councils do
   @moduledoc "Private ordered Councils: matching halls in order, with General as the final fallback."
   import Ecto.Query
-  alias YouCongress.{Repo, Halls, Authors}
+  alias YouCongress.{Repo, Halls, Authors, PeopleLists}
   alias YouCongress.Accounts.{User, Permissions}
-  alias YouCongress.Councils.{Council, List, Member, Evaluator}
+  alias YouCongress.Councils.{Council, List, PeopleListMember, PeopleList, Evaluator}
   alias YouCongress.Votes.Vote
 
   def get(author_id), do: Repo.get_by(Council, author_id: author_id) |> preload()
   defp preload(nil), do: nil
-  defp preload(council), do: Repo.preload(council, lists: :members)
+
+  defp preload(council) do
+    council = Repo.preload(council, lists: [people_list: :members])
+
+    lists =
+      Enum.map(council.lists, fn list ->
+        source = list.people_list
+        available = PeopleLists.accessible?(source, %User{author_id: council.author_id})
+
+        %{
+          list
+          | name: if(available, do: source.name, else: "Unavailable list"),
+            available: available,
+            list_owner_id: if(available, do: source.author_id),
+            public: available && source.public,
+            list_version: if(available, do: source.version),
+            members:
+              if(available,
+                do: Enum.reject(source.members, &(&1.author_id == council.author_id)),
+                else: []
+              )
+        }
+      end)
+
+    %{council | lists: lists}
+  end
 
   def ensure(author_id) do
     Repo.transaction(fn ->
@@ -19,10 +44,21 @@ defmodule YouCongress.Councils do
           council = Repo.insert!(Council.changeset(%Council{}, %{author_id: author_id}))
 
           Enum.each(Enum.with_index(default_lists()), fn {attrs, index} ->
+            source =
+              PeopleLists.write!(%User{author_id: author_id}, nil, %{
+                name: attrs.name,
+                members: [],
+                public: false
+              })
+
             Repo.insert!(
               List.changeset(
                 %List{},
-                Map.merge(attrs, %{council_id: council.id, position: index})
+                Map.merge(attrs, %{
+                  council_id: council.id,
+                  position: index,
+                  people_list_id: source.id
+                })
               )
             )
           end)
@@ -37,10 +73,12 @@ defmodule YouCongress.Councils do
                 select: d.delegate_id
             )
 
-          Enum.each(
-            legacy,
-            &Repo.insert!(Member.changeset(%Member{}, %{list_id: fallback.id, author_id: &1}))
-          )
+          if legacy != [] do
+            PeopleLists.write!(%User{author_id: author_id}, fallback.people_list_id, %{
+              version: fallback.list_version,
+              members: Enum.map(legacy, &%{author_id: &1})
+            })
+          end
 
           get(author_id)
 
@@ -95,16 +133,19 @@ defmodule YouCongress.Councils do
 
           council |> Ecto.Changeset.change(version: council.version + 1) |> Repo.update!()
           sync_legacy(council.author_id)
-          council = get(user.author_id)
-          YouCongress.PeopleLists.sync_members_from_council(council)
-          council
+          get(user.author_id)
         end)
 
       case result do
         {:ok, council} ->
+          PeopleLists.refresh_dependents(
+            Enum.map(council.lists, & &1.people_list_id)
+            |> Enum.reject(&is_nil/1)
+          )
+
           YouCongress.DelegationVotes.update_author_delegated_votes(user.author_id)
           YouCongress.Track.event("Council saved", user)
-          {:ok, council}
+          {:ok, get(user.author_id)}
 
         error ->
           error
@@ -113,39 +154,6 @@ defmodule YouCongress.Councils do
   end
 
   def save(_, _), do: {:error, :forbidden}
-
-  @doc false
-  def sync_members_from_list(author_id, ids, list_id \\ nil) do
-    unless Repo.in_transaction?(),
-      do: raise(ArgumentError, "membership sync requires a transaction")
-
-    if author_id in ids, do: Repo.rollback(:self_in_linked_list)
-    {:ok, council} = ensure(author_id)
-
-    council =
-      Repo.one!(from c in Council, where: c.id == ^council.id, lock: "FOR UPDATE") |> preload()
-
-    list = Enum.find(council.lists, fn l -> if list_id, do: l.id == list_id, else: l.fallback end)
-    if is_nil(list), do: Repo.rollback(:invalid_list)
-    existing = Map.new(list.members, &{&1.author_id, &1})
-
-    if MapSet.new(Map.keys(existing)) == MapSet.new(ids) do
-      false
-    else
-      members =
-        Enum.map(ids, fn id ->
-          case existing[id] do
-            nil -> %{author_id: id, reason: nil, source_url: nil}
-            member -> Map.take(member, [:author_id, :reason, :source_url])
-          end
-        end)
-
-      save_members!(author_id, list, members)
-      council |> Ecto.Changeset.change(version: council.version + 1) |> Repo.update!()
-      sync_legacy(author_id)
-      true
-    end
-  end
 
   defp validate_lists!(council, lists) do
     unless is_list(lists) and Enum.all?(lists, &is_map/1), do: Repo.rollback(:invalid_lists)
@@ -168,60 +176,74 @@ defmodule YouCongress.Councils do
     hall = if hall_id, do: Repo.get(Halls.Hall, hall_id)
     if hall_id && is_nil(hall), do: Repo.rollback(:invalid_hall)
     if existing.fallback && hall_id, do: Repo.rollback(:invalid_fallback)
-    name = list_name!(attrs, hall)
+    source = save_source!(council, existing, attrs, hall)
 
-    list =
-      existing
-      |> List.changeset(%{council_id: council.id, hall_id: hall_id, name: name, position: index})
-      |> Repo.insert_or_update!()
-
-    save_members!(council.author_id, list, value(attrs, :members) || [])
+    existing
+    |> List.changeset(%{
+      council_id: council.id,
+      hall_id: hall_id,
+      people_list_id: if(source, do: source.id, else: existing.people_list_id),
+      position: index
+    })
+    |> Repo.insert_or_update!()
   end
 
-  defp list_name!(attrs, hall) do
-    raw_name = value(attrs, :name) || default_name(hall)
-    unless is_binary(raw_name), do: Repo.rollback(:invalid_name)
-    name = String.trim(raw_name)
-    if name == "" or String.length(name) > 120, do: Repo.rollback(:invalid_name)
-    name
+  defp save_source!(council, existing, attrs, hall) do
+    source_id = value(attrs, :people_list_id) || existing.people_list_id
+    source = if source_id, do: PeopleLists.get(source_id, %User{author_id: council.author_id})
+    members = value(attrs, :members) || []
+    name = source_name(attrs, source, hall)
+
+    cond do
+      is_nil(existing.id) && is_nil(source_id) ->
+        PeopleLists.write!(%User{author_id: council.author_id}, nil, %{
+          name: name,
+          members: members,
+          public: false
+        })
+
+      source_id != existing.people_list_id ->
+        source || Repo.rollback(:unavailable_list)
+
+      source && source_changed?(existing, name, members) ->
+        update_owned_source!(council, source, existing, attrs, name, members)
+
+      true ->
+        source
+    end
   end
+
+  defp source_name(attrs, source, hall),
+    do: value(attrs, :name) || (source && source.name) || default_name(hall)
+
+  defp source_changed?(existing, name, members) do
+    name != existing.name || normalized_members(members) != normalized_members(existing.members)
+  end
+
+  defp update_owned_source!(council, source, existing, attrs, name, members) do
+    if source.author_id != council.author_id, do: Repo.rollback(:read_only_list)
+
+    if council.author_id in Enum.map(members, &value(&1, :author_id)),
+      do: Repo.rollback(:invalid_members)
+
+    # Reusable lists can include their owner; their own Council ignores that entry.
+    self_members = Enum.filter(source.members, &(&1.author_id == council.author_id))
+
+    PeopleLists.write!(%User{author_id: council.author_id}, source.id, %{
+      name: name,
+      version: value(attrs, :list_version) || existing.list_version,
+      members: members ++ self_members
+    })
+  end
+
+  defp normalized_members(members),
+    do:
+      Enum.map(members, fn m ->
+        {value(m, :author_id), value(m, :reason), value(m, :source_url)}
+      end)
 
   defp default_name(nil), do: "General"
   defp default_name(hall), do: hall.name
-
-  defp save_members!(owner_id, list, members) do
-    unless is_list(members) and Enum.all?(members, &is_map/1), do: Repo.rollback(:invalid_members)
-    member_ids = Enum.map(members, &value(&1, :author_id))
-
-    if owner_id in member_ids or length(member_ids) != length(Enum.uniq(member_ids)),
-      do: Repo.rollback(:invalid_members)
-
-    found = Repo.aggregate(from(a in Authors.Author, where: a.id in ^member_ids), :count)
-    if found != length(member_ids), do: Repo.rollback(:invalid_members)
-
-    Repo.delete_all(
-      from m in Member, where: m.list_id == ^list.id and m.author_id not in ^member_ids
-    )
-
-    Enum.each(members, fn m ->
-      member = Repo.get_by(Member, list_id: list.id, author_id: value(m, :author_id)) || %Member{}
-
-      changeset =
-        Member.changeset(member, %{
-          list_id: list.id,
-          author_id: value(m, :author_id),
-          reason: value(m, :reason),
-          source_url: value(m, :source_url)
-        })
-        |> Ecto.Changeset.validate_length(:reason, max: 5_000)
-        |> validate_url()
-
-      case Repo.insert_or_update(changeset) do
-        {:ok, _} -> :ok
-        {:error, error} -> Repo.rollback(error)
-      end
-    end)
-  end
 
   def validate_url(changeset) do
     Ecto.Changeset.validate_change(changeset, :source_url, fn :source_url, url ->
@@ -245,6 +267,11 @@ defmodule YouCongress.Councils do
         Enum.map(council.lists, fn l ->
           %{
             id: l.id,
+            people_list_id: l.people_list_id,
+            list_owner_id: l.list_owner_id,
+            list_version: l.list_version,
+            public: l.public,
+            available: l.available,
             name: l.name,
             hall_id: l.hall_id,
             fallback: l.fallback,
@@ -319,30 +346,32 @@ defmodule YouCongress.Councils do
         |> Repo.update()
   end
 
-  # Council ownership and reasons remain private; linked public lists share membership only.
+  # Council assignments are private, even when their selected lists are public.
   def public(_author_id), do: nil
 
   def delegate_ids(author_id) do
-    Repo.all(
-      from m in Member,
-        join: l in List,
-        on: l.id == m.list_id,
-        join: c in Council,
-        on: c.id == l.council_id,
-        where: c.author_id == ^author_id,
-        select: m.author_id,
-        distinct: true
-    )
+    case get(author_id) do
+      nil ->
+        []
+
+      council ->
+        council.lists
+        |> Enum.flat_map(&Enum.map(&1.members, fn m -> m.author_id end))
+        |> Enum.uniq()
+    end
   end
 
   def followers(author_id) do
     Repo.all(
-      from m in Member,
+      from m in PeopleListMember,
+        join: p in PeopleList,
+        on: p.id == m.people_list_id,
         join: l in List,
-        on: l.id == m.list_id,
+        on: l.people_list_id == p.id,
         join: c in Council,
         on: c.id == l.council_id,
-        where: m.author_id == ^author_id,
+        where: m.author_id == ^author_id and c.author_id != ^author_id,
+        where: p.public or p.author_id == c.author_id,
         select: c.author_id,
         distinct: true
     )

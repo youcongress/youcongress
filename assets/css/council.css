@@ -777,3 +777,9 @@
  .council-ui .yc-topic-row > :nth-child(3), .council-ui .yc-topic-row > :nth-child(4) { grid-column:2; }
  .council-ui .yc-topic-row .yc-row { flex-wrap:wrap; }
 }
+
+.council-ui .yc-hall-selector { margin-top:.5rem; min-width:0; }
+.council-ui .yc-hall-choices { margin-top:.75rem; max-width:28rem; }
+.council-ui .yc-hall-options { margin-top:.25rem; max-height:14rem; overflow-y:auto; border:1px solid #dce0e8; border-radius:.5rem; background:#fff; }
+.council-ui .yc-hall-option { display:block; width:100%; padding:.5rem .75rem; text-align:left; font-size:.875rem; }
+.council-ui .yc-hall-option:hover, .council-ui .yc-hall-option.is-highlighted { background:#eef2ff; }

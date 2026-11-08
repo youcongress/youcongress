@@ -32,6 +32,7 @@ defmodule YouCongress.Councils.Discovery do
       on: a.id == l.author_id,
       join: u in YouCongress.Accounts.User,
       on: u.author_id == a.id,
+      where: l.public,
       where: u.role not in ["spam", "blocked", "waiting_list"],
       where: not is_nil(m.reason) and fragment("btrim(?)", m.reason) != ""
   end

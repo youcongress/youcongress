@@ -91,6 +91,7 @@ defmodule YouCongressWeb.Components.CouncilVote do
 
   defp answer_label(nil), do: "No position"
   defp answer_label(answer), do: answer |> to_string() |> String.capitalize()
+  defp status(%{status: :unavailable}), do: "Unavailable list · Skipped"
   defp status(%{status: :not_matching}), do: "Skipped · Not a matching hall"
   defp status(%{status: :not_needed}), do: "Not needed · An earlier list decided"
   defp status(%{status: :deciding, answer: answer}), do: "Sets your vote: #{answer_label(answer)}"

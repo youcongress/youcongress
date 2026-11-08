@@ -178,23 +178,25 @@ defmodule YouCongress.Delegations do
   end
 
   defp sync_council(delegation, action) do
-    alias YouCongress.Councils.{List, Member}
-    {:ok, council} = YouCongress.Councils.ensure(delegation.deleguee_id)
+    user = %User{author_id: delegation.deleguee_id}
+    {:ok, council} = YouCongress.Councils.ensure(user.author_id)
 
     if action == :add do
-      fallback = Enum.find(council.lists, & &1.fallback)
-
-      %Member{}
-      |> Member.changeset(%{list_id: fallback.id, author_id: delegation.delegate_id})
-      |> Repo.insert(on_conflict: :nothing, conflict_target: [:list_id, :author_id])
+      YouCongress.Councils.add_member(user, delegation.delegate_id)
     else
-      ids = Repo.all(from l in List, where: l.council_id == ^council.id, select: l.id)
+      attrs = YouCongress.Councils.editable(council)
 
-      Repo.delete_all(
-        from m in Member, where: m.list_id in ^ids and m.author_id == ^delegation.delegate_id
-      )
+      lists =
+        Enum.map(attrs.lists, fn list ->
+          if list.list_owner_id == user.author_id,
+            do: %{
+              list
+              | members: Enum.reject(list.members, &(&1.author_id == delegation.delegate_id))
+            },
+            else: list
+        end)
+
+      YouCongress.Councils.save(user, %{attrs | lists: lists})
     end
-
-    council |> Ecto.Changeset.change(version: council.version + 1) |> Repo.update!()
   end
 end

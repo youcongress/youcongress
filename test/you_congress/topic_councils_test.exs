@@ -169,6 +169,7 @@ defmodule YouCongress.TopicCouncilsTest do
 
     {:ok, topic_public} =
       PeopleLists.create(user, %{
+        public: true,
         name: "Policy picks",
         members: [%{author_id: a.id}],
         link_council: true,
@@ -177,6 +178,7 @@ defmodule YouCongress.TopicCouncilsTest do
 
     {:ok, general_public} =
       PeopleLists.create(user, %{
+        public: true,
         name: "General picks",
         members: [%{author_id: b.id}],
         link_council: true
@@ -206,6 +208,7 @@ defmodule YouCongress.TopicCouncilsTest do
 
     assert {:error, :invalid_list} =
              PeopleLists.create(other, %{
+               public: true,
                name: "Bad link",
                members: [],
                link_council: true,

@@ -12,7 +12,7 @@
         <div class="yc-between">
           <h1>
             {cond do
-              @own -> "My public lists"
+              @own -> "My lists"
               @owner -> "#{@owner.name}’s public lists"
               true -> "Your public lists"
             end}
@@ -20,7 +20,7 @@
           <.link navigate={~p"/lists/new"} class="yc-btn primary">Create a list →</.link>
         </div>
         <p class="yc-intro">
-          Named collections of people, with your reasons for choosing them. Only you can see whether a list is linked to your Council.
+          Named collections of people, with your reasons for choosing them. Your private lists are visible only to you. Council assignments always stay private.
         </p>
         <div class="yc-stack yc-gap">
           <article :for={list <- @lists} class="yc-panel yc-between">
@@ -31,7 +31,11 @@
               >
                 {list.name}
               </.link>
-              <p class="yc-help">{people_count(length(list.members))} · Public list</p>
+              <p class="yc-help">
+                {people_count(length(list.members))} · {if list.public,
+                  do: "Public list",
+                  else: "Private list"}
+              </p>
             </div>
             <.link navigate={PeopleListPaths.public_path(@owner, list.slug)} class="yc-link">
               View list →
@@ -49,24 +53,18 @@
         <div :if={@own} class="yc-panel tint yc-gap">
           <h3>Your Council stays private</h3>
           <p class="yc-gap-sm">
-            You can publish any number of lists. Public pages never show whether you use a list as your Council. Saved additions and removals in a linked list also update your Council. Unlinked lists stay independent.
+            Keep lists private or make them public. A Council uses the selected list directly, so edits apply everywhere that list is used. Public pages never reveal who uses a list in their Council.
           </p>
           <.link navigate={~p"/council"} class="yc-link yc-gap-sm">Go to My Council →</.link>
         </div>
       <% action when action in [:new, :edit] -> %>
         <p class="yc-breadcrumb">
-          <.link navigate={~p"/lists"} class="yc-link">← My public lists</.link>
+          <.link navigate={~p"/lists"} class="yc-link">← My lists</.link>
         </p>
-        <h1>{if @list, do: "Edit public list", else: "Create a public list"}</h1>
+        <h1>{if @list, do: "Edit list", else: "Create a list"}</h1>
         <p class="yc-intro">
-          Choose people and add your reasons. This list is public; your Council choices stay private.
+          Choose people and add your reasons. Private lists are only visible to you. Making a list public shares its people and comments, but never your Council assignments.
         </p>
-        <div :if={@reviewing_council} id="list-council-review" class="yc-panel soft yc-gap">
-          <strong>Review your Council picks before publishing.</strong>
-          <p class="yc-gap-sm">
-            Saving will publish the people and reasons below. Your existing public list stays unchanged until you save.
-          </p>
-        </div>
         <form
           id="public-list-editor"
           phx-hook="ListAutosave"
@@ -111,32 +109,13 @@
           </div>
           <p id="list-navigation-status" class="yc-help" role="status" phx-update="ignore"></p>
           <div class="yc-panel soft yc-gap">
-            <input type="hidden" name="link_council" value="false" />
-            <label for="list-council-link" class="yc-row">
-              <input
-                type="checkbox"
-                id="list-council-link"
-                name="link_council"
-                value="true"
-                checked={@linked}
-              />
-              <strong>Linked to a Council list</strong>
-              <span class="yc-badge">Only you</span>
-            </label>
-            <label for="public-list-council-target" class="yc-label yc-gap-sm">
-              Council list
-            </label>
-            <select id="public-list-council-target" name="council_list_id" class="yc-field">
-              <option
-                :for={{topic, index} <- Enum.with_index(@council_lists)}
-                value={topic.id}
-                selected={topic.id == @council_list_id}
-              >
-                {index + 1}. {topic.name}
-              </option>
+            <label for="list-visibility" class="yc-label">Who can see this list?</label>
+            <select id="list-visibility" name="public" class="yc-field">
+              <option value="false" selected={!@draft.public}>Private · Only me</option>
+              <option value="true" selected={@draft.public}>Public · Anyone</option>
             </select>
             <p class="yc-help">
-              Use this list’s people in the selected Council list. Additions and removals sync both ways; reasons stay separate. Only you can see this connection.
+              Public lists share their people and comments. Your Council assignments are always private.
             </p>
           </div>
         </form>
@@ -285,11 +264,9 @@
             </div>
             <hr class="yc-divider" />
             <p class="yc-help">
-              {if @autosave,
-                do:
-                  "Changes save automatically and are public. If linked, adding or removing people also updates your Council and its votes.",
-                else:
-                  "Your people and reasons go public when you save this list. If linked, its people also update your Council and its votes."} Private Council reasons are never copied automatically.
+              Changes to this list apply to every Council entry using it. {if @draft.public,
+                do: "People and comments are public.",
+                else: "People and comments are private."}
             </p>
             <p :if={@autosave && @save_error} class="yc-help" role="alert">{@save_error}</p>
             <div class="yc-actions">
@@ -310,7 +287,7 @@
                 class="yc-btn primary"
                 phx-disable-with="Saving…"
               >
-                {if @list, do: "Save public list", else: "Publish list →"}
+                {if @list, do: "Save list", else: "Create list →"}
               </button>
             </div>
           </aside>
@@ -321,10 +298,13 @@
             ← {@owner.name}’s public lists
           </.link>
         </p>
-        <p class="yc-eyebrow">Public people list</p>
+        <p class="yc-eyebrow">
+          {if @list.public, do: "Public people list", else: "Private list · Only you"}
+        </p>
         <div class="yc-between">
           <h1>{@list.name}</h1>
           <button
+            :if={@list.public}
             class="yc-btn"
             data-council-copy={PeopleListPaths.public_url(@owner, @list.slug)}
           >
@@ -360,7 +340,7 @@
             <div class="yc-panel">
               <h3>Make your own choices</h3>
               <p class="yc-gap-sm">
-                Use these people as a starting point. Review and edit your private Council before saving.
+                Select this list for a hall in your Council. Updates to the list will update the people your Council consults. You can also make a private copy.
               </p>
               <.link
                 navigate={~p"/council?#{%{step: "pick", use_list: @list.id}}"}
@@ -378,14 +358,14 @@
                 Edit list
               </.link>
               <p class="yc-help">
-                If you link this list to your Council, saved additions and removals update both.
+                Edits apply wherever this list is used. Council assignments are private.
               </p>
               <button
                 class="yc-link yc-gap"
                 phx-click="delete"
-                data-confirm="Delete this public list? Your private Council will not change."
+                data-confirm="Delete this list? Council entries using it will become unavailable."
               >
-                Delete public list
+                Delete list
               </button>
             </div>
           </aside>
