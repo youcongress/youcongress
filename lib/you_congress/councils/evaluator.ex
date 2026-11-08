@@ -1,5 +1,5 @@
 defmodule YouCongress.Councils.Evaluator do
-  @moduledoc "Pure ordered council evaluation. Repeated scopes are independent lists."
+  @moduledoc "Evaluates the saved Council majority, excluding abstentions and missing positions."
 
   def evaluate(lists, positions) do
     {answer, deciding, traces} =

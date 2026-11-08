@@ -6,32 +6,30 @@ defmodule YouCongress.CouncilsTest do
   import YouCongress.VotesFixtures
   alias YouCongress.{Councils, TrustRankings, TrustNetwork, Votes}
 
-  test "repeated General and topic lists decide independently, and nominees count once" do
+  test "one Council applies across statements and rejects extra or topic lists" do
     user = user_fixture()
     first = author_fixture()
     second = author_fixture()
     statement = statement_fixture()
     vote_fixture(%{author_id: first.id, statement_id: statement.id, answer: :against})
     vote_fixture(%{author_id: second.id, statement_id: statement.id, answer: :for})
-    {:ok, council} = Councils.ensure(user.author_id)
+    {:ok, _} = Councils.add_member(user, first.id)
+    {:ok, council} = Councils.add_member(user, second.id)
+    assert [%{name: "Council", hall_id: nil}] = council.lists
+    assert Councils.explain(user.author_id, statement.id).answer == nil
     attrs = Councils.editable(council)
-    governance = hd(attrs.lists)
 
-    lists = [
-      %{name: "Ultra trusted", hall_id: nil, members: [%{author_id: first.id}]},
-      %{governance | members: [%{author_id: second.id}]},
-      %{name: "Other governance", hall_id: governance.hall_id, members: [%{author_id: second.id}]}
-      | tl(attrs.lists)
-    ]
+    assert {:error, :invalid_order} =
+             Councils.save(user, %{attrs | lists: attrs.lists ++ attrs.lists})
 
-    {:ok, _} = Councils.save(user, %{attrs | lists: lists})
-    result = Councils.explain(user.author_id, statement.id)
-    assert result.answer == :against
-    assert hd(result.lists).name == "Ultra trusted"
-    assert Enum.at(result.lists, 1).consulted == false
-    assert %{participants: 1, rows: [%{count: 1}]} = TrustRankings.ranking("ai-governance")
-    assert %{participants: 1, rows: [%{author_id: id}]} = TrustRankings.ranking("general")
-    assert id == first.id
+    hall = YouCongress.HallsFixtures.hall_fixture()
+
+    assert {:error, :invalid_order} =
+             Councils.save(user, %{attrs | lists: [%{hd(attrs.lists) | hall_id: hall.id}]})
+
+    assert %{participants: 1, rows: rows} = TrustRankings.ranking("general")
+    assert length(rows) == 2
+    assert Enum.all?(rows, &(&1.count == 1))
   end
 
   test "abstention and missing members do not dilute the majority; direct abstain overrides" do
@@ -79,7 +77,7 @@ defmodule YouCongress.CouncilsTest do
     attrs = Councils.editable(council)
 
     assert {:error, :invalid_order} =
-             Councils.save(user, %{attrs | lists: Enum.reverse(attrs.lists)})
+             Councils.save(user, %{attrs | lists: []})
 
     empty = Enum.map(attrs.lists, &%{&1 | members: []})
     assert {:ok, _} = Councils.save(user, %{attrs | lists: empty})

@@ -155,30 +155,7 @@ defmodule YouCongress.TrustNetwork do
   end
 
   def add_recommendation_to_council(user, recommendation) do
-    {:ok, council} = Councils.ensure(user.author_id)
-
-    hall_id =
-      if recommendation.scope != "general" do
-        {:ok, hall} = YouCongress.Halls.get_or_create_by_name(recommendation.scope)
-        hall.id
-      end
-
-    list =
-      Enum.find(council.lists, fn l -> if hall_id, do: l.hall_id == hall_id, else: l.fallback end)
-
-    if list do
-      Councils.add_member(user, recommendation.nominee_id, list.id)
-    else
-      attrs = Councils.editable(council)
-
-      list = %{
-        name: recommendation.scope,
-        hall_id: hall_id,
-        members: [%{author_id: recommendation.nominee_id}]
-      }
-
-      Councils.save(user, %{attrs | lists: List.insert_at(attrs.lists, -2, list)})
-    end
+    Councils.add_member(user, recommendation.nominee_id)
   end
 
   def recommendations(author_id, public_only \\ true) do

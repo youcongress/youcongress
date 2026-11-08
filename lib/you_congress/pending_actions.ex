@@ -102,9 +102,9 @@ defmodule YouCongress.PendingActions do
 
   defp validate_payload(_payload), do: {:error, :invalid_pending_actions}
 
-  defp process_payload(user, %{"council" => council}) do
+  defp process_payload(user, %{"council" => council} = payload) do
     case YouCongress.Councils.Draft.apply(user, council) do
-      {:ok, _} -> :ok
+      {:ok, _} -> YouCongress.Councils.Invitations.accept(user, payload["council_ref"])
       error -> error
     end
   end

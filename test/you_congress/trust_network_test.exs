@@ -31,13 +31,13 @@ defmodule YouCongress.TrustNetworkTest do
     assert TrustRankings.ranking("general").participants == 2
   end
 
-  test "blocked participants are excluded and repeated General lists do not multiply nominations" do
+  test "blocked participants are excluded and repeated Council lists are rejected" do
     user = user_fixture()
     nominee = author_fixture()
     {:ok, council} = Councils.add_member(user, nominee.id)
     attrs = Councils.editable(council)
     extra = %{name: "Inner circle", hall_id: nil, members: [%{author_id: nominee.id}]}
-    {:ok, _} = Councils.save(user, %{attrs | lists: [extra | attrs.lists]})
+    {:error, :invalid_order} = Councils.save(user, %{attrs | lists: [extra | attrs.lists]})
     assert [%{count: 1, share: 100.0}] = TrustRankings.ranking("general").rows
     {:ok, blocked} = YouCongress.Accounts.update_role(user, "blocked")
     assert TrustRankings.ranking("general").participants == 0
@@ -80,7 +80,7 @@ defmodule YouCongress.TrustNetworkTest do
     refute_email_sent(subject: "Your YouCongress updates")
   end
 
-  test "independent recommendation can explicitly add a previously absent topic" do
+  test "independent recommendations add to the one Council" do
     user = user_fixture()
     nominee = author_fixture()
 
@@ -94,11 +94,11 @@ defmodule YouCongress.TrustNetworkTest do
 
     assert TrustRankings.ranking("ai-safety").rows == []
     {:ok, _} = TrustNetwork.add_recommendation_to_council(user, rec)
-    assert [%{author_id: id}] = TrustRankings.ranking("ai-safety").rows
+    assert [%{author_id: id}] = TrustRankings.ranking("general").rows
     assert id == nominee.id
     assert List.last(Councils.get(user.author_id).lists).fallback
     TrustNetwork.delete_recommendation(user, rec.id)
-    assert TrustRankings.ranking("ai-safety").participants == 1
+    assert TrustRankings.ranking("general").participants == 1
   end
 
   test "unsafe recommendation URLs and malformed guest drafts are rejected" do

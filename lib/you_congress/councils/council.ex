@@ -5,6 +5,7 @@ defmodule YouCongress.Councils.Council do
 
   schema "councils" do
     field :author_id, :id
+    field :invited_by_id, :id
     field :version, :integer, default: 1
     field :published, :boolean, default: false
     field :digest, :string, default: "off"

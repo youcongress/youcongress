@@ -1,5 +1,5 @@
 defmodule YouCongress.Councils do
-  @moduledoc "Saved ordered councils, including repeatable topic and General lists."
+  @moduledoc "One saved Council per person, used across every statement."
   import Ecto.Query
   alias YouCongress.{Repo, Halls, Authors}
   alias YouCongress.Accounts.{User, Permissions}
@@ -50,15 +50,7 @@ defmodule YouCongress.Councils do
     end)
   end
 
-  def default_lists do
-    Enum.map(
-      [{"ai-governance", "AI governance"}, {"impact-on-labor", "Impact on Jobs"}],
-      fn {slug, name} ->
-        {:ok, hall} = Halls.get_or_create_by_name(slug)
-        %{hall_id: hall.id, name: name, fallback: false}
-      end
-    ) ++ [%{hall_id: nil, name: "General", fallback: true}]
-  end
+  def default_lists, do: [%{hall_id: nil, name: "Council", fallback: true}]
 
   def save(%User{} = user, attrs) do
     if Permissions.blocked?(user) do
@@ -113,7 +105,8 @@ defmodule YouCongress.Councils do
     owned = Enum.map(council.lists, & &1.id)
 
     valid =
-      lists != [] and length(ids) == length(Enum.uniq(ids)) and
+      length(lists) == 1 and Enum.all?(lists, &is_nil(value(&1, :hall_id))) and
+        length(ids) == length(Enum.uniq(ids)) and
         Enum.all?(ids, &(&1 in owned)) and value(Elixir.List.last(lists), :id) == fallback.id and
         Enum.count(lists, &(value(&1, :id) == fallback.id)) == 1
 
@@ -126,7 +119,7 @@ defmodule YouCongress.Councils do
     hall = if hall_id, do: Repo.get(Halls.Hall, hall_id)
     if hall_id && is_nil(hall), do: Repo.rollback(:invalid_hall)
     if existing.fallback && hall_id, do: Repo.rollback(:invalid_fallback)
-    name = list_name!(attrs, hall)
+    name = list_name!(Map.put(attrs, :name, "Council"), hall)
 
     list =
       existing
@@ -272,17 +265,13 @@ defmodule YouCongress.Councils do
       do: {:error, :forbidden},
       else:
         council
-        |> Ecto.Changeset.cast(attrs, [:published, :digest])
+        |> Ecto.Changeset.cast(attrs, [:digest])
         |> Ecto.Changeset.validate_inclusion(:digest, ["off", "daily", "weekly"])
         |> Repo.update()
   end
 
-  def public(author_id) do
-    case get(author_id) do
-      %Council{published: true} = council -> council
-      _ -> nil
-    end
-  end
+  # A Council is always private. Publishing creates an independent PeopleList.
+  def public(_author_id), do: nil
 
   def delegate_ids(author_id) do
     Repo.all(

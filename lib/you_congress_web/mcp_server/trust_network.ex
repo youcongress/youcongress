@@ -1,5 +1,5 @@
 defmodule YouCongressWeb.MCPServer.TrustNetwork do
-  @moduledoc "Read public councils, rankings, recommendations, and participating communities."
+  @moduledoc "Read named public people lists, YouCongress Trust 30, and recommendations. Private Councils are never exposed."
   use Anubis.Server.Component, type: :tool
   alias Anubis.Server.Response
 
@@ -17,20 +17,16 @@ defmodule YouCongressWeb.MCPServer.TrustNetwork do
     data =
       case params.view do
         "rankings" ->
-          YouCongress.TrustRankings.ranking(params[:scope] || "general", %{
-            "community" => params[:community],
-            "nominators" => params[:nominators],
-            "nominees" => params[:nominees]
-          })
+          YouCongress.Councils.Discovery.trust30()
 
         "communities" ->
-          Enum.map(
-            YouCongress.TrustNetwork.communities(),
-            &Map.take(&1, [:id, :name, :description])
-          )
+          []
 
         "council" ->
-          public_council(params[:author_id])
+          %{error: "Councils are private. Use lists to read public people lists."}
+
+        "lists" ->
+          public_lists(params[:author_id])
 
         "recommendations" ->
           if params[:author_id],
@@ -42,18 +38,22 @@ defmodule YouCongressWeb.MCPServer.TrustNetwork do
             else: %{error: "author_id required"}
 
         _ ->
-          %{error: "Choose rankings, communities, council, or recommendations"}
+          %{error: "Choose rankings, lists, or recommendations"}
       end
 
     {:reply, Response.json(Response.tool(), data), frame}
   end
 
-  defp public_council(nil), do: %{error: "author_id required"}
+  defp public_lists(nil), do: %{error: "author_id required"}
 
-  defp public_council(id) do
-    case YouCongress.Councils.public(id) do
-      nil -> %{error: "Council is not public"}
-      council -> YouCongress.Councils.editable(council)
-    end
+  defp public_lists(id) do
+    Enum.map(YouCongress.PeopleLists.for_author(id), fn list ->
+      %{
+        id: list.id,
+        name: list.name,
+        author_id: list.author_id,
+        members: Enum.map(list.members, &Map.take(&1, [:author_id, :reason]))
+      }
+    end)
   end
 end
