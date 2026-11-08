@@ -15,8 +15,8 @@ defmodule YouCongressWeb.Tools.Tooltip do
     ~H"""
     <Tooltip.render
       content={[
-        "Build ordered council lists",
-        "The first For/Against majority decides.",
+        "Choose people for your Council",
+        "Their For/Against majority represents you.",
         "Unless you vote directly."
       ]}
       position="left"

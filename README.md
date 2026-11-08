@@ -101,39 +101,38 @@ Sobelow honors only the documented, check-specific `sobelow_skip` annotations fo
 
 ## Trust Network
 
-Participants build councils at `/council`. Lists are independently ordered and may repeat
-any topic hall or General. A permanent General fallback stays last. Lists have no
-five-person limit. Saving changes delegation and includes nominations in public trust
-rankings; publishing the council page and reasons is a separate setting.
+Participants choose one private Council at `/council`, across every statement. Existing
+delegates become Council members; topic lists are consolidated, retaining unique people
+and an existing nonempty reason for each person. There is no five-person limit. Guest picks and reasons survive signup, and
+email signups take effect after confirmation. Saving a Council enables its voting behavior
+and contributes anonymous nominations to YouCongress Trust 30.
 
-For each statement, the first list with more eligible For than Against positions decides.
-Abstentions, missing positions, and disputed/unverified inferences do not count. A direct
-vote, including Abstain, overrides the council. Delegation does not follow chains.
-Source-inferred positions need positive authenticity, relevance, and stance verification.
-Repeated selections count independently in delegation but once per participant, nominee,
-and scope in rankings.
+A Council follows the majority of its members’ eligible For and Against positions. Ties,
+abstentions, missing positions, and disputed/unverified inferences produce no deciding vote.
+A participant’s direct vote, including Abstain, always overrides their Council. Voting does
+not follow delegation chains. Source-inferred positions still need positive authenticity,
+relevance, and stance verification.
 
-`/trust/general` provides four scoped rankings, independent nominator/nominee country
-filters, community filtering, CSV exports, and administrator-published dated snapshots.
-`/trust/compare` compares independent audiences. Joining an administrator-enabled community
-includes nominations without an additional sharing step. `/trust/recommendations` manages
-independent recommendations; these do not affect rankings unless also saved in a council.
-The contributor series and AI Trust campaign are intentionally not implemented.
+`/lists` manages independently named public lists of people and reasons. Publishing Council
+picks creates a separate public list; editing or deleting either collection never changes
+the other. Public pages and the MCP tool reveal no association with a private Council.
+“Use these picks” copies a public list’s people into a private draft for explicit review and
+saving. Public list membership does not count as a Council nomination. Previously published
+Councils are migrated into named public lists, and all Councils become private.
 
-`/trust/requests` accepts evidence corrections, missing-position requests, and missing-person
-suggestions. Moderators review requests in the same page or with the `trust_requests` MCP
-tool. Discovery prioritizes one open evidence request each day when a verification account
-is configured. Search results remain subject to the existing verification workflow.
-`/trust/updates` shows private updates. Council settings offer daily/weekly email digests,
-off by default, with signed unsubscribe links. The daily dispatcher runs at 06:00 UTC.
+`/trust` (also `/trust/general`) shows the single global YouCongress Trust 30 and its positions
+on statements. Reasons come only from published people lists. Community and comparison
+pages redirect to this list. Historical snapshots and CSV exports remain available.
+`/trust/requests` retains the evidence correction and missing-person workflow;
+`/trust/updates` retains private updates.
 
-Deploy by running migrations before starting the new release. The additive backfill preserves
-legacy votes and delegates, creates default councils, and queues resumable `RefreshCouncilWorker`
-jobs. Each worker transactionally stores a new explanation before updating its vote projection.
-Monitor those jobs before announcing the rollout. Existing delegates are immediately included
-in aggregate General nominations; their council pages remain unpublished. Do not roll back
-the new schema after participants have edited councils without exporting their choices.
+The invite step provides a signed referral link, sharing controls, and optional email
+invitations (up to 10 at once and 20 per day, with duplicate recipients suppressed).
+Development and test use local mail adapters; they do not send external mail.
 
-Validation: `mix test test/you_congress/councils_test.exs test/you_congress_web/live/trust_live_test.exs`
-plus the repository-wide `mix precommit` checks. No external discovery or email is needed
-for tests. Start the local review server with `PORT=4006 mix phx.server`.
+Run migrations before starting the release. Consolidation preserves existing picks and
+queues resumable `RefreshCouncilWorker` jobs to refresh voting projections. Monitor those
+jobs before rollout. Do not roll back the schema after users edit collections without
+exporting their choices.
+
+Validate with `mix check`. Start the local review server with `PORT=4006 mix phx.server`.

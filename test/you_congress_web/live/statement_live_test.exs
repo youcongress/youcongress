@@ -393,7 +393,7 @@ defmodule YouCongressWeb.StatementLiveTest do
       assert Statements.get_statement!(statement.id).url == "https://ai-2040.com/"
 
       {:ok, show_live, _html} = live(recycle(show_conn), show_path)
-      edit_result = show_live |> element("a", "Edit") |> render_click()
+      edit_result = show_live |> element("#statement-header a", "Edit") |> render_click()
       assert {:error, {:live_redirect, %{to: ^edit_path}}} = edit_result
       {:ok, edit_live, _html} = follow_redirect(edit_result, conn, edit_path)
 
@@ -715,7 +715,7 @@ defmodule YouCongressWeb.StatementLiveTest do
       {:ok, show_live, _html} = live(conn, ~p"/p/#{statement.slug}")
       edit_path = ~p"/p/#{statement.slug}/show/edit"
 
-      edit_result = show_live |> element("a", "Edit") |> render_click()
+      edit_result = show_live |> element("#statement-header a", "Edit") |> render_click()
       assert {:error, {:live_redirect, %{to: ^edit_path}}} = edit_result
       {:ok, edit_live, html} = follow_redirect(edit_result, conn, edit_path)
       assert html =~ "Edit Poll"

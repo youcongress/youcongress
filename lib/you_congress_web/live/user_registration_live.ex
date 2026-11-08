@@ -387,6 +387,9 @@ defmodule YouCongressWeb.UserRegistrationLive do
   defp pending_actions(%{"pending_actions" => pending_actions}, session)
        when is_binary(pending_actions) do
     case Jason.decode(pending_actions) do
+      {:ok, %{"council" => council}} when is_map(council) ->
+        {[], %{}, pending_actions}
+
       {:ok, %{"delegate_ids" => delegate_ids, "votes" => votes}}
       when is_list(delegate_ids) and is_map(votes) ->
         {delegate_ids, votes, pending_actions}

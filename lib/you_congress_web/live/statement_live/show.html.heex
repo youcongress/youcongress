@@ -120,6 +120,13 @@
     </div>
   </:vote_controls>
 </ResultsComponent.horizontal_bar>
+<.live_component
+  module={YouCongressWeb.Components.CouncilVote}
+  id="statement-council"
+  statement={@statement}
+  current_user={@current_user}
+  current_user_vote={@current_user_vote}
+/>
 
 <div class="mt-4 pb-2">
   <.live_component

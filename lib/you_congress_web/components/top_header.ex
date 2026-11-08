@@ -19,9 +19,10 @@ defmodule YouCongressWeb.TopHeaderComponent do
           </.link>
         </div>
         <!-- Desktop Navigation -->
-        <div class="hidden md:flex text-sm items-center gap-6 leading-6 text-zinc-900">
-          <.link href={~p"/council"} class="text-indigo-700">My council</.link>
-          <.link href={~p"/trust/general"}>Trust lists</.link>
+        <div class="hidden lg:flex flex-wrap max-w-full justify-end text-sm items-center gap-x-6 gap-y-2 leading-6 text-zinc-900">
+          <.link href={~p"/council"} class="text-indigo-700">My Council</.link>
+          <.link href={~p"/trust"}>Trust List</.link>
+          <.link :if={@current_user} href={~p"/lists"}>My lists</.link>
           <.link :if={@current_user} href={~p"/trust/updates"}>Updates</.link>
           <.github_link />
           <.link
@@ -77,10 +78,11 @@ defmodule YouCongressWeb.TopHeaderComponent do
           <% end %>
         </div>
         <!-- Mobile Navigation (Optimized Touch Targets) -->
-        <div class="md:hidden flex max-w-full flex-col items-end gap-3 text-sm">
+        <div class="lg:hidden flex max-w-full flex-col items-end gap-3 text-sm">
           <div class="flex flex-wrap items-center gap-4">
             <.link href={~p"/council"} class="py-3 text-indigo-700">Council</.link>
-            <.link href={~p"/trust/general"}>Trust lists</.link>
+            <.link href={~p"/trust"}>Trust List</.link>
+            <.link :if={@current_user} href={~p"/lists"}>My lists</.link>
             <.link
               href={~p"/explore"}
               class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"

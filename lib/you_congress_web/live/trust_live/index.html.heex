@@ -14,11 +14,8 @@
       end}
     </h1>
     <nav class="flex flex-wrap gap-4 text-sm text-indigo-700">
-      <.link navigate={~p"/council"}>My council</.link>
-      <.link navigate={~p"/trust/general"}>Trust lists</.link>
-      <.link navigate={~p"/trust/compare"}>Compare groups</.link>
-      <.link navigate={~p"/communities"}>Communities</.link>
-      <.link navigate={~p"/trust/recommendations"}>Recommendations</.link>
+      <.link navigate={~p"/council"}>My Council</.link>
+      <.link navigate={~p"/trust"}>Trust List</.link>
       <.link navigate={~p"/trust/requests"}>Review evidence</.link>
       <.link
         :if={@current_user}

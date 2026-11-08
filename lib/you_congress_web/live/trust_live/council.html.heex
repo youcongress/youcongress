@@ -1,369 +1,567 @@
 <div
   id="council-editor"
+  class="council-ui"
   phx-hook="CouncilDraft"
   data-guest={to_string(is_nil(@current_user))}
-  class="py-8 space-y-8"
+  data-readonly="false"
 >
-  <div class="flex flex-wrap justify-between gap-4">
-    <div>
-      <p class="text-sm font-semibold text-indigo-700">TRUST NETWORK</p>
-      <h1 class="text-3xl font-bold mt-2">
-        {if @readonly, do: "#{@public_author.name}'s council", else: "Build your AI council"}
-      </h1>
-    </div>
-    <nav class="flex gap-4 text-sm">
-      <.link navigate={~p"/trust/general"}>Trust lists</.link>
-      <.link navigate={~p"/communities"}>Communities</.link>
-      <.link
-        :if={@current_user}
-        navigate={~p"/trust/updates"}
-      >
-        Updates
-      </.link>
-    </nav>
-  </div>
-  <p class="text-gray-600">
-    Try each list in order. The first list with more For than Against determines your delegated vote. Abstentions and missing or unverified positions do not count. Your direct vote always takes precedence.
-  </p>
-  <p class="rounded-lg bg-indigo-50 p-4">
-    You can repeat any topic or General, with different people in each list. The final General is always your last fallback.
-  </p>
-  <div :if={@readonly}>
-    <button phx-click="copy" class="rounded bg-indigo-700 px-4 py-2 text-white">
-      Copy into my draft
-    </button>
-    <p class="text-sm mt-2">Review and save before any choices change.</p>
-  </div>
-  <div :if={@selected_person && !@readonly} class="border rounded p-4 bg-indigo-50">
-    <p class="font-semibold">Add {@selected_person.name} to a list</p>
-    <button
-      :for={{list, i} <- Enum.with_index(@draft.lists)}
-      phx-click="add-person"
-      phx-value-id={@selected_person.id}
-      phx-value-list={i}
-      class="border rounded m-1 p-2"
-    >
-      {i + 1}. {list.name}
-    </button>
-  </div>
-  <section
-    :for={{list, i} <- Enum.with_index(@draft.lists)}
-    id={"council-list-#{i}"}
-    class="rounded-xl border p-5 space-y-4"
-  >
-    <div class="flex flex-wrap justify-between gap-3 items-center">
-      <h2 class="text-xl font-semibold">
-        {i + 1}. {list.name}
-        <span :if={list.fallback} class="text-sm text-gray-500">Final fallback</span>
-      </h2>
-      <div :if={!@readonly && !list.fallback} class="flex gap-3">
-        <button
-          phx-click="move"
-          phx-value-index={i}
-          phx-value-direction="up"
-          disabled={i == 0}
-          aria-label={"Move #{list.name} up"}
-        >
-          ↑ Up
-        </button>
-        <button
-          phx-click="move"
-          phx-value-index={i}
-          phx-value-direction="down"
-          disabled={i >= length(@draft.lists) - 2}
-          aria-label={"Move #{list.name} down"}
-        >
-          ↓ Down
-        </button>
-        <button phx-click="remove-list" phx-value-index={i} class="text-red-700">
-          Remove list
-        </button>
+  <div class={["yc-content", @step in ["why", "publish", "invite"] && "narrow"]}>
+    <.steps :if={@step in ["pick", "why", "join", "publish", "invite"]} step={@step} />
+    <div :if={@referrer && @step == "landing"} class="yc-success">
+      <.avatar person={@referrer} />
+      <div>
+        <strong>{@referrer.name} invited you to YouCongress.</strong>
+        <p>Who would you choose for your Council?</p>
       </div>
     </div>
-    <form :if={!@readonly} phx-change="rename" class="flex gap-2 items-center">
-      <input type="hidden" name="index" value={i} />
-      <label for={"list-name-#{i}"}>
-        List name
-      </label>
-      <input
-        id={"list-name-#{i}"}
-        name="name"
-        value={list.name}
-        maxlength="120"
-        phx-debounce="300"
-        class="rounded border-gray-300"
-      />
-    </form>
-    <p :if={list.members == []} class="text-gray-500">
-      No people selected. This list will be skipped.
-    </p>
-    <div :for={member <- list.members} class="border-t pt-3">
-      <div class="flex justify-between gap-3">
-        <.link href={~p"/a/#{member.author_id}"} class="font-semibold">
-          {person_name(@people, member.author_id)}
-        </.link>
-        <button
-          :if={!@readonly}
-          phx-click="remove-person"
-          phx-value-id={member.author_id}
-          phx-value-list={i}
-          class="text-sm text-red-700"
-        >
-          Remove
-        </button>
-      </div>
-      <form :if={!@readonly} phx-change="reason" class="mt-2">
-        <input type="hidden" name="person_id" value={member.author_id} />
-        <input
-          type="hidden"
-          name="list"
-          value={i}
-        />
-        <label class="text-sm">
-          Reason (optional)<input
-            name="reason"
-            value={member[:reason]}
-            phx-debounce="400"
-            maxlength="5000"
-            class="block w-full rounded border-gray-300"
-          />
-        </label>
-      </form>
-      <div :if={@readonly} class="text-sm mt-2">
-        <p>{member[:reason]}</p>
-        <.link
-          :if={member[:source_url] not in [nil, ""]}
-          href={member[:source_url]}
-          rel="noopener noreferrer"
-          class="text-indigo-700"
-        >
-          Source
-        </.link>
-      </div>
-    </div>
-    <form :if={!@readonly} phx-change="search" class="mt-3">
-      <input type="hidden" name="list" value={i} />
-      <label for={"person-search-#{i}"}>
-        Find a person
-      </label>
-      <input
-        id={"person-search-#{i}"}
-        name="q"
-        value={if @active_list == i, do: @query, else: ""}
-        phx-debounce="250"
-        placeholder="Search by name"
-        class="block w-full rounded border-gray-300"
-      />
-    </form>
-    <div :if={!@readonly && @active_list == i} class="flex flex-wrap gap-2">
-      <button
-        :for={person <- @matches}
-        phx-click="add-person"
-        phx-value-id={person.id}
-        phx-value-list={i}
-        class="rounded bg-indigo-50 px-3 py-2 text-indigo-800"
-      >
-        + {person.name}
-      </button>
-    </div>
-  </section>
-  <section :if={!@readonly} class="space-y-4">
-    <h2 class="text-xl font-semibold">Add another list</h2>
-    <button phx-click="add-list" class="rounded border px-4 py-2">+ General list</button>
-    <form phx-change="search-halls">
-      <label for="hall-search">Search existing topic halls</label>
-      <input
-        id="hall-search"
-        name="q"
-        value={@hall_query}
-        phx-debounce="250"
-        class="block w-full rounded border-gray-300"
-      />
-    </form>
-    <div class="flex flex-wrap gap-2">
-      <button
-        :for={hall <- @hall_matches}
-        phx-click="add-list"
-        phx-value-hall={hall.id}
-        class="rounded border px-3 py-2"
-      >
-        + {hall.name}
-      </button>
-    </div>
-    <.link navigate={~p"/trust/requests"} class="text-indigo-700">
-      Suggest a missing person or request evidence
-    </.link>
-    <div class="rounded-lg bg-gray-50 p-5 space-y-3">
-      <p>
-        Saving determines your delegated votes and includes your nominations in global rankings and the communities you join. Repeating a person in the same topic counts as one public nomination.
-      </p>
-      <button
-        phx-click="save"
-        id="save-council"
-        class="rounded bg-indigo-700 px-5 py-3 text-white"
-      >
-        Save council
-      </button>
-      <span :if={@dirty} class="ml-3 text-sm">Unsaved changes</span>
-      <div :if={!@current_user} class="flex flex-wrap gap-3">
-        <.link
-          href={~p"/auth/google?#{%{pending_actions: pending(@draft)}}"}
-          class="text-indigo-700"
-        >
-          Continue with Google
-        </.link>
-        <.link href={~p"/auth/x?#{%{pending_actions: pending(@draft)}}"} class="text-indigo-700">
-          Continue with X
-        </.link>
-        <.link
-          href={~p"/sign_up?#{%{pending_actions: pending(@draft), return_to: "/council"}}"}
-          class="text-indigo-700"
-        >
-          Continue with email
-        </.link>
-      </div>
-    </div>
-  </section>
-  <section :if={@current_user && !@readonly} class="rounded-xl border p-5">
-    <h2 class="text-xl font-semibold">Sharing and updates</h2>
-    <form phx-submit="settings" class="mt-4 space-y-4">
-      <label class="flex gap-3">
-        <input type="checkbox" name="published" value="true" checked={@settings.published} />
-        Publish my council page, including reasons and source links
-      </label>
-      <label>
-        Email digest
-        <select name="digest" class="rounded border-gray-300">
-          <option
-            :for={value <- ["off", "daily", "weekly"]}
-            value={value}
-            selected={@settings.digest == value}
-          >
-            {String.capitalize(value)}
-          </option>
-        </select>
-      </label>
-      <button class="rounded border px-4 py-2">Save preferences</button>
-    </form>
-    <.link
-      :if={@settings.published}
-      href={~p"/a/#{@current_user.author_id}/council"}
-      class="block mt-3 text-indigo-700"
-    >
-      View my public council
-    </.link>
-  </section>
-  <section class="space-y-4">
-    <h2 class="text-xl font-semibold">Compare positions and inspect a decision</h2>
-    <form phx-change="search-statements">
-      <label for="statement-search">Find a proposal or claim</label>
-      <input
-        id="statement-search"
-        name="q"
-        value={@statement_query}
-        phx-debounce="250"
-        class="block w-full rounded border-gray-300"
-      />
-    </form>
-    <button
-      :for={statement <- @statements}
-      phx-click="inspect"
-      phx-value-id={statement.id}
-      class="block text-left text-indigo-700 py-2"
-    >
-      {statement.title}
-    </button>
-    <div :if={@matrix != []} class="overflow-x-auto rounded border">
-      <table class="w-full text-left text-sm">
-        <thead>
-          <tr>
-            <th class="p-3">Person</th>
-            <th :for={column <- @matrix} class="p-3 min-w-48">
-              {column.statement.title}<button
-                phx-click="remove-comparison"
-                phx-value-id={column.statement.id}
-                class="block text-xs text-gray-500"
-              >Remove column</button>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            :for={
-              {id, person} <- Enum.sort_by(@people, fn {_id, person} -> person.name || "" end)
-            }
-            class="border-t"
-          >
-            <th class="p-3">{person.name}</th>
-            <td :for={column <- @matrix} class="p-3">
-              {answer(get_in(column.positions, [id, :recorded_answer]))}<span class="block text-xs text-gray-500">{get_in(column.positions, [id, :status]) || "missing"}</span>
-            </td>
-          </tr>
-          <tr class="border-t bg-indigo-50">
-            <th class="p-3">This council</th>
-            <td :for={column <- @matrix} class="p-3">{answer(column.result)}</td>
-          </tr>
-          <tr :if={@current_user} class="border-t">
-            <th class="p-3">My saved vote</th>
-            <td :for={column <- @matrix} class="p-3">{answer(column.own)}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div :if={@statement && @explanation} class="rounded-lg border p-5 space-y-4">
-      <h3 class="text-xl font-semibold">{@statement.title}</h3>
-      <p class="text-lg">
-        Council result: {if @explanation.answer,
-          do: answer(@explanation.answer),
-          else: "No delegated vote"}
-      </p>
-      <p :if={@dirty} class="text-sm">Preview of unsaved choices.</p>
-      <div :for={trace <- @explanation.lists} class="border-t pt-3">
-        <h4 class="font-semibold">
-          {trace.name}: {trace.for} For · {trace.against} Against · {trace.excluded} excluded
-          <span :if={!trace.consulted}>(not consulted)</span>
-        </h4>
-        <ul class="mt-2 space-y-2">
-          <li :for={member <- trace.members} class="text-sm">
-            {person_name(@people, member.author_id)} — {answer(
-              member[:recorded_answer] || member.answer
-            )} · {String.replace(member.status, "_", " ")}
-            <.link
-              :if={member[:opinion_id]}
-              href={~p"/c/#{member.opinion_id}"}
-              class="ml-2 text-indigo-700"
-            >
-              Evidence and verification history
+    <section :if={@step == "landing"}>
+      <div class="yc-hero">
+        <div>
+          <p class="yc-eyebrow">People you trust. A voice that counts.</p>
+          <h1>
+            {if @current_user,
+              do: "Who’s on your Council?",
+              else: "You don’t have to decide alone."}
+          </h1>
+          <p class="yc-intro">
+            Choose the people whose judgment you trust. Your Council represents you on statements you haven’t voted on. Your own vote always comes first.
+          </p>
+          <div class="yc-row yc-gap">
+            <.link patch={~p"/council?#{%{step: "pick"}}"} class="yc-btn primary large">
+              Pick my Council →
             </.link>
-          </li>
-        </ul>
+            <.link navigate={~p"/trust"} class="yc-link">Explore Trust 30</.link>
+          </div>
+          <p class="yc-help">
+            {if @current_user,
+              do: "One Council across every statement. Change your picks anytime.",
+              else: "Start choosing now. Create an account when you’re ready to save."}
+          </p>
+        </div>
+        <div class="yc-hero-list">
+          <div class="yc-between">
+            <h3>Discover people you might trust</h3>
+            <span class="yc-badge">Trust 30</span>
+          </div>
+          <div :if={@matches != []} class="yc-list yc-gap">
+            <div :for={person <- Enum.take(@matches, 3)} class="yc-list-item">
+              <.person person={person} subtitle={biography(person)} />
+            </div>
+          </div>
+          <div :if={@matches == []} class="yc-panel yc-gap">
+            <h3>Help start the Trust List</h3>
+            <p class="yc-gap-sm">
+              Search for people whose judgment you value. Every saved Council helps others discover who to trust.
+            </p>
+          </div>
+          <p class="yc-help">
+            One Council, across all statements. You can choose anyone on YouCongress.
+          </p>
+        </div>
       </div>
-      <.link
-        href={~p"/p/#{@statement.slug}"}
-        class="inline-block rounded bg-indigo-700 px-4 py-2 text-white"
-      >
-        Inspect the statement or cast my own vote
-      </.link>
-    </div>
-  </section>
-  <details class="rounded border p-4">
-    <summary>Check your understanding (optional)</summary>
-    <form phx-submit="understanding" class="mt-3 space-y-3">
-      <p>What takes precedence over your council's result?</p>
-      <label class="block">
-        <input type="radio" name="answer" value="direct" required />
-        My direct vote, including Abstain
-      </label>
-      <label class="block">
-        <input type="radio" name="answer" value="ranking" /> The top person in the public ranking
-      </label>
-      <button class="rounded border px-3 py-2">Check answer</button>
-    </form>
-    <p :if={!is_nil(@understanding)} class="mt-3">
-      {if @understanding,
-        do: "Correct. Your direct vote always takes precedence.",
-        else:
-          "Your direct vote always takes precedence. Public rankings never determine a council vote."}
-    </p>
-  </details>
+      <div class="yc-three yc-how">
+        <div>
+          <p class="yc-eyebrow">01 / Choose</p>
+          <h3>Whose judgment do you trust?</h3>
+          <p class="yc-gap-sm">Find people you know, or discover them through the Trust List.</p>
+        </div>
+        <div>
+          <p class="yc-eyebrow">02 / Explain</p>
+          <h3>Let others see your thinking.</h3>
+          <p class="yc-gap-sm">
+            Add a reason for each pick. Publish a named list if you’d like to share your picks.
+          </p>
+        </div>
+        <div>
+          <p class="yc-eyebrow">03 / Build together</p>
+          <h3>Help shape YouCongress Trust 30.</h3>
+          <p class="yc-gap-sm">
+            Your saved picks contribute to the list of people chosen by the most Councils.
+          </p>
+        </div>
+      </div>
+      <div class="yc-panel yc-gap-lg yc-between">
+        <div>
+          <h3>YouCongress Trust 30</h3>
+          <p class="yc-help">See who people trust, why they chose them, and where they stand.</p>
+        </div>
+        <.link navigate={~p"/trust"} class="yc-btn">See the Trust List →</.link>
+      </div>
+    </section>
+
+    <section :if={@step == "pick"}>
+      <p :if={@source_list_name} class="yc-panel soft yc-gap">
+        Copied people from <strong>{@source_list_name}</strong>. Review before saving: saving replaces your private Council. The public list stays unchanged.
+      </p>
+      <p class="yc-eyebrow">Your Council</p>
+      <h1>Whose judgment do you trust?</h1>
+      <p class="yc-intro">
+        Start with people you would turn to for a thoughtful opinion. You can add or remove anyone later.
+      </p>
+      <div class="yc-mobile-continue">
+        <strong>{length(members(@draft))} selected</strong><.link
+          patch={~p"/council?#{%{step: "why"}}"}
+          class="yc-btn primary"
+        >Continue →</.link>
+      </div>
+      <div class="yc-grid yc-gap">
+        <section>
+          <form phx-change="search" phx-submit="search">
+            <label for="person-search" class="yc-label">Find a person</label>
+            <input
+              id="person-search"
+              class="yc-field"
+              name="q"
+              value={@query}
+              placeholder="Search by name"
+              phx-debounce="250"
+            />
+          </form>
+          <div class="yc-between yc-gap">
+            <h3>{if @query == "", do: "From YouCongress Trust 30", else: "Search results"}</h3>
+            <.link navigate={~p"/trust"} class="yc-link">View Trust List</.link>
+          </div>
+          <div class="yc-list yc-gap-sm">
+            <div :for={person <- @matches} class="yc-list-item yc-between">
+              <.person
+                person={person}
+                subtitle={
+                  if @ranks[person.id],
+                    do: "#{@ranks[person.id].count} Councils",
+                    else: biography(person)
+                }
+              />
+              <button
+                type="button"
+                class={["yc-btn", selected?(@draft, person.id) && "selected"]}
+                phx-click={
+                  if selected?(@draft, person.id), do: "remove-person", else: "add-person"
+                }
+                phx-value-id={person.id}
+                aria-pressed={to_string(selected?(@draft, person.id))}
+              >
+                {if selected?(@draft, person.id), do: "✓ Added", else: "+ Add"}
+              </button>
+            </div>
+            <p :if={@matches == []} class="yc-list-item">
+              {if @query == "",
+                do: "Search by name to choose your first Council members.",
+                else: "No people found. Try another name."}
+            </p>
+          </div>
+          <p class="yc-help">
+            Can’t find someone?
+            <.link navigate={~p"/trust/requests"} class="yc-link">Suggest a missing person</.link>
+            or invite them after saving.
+          </p>
+        </section>
+        <aside class="yc-stack">
+          <div class="yc-panel">
+            <div class="yc-between">
+              <h3>Your Council</h3>
+              <span class="yc-badge purple">{length(members(@draft))} selected</span>
+            </div>
+            <div class="yc-stack yc-gap">
+              <div :for={member <- members(@draft)} class="yc-between">
+                <.person person={@people[member.author_id]} />
+                <button
+                  class="yc-link muted"
+                  phx-click="remove-person"
+                  phx-value-id={member.author_id}
+                  aria-label={"Remove #{@people[member.author_id].name}"}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+            <p :if={members(@draft) == []} class="yc-gap">Your picks will appear here.</p>
+            <hr class="yc-divider" />
+            <p class="yc-help">Every member has an equal voice in your Council.</p>
+            <.link patch={~p"/council?#{%{step: "why"}}"} class="yc-btn primary full yc-gap">
+              Continue with {people_count(length(members(@draft)))} →
+            </.link>
+          </div>
+          <div class="yc-panel soft">
+            <h3>You stay in control</h3>
+            <p class="yc-gap-sm">
+              When you haven’t voted, your vote follows your Council’s majority. Your direct vote overrides it.
+            </p>
+            <p class="yc-help">
+              Saving enables Council votes. Nothing changes while you’re choosing.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section :if={@step == "why"}>
+      <h1>Why did you choose them?</h1>
+      <p class="yc-intro">
+        A good reason helps others discover people they might trust, too. These comments are optional and stay private unless you copy them to a public list.
+      </p>
+      <form id="council-reasons" phx-change="reasons" phx-submit="save">
+        <div class="yc-stack yc-gap">
+          <div :for={member <- members(@draft)} class="yc-panel">
+            <.person
+              person={@people[member.author_id]}
+              subtitle={biography(@people[member.author_id])}
+            />
+            <label class="yc-label yc-gap" for={"reason-#{member.author_id}"}>
+              Why I trust {@people[member.author_id].name}
+              <span class="yc-muted">· optional</span>
+            </label>
+            <textarea
+              class="yc-field"
+              id={"reason-#{member.author_id}"}
+              name={"reasons[#{member.author_id}]"}
+              maxlength="5000"
+              rows="3"
+              phx-debounce="300"
+              placeholder="What makes their judgment worth listening to?"
+            >{member[:reason]}</textarea>
+          </div>
+        </div>
+        <div :if={members(@draft) == []} class="yc-panel soft yc-gap">
+          <p>
+            Your Council is empty. Saving removes all Council members and stops Council votes.
+          </p>
+        </div>
+        <div class="yc-actions">
+          <.link patch={~p"/council?#{%{step: "pick"}}"} class="yc-link muted">
+            ← Back to my picks
+          </.link>
+          <button id="save-council" class="yc-btn primary" phx-disable-with="Saving…">
+            Save my Council →
+          </button>
+        </div>
+        <p class="yc-help">
+          Saving enables Council votes and includes your picks in Trust 30. Choose whether to publish next.
+        </p>
+      </form>
+    </section>
+
+    <section :if={@step == "join"} class="yc-grid equal">
+      <div>
+        <p class="yc-eyebrow">One last step to save</p>
+        <h1>Keep your Council.</h1>
+        <p class="yc-intro">
+          Create an account to save your {length(members(@draft))} picks. Your reasons will come with you.
+        </p>
+        <div class="yc-panel soft yc-gap">
+          <div class="yc-row">
+            <.avatar :for={member <- members(@draft)} person={@people[member.author_id]} />
+          </div>
+          <p class="yc-gap-sm">
+            Your Council stays private. You can publish separate, named lists of people.
+          </p>
+        </div>
+        <.link patch={~p"/council?#{%{step: "why"}}"} class="yc-link yc-gap">
+          ← Back to my reasons
+        </.link>
+      </div>
+      <div class="yc-panel">
+        <h2>Join YouCongress</h2>
+        <p class="yc-gap-sm">Confirm your email to save your Council and start participating.</p>
+        <YouCongressWeb.Components.LoginButtons.render
+          class="yc-gap"
+          email_action={:sign_up}
+          pending_actions={pending(@draft, @ref)}
+          return_to={~p"/council?#{%{step: "publish"}}"}
+        />
+        <p class="yc-help yc-gap">
+          Already a member?
+          <.link
+            href={
+              YouCongressWeb.ReturnTo.log_in_path(
+                pending(@draft, @ref),
+                ~p"/council?#{%{step: "publish"}}"
+              )
+            }
+            class="yc-link"
+          >
+            Log in and keep my picks
+          </.link>
+        </p>
+      </div>
+    </section>
+
+    <section :if={@step == "publish" && @current_user}>
+      <div class="yc-success">
+        <span class="yc-check">✓</span>
+        <div>
+          <strong>Your Council is saved.</strong>
+          <p>Your {length(members(@draft))} picks contribute to YouCongress Trust 30.</p>
+        </div>
+      </div>
+      <h1 class="yc-gap-lg">Share a named list?</h1>
+      <p class="yc-intro">
+        Publish a copy of your picks and reasons under a name you choose. Your Council stays private: public lists never show whether you use them to vote.
+      </p>
+      <form id="publish-council-list" phx-submit="publish-list">
+        <label class="yc-label yc-gap" for="council-list-name">List name</label>
+        <input
+          id="council-list-name"
+          class="yc-field"
+          name="name"
+          placeholder="e.g. People whose judgment I value"
+          required
+          maxlength="120"
+        />
+        <div class="yc-panel soft yc-gap">
+          <.person
+            person={@current_user.author}
+            subtitle={"#{people_count(length(members(@draft)))} · reasons included"}
+          />
+          <div class="yc-row yc-gap-sm">
+            <.avatar :for={member <- members(@draft)} person={@people[member.author_id]} />
+          </div>
+        </div>
+        <p class="yc-help yc-gap">
+          This creates a separate public list. Future edits to your Council and this list are independent. You can create more lists from My lists.
+        </p>
+        <div class="yc-actions">
+          <.link patch={~p"/council?#{%{step: "invite"}}"} class="yc-link muted">
+            Skip for now
+          </.link>
+          <button class="yc-btn primary" phx-disable-with="Publishing…">
+            Publish list & continue →
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section :if={@step == "invite" && @current_user}>
+      <div class="yc-success">
+        <span class="yc-check">✓</span>
+        <div>
+          <strong>Your Council is set.</strong>
+          <p>
+            Your picks count toward YouCongress Trust 30. Your Council stays private.
+          </p>
+        </div>
+      </div>
+      <h1 class="yc-gap-lg">Who would you invite?</h1>
+      <p class="yc-intro">
+        Invite people whose judgment you value. Every new Council helps more people discover who to trust.
+      </p>
+      <div :if={@published_list} class="yc-panel soft yc-gap">
+        <h3>Your public list: {@published_list.name}</h3>
+        <.link navigate={~p"/lists/#{@published_list.id}"} class="yc-link yc-gap-sm">
+          View and share your list →
+        </.link>
+      </div>
+      <form id="council-invites" phx-change="invite-change" phx-submit="invite">
+        <div class="yc-panel yc-gap">
+          <label class="yc-label" for="invite-link">Your personal invite link</label>
+          <div class="yc-copy-row">
+            <input class="yc-field" id="invite-link" readonly value={invite_url(@current_user)} />
+            <button
+              type="button"
+              class="yc-btn primary"
+              data-council-copy={invite_url(@current_user)}
+            >
+              Copy link
+            </button>
+          </div>
+          <div class="yc-row yc-gap-sm">
+            <.link href={share_href(:email, @current_user, @invite_note)} class="yc-btn">
+              Email
+            </.link>
+            <.link href={share_href(:sms, @current_user, @invite_note)} class="yc-btn">
+              Messages
+            </.link>
+            <.link
+              href={share_href(:x, @current_user, @invite_note)}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="yc-btn"
+            >
+              X Post
+            </.link>
+            <button
+              type="button"
+              class="yc-btn"
+              data-council-share={@invite_note <> "\n\n" <> invite_url(@current_user)}
+            >
+              Share…
+            </button>
+          </div>
+          <label class="yc-label yc-gap" for="invite-note">
+            Add a personal note <span class="yc-muted">· optional</span>
+          </label>
+          <textarea
+            class="yc-field"
+            name="note"
+            id="invite-note"
+            rows="3"
+            maxlength="2000"
+            phx-debounce="300"
+          >{@invite_note}</textarea>
+          <p class="yc-help">
+            Friends can choose to share named public lists. Their Councils stay private.
+          </p>
+        </div>
+        <div class="yc-panel yc-gap">
+          <div class="yc-between">
+            <label for="invite-emails" class="yc-label">Invite by email</label><small>One email. No follow-ups.</small>
+          </div>
+          <input
+            class="yc-field"
+            id="invite-emails"
+            name="emails"
+            value={@invite_emails}
+            placeholder="Email addresses, separated by commas"
+            maxlength="2600"
+          />
+          <p class="yc-help">Up to 10 people at once, 20 per day.</p>
+          <button class="yc-btn purple yc-gap-sm" phx-disable-with="Queuing invitations…">
+            Send invites
+          </button>
+        </div>
+      </form>
+      <div class="yc-panel soft yc-gap">
+        <h3>Your invitations</h3>
+        <p class="yc-gap-sm">{@joined} people joined through your invite link.</p>
+        <div :for={invitation <- @invitations} class="yc-between yc-gap-sm">
+          <span class="yc-break">{invitation.email}</span><span class="yc-badge">{invitation.status}</span>
+        </div>
+        <p :if={@invitations == []} class="yc-help">No email invitations sent yet.</p>
+      </div>
+      <div class="yc-actions">
+        <.link patch={~p"/council"} class="yc-link muted">Skip for now</.link><.link
+          patch={~p"/council"}
+          class="yc-btn primary"
+        >Go to My Council →</.link>
+      </div>
+    </section>
+
+    <section :if={@step in ["mine", "votes"]}>
+      <div class="yc-between">
+        <div class="yc-person">
+          <.avatar person={@current_user.author} large />
+          <div>
+            <h1>My Council</h1>
+            <div class="yc-row yc-gap-sm">
+              <span class="yc-muted">
+                {@current_user.author.name}
+              </span>
+              <span class="yc-badge">Private Council</span>
+            </div>
+          </div>
+        </div>
+        <.link navigate={~p"/lists/new?from=council"} class="yc-btn">Publish a list</.link>
+      </div>
+      <nav class="yc-tabs" aria-label="My Council">
+        <.link patch={~p"/council"} class={@step == "mine" && "active"}>Council</.link><.link
+          patch={~p"/council?#{%{step: "votes"}}"}
+          class={@step == "votes" && "active"}
+        >My votes</.link><.link patch={~p"/council?#{%{step: "invite"}}"}>Invites</.link>
+      </nav>
+      <div :if={@step == "votes"} class="yc-list yc-gap">
+        <div :for={vote <- @votes} class="yc-list-item yc-between">
+          <.link navigate={~p"/p/#{vote.statement.slug}"} class="yc-name">
+            {vote.statement.title}
+          </.link>
+          <span class="yc-badge">
+            {answer(vote.answer)} · {if vote.direct, do: "direct vote", else: "via your Council"}
+          </span>
+        </div>
+        <p :if={@votes == []} class="yc-list-item">
+          No votes yet.
+          <.link navigate={~p"/explore"} class="yc-link">Explore statements →</.link>
+        </p>
+      </div>
+      <div :if={@step == "mine"} class="yc-grid yc-gap">
+        <section>
+          <div class="yc-between">
+            <h2>{people_count(length(members(@draft)))} I trust</h2>
+            <.link patch={~p"/council?#{%{step: "pick"}}"} class="yc-btn">
+              Edit Council
+            </.link>
+          </div>
+          <div class="yc-list yc-gap">
+            <div :for={member <- members(@draft)} class="yc-list-item">
+              <div class="yc-between">
+                <.person
+                  person={@people[member.author_id]}
+                  subtitle={biography(@people[member.author_id])}
+                />
+                <.link
+                  :if={@ranks[member.author_id]}
+                  navigate={~p"/trust/people/#{member.author_id}"}
+                  class="yc-link"
+                >
+                  #{@ranks[member.author_id].rank} in Trust 30
+                </.link>
+              </div>
+              <blockquote :if={member[:reason] not in [nil, ""]} class="yc-note">
+                <span>{member[:reason]}</span>
+              </blockquote>
+              <div class="yc-row yc-gap-sm">
+                <.link patch={~p"/council?#{%{step: "why"}}"} class="yc-link">
+                  {if member[:reason] in [nil, ""], do: "+ Add a reason", else: "Edit reason"}
+                </.link>
+                <.link navigate={~p"/a/#{member.author_id}"} class="yc-link">
+                  View positions →
+                </.link>
+              </div>
+            </div>
+            <p :if={members(@draft) == []} class="yc-list-item">No people selected yet.</p>
+          </div>
+          <div class="yc-empty yc-gap yc-between">
+            <span>Add someone whose judgment you trust.</span><.link
+              navigate={~p"/trust"}
+              class="yc-link"
+            >Browse Trust 30 →</.link>
+          </div>
+        </section>
+        <aside class="yc-stack">
+          <div class="yc-panel">
+            <h3>What this Council does</h3>
+            <p class="yc-gap-sm">
+              On statements you haven’t voted on, the vote follows this Council’s majority. A direct vote always comes first.
+            </p>
+            <div class="yc-stat-grid yc-gap">
+              <div>
+                <strong>{@counts.direct}</strong>
+                <p>direct votes</p>
+              </div>
+              <div>
+                <strong>{@counts.council}</strong>
+                <p>via your Council</p>
+              </div>
+            </div>
+            <p class="yc-help">A tie or no eligible positions means no Council vote.</p>
+          </div>
+          <div class="yc-panel">
+            <h3>Part of YouCongress Trust 30</h3>
+            <p class="yc-gap-sm">
+              These picks help shape the single Trust List for everyone on YouCongress.
+            </p>
+            <.link navigate={~p"/trust"} class="yc-link yc-gap-sm">View the Trust List →</.link>
+          </div>
+          <div class="yc-panel">
+            <h3>Your Council is private</h3>
+            <p class="yc-gap-sm">
+              Only you can see your Council and its reasons. Public lists do not show whether you use their people to vote.
+            </p>
+            <.link navigate={~p"/lists"} class="yc-link yc-gap-sm">
+              Manage my public lists →
+            </.link>
+          </div>
+          <div class="yc-panel tint">
+            <h3>Invite thoughtful people</h3>
+            <p class="yc-gap-sm">Whose judgment would you love to hear?</p>
+            <.link
+              navigate={~p"/council?#{%{step: "invite"}}"}
+              class="yc-btn yc-gap-sm"
+            >
+              Invite friends →
+            </.link>
+          </div>
+        </aside>
+      </div>
+    </section>
+    <p id="council-copy-status" class="yc-help" role="status" phx-update="ignore"></p>
+  </div>
 </div>

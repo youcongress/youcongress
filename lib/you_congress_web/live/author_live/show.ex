@@ -135,7 +135,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   def handle_event("toggle-delegate", _, %{assigns: %{current_user: nil}} = socket) do
-    {:noreply, put_flash(socket, :warning, "Log in to unlock delegate voting.")}
+    {:noreply, put_flash(socket, :warning, "Log in to choose your Council.")}
   end
 
   def handle_event("toggle-delegate", %{"author_id" => delegate_id}, socket) do

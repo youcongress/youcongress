@@ -136,12 +136,12 @@ defmodule YouCongressWeb.OpinionLive.Show do
           socket
           |> load_opinion!(opinion.id)
           |> load_delegations()
-          |> put_flash(:info, "Delegated successfully.")
+          |> put_flash(:info, "Added to your Council.")
 
         {:noreply, socket}
 
       {:error, _} ->
-        {:noreply, socket |> put_flash(:error, "Failed to delegate.")}
+        {:noreply, socket |> put_flash(:error, "Could not add this person to your Council.")}
     end
   end
 

@@ -94,7 +94,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   def handle_event("add-delegation", _, %{assigns: %{current_user: nil}} = socket) do
     send(
       self(),
-      {:put_flash, :warning, "Log in to unlock delegate voting."}
+      {:put_flash, :warning, "Log in to choose your Council."}
     )
 
     {:noreply, socket}

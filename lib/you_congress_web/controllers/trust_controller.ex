@@ -2,6 +2,10 @@ defmodule YouCongressWeb.TrustController do
   use YouCongressWeb, :controller
   alias YouCongress.TrustRankings
 
+  def public_lists(conn, %{"author_id" => id}), do: redirect(conn, to: ~p"/a/#{id}/lists")
+
+  def simplified(conn, _params), do: redirect(conn, to: ~p"/trust")
+
   def export(conn, %{"id" => id}) do
     case TrustRankings.get_snapshot(id) do
       nil -> send_resp(conn, 404, "Snapshot not found")

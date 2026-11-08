@@ -65,9 +65,9 @@
         saved={@delegating?}
       />
     <% end %>
-    <.link href={~p"/a/#{@author.id}/council"} class="text-sm text-indigo-700">Council</.link>
-    <.link href={~p"/a/#{@author.id}/recommendations"} class="text-sm text-indigo-700">
-      Recommendations
+    <.link href={~p"/a/#{@author.id}/lists"} class="text-sm text-indigo-700">Public lists</.link>
+    <.link navigate={~p"/trust/people/#{@author.id}"} class="text-sm text-indigo-700">
+      Why people trust them
     </.link>
     <.link href={~p"/trust/requests"} class="text-sm text-indigo-700">Review this profile</.link>
     <%= if @current_user && Permissions.can_edit_author?(@current_user) do %>

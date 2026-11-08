@@ -1,7 +1,7 @@
 defmodule YouCongressWeb.Components.CouncilBookmark do
-  @moduledoc "Quick council saving and inline list selection, shared by person actions."
+  @moduledoc "Add or remove one person from the current user's Council."
   use YouCongressWeb, :live_component
-  alias YouCongress.{Councils, TrustRankings}
+  alias YouCongress.Councils
 
   @impl true
   def update_many(assigns_sockets) do
@@ -27,19 +27,18 @@ defmodule YouCongressWeb.Components.CouncilBookmark do
   end
 
   @impl true
-  def handle_event("bookmark", _, %{assigns: %{current_user: nil}} = socket) do
-    {:noreply, assign(socket, open: true, expanded: false)}
-  end
+  def handle_event("bookmark", _, %{assigns: %{current_user: nil}} = socket),
+    do: {:noreply, assign(socket, open: true)}
 
   def handle_event("bookmark", _, socket) do
-    %{current_user: user, author_id: author_id} = socket.assigns
+    %{current_user: user, author_id: id} = socket.assigns
     {:ok, council} = Councils.ensure(user.author_id)
 
-    if selected?(council, author_id) do
+    if id in Councils.delegate_ids(user.author_id) do
       {:noreply,
        assign(socket, council: council, saved: true, open: true, expanded: true, error: nil)}
     else
-      case Councils.add_member(user, author_id) do
+      case Councils.add_member(user, id) do
         {:ok, council} ->
           {:noreply,
            assign(socket,
@@ -51,44 +50,30 @@ defmodule YouCongressWeb.Components.CouncilBookmark do
              notice: socket.assigns.notice + 1
            )}
 
-        {:error, _} ->
+        _ ->
           {:noreply,
-           assign(socket, open: true, error: "Could not add this person. Please try again.")}
+           assign(socket, open: true, error: "Could not add this person to your Council.")}
       end
     end
   end
 
-  def handle_event("choose-lists", _, %{assigns: %{current_user: user}} = socket)
-      when not is_nil(user) do
-    {:ok, council} = Councils.ensure(user.author_id)
-    {:noreply, assign(socket, council: council, expanded: true, error: nil)}
-  end
-
-  def handle_event("choose-lists", _, socket), do: {:noreply, socket}
-
-  def handle_event("select-lists", %{"lists" => ids}, socket)
-      when is_list(ids) and not is_nil(socket.assigns.current_user) and
-             not is_nil(socket.assigns.council) do
-    %{current_user: user, author_id: author_id, council: council} = socket.assigns
-    ids = ids |> Enum.map(&TrustRankings.parse_id/1) |> Enum.reject(&is_nil/1)
-
-    case Councils.set_member_lists(user, author_id, ids, council.version) do
-      {:ok, saved} ->
-        {:noreply, assign(socket, council: saved, saved: selected?(saved, author_id), error: nil)}
+  def handle_event("remove", _, %{assigns: %{current_user: user, council: council}} = socket)
+      when not is_nil(user) and not is_nil(council) do
+    case Councils.set_member_lists(user, socket.assigns.author_id, [], council.version) do
+      {:ok, council} ->
+        {:noreply, assign(socket, council: council, saved: false, open: false, expanded: false)}
 
       {:error, :stale} ->
         {:noreply,
          assign(socket,
            council: Councils.get(user.author_id),
-           error: "Your council changed elsewhere. Review these lists and try again."
+           error: "Your Council changed elsewhere. Review it and try again."
          )}
 
-      {:error, _} ->
-        {:noreply, assign(socket, error: "Could not save these lists. Please try again.")}
+      _ ->
+        {:noreply, assign(socket, error: "Could not update your Council.")}
     end
   end
-
-  def handle_event("select-lists", _, socket), do: {:noreply, socket}
 
   def handle_event("dismiss", %{"notice" => notice}, socket) do
     if to_string(socket.assigns.notice) == to_string(notice) and not socket.assigns.expanded,
@@ -99,8 +84,7 @@ defmodule YouCongressWeb.Components.CouncilBookmark do
   def handle_event("close", _, socket),
     do: {:noreply, assign(socket, open: false, expanded: false)}
 
-  defp selected?(council, author_id), do: Enum.any?(council.lists, &member?(&1, author_id))
-  defp member?(list, author_id), do: Enum.any?(list.members, &(&1.author_id == author_id))
+  def handle_event(_, _, socket), do: {:noreply, socket}
 
   @impl true
   def render(assigns) do
@@ -121,99 +105,57 @@ defmodule YouCongressWeb.Components.CouncilBookmark do
         aria-haspopup="dialog"
         aria-expanded={to_string(@open)}
         aria-controls={@id <> "-popup"}
-        class="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600"
+        class="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
       >
-        <.icon name={if @saved, do: "hero-bookmark-solid", else: "hero-bookmark"} class="h-4 w-4" />
-        {if @saved, do: "In my council", else: "Add to council"}
+        <.icon name={if @saved, do: "hero-bookmark-solid", else: "hero-bookmark"} class="h-4 w-4" />{if @saved,
+          do: "In my Council",
+          else: "Add to Council"}
       </button>
       <div
         :if={@open}
         id={@id <> "-popup"}
         role="dialog"
-        aria-label={"Council lists for #{@name}"}
+        aria-label={"Council selection for #{@name}"}
         phx-click-away="close"
         phx-target={@myself}
         phx-window-keydown="close"
         phx-key="Escape"
-        class={[
-          "fixed bottom-5 right-4 z-[60] max-w-[calc(100vw-2rem)] rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-900 shadow-xl",
-          if(@expanded, do: "w-96", else: "w-80")
-        ]}
+        class="fixed bottom-5 right-4 z-[60] w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-900 shadow-xl"
       >
         <button
           type="button"
           phx-click="close"
           phx-target={@myself}
-          aria-label="Close council popup"
-          class="absolute right-2 top-2 rounded p-1 text-gray-500 hover:bg-gray-100"
+          aria-label="Close Council popup"
+          class="absolute right-2 top-2 rounded p-1 text-gray-500"
         >
           <.icon name="hero-x-mark" class="h-4 w-4" />
         </button>
         <p :if={@error} role="alert" class="pr-6 text-red-700">{@error}</p>
         <%= cond do %>
           <% is_nil(@current_user) -> %>
-            <p class="pr-6 font-medium">Sign in to add {@name} to your council.</p>
+            <p class="pr-6 font-medium">Sign in to add {@name} to your Council.</p>
             <YouCongressWeb.Components.LoginButtons.render
               class="mt-3"
               return_to={~p"/council"}
               pending_actions={Jason.encode!(%{delegate_ids: [@author_id], votes: %{}})}
             />
-          <% @expanded && @council -> %>
+          <% @expanded -> %>
             <h2 tabindex="-1" data-council-heading class="pr-6 font-semibold">
-              Choose lists for {@name}
+              {@name} is in your Council
             </h2>
-            <p class="mt-1 text-xs text-gray-500">
-              Changes save automatically. Choose as many lists as you like.
-            </p>
-            <form
-              phx-change="select-lists"
-              phx-target={@myself}
-              class="mt-3 space-y-1 max-h-72 overflow-y-auto"
-            >
-              <input type="hidden" name="lists[]" value="" />
-              <label
-                :for={list <- @council.lists}
-                class="flex cursor-pointer items-center gap-3 rounded-lg p-2 hover:bg-gray-50"
-              >
-                <input
-                  type="checkbox"
-                  name="lists[]"
-                  value={list.id}
-                  checked={member?(list, @author_id)}
-                  class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <span>
-                  <span class="block font-medium">{list.name}</span>
-                  <span class="text-xs text-gray-500">
-                    List {list.position + 1}{if list.fallback, do: " · Final General fallback"}
-                  </span>
-                </span>
-              </label>
-            </form>
-            <.link
-              navigate={~p"/council"}
-              class="mt-3 flex items-center gap-2 rounded-lg px-2 py-2 font-semibold text-indigo-700 hover:bg-indigo-50"
-            >
-              <.icon name="hero-plus" class="h-4 w-4" /> Create a new list
+            <p class="mt-2 text-gray-600">Their position counts when you haven’t voted directly.</p>
+            <.link navigate={~p"/council?#{%{step: "why"}}"} class="mt-3 block text-indigo-700">
+              Add or edit your reason →
             </.link>
-            <button
-              type="button"
-              phx-click="close"
-              phx-target={@myself}
-              class="mt-3 w-full rounded-lg bg-indigo-600 px-3 py-2 font-semibold text-white hover:bg-indigo-700"
-            >
-              Done
+            <button class="mt-3 text-red-700" phx-click="remove" phx-target={@myself}>
+              Remove from my Council
             </button>
           <% !@error -> %>
-            <p role="status" class="pr-6 font-medium">Added to the General council.</p>
-            <button
-              type="button"
-              phx-click="choose-lists"
-              phx-target={@myself}
-              class="mt-2 font-semibold text-indigo-700 hover:underline"
-            >
-              Choose lists
-            </button>
+            <p role="status" class="pr-6 font-medium">Added to your Council.</p>
+            <.link navigate={~p"/council?#{%{step: "why"}}"} class="mt-2 block text-indigo-700">
+              Say why you chose them →
+            </.link>
           <% true -> %>
         <% end %>
       </div>

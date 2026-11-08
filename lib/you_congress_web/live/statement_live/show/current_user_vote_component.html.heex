@@ -1,11 +1,4 @@
 <div>
-  <.link
-    :if={@current_user}
-    href={~p"/council?#{%{statement: @statement.id}}"}
-    class="text-sm text-indigo-700"
-  >
-    Inspect my council's decision
-  </.link>
   <%= if @current_user_vote do %>
     <div class="pt-4">
       <.live_component

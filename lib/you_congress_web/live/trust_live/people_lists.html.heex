@@ -1,0 +1,218 @@
+<div
+  id="people-lists"
+  class="council-ui"
+  phx-hook="CouncilDraft"
+  data-guest="false"
+  data-readonly="true"
+>
+  <div class="yc-content">
+    <%= case @live_action do %>
+      <% :index -> %>
+        <p class="yc-eyebrow">People worth discovering</p>
+        <div class="yc-between">
+          <h1>
+            {cond do
+              @own -> "My public lists"
+              @owner -> "#{@owner.name}’s public lists"
+              true -> "Your public lists"
+            end}
+          </h1>
+          <.link navigate={~p"/lists/new"} class="yc-btn primary">Create a list →</.link>
+        </div>
+        <p class="yc-intro">
+          Named collections of people, with your reasons for choosing them. Public lists are independent of private voting choices.
+        </p>
+        <div class="yc-stack yc-gap">
+          <article :for={list <- @lists} class="yc-panel yc-between">
+            <div>
+              <.link navigate={~p"/lists/#{list.id}"} class="yc-statement-link">
+                {list.name}
+              </.link>
+              <p class="yc-help">{people_count(length(list.members))} · Public list</p>
+            </div>
+            <.link navigate={~p"/lists/#{list.id}"} class="yc-link">View list →</.link>
+          </article>
+          <div :if={@lists == []} class="yc-panel soft">
+            <h3>{if @own, do: "Create your first list", else: "No public lists yet"}</h3>
+            <p class="yc-gap-sm">
+              {if @own,
+                do: "Give it a name, choose people, and share why they are worth following.",
+                else: "Only lists their owner has chosen to publish appear here."}
+            </p>
+          </div>
+        </div>
+        <div :if={@own} class="yc-panel tint yc-gap">
+          <h3>Your Council stays private</h3>
+          <p class="yc-gap-sm">
+            You can publish any number of lists. Public pages never show whether you use a list as your Council. Editing or deleting a public list never changes your votes.
+          </p>
+          <.link navigate={~p"/council"} class="yc-link yc-gap-sm">Go to My Council →</.link>
+        </div>
+      <% action when action in [:new, :edit] -> %>
+        <p class="yc-breadcrumb">
+          <.link navigate={~p"/lists"} class="yc-link">← My public lists</.link>
+        </p>
+        <h1>{if @list, do: "Edit public list", else: "Create a public list"}</h1>
+        <p class="yc-intro">
+          Give your collection a name. Everyone can see this list. It never shows whether you use these people as your private Council.
+        </p>
+        <div class="yc-grid yc-gap">
+          <section>
+            <form id="public-list-editor" phx-change="change" phx-submit="save">
+              <label class="yc-label" for="public-list-name">List name</label>
+              <input
+                class="yc-field"
+                id="public-list-name"
+                name="name"
+                value={@draft.name}
+                placeholder="e.g. Clear thinkers I follow"
+                required
+                maxlength="120"
+                phx-debounce="300"
+              />
+              <div class="yc-stack yc-gap">
+                <div :for={member <- @draft.members} class="yc-panel">
+                  <div class="yc-between">
+                    <.person person={@people[member.author_id]} />
+                    <button
+                      type="button"
+                      phx-click="remove-person"
+                      phx-value-id={member.author_id}
+                      class="yc-link muted"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <label class="yc-label yc-gap-sm" for={"list-reason-#{member.author_id}"}>
+                    Why I chose them · optional
+                  </label>
+                  <textarea
+                    class="yc-field"
+                    id={"list-reason-#{member.author_id}"}
+                    name={"reasons[#{member.author_id}]"}
+                    maxlength="5000"
+                    rows="2"
+                    phx-debounce="300"
+                  >{member[:reason]}</textarea>
+                </div>
+                <p :if={@draft.members == []} class="yc-panel soft">
+                  Find people by name to add them to this list.
+                </p>
+              </div>
+              <div class="yc-actions">
+                <.link
+                  navigate={if @list, do: ~p"/lists/#{@list.id}", else: ~p"/lists"}
+                  class="yc-link muted"
+                >
+                  Cancel
+                </.link>
+                <button class="yc-btn primary" phx-disable-with="Saving…">
+                  {if @list, do: "Save public list", else: "Publish list →"}
+                </button>
+              </div>
+              <p class="yc-help">
+                This saves a public list. It does not add anyone to your private Council.
+              </p>
+            </form>
+          </section>
+          <aside class="yc-panel">
+            <form phx-change="search" phx-submit="search">
+              <label class="yc-label" for="list-person-search">Add people</label>
+              <input
+                class="yc-field"
+                id="list-person-search"
+                name="q"
+                value={@query}
+                placeholder="Search by name"
+                phx-debounce="250"
+              />
+            </form>
+            <div class="yc-stack yc-gap">
+              <div :for={person <- @matches} class="yc-between">
+                <.person person={person} />
+                <button
+                  class="yc-btn"
+                  phx-click="add-person"
+                  phx-value-id={person.id}
+                  disabled={Enum.any?(@draft.members, &(&1.author_id == person.id))}
+                >
+                  {if Enum.any?(@draft.members, &(&1.author_id == person.id)),
+                    do: "✓ Added",
+                    else: "+ Add"}
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      <% :show -> %>
+        <p class="yc-breadcrumb">
+          <.link navigate={~p"/a/#{@owner.id}/lists"} class="yc-link">
+            ← {@owner.name}’s public lists
+          </.link>
+        </p>
+        <p class="yc-eyebrow">Public people list</p>
+        <div class="yc-between">
+          <h1>{@list.name}</h1>
+          <button class="yc-btn" data-council-copy={public_url(@list.id)}>Share list</button>
+        </div>
+        <div class="yc-row yc-gap">
+          <.avatar person={@owner} />
+          <p>
+            Curated by <.link navigate={~p"/a/#{@owner.id}"} class="yc-link">{@owner.name}</.link>
+            · {people_count(length(@list.members))}
+          </p>
+        </div>
+        <div class="yc-grid yc-gap">
+          <section>
+            <div class="yc-list">
+              <article :for={member <- @list.members} class="yc-list-item">
+                <.person
+                  person={@people[member.author_id]}
+                  subtitle={biography(@people[member.author_id])}
+                />
+                <blockquote :if={member.reason not in [nil, ""]} class="yc-note">
+                  <span>{member.reason}</span>
+                </blockquote>
+                <.link navigate={~p"/a/#{member.author_id}"} class="yc-link yc-gap-sm">
+                  View positions →
+                </.link>
+              </article>
+              <p :if={@list.members == []} class="yc-list-item">No people added yet.</p>
+            </div>
+          </section>
+          <aside class="yc-stack">
+            <div class="yc-panel">
+              <h3>Make your own choices</h3>
+              <p class="yc-gap-sm">
+                Use these people as a starting point. Review and edit your private Council before saving.
+              </p>
+              <.link
+                navigate={~p"/council?#{%{step: "pick", use_list: @list.id}}"}
+                class="yc-btn primary yc-gap"
+              >
+                Use these picks →
+              </.link>
+              <p class="yc-help">
+                Your choices are private. This public list does not show who uses it.
+              </p>
+            </div>
+            <div :if={@own} class="yc-panel">
+              <h3>Manage this list</h3>
+              <.link navigate={~p"/lists/#{@list.id}/edit"} class="yc-btn yc-gap-sm">
+                Edit list
+              </.link>
+              <p class="yc-help">Changes here never change your Council or votes.</p>
+              <button
+                class="yc-link yc-gap"
+                phx-click="delete"
+                data-confirm="Delete this public list? Your private Council will not change."
+              >
+                Delete public list
+              </button>
+            </div>
+          </aside>
+        </div>
+    <% end %>
+    <p id="council-copy-status" class="yc-help" role="status" phx-update="ignore"></p>
+  </div>
+</div>
