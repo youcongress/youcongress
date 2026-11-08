@@ -129,11 +129,8 @@
               vote and share your perspective (votes are private unless you publish a comment).
             </li>
             <li>
-              delegate to trusted experts, public figures and other users. You'll vote as the majority of your delegates unless you vote directly. In the future, we plan to add topic-based delegation and other <.link
-                href="https://www.lesswrong.com/posts/4KjiZeAWc7Yv9oyCb/tackling-moloch-how-youcongress-offers-a-novel-coordination"
-                target="_blank"
-                class="underline"
-              >delegation mechanisms</.link>.
+              build a <.link href={~p"/council"} class="underline">Council</.link>
+              of people you trust, with different lists for different topics. Your Council can determine your vote when you have not voted directly.
             </li>
           </ul>
         </dd>
@@ -141,21 +138,95 @@
 
       <div id="delegation" class="pt-8 lg:grid lg:grid-cols-12 lg:gap-8">
         <dt class="text-base font-semibold leading-7 text-gray-900 lg:col-span-5">
-          What are YouCongress delegates?
+          What is My Council?
         </dt>
         <dd class="mt-4 lg:col-span-7 lg:mt-0">
           <p class="text-base leading-7 text-gray-600">
-            YouCongress users can choose a list of delegates, similar to following others on social media. Unless they vote directly, their vote follows the most common answer among their delegates. For example, if five delegates vote on an issue and three vote in favor while two vote against, the user's delegated vote is in favor. If the delegate votes are tied, no delegated vote is recorded. A direct vote always takes precedence over delegation.
-          </p>
-          <p class="text-base leading-7 text-gray-600 ">
-            Future enhancements will introduce additional <.link
-              href="https://www.lesswrong.com/posts/4KjiZeAWc7Yv9oyCb/tackling-moloch-how-youcongress-offers-a-novel-coordination"
-              target="_blank"
-              class="underline"
-            >delegation mechanisms</.link>, including topic-specific delegation. This will enable users to appoint delegates for votes concerning specific areas such as their local community, economic matters, AI-related issues, and more.
+            Your Council is your private choice of whose judgment to follow on YouCongress. You choose lists of people and the topics they apply to. On statements you have not voted on directly, their positions can determine a vote for you.
           </p>
           <p class="text-base leading-7 text-gray-600 pt-4">
-            In country and year result views, users can filter results by direct and delegated votes. This keeps the platform useful for people who want to consider direct votes separately.
+            Start at <.link href={~p"/council"} class="underline">My Council</.link>. After signing up, choose people you trust for your All statements list and optionally say why you chose each person. Changes save automatically. You can then go to My Council to adjust your choices; publishing a list and inviting others are optional.
+          </p>
+        </dd>
+      </div>
+
+      <div id="council-topics" class="pt-8 lg:grid lg:grid-cols-12 lg:gap-8">
+        <dt class="text-base font-semibold leading-7 text-gray-900 lg:col-span-5">
+          Can I choose different people for different topics?
+        </dt>
+        <dd class="mt-4 lg:col-span-7 lg:mt-0">
+          <p class="text-base leading-7 text-gray-600">
+            Yes. Each Council entry pairs a list of people with a hall, which is a topic tag on statements. The default order is AI governance, Impact on labor, and All statements. Your first picks go into All statements; the topic lists start empty, so you can fill them in later.
+          </p>
+          <p class="text-base leading-7 text-gray-600 pt-4">
+            You can add halls, reorder entries, and use the same hall more than once with different lists. All statements applies to every statement. You can add an All statements entry higher in the order for a small group you especially trust; the final All statements entry stays last as a fallback.
+          </p>
+        </dd>
+      </div>
+
+      <div id="council-votes" class="pt-8 lg:grid lg:grid-cols-12 lg:gap-8">
+        <dt class="text-base font-semibold leading-7 text-gray-900 lg:col-span-5">
+          How does my Council choose my vote?
+        </dt>
+        <dd class="mt-4 lg:col-span-7 lg:mt-0">
+          <ol class="list-decimal pl-5 space-y-2 text-base leading-7 text-gray-600">
+            <li>
+              We check your entries from top to bottom, skipping halls that do not match the statement’s tags. All statements entries always match.
+            </li>
+            <li>
+              Within each matching list, we compare For and Against. More For means For; more Against means Against. Abstentions and people without an eligible position do not count toward either side.
+            </li>
+            <li>
+              A tie, an empty list, or an unavailable list moves us to the next matching entry. The first list that decides supplies your Council vote. If none decides, no Council vote is cast.
+            </li>
+          </ol>
+          <p class="text-base leading-7 text-gray-600 pt-4">
+            For example, 8 For and 0 Against gives a For vote, even if 1 person abstains and 49 have no position. A statement tagged only environment skips AI governance and Impact on labor, then uses All statements unless you have added an earlier matching entry that decides.
+          </p>
+          <p class="text-base leading-7 text-gray-600 pt-4">
+            Your direct vote always takes priority, including a direct Abstain. Clearing your direct vote lets your Council apply again. On a statement, click “See how your Council voted” to see which lists were checked or skipped and who was For, Against, or Abstain, or had no eligible position.
+          </p>
+        </dd>
+      </div>
+
+      <div id="council-positions" class="pt-8 lg:grid lg:grid-cols-12 lg:gap-8">
+        <dt class="text-base font-semibold leading-7 text-gray-900 lg:col-span-5">
+          Which positions count toward my Council vote?
+        </dt>
+        <dd class="mt-4 lg:col-span-7 lg:mt-0">
+          <p class="text-base leading-7 text-gray-600">
+            A person’s own direct vote counts. A position inferred from a sourced quote counts when the quote, its relevance to the statement, and the inferred vote have positive verification: Endorsed, Verified, or AI Verified. Unverified, disputed, or unverifiable positions do not count.
+          </p>
+          <p class="text-base leading-7 text-gray-600 pt-4">
+            We use each person’s own position, not votes they receive through their Council. You can inspect the people and positions behind your Council’s decision on the statement page and cast your own vote at any time.
+          </p>
+        </dd>
+      </div>
+
+      <div id="council-lists" class="pt-8 lg:grid lg:grid-cols-12 lg:gap-8">
+        <dt class="text-base font-semibold leading-7 text-gray-900 lg:col-span-5">
+          Can I use my own lists or someone else’s public list?
+        </dt>
+        <dd class="mt-4 lg:col-span-7 lg:mt-0">
+          <p class="text-base leading-7 text-gray-600">
+            Each Council entry uses one list: a private or public list you own, or a public list by someone else. “Choose people” or “Edit people” opens the people editor. To change the source list or hall, open the entry’s options and choose “Edit entry.”
+          </p>
+          <p class="text-base leading-7 text-gray-600 pt-4">
+            Changes to a list you own apply everywhere you use that list. When you use someone else’s public list, your Council follows their membership updates. You cannot edit their list, but you can make a private copy and change it independently. Replacing or removing a Council entry does not delete the underlying list.
+          </p>
+        </dd>
+      </div>
+
+      <div id="council-privacy" class="pt-8 lg:grid lg:grid-cols-12 lg:gap-8">
+        <dt class="text-base font-semibold leading-7 text-gray-900 lg:col-span-5">
+          Is my Council public? Do I have to publish a list?
+        </dt>
+        <dd class="mt-4 lg:col-span-7 lg:mt-0">
+          <p class="text-base leading-7 text-gray-600">
+            Your Council assignments and their order are private. A public list shows its name, people, and reasons, but does not reveal whether you use it in your Council. Other list owners cannot see whether you use their lists either. Private lists and their reasons are visible only to you.
+          </p>
+          <p class="text-base leading-7 text-gray-600 pt-4">
+            Publishing is optional. You can create named public lists to share people you value without using those lists to determine your votes. You can also invite others to choose their own Council without publishing yours.
           </p>
         </dd>
       </div>
