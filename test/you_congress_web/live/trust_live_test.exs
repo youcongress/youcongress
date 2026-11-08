@@ -115,7 +115,6 @@ defmodule YouCongressWeb.TrustLiveTest do
     assert Councils.get(user.author_id) == before
     {:ok, _, html} = live(conn, "/council")
     assert html =~ "My Council"
-    assert html =~ "Council order"
     assert html =~ "AI governance"
     {:ok, _, html} = live(conn, "/council?step=pick")
     assert html =~ "Careful thinkers"

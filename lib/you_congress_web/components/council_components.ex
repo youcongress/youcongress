@@ -13,7 +13,7 @@ defmodule YouCongressWeb.CouncilComponents do
         class={@active == :order && "active"}
         aria-current={@active == :order && "page"}
       >
-        Council order
+        My Council
       </.link>
       <.link
         navigate={~p"/council?#{%{step: "votes"}}"}
