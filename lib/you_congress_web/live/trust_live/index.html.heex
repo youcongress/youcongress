@@ -6,7 +6,6 @@
         :communities -> "Participating communities"
         :compare -> "Compare trust lists"
         :recommendations -> "Recommendations"
-        :requests -> "Evidence and profile requests"
         :updates -> "Your updates"
         :snapshot -> "Published trust snapshot"
         :metrics -> "Trust Network evaluation"
@@ -18,7 +17,6 @@
       <.link :if={YouCongress.Accounts.admin?(@current_user)} navigate={~p"/trust"}>
         Trust List
       </.link>
-      <.link navigate={~p"/trust/requests"}>Review evidence</.link>
       <.link
         :if={@current_user}
         navigate={~p"/trust/updates"}
@@ -419,94 +417,6 @@
       </form>
     </div>
   </section>
-  <section :if={@live_action == :requests} class="space-y-5">
-    <p>
-      Request a correction, evidence for a missing position, or a profile for someone missing. Reviewers check sources before changing the record.
-    </p>
-    <form :if={@current_user} phx-submit="request" class="rounded border p-5 space-y-3">
-      <label>
-        Request type<select name="kind" class="block rounded border-gray-300">
-<option value="correction">Correction</option>
-<option value="missing_position">Missing position</option>
-<option value="missing_person">Missing person</option>
-</select>
-      </label>
-      <label class="block">
-        Details<textarea
-          name="body"
-          required
-          maxlength="10000"
-          class="block w-full rounded border-gray-300"
-        >
-</textarea>
-      </label>
-      <label class="block">
-        Source URL<input
-          name="source_url"
-          type="url"
-          class="block w-full rounded border-gray-300"
-        />
-      </label>
-      <div class="flex gap-3">
-        <label>
-          Author ID (optional)<input
-            name="author_id"
-            type="number"
-            min="1"
-            class="block rounded border-gray-300"
-          />
-        </label>
-        <label>
-          Statement ID (optional)<input
-            name="statement_id"
-            type="number"
-            min="1"
-            class="block rounded border-gray-300"
-          />
-        </label>
-      </div>
-      <button class="rounded bg-indigo-700 px-4 py-2 text-white">Submit request</button>
-    </form>
-    <article :for={request <- @requests} class="rounded border p-5 space-y-2">
-      <h2 class="font-semibold">{String.replace(request.kind, "_", " ")} · {request.status}</h2>
-      <p class="whitespace-pre-wrap">{request.body}</p>
-      <.link
-        :if={request.source_url not in [nil, ""]}
-        href={request.source_url}
-        rel="noopener noreferrer"
-        class="text-indigo-700"
-      >
-        Source
-      </.link>
-      <p>{request.resolution}</p>
-      <details :if={request.attempts != []}>
-        <summary>Search history</summary>
-        <p :for={attempt <- request.attempts}>{attempt["at"]}: {attempt["result"]}</p>
-      </details>
-      <form :if={review?(@current_user)} phx-submit="resolve" class="space-y-3">
-        <input name="request_id" type="hidden" value={request.id} />
-        <select
-          name="status"
-          class="rounded border-gray-300"
-        >
-          <option
-            :for={status <- ["open", "reviewing", "resolved", "unresolved"]}
-            value={status}
-            selected={status == request.status}
-          >
-            {status}
-          </option>
-        </select>
-        <label class="block">
-          Review notes<textarea
-            name="resolution"
-            class="block w-full rounded border-gray-300"
-          >{request.resolution}</textarea>
-        </label>
-        <button class="rounded border px-3 py-2">Update review</button>
-      </form>
-    </article>
-  </section>
   <section :if={@live_action == :updates} class="space-y-4">
     <p :if={@updates == []}>
       No updates yet. Relevant corrections and council changes will appear here.
@@ -519,7 +429,11 @@
           else: "rounded border border-indigo-300 bg-indigo-50 p-4"
       }
     >
-      <.link href={update.path}>{update.body}</.link>
+      <%= if update.path == "/trust/requests" do %>
+        <p>{update.body}</p>
+      <% else %>
+        <.link href={update.path}>{update.body}</.link>
+      <% end %>
       <p class="text-sm text-gray-500">{update.inserted_at}</p>
       <button
         :if={!update.read_at}
@@ -554,7 +468,7 @@
       Reconsider reports changes in participants' stated positions, not causal effects of content. Participation, explanation views, saves, and referrals are measured only with analytics consent.
     </p>
   </section>
-  <p :if={!@current_user && @live_action in [:requests, :updates, :recommendations, :communities]}>
+  <p :if={!@current_user && @live_action in [:updates, :recommendations, :communities]}>
     <.link href={~p"/log_in"} class="text-indigo-700">Sign in</.link> to participate.
   </p>
 </div>

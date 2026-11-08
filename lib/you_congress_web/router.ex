@@ -31,7 +31,6 @@ defmodule YouCongressWeb.Router do
     pipe_through(:browser)
 
     live("/trust/recommendations", TrustLive.Index, :recommendations)
-    live("/trust/requests", TrustLive.Index, :requests)
     live("/trust/updates", TrustLive.Index, :updates)
     get("/trust/unsubscribe/:token", TrustController, :unsubscribe)
     get("/communities", TrustController, :simplified)

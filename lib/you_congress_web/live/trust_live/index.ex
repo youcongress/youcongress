@@ -21,7 +21,6 @@ defmodule YouCongressWeb.TrustLive.Index do
        community: nil,
        community_results: [],
        recommendations: [],
-       requests: [],
        updates: [],
        snapshots:
          if(YouCongress.Accounts.admin?(socket.assigns.current_user),
@@ -66,9 +65,6 @@ defmodule YouCongressWeb.TrustLive.Index do
 
   defp load_view(:snapshot, socket, params),
     do: assign(socket, snapshot: TrustRankings.get_snapshot(params["id"]))
-
-  defp load_view(:requests, %{assigns: %{current_user: user}} = socket, _) when not is_nil(user),
-    do: assign(socket, requests: TrustNetwork.requests(user))
 
   defp load_view(:updates, %{assigns: %{current_user: user}} = socket, _) when not is_nil(user),
     do: assign(socket, updates: TrustNetwork.notifications(user))
@@ -268,34 +264,6 @@ defmodule YouCongressWeb.TrustLive.Index do
     {:noreply, load_recommendations(socket, %{})}
   end
 
-  def handle_event("request", params, %{assigns: %{current_user: user}} = socket)
-      when not is_nil(user) do
-    case TrustNetwork.request(user, params) do
-      {:ok, _} ->
-        {:noreply,
-         assign(socket, requests: TrustNetwork.requests(user))
-         |> put_flash(:info, "Request submitted for review.")}
-
-      _ ->
-        {:noreply, put_flash(socket, :error, "Check your request and source URL.")}
-    end
-  end
-
-  def handle_event("resolve", params, socket) do
-    case TrustNetwork.resolve(
-           socket.assigns.current_user,
-           params["request_id"],
-           params["status"],
-           params["resolution"]
-         ) do
-      {:ok, _} ->
-        {:noreply, assign(socket, requests: TrustNetwork.requests(socket.assigns.current_user))}
-
-      _ ->
-        {:noreply, put_flash(socket, :error, "Could not update this request.")}
-    end
-  end
-
   def handle_event("read", %{"id" => id}, %{assigns: %{current_user: user}} = socket)
       when not is_nil(user) do
     TrustNetwork.read(user, id)
@@ -321,6 +289,5 @@ defmodule YouCongressWeb.TrustLive.Index do
     do: {:noreply, put_flash(socket, :info, "Sign in to participate.")}
 
   def own_recommendations?(user, author), do: user && author && user.author_id == author.id
-  def review?(user), do: user && user.role in ["admin", "moderator"]
   def admin?(user), do: user && user.role == "admin"
 end

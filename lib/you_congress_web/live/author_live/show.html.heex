@@ -79,7 +79,6 @@
     >
       Why people trust them
     </.link>
-    <.link href={~p"/trust/requests"} class="text-sm text-indigo-700">Review this profile</.link>
     <%= if @current_user && Permissions.can_edit_author?(@current_user) do %>
       <.link
         navigate={~p"/authors/#{@author}/show/edit"}
