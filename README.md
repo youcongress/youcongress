@@ -115,12 +115,23 @@ A participant’s direct vote, including Abstain, always overrides their Council
 not follow delegation chains. Source-inferred positions still need positive authenticity,
 relevance, and stance verification.
 
-`/lists` manages independently named public lists of people and reasons. Publishing Council
-picks creates a separate public list; editing or deleting either collection never changes
-the other. Public pages and the MCP tool reveal no association with a private Council.
-“Use these picks” copies a public list’s people into a private draft for explicit review and
-saving. Public list membership does not count as a Council nomination. Previously published
-Councils are migrated into named public lists, and all Councils become private.
+`/lists` manages named public lists of people and reasons. Publishing Council picks
+privately links the new list to the author's Council. The owner can choose or remove that
+link with the list editor's checkbox. One list can be linked at a time; linking an existing
+list uses its people as the Council. Saved additions and removals synchronize both ways
+in one transaction, refresh Council votes, and invalidate stale editors. Reasons remain
+separate: Council-only reasons are never automatically copied to the public list, and
+public-list reasons never overwrite private Council reasons. “Update list” previews a
+copy of Council people and reasons for explicit publication. Deleting or unlinking the
+list leaves the saved Council intact. Lists containing their owner cannot be linked,
+because Council members cannot include oneself.
+
+The link is stored as private account data, outside the public list schema; public pages
+and the MCP tool reveal no association with a Council. The list picker uses search and
+suggestions on the left, selected people with inline draft reasons on the right.
+“Use these picks” copies a public list into a Council draft; it does not link to another
+author's list. Unlinked public lists do not contribute Council nominations. Previously
+published Councils were migrated into named public lists, with all Councils private.
 
 Public list URLs use `/@username/lists/<slug>`, with `/a/<author_id>/lists/<slug>` as
 an automatic fallback for authors without a username. Slugs are suggested from the list

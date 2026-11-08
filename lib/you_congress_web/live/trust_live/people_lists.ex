@@ -22,6 +22,12 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
        own: false,
        slug_custom: false,
        slug_error: nil,
+       linked: false,
+       original_linked: false,
+       reviewing_council: false,
+       editing_reason: nil,
+       reason_text: "",
+       last_added_id: nil,
        draft: %{name: "", slug: "", version: 1, members: []}
      )}
   end
@@ -42,6 +48,10 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
          socket
          |> assign(
            draft: draft,
+           linked: params["from"] == "council",
+           original_linked: false,
+           reviewing_council: params["from"] == "council",
+           matches: Discovery.search(""),
            slug_custom: false,
            slug_error: nil,
            list: nil,
@@ -55,7 +65,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
         show_list(socket, params)
 
       :edit ->
-        load_list(socket, PeopleLists.get(params["id"]))
+        load_list(socket, PeopleLists.get(params["id"]), params["from"])
 
       _ ->
         {:noreply,
@@ -103,7 +113,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
      )}
   end
 
-  defp load_list(socket, list) do
+  defp load_list(socket, list, source \\ nil) do
     user = socket.assigns.current_user
     own = list && user && list.author_id == user.author_id
 
@@ -118,26 +128,46 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
         {:noreply, push_navigate(socket, to: PeopleListPaths.public_path(list))}
 
       true ->
-        draft = %{
-          name: list.name,
-          slug: list.slug,
-          version: list.version,
-          members: Enum.map(list.members, &Map.take(&1, [:author_id, :reason]))
-        }
-
-        {:noreply,
-         socket
-         |> assign(
-           list: list,
-           owner: Repo.get!(YouCongress.Authors.Author, list.author_id),
-           own: own,
-           draft: draft,
-           slug_custom: true,
-           slug_error: nil,
-           page_title: list.name
-         )
-         |> load_people()}
+        render_list(socket, list, user, own, source)
     end
+  end
+
+  defp render_list(socket, list, user, own, source) do
+    linked_list = if own, do: PeopleLists.linked_list(user)
+    linked = not is_nil(linked_list) && linked_list.id == list.id
+    reviewing = own && socket.assigns.live_action == :edit && source == "council" && linked
+
+    draft = %{
+      name: list.name,
+      slug: list.slug,
+      version: list.version,
+      members:
+        if(reviewing,
+          do: council_members(user),
+          else: Enum.map(list.members, &Map.take(&1, [:author_id, :reason]))
+        )
+    }
+
+    {:noreply,
+     socket
+     |> assign(
+       linked: linked,
+       original_linked: linked,
+       reviewing_council: reviewing,
+       editing_reason: nil,
+       reason_text: "",
+       last_added_id: nil,
+       matches: if(socket.assigns.live_action == :edit, do: Discovery.search(""), else: []),
+       query: "",
+       list: list,
+       owner: Repo.get!(YouCongress.Authors.Author, list.author_id),
+       own: own,
+       draft: draft,
+       slug_custom: true,
+       slug_error: nil,
+       page_title: list.name
+     )
+     |> load_people()}
   end
 
   @impl true
@@ -150,7 +180,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
     {:noreply,
      assign(socket,
        query: q,
-       matches: if(String.trim(q) == "", do: [], else: Discovery.search(q))
+       matches: Discovery.search(q)
      )}
   end
 
@@ -164,16 +194,23 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
        |> assign(
          draft: %{
            socket.assigns.draft
-           | members: socket.assigns.draft.members ++ [%{author_id: id, reason: nil}]
+           | members: [%{author_id: id, reason: nil} | socket.assigns.draft.members]
          }
        )
-       |> load_people()}
+       |> assign(last_added_id: id)
+       |> load_people()
+       |> push_event("council-person-added", %{id: id})}
     else
       {:noreply, socket}
     end
   end
 
   def handle_event("remove-person", %{"id" => raw}, socket) do
+    socket =
+      if socket.assigns.editing_reason == TrustRankings.parse_id(raw),
+        do: assign(socket, editing_reason: nil, reason_text: ""),
+        else: socket
+
     members =
       Enum.reject(socket.assigns.draft.members, &(&1.author_id == TrustRankings.parse_id(raw)))
 
@@ -181,10 +218,33 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
      socket |> assign(draft: %{socket.assigns.draft | members: members}) |> load_people()}
   end
 
+  def handle_event("edit-reason", %{"id" => raw}, socket) do
+    case Enum.find(socket.assigns.draft.members, &(&1.author_id == TrustRankings.parse_id(raw))) do
+      nil ->
+        {:noreply, socket}
+
+      member ->
+        {:noreply,
+         assign(socket, editing_reason: member.author_id, reason_text: member.reason || "")}
+    end
+  end
+
+  def handle_event("cancel-reason", _, socket),
+    do: {:noreply, assign(socket, editing_reason: nil, reason_text: "")}
+
   def handle_event("change", params, socket), do: {:noreply, update_draft(socket, params)}
 
+  def handle_event("save", %{"action" => "save-reason"} = params, socket) do
+    {:noreply, socket |> update_draft(params) |> save_draft_reason()}
+  end
+
   def handle_event("save", params, socket) do
-    socket = update_draft(socket, params)
+    socket = socket |> update_draft(params) |> save_draft_reason()
+
+    attrs =
+      if socket.assigns.linked != socket.assigns.original_linked,
+        do: Map.put(socket.assigns.draft, :link_council, socket.assigns.linked),
+        else: socket.assigns.draft
 
     result =
       if socket.assigns.list,
@@ -192,16 +252,30 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
           PeopleLists.update(
             socket.assigns.current_user,
             socket.assigns.list.id,
-            socket.assigns.draft
+            attrs
           ),
-        else: PeopleLists.create(socket.assigns.current_user, socket.assigns.draft)
+        else: PeopleLists.create(socket.assigns.current_user, attrs)
 
     case result do
       {:ok, list} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Public list saved. Your private Council is unchanged.")
+         |> put_flash(
+           :info,
+           if(socket.assigns.linked,
+             do: "Public list saved. Its people are synced with your Council.",
+             else: "Public list saved."
+           )
+         )
          |> push_navigate(to: PeopleListPaths.public_path(list))}
+
+      {:error, :self_in_linked_list} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "A linked list cannot include yourself. Remove yourself or unlink it from your Council."
+         )}
 
       {:error, :stale} ->
         {:noreply,
@@ -242,11 +316,13 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
     draft = socket.assigns.draft
     reasons = params["reasons"] || %{}
 
-    members =
-      Enum.map(
-        draft.members,
-        &Map.put(&1, :reason, Map.get(reasons, to_string(&1.author_id), &1[:reason]))
-      )
+    reason_text =
+      Map.get(reasons, to_string(socket.assigns.editing_reason), socket.assigns.reason_text)
+
+    linked =
+      if Map.has_key?(params, "link_council"),
+        do: params["link_council"] == "true",
+        else: socket.assigns.linked
 
     {draft, custom?} =
       PeopleListPaths.edit_fields(
@@ -256,7 +332,28 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
         socket.assigns.owner.id
       )
 
-    assign(socket, draft: %{draft | members: members}, slug_custom: custom?, slug_error: nil)
+    assign(socket,
+      draft: draft,
+      slug_custom: custom?,
+      slug_error: nil,
+      linked: linked,
+      reason_text: reason_text
+    )
+  end
+
+  defp save_draft_reason(socket) do
+    members =
+      Enum.map(socket.assigns.draft.members, fn member ->
+        if member.author_id == socket.assigns.editing_reason,
+          do: Map.put(member, :reason, socket.assigns.reason_text),
+          else: member
+      end)
+
+    assign(socket,
+      draft: %{socket.assigns.draft | members: members},
+      editing_reason: nil,
+      reason_text: ""
+    )
   end
 
   defp load_people(socket),

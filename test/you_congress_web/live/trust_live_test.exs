@@ -103,6 +103,7 @@ defmodule YouCongressWeb.TrustLiveTest do
     refute Councils.public(user.author_id)
     [list] = PeopleLists.for_author(user.author_id)
     assert list.slug == "trusted-voices"
+    assert PeopleLists.linked_list(user).id == list.id
     {:ok, public, html} = live(build_conn(), YouCongressWeb.PeopleListPaths.public_path(list))
     assert html =~ "Thoughtful judgment"
     refute has_element?(public, "#save-council")
@@ -113,6 +114,8 @@ defmodule YouCongressWeb.TrustLiveTest do
     {:ok, _, html} = live(conn, "/council")
     assert html =~ "My Council"
     assert html =~ "Edit Council"
+    assert html =~ "Published as"
+    assert html =~ "Careful thinkers"
   end
 
   test "private Councils count anonymously and only public lists share reasons", %{

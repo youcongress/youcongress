@@ -23,6 +23,7 @@ defmodule YouCongressWeb.TrustLive.Council do
        draft: draft,
        source_list_name: nil,
        published_list: nil,
+       linked_list: nil,
        publish_fields: %{name: "", slug: ""},
        publish_slug_custom: false,
        publish_slug_error: nil,
@@ -75,6 +76,7 @@ defmodule YouCongressWeb.TrustLive.Council do
     socket =
       if user do
         assign(socket,
+          linked_list: PeopleLists.linked_list(user),
           counts: Discovery.vote_counts(user.author_id),
           invitations: Invitations.history(user),
           joined: Invitations.joined(user.author_id),
@@ -284,7 +286,10 @@ defmodule YouCongressWeb.TrustLive.Council do
       |> Map.fetch!(:members)
       |> Enum.map(&Map.take(&1, [:author_id, :reason]))
 
-    case PeopleLists.create(user, Map.put(socket.assigns.publish_fields, :members, members)) do
+    case PeopleLists.create(
+           user,
+           Map.merge(socket.assigns.publish_fields, %{members: members, link_council: true})
+         ) do
       {:ok, list} ->
         {:noreply,
          socket

@@ -60,6 +60,8 @@ defmodule YouCongress.Councils do
 
       result =
         Repo.transaction(fn ->
+          Repo.one!(from a in Authors.Author, where: a.id == ^user.author_id, lock: "FOR UPDATE")
+
           council =
             Repo.one!(
               from c in Council, where: c.author_id == ^user.author_id, lock: "FOR UPDATE"
@@ -81,7 +83,9 @@ defmodule YouCongress.Councils do
 
           council |> Ecto.Changeset.change(version: council.version + 1) |> Repo.update!()
           sync_legacy(council.author_id)
-          get(user.author_id)
+          council = get(user.author_id)
+          YouCongress.PeopleLists.sync_members_from_council(council)
+          council
         end)
 
       case result do
@@ -97,6 +101,38 @@ defmodule YouCongress.Councils do
   end
 
   def save(_, _), do: {:error, :forbidden}
+
+  @doc false
+  def sync_members_from_list(author_id, ids) do
+    unless Repo.in_transaction?(),
+      do: raise(ArgumentError, "membership sync requires a transaction")
+
+    if author_id in ids, do: Repo.rollback(:self_in_linked_list)
+    {:ok, council} = ensure(author_id)
+
+    council =
+      Repo.one!(from c in Council, where: c.id == ^council.id, lock: "FOR UPDATE") |> preload()
+
+    [list] = council.lists
+    existing = Map.new(list.members, &{&1.author_id, &1})
+
+    if MapSet.new(Map.keys(existing)) == MapSet.new(ids) do
+      false
+    else
+      members =
+        Enum.map(ids, fn id ->
+          case existing[id] do
+            nil -> %{author_id: id, reason: nil, source_url: nil}
+            member -> Map.take(member, [:author_id, :reason, :source_url])
+          end
+        end)
+
+      save_members!(author_id, list, members)
+      council |> Ecto.Changeset.change(version: council.version + 1) |> Repo.update!()
+      sync_legacy(author_id)
+      true
+    end
+  end
 
   defp validate_lists!(council, lists) do
     unless is_list(lists) and Enum.all?(lists, &is_map/1), do: Repo.rollback(:invalid_lists)
@@ -270,7 +306,7 @@ defmodule YouCongress.Councils do
         |> Repo.update()
   end
 
-  # A Council is always private. Publishing creates an independent PeopleList.
+  # Council ownership and reasons remain private; linked public lists share membership only.
   def public(_author_id), do: nil
 
   def delegate_ids(author_id) do

@@ -16,11 +16,11 @@ defmodule YouCongressWeb.PeopleListsTest do
     render_change(view, "search", %{"q" => "Independent thinker"})
     view |> element("button[phx-click=add-person]") |> render_click()
 
-    view
-    |> element("#public-list-editor")
-    |> render_submit(%{
-      name: "People worth reading",
-      reasons: %{to_string(person.id) => "Tests ideas carefully"}
+    view |> element("#council-member-#{person.id} button", "+ Add a reason") |> render_click()
+
+    render_submit(view, "save", %{
+      "name" => "People worth reading",
+      "reasons" => %{to_string(person.id) => "Tests ideas carefully"}
     })
 
     [list] = PeopleLists.for_author(user.author_id)
@@ -49,6 +49,16 @@ defmodule YouCongressWeb.PeopleListsTest do
 
     {:ok, public, before} = live(conn, YouCongressWeb.PeopleListPaths.public_path(list))
     {:ok, _} = Councils.add_member(owner, person.id)
+
+    {:ok, _} =
+      PeopleLists.update(owner, list.id, %{
+        name: list.name,
+        version: list.version,
+        members: [%{author_id: person.id, reason: "Worth reading"}],
+        link_council: true
+      })
+
+    list = PeopleLists.get(list.id)
     {:ok, _, after_html} = live(conn, YouCongressWeb.PeopleListPaths.public_path(list))
 
     public_content = fn html ->
@@ -185,5 +195,134 @@ defmodule YouCongressWeb.PeopleListsTest do
     end
 
     assert get(conn, "/lists/0").status == 404
+  end
+
+  test "Council-style list picking keeps reasons in the draft until the list is saved", %{
+    conn: conn
+  } do
+    user = user_fixture()
+    first = author_fixture(%{name: "Picker List Alpha"})
+    second = author_fixture(%{name: "Picker List Beta"})
+    {:ok, list} = PeopleLists.create(user, %{name: "Editable", members: []})
+    {:ok, view, _} = live(log_in_user(conn, user), "/lists/#{list.id}/edit")
+    assert has_element?(view, "h3", "People to consider")
+    assert has_element?(view, "aside h3", "Your list")
+    view |> form("#list-person-search-form") |> render_change(%{q: "Picker List"})
+
+    for person <- [first, second] do
+      view |> element("#list-candidate-#{person.id} button") |> render_click()
+      refute has_element?(view, "#list-candidate-#{person.id}")
+      assert has_element?(view, "aside #council-member-#{person.id} button", "+ Add a reason")
+    end
+
+    ids =
+      render(view)
+      |> Floki.parse_fragment!()
+      |> Floki.find("aside [id^=council-member-]")
+      |> Floki.attribute("id")
+
+    assert ids == ["council-member-#{second.id}", "council-member-#{first.id}"]
+    view |> element("#council-member-#{second.id} button", "+ Add a reason") |> render_click()
+    assert has_element?(view, "#list-reason-#{second.id}")
+    refute has_element?(view, "#list-reason-#{first.id}")
+
+    render_submit(view, "save", %{
+      "action" => "save-reason",
+      "reasons" => %{to_string(second.id) => "Draft reason"}
+    })
+
+    assert has_element?(view, "#council-member-#{second.id} blockquote", "Draft reason")
+    assert PeopleLists.get(list.id).members == []
+    view |> element("#council-member-#{second.id} button", "Edit reason") |> render_click()
+    render_change(view, "change", %{"reasons" => %{to_string(second.id) => "Discarded"}})
+    view |> element("button[phx-click=cancel-reason]") |> render_click()
+    assert has_element?(view, "blockquote", "Draft reason")
+    view |> element("#council-member-#{first.id} button", "+ Add a reason") |> render_click()
+
+    render_submit(view, "save", %{
+      "reasons" => %{to_string(first.id) => "Saved with the whole list"}
+    })
+
+    saved = PeopleLists.get(list.id)
+    assert Enum.map(saved.members, & &1.reason) == ["Draft reason", "Saved with the whole list"]
+  end
+
+  test "Update list previews private Council changes and checkbox unlinks without changing votes",
+       %{conn: conn} do
+    user = user_fixture()
+    first = author_fixture()
+    second = author_fixture()
+    {:ok, _} = Councils.add_member(user, first.id)
+
+    {:ok, list} =
+      PeopleLists.create(user, %{
+        name: "Linked picks",
+        members: [%{author_id: first.id}],
+        link_council: true
+      })
+
+    {:ok, council} = Councils.add_member(user, second.id)
+    conn = log_in_user(conn, user)
+    {:ok, mine, _} = live(conn, "/council")
+    assert has_element?(mine, "#council-linked-list", "Linked picks")
+    assert has_element?(mine, "a[href='/lists/#{list.id}/edit?from=council']", "Update list")
+    {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit?from=council")
+    assert has_element?(edit, "#list-council-link[checked]")
+    assert has_element?(edit, "#list-council-review")
+    assert has_element?(edit, "#council-member-#{second.id}")
+    assert length(PeopleLists.get(list.id).members) == 2
+    edit |> form("#public-list-editor") |> render_submit()
+    assert length(PeopleLists.get(list.id).members) == 2
+    assert Councils.get(user.author_id) == council
+    {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit")
+    edit |> form("#public-list-editor") |> render_submit(%{link_council: "false"})
+    assert PeopleLists.linked_list(user) == nil
+    assert Councils.get(user.author_id) == council
+    {:ok, mine, _} = live(conn, "/council")
+    refute has_element?(mine, "#council-linked-list")
+    {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit")
+    edit |> form("#public-list-editor") |> render_submit(%{link_council: "true"})
+    assert PeopleLists.linked_list(user).id == list.id
+  end
+
+  test "publishing a list copied from My Council links it automatically", %{conn: conn} do
+    user = user_fixture()
+    person = author_fixture()
+    {:ok, council} = Councils.add_member(user, person.id)
+    {:ok, view, _} = live(log_in_user(conn, user), "/lists/new?from=council")
+    assert has_element?(view, "#list-council-link[checked]")
+    view |> form("#public-list-editor") |> render_submit(%{name: "My picks"})
+    assert PeopleLists.linked_list(user).name == "My picks"
+    assert Councils.get(user.author_id) == council
+  end
+
+  test "saving a reason before naming a new list keeps its slug automatic", %{conn: conn} do
+    user = user_fixture()
+    person = author_fixture()
+    {:ok, view, _} = live(log_in_user(conn, user), "/lists/new")
+    render_click(view, "add-person", %{"id" => person.id})
+    render_click(view, "edit-reason", %{"id" => person.id})
+
+    render_change(view, "change", %{
+      "name" => "",
+      "slug" => "",
+      "_target" => ["reasons", to_string(person.id)],
+      "reasons" => %{to_string(person.id) => "Early note"}
+    })
+
+    render_submit(view, "save", %{
+      "action" => "save-reason",
+      "name" => "",
+      "slug" => "",
+      "reasons" => %{to_string(person.id) => "Early note"}
+    })
+
+    render_change(view, "change", %{"name" => "Mobile picks", "slug" => "", "_target" => ["name"]})
+
+    assert has_element?(view, "#public-list-slug[value=mobile-picks]")
+    view |> form("#public-list-editor") |> render_submit()
+    [list] = PeopleLists.for_author(user.author_id)
+    assert hd(list.members).reason == "Early note"
+    assert list.slug == "mobile-picks"
   end
 end

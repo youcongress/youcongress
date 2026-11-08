@@ -1,5 +1,5 @@
 defmodule YouCongress.PeopleLists do
-  @moduledoc "Named public lists, independent of private Council membership and voting."
+  @moduledoc "Named public lists with optional private links that synchronize Council membership."
   import Ecto.Query
   alias YouCongress.{Repo, Councils, TrustRankings}
   alias YouCongress.Accounts.{User, Permissions}
@@ -59,6 +59,19 @@ defmodule YouCongress.PeopleLists do
           preload: [:members]
       )
 
+  # This association is private account data, never part of the public list schema.
+  def linked_list(%User{author_id: author_id}) do
+    Repo.one(
+      from l in PeopleList,
+        join: link in "council_public_list_links",
+        on: link.people_list_id == l.id,
+        where: link.author_id == ^author_id and l.author_id == ^author_id
+    )
+    |> preload()
+  end
+
+  def linked_list(_), do: nil
+
   def create(%User{} = user, attrs) do
     if Permissions.blocked?(user), do: {:error, :forbidden}, else: persist(user, nil, attrs)
   end
@@ -72,9 +85,14 @@ defmodule YouCongress.PeopleLists do
   def update(_, _, _), do: {:error, :forbidden}
 
   def delete(%User{} = user, id) do
-    case if(Permissions.blocked?(user), do: nil, else: get(id)) do
-      %PeopleList{author_id: owner} = list when owner == user.author_id -> Repo.delete(list)
-      _ -> {:error, :forbidden}
+    if Permissions.blocked?(user) do
+      {:error, :forbidden}
+    else
+      Repo.transaction(fn ->
+        lock_owner!(user.author_id)
+        if is_nil(TrustRankings.parse_id(id)), do: Repo.rollback(:forbidden)
+        user |> owned_list!(id) |> Repo.delete!()
+      end)
     end
   end
 
@@ -82,6 +100,7 @@ defmodule YouCongress.PeopleLists do
 
   defp persist(user, id, attrs) do
     Repo.transaction(fn ->
+      lock_owner!(user.author_id)
       list = owned_list!(user, id)
       if id && Councils.value(attrs, :version) != list.version, do: Repo.rollback(:stale)
       members = Councils.value(attrs, :members) || []
@@ -121,9 +140,90 @@ defmodule YouCongress.PeopleLists do
         end
       end)
 
-      get(list.id)
+      save_council_link(user, list, Councils.value(attrs, :link_council))
+      list = get(list.id)
+      linked = linked_list(user)
+
+      changed =
+        if linked && linked.id == list.id,
+          do:
+            Councils.sync_members_from_list(
+              user.author_id,
+              Enum.map(list.members, & &1.author_id)
+            ),
+          else: false
+
+      {list, changed}
     end)
+    |> finish_save(user)
   end
+
+  defp finish_save({:ok, {list, changed}}, user) do
+    if changed, do: YouCongress.DelegationVotes.update_author_delegated_votes(user.author_id)
+    {:ok, list}
+  end
+
+  defp finish_save(error, _user), do: error
+
+  defp lock_owner!(author_id),
+    do: Repo.one!(from a in Author, where: a.id == ^author_id, lock: "FOR UPDATE")
+
+  @doc false
+  def sync_members_from_council(council) do
+    unless Repo.in_transaction?(),
+      do: raise(ArgumentError, "membership sync requires a transaction")
+
+    case linked_list(%User{author_id: council.author_id}) do
+      nil -> :ok
+      list -> sync_public_members(list, Enum.map(hd(council.lists).members, & &1.author_id))
+    end
+  end
+
+  defp sync_public_members(list, ids) do
+    existing = Map.new(list.members, &{&1.author_id, &1})
+
+    if MapSet.new(Map.keys(existing)) != MapSet.new(ids) do
+      Repo.delete_all(
+        from m in PeopleListMember,
+          where: m.people_list_id == ^list.id and m.author_id not in ^ids
+      )
+
+      Enum.with_index(ids)
+      |> Enum.each(fn {id, position} ->
+        member = existing[id] || %PeopleListMember{}
+
+        member
+        |> PeopleListMember.changeset(%{
+          people_list_id: list.id,
+          author_id: id,
+          position: position
+        })
+        |> Repo.insert_or_update!()
+      end)
+
+      list |> Ecto.Changeset.change(version: list.version + 1) |> Repo.update!()
+    end
+
+    :ok
+  end
+
+  defp save_council_link(user, list, value) when value in [true, "true"] do
+    Repo.insert_all(
+      "council_public_list_links",
+      [%{author_id: user.author_id, people_list_id: list.id}],
+      on_conflict: {:replace, [:people_list_id]},
+      conflict_target: [:author_id]
+    )
+  end
+
+  defp save_council_link(user, list, value) when value in [false, "false"] do
+    Repo.delete_all(
+      from link in "council_public_list_links",
+        where: link.author_id == ^user.author_id and link.people_list_id == ^list.id
+    )
+  end
+
+  defp save_council_link(_user, _list, _value), do: :ok
 
   defp list_slug(user, list, attrs) do
     Councils.value(attrs, :slug) || list.slug ||

@@ -18,7 +18,8 @@ defmodule YouCongressWeb.PeopleListPaths do
 
     custom? =
       custom? || params["_target"] == ["slug"] ||
-        (Map.has_key?(params, "slug") && params["slug"] != draft.slug)
+        (is_nil(params["_target"]) && params["slug"] not in [nil, ""] &&
+           params["slug"] != draft.slug)
 
     slug =
       if custom?,

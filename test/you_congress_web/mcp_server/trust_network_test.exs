@@ -34,4 +34,29 @@ defmodule YouCongressWeb.MCPServer.TrustNetworkTest do
                TrustNetwork.execute(%{view: "rankings"}, admin_frame)
     end
   end
+
+  test "public list API never reveals the private Council link" do
+    user = user_fixture()
+    {:ok, list} = YouCongress.PeopleLists.create(user, %{name: "Public picks", members: []})
+    frame = %Anubis.Server.Frame{assigns: %{query_params: %{}}}
+
+    with_mock Anubis.Server.Response, tool: fn -> :tool end, json: fn :tool, data -> data end do
+      {:reply, before, _} =
+        TrustNetwork.execute(%{view: "lists", author_id: user.author_id}, frame)
+
+      {:ok, _} =
+        YouCongress.PeopleLists.update(user, list.id, %{
+          version: list.version,
+          name: list.name,
+          members: [],
+          link_council: true
+        })
+
+      {:reply, after_link, _} =
+        TrustNetwork.execute(%{view: "lists", author_id: user.author_id}, frame)
+
+      assert after_link == before
+      assert YouCongress.PeopleLists.linked_list(user).id == list.id
+    end
+  end
 end

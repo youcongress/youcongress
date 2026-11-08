@@ -160,4 +160,47 @@ defmodule YouCongress.PeopleListsTest do
 
     assert updated.slug == list.slug
   end
+
+  test "private links require ownership, survive independent edits, and clear on deletion" do
+    user = user_fixture()
+    other = user_fixture()
+    person = author_fixture()
+    {:ok, council} = Councils.add_member(user, person.id)
+
+    {:ok, list} =
+      PeopleLists.create(user, %{
+        name: "Linked",
+        members: [%{author_id: person.id}],
+        link_council: true
+      })
+
+    assert PeopleLists.linked_list(user).id == list.id
+    assert PeopleLists.linked_list(other) == nil
+    assert PeopleLists.linked_list(nil) == nil
+    assert Councils.get(user.author_id) == council
+
+    assert {:error, :forbidden} =
+             PeopleLists.update(other, list.id, %{
+               version: list.version,
+               name: list.name,
+               members: [],
+               link_council: true
+             })
+
+    assert {:error, _} = PeopleLists.create(user, %{name: "", members: [], link_council: true})
+    assert PeopleLists.linked_list(user).id == list.id
+
+    {:ok, updated} =
+      PeopleLists.update(user, list.id, %{
+        version: list.version,
+        name: "Edited independently",
+        members: [%{author_id: person.id}]
+      })
+
+    assert PeopleLists.linked_list(user).id == list.id
+    assert Councils.get(user.author_id) == council
+    {:ok, _} = PeopleLists.delete(user, updated.id)
+    assert PeopleLists.linked_list(user) == nil
+    assert Councils.get(user.author_id) == council
+  end
 end

@@ -112,6 +112,9 @@
       <p class="yc-intro">
         Start with people you would turn to for a thoughtful opinion. You can add or remove anyone later.
       </p>
+      <p :if={@linked_list} class="yc-panel soft yc-gap">
+        Linked to <strong>{@linked_list.name}</strong>. Saving additions or removals also changes this public list. Your reasons stay private.
+      </p>
       <div class="yc-mobile-continue">
         <strong>{length(members(@draft))} selected</strong><.continue_button editing_reason={
           @editing_reason
@@ -316,6 +319,9 @@
           <p>Your Council stays private. Publishing a list is optional.</p>
         </div>
       </div>
+      <p :if={@linked_list} class="yc-help yc-gap">
+        Your people are synced with <strong>{@linked_list.name}</strong>. Publishing another list will replace that private link.
+      </p>
       <h1 class="yc-gap-lg">Share a named list?</h1>
       <p class="yc-intro">
         Publish a copy of your picks and reasons under a name you choose. Your Council stays private: public lists never show whether you use them to vote.
@@ -347,7 +353,7 @@
           </div>
         </div>
         <p class="yc-help yc-gap">
-          This creates a separate public list. Future edits to your Council and this list are independent. You can create more lists from My lists.
+          This links the new list to your Council. Saved additions and removals sync both ways. Future reasons stay separate unless you explicitly update the public list.
         </p>
         <div class="yc-actions">
           <.link patch={~p"/council?#{%{step: "invite"}}"} class="yc-link muted">
@@ -483,6 +489,25 @@
           </div>
         </div>
         <.link navigate={~p"/lists/new?from=council"} class="yc-btn">Publish a list</.link>
+      </div>
+      <div :if={@linked_list} id="council-linked-list" class="yc-panel soft yc-gap">
+        <div class="yc-between">
+          <p>Published as <strong>{@linked_list.name}</strong></p>
+          <div class="yc-row">
+            <.link
+              navigate={YouCongressWeb.PeopleListPaths.public_path(@linked_list)}
+              class="yc-link"
+            >
+              View list
+            </.link>
+            <.link navigate={~p"/lists/#{@linked_list.id}/edit?from=council"} class="yc-btn">
+              Update list
+            </.link>
+          </div>
+        </div>
+        <p class="yc-help">
+          Only you see this link. Saved additions and removals sync both ways. Your reasons stay private until you review and publish them with Update list.
+        </p>
       </div>
       <nav class="yc-tabs" aria-label="My Council">
         <.link patch={~p"/council"} class={@step == "mine" && "active"}>Council</.link><.link
