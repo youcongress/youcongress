@@ -802,8 +802,6 @@
 }
 
 /* Hall assignments and their source lists remain visually separate. */
-.council-ui .yc-overview-nav {display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid var(--yc-line);margin-top:24px}
-.council-ui .yc-overview-nav .yc-tabs {margin:0;border:0;flex:1}
 .council-ui .yc-order-table-wrap {border:1px solid var(--yc-line);border-radius:10px}
 .council-ui .yc-order-table {width:100%;border-collapse:collapse;text-align:left}
 .council-ui .yc-order-table th {text-transform:uppercase;font-size:12px;color:var(--yc-muted);padding:12px 18px;background:var(--yc-soft)}
@@ -826,8 +824,6 @@
 .council-ui .yc-order-example summary {cursor:pointer}
 .council-ui .yc-mobile-label {display:none}
 @media(max-width:850px){
- .council-ui .yc-overview-nav {flex-wrap:wrap;padding-bottom:14px;gap:12px}
- .council-ui .yc-overview-nav .yc-tabs {flex-basis:100%}
  .council-ui .yc-order-table,.council-ui .yc-order-table tbody {display:block}
  .council-ui .yc-order-table thead {display:none}
  .council-ui .yc-order-row {display:grid;grid-template-columns:38px minmax(0,1fr);gap:12px;padding:18px}
@@ -839,3 +835,5 @@
  .council-ui .yc-order-number .yc-mobile-label {display:none}
  .council-ui .yc-order-actions .yc-row {justify-content:flex-start;flex-wrap:wrap}
 }
+
+.council-ui .yc-council-tabs {flex-wrap:wrap;column-gap:24px;row-gap:0}

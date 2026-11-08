@@ -31,7 +31,8 @@ defmodule YouCongressWeb.Router do
     pipe_through(:browser)
 
     live("/trust/recommendations", TrustLive.Index, :recommendations)
-    live("/trust/updates", TrustLive.Index, :updates)
+    # Prevent the retired URL from matching the legacy /trust/:scope route.
+    get("/trust/updates", TrustController, :removed)
     get("/trust/unsubscribe/:token", TrustController, :unsubscribe)
     get("/communities", TrustController, :simplified)
     get("/communities/:id", TrustController, :simplified)

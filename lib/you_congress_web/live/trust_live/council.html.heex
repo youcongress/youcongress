@@ -719,16 +719,10 @@
         </span>
       </div>
       <p class="yc-intro">Choose whose judgment to follow when you haven’t voted.</p>
-      <div class="yc-overview-nav">
-        <nav class="yc-tabs" aria-label="My Council">
-          <.link patch={~p"/council"} class={@step == "mine" && "active"}>Council order</.link>
-          <.link patch={~p"/council?#{%{step: "votes"}}"} class={@step == "votes" && "active"}>
-            My votes
-          </.link>
-          <.link patch={~p"/council?#{%{step: "invite"}}"}>Invites</.link>
-        </nav>
-        <.link navigate={~p"/lists"} class="yc-btn">Manage my lists</.link>
-      </div>
+      <.council_tabs
+        current_user={@current_user}
+        active={if @step == "votes", do: :votes, else: :order}
+      />
       <div :if={@step == "votes"} class="yc-list yc-gap">
         <div :for={vote <- @votes} class="yc-list-item yc-between">
           <.link navigate={~p"/p/#{vote.statement.slug}"} class="yc-name">

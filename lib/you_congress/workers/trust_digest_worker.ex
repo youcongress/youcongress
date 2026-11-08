@@ -49,7 +49,13 @@ defmodule YouCongress.Workers.TrustDigestWorker do
     base = YouCongressWeb.Endpoint.url()
     token = Phoenix.Token.sign(YouCongressWeb.Endpoint, "trust-digest", user.author_id)
     unsubscribe = base <> "/trust/unsubscribe/" <> token
-    body = Enum.map_join(notifications, "\n\n", &(&1.body <> "\n" <> base <> &1.path))
+
+    body =
+      Enum.map_join(
+        notifications,
+        "\n\n",
+        &(&1.body <> "\n" <> base <> notification_path(&1.path))
+      )
 
     email =
       new()
@@ -71,4 +77,7 @@ defmodule YouCongress.Workers.TrustDigestWorker do
         Repo.rollback(reason)
     end
   end
+
+  defp notification_path("/trust/updates"), do: "/council"
+  defp notification_path(path), do: path
 end

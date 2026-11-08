@@ -226,7 +226,7 @@ defmodule YouCongress.TrustNetwork do
         owner.author_id,
         "request:#{id}:#{status}:#{System.unique_integer([:positive])}",
         "Your evidence request is #{status}.",
-        "/trust/updates"
+        "/council"
       )
     end
 

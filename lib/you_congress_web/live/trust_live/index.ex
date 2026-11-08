@@ -21,7 +21,6 @@ defmodule YouCongressWeb.TrustLive.Index do
        community: nil,
        community_results: [],
        recommendations: [],
-       updates: [],
        snapshots:
          if(YouCongress.Accounts.admin?(socket.assigns.current_user),
            do: TrustRankings.snapshots(),
@@ -65,9 +64,6 @@ defmodule YouCongressWeb.TrustLive.Index do
 
   defp load_view(:snapshot, socket, params),
     do: assign(socket, snapshot: TrustRankings.get_snapshot(params["id"]))
-
-  defp load_view(:updates, %{assigns: %{current_user: user}} = socket, _) when not is_nil(user),
-    do: assign(socket, updates: TrustNetwork.notifications(user))
 
   defp load_view(:metrics, %{assigns: %{current_user: %{role: "admin"} = user}} = socket, _),
     do: assign(socket, metrics: TrustNetwork.metrics(user))
@@ -262,12 +258,6 @@ defmodule YouCongressWeb.TrustLive.Index do
       when not is_nil(user) do
     TrustNetwork.delete_recommendation(user, id)
     {:noreply, load_recommendations(socket, %{})}
-  end
-
-  def handle_event("read", %{"id" => id}, %{assigns: %{current_user: user}} = socket)
-      when not is_nil(user) do
-    TrustNetwork.read(user, id)
-    {:noreply, assign(socket, updates: TrustNetwork.notifications(user))}
   end
 
   def handle_event("snapshot", %{"title" => title}, socket) do

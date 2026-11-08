@@ -171,7 +171,10 @@ Profiles show a public-lists link (`/@username/lists` or `/a/<author_id>/lists`)
 the author has a published list. Legacy community
 pages redirect to the Trust List for admins and Council setup for other visitors. Historical
 snapshots and CSV exports remain available to admins.
-`/trust/updates` retains private updates. The former `/trust/requests` page is removed.
+The Updates page and its navigation are removed; `/trust/updates` returns 404. Existing
+optional email digests link older Updates notifications to Council instead. My lists and
+Trust 30 are Council tabs; Trust 30 remains admin-only. The main navigation contains
+GitHub, My Council, Explore, About, and Profile. Guests reach sign-in through Profile.
 
 The invite step provides a short author-ID referral link (`/council?ref=123`), sharing controls, and optional email
 invitations (up to 10 at once and 20 per day, with duplicate recipients suppressed).

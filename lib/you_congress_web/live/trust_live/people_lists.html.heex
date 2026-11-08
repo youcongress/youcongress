@@ -8,6 +8,7 @@
   <div class="yc-content">
     <%= case @live_action do %>
       <% :index -> %>
+        <.council_tabs :if={@own} current_user={@current_user} active={:lists} />
         <p class="yc-eyebrow">People worth discovering</p>
         <div class="yc-between">
           <h1>

@@ -2,6 +2,8 @@ defmodule YouCongressWeb.TrustController do
   use YouCongressWeb, :controller
   alias YouCongress.TrustRankings
 
+  def removed(conn, _params), do: send_resp(conn, 404, "Not found")
+
   def public_lists(conn, %{"author_id" => id}), do: redirect(conn, to: ~p"/a/#{id}/lists")
 
   def person(conn, %{"id" => raw} = params) do

@@ -6,7 +6,6 @@
         :communities -> "Participating communities"
         :compare -> "Compare trust lists"
         :recommendations -> "Recommendations"
-        :updates -> "Your updates"
         :snapshot -> "Published trust snapshot"
         :metrics -> "Trust Network evaluation"
         _ -> "Who do participants trust?"
@@ -16,12 +15,6 @@
       <.link navigate={~p"/council"}>My Council</.link>
       <.link :if={YouCongress.Accounts.admin?(@current_user)} navigate={~p"/trust"}>
         Trust List
-      </.link>
-      <.link
-        :if={@current_user}
-        navigate={~p"/trust/updates"}
-      >
-        Updates
       </.link>
     </nav>
   </header>
@@ -417,35 +410,6 @@
       </form>
     </div>
   </section>
-  <section :if={@live_action == :updates} class="space-y-4">
-    <p :if={@updates == []}>
-      No updates yet. Relevant corrections and council changes will appear here.
-    </p>
-    <article
-      :for={update <- @updates}
-      class={
-        if update.read_at,
-          do: "rounded border p-4",
-          else: "rounded border border-indigo-300 bg-indigo-50 p-4"
-      }
-    >
-      <%= if update.path == "/trust/requests" do %>
-        <p>{update.body}</p>
-      <% else %>
-        <.link href={update.path}>{update.body}</.link>
-      <% end %>
-      <p class="text-sm text-gray-500">{update.inserted_at}</p>
-      <button
-        :if={!update.read_at}
-        phx-click="read"
-        phx-value-id={update.id}
-        class="mt-2 text-sm text-indigo-700"
-      >
-        Mark read
-      </button>
-    </article>
-    <.link navigate={~p"/council"} class="text-indigo-700">Manage optional email digest</.link>
-  </section>
   <section :if={@live_action == :snapshot && @snapshot} class="space-y-4">
     <h2 class="text-xl font-semibold">{@snapshot.title}</h2>
     <p>
@@ -468,7 +432,7 @@
       Reconsider reports changes in participants' stated positions, not causal effects of content. Participation, explanation views, saves, and referrals are measured only with analytics consent.
     </p>
   </section>
-  <p :if={!@current_user && @live_action in [:updates, :recommendations, :communities]}>
+  <p :if={!@current_user && @live_action in [:recommendations, :communities]}>
     <.link href={~p"/log_in"} class="text-indigo-700">Sign in</.link> to participate.
   </p>
 </div>

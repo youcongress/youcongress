@@ -16,7 +16,7 @@ defmodule YouCongressWeb.TopicCouncilTest do
 
     assert has_element?(view, "th", "Hall")
     assert has_element?(view, "th", "List to use")
-    assert has_element?(view, "a", "Manage my lists")
+    assert has_element?(view, "a", "My lists")
     refute has_element?(view, "a", "Publish a list")
     assert has_element?(view, "a", "Edit entry")
     assert has_element?(view, "details summary", "See an example")

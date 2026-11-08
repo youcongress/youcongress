@@ -2,6 +2,52 @@ defmodule YouCongressWeb.CouncilComponents do
   @moduledoc "Shared Council, Trust 30, and vote explanation presentation."
   use YouCongressWeb, :html
 
+  attr :current_user, :any, required: true
+  attr :active, :atom, required: true
+
+  def council_tabs(assigns) do
+    ~H"""
+    <nav class="yc-tabs yc-council-tabs" aria-label="My Council">
+      <.link
+        navigate={~p"/council"}
+        class={@active == :order && "active"}
+        aria-current={@active == :order && "page"}
+      >
+        Council order
+      </.link>
+      <.link
+        navigate={~p"/council?#{%{step: "votes"}}"}
+        class={@active == :votes && "active"}
+        aria-current={@active == :votes && "page"}
+      >
+        My votes
+      </.link>
+      <.link
+        navigate={~p"/council?#{%{step: "invite"}}"}
+        class={@active == :invite && "active"}
+        aria-current={@active == :invite && "page"}
+      >
+        Invites
+      </.link>
+      <.link
+        navigate={~p"/lists"}
+        class={@active == :lists && "active"}
+        aria-current={@active == :lists && "page"}
+      >
+        My lists
+      </.link>
+      <.link
+        :if={YouCongress.Accounts.admin?(@current_user)}
+        navigate={~p"/trust"}
+        class={@active == :trust && "active"}
+        aria-current={@active == :trust && "page"}
+      >
+        Trust 30
+      </.link>
+    </nav>
+    """
+  end
+
   attr :person, :map, required: true
   attr :large, :boolean, default: false
 
