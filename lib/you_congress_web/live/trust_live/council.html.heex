@@ -5,7 +5,7 @@
 >
   <div class={["yc-content", @step in ["publish", "invite"] && "narrow"]}>
     <.steps
-      :if={@step in ["publish", "invite"]}
+      :if={@step == "publish"}
       step={@step}
     />
     <div :if={@referrer && @step == "landing"} class="yc-success">
@@ -416,16 +416,7 @@
     </section>
 
     <section :if={@step == "invite" && @current_user}>
-      <div class="yc-success">
-        <span class="yc-check">✓</span>
-        <div>
-          <strong>Your Council is set.</strong>
-          <p>
-            Your Council stays private. Invite others to choose their own.
-          </p>
-        </div>
-      </div>
-      <h1 class="yc-gap-lg">Who would you invite?</h1>
+      <h1>Who would you invite?</h1>
       <p class="yc-intro">
         Invite people whose judgment you value. Every new Council helps more people discover who to trust.
       </p>
