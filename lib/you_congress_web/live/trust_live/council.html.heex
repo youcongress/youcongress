@@ -480,7 +480,11 @@
             </.link>
           </div>
           <div class="yc-list yc-gap">
-            <div :for={member <- members(@draft)} class="yc-list-item">
+            <div
+              :for={member <- members(@draft)}
+              id={"council-member-#{member.author_id}"}
+              class="yc-list-item"
+            >
               <div class="yc-between">
                 <.person
                   person={@people[member.author_id]}
@@ -494,13 +498,58 @@
                   #{@ranks[member.author_id].rank} in Trust 30
                 </.link>
               </div>
-              <blockquote :if={member[:reason] not in [nil, ""]} class="yc-note">
+              <blockquote
+                :if={@editing_reason != member.author_id && member[:reason] not in [nil, ""]}
+                class="yc-note"
+              >
                 <span>{member[:reason]}</span>
               </blockquote>
+              <form
+                :if={@editing_reason == member.author_id}
+                id={"council-reason-#{member.author_id}"}
+                phx-change="change-reason"
+                phx-submit="save-reason"
+                class="yc-gap-sm"
+              >
+                <label class="yc-label" for={"inline-reason-#{member.author_id}"}>
+                  Why I trust {@people[member.author_id].name}
+                </label>
+                <textarea
+                  id={"inline-reason-#{member.author_id}"}
+                  name="reason"
+                  class="yc-field"
+                  rows="3"
+                  maxlength="5000"
+                  phx-debounce="300"
+                  phx-mounted={JS.focus()}
+                  aria-invalid={to_string(!is_nil(@reason_error))}
+                  aria-describedby={@reason_error && "reason-error-#{member.author_id}"}
+                >{@reason_text}</textarea>
+                <p
+                  :if={@reason_error}
+                  id={"reason-error-#{member.author_id}"}
+                  class="text-sm text-red-700 mt-2"
+                  role="alert"
+                >
+                  {@reason_error}
+                </p>
+                <div class="yc-row yc-gap-sm">
+                  <button type="submit" class="yc-btn primary" phx-disable-with="Saving…">
+                    Save reason
+                  </button>
+                  <button type="button" class="yc-btn" phx-click="cancel-reason">Cancel</button>
+                </div>
+              </form>
               <div class="yc-row yc-gap-sm">
-                <.link patch={~p"/council?#{%{step: "why"}}"} class="yc-link">
+                <button
+                  :if={@editing_reason != member.author_id}
+                  type="button"
+                  phx-click="edit-reason"
+                  phx-value-id={member.author_id}
+                  class="yc-link"
+                >
                   {if member[:reason] in [nil, ""], do: "+ Add a reason", else: "Edit reason"}
-                </.link>
+                </button>
                 <.link navigate={~p"/a/#{member.author_id}"} class="yc-link">
                   View positions →
                 </.link>

@@ -141,4 +141,52 @@ defmodule YouCongressWeb.TrustLiveTest do
     assert redirected_to(get(conn, "/communities")) == "/trust"
     assert redirected_to(get(conn, "/trust/compare")) == "/trust"
   end
+
+  test "reasons open inline for one member, save independently, and cancel without changes", %{
+    conn: conn
+  } do
+    user = user_fixture()
+    first = author_fixture()
+    second = author_fixture()
+    {:ok, _} = Councils.add_member(user, first.id)
+    {:ok, _} = Councils.add_member(user, second.id)
+    {:ok, view, _} = live(log_in_user(conn, user), "/council")
+    view |> element("#council-member-#{first.id} button", "+ Add a reason") |> render_click()
+    assert has_element?(view, "#council-member-#{first.id} textarea")
+    refute has_element?(view, "#council-member-#{second.id} textarea")
+    refute has_element?(view, "#council-reasons")
+
+    view
+    |> form("#council-reason-#{first.id}", reason: "Careful with evidence")
+    |> render_submit()
+
+    assert has_element?(view, "#council-member-#{first.id} blockquote", "Careful with evidence")
+    refute has_element?(view, "textarea")
+    saved = hd(Councils.get(user.author_id).lists).members
+    assert Enum.find(saved, &(&1.author_id == first.id)).reason == "Careful with evidence"
+    assert Enum.find(saved, &(&1.author_id == second.id)).reason == nil
+
+    view |> element("#council-member-#{first.id} button", "Edit reason") |> render_click()
+    assert has_element?(view, "textarea", "Careful with evidence")
+    view |> form("#council-reason-#{first.id}", reason: "Unsaved edit") |> render_change()
+    view |> element("button", "Cancel") |> render_click()
+    refute has_element?(view, "textarea")
+    assert has_element?(view, "#council-member-#{first.id} blockquote", "Careful with evidence")
+    assert hd(Councils.get(user.author_id).lists).members == saved
+  end
+
+  test "inline reason conflicts keep the typed text and do not overwrite newer Council changes",
+       %{conn: conn} do
+    user = user_fixture()
+    person = author_fixture()
+    added_elsewhere = author_fixture()
+    {:ok, _} = Councils.add_member(user, person.id)
+    {:ok, view, _} = live(log_in_user(conn, user), "/council")
+    view |> element("#council-member-#{person.id} button", "+ Add a reason") |> render_click()
+    {:ok, newer} = Councils.add_member(user, added_elsewhere.id)
+    view |> form("#council-reason-#{person.id}", reason: "Keep my draft") |> render_submit()
+    assert has_element?(view, "[role=alert]", "Your Council changed in another window")
+    assert has_element?(view, "textarea", "Keep my draft")
+    assert Councils.get(user.author_id) == newer
+  end
 end

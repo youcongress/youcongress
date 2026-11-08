@@ -26,6 +26,9 @@ defmodule YouCongressWeb.TrustLive.Council do
        ranking: ranking,
        ranks: Map.new(ranking.rows, &{&1.author_id, &1}),
        dirty: false,
+       editing_reason: nil,
+       reason_text: "",
+       reason_error: nil,
        ref: nil,
        referrer: nil,
        invite_note:
@@ -54,7 +57,10 @@ defmodule YouCongressWeb.TrustLive.Council do
     step = if params["statement"] && user, do: "votes", else: step
     socket = socket |> assign(step: step, ref: ref, referrer: referrer, page_title: "My Council")
 
-    socket = load_saved_view(socket, user, step)
+    socket =
+      socket
+      |> assign(editing_reason: nil, reason_text: "", reason_error: nil)
+      |> load_saved_view(user, step)
 
     socket = socket |> use_list(params["use_list"]) |> add_from_link(params["add"])
 
@@ -96,6 +102,74 @@ defmodule YouCongressWeb.TrustLive.Council do
        socket,
        Enum.reject(members(socket.assigns.draft), &(&1.author_id == TrustRankings.parse_id(raw)))
      )}
+  end
+
+  def handle_event(
+        "edit-reason",
+        %{"id" => raw},
+        %{assigns: %{current_user: user, step: "mine"}} = socket
+      )
+      when not is_nil(user) do
+    case Enum.find(members(socket.assigns.draft), &(&1.author_id == TrustRankings.parse_id(raw))) do
+      nil ->
+        {:noreply, socket}
+
+      member ->
+        {:noreply,
+         assign(socket,
+           editing_reason: member.author_id,
+           reason_text: member[:reason] || "",
+           reason_error: nil
+         )}
+    end
+  end
+
+  def handle_event("cancel-reason", _, socket),
+    do: {:noreply, assign(socket, editing_reason: nil, reason_text: "", reason_error: nil)}
+
+  def handle_event("change-reason", %{"reason" => reason}, socket) when is_binary(reason),
+    do: {:noreply, assign(socket, reason_text: reason, reason_error: nil)}
+
+  def handle_event(
+        "save-reason",
+        %{"reason" => reason},
+        %{assigns: %{current_user: user, editing_reason: id, step: "mine"}} = socket
+      )
+      when not is_nil(user) and is_integer(id) and is_binary(reason) do
+    [list] = socket.assigns.draft.lists
+
+    updated =
+      Enum.map(list.members, fn member ->
+        if member.author_id == id, do: Map.put(member, :reason, reason), else: member
+      end)
+
+    draft = %{socket.assigns.draft | lists: [%{list | members: updated}]}
+    socket = assign(socket, reason_text: reason)
+
+    case Councils.save(user, draft) do
+      {:ok, council} ->
+        {:noreply,
+         assign(socket,
+           draft: Councils.editable(council),
+           dirty: false,
+           editing_reason: nil,
+           reason_text: "",
+           reason_error: nil
+         )}
+
+      {:error, :stale} ->
+        {:noreply,
+         assign(socket,
+           reason_error: "Your Council changed in another window. Reload before saving."
+         )}
+
+      _ ->
+        {:noreply,
+         assign(socket,
+           reason_error:
+             "Could not save your reason. Keep it under 5,000 characters and try again."
+         )}
+    end
   end
 
   def handle_event("reasons", %{"reasons" => reasons}, socket) do
