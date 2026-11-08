@@ -1,100 +1,70 @@
 defmodule YouCongressWeb.Components.CouncilVote do
-  @moduledoc "Shows the actual Council decision alongside the separate Trust 30 view."
+  @moduledoc "A collapsed breakdown of the members behind a Council vote."
   use YouCongressWeb, :live_component
-  import YouCongressWeb.CouncilComponents
   alias YouCongress.Councils
   alias YouCongress.Councils.Discovery
 
   @impl true
   def update(assigns, socket) do
-    explanation =
-      if assigns.current_user,
-        do: Councils.explain(assigns.current_user.author_id, assigns.statement.id)
+    explanation = Councils.explain(assigns.current_user.author_id, assigns.statement.id)
+    members = Enum.flat_map(explanation.lists, & &1.members)
 
-    ids =
-      if explanation,
-        do: Enum.flat_map(explanation.lists, &Enum.map(&1.members, fn m -> m.author_id end)),
-        else: []
+    groups =
+      for answer <- [:for, :against, :abstain] do
+        %{
+          answer: answer,
+          label: answer |> to_string() |> String.capitalize(),
+          members: Enum.filter(members, &(&1.answer == answer))
+        }
+      end
 
     {:ok,
      socket
      |> assign(assigns)
      |> assign(
-       explanation: explanation,
-       people: Discovery.people(ids),
-       summary: Discovery.statement_summary(assigns.statement.id)
+       groups: groups,
+       people: Discovery.people(Enum.map(members, & &1.author_id)),
+       missing: Enum.count(members, &is_nil(&1.answer))
      )}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div id={@id} class="council-ui mt-6 mb-6">
-      <div class="yc-grid equal">
-        <section class="yc-panel">
-          <div class="yc-between">
-            <h3>YouCongress Trust 30</h3>
-            <.link navigate={~p"/trust"} class="yc-link">View list →</.link>
-          </div>
-          <.position_bar summary={@summary} />
-          <p class="yc-help">
-            Positions from {@summary.total} Trust List members. This view never changes your vote.
-          </p>
-          <.link :if={!@current_user} navigate={~p"/council"} class="yc-link yc-gap-sm">
-            Choose your own Council →
-          </.link>
-        </section>
-        <section :if={@explanation} id="my-council-decision" class="yc-panel tint">
-          <p class="yc-eyebrow">Your vote</p>
-          <h2>
-            {answer(@explanation.effective)}<span :if={@explanation.direct}> · your direct vote</span>
-            <span :if={!@explanation.direct && @explanation.answer}>
-              · via your Council
-            </span>
-          </h2>
-          <p :if={@explanation.direct} class="yc-help">
-            Your direct vote overrides your Council on this statement.
-          </p>
-          <p :if={!@explanation.direct && !@explanation.answer} class="yc-help">
-            No Council vote is cast when there is a tie or no eligible positions. You can vote for yourself above.
-          </p>
-          <p :if={!@explanation.direct && @explanation.answer} class="yc-help">
-            Your Council has more {answer(@explanation.answer)} than {if @explanation.answer == :for,
-              do: "Against",
-              else: "For"} positions. Vote above to make your own choice.
-          </p>
-          <details class="yc-gap-sm">
-            <summary class="cursor-pointer font-semibold">See how your Council voted</summary>
-            <div :for={list <- @explanation.lists} class="yc-gap-sm">
-              <div :for={member <- list.members} class="yc-voter">
-                <.avatar person={@people[member.author_id]} />
+    <div id={@id}>
+      <details id={"#{@id}-breakdown"} class="group text-sm">
+        <summary class="cursor-pointer text-indigo-700 underline underline-offset-2 hover:text-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-600">
+          See how your Council voted
+        </summary>
+        <div class="mt-3 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <section
+            :for={group <- @groups}
+            id={"#{@id}-#{group.answer}"}
+            aria-labelledby={"#{@id}-#{group.answer}-heading"}
+          >
+            <h3 id={"#{@id}-#{group.answer}-heading"} class="font-semibold text-gray-900">
+              {group.label} <span class="font-normal text-gray-500">({length(group.members)})</span>
+            </h3>
+            <ul :if={group.members != []} class="mt-1 space-y-1">
+              <li :for={member <- group.members}>
                 <.link
                   navigate={~p"/a/#{member.author_id}"}
-                  class="yc-name"
+                  class="break-words text-indigo-700 hover:underline"
                 >
-                  {@people[member.author_id].name}
+                  {@people[member.author_id].name || "Participant"}
                 </.link>
-                <span class={[
-                  "yc-badge",
-                  member.answer == :for && "green",
-                  member.answer == :against && "red"
-                ]}>
-                  {answer(member.answer)}
-                </span>
-              </div>
-              <p class="yc-help">
-                {list.for} For · {list.against} Against · {list.excluded} abstaining or without an eligible position
-              </p>
-            </div>
-            <p class="yc-help">
-              Only direct votes and verified sourced positions count. Abstentions and missing positions don’t dilute the majority.
-            </p>
-          </details>
-          <.link navigate={~p"/council?#{%{step: "pick"}}"} class="yc-link yc-gap-sm">
-            Edit my Council →
-          </.link>
-        </section>
-      </div>
+              </li>
+            </ul>
+            <p :if={group.members == []} class="mt-1 text-gray-500">No Council members.</p>
+          </section>
+          <p :if={@missing > 0} class="text-xs text-gray-500">
+            {@missing} {if @missing == 1, do: "member has", else: "members have"} no eligible position on this statement.
+          </p>
+          <p class="text-xs text-gray-500">
+            Only direct votes and verified sourced positions count. Abstentions do not count toward the majority.
+          </p>
+        </div>
+      </details>
     </div>
     """
   end

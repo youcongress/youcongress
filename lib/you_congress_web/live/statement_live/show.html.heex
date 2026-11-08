@@ -106,7 +106,7 @@
     />
   </:synthesis>
   <:vote_controls>
-    <div class="space-y-4">
+    <div id="statement-vote-controls" class="space-y-4">
       <div class="text-sm font-semibold">Cast Your Vote:</div>
       <.live_component
         module={CastVoteComponent}
@@ -117,16 +117,16 @@
         display_results={false}
         page={:statement_show}
       />
+      <.live_component
+        :if={@current_user && @current_user_vote && !@current_user_vote.direct}
+        module={YouCongressWeb.Components.CouncilVote}
+        id="statement-council"
+        statement={@statement}
+        current_user={@current_user}
+      />
     </div>
   </:vote_controls>
 </ResultsComponent.horizontal_bar>
-<.live_component
-  module={YouCongressWeb.Components.CouncilVote}
-  id="statement-council"
-  statement={@statement}
-  current_user={@current_user}
-  current_user_vote={@current_user_vote}
-/>
 
 <div class="mt-4 pb-2">
   <.live_component
