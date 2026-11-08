@@ -128,7 +128,11 @@ because Council members cannot include oneself.
 
 The link is stored as private account data, outside the public list schema; public pages
 and the MCP tool reveal no association with a Council. The list picker uses search and
-suggestions on the left, selected people with inline draft reasons on the right.
+suggestions on the left, selected people with inline reasons on the right. Existing lists
+save adds/removals, reasons, metadata, and link changes automatically, with visible save
+errors and optimistic version checks. Reasons save after a typing pause; URL edits save
+on blur. Navigation links flush pending edits before leaving. New lists and the Council
+reason-publication preview retain their explicit publish/save step.
 “Use these picks” copies a public list into a Council draft; it does not link to another
 author's list. Unlinked public lists do not contribute Council nominations. Previously
 published Councils were migrated into named public lists, with all Councils private.

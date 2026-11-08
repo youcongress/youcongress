@@ -27,7 +27,7 @@ defmodule YouCongressWeb.PeopleListsTest do
     assert_redirect(view, YouCongressWeb.PeopleListPaths.public_path(list))
     assert Councils.get(user.author_id) == council
     {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit")
-    edit |> element("#public-list-editor") |> render_submit(%{name: "Careful researchers"})
+    edit |> element("#public-list-editor") |> render_change(%{name: "Careful researchers"})
     {:ok, show, html} = live(conn, YouCongressWeb.PeopleListPaths.public_path(list))
     assert html =~ "Careful researchers"
     assert html =~ "Tests ideas carefully"
@@ -152,7 +152,8 @@ defmodule YouCongressWeb.PeopleListsTest do
     assert redirected_to(legacy, 301) == "/@listwriter/lists/my-picks"
     {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit")
     edit |> form("#public-list-editor") |> render_submit(%{slug: "new-picks"})
-    assert_redirect(edit, "/@listwriter/lists/new-picks")
+    assert has_element?(edit, "#list-autosave-status", "All changes saved")
+    assert PeopleLists.get(list.id).slug == "new-picks"
 
     assert {:error, {:live_redirect, %{to: "/@listwriter/lists/new-picks"}}} =
              live(build_conn(), "/@listwriter/lists/my-picks")
@@ -197,14 +198,15 @@ defmodule YouCongressWeb.PeopleListsTest do
     assert get(conn, "/lists/0").status == 404
   end
 
-  test "Council-style list picking keeps reasons in the draft until the list is saved", %{
+  test "existing list additions, removals, and reasons autosave without a save button", %{
     conn: conn
   } do
     user = user_fixture()
     first = author_fixture(%{name: "Picker List Alpha"})
     second = author_fixture(%{name: "Picker List Beta"})
-    {:ok, list} = PeopleLists.create(user, %{name: "Editable", members: []})
+    {:ok, list} = PeopleLists.create(user, %{name: "Editable", members: [], link_council: true})
     {:ok, view, _} = live(log_in_user(conn, user), "/lists/#{list.id}/edit")
+    refute has_element?(view, "button", "Save public list")
     assert has_element?(view, "h3", "People to consider")
     assert has_element?(view, "aside h3", "Your list")
     view |> form("#list-person-search-form") |> render_change(%{q: "Picker List"})
@@ -212,7 +214,8 @@ defmodule YouCongressWeb.PeopleListsTest do
     for person <- [first, second] do
       view |> element("#list-candidate-#{person.id} button") |> render_click()
       refute has_element?(view, "#list-candidate-#{person.id}")
-      assert has_element?(view, "aside #council-member-#{person.id} button", "+ Add a reason")
+      assert Enum.any?(PeopleLists.get(list.id).members, &(&1.author_id == person.id))
+      assert person.id in Councils.delegate_ids(user.author_id)
     end
 
     ids =
@@ -223,28 +226,56 @@ defmodule YouCongressWeb.PeopleListsTest do
 
     assert ids == ["council-member-#{second.id}", "council-member-#{first.id}"]
     view |> element("#council-member-#{second.id} button", "+ Add a reason") |> render_click()
+    refute has_element?(view, "button", "Save reason")
+
+    render_change(view, "change", %{
+      "reasons" => %{to_string(second.id) => "Autosaved public reason"}
+    })
+
+    assert hd(PeopleLists.get(list.id).members).reason == "Autosaved public reason"
     assert has_element?(view, "#list-reason-#{second.id}")
-    refute has_element?(view, "#list-reason-#{first.id}")
+
+    assert Enum.find(hd(Councils.get(user.author_id).lists).members, &(&1.author_id == second.id)).reason ==
+             nil
 
     render_submit(view, "save", %{
-      "action" => "save-reason",
-      "reasons" => %{to_string(second.id) => "Draft reason"}
+      "action" => "close-reason",
+      "reasons" => %{to_string(second.id) => "Final edit before Done"}
     })
 
-    assert has_element?(view, "#council-member-#{second.id} blockquote", "Draft reason")
-    assert PeopleLists.get(list.id).members == []
-    view |> element("#council-member-#{second.id} button", "Edit reason") |> render_click()
-    render_change(view, "change", %{"reasons" => %{to_string(second.id) => "Discarded"}})
-    view |> element("button[phx-click=cancel-reason]") |> render_click()
-    assert has_element?(view, "blockquote", "Draft reason")
-    view |> element("#council-member-#{first.id} button", "+ Add a reason") |> render_click()
+    assert has_element?(view, "#council-member-#{second.id} blockquote", "Final edit before Done")
+    view |> element("#council-member-#{first.id} button", "Remove") |> render_click()
+    assert Enum.map(PeopleLists.get(list.id).members, & &1.author_id) == [second.id]
+    assert Councils.delegate_ids(user.author_id) == [second.id]
+    assert has_element?(view, "#list-autosave-status", "All changes saved")
+  end
 
-    render_submit(view, "save", %{
-      "reasons" => %{to_string(first.id) => "Saved with the whole list"}
-    })
+  test "autosave validation and conflict errors preserve edits without overwriting saved data", %{
+    conn: conn
+  } do
+    user = user_fixture()
+    {:ok, list} = PeopleLists.create(user, %{name: "Original", members: []})
+    conn = log_in_user(conn, user)
+    {:ok, view, _} = live(conn, "/lists/#{list.id}/edit")
+    view |> form("#public-list-editor") |> render_change(%{name: ""})
+    assert has_element?(view, "#list-autosave-status", "Not saved")
+    assert PeopleLists.get(list.id).name == "Original"
+    view |> form("#public-list-editor") |> render_change(%{name: "Corrected"})
+    assert PeopleLists.get(list.id).name == "Corrected"
+    assert has_element?(view, "#list-autosave-status", "All changes saved")
+    current = PeopleLists.get(list.id)
 
-    saved = PeopleLists.get(list.id)
-    assert Enum.map(saved.members, & &1.reason) == ["Draft reason", "Saved with the whole list"]
+    {:ok, _} =
+      PeopleLists.update(user, list.id, %{
+        version: current.version,
+        name: "Another window",
+        members: []
+      })
+
+    view |> form("#public-list-editor") |> render_change(%{name: "Keep this unsaved text"})
+    assert has_element?(view, "#list-autosave-status", "changed in another window")
+    assert has_element?(view, "#public-list-name[value='Keep this unsaved text']")
+    assert PeopleLists.get(list.id).name == "Another window"
   end
 
   test "Update list previews private Council changes and checkbox unlinks without changing votes",
@@ -269,19 +300,22 @@ defmodule YouCongressWeb.PeopleListsTest do
     {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit?from=council")
     assert has_element?(edit, "#list-council-link[checked]")
     assert has_element?(edit, "#list-council-review")
+    assert has_element?(edit, "button", "Save public list")
+    edit |> form("#public-list-editor") |> render_change(%{name: "Previewed name"})
+    assert PeopleLists.get(list.id).name == "Linked picks"
     assert has_element?(edit, "#council-member-#{second.id}")
     assert length(PeopleLists.get(list.id).members) == 2
     edit |> form("#public-list-editor") |> render_submit()
     assert length(PeopleLists.get(list.id).members) == 2
     assert Councils.get(user.author_id) == council
     {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit")
-    edit |> form("#public-list-editor") |> render_submit(%{link_council: "false"})
+    edit |> form("#public-list-editor") |> render_change(%{link_council: "false"})
     assert PeopleLists.linked_list(user) == nil
     assert Councils.get(user.author_id) == council
     {:ok, mine, _} = live(conn, "/council")
     refute has_element?(mine, "#council-linked-list")
     {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit")
-    edit |> form("#public-list-editor") |> render_submit(%{link_council: "true"})
+    edit |> form("#public-list-editor") |> render_change(%{link_council: "true"})
     assert PeopleLists.linked_list(user).id == list.id
   end
 

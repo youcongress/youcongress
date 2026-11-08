@@ -165,6 +165,8 @@ defmodule YouCongressWeb.CouncilComponents do
   attr :slug, :string, required: true
   attr :error, :string, default: nil
 
+  attr :debounce, :string, default: "300"
+
   def list_slug_field(assigns) do
     ~H"""
     <label class="yc-label yc-gap" for="public-list-slug">List URL</label>
@@ -176,7 +178,7 @@ defmodule YouCongressWeb.CouncilComponents do
       placeholder="e.g. people-i-trust"
       required
       maxlength="80"
-      phx-debounce="300"
+      phx-debounce={@debounce}
       aria-invalid={to_string(!is_nil(@error))}
       aria-describedby="public-list-slug-help"
     />

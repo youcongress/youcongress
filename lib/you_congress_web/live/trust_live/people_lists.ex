@@ -28,6 +28,8 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
        editing_reason: nil,
        reason_text: "",
        last_added_id: nil,
+       autosave: false,
+       save_error: nil,
        draft: %{name: "", slug: "", version: 1, members: []}
      )}
   end
@@ -55,6 +57,8 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
            slug_custom: false,
            slug_error: nil,
            list: nil,
+           autosave: false,
+           save_error: nil,
            owner: user.author,
            own: true,
            page_title: "Create a public list"
@@ -151,6 +155,8 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
     {:noreply,
      socket
      |> assign(
+       autosave: socket.assigns.live_action == :edit && !reviewing,
+       save_error: nil,
        linked: linked,
        original_linked: linked,
        reviewing_council: reviewing,
@@ -199,6 +205,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
        )
        |> assign(last_added_id: id)
        |> load_people()
+       |> maybe_autosave()
        |> push_event("council-person-added", %{id: id})}
     else
       {:noreply, socket}
@@ -215,7 +222,10 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
       Enum.reject(socket.assigns.draft.members, &(&1.author_id == TrustRankings.parse_id(raw)))
 
     {:noreply,
-     socket |> assign(draft: %{socket.assigns.draft | members: members}) |> load_people()}
+     socket
+     |> assign(draft: %{socket.assigns.draft | members: members})
+     |> load_people()
+     |> maybe_autosave()}
   end
 
   def handle_event("edit-reason", %{"id" => raw}, socket) do
@@ -232,7 +242,26 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
   def handle_event("cancel-reason", _, socket),
     do: {:noreply, assign(socket, editing_reason: nil, reason_text: "")}
 
-  def handle_event("change", params, socket), do: {:noreply, update_draft(socket, params)}
+  def handle_event("change", params, socket),
+    do: {:noreply, socket |> update_draft(params) |> maybe_autosave()}
+
+  def handle_event("flush-autosave", params, socket) do
+    socket = socket |> update_draft(params) |> maybe_autosave()
+    {:reply, %{saved: is_nil(socket.assigns.save_error)}, socket}
+  end
+
+  def handle_event("retry-autosave", _, socket), do: {:noreply, maybe_autosave(socket)}
+
+  def handle_event("save", params, %{assigns: %{autosave: true}} = socket) do
+    socket = socket |> update_draft(params) |> maybe_autosave()
+
+    socket =
+      if params["action"] == "close-reason" && is_nil(socket.assigns.save_error),
+        do: assign(socket, editing_reason: nil, reason_text: ""),
+        else: socket
+
+    {:noreply, socket}
+  end
 
   def handle_event("save", %{"action" => "save-reason"} = params, socket) do
     {:noreply, socket |> update_draft(params) |> save_draft_reason()}
@@ -332,6 +361,23 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
         socket.assigns.owner.id
       )
 
+    draft =
+      if socket.assigns.autosave do
+        %{
+          draft
+          | members:
+              Enum.map(draft.members, fn member ->
+                Map.put(
+                  member,
+                  :reason,
+                  Map.get(reasons, to_string(member.author_id), member[:reason])
+                )
+              end)
+        }
+      else
+        draft
+      end
+
     assign(socket,
       draft: draft,
       slug_custom: custom?,
@@ -339,6 +385,71 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
       linked: linked,
       reason_text: reason_text
     )
+  end
+
+  defp maybe_autosave(%{assigns: %{autosave: false}} = socket), do: socket
+
+  defp maybe_autosave(socket) do
+    if socket.assigns.draft == saved_draft(socket.assigns.list) &&
+         socket.assigns.linked == socket.assigns.original_linked do
+      assign(socket, save_error: nil, slug_error: nil)
+    else
+      persist_autosave(socket)
+    end
+  end
+
+  defp saved_draft(list) do
+    %{
+      name: list.name,
+      slug: list.slug,
+      version: list.version,
+      members: Enum.map(list.members, &Map.take(&1, [:author_id, :reason]))
+    }
+  end
+
+  defp persist_autosave(socket) do
+    attrs =
+      if socket.assigns.linked != socket.assigns.original_linked,
+        do: Map.put(socket.assigns.draft, :link_council, socket.assigns.linked),
+        else: socket.assigns.draft
+
+    case PeopleLists.update(socket.assigns.current_user, socket.assigns.list.id, attrs) do
+      {:ok, list} ->
+        linked = PeopleLists.linked_list(socket.assigns.current_user)
+        linked? = not is_nil(linked) && linked.id == list.id
+
+        draft = saved_draft(list)
+
+        assign(socket,
+          list: list,
+          draft: draft,
+          linked: linked?,
+          original_linked: linked?,
+          save_error: nil,
+          slug_error: nil
+        )
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        assign(socket,
+          slug_error: PeopleListPaths.slug_error(changeset),
+          save_error: "Not saved. Check the list name, URL, and reason length."
+        )
+
+      {:error, :stale} ->
+        assign(socket,
+          save_error:
+            "Not saved: this list changed in another window or through your Council. Reload to get the latest version; your edits are still shown here."
+        )
+
+      {:error, :self_in_linked_list} ->
+        assign(socket,
+          save_error:
+            "Not saved: a linked list cannot include yourself. Remove yourself or unlink the list."
+        )
+
+      _ ->
+        assign(socket, save_error: "Your changes could not be saved. Please try again.")
+    end
   end
 
   defp save_draft_reason(socket) do

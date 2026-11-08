@@ -760,3 +760,9 @@
 @media (prefers-reduced-motion: reduce) {
   .council-ui .yc-picker-fade { transition: none; }
 }
+
+.council-ui .yc-save-pending { display: none; }
+.council-ui form.phx-change-loading .yc-save-pending,
+.council-ui form.phx-submit-loading .yc-save-pending { display: inline; }
+.council-ui form.phx-change-loading .yc-save-idle,
+.council-ui form.phx-submit-loading .yc-save-idle { display: none; }

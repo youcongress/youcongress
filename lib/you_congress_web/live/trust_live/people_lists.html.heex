@@ -67,7 +67,14 @@
             Saving will publish the people and reasons below. Your existing public list stays unchanged until you save.
           </p>
         </div>
-        <form id="public-list-editor" phx-change="change" phx-submit="save" class="yc-gap">
+        <form
+          id="public-list-editor"
+          phx-hook="ListAutosave"
+          data-autosave={to_string(@autosave)}
+          phx-change="change"
+          phx-submit="save"
+          class="yc-gap"
+        >
           <label class="yc-label" for="public-list-name">List name</label>
           <input
             class="yc-field"
@@ -79,7 +86,30 @@
             maxlength="120"
             phx-debounce="300"
           />
-          <.list_slug_field owner={@owner} slug={@draft.slug} error={@slug_error} />
+          <.list_slug_field
+            owner={@owner}
+            slug={@draft.slug}
+            error={@slug_error}
+            debounce={if @autosave, do: "blur", else: "300"}
+          />
+          <div
+            :if={@autosave}
+            id="list-autosave-status"
+            class="yc-help"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="yc-save-pending">Saving…</span>
+            <span :if={is_nil(@save_error)} class="yc-save-idle">All changes saved</span>
+            <span :if={@save_error} class="yc-save-idle">{@save_error}</span>
+            <button :if={@save_error} type="button" class="yc-link" phx-click="retry-autosave">
+              Retry
+            </button>
+            <.link :if={@save_error} href={~p"/lists/#{@list.id}/edit"} class="yc-link">
+              Reload list
+            </.link>
+          </div>
+          <p id="list-navigation-status" class="yc-help" role="status" phx-update="ignore"></p>
           <div class="yc-panel soft yc-gap">
             <input type="hidden" name="link_council" value="false" />
             <label for="list-council-link" class="yc-row">
@@ -179,6 +209,7 @@
                     phx-click="remove-person"
                     phx-value-id={member.author_id}
                     aria-label={"Remove #{@people[member.author_id].name}"}
+                    phx-disable-with="Removing…"
                   >
                     Remove
                   </button>
@@ -197,7 +228,7 @@
                     phx-debounce="300"
                     phx-mounted={JS.focus()}
                   >{@reason_text}</textarea>
-                  <div class="yc-row yc-gap-sm">
+                  <div :if={!@autosave} class="yc-row yc-gap-sm">
                     <button
                       type="submit"
                       form="public-list-editor"
@@ -209,6 +240,19 @@
                       Save reason
                     </button>
                     <button type="button" class="yc-btn" phx-click="cancel-reason">Cancel</button>
+                  </div>
+                  <div :if={@autosave} class="yc-row yc-gap-sm">
+                    <p class="yc-help">Your reason saves automatically as you type.</p>
+                    <button
+                      type="submit"
+                      form="public-list-editor"
+                      name="action"
+                      value="close-reason"
+                      class="yc-btn"
+                      formnovalidate
+                    >
+                      Done
+                    </button>
                   </div>
                 </div>
                 <div :if={@editing_reason != member.author_id} class="yc-gap-sm">
@@ -229,8 +273,13 @@
             </div>
             <hr class="yc-divider" />
             <p class="yc-help">
-              Your people and reasons go public when you save this list. If linked, its people also update your Council and its votes. Private Council reasons are never copied automatically.
+              {if @autosave,
+                do:
+                  "Changes save automatically and are public. If linked, adding or removing people also updates your Council and its votes.",
+                else:
+                  "Your people and reasons go public when you save this list. If linked, its people also update your Council and its votes."} Private Council reasons are never copied automatically.
             </p>
+            <p :if={@autosave && @save_error} class="yc-help" role="alert">{@save_error}</p>
             <div class="yc-actions">
               <.link
                 navigate={
@@ -238,9 +287,10 @@
                 }
                 class="yc-link muted"
               >
-                Cancel
+                {if @autosave, do: "View list →", else: "Cancel"}
               </.link>
               <button
+                :if={!@autosave}
                 type="submit"
                 form="public-list-editor"
                 name="action"
