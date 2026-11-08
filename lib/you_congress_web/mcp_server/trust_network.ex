@@ -1,5 +1,5 @@
 defmodule YouCongressWeb.MCPServer.TrustNetwork do
-  @moduledoc "Read named public people lists, YouCongress Trust 30, and recommendations. Private Councils are never exposed."
+  @moduledoc "Read named public people lists, admin-only YouCongress Trust 30, and recommendations. Private Councils are never exposed."
   use Anubis.Server.Component, type: :tool
   alias Anubis.Server.Response
 
@@ -17,7 +17,7 @@ defmodule YouCongressWeb.MCPServer.TrustNetwork do
     data =
       case params.view do
         "rankings" ->
-          YouCongress.Councils.Discovery.trust30()
+          rankings(frame)
 
         "communities" ->
           []
@@ -42,6 +42,16 @@ defmodule YouCongressWeb.MCPServer.TrustNetwork do
       end
 
     {:reply, Response.json(Response.tool(), data), frame}
+  end
+
+  defp rankings(frame) do
+    with {:ok, user} <-
+           YouCongress.MCP.ToolUsageTracker.track(__MODULE__, frame, required_scope: :read),
+         true <- YouCongress.Accounts.admin?(user) do
+      YouCongress.Councils.Discovery.trust30()
+    else
+      _ -> %{error: "Trust List rankings are currently available to admins only."}
+    end
   end
 
   defp public_lists(nil), do: %{error: "author_id required"}

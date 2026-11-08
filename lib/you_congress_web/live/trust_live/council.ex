@@ -9,7 +9,11 @@ defmodule YouCongressWeb.TrustLive.Council do
   def mount(_params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
     draft = own_council(socket.assigns.current_user)
-    ranking = Discovery.trust30()
+
+    ranking =
+      if YouCongress.Accounts.admin?(socket.assigns.current_user),
+        do: Discovery.trust30(),
+        else: %{rows: []}
 
     {:ok,
      socket
@@ -26,6 +30,7 @@ defmodule YouCongressWeb.TrustLive.Council do
        ranking: ranking,
        ranks: Map.new(ranking.rows, &{&1.author_id, &1}),
        dirty: false,
+       last_added_id: nil,
        editing_reason: nil,
        reason_text: "",
        reason_error: nil,
@@ -48,10 +53,10 @@ defmodule YouCongressWeb.TrustLive.Council do
     ref = params["ref"] || socket.assigns.ref
     referrer = Invitations.referrer(ref)
     default = if user && members(socket.assigns.draft) != [], do: "mine", else: "landing"
-    step = params["step"] || default
+    step = requested_step(params["step"], default)
 
     allowed =
-      if user, do: ~w(landing pick why publish invite mine votes), else: ~w(landing pick why join)
+      if user, do: ~w(landing pick publish invite mine votes), else: ~w(landing pick join)
 
     step = if step in allowed, do: step, else: default
     step = if params["statement"] && user, do: "votes", else: step
@@ -90,13 +95,25 @@ defmodule YouCongressWeb.TrustLive.Council do
 
       id ->
         case Repo.get(Author, id) do
-          nil -> {:noreply, socket}
-          person -> {:noreply, add_person(socket, person)}
+          nil ->
+            {:noreply, socket}
+
+          person ->
+            {:noreply,
+             socket
+             |> add_person(person)
+             |> assign(last_added_id: person.id)
+             |> push_event("council-person-added", %{id: person.id})}
         end
     end
   end
 
   def handle_event("remove-person", %{"id" => raw}, socket) do
+    socket =
+      if socket.assigns.editing_reason == TrustRankings.parse_id(raw),
+        do: assign(socket, editing_reason: nil, reason_text: "", reason_error: nil),
+        else: socket
+
     {:noreply,
      change_members(
        socket,
@@ -107,9 +124,9 @@ defmodule YouCongressWeb.TrustLive.Council do
   def handle_event(
         "edit-reason",
         %{"id" => raw},
-        %{assigns: %{current_user: user, step: "mine"}} = socket
+        %{assigns: %{step: step}} = socket
       )
-      when not is_nil(user) do
+      when step in ["mine", "pick"] do
     case Enum.find(members(socket.assigns.draft), &(&1.author_id == TrustRankings.parse_id(raw))) do
       nil ->
         {:noreply, socket}
@@ -129,6 +146,35 @@ defmodule YouCongressWeb.TrustLive.Council do
 
   def handle_event("change-reason", %{"reason" => reason}, socket) when is_binary(reason),
     do: {:noreply, assign(socket, reason_text: reason, reason_error: nil)}
+
+  def handle_event(
+        "save-reason",
+        %{"reason" => reason} = params,
+        %{assigns: %{step: "pick", editing_reason: id}} = socket
+      )
+      when is_integer(id) and is_binary(reason) do
+    if String.length(reason) <= 5_000 do
+      updated =
+        Enum.map(members(socket.assigns.draft), fn member ->
+          if member.author_id == id, do: Map.put(member, :reason, reason), else: member
+        end)
+
+      socket =
+        socket
+        |> change_members(updated)
+        |> assign(editing_reason: nil, reason_text: "", reason_error: nil)
+
+      if params["continue"] == "true",
+        do: handle_event("save", %{}, socket),
+        else: {:noreply, socket}
+    else
+      {:noreply,
+       assign(socket,
+         reason_text: reason,
+         reason_error: "Keep your reason under 5,000 characters."
+       )}
+    end
+  end
 
   def handle_event(
         "save-reason",
@@ -322,6 +368,10 @@ defmodule YouCongressWeb.TrustLive.Council do
 
   def handle_event(_, _, socket), do: {:noreply, socket}
 
+  defp requested_step("why", _default), do: "pick"
+  defp requested_step(nil, default), do: default
+  defp requested_step(step, _default), do: step
+
   defp load_saved_view(socket, nil, _step), do: socket
 
   defp load_saved_view(socket, user, step) when step in ~w(mine votes publish invite),
@@ -397,7 +447,7 @@ defmodule YouCongressWeb.TrustLive.Council do
     else
       change_members(
         socket,
-        members(socket.assigns.draft) ++ [%{author_id: person.id, reason: nil, source_url: nil}]
+        [%{author_id: person.id, reason: nil, source_url: nil} | members(socket.assigns.draft)]
       )
     end
   end
@@ -421,9 +471,13 @@ defmodule YouCongressWeb.TrustLive.Council do
   defp load_matches(socket) do
     matches =
       if String.trim(socket.assigns.query) == "" do
-        ids = Enum.map(socket.assigns.ranking.rows, & &1.author_id)
-        people = Discovery.people(ids)
-        Enum.map(ids, &people[&1]) |> Enum.reject(&is_nil/1)
+        if YouCongress.Accounts.admin?(socket.assigns.current_user) do
+          ids = Enum.map(socket.assigns.ranking.rows, & &1.author_id)
+          people = Discovery.people(ids)
+          Enum.map(ids, &people[&1]) |> Enum.reject(&is_nil/1)
+        else
+          Discovery.search("")
+        end
       else
         Discovery.search(
           socket.assigns.query,

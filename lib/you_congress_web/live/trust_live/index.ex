@@ -23,7 +23,11 @@ defmodule YouCongressWeb.TrustLive.Index do
        recommendations: [],
        requests: [],
        updates: [],
-       snapshots: TrustRankings.snapshots(),
+       snapshots:
+         if(YouCongress.Accounts.admin?(socket.assigns.current_user),
+           do: TrustRankings.snapshots(),
+           else: []
+         ),
        snapshot: nil,
        people: [],
        person_query: "",
@@ -42,8 +46,16 @@ defmodule YouCongressWeb.TrustLive.Index do
       assign(socket,
         scope: scope,
         filters: filters,
-        result: TrustRankings.ranking(scope, filters),
-        comparisons: comparison_params(params, scope)
+        result:
+          if(YouCongress.Accounts.admin?(socket.assigns.current_user),
+            do: TrustRankings.ranking(scope, filters),
+            else: %{rows: [], participants: 0}
+          ),
+        comparisons:
+          if(YouCongress.Accounts.admin?(socket.assigns.current_user),
+            do: comparison_params(params, scope),
+            else: []
+          )
       )
 
     {:noreply, load_view(socket.assigns.live_action, socket, params)}

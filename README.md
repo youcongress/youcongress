@@ -101,7 +101,9 @@ Sobelow honors only the documented, check-specific `sobelow_skip` annotations fo
 
 ## Trust Network
 
-Participants choose one private Council at `/council`, across every statement. Existing
+Participants choose one private Council at `/council`, across every statement.
+Setup has three steps: Pick your Council (with optional inline reasons), Publish, and Invite.
+Continue saves the selected people and reasons before opening the optional publishing step. Existing
 delegates become Council members; topic lists are consolidated, retaining unique people
 and an existing nonempty reason for each person. There is no five-person limit. Guest picks and reasons survive signup, and
 email signups take effect after confirmation. Saving a Council enables its voting behavior
@@ -121,8 +123,11 @@ saving. Public list membership does not count as a Council nomination. Previousl
 Councils are migrated into named public lists, and all Councils become private.
 
 `/trust` (also `/trust/general`) shows the single global YouCongress Trust 30 and its positions
-on statements. Reasons come only from published people lists. Community and comparison
-pages redirect to this list. Historical snapshots and CSV exports remain available.
+on statements. While participation grows, rankings, related person pages, snapshots,
+exports, and MCP ranking access are restricted to admins. Public Council pages do not show
+ranking previews or links. Reasons come only from published people lists. Legacy community
+pages redirect to the Trust List for admins and Council setup for other visitors. Historical
+snapshots and CSV exports remain available to admins.
 `/trust/requests` retains the evidence correction and missing-person workflow;
 `/trust/updates` retains private updates.
 

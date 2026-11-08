@@ -21,7 +21,7 @@ defmodule YouCongressWeb.TopHeaderComponent do
         <!-- Desktop Navigation -->
         <div class="hidden lg:flex flex-wrap max-w-full justify-end text-sm items-center gap-x-6 gap-y-2 leading-6 text-zinc-900">
           <.link href={~p"/council"} class="text-indigo-700">My Council</.link>
-          <.link href={~p"/trust"}>Trust List</.link>
+          <.link :if={YouCongress.Accounts.admin?(@current_user)} href={~p"/trust"}>Trust List</.link>
           <.link :if={@current_user} href={~p"/lists"}>My lists</.link>
           <.link :if={@current_user} href={~p"/trust/updates"}>Updates</.link>
           <.github_link />
@@ -81,7 +81,9 @@ defmodule YouCongressWeb.TopHeaderComponent do
         <div class="lg:hidden flex max-w-full flex-col items-end gap-3 text-sm">
           <div class="flex flex-wrap items-center gap-4">
             <.link href={~p"/council"} class="py-3 text-indigo-700">Council</.link>
-            <.link href={~p"/trust"}>Trust List</.link>
+            <.link :if={YouCongress.Accounts.admin?(@current_user)} href={~p"/trust"}>
+              Trust List
+            </.link>
             <.link :if={@current_user} href={~p"/lists"}>My lists</.link>
             <.link
               href={~p"/explore"}

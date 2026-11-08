@@ -30,18 +30,10 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through(:browser)
 
-    live("/trust", TrustLive.List, :index)
-    live("/trust/people/:id", TrustLive.List, :person)
-    get("/trust/compare", TrustController, :simplified)
     live("/trust/recommendations", TrustLive.Index, :recommendations)
     live("/trust/requests", TrustLive.Index, :requests)
     live("/trust/updates", TrustLive.Index, :updates)
-    live("/trust/metrics", TrustLive.Index, :metrics)
-    live("/trust/snapshots/:id", TrustLive.Index, :snapshot)
-    get("/trust/snapshots/:id/export.csv", TrustController, :export)
     get("/trust/unsubscribe/:token", TrustController, :unsubscribe)
-    get("/trust/:scope/export.csv", TrustController, :export)
-    live("/trust/:scope", TrustLive.List, :index)
     get("/communities", TrustController, :simplified)
     get("/communities/:id", TrustController, :simplified)
     live("/a/:author_id/recommendations", TrustLive.Index, :recommendations)
@@ -109,8 +101,18 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through([:browser, :require_admin_user])
 
+    get("/trust/compare", TrustController, :simplified)
+    get("/trust/snapshots/:id/export.csv", TrustController, :export)
+    get("/trust/:scope/export.csv", TrustController, :export)
+
     live_session :admin,
       on_mount: [{YouCongressWeb.UserAuth, :ensure_admin}] do
+      live("/trust", TrustLive.List, :index)
+      live("/trust/people/:id", TrustLive.List, :person)
+      live("/trust/metrics", TrustLive.Index, :metrics)
+      live("/trust/snapshots/:id", TrustLive.Index, :snapshot)
+      live("/trust/:scope", TrustLive.List, :index)
+
       live("/p/new", StatementLive.Index, :new)
       live("/p/:slug/edit", StatementLive.Show, :edit)
       live("/p/:slug/show/edit", StatementLive.Show, :edit)

@@ -16,6 +16,14 @@ export default {
     this.handleEvent("clear-council-draft", () => {
       try { sessionStorage.removeItem(key) } catch (_) {}
     })
+    this.handleEvent("council-person-added", ({id}) => {
+      const member = document.getElementById(`council-member-${id}`)
+      if (!member || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+      member.animate([
+        {opacity: 0, transform: "translateY(-8px)"},
+        {opacity: 1, transform: "translateY(0)"}
+      ], {duration: 240, delay: 180, fill: "backwards", easing: "ease-out"})
+    })
     this.onClick = async event => {
       const button = event.target.closest("[data-council-copy], [data-council-share]")
       if (!button) return

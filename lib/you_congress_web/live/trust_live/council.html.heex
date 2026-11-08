@@ -5,8 +5,8 @@
   data-guest={to_string(is_nil(@current_user))}
   data-readonly="false"
 >
-  <div class={["yc-content", @step in ["why", "publish", "invite"] && "narrow"]}>
-    <.steps :if={@step in ["pick", "why", "join", "publish", "invite"]} step={@step} />
+  <div class={["yc-content", @step in ["publish", "invite"] && "narrow"]}>
+    <.steps :if={@step in ["pick", "join", "publish", "invite"]} step={@step} />
     <div :if={@referrer && @step == "landing"} class="yc-success">
       <.avatar person={@referrer} />
       <div>
@@ -30,7 +30,13 @@
             <.link patch={~p"/council?#{%{step: "pick"}}"} class="yc-btn primary large">
               Pick my Council →
             </.link>
-            <.link navigate={~p"/trust"} class="yc-link">Explore Trust 30</.link>
+            <.link
+              :if={YouCongress.Accounts.admin?(@current_user)}
+              navigate={~p"/trust"}
+              class="yc-link"
+            >
+              Explore Trust 30
+            </.link>
           </div>
           <p class="yc-help">
             {if @current_user,
@@ -41,7 +47,9 @@
         <div class="yc-hero-list">
           <div class="yc-between">
             <h3>Discover people you might trust</h3>
-            <span class="yc-badge">Trust 30</span>
+            <span :if={YouCongress.Accounts.admin?(@current_user)} class="yc-badge">
+              Trust 30
+            </span>
           </div>
           <div :if={@matches != []} class="yc-list yc-gap">
             <div :for={person <- Enum.take(@matches, 3)} class="yc-list-item">
@@ -49,9 +57,9 @@
             </div>
           </div>
           <div :if={@matches == []} class="yc-panel yc-gap">
-            <h3>Help start the Trust List</h3>
+            <h3>Find your Council</h3>
             <p class="yc-gap-sm">
-              Search for people whose judgment you value. Every saved Council helps others discover who to trust.
+              Search for people whose judgment you value. Choose people whose judgment you value.
             </p>
           </div>
           <p class="yc-help">
@@ -63,29 +71,35 @@
         <div>
           <p class="yc-eyebrow">01 / Choose</p>
           <h3>Whose judgment do you trust?</h3>
-          <p class="yc-gap-sm">Find people you know, or discover them through the Trust List.</p>
+          <p class="yc-gap-sm">Find people you trust and add an optional reason for each pick.</p>
         </div>
         <div>
-          <p class="yc-eyebrow">02 / Explain</p>
+          <p class="yc-eyebrow">02 / Publish</p>
           <h3>Let others see your thinking.</h3>
           <p class="yc-gap-sm">
             Add a reason for each pick. Publish a named list if you’d like to share your picks.
           </p>
         </div>
         <div>
-          <p class="yc-eyebrow">03 / Build together</p>
-          <h3>Help shape YouCongress Trust 30.</h3>
+          <p class="yc-eyebrow">03 / Invite</p>
+          <h3>Invite thoughtful people.</h3>
           <p class="yc-gap-sm">
-            Your saved picks contribute to the list of people chosen by the most Councils.
+            Invite friends to choose their own Council and share the people they value.
           </p>
         </div>
       </div>
-      <div class="yc-panel yc-gap-lg yc-between">
+      <div :if={YouCongress.Accounts.admin?(@current_user)} class="yc-panel yc-gap-lg yc-between">
         <div>
           <h3>YouCongress Trust 30</h3>
           <p class="yc-help">See who people trust, why they chose them, and where they stand.</p>
         </div>
-        <.link navigate={~p"/trust"} class="yc-btn">See the Trust List →</.link>
+        <.link
+          :if={YouCongress.Accounts.admin?(@current_user)}
+          navigate={~p"/trust"}
+          class="yc-btn"
+        >
+          See the Trust List →
+        </.link>
       </div>
     </section>
 
@@ -99,10 +113,9 @@
         Start with people you would turn to for a thoughtful opinion. You can add or remove anyone later.
       </p>
       <div class="yc-mobile-continue">
-        <strong>{length(members(@draft))} selected</strong><.link
-          patch={~p"/council?#{%{step: "why"}}"}
-          class="yc-btn primary"
-        >Continue →</.link>
+        <strong>{length(members(@draft))} selected</strong><.continue_button editing_reason={
+          @editing_reason
+        }>Continue →</.continue_button>
       </div>
       <div class="yc-grid yc-gap">
         <section>
@@ -118,35 +131,73 @@
             />
           </form>
           <div class="yc-between yc-gap">
-            <h3>{if @query == "", do: "From YouCongress Trust 30", else: "Search results"}</h3>
-            <.link navigate={~p"/trust"} class="yc-link">View Trust List</.link>
+            <h3>{if @query == "", do: "People to consider", else: "Search results"}</h3>
+            <.link
+              :if={YouCongress.Accounts.admin?(@current_user)}
+              navigate={~p"/trust"}
+              class="yc-link"
+            >
+              View Trust List
+            </.link>
           </div>
-          <div class="yc-list yc-gap-sm">
-            <div :for={person <- @matches} class="yc-list-item yc-between">
+          <% candidates = Enum.reject(@matches, &selected?(@draft, &1.id)) %>
+          <p
+            :if={@last_added_id && selected?(@draft, @last_added_id)}
+            class="yc-help"
+            role="status"
+          >
+            {@people[@last_added_id].name} added to your Council.
+            <button
+              type="button"
+              class="yc-link"
+              phx-click="edit-reason"
+              phx-value-id={@last_added_id}
+            >
+              + Add a reason
+            </button>
+          </p>
+          <div id="council-candidates" class="yc-list yc-gap-sm">
+            <div
+              :for={person <- candidates}
+              id={"council-candidate-#{person.id}"}
+              class="yc-list-item yc-between"
+              phx-remove={
+                JS.hide(
+                  transition: {"yc-picker-fade", "yc-picker-visible", "yc-picker-hidden"},
+                  time: 180
+                )
+              }
+            >
               <.person
                 person={person}
                 subtitle={
-                  if @ranks[person.id],
+                  if YouCongress.Accounts.admin?(@current_user) && @ranks[person.id],
                     do: "#{@ranks[person.id].count} Councils",
                     else: biography(person)
                 }
               />
               <button
                 type="button"
-                class={["yc-btn", selected?(@draft, person.id) && "selected"]}
-                phx-click={
-                  if selected?(@draft, person.id), do: "remove-person", else: "add-person"
-                }
+                class="yc-btn"
+                phx-click="add-person"
                 phx-value-id={person.id}
-                aria-pressed={to_string(selected?(@draft, person.id))}
+                phx-disable-with="Adding…"
+                aria-label={"Add #{person.name} to your Council"}
               >
-                {if selected?(@draft, person.id), do: "✓ Added", else: "+ Add"}
+                + Add
               </button>
             </div>
-            <p :if={@matches == []} class="yc-list-item">
-              {if @query == "",
-                do: "Search by name to choose your first Council members.",
-                else: "No people found. Try another name."}
+            <p :if={candidates == []} class="yc-list-item">
+              {cond do
+                @matches != [] ->
+                  "Everyone shown is already in your Council. Search for someone else."
+
+                @query == "" ->
+                  "Search by name to choose your first Council members."
+
+                true ->
+                  "No people found. Try another name."
+              end}
             </p>
           </div>
           <p class="yc-help">
@@ -162,24 +213,42 @@
               <span class="yc-badge purple">{length(members(@draft))} selected</span>
             </div>
             <div class="yc-stack yc-gap">
-              <div :for={member <- members(@draft)} class="yc-between">
-                <.person person={@people[member.author_id]} />
-                <button
-                  class="yc-link muted"
-                  phx-click="remove-person"
-                  phx-value-id={member.author_id}
-                  aria-label={"Remove #{@people[member.author_id].name}"}
-                >
-                  Remove
-                </button>
+              <div :for={member <- members(@draft)} id={"council-member-#{member.author_id}"}>
+                <div class="yc-between">
+                  <.person person={@people[member.author_id]} />
+                  <button
+                    type="button"
+                    class="yc-link muted"
+                    phx-click="remove-person"
+                    phx-value-id={member.author_id}
+                    aria-label={"Remove #{@people[member.author_id].name}"}
+                  >
+                    Remove
+                  </button>
+                </div>
+                <.reason_editor
+                  member={member}
+                  person={@people[member.author_id]}
+                  editing_reason={@editing_reason}
+                  reason_text={@reason_text}
+                  reason_error={@reason_error}
+                />
               </div>
             </div>
             <p :if={members(@draft) == []} class="yc-gap">Your picks will appear here.</p>
             <hr class="yc-divider" />
-            <p class="yc-help">Every member has an equal voice in your Council.</p>
-            <.link patch={~p"/council?#{%{step: "why"}}"} class="yc-btn primary full yc-gap">
-              Continue with {people_count(length(members(@draft)))} →
-            </.link>
+            <p class="yc-help">
+              Add an optional reason for each person. Reasons stay private unless you publish a copy.
+            </p>
+            <p class="yc-help">
+              Continuing saves your Council and enables its votes. You can choose whether to publish next.
+            </p>
+            <p :if={members(@draft) == []} class="yc-help">
+              Continuing with no people removes your Council members and stops Council votes.
+            </p>
+            <.continue_button editing_reason={@editing_reason} class="yc-btn primary full yc-gap">
+              Continue to Publish →
+            </.continue_button>
           </div>
           <div class="yc-panel soft">
             <h3>You stay in control</h3>
@@ -192,52 +261,6 @@
           </div>
         </aside>
       </div>
-    </section>
-
-    <section :if={@step == "why"}>
-      <h1>Why did you choose them?</h1>
-      <p class="yc-intro">
-        A good reason helps others discover people they might trust, too. These comments are optional and stay private unless you copy them to a public list.
-      </p>
-      <form id="council-reasons" phx-change="reasons" phx-submit="save">
-        <div class="yc-stack yc-gap">
-          <div :for={member <- members(@draft)} class="yc-panel">
-            <.person
-              person={@people[member.author_id]}
-              subtitle={biography(@people[member.author_id])}
-            />
-            <label class="yc-label yc-gap" for={"reason-#{member.author_id}"}>
-              Why I trust {@people[member.author_id].name}
-              <span class="yc-muted">· optional</span>
-            </label>
-            <textarea
-              class="yc-field"
-              id={"reason-#{member.author_id}"}
-              name={"reasons[#{member.author_id}]"}
-              maxlength="5000"
-              rows="3"
-              phx-debounce="300"
-              placeholder="What makes their judgment worth listening to?"
-            >{member[:reason]}</textarea>
-          </div>
-        </div>
-        <div :if={members(@draft) == []} class="yc-panel soft yc-gap">
-          <p>
-            Your Council is empty. Saving removes all Council members and stops Council votes.
-          </p>
-        </div>
-        <div class="yc-actions">
-          <.link patch={~p"/council?#{%{step: "pick"}}"} class="yc-link muted">
-            ← Back to my picks
-          </.link>
-          <button id="save-council" class="yc-btn primary" phx-disable-with="Saving…">
-            Save my Council →
-          </button>
-        </div>
-        <p class="yc-help">
-          Saving enables Council votes and includes your picks in Trust 30. Choose whether to publish next.
-        </p>
-      </form>
     </section>
 
     <section :if={@step == "join"} class="yc-grid equal">
@@ -255,8 +278,8 @@
             Your Council stays private. You can publish separate, named lists of people.
           </p>
         </div>
-        <.link patch={~p"/council?#{%{step: "why"}}"} class="yc-link yc-gap">
-          ← Back to my reasons
+        <.link patch={~p"/council?#{%{step: "pick"}}"} class="yc-link yc-gap">
+          ← Back to my picks
         </.link>
       </div>
       <div class="yc-panel">
@@ -290,7 +313,7 @@
         <span class="yc-check">✓</span>
         <div>
           <strong>Your Council is saved.</strong>
-          <p>Your {length(members(@draft))} picks contribute to YouCongress Trust 30.</p>
+          <p>Your Council stays private. Publishing a list is optional.</p>
         </div>
       </div>
       <h1 class="yc-gap-lg">Share a named list?</h1>
@@ -336,7 +359,7 @@
         <div>
           <strong>Your Council is set.</strong>
           <p>
-            Your picks count toward YouCongress Trust 30. Your Council stays private.
+            Your Council stays private. Invite others to choose their own.
           </p>
         </div>
       </div>
@@ -491,65 +514,21 @@
                   subtitle={biography(@people[member.author_id])}
                 />
                 <.link
-                  :if={@ranks[member.author_id]}
+                  :if={YouCongress.Accounts.admin?(@current_user) && @ranks[member.author_id]}
                   navigate={~p"/trust/people/#{member.author_id}"}
                   class="yc-link"
                 >
                   #{@ranks[member.author_id].rank} in Trust 30
                 </.link>
               </div>
-              <blockquote
-                :if={@editing_reason != member.author_id && member[:reason] not in [nil, ""]}
-                class="yc-note"
-              >
-                <span>{member[:reason]}</span>
-              </blockquote>
-              <form
-                :if={@editing_reason == member.author_id}
-                id={"council-reason-#{member.author_id}"}
-                phx-change="change-reason"
-                phx-submit="save-reason"
-                class="yc-gap-sm"
-              >
-                <label class="yc-label" for={"inline-reason-#{member.author_id}"}>
-                  Why I trust {@people[member.author_id].name}
-                </label>
-                <textarea
-                  id={"inline-reason-#{member.author_id}"}
-                  name="reason"
-                  class="yc-field"
-                  rows="3"
-                  maxlength="5000"
-                  phx-debounce="300"
-                  phx-mounted={JS.focus()}
-                  aria-invalid={to_string(!is_nil(@reason_error))}
-                  aria-describedby={@reason_error && "reason-error-#{member.author_id}"}
-                >{@reason_text}</textarea>
-                <p
-                  :if={@reason_error}
-                  id={"reason-error-#{member.author_id}"}
-                  class="text-sm text-red-700 mt-2"
-                  role="alert"
-                >
-                  {@reason_error}
-                </p>
-                <div class="yc-row yc-gap-sm">
-                  <button type="submit" class="yc-btn primary" phx-disable-with="Saving…">
-                    Save reason
-                  </button>
-                  <button type="button" class="yc-btn" phx-click="cancel-reason">Cancel</button>
-                </div>
-              </form>
+              <.reason_editor
+                member={member}
+                person={@people[member.author_id]}
+                editing_reason={@editing_reason}
+                reason_text={@reason_text}
+                reason_error={@reason_error}
+              />
               <div class="yc-row yc-gap-sm">
-                <button
-                  :if={@editing_reason != member.author_id}
-                  type="button"
-                  phx-click="edit-reason"
-                  phx-value-id={member.author_id}
-                  class="yc-link"
-                >
-                  {if member[:reason] in [nil, ""], do: "+ Add a reason", else: "Edit reason"}
-                </button>
                 <.link navigate={~p"/a/#{member.author_id}"} class="yc-link">
                   View positions →
                 </.link>
@@ -559,9 +538,9 @@
           </div>
           <div class="yc-empty yc-gap yc-between">
             <span>Add someone whose judgment you trust.</span><.link
-              navigate={~p"/trust"}
+              patch={~p"/council?step=pick"}
               class="yc-link"
-            >Browse Trust 30 →</.link>
+            >Find people →</.link>
           </div>
         </section>
         <aside class="yc-stack">
@@ -582,12 +561,18 @@
             </div>
             <p class="yc-help">A tie or no eligible positions means no Council vote.</p>
           </div>
-          <div class="yc-panel">
+          <div :if={YouCongress.Accounts.admin?(@current_user)} class="yc-panel">
             <h3>Part of YouCongress Trust 30</h3>
             <p class="yc-gap-sm">
               These picks help shape the single Trust List for everyone on YouCongress.
             </p>
-            <.link navigate={~p"/trust"} class="yc-link yc-gap-sm">View the Trust List →</.link>
+            <.link
+              :if={YouCongress.Accounts.admin?(@current_user)}
+              navigate={~p"/trust"}
+              class="yc-link yc-gap-sm"
+            >
+              View the Trust List →
+            </.link>
           </div>
           <div class="yc-panel">
             <h3>Your Council is private</h3>

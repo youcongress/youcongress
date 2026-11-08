@@ -753,3 +753,10 @@
 .council-ui .yc-between > * {
   min-width: 0;
 }
+
+.council-ui .yc-picker-fade { transition: opacity 180ms ease-out, transform 180ms ease-out; }
+.council-ui .yc-picker-visible { opacity: 1; transform: translateX(0); }
+.council-ui .yc-picker-hidden { opacity: 0; transform: translateX(8px); }
+@media (prefers-reduced-motion: reduce) {
+  .council-ui .yc-picker-fade { transition: none; }
+}

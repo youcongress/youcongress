@@ -145,7 +145,7 @@ defmodule YouCongressWeb.Components.CouncilBookmark do
               {@name} is in your Council
             </h2>
             <p class="mt-2 text-gray-600">Their position counts when you haven’t voted directly.</p>
-            <.link navigate={~p"/council?#{%{step: "why"}}"} class="mt-3 block text-indigo-700">
+            <.link navigate={~p"/council?#{%{step: "pick"}}"} class="mt-3 block text-indigo-700">
               Add or edit your reason →
             </.link>
             <button class="mt-3 text-red-700" phx-click="remove" phx-target={@myself}>
@@ -153,7 +153,7 @@ defmodule YouCongressWeb.Components.CouncilBookmark do
             </button>
           <% !@error -> %>
             <p role="status" class="pr-6 font-medium">Added to your Council.</p>
-            <.link navigate={~p"/council?#{%{step: "why"}}"} class="mt-2 block text-indigo-700">
+            <.link navigate={~p"/council?#{%{step: "pick"}}"} class="mt-2 block text-indigo-700">
               Say why you chose them →
             </.link>
           <% true -> %>

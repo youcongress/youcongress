@@ -14,13 +14,11 @@ defmodule YouCongressWeb.TrustLiveTest do
     view |> element("form[phx-change=search]") |> render_change(%{q: "careful"})
     view |> element("button[phx-click=add-person]") |> render_click()
     assert render(view) =~ "1 selected"
-    view |> element("aside a", "Continue with 1 person") |> render_click()
-
-    view
-    |> element("#council-reasons")
-    |> render_change(%{reasons: %{to_string(person.id) => "Good judgment"}})
-
-    view |> element("#council-reasons") |> render_submit()
+    refute render(view) =~ "Say why"
+    assert length(Floki.find(Floki.parse_fragment!(render(view)), ".yc-steps li")) == 3
+    view |> element("#council-member-#{person.id} button", "+ Add a reason") |> render_click()
+    view |> form("#council-reason-#{person.id}", reason: "Good judgment") |> render_submit()
+    view |> element("aside button", "Continue to Publish") |> render_click()
     assert render(view) =~ "Keep your Council."
     assert has_element?(view, "a[href*='pending_actions']")
 
@@ -53,6 +51,35 @@ defmodule YouCongressWeb.TrustLiveTest do
     assert hd(hd(payload["council"]["lists"])["members"])["reason"] == "Good judgment"
   end
 
+  test "adding people moves them out of results to the top of the Council", %{conn: conn} do
+    first = author_fixture(%{name: "Picker Move Alpha"})
+    second = author_fixture(%{name: "Picker Move Beta"})
+    {:ok, view, _} = live(conn, "/council?step=pick")
+    view |> element("form[phx-change=search]") |> render_change(%{q: "Picker Move"})
+
+    for person <- [first, second] do
+      view |> element("#council-candidate-#{person.id} button") |> render_click()
+      refute has_element?(view, "#council-candidate-#{person.id}")
+      assert has_element?(view, "#council-member-#{person.id} button", "+ Add a reason")
+    end
+
+    ids =
+      view
+      |> render()
+      |> Floki.parse_fragment!()
+      |> Floki.find("aside [id^=council-member-]")
+      |> Floki.attribute("id")
+
+    assert ids == ["council-member-#{second.id}", "council-member-#{first.id}"]
+    assert has_element?(view, "#council-candidates", "Everyone shown is already in your Council")
+    view |> element("p[role=status] button", "+ Add a reason") |> render_click()
+    assert has_element?(view, "#inline-reason-#{second.id}")
+    view |> element("#council-member-#{second.id} button", "Remove") |> render_click()
+    assert has_element?(view, "#council-candidate-#{second.id} button")
+    refute has_element?(view, "#council-member-#{second.id}")
+    refute has_element?(view, "textarea[name=reason]")
+  end
+
   test "owner saves reasons, publishes, invites, and returns to My Council", %{conn: conn} do
     user = user_fixture()
     people = for _ <- 1..6, do: author_fixture()
@@ -61,11 +88,10 @@ defmodule YouCongressWeb.TrustLiveTest do
     assert html =~ "Whose judgment do you trust?"
     for person <- people, do: render_click(view, "add-person", %{"id" => person.id})
 
-    render_change(view, "reasons", %{
-      "reasons" => %{to_string(hd(people).id) => "Thoughtful judgment"}
-    })
-
-    render_click(view, "save")
+    view |> element("#council-member-#{hd(people).id} button", "+ Add a reason") |> render_click()
+    assert Councils.delegate_ids(user.author_id) == []
+    render_submit(view, "save-reason", %{"reason" => "Thoughtful judgment", "continue" => "true"})
+    assert_patch(view, "/council?step=publish")
     assert render(view) =~ "Share a named list?"
     council = Councils.get(user.author_id)
     assert length(hd(council.lists).members) == 6
@@ -104,6 +130,7 @@ defmodule YouCongressWeb.TrustLiveTest do
     assert redirected_to(get(conn, "/a/#{user.author_id}/council")) ==
              "/a/#{user.author_id}/lists"
 
+    conn = log_in_user(conn, admin_fixture())
     {:ok, _, html} = live(conn, "/trust")
     assert html =~ "Trusted Person"
     refute html =~ "Private reason"
@@ -129,6 +156,7 @@ defmodule YouCongressWeb.TrustLiveTest do
     user = user_fixture()
     person = author_fixture(%{name: "Trusted Person"})
     {:ok, _} = Councils.add_member(user, person.id)
+    conn = log_in_user(conn, admin_fixture())
     {:ok, _, html} = live(conn, "/trust/general?community=123")
     assert html =~ "YouCongress Trust 30"
     assert html =~ "Trusted Person"
@@ -188,5 +216,64 @@ defmodule YouCongressWeb.TrustLiveTest do
     assert has_element?(view, "[role=alert]", "Your Council changed in another window")
     assert has_element?(view, "textarea", "Keep my draft")
     assert Councils.get(user.author_id) == newer
+  end
+
+  test "picker reasons stay in the draft until Continue, and the old why link opens the picker",
+       %{conn: conn} do
+    user = user_fixture()
+    person = author_fixture()
+    {:ok, view, html} = live(log_in_user(conn, user), "/council?step=why")
+    assert html =~ "Whose judgment do you trust?"
+    refute html =~ "Say why"
+    render_click(view, "add-person", %{"id" => person.id})
+    view |> element("#council-member-#{person.id} button", "+ Add a reason") |> render_click()
+    view |> form("#council-reason-#{person.id}", reason: "Draft reason") |> render_submit()
+    assert Councils.delegate_ids(user.author_id) == []
+    assert has_element?(view, "#council-member-#{person.id} blockquote", "Draft reason")
+    view |> element("aside button", "Continue to Publish") |> render_click()
+    assert_patch(view, "/council?step=publish")
+    assert hd(hd(Councils.get(user.author_id).lists).members).reason == "Draft reason"
+  end
+
+  test "Trust rankings and exports require an admin, and public pages hide ranking entry points",
+       %{conn: conn} do
+    person = author_fixture()
+    admin = admin_fixture()
+    {:ok, snapshot} = TrustRankings.snapshot(admin, "general", %{}, "Admin preview")
+    {:ok, moderator} = YouCongress.Accounts.update_role(user_fixture(), "moderator")
+
+    for viewer <- [nil, user_fixture(), moderator] do
+      viewer_conn = if viewer, do: log_in_user(build_conn(), viewer), else: conn
+
+      for path <- [
+            "/trust",
+            "/trust/general",
+            "/trust/people/#{person.id}",
+            "/trust/general/export.csv",
+            "/trust/snapshots/#{snapshot.id}",
+            "/trust/snapshots/#{snapshot.id}/export.csv",
+            "/trust/metrics"
+          ] do
+        assert redirected_to(get(viewer_conn, path)) == "/log_in"
+      end
+
+      for path <- ["/council", "/council?step=pick", "/a/#{person.id}"] do
+        {:ok, view, html} = live(viewer_conn, path)
+        refute has_element?(view, "a[href='/trust']")
+        refute has_element?(view, "a[href^='/trust/people/']")
+        refute html =~ "Trust 30"
+      end
+    end
+
+    {:ok, view, _} = live(log_in_user(conn, admin), "/council")
+    assert has_element?(view, "a[href='/trust']")
+  end
+
+  test "an open Trust List rejects navigation after admin access is revoked", %{conn: conn} do
+    admin = admin_fixture()
+    {:ok, view, _} = live(log_in_user(conn, admin), "/trust")
+    {:ok, _} = YouCongress.Accounts.update_role(admin, "user")
+    render_patch(view, "/trust?tab=statements")
+    assert_redirect(view, "/")
   end
 end
