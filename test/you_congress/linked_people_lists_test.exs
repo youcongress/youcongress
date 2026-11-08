@@ -8,7 +8,7 @@ defmodule YouCongress.LinkedPeopleListsTest do
 
   defp save_council(user, members) do
     draft = Councils.get(user.author_id) |> Councils.editable()
-    Councils.save(user, %{draft | lists: [%{hd(draft.lists) | members: members}]})
+    Councils.save(user, %{draft | lists: [%{List.last(draft.lists) | members: members}]})
   end
 
   test "saved memberships synchronize both ways but reasons stay separate and stale editors fail" do
@@ -56,7 +56,7 @@ defmodule YouCongress.LinkedPeopleListsTest do
 
     assert Councils.delegate_ids(user.author_id) == [second.id]
 
-    assert hd(hd(Councils.get(user.author_id).lists).members).reason ==
+    assert hd(List.last(Councils.get(user.author_id).lists).members).reason ==
              "Never publish automatically"
 
     assert {:error, :stale} = Councils.save(user, Councils.editable(council))
@@ -74,7 +74,7 @@ defmodule YouCongress.LinkedPeopleListsTest do
         members: [%{author_id: first.id, reason: "Only public"}]
       })
 
-    assert hd(hd(Councils.get(user.author_id).lists).members).reason == nil
+    assert hd(List.last(Councils.get(user.author_id).lists).members).reason == nil
   end
 
   test "linking and editing refresh votes; unlinking stops sync and deletion keeps the Council" do

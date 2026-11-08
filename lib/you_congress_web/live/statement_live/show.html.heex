@@ -117,16 +117,32 @@
         display_results={false}
         page={:statement_show}
       />
-      <.live_component
-        :if={@current_user && @current_user_vote && !@current_user_vote.direct}
-        module={YouCongressWeb.Components.CouncilVote}
-        id="statement-council"
-        statement={@statement}
-        current_user={@current_user}
-      />
+      <div :if={@council_explanation} class="space-y-2 text-sm">
+        <p :if={!@council_explanation.answer} class="text-gray-600">
+          Your Council has no majority on this statement yet. No vote has been cast for you.
+        </p>
+        <button
+          id="statement-council-toggle"
+          type="button"
+          phx-click="toggle-council-breakdown"
+          aria-expanded={to_string(@show_council_breakdown)}
+          aria-controls="statement-council-breakdown"
+          class="text-left text-indigo-700 underline underline-offset-2 hover:text-indigo-500"
+        >
+          See how your Council voted
+        </button>
+      </div>
     </div>
   </:vote_controls>
 </ResultsComponent.horizontal_bar>
+
+<.live_component
+  :if={@council_explanation}
+  module={YouCongressWeb.Components.CouncilVote}
+  id="statement-council"
+  explanation={@council_explanation}
+  expanded={@show_council_breakdown}
+/>
 
 <div class="mt-4 pb-2">
   <.live_component

@@ -120,11 +120,23 @@
                 value="true"
                 checked={@linked}
               />
-              <strong>Linked to my Council</strong>
+              <strong>Linked to a Council list</strong>
               <span class="yc-badge">Only you</span>
             </label>
+            <label for="public-list-council-target" class="yc-label yc-gap-sm">
+              Council list
+            </label>
+            <select id="public-list-council-target" name="council_list_id" class="yc-field">
+              <option
+                :for={{topic, index} <- Enum.with_index(@council_lists)}
+                value={topic.id}
+                selected={topic.id == @council_list_id}
+              >
+                {index + 1}. {topic.name}
+              </option>
+            </select>
             <p class="yc-help">
-              Use this list’s people as your Council. Saved additions and removals sync both ways and affect Council votes. Reasons stay separate. Linking replaces any previous linked list; only you can see the connection.
+              Use this list’s people in the selected Council list. Additions and removals sync both ways; reasons stay separate. Only you can see this connection.
             </p>
           </div>
         </form>

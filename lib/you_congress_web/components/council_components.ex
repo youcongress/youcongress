@@ -81,6 +81,7 @@ defmodule YouCongressWeb.CouncilComponents do
   attr :editing_reason, :integer, default: nil
   attr :reason_text, :string, required: true
   attr :reason_error, :string, default: nil
+  attr :autosave, :boolean, default: false
 
   def reason_editor(assigns) do
     ~H"""
@@ -107,7 +108,7 @@ defmodule YouCongressWeb.CouncilComponents do
           class="yc-field"
           rows="3"
           maxlength="5000"
-          phx-debounce="300"
+          phx-debounce={if @autosave, do: "blur", else: "300"}
           phx-mounted={JS.focus()}
           aria-invalid={to_string(!is_nil(@reason_error))}
           aria-describedby={@reason_error && "reason-error-#{@member.author_id}"}
@@ -122,9 +123,11 @@ defmodule YouCongressWeb.CouncilComponents do
         </p>
         <div class="yc-row yc-gap-sm">
           <button type="submit" class="yc-btn primary" phx-disable-with="Saving…">
-            Save reason
+            {if @autosave, do: "Done", else: "Save reason"}
           </button>
-          <button type="button" class="yc-btn" phx-click="cancel-reason">Cancel</button>
+          <button :if={!@autosave} type="button" class="yc-btn" phx-click="cancel-reason">
+            Cancel
+          </button>
         </div>
       </form>
 

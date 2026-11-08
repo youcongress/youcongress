@@ -766,3 +766,14 @@
 .council-ui form.phx-submit-loading .yc-save-pending { display: inline; }
 .council-ui form.phx-change-loading .yc-save-idle,
 .council-ui form.phx-submit-loading .yc-save-idle { display: none; }
+
+/* Ordered topic Councils. */
+.council-ui .yc-topic-tabs { display:flex; flex-wrap:wrap; gap:.5rem; }
+.council-ui .yc-topic-row { display:grid; grid-template-columns:2rem minmax(12rem,1fr) 6rem auto; gap:1rem; align-items:center; }
+.council-ui .yc-topic-number { color:#5145e8; font-size:1.25rem; }
+.council-ui .yc-btn:disabled { opacity:.35; cursor:default; }
+@media(max-width:700px) {
+ .council-ui .yc-topic-row { grid-template-columns:1.5rem 1fr; gap:.75rem; }
+ .council-ui .yc-topic-row > :nth-child(3), .council-ui .yc-topic-row > :nth-child(4) { grid-column:2; }
+ .council-ui .yc-topic-row .yc-row { flex-wrap:wrap; }
+}

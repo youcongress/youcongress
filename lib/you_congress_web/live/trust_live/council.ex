@@ -21,6 +21,9 @@ defmodule YouCongressWeb.TrustLive.Council do
        page_title: "My Council",
        full_width: true,
        draft: draft,
+       halls: YouCongress.Halls.list_halls(),
+       show_add_hall: false,
+       save_error: nil,
        source_list_name: nil,
        published_list: nil,
        linked_list: nil,
@@ -56,7 +59,7 @@ defmodule YouCongressWeb.TrustLive.Council do
     user = socket.assigns.current_user
     ref = params["ref"] || socket.assigns.ref
     referrer = Invitations.referrer(ref)
-    default = if user && members(socket.assigns.draft) != [], do: "mine", else: "landing"
+    default = if user, do: "mine", else: "landing"
     step = requested_step(params["step"], default)
 
     allowed =
@@ -71,12 +74,13 @@ defmodule YouCongressWeb.TrustLive.Council do
       |> assign(editing_reason: nil, reason_text: "", reason_error: nil)
       |> load_saved_view(user, step)
 
+    socket = select_list_param(socket, params["list"])
     socket = socket |> use_list(params["use_list"]) |> add_from_link(params["add"])
 
     socket =
       if user do
         assign(socket,
-          linked_list: PeopleLists.linked_list(user),
+          linked_list: PeopleLists.linked_list(user, current_list(socket.assigns.draft).id),
           counts: Discovery.vote_counts(user.author_id),
           invitations: Invitations.history(user),
           joined: Invitations.joined(user.author_id),
@@ -149,8 +153,22 @@ defmodule YouCongressWeb.TrustLive.Council do
   def handle_event("cancel-reason", _, socket),
     do: {:noreply, assign(socket, editing_reason: nil, reason_text: "", reason_error: nil)}
 
-  def handle_event("change-reason", %{"reason" => reason}, socket) when is_binary(reason),
-    do: {:noreply, assign(socket, reason_text: reason, reason_error: nil)}
+  def handle_event("change-reason", %{"reason" => reason}, socket) when is_binary(reason) do
+    socket = assign(socket, reason_text: reason, reason_error: nil)
+
+    if socket.assigns.current_user && socket.assigns.editing_reason do
+      if String.length(reason) <= 5_000 do
+        updated =
+          update_member_reason(socket.assigns.draft, socket.assigns.editing_reason, reason)
+
+        {:noreply, change_members(socket, updated)}
+      else
+        {:noreply, assign(socket, reason_error: "Keep your reason under 5,000 characters.")}
+      end
+    else
+      {:noreply, socket}
+    end
+  end
 
   def handle_event(
         "save-reason",
@@ -164,14 +182,17 @@ defmodule YouCongressWeb.TrustLive.Council do
           if member.author_id == id, do: Map.put(member, :reason, reason), else: member
         end)
 
-      socket =
-        socket
-        |> change_members(updated)
-        |> assign(editing_reason: nil, reason_text: "", reason_error: nil)
+      socket = change_members(socket, updated)
 
-      if params["continue"] == "true",
-        do: handle_event("save", %{}, socket),
-        else: {:noreply, socket}
+      if socket.assigns.save_error do
+        {:noreply, assign(socket, reason_text: reason, reason_error: socket.assigns.save_error)}
+      else
+        socket = assign(socket, editing_reason: nil, reason_text: "", reason_error: nil)
+
+        if params["continue"] == "true",
+          do: handle_event("save", %{}, socket),
+          else: {:noreply, socket}
+      end
     else
       {:noreply,
        assign(socket,
@@ -187,21 +208,21 @@ defmodule YouCongressWeb.TrustLive.Council do
         %{assigns: %{current_user: user, editing_reason: id, step: "mine"}} = socket
       )
       when not is_nil(user) and is_integer(id) and is_binary(reason) do
-    [list] = socket.assigns.draft.lists
+    list = current_list(socket.assigns.draft)
 
     updated =
       Enum.map(list.members, fn member ->
         if member.author_id == id, do: Map.put(member, :reason, reason), else: member
       end)
 
-    draft = %{socket.assigns.draft | lists: [%{list | members: updated}]}
+    draft = put_members(socket.assigns.draft, updated)
     socket = assign(socket, reason_text: reason)
 
     case Councils.save(user, draft) do
       {:ok, council} ->
         {:noreply,
          assign(socket,
-           draft: Councils.editable(council),
+           draft: with_selection(Councils.editable(council), socket.assigns.draft),
            dirty: false,
            editing_reason: nil,
            reason_text: "",
@@ -248,10 +269,16 @@ defmodule YouCongressWeb.TrustLive.Council do
 
         {:noreply,
          socket
-         |> assign(draft: Councils.editable(council), dirty: false, source_list_name: nil)
+         |> assign(
+           draft: with_selection(Councils.editable(council), socket.assigns.draft),
+           dirty: false,
+           source_list_name: nil
+         )
          |> push_event("clear-council-draft", %{})
          |> put_flash(:info, "Your Council is saved.")
-         |> push_patch(to: ~p"/council?#{%{step: "publish"}}")}
+         |> push_patch(
+           to: ~p"/council?#{%{step: "publish", list: current_list(socket.assigns.draft).id}}"
+         )}
 
       {:error, :stale} ->
         {:noreply,
@@ -280,15 +307,22 @@ defmodule YouCongressWeb.TrustLive.Council do
     socket = update_publish_fields(socket, params)
     {:ok, council} = Councils.ensure(user.author_id)
 
+    selected =
+      Enum.find(council.lists, &(&1.id == current_list(socket.assigns.draft).id)) ||
+        Enum.find(council.lists, & &1.fallback)
+
     members =
-      council.lists
-      |> hd()
+      selected
       |> Map.fetch!(:members)
       |> Enum.map(&Map.take(&1, [:author_id, :reason]))
 
     case PeopleLists.create(
            user,
-           Map.merge(socket.assigns.publish_fields, %{members: members, link_council: true})
+           Map.merge(socket.assigns.publish_fields, %{
+             members: members,
+             link_council: true,
+             council_list_id: selected.id
+           })
          ) do
       {:ok, list} ->
         {:noreply,
@@ -365,17 +399,20 @@ defmodule YouCongressWeb.TrustLive.Council do
       ) do
     case YouCongress.Councils.Draft.normalize(attrs) do
       {:ok, draft} ->
-        valid = Discovery.people(Enum.map(members(draft), & &1.author_id))
+        valid =
+          Discovery.people(
+            Enum.flat_map(draft.lists, fn l -> Enum.map(l.members, & &1.author_id) end)
+          )
+
+        lists =
+          Enum.map(draft.lists, fn l ->
+            %{l | members: Enum.filter(l.members, &Map.has_key?(valid, &1.author_id))}
+          end)
 
         socket =
-          change_members(
-            socket,
-            Enum.uniq_by(
-              Enum.filter(members(draft), &Map.has_key?(valid, &1.author_id)) ++
-                members(socket.assigns.draft),
-              & &1.author_id
-            )
-          )
+          socket
+          |> assign(draft: with_selection(%{draft | lists: lists}, socket.assigns.draft))
+          |> load_people()
 
         ref = socket.assigns.ref || params["ref"]
         {:noreply, assign(socket, ref: ref, referrer: Invitations.referrer(ref))}
@@ -385,7 +422,90 @@ defmodule YouCongressWeb.TrustLive.Council do
     end
   end
 
+  def handle_event("select-topic", %{"index" => raw}, socket) do
+    case Integer.parse(raw) do
+      {index, ""} when index >= 0 and index < length(socket.assigns.draft.lists) ->
+        socket =
+          socket
+          |> assign(
+            draft: Map.put(socket.assigns.draft, :active_index, index),
+            editing_reason: nil,
+            last_added_id: nil,
+            query: ""
+          )
+          |> load_people()
+          |> load_matches()
+          |> load_link()
+
+        socket =
+          if socket.assigns.current_user,
+            do:
+              push_patch(socket,
+                to: ~p"/council?#{%{step: "pick", list: current_list(socket.assigns.draft).id}}"
+              ),
+            else: socket
+
+        {:noreply, socket}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("toggle-add-hall", _, socket),
+    do: {:noreply, assign(socket, show_add_hall: !socket.assigns.show_add_hall)}
+
+  def handle_event("add-hall", params, %{assigns: %{current_user: user}} = socket)
+      when not is_nil(user) do
+    hall = Enum.find(socket.assigns.halls, &(to_string(&1.id) == params["hall_id"]))
+
+    if hall || params["hall_id"] == "general" do
+      name = String.trim(params["name"] || "")
+      name = if name == "", do: if(hall, do: hall_label(hall), else: "General"), else: name
+      list = %{id: nil, hall_id: hall && hall.id, name: name, fallback: false, members: []}
+      lists = List.insert_at(socket.assigns.draft.lists, -2, list)
+      {:noreply, save_topic_lists(socket, lists) |> assign(show_add_hall: false)}
+    else
+      {:noreply, put_flash(socket, :error, "Choose an existing hall or General.")}
+    end
+  end
+
+  def handle_event("move-list", %{"id" => raw, "direction" => direction}, socket) do
+    lists = socket.assigns.draft.lists
+    index = Enum.find_index(lists, &(&1.id == TrustRankings.parse_id(raw)))
+    target = if index, do: index + if(direction == "up", do: -1, else: 1)
+
+    if index && target >= 0 && target < length(lists) - 1 && !Enum.at(lists, index).fallback do
+      moved = lists |> List.delete_at(index) |> List.insert_at(target, Enum.at(lists, index))
+      {:noreply, save_topic_lists(socket, moved)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("remove-list", %{"id" => raw}, socket) do
+    lists =
+      Enum.reject(
+        socket.assigns.draft.lists,
+        &(!&1.fallback && &1.id == TrustRankings.parse_id(raw))
+      )
+
+    {:noreply, save_topic_lists(socket, lists)}
+  end
+
+  def handle_event("rename-list", %{"name" => name}, socket) do
+    index = active_index(socket.assigns.draft)
+    lists = List.update_at(socket.assigns.draft.lists, index, &%{&1 | name: name})
+    {:noreply, save_topic_lists(socket, lists)}
+  end
+
   def handle_event(_, _, socket), do: {:noreply, socket}
+
+  defp update_member_reason(draft, id, reason) do
+    Enum.map(members(draft), fn member ->
+      if member.author_id == id, do: Map.put(member, :reason, reason), else: member
+    end)
+  end
 
   defp update_publish_fields(%{assigns: %{current_user: nil}} = socket, _params), do: socket
 
@@ -408,7 +528,10 @@ defmodule YouCongressWeb.TrustLive.Council do
   defp load_saved_view(socket, nil, _step), do: socket
 
   defp load_saved_view(socket, user, step) when step in ~w(mine votes publish invite),
-    do: socket |> assign(draft: own_council(user), dirty: false) |> load_people()
+    do:
+      socket
+      |> assign(draft: with_selection(own_council(user), socket.assigns.draft), dirty: false)
+      |> load_people()
 
   defp load_saved_view(socket, _user, _step), do: socket
 
@@ -427,7 +550,14 @@ defmodule YouCongressWeb.TrustLive.Council do
           |> Enum.reject(&(&1.author_id == owner))
           |> Enum.map(&%{author_id: &1.author_id, reason: nil, source_url: nil})
 
-        socket |> change_members(members) |> assign(source_list_name: list.name, step: "pick")
+        socket
+        |> assign(
+          draft: put_members(socket.assigns.draft, members),
+          dirty: true,
+          source_list_name: list.name,
+          step: "pick"
+        )
+        |> load_people()
     end
   end
 
@@ -443,7 +573,7 @@ defmodule YouCongressWeb.TrustLive.Council do
   defp own_council(nil),
     do: %{
       version: 1,
-      lists: [%{id: nil, name: "Council", hall_id: nil, fallback: true, members: []}]
+      lists: Enum.map(Councils.default_lists(), &Map.merge(&1, %{id: nil, members: []}))
     }
 
   defp own_council(user) do
@@ -451,7 +581,74 @@ defmodule YouCongressWeb.TrustLive.Council do
     Councils.editable(council)
   end
 
-  def members(draft), do: hd(draft.lists).members
+  def active_index(draft),
+    do: min(Map.get(draft, :active_index, length(draft.lists) - 1), length(draft.lists) - 1)
+
+  def current_list(draft), do: Enum.at(draft.lists, active_index(draft))
+  def members(draft), do: current_list(draft).members
+  def hall_label(%{name: "ai-governance"}), do: "AI governance"
+  def hall_label(%{name: "impact-on-jobs"}), do: "Impact on jobs"
+  def hall_label(hall), do: YouCongress.Tools.StringUtils.titleize_hall(hall.name)
+
+  defp with_selection(draft, previous),
+    do: Map.put(draft, :active_index, min(active_index(previous), length(draft.lists) - 1))
+
+  defp put_members(draft, members),
+    do: %{
+      draft
+      | lists: List.update_at(draft.lists, active_index(draft), &%{&1 | members: members})
+    }
+
+  defp select_list_param(socket, nil), do: socket
+
+  defp select_list_param(socket, raw) do
+    index = Enum.find_index(socket.assigns.draft.lists, &(&1.id == TrustRankings.parse_id(raw)))
+
+    if index,
+      do: assign(socket, draft: Map.put(socket.assigns.draft, :active_index, index)),
+      else: socket
+  end
+
+  defp load_link(socket) do
+    assign(socket,
+      linked_list:
+        PeopleLists.linked_list(
+          socket.assigns.current_user,
+          current_list(socket.assigns.draft).id
+        )
+    )
+  end
+
+  defp save_topic_lists(socket, lists) do
+    if socket.assigns.current_user do
+      draft = %{socket.assigns.draft | lists: lists}
+
+      case Councils.save(socket.assigns.current_user, draft) do
+        {:ok, council} ->
+          socket
+          |> assign(
+            draft: with_selection(Councils.editable(council), draft),
+            dirty: false,
+            save_error: nil
+          )
+          |> load_people()
+          |> load_link()
+
+        {:error, :stale} ->
+          assign(socket,
+            save_error: "Your Council changed in another window. Reload before continuing."
+          )
+
+        _ ->
+          assign(socket,
+            save_error: "Could not save. Keep a name under 120 characters and at most 20 lists."
+          )
+      end
+    else
+      socket
+    end
+  end
+
   def selected?(draft, id), do: Enum.any?(members(draft), &(&1.author_id == id))
   def pending(draft, ref), do: Jason.encode!(%{council: draft, council_ref: ref})
   def invite_url(user), do: Invitations.url(user.author_id)
@@ -486,19 +683,27 @@ defmodule YouCongressWeb.TrustLive.Council do
   end
 
   defp change_members(socket, members) do
-    [list] = socket.assigns.draft.lists
-    draft = %{socket.assigns.draft | lists: [%{list | members: members}]}
+    draft = put_members(socket.assigns.draft, members)
     socket = socket |> assign(draft: draft, dirty: true) |> load_people()
 
     if socket.assigns.current_user,
-      do: socket,
+      do:
+        if(socket.assigns.source_list_name,
+          do: socket,
+          else: save_topic_lists(socket, draft.lists)
+        ),
       else: push_event(socket, "store-council-draft", %{draft: draft, ref: socket.assigns.ref})
   end
 
   defp load_people(socket),
     do:
       assign(socket,
-        people: Discovery.people(Enum.map(members(socket.assigns.draft), & &1.author_id))
+        people:
+          Discovery.people(
+            Enum.flat_map(socket.assigns.draft.lists, fn l ->
+              Enum.map(l.members, & &1.author_id)
+            end)
+          )
       )
 
   defp load_matches(socket) do

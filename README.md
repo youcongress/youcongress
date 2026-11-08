@@ -101,24 +101,35 @@ Sobelow honors only the documented, check-specific `sobelow_skip` annotations fo
 
 ## Trust Network
 
-Participants choose one private Council at `/council`, across every statement.
-Setup has three steps: Pick your Council (with optional inline reasons), Publish, and Invite.
-Continue saves the selected people and reasons before opening the optional publishing step. Existing
-delegates become Council members; topic lists are consolidated, retaining unique people
-and an existing nonempty reason for each person. There is no five-person limit. Guest picks and reasons survive signup, and
-email signups take effect after confirmation. Saving a Council enables its voting behavior
-and contributes anonymous nominations to YouCongress Trust 30.
+Participants manage ordered private Council lists at `/council`. The four defaults are
+AI governance, Impact on jobs, Environment, and General. Existing picks remain in the final
+General list. Any existing hall can be added repeatedly, including extra General lists;
+custom names distinguish small trusted groups. Lists can be reordered or removed, except
+for the permanent final General list. Its people and name remain editable.
 
-A Council follows the majority of its members’ eligible For and Against positions. Ties,
-abstentions, missing positions, and disputed/unverified inferences produce no deciding vote.
-A participant’s direct vote, including Abstain, always overrides their Council. Voting does
-not follow delegation chains. Source-inferred positions still need positive authenticity,
-relevance, and stance verification.
+For each statement, only lists matching one of its hall tags are consulted, in saved order.
+Every General list applies to every statement, including an extra General placed first.
+The first matching list with more For than Against, or more Against than For, decides.
+Abstentions, missing positions, and disputed/unverified evidence do not count toward the majority.
+Ties (including zero For and zero Against) move on to the next matching list.
+Lists are never pooled. If none decides, no delegated vote is recorded. Direct votes,
+including Abstain, always override the result; delegation does not follow chains.
+Source-inferred positions still need positive authenticity, relevance, and stance verification.
+The existing “See how your Council voted” disclosure shows this sequence and each consulted
+list’s people, without changing the surrounding statement page. Hall-tag changes queue
+recalculation for affected Councils.
+
+Signed-in topic edits, reasons, names, and order save automatically. Guest topic selections
+and reasons survive signup; email signups take effect after confirmation. Publishing and
+invitations remain optional. Copying a public list remains a reviewable draft until saved.
+Migration `20261108180000` preserves existing choices, reasons, public-list links, and votes;
+it adds empty defaults and queues normal vote recalculation. Returning to a single-list
+schema requires a separate data-preserving migration rather than a destructive rollback.
 
 `/lists` manages named public lists of people and reasons. Publishing Council picks
-privately links the new list to the author's Council. The owner can choose or remove that
-link with the list editor's checkbox. One list can be linked at a time; linking an existing
-list uses its people as the Council. Saved additions and removals synchronize both ways
+privately links the new list to the selected topic Council list. The owner can choose or remove that
+link with the list editor's checkbox. Each topic Council list can have one public list linked to it; the editor selects the target.
+Linking an existing public list uses its people only in that Council list. Saved additions and removals synchronize both ways
 in one transaction, refresh Council votes, and invalidate stale editors. Reasons remain
 separate: Council-only reasons are never automatically copied to the public list, and
 public-list reasons never overwrite private Council reasons. “Update list” previews a

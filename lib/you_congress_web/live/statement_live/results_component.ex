@@ -43,14 +43,14 @@ defmodule YouCongressWeb.StatementLive.ResultsComponent do
                 do: "sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-8",
                 else: "sm:grid-cols-2 sm:gap-x-8"
               ),
-            else: "lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-x-8"
+            else: "lg:grid-cols-3 lg:gap-x-8"
           )
       ]}>
         {render_slot(@header)}
         <div :if={@synthesis != []} class="min-w-0">
           {render_slot(@synthesis)}
         </div>
-        <div :if={@vote_controls != []}>
+        <div :if={@vote_controls != []} class="min-w-0">
           {render_slot(@vote_controls)}
         </div>
         <div class="min-w-0 space-y-4">

@@ -10,7 +10,7 @@ defmodule YouCongressWeb.AuthorTrustTest do
     person = author_fixture()
     {:ok, council} = Councils.add_member(owner, person.id)
     attrs = Councils.editable(council)
-    [list] = attrs.lists
+    list = List.last(attrs.lists)
 
     {:ok, _} =
       Councils.save(owner, %{

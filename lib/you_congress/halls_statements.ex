@@ -55,6 +55,13 @@ defmodule YouCongress.HallsStatements do
       |> Repo.insert!()
     end)
 
+    old_ids = Enum.map(statement.halls, & &1.id)
+    new_ids = Enum.map(halls, & &1.id)
+
+    if MapSet.new(old_ids) != MapSet.new(new_ids) do
+      YouCongress.Councils.refresh_for_halls(statement.id, Enum.uniq(old_ids ++ new_ids))
+    end
+
     {:ok, Statements.get_statement!(statement.id, preload: [:halls])}
   end
 

@@ -48,7 +48,7 @@ defmodule YouCongressWeb.TrustLiveTest do
       |> Map.fetch!("pending_actions")
       |> Jason.decode!()
 
-    assert hd(hd(payload["council"]["lists"])["members"])["reason"] == "Good judgment"
+    assert hd(List.last(payload["council"]["lists"])["members"])["reason"] == "Good judgment"
   end
 
   test "adding people moves them out of results to the top of the Council", %{conn: conn} do
@@ -85,16 +85,21 @@ defmodule YouCongressWeb.TrustLiveTest do
     people = for _ <- 1..6, do: author_fixture()
     conn = log_in_user(conn, user)
     {:ok, view, html} = live(conn, "/council?step=pick")
-    assert html =~ "Whose judgment do you trust?"
+    assert html =~ "Who do you trust on General?"
     for person <- people, do: render_click(view, "add-person", %{"id" => person.id})
 
     view |> element("#council-member-#{hd(people).id} button", "+ Add a reason") |> render_click()
-    assert Councils.delegate_ids(user.author_id) == []
+    assert length(Councils.delegate_ids(user.author_id)) == 6
     render_submit(view, "save-reason", %{"reason" => "Thoughtful judgment", "continue" => "true"})
-    assert_patch(view, "/council?step=publish")
+
+    assert_patch(
+      view,
+      "/council?list=#{List.last(Councils.get(user.author_id).lists).id}&step=publish"
+    )
+
     assert render(view) =~ "Share a named list?"
     council = Councils.get(user.author_id)
-    assert length(hd(council.lists).members) == 6
+    assert length(List.last(council.lists).members) == 6
     refute council.published
     view |> form("#publish-council-list") |> render_change(%{name: "Careful thinkers"})
     assert has_element?(view, "#public-list-slug[value=careful-thinkers]")
@@ -113,8 +118,9 @@ defmodule YouCongressWeb.TrustLiveTest do
     assert Councils.get(user.author_id) == before
     {:ok, _, html} = live(conn, "/council")
     assert html =~ "My Council"
-    assert html =~ "Edit Council"
-    assert html =~ "Published as"
+    assert html =~ "Council order"
+    assert html =~ "AI governance"
+    {:ok, _, html} = live(conn, "/council?step=pick")
     assert html =~ "Careful thinkers"
   end
 
@@ -125,7 +131,7 @@ defmodule YouCongressWeb.TrustLiveTest do
     person = author_fixture(%{name: "Trusted Person"})
     {:ok, council} = Councils.add_member(user, person.id)
     attrs = Councils.editable(council)
-    [list] = attrs.lists
+    list = List.last(attrs.lists)
 
     {:ok, _} =
       Councils.save(user, %{
@@ -176,7 +182,7 @@ defmodule YouCongressWeb.TrustLiveTest do
     assert redirected_to(get(conn, "/trust/compare")) == "/trust"
   end
 
-  test "reasons open inline for one member, save independently, and cancel without changes", %{
+  test "reasons open inline for one member and autosave independently", %{
     conn: conn
   } do
     user = user_fixture()
@@ -184,7 +190,7 @@ defmodule YouCongressWeb.TrustLiveTest do
     second = author_fixture()
     {:ok, _} = Councils.add_member(user, first.id)
     {:ok, _} = Councils.add_member(user, second.id)
-    {:ok, view, _} = live(log_in_user(conn, user), "/council")
+    {:ok, view, _} = live(log_in_user(conn, user), "/council?step=pick")
     view |> element("#council-member-#{first.id} button", "+ Add a reason") |> render_click()
     assert has_element?(view, "#council-member-#{first.id} textarea")
     refute has_element?(view, "#council-member-#{second.id} textarea")
@@ -196,17 +202,16 @@ defmodule YouCongressWeb.TrustLiveTest do
 
     assert has_element?(view, "#council-member-#{first.id} blockquote", "Careful with evidence")
     refute has_element?(view, "textarea")
-    saved = hd(Councils.get(user.author_id).lists).members
+    saved = List.last(Councils.get(user.author_id).lists).members
     assert Enum.find(saved, &(&1.author_id == first.id)).reason == "Careful with evidence"
     assert Enum.find(saved, &(&1.author_id == second.id)).reason == nil
 
     view |> element("#council-member-#{first.id} button", "Edit reason") |> render_click()
     assert has_element?(view, "textarea", "Careful with evidence")
-    view |> form("#council-reason-#{first.id}", reason: "Unsaved edit") |> render_change()
-    view |> element("button", "Cancel") |> render_click()
-    refute has_element?(view, "textarea")
-    assert has_element?(view, "#council-member-#{first.id} blockquote", "Careful with evidence")
-    assert hd(Councils.get(user.author_id).lists).members == saved
+    view |> form("#council-reason-#{first.id}", reason: "Autosaved edit") |> render_change()
+    updated = List.last(Councils.get(user.author_id).lists).members
+    assert Enum.find(updated, &(&1.author_id == first.id)).reason == "Autosaved edit"
+    assert Enum.find(updated, &(&1.author_id == second.id)).reason == nil
   end
 
   test "inline reason conflicts keep the typed text and do not overwrite newer Council changes",
@@ -215,7 +220,7 @@ defmodule YouCongressWeb.TrustLiveTest do
     person = author_fixture()
     added_elsewhere = author_fixture()
     {:ok, _} = Councils.add_member(user, person.id)
-    {:ok, view, _} = live(log_in_user(conn, user), "/council")
+    {:ok, view, _} = live(log_in_user(conn, user), "/council?step=pick")
     view |> element("#council-member-#{person.id} button", "+ Add a reason") |> render_click()
     {:ok, newer} = Councils.add_member(user, added_elsewhere.id)
     view |> form("#council-reason-#{person.id}", reason: "Keep my draft") |> render_submit()
@@ -224,21 +229,26 @@ defmodule YouCongressWeb.TrustLiveTest do
     assert Councils.get(user.author_id) == newer
   end
 
-  test "picker reasons stay in the draft until Continue, and the old why link opens the picker",
+  test "picker reasons autosave and the old why link opens the picker",
        %{conn: conn} do
     user = user_fixture()
     person = author_fixture()
     {:ok, view, html} = live(log_in_user(conn, user), "/council?step=why")
-    assert html =~ "Whose judgment do you trust?"
+    assert html =~ "Who do you trust on General?"
     refute html =~ "Say why"
     render_click(view, "add-person", %{"id" => person.id})
     view |> element("#council-member-#{person.id} button", "+ Add a reason") |> render_click()
     view |> form("#council-reason-#{person.id}", reason: "Draft reason") |> render_submit()
-    assert Councils.delegate_ids(user.author_id) == []
+    assert Councils.delegate_ids(user.author_id) == [person.id]
     assert has_element?(view, "#council-member-#{person.id} blockquote", "Draft reason")
-    view |> element("aside button", "Continue to Publish") |> render_click()
-    assert_patch(view, "/council?step=publish")
-    assert hd(hd(Councils.get(user.author_id).lists).members).reason == "Draft reason"
+    view |> element("aside button", "Publish this list") |> render_click()
+
+    assert_patch(
+      view,
+      "/council?list=#{List.last(Councils.get(user.author_id).lists).id}&step=publish"
+    )
+
+    assert hd(List.last(Councils.get(user.author_id).lists).members).reason == "Draft reason"
   end
 
   test "Trust rankings and exports require an admin, and public pages hide ranking entry points",

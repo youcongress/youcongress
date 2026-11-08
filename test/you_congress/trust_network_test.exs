@@ -31,13 +31,13 @@ defmodule YouCongress.TrustNetworkTest do
     assert TrustRankings.ranking("general").participants == 2
   end
 
-  test "blocked participants are excluded and repeated Council lists are rejected" do
+  test "blocked participants are excluded and repeated Council lists count each nominator once" do
     user = user_fixture()
     nominee = author_fixture()
     {:ok, council} = Councils.add_member(user, nominee.id)
     attrs = Councils.editable(council)
     extra = %{name: "Inner circle", hall_id: nil, members: [%{author_id: nominee.id}]}
-    {:error, :invalid_order} = Councils.save(user, %{attrs | lists: [extra | attrs.lists]})
+    {:ok, _} = Councils.save(user, %{attrs | lists: [extra | attrs.lists]})
     assert [%{count: 1, share: 100.0}] = TrustRankings.ranking("general").rows
     {:ok, blocked} = YouCongress.Accounts.update_role(user, "blocked")
     assert TrustRankings.ranking("general").participants == 0

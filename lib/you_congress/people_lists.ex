@@ -63,17 +63,32 @@ defmodule YouCongress.PeopleLists do
       )
 
   # This association is private account data, never part of the public list schema.
-  def linked_list(%User{author_id: author_id}) do
+  def linked_list(user, council_list_id \\ nil)
+
+  def linked_list(%User{author_id: author_id}, council_list_id) do
+    council = Councils.get(author_id)
+    target = council_list_id || (council && Enum.find(council.lists, & &1.fallback).id)
+
     Repo.one(
       from l in PeopleList,
         join: link in "council_public_list_links",
         on: link.people_list_id == l.id,
-        where: link.author_id == ^author_id and l.author_id == ^author_id
+        where:
+          link.author_id == ^author_id and link.council_list_id == ^(target || 0) and
+            l.author_id == ^author_id
     )
     |> preload()
   end
 
-  def linked_list(_), do: nil
+  def linked_list(_, _), do: nil
+
+  def linked_council_list_id(%User{author_id: author_id}, people_list_id) do
+    Repo.one(
+      from link in "council_public_list_links",
+        where: link.author_id == ^author_id and link.people_list_id == ^people_list_id,
+        select: link.council_list_id
+    )
+  end
 
   def create(%User{} = user, attrs) do
     if Permissions.blocked?(user), do: {:error, :forbidden}, else: persist(user, nil, attrs)
@@ -143,16 +158,23 @@ defmodule YouCongress.PeopleLists do
         end
       end)
 
-      save_council_link(user, list, Councils.value(attrs, :link_council))
+      save_council_link(
+        user,
+        list,
+        Councils.value(attrs, :link_council),
+        Councils.value(attrs, :council_list_id)
+      )
+
       list = get(list.id)
-      linked = linked_list(user)
+      linked = linked_council_list_id(user, list.id)
 
       changed =
-        if linked && linked.id == list.id,
+        if linked,
           do:
             Councils.sync_members_from_list(
               user.author_id,
-              Enum.map(list.members, & &1.author_id)
+              Enum.map(list.members, & &1.author_id),
+              linked
             ),
           else: false
 
@@ -176,10 +198,12 @@ defmodule YouCongress.PeopleLists do
     unless Repo.in_transaction?(),
       do: raise(ArgumentError, "membership sync requires a transaction")
 
-    case linked_list(%User{author_id: council.author_id}) do
-      nil -> :ok
-      list -> sync_public_members(list, Enum.map(hd(council.lists).members, & &1.author_id))
-    end
+    Enum.each(council.lists, fn topic ->
+      case linked_list(%User{author_id: council.author_id}, topic.id) do
+        nil -> :ok
+        list -> sync_public_members(list, Enum.map(topic.members, & &1.author_id))
+      end
+    end)
   end
 
   defp sync_public_members(list, ids) do
@@ -210,23 +234,37 @@ defmodule YouCongress.PeopleLists do
     :ok
   end
 
-  defp save_council_link(user, list, value) when value in [true, "true"] do
+  defp save_council_link(user, list, value, raw_id) when value in [true, "true"] do
+    {:ok, council} = Councils.ensure(user.author_id)
+
+    target =
+      if raw_id,
+        do: Enum.find(council.lists, &(&1.id == TrustRankings.parse_id(raw_id))),
+        else: Enum.find(council.lists, & &1.fallback)
+
+    if is_nil(target), do: Repo.rollback(:invalid_list)
+
+    Repo.delete_all(
+      from link in "council_public_list_links",
+        where: link.author_id == ^user.author_id and link.people_list_id == ^list.id
+    )
+
     Repo.insert_all(
       "council_public_list_links",
-      [%{author_id: user.author_id, people_list_id: list.id}],
+      [%{author_id: user.author_id, people_list_id: list.id, council_list_id: target.id}],
       on_conflict: {:replace, [:people_list_id]},
-      conflict_target: [:author_id]
+      conflict_target: [:council_list_id]
     )
   end
 
-  defp save_council_link(user, list, value) when value in [false, "false"] do
+  defp save_council_link(user, list, value, _id) when value in [false, "false"] do
     Repo.delete_all(
       from link in "council_public_list_links",
         where: link.author_id == ^user.author_id and link.people_list_id == ^list.id
     )
   end
 
-  defp save_council_link(_user, _list, _value), do: :ok
+  defp save_council_link(_user, _list, _value, _id), do: :ok
 
   defp list_slug(user, list, attrs) do
     Councils.value(attrs, :slug) || list.slug ||

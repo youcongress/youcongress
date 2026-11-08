@@ -107,7 +107,7 @@ defmodule YouCongressWeb.PeopleListsTest do
     assert Councils.delegate_ids(chooser.author_id) == [old.id]
     render_click(view, "save")
     assert Councils.delegate_ids(chooser.author_id) == [person.id]
-    refute hd(hd(Councils.get(chooser.author_id).lists).members).reason
+    refute hd(List.last(Councils.get(chooser.author_id).lists).members).reason
 
     {:ok, _} =
       PeopleLists.update(owner, list.id, %{
@@ -235,7 +235,10 @@ defmodule YouCongressWeb.PeopleListsTest do
     assert hd(PeopleLists.get(list.id).members).reason == "Autosaved public reason"
     assert has_element?(view, "#list-reason-#{second.id}")
 
-    assert Enum.find(hd(Councils.get(user.author_id).lists).members, &(&1.author_id == second.id)).reason ==
+    assert Enum.find(
+             List.last(Councils.get(user.author_id).lists).members,
+             &(&1.author_id == second.id)
+           ).reason ==
              nil
 
     render_submit(view, "save", %{
@@ -294,7 +297,7 @@ defmodule YouCongressWeb.PeopleListsTest do
 
     {:ok, council} = Councils.add_member(user, second.id)
     conn = log_in_user(conn, user)
-    {:ok, mine, _} = live(conn, "/council")
+    {:ok, mine, _} = live(conn, "/council?step=pick")
     assert has_element?(mine, "#council-linked-list", "Linked picks")
     assert has_element?(mine, "a[href='/lists/#{list.id}/edit?from=council']", "Update list")
     {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit?from=council")
@@ -312,7 +315,7 @@ defmodule YouCongressWeb.PeopleListsTest do
     edit |> form("#public-list-editor") |> render_change(%{link_council: "false"})
     assert PeopleLists.linked_list(user) == nil
     assert Councils.get(user.author_id) == council
-    {:ok, mine, _} = live(conn, "/council")
+    {:ok, mine, _} = live(conn, "/council?step=pick")
     refute has_element?(mine, "#council-linked-list")
     {:ok, edit, _} = live(conn, "/lists/#{list.id}/edit")
     edit |> form("#public-list-editor") |> render_change(%{link_council: "true"})

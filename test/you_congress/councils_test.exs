@@ -6,7 +6,7 @@ defmodule YouCongress.CouncilsTest do
   import YouCongress.VotesFixtures
   alias YouCongress.{Councils, TrustRankings, TrustNetwork, Votes}
 
-  test "one Council applies across statements and rejects extra or topic lists" do
+  test "default topic Councils preserve General and reject duplicate list IDs" do
     user = user_fixture()
     first = author_fixture()
     second = author_fixture()
@@ -15,7 +15,14 @@ defmodule YouCongress.CouncilsTest do
     vote_fixture(%{author_id: second.id, statement_id: statement.id, answer: :for})
     {:ok, _} = Councils.add_member(user, first.id)
     {:ok, council} = Councils.add_member(user, second.id)
-    assert [%{name: "Council", hall_id: nil}] = council.lists
+
+    assert Enum.map(council.lists, & &1.name) == [
+             "AI governance",
+             "Impact on jobs",
+             "Environment",
+             "General"
+           ]
+
     assert Councils.explain(user.author_id, statement.id).answer == nil
     attrs = Councils.editable(council)
 
@@ -32,7 +39,7 @@ defmodule YouCongress.CouncilsTest do
     assert Enum.all?(rows, &(&1.count == 1))
   end
 
-  test "abstention and missing members do not dilute the majority; direct abstain overrides" do
+  test "abstention and missing members do not count toward the majority; direct abstain overrides" do
     user = user_fixture()
     voters = for _ <- 1..6, do: author_fixture()
     statement = statement_fixture()

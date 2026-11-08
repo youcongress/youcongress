@@ -16,7 +16,7 @@ defmodule YouCongress.CouncilDiscoveryTest do
 
     {:ok, council} = Councils.ensure(user.author_id)
     attrs = Councils.editable(council)
-    [list] = attrs.lists
+    list = List.last(attrs.lists)
 
     {:ok, _} =
       Councils.save(user, %{
@@ -52,14 +52,15 @@ defmodule YouCongress.CouncilDiscoveryTest do
     refute Councils.get(user.author_id).published
   end
 
-  test "portable old lists flatten and invalid reasons are rejected" do
+  test "portable topic lists remain separate and invalid reasons are rejected" do
     one = author_fixture()
 
     attrs = %{
       lists: [%{hall_id: 12, members: [%{author_id: one.id}]}, %{members: [%{author_id: one.id}]}]
     }
 
-    assert {:ok, %{lists: [%{hall_id: nil, members: [_]}]}} = Draft.normalize(attrs)
+    assert {:ok, %{lists: [%{hall_id: 12, members: [_]}, %{hall_id: nil, members: [_]}]}} =
+             Draft.normalize(attrs)
 
     assert {:error, :invalid_draft} =
              Draft.normalize(%{lists: [%{members: [%{author_id: one.id, reason: %{bad: true}}]}]})

@@ -1,5 +1,5 @@
 defmodule YouCongress.Councils do
-  @moduledoc "One saved Council per person, used across every statement."
+  @moduledoc "Private ordered Councils: matching halls in order, with General as the final fallback."
   import Ecto.Query
   alias YouCongress.{Repo, Halls, Authors}
   alias YouCongress.Accounts.{User, Permissions}
@@ -50,7 +50,19 @@ defmodule YouCongress.Councils do
     end)
   end
 
-  def default_lists, do: [%{hall_id: nil, name: "Council", fallback: true}]
+  def default_lists do
+    Enum.map(
+      [
+        {"ai-governance", "AI governance"},
+        {"impact-on-jobs", "Impact on jobs"},
+        {"environment", "Environment"}
+      ],
+      fn {slug, name} ->
+        {:ok, hall} = Halls.get_or_create_by_name(slug)
+        %{hall_id: hall.id, name: name, fallback: false}
+      end
+    ) ++ [%{hall_id: nil, name: "General", fallback: true}]
+  end
 
   def save(%User{} = user, attrs) do
     if Permissions.blocked?(user) do
@@ -103,7 +115,7 @@ defmodule YouCongress.Councils do
   def save(_, _), do: {:error, :forbidden}
 
   @doc false
-  def sync_members_from_list(author_id, ids) do
+  def sync_members_from_list(author_id, ids, list_id \\ nil) do
     unless Repo.in_transaction?(),
       do: raise(ArgumentError, "membership sync requires a transaction")
 
@@ -113,7 +125,8 @@ defmodule YouCongress.Councils do
     council =
       Repo.one!(from c in Council, where: c.id == ^council.id, lock: "FOR UPDATE") |> preload()
 
-    [list] = council.lists
+    list = Enum.find(council.lists, fn l -> if list_id, do: l.id == list_id, else: l.fallback end)
+    if is_nil(list), do: Repo.rollback(:invalid_list)
     existing = Map.new(list.members, &{&1.author_id, &1})
 
     if MapSet.new(Map.keys(existing)) == MapSet.new(ids) do
@@ -141,7 +154,7 @@ defmodule YouCongress.Councils do
     owned = Enum.map(council.lists, & &1.id)
 
     valid =
-      length(lists) == 1 and Enum.all?(lists, &is_nil(value(&1, :hall_id))) and
+      lists != [] and length(lists) <= 20 and
         length(ids) == length(Enum.uniq(ids)) and
         Enum.all?(ids, &(&1 in owned)) and value(Elixir.List.last(lists), :id) == fallback.id and
         Enum.count(lists, &(value(&1, :id) == fallback.id)) == 1
@@ -155,7 +168,7 @@ defmodule YouCongress.Councils do
     hall = if hall_id, do: Repo.get(Halls.Hall, hall_id)
     if hall_id && is_nil(hall), do: Repo.rollback(:invalid_hall)
     if existing.fallback && hall_id, do: Repo.rollback(:invalid_fallback)
-    name = list_name!(Map.put(attrs, :name, "Council"), hall)
+    name = list_name!(attrs, hall)
 
     list =
       existing
@@ -413,11 +426,35 @@ defmodule YouCongress.Councils do
   defp position_status(%{twin: true}, false), do: "unverified"
   defp position_status(_, false), do: "self_cast"
 
+  def refresh_for_halls(statement_id, hall_ids) do
+    Repo.all(
+      from c in Council,
+        join: l in List,
+        on: l.council_id == c.id,
+        where: l.hall_id in ^hall_ids,
+        select: c.author_id,
+        distinct: true
+    )
+    |> Enum.each(fn author_id ->
+      %{author_id: author_id, statement_id: statement_id}
+      |> YouCongress.Workers.RefreshAuthorStatementDelegatedVotesWorker.new()
+      |> Oban.insert()
+    end)
+  end
+
   def explain(author_id, statement_id, lists \\ nil) do
     {:ok, council} = ensure(author_id)
     lists = lists || council.lists
     ids = lists |> Enum.flat_map(&Enum.map(&1.members, fn m -> m.author_id end)) |> Enum.uniq()
-    result = Evaluator.evaluate(lists, positions(ids, statement_id))
+
+    hall_ids =
+      Repo.all(
+        from hs in YouCongress.HallsStatements.HallStatement,
+          where: hs.statement_id == ^statement_id,
+          select: hs.hall_id
+      )
+
+    result = Evaluator.evaluate(lists, positions(ids, statement_id), hall_ids)
     direct = Repo.get_by(Vote, author_id: author_id, statement_id: statement_id, direct: true)
     direct = if direct && direct.origin != "inferred", do: direct
 
