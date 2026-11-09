@@ -311,7 +311,11 @@ defmodule YouCongressWeb.PageController do
     - statement_authors: authors with a sourced quote on a statement
     - statements_create: create a statement (creator/admin)
     - statement_populate: queue AI quote discovery for a statement (admin)
-    - statements_halls_update: set the halls on a statement (own/admin)
+    - statements_halls_update: set unordered hall tags on a statement (own/admin); halls is a comma-separated list. Legacy main_hall is accepted without priority.
+    - trust_network: public rankings, communities, published councils, and independent recommendations. view selects the result; scope, community, nominators, and nominees filter rankings.
+    - trust_requests: authenticated moderator review queue; action=list reads requests, action=resolve updates a request_id with status and resolution.
+
+    Councils contain independently ordered, repeatable topic and General lists, ending in a permanent General fallback. Only eligible For and Against positions count; the first unequal count decides. Direct votes override delegation and delegation never follows chains. Repeated nominations in the same scope count once. Publishing a council is separate from inclusion in aggregate rankings.
 
     Authors (people whose opinions and votes are tracked):
     - authors_search: search authors by name

@@ -15,8 +15,8 @@ defmodule YouCongressWeb.Tools.Tooltip do
     ~H"""
     <Tooltip.render
       content={[
-        "Choose a list of delegates",
-        "to vote as the majority of them.",
+        "Choose people for your Council",
+        "Their For/Against majority represents you.",
         "Unless you vote directly."
       ]}
       position="left"

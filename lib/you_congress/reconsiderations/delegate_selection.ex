@@ -8,6 +8,10 @@ defmodule YouCongress.Reconsiderations.DelegateSelection do
   alias YouCongress.Reconsiderations.Reconsideration
 
   schema "reconsideration_delegate_selections" do
+    field :council_list_id, :id
+    field :council_member_id, :id
+    field :council_version, :integer
+    field :created_membership, :boolean, default: false
     belongs_to :reconsideration, Reconsideration
     belongs_to :participant_author, Author
     belongs_to :delegate_author, Author
@@ -17,7 +21,15 @@ defmodule YouCongress.Reconsiderations.DelegateSelection do
 
   def changeset(selection, attrs) do
     selection
-    |> cast(attrs, [:reconsideration_id, :participant_author_id, :delegate_author_id])
+    |> cast(attrs, [
+      :reconsideration_id,
+      :participant_author_id,
+      :delegate_author_id,
+      :council_list_id,
+      :council_member_id,
+      :council_version,
+      :created_membership
+    ])
     |> validate_required([:reconsideration_id, :participant_author_id, :delegate_author_id])
     |> unique_constraint(
       [:reconsideration_id, :participant_author_id, :delegate_author_id],

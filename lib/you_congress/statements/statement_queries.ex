@@ -832,6 +832,11 @@ defmodule YouCongress.Statements.StatementQueries do
           SELECT 1 FROM (
             SELECT COUNT(share_votes.answer) AS vote_count FROM votes share_votes
             WHERE share_votes.statement_id = s.id
+              AND (share_votes.direct
+                OR NOT EXISTS (SELECT 1 FROM councils c WHERE c.author_id = share_votes.author_id)
+                OR EXISTS (SELECT 1 FROM council_decisions d JOIN councils c ON c.author_id = d.author_id
+                  WHERE d.author_id = share_votes.author_id AND d.statement_id = share_votes.statement_id
+                    AND d.council_version = c.version AND d.answer = share_votes.answer::text))
             GROUP BY share_votes.answer
           ) response_counts
           HAVING SUM(vote_count) > 0

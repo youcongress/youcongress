@@ -1,0 +1,57 @@
+<div class="council-ui">
+  <div class="yc-content">
+    <p class="yc-breadcrumb">
+      <.link navigate={AuthorPaths.profile(@person)} class="yc-link">← Profile</.link>
+    </p>
+    <div class="yc-between">
+      <div class="yc-person">
+        <.avatar person={@person} large />
+        <div>
+          <h1>{@person.name}</h1>
+          <p class="yc-gap-sm">{biography(@person)}</p>
+        </div>
+      </div>
+      <.link navigate={~p"/council?#{%{step: "pick", add: @person.id}}"} class="yc-btn primary">
+        {if @person.id in @selected, do: "Edit my Council", else: "+ Add to my Council"}
+      </.link>
+    </div>
+    <div class="yc-tabs">
+      <span class="active">Why people trust them</span>
+      <.link navigate={AuthorPaths.profile(@person)}>Where they stand</.link>
+    </div>
+    <div class="yc-grid yc-gap">
+      <section>
+        <h2>Reasons from public lists</h2>
+        <p class="yc-help">
+          Shared by people who published a list. These lists do not reveal anyone’s private Council.
+        </p>
+        <div class="yc-stack yc-gap">
+          <div :for={entry <- @reasons} class="yc-panel">
+            <.person person={entry.author} subtitle={entry.list_name} />
+            <blockquote class="yc-note"><span>{entry.reason}</span></blockquote>
+            <.link
+              navigate={YouCongressWeb.PeopleListPaths.public_path(entry.author, entry.list_slug)}
+              class="yc-link yc-gap-sm"
+            >
+              See {entry.list_name} →
+            </.link>
+          </div>
+          <div :if={@reasons == []} class="yc-panel soft">
+            <p>
+              No public reasons yet. If you choose this person, you can explain why in a public list.
+            </p>
+          </div>
+        </div>
+      </section>
+      <aside class="yc-panel">
+        <h3>Trust is a starting point.</h3>
+        <p class="yc-gap-sm">
+          Read their positions and the evidence behind them before deciding whether to add them to your Council.
+        </p>
+        <.link navigate={AuthorPaths.profile(@person)} class="yc-link yc-gap">
+          Read their profile →
+        </.link>
+      </aside>
+    </div>
+  </div>
+</div>

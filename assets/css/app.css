@@ -4,6 +4,7 @@
 
 /* This file is for your main application CSS */
 @import "sim.css";
+@import "council.css";
 
 /* Reconsider motion ad */
 .reconsider-motion-ad-shell {

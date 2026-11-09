@@ -122,7 +122,11 @@ defmodule YouCongress.VoteVerifications do
 
   defp create_for_vote(%Vote{} = vote, source_attrs, attrs, status) do
     opinion_id = verification_opinion_id(source_attrs, vote)
-    attrs = Map.put(attrs, :opinion_id, opinion_id)
+
+    attrs =
+      attrs
+      |> Map.put(:opinion_id, opinion_id)
+      |> Map.put(:evidence_revision, VerificationStatus.evidence_revision(opinion_id))
 
     with :ok <- check_prerequisites(vote, opinion_id, status) do
       %VoteVerification{}
@@ -175,10 +179,17 @@ defmodule YouCongress.VoteVerifications do
     cached_status =
       vote_id
       |> base_query_for_opinion(vote.opinion_id)
+      |> VerificationStatus.current_evidence(vote.opinion_id)
       |> VerificationStatus.resolve()
 
     from(v in Vote, where: v.id == ^vote_id)
     |> Repo.update_all(set: [verification_status: cached_status])
+    |> tap(fn _ ->
+      YouCongress.DelegationVotes.enqueue_deleguees_for_delegate_statement(
+        vote.author_id,
+        vote.statement_id
+      )
+    end)
   end
 
   defp verification_opinion_id(attrs, vote) do

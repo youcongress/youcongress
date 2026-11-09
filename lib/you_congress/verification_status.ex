@@ -10,6 +10,20 @@ defmodule YouCongress.VerificationStatus do
   import Ecto.Query, warn: false
   alias YouCongress.Repo
 
+  def evidence_revision(nil), do: 1
+
+  def evidence_revision(opinion_id) do
+    case Repo.get(YouCongress.Opinions.Opinion, opinion_id) do
+      nil -> 1
+      opinion -> opinion.evidence_revision
+    end
+  end
+
+  def current_evidence(query, opinion_id) do
+    revision = evidence_revision(opinion_id)
+    from row in query, where: row.evidence_revision == ^revision
+  end
+
   @doc """
   Resolve the cached status from a base query that already selects the
   verification rows for a single subject. The base query's first binding is

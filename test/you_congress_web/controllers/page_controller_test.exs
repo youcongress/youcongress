@@ -127,7 +127,7 @@ defmodule YouCongressWeb.PageControllerTest do
     document = Floki.parse_document!(html)
 
     assert html =~ "About YouCongress"
-    assert Floki.find(document, "header a[href='/reconsider']") != []
+    assert Floki.find(document, "header a[href='/reconsider']") == []
     assert Floki.find(document, "header a[href='/reconsider/new']") == []
   end
 

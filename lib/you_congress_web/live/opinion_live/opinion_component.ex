@@ -94,7 +94,7 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   def handle_event("add-delegation", _, %{assigns: %{current_user: nil}} = socket) do
     send(
       self(),
-      {:put_flash, :warning, "Log in to unlock delegate voting."}
+      {:put_flash, :warning, "Log in to choose your Council."}
     )
 
     {:noreply, socket}
@@ -192,33 +192,21 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
     """
   end
 
+  attr :name, :string, default: nil
   attr :is_human, :boolean, default: true
   attr :profile_image_url, :string, default: nil
 
   def avatar_icon(assigns) do
     ~H"""
-    <%= if @is_human do %>
-      <%= if @profile_image_url do %>
-        <img
-          src={@profile_image_url}
-          data-fallback-src="/images/human-avatar.svg"
-          alt="Avatar"
-          class="inline-block h-10 w-10 min-w-[2.5rem] shrink-0 rounded-full object-cover align-middle"
-        />
-      <% else %>
-        <img
-          src="/images/human-avatar.svg"
-          alt="Human avatar"
-          class="inline-block h-10 w-10 min-w-[2.5rem] shrink-0 rounded-full object-cover align-middle"
-        />
-      <% end %>
-    <% else %>
-      <img
-        src="/images/robot-avatar.svg"
-        alt="AI avatar"
-        class="inline-block h-10 w-10 min-w-[2.5rem] shrink-0 rounded-full object-cover align-middle"
-      />
-    <% end %>
+    <span class="relative inline-block align-middle">
+      <.profile_avatar name={@name} image_url={@profile_image_url} />
+      <span
+        :if={!@is_human}
+        class="absolute -bottom-1 -right-1 rounded bg-indigo-100 px-1 text-[9px] font-semibold text-indigo-700"
+      >
+        AI
+      </span>
+    </span>
     """
   end
 

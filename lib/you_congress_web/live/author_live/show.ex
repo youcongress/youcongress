@@ -73,6 +73,8 @@ defmodule YouCongressWeb.AuthorLive.Show do
      |> assign(:return_to, ReturnTo.from_url(url))
      |> assign_page_meta(socket.assigns.live_action, author, name, halls)
      |> assign(:author, author)
+     |> assign(:has_public_lists, YouCongress.PeopleLists.has_public_lists?(author.id))
+     |> assign(:has_public_reasons, YouCongress.Councils.Discovery.has_public_reasons?(author.id))
      |> assign(:votes, votes)
      |> assign(:halls, halls)
      |> assign(:other_authors, other_authors)
@@ -135,7 +137,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
   end
 
   def handle_event("toggle-delegate", _, %{assigns: %{current_user: nil}} = socket) do
-    {:noreply, put_flash(socket, :warning, "Log in to unlock delegate voting.")}
+    {:noreply, put_flash(socket, :warning, "Log in to choose your Council.")}
   end
 
   def handle_event("toggle-delegate", %{"author_id" => delegate_id}, socket) do

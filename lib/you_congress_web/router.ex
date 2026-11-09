@@ -30,6 +30,26 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through(:browser)
 
+    live("/trust/recommendations", TrustLive.Index, :recommendations)
+    # Prevent the retired URL from matching the legacy /trust/:scope route.
+    get("/trust/updates", TrustController, :removed)
+    get("/trust/unsubscribe/:token", TrustController, :unsubscribe)
+    get("/communities", TrustController, :simplified)
+    get("/communities/:id", TrustController, :simplified)
+    live("/a/:author_id/recommendations", TrustLive.Index, :recommendations)
+    live("/council", TrustLive.Council, :edit)
+    get("/a/:author_id/council", TrustController, :public_lists)
+    live("/lists", TrustLive.PeopleLists, :index)
+    live("/lists/new", TrustLive.PeopleLists, :new)
+    live("/lists/:id/edit", TrustLive.PeopleLists, :edit)
+    get("/lists/:id", PeopleListController, :legacy)
+    live("/@:username/lists/:slug", TrustLive.PeopleLists, :show)
+    live("/a/:author_id/lists/:slug", TrustLive.PeopleLists, :show)
+    live("/a/:author_id/lists", TrustLive.PeopleLists, :index)
+    live("/@:username/lists", TrustLive.PeopleLists, :index)
+    live("/a/:id/trust", AuthorLive.Trust, :show)
+    live("/@:username/trust", AuthorLive.Trust, :show)
+    get("/trust/people/:id", TrustController, :person)
     get("/sim", SimController, :index)
     get("/home", PageController, :redirect_to_home)
     live("/explore", StatementLive.Index, :index)
@@ -87,8 +107,17 @@ defmodule YouCongressWeb.Router do
   scope "/", YouCongressWeb do
     pipe_through([:browser, :require_admin_user])
 
+    get("/trust/compare", TrustController, :simplified)
+    get("/trust/snapshots/:id/export.csv", TrustController, :export)
+    get("/trust/:scope/export.csv", TrustController, :export)
+
     live_session :admin,
       on_mount: [{YouCongressWeb.UserAuth, :ensure_admin}] do
+      live("/trust", TrustLive.List, :index)
+      live("/trust/metrics", TrustLive.Index, :metrics)
+      live("/trust/snapshots/:id", TrustLive.Index, :snapshot)
+      live("/trust/:scope", TrustLive.List, :index)
+
       live("/p/new", StatementLive.Index, :new)
       live("/p/:slug/edit", StatementLive.Show, :edit)
       live("/p/:slug/show/edit", StatementLive.Show, :edit)

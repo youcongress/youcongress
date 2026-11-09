@@ -373,6 +373,14 @@ defmodule YouCongressWeb.UserAuth do
 
   defp maybe_attach_params_hook(socket, _name, _callback), do: socket
 
+  defp required_live_access(%{view: YouCongressWeb.TrustLive.List}), do: :admin
+
+  defp required_live_access(%{
+         view: YouCongressWeb.TrustLive.Index,
+         assigns: %{live_action: action}
+       })
+       when action in [:snapshot, :metrics], do: :admin
+
   defp required_live_access(%{view: YouCongressWeb.AuthorLive.Index}), do: :admin
 
   defp required_live_access(%{

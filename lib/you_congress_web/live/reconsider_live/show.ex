@@ -115,6 +115,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
       reconsideration: %{
         slug: socket.assigns.reconsideration.slug,
         responses: params["answers"],
+        council_list_id: params["council_list_id"],
         delegate_ids: params["delegate_ids"]
       }
     }
@@ -131,7 +132,8 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
            socket.assigns.reconsideration,
            socket.assigns.current_user,
            params["answers"],
-           params["delegate_ids"]
+           params["delegate_ids"],
+           params["council_list_id"]
          ) do
       {:ok, _responses} ->
         {:noreply,
@@ -163,6 +165,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
     |> assign(:show_results, false)
     |> assign(:personal_responses, %{})
     |> assign(:stats, nil)
+    |> assign(:council_lists, [])
     |> assign(:existing_delegate_ids, [])
   end
 
@@ -176,12 +179,14 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
     |> assign(:show_results, responses != [])
     |> assign(:personal_responses, Map.new(responses, &{&1.statement_id, &1}))
     |> assign(:stats, if(responses == [], do: nil, else: Reconsiderations.stats(reconsideration)))
+    |> assign(:council_lists, elem(YouCongress.Councils.ensure(author_id), 1).lists)
     |> assign(:existing_delegate_ids, Delegations.delegate_ids_by_deleguee_id(author_id))
   end
 
   defp normalize_form_params(params) do
     %{
       "answers" => params["answers"] || %{},
+      "council_list_id" => params["council_list_id"],
       "delegate_ids" => List.wrap(params["delegate_ids"])
     }
   end
@@ -498,12 +503,10 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                   href={SEO.author_path(delegate.author)}
                   class="flex min-w-0 items-center gap-3 hover:text-indigo-600"
                 >
-                  <img
-                    :if={delegate.author.profile_image_url}
-                    src={delegate.author.profile_image_url}
-                    data-fallback-src="/images/human-avatar.svg"
-                    alt=""
-                    class="h-9 w-9 rounded-full"
+                  <.profile_avatar
+                    name={delegate.author.name}
+                    image_url={delegate.author.profile_image_url}
+                    class="h-9 w-9 text-sm"
                   />
                   <span class="truncate font-medium">{author_name(delegate.author)}</span>
                 </.link>
@@ -597,6 +600,19 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
             </div>
           </fieldset>
 
+          <div :if={@council_lists != []} class="my-4">
+            <label>
+              Council list for these selections
+              <select name="response[council_list_id]" class="block rounded border-gray-300">
+                <option :for={list <- @council_lists} value={list.id} selected={list.fallback}>
+                  {list.name}{if list.fallback, do: " (final fallback)"}
+                </option>
+              </select>
+            </label>
+            <.link href={~p"/council"} class="text-sm text-indigo-700">
+              Build or compare your council
+            </.link>
+          </div>
           <fieldset
             :if={available_delegates(@reconsideration, @current_user) != []}
             class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
@@ -606,7 +622,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
             </legend>
             <p class="mt-2 text-sm text-gray-600">
               Optional. These are global delegations. When you have not voted directly on an issue,
-              YouCongress follows the most common answer among your delegates. Your own votes always
+              The first council list with more For than Against determines delegation. Saving includes your nominations in rankings. Your own votes always
               take priority.
             </p>
 
@@ -619,19 +635,13 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                   type="checkbox"
                   name="response[delegate_ids][]"
                   value={delegate.author_id}
-                  checked={
-                    already_delegating?(delegate.author_id, @existing_delegate_ids) ||
-                      to_string(delegate.author_id) in @form_params["delegate_ids"]
-                  }
-                  disabled={already_delegating?(delegate.author_id, @existing_delegate_ids)}
+                  checked={to_string(delegate.author_id) in @form_params["delegate_ids"]}
                   class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                 />
-                <img
-                  :if={delegate.author.profile_image_url}
-                  src={delegate.author.profile_image_url}
-                  data-fallback-src="/images/human-avatar.svg"
-                  alt=""
-                  class="h-9 w-9 rounded-full"
+                <.profile_avatar
+                  name={delegate.author.name}
+                  image_url={delegate.author.profile_image_url}
+                  class="h-9 w-9 text-sm"
                 />
                 <span class="font-medium text-gray-900">{author_name(delegate.author)}</span>
                 <span

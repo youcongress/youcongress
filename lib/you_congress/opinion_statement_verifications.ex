@@ -114,6 +114,15 @@ defmodule YouCongress.OpinionStatementVerifications do
     do: status in @ai_statuses or status in Enum.map(@ai_statuses, &Atom.to_string/1)
 
   defp insert_verification(attrs, opinion_statement_id) do
+    relation = if opinion_statement_id, do: Repo.get(OpinionStatement, opinion_statement_id)
+
+    attrs =
+      Map.put(
+        attrs,
+        :evidence_revision,
+        VerificationStatus.evidence_revision(relation && relation.opinion_id)
+      )
+
     %OpinionStatementVerification{}
     |> OpinionStatementVerification.changeset(attrs)
     |> Repo.insert()
@@ -141,14 +150,22 @@ defmodule YouCongress.OpinionStatementVerifications do
   end
 
   def update_opinion_statement_verification_status(opinion_statement_id) do
+    relation = Repo.get!(OpinionStatement, opinion_statement_id)
+
     cached_status =
       from(v in OpinionStatementVerification,
         where: v.opinion_statement_id == ^opinion_statement_id
       )
+      |> VerificationStatus.current_evidence(relation.opinion_id)
       |> VerificationStatus.resolve()
 
     from(os in OpinionStatement, where: os.id == ^opinion_statement_id)
     |> Repo.update_all(set: [verification_status: cached_status])
+    |> tap(fn _ ->
+      YouCongress.DelegationVotes.refresh_opinion(
+        Repo.get!(OpinionStatement, opinion_statement_id).opinion_id
+      )
+    end)
   end
 
   defp tap_ok({:ok, result}, fun) do

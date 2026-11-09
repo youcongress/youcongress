@@ -276,6 +276,17 @@ defmodule YouCongress.Opinions do
 
   """
   def update_opinion(%Opinion{} = opinion, attrs, opts \\ []) when is_list(opts) do
+    Repo.transaction(fn ->
+      current = Repo.one!(from o in Opinion, where: o.id == ^opinion.id, lock: "FOR UPDATE")
+      do_update_opinion(current, attrs, opts)
+    end)
+    |> case do
+      {:ok, result} -> result
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp do_update_opinion(opinion, attrs, opts) do
     attrs = Opinion.normalize_attrs(attrs)
 
     case Opinion.changeset(opinion, attrs) do
@@ -285,7 +296,28 @@ defmodule YouCongress.Opinions do
       _valid_changeset ->
         attrs = ContentEmbedding.put(attrs, opinion)
         changeset = Opinion.changeset(opinion, attrs)
+
+        changeset =
+          if quote_reverification_field_changed?(changeset),
+            do:
+              changeset
+              |> Ecto.Changeset.put_change(:verification_status, nil)
+              |> Ecto.Changeset.put_change(:evidence_revision, opinion.evidence_revision + 1),
+            else: changeset
+
         result = Repo.update(changeset)
+
+        if match?({:ok, _}, result) and quote_reverification_field_changed?(changeset) do
+          Repo.update_all(from(os in OpinionStatement, where: os.opinion_id == ^opinion.id),
+            set: [verification_status: nil]
+          )
+
+          Repo.update_all(from(v in Vote, where: v.opinion_id == ^opinion.id),
+            set: [verification_status: nil]
+          )
+        end
+
+        if match?({:ok, _}, result), do: YouCongress.DelegationVotes.refresh_opinion(opinion.id)
         maybe_update_vote_author_on_opinion_update(result, opinion, changeset)
         maybe_reverify_quote_on_update(result, changeset, opts)
         maybe_endorse_updated_opinion(result, changeset, opts)
@@ -472,6 +504,24 @@ defmodule YouCongress.Opinions do
     end
   end
 
+  defp apply_quote_date_cursor(query, {:desc, nil, id}),
+    do: from(q in query, where: is_nil(q.date) and q.id < ^id)
+
+  defp apply_quote_date_cursor(query, {:asc, nil, id}),
+    do: from(q in query, where: is_nil(q.date) and q.id > ^id)
+
+  defp apply_quote_date_cursor(query, {:desc, date, id}),
+    do:
+      from(q in query,
+        where: is_nil(q.date) or q.date < ^date or (q.date == ^date and q.id < ^id)
+      )
+
+  defp apply_quote_date_cursor(query, {:asc, date, id}),
+    do:
+      from(q in query,
+        where: is_nil(q.date) or q.date > ^date or (q.date == ^date and q.id > ^id)
+      )
+
   defp build_query(opts) do
     base_query = from(o in Opinion)
 
@@ -488,23 +538,8 @@ defmodule YouCongress.Opinions do
       {:id_greater_than, id}, query ->
         from q in query, where: q.id > ^id
 
-      {:quote_date_cursor, {:desc, nil, id}}, query ->
-        from q in query, where: is_nil(q.date) and q.id < ^id
-
-      {:quote_date_cursor, {:desc, date, id}}, query ->
-        from q in query,
-          where:
-            is_nil(q.date) or q.date < ^date or
-              (q.date == ^date and q.id < ^id)
-
-      {:quote_date_cursor, {:asc, nil, id}}, query ->
-        from q in query, where: is_nil(q.date) and q.id > ^id
-
-      {:quote_date_cursor, {:asc, date, id}}, query ->
-        from q in query,
-          where:
-            is_nil(q.date) or q.date > ^date or
-              (q.date == ^date and q.id > ^id)
+      {:quote_date_cursor, cursor}, query ->
+        apply_quote_date_cursor(query, cursor)
 
       {:author_ids, author_ids}, query ->
         from q in query, where: q.author_id in ^author_ids
@@ -1005,6 +1040,7 @@ defmodule YouCongress.Opinions do
     Ecto.Multi.run(multi, :current_quote_vote, fn _repo, _changes ->
       case Votes.get_by(%{author_id: author_id, statement_id: statement.id}) do
         nil -> {:ok, nil}
+        %{origin: "self_cast"} -> {:ok, nil}
         vote -> Votes.update_vote(vote, %{opinion_id: opinion.id, twin: false})
       end
     end)
@@ -1038,20 +1074,24 @@ defmodule YouCongress.Opinions do
 
   defp reassign_or_delete_current_quote_votes(votes, author_id, removed_opinion_id) do
     Enum.reduce_while(votes, {:ok, []}, fn vote, {:ok, changed_votes} ->
-      case next_sourced_statement_opinion(vote.statement_id, author_id, removed_opinion_id) do
-        %Opinion{} = replacement ->
-          case Votes.update_vote(vote, %{opinion_id: replacement.id, twin: false}) do
-            {:ok, updated_vote} -> {:cont, {:ok, [updated_vote | changed_votes]}}
-            {:error, reason} -> {:halt, {:error, reason}}
-          end
-
-        nil ->
-          case Votes.delete_vote(vote) do
-            {:ok, deleted_vote} -> {:cont, {:ok, [deleted_vote | changed_votes]}}
-            {:error, reason} -> {:halt, {:error, reason}}
-          end
+      case reassign_or_delete_quote_vote(vote, author_id, removed_opinion_id) do
+        {:ok, changed} -> {:cont, {:ok, [changed | changed_votes]}}
+        {:error, reason} -> {:halt, {:error, reason}}
       end
     end)
+  end
+
+  defp reassign_or_delete_quote_vote(%{origin: "self_cast"} = vote, _author_id, _opinion_id),
+    do: Votes.update_vote(vote, %{opinion_id: nil})
+
+  defp reassign_or_delete_quote_vote(vote, author_id, removed_opinion_id) do
+    case next_sourced_statement_opinion(vote.statement_id, author_id, removed_opinion_id) do
+      %Opinion{} = replacement ->
+        Votes.update_vote(vote, %{opinion_id: replacement.id, twin: false})
+
+      nil ->
+        Votes.delete_vote(vote)
+    end
   end
 
   defp next_sourced_statement_opinion(statement_id, author_id, removed_opinion_id) do

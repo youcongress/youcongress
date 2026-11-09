@@ -19,6 +19,56 @@ defmodule YouCongressWeb.CoreComponents do
   alias Phoenix.LiveView.JS
   import YouCongressWeb.Gettext
 
+  @doc "A profile photo with name initials underneath as a missing or broken image fallback."
+  attr :name, :string, default: nil
+  attr :image_url, :string, default: nil
+  attr :class, :any, default: "h-10 w-10 text-sm"
+
+  def profile_avatar(assigns) do
+    image_url = assigns.image_url && String.trim(assigns.image_url)
+
+    image_url =
+      if image_url in ["", "/images/human-avatar.svg", "/images/robot-avatar.svg"],
+        do: nil,
+        else: image_url
+
+    assigns = assign(assigns, :image_url, image_url)
+
+    ~H"""
+    <span
+      class={[
+        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-indigo-50 font-semibold text-indigo-700 align-middle",
+        @class
+      ]}
+      role="img"
+      aria-label={@name || "Anonymous"}
+      data-profile-avatar
+    >
+      <span aria-hidden="true">{avatar_initials(@name)}</span>
+      <img
+        :if={@image_url}
+        src={@image_url}
+        alt=""
+        aria-hidden="true"
+        data-person-image
+        class="absolute inset-0 h-full w-full rounded-full object-cover"
+      />
+    </span>
+    """
+  end
+
+  def avatar_initials(name) when is_binary(name) do
+    case String.split(name)
+         |> Enum.take(2)
+         |> Enum.map_join(&String.first/1)
+         |> String.upcase() do
+      "" -> "?"
+      initials -> initials
+    end
+  end
+
+  def avatar_initials(_), do: "?"
+
   @doc """
   Returns a precompiled percentage-width class so progress bars work with a
   Content Security Policy that blocks inline styles.
@@ -155,9 +205,9 @@ defmodule YouCongressWeb.CoreComponents do
 
   def flash_group(assigns) do
     ~H"""
-    <.flash kind={:info} title="Success!" flash={@flash} />
-    <.flash kind={:warning} title="Warning!" flash={@flash} />
-    <.flash kind={:error} title="Error!" flash={@flash} />
+    <.flash id="flash-info" kind={:info} title="Success!" flash={@flash} />
+    <.flash id="flash-warning" kind={:warning} title="Warning!" flash={@flash} />
+    <.flash id="flash-error" kind={:error} title="Error!" flash={@flash} />
     <.flash
       id="client-error"
       kind={:error}

@@ -157,10 +157,10 @@ defmodule YouCongressWeb.StatementLive.CastVoteComponent do
           phx-target={@myself}
           class="text-sm"
         >
-          Clear
+          Clear direct vote
         </button>
       <% else %>
-        via delegates
+        via your Council
       <% end %>
     </div>
     """

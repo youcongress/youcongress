@@ -124,7 +124,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
   def handle_event("add-delegation", _, %{assigns: %{current_user: nil}} = socket) do
     send(
       self(),
-      {:put_flash, :warning, "Log in to unlock delegate voting."}
+      {:put_flash, :warning, "Log in to choose your Council."}
     )
 
     {:noreply, socket}
@@ -139,7 +139,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
         send(
           self(),
           {:put_flash, :info,
-           "Added to your delegation list. You're voting as the majority of your delegates unless you directly vote."}
+           "Added to your Council. Your vote follows its majority unless you vote directly."}
         )
 
         socket =
@@ -155,7 +155,7 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
   end
 
   def handle_event("remove-delegation", _, %{assigns: %{current_user: nil}} = socket) do
-    send(self(), {:put_flash, :warning, "Log in to remove your delegates."})
+    send(self(), {:put_flash, :warning, "Log in to edit your Council."})
     socket = assign(socket, :delegating?, false)
     {:noreply, socket}
   end

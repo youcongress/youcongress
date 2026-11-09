@@ -1,3 +1,24 @@
+<section class="my-6 rounded-lg border p-5">
+  <h2 class="text-xl font-semibold">Trust Network</h2>
+  <p>
+    <code>trust_network</code>
+    reads public rankings, communities, published councils, and recommendations. Set
+    <code>view</code>
+    to rankings, communities, council, or recommendations. Council and recommendation reads take <code>author_id</code>. Ranking filters are <code>scope</code>, <code>community</code>,
+    <code>nominators</code>
+    (country ID or unknown), and <code>nominees</code>
+    (country ID or unknown).
+  </p>
+  <p>
+    <code>trust_requests</code>
+    requires a moderator or administrator API key. Use <code>action=list</code>
+    to inspect requests, or <code>action=resolve</code>
+    with request_id, status, and resolution. Updating requires write scope.
+  </p>
+  <p>
+    Hall tags are unordered. The legacy main_hall input is accepted for compatibility and does not establish priority. Independent recommendations never count in rankings.
+  </p>
+</section>
 <%!-- When changing the tool docs here, also update the AI-facing tool list in
 build_llms_txt/0 (page_controller.ex, served at /llms.txt), and vice versa. --%>
 <div class="max-w-4xl mx-auto space-y-8">

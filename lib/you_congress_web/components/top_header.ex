@@ -18,116 +18,29 @@ defmodule YouCongressWeb.TopHeaderComponent do
             YouCongress
           </.link>
         </div>
-        <!-- Desktop Navigation -->
-        <div class="hidden md:flex text-sm items-center gap-6 leading-6 text-zinc-900">
-          <.github_link />
-          <.link
-            :if={@current_user && YouCongress.Accounts.sign_up_complete?(@current_user)}
-            href={~p"/"}
-            class="px-3 py-2 hover:text-zinc-700 transition-colors"
-          >
-            Home
+        <nav
+          aria-label="Main navigation"
+          class="flex max-w-full flex-wrap items-center gap-x-5 gap-y-1 text-sm text-zinc-900"
+        >
+          <.github_link class="p-2" />
+          <.link href={~p"/council"} class="py-3 text-indigo-700">My Council</.link>
+          <.link href={~p"/explore"} class="py-3 hover:text-zinc-700">Explore</.link>
+          <.link href={~p"/about"} class="py-3 hover:text-zinc-700">About</.link>
+          <.link href={profile_path(@current_user, @return_to)} class="py-3 hover:text-zinc-700">
+            {if @current_user, do: "Profile", else: "Sign up"}
           </.link>
-          <.link href={~p"/explore"} class="px-3 py-2 hover:text-zinc-700 transition-colors">
-            Explore
-          </.link>
-          <.link
-            :if={
-              @current_user && YouCongress.Accounts.sign_up_complete?(@current_user) &&
-                YouCongress.Accounts.Permissions.can_create_reconsideration?(@current_user)
-            }
-            href={~p"/reconsider"}
-            class="px-3 py-2 hover:text-zinc-700 transition-colors"
-          >
-            Reconsider
-          </.link>
-          <.link
-            :if={!@current_user || YouCongress.Accounts.sign_up_complete?(@current_user)}
-            href={~p"/about"}
-            class="px-3 py-2 hover:text-zinc-700 transition-colors"
-          >
-            About
-          </.link>
-
-          <%= if @current_user do %>
-            <.link
-              :if={YouCongress.Accounts.sign_up_complete?(@current_user)}
-              href={author_path(@current_user.author)}
-              class="px-3 py-2 hover:text-zinc-700 transition-colors"
-            >
-              Profile
-            </.link>
-            <.link
-              href={~p"/log_out"}
-              method="delete"
-              class="px-3 py-2 hover:text-zinc-700 transition-colors"
-            >
-              Log out
-            </.link>
-          <% else %>
-            <.link
-              href={ReturnTo.sign_up_path(@return_to)}
-              class="px-3 py-2 bg-zinc-900 text-white rounded-md hover:bg-zinc-700 transition-colors"
-            >
-              Sign up
-            </.link>
-          <% end %>
-        </div>
-        <!-- Mobile Navigation (Optimized Touch Targets) -->
-        <div class="md:hidden flex max-w-full flex-col items-end gap-3 text-sm">
-          <div class="flex flex-wrap items-center gap-4">
-            <.github_link class="p-3" />
-            <.link
-              href={~p"/explore"}
-              class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
-            >
-              Explore
-            </.link>
-            <.link
-              :if={
-                @current_user && YouCongress.Accounts.sign_up_complete?(@current_user) &&
-                  YouCongress.Accounts.Permissions.can_create_reconsideration?(@current_user)
-              }
-              href={~p"/reconsider"}
-              class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
-            >
-              Create
-            </.link>
-            <.link
-              :if={!@current_user || YouCongress.Accounts.sign_up_complete?(@current_user)}
-              href={~p"/about"}
-              class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
-            >
-              About
-            </.link>
-            <%= if @current_user do %>
-              <.link
-                :if={YouCongress.Accounts.sign_up_complete?(@current_user)}
-                href={author_path(@current_user.author)}
-                class="px-1 py-3 text-zinc-900 hover:text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
-              >
-                Profile
-              </.link>
-              <.link
-                href={~p"/log_out"}
-                method="delete"
-                class="px-1 py-3 text-zinc-600 hover:text-zinc-800 hover:bg-zinc-50 rounded-md transition-colors min-w-[44px] text-center"
-              >
-                Logout
-              </.link>
-            <% else %>
-              <.link
-                href={ReturnTo.sign_up_path(@return_to)}
-                class="px-1 py-3 rounded-md hover:bg-zinc-700 transition-colors min-w-[44px] text-center"
-              >
-                Sign up
-              </.link>
-            <% end %>
-          </div>
-        </div>
+        </nav>
       </div>
     </header>
     """
+  end
+
+  defp profile_path(nil, return_to), do: ReturnTo.sign_up_path(return_to)
+
+  defp profile_path(user, return_to) do
+    if YouCongress.Accounts.sign_up_complete?(user),
+      do: author_path(user.author),
+      else: ReturnTo.welcome_path(return_to)
   end
 
   attr :class, :string, default: "p-2"

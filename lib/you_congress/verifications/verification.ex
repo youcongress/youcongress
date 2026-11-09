@@ -20,6 +20,7 @@ defmodule YouCongress.Verifications.Verification do
         :unverified
       ]
 
+    field :evidence_revision, :integer, default: 1
     field :comment, :string
     field :model, :string, default: "human"
 
@@ -31,7 +32,7 @@ defmodule YouCongress.Verifications.Verification do
 
   def changeset(verification, attrs) do
     verification
-    |> cast(attrs, [:opinion_id, :user_id, :status, :comment, :model])
+    |> cast(attrs, [:opinion_id, :user_id, :status, :comment, :model, :evidence_revision])
     |> validate_required([:opinion_id, :user_id, :status])
     |> ContentLimits.validate_text(:comment, 4_000, 8_000)
     |> ContentLimits.validate_text(:model, 100, 400)

@@ -48,6 +48,7 @@ defmodule YouCongressWeb.StatementLive.Show do
      |> assign(:show_year_results, false)
      |> assign(:year_vote_frequencies, nil)
      |> assign(:year_results_filters, VoteFrequencies.default_year_filters())
+     |> assign(:show_council_breakdown, false)
      |> assign(:show_synthesis, false)
      |> assign(:show_synthesis_card?, false)
      |> assign(:synthesis_opinions, %{})
@@ -113,6 +114,10 @@ defmodule YouCongressWeb.StatementLive.Show do
 
   @impl true
   @spec handle_event(binary, map, Socket.t()) :: {:noreply, Socket.t()}
+
+  def handle_event("toggle-council-breakdown", _, socket) do
+    {:noreply, assign(socket, :show_council_breakdown, !socket.assigns.show_council_breakdown)}
+  end
 
   def handle_event("find-sourced-quotes", %{"statement_id" => statement_id}, socket) do
     statement_id = String.to_integer(statement_id)
@@ -409,16 +414,12 @@ defmodule YouCongressWeb.StatementLive.Show do
 
   defp load_random_statements(socket, statement_id) do
     random_statements_from_main_hall =
-      case HallsStatements.get_main_hall(statement_id) do
-        nil ->
-          []
-
-        main_hall ->
-          statements =
-            HallsStatements.get_random_statements_from_hall(main_hall.name, 5, [statement_id])
-
-          if Enum.empty?(statements), do: [], else: [{main_hall, statements}]
-      end
+      YouCongress.Statements.get_statement!(statement_id, preload: [:halls]).halls
+      |> Enum.sort_by(& &1.name)
+      |> Enum.map(fn hall ->
+        {hall, HallsStatements.get_random_statements_from_hall(hall.name, 3, [statement_id])}
+      end)
+      |> Enum.reject(fn {_hall, statements} -> statements == [] end)
 
     assign(socket, :random_statements_from_main_hall, random_statements_from_main_hall)
   end
@@ -509,9 +510,25 @@ defmodule YouCongressWeb.StatementLive.Show do
   defp load_statement_and_likes(socket, statement) do
     socket
     |> VotesLoader.load_statement_and_votes(statement.id)
+    |> assign_council_explanation(statement)
     |> assign(
       :liked_opinion_ids,
       Likes.get_liked_opinion_ids(socket.assigns.current_user, statement)
     )
+  end
+
+  defp assign_council_explanation(socket, statement) do
+    user = socket.assigns.current_user
+    vote = socket.assigns.current_user_vote
+
+    explanation =
+      if user && (!vote || !vote.direct) do
+        result = YouCongress.Councils.explain(user.author_id, statement.id)
+        if Enum.any?(result.lists, &(&1.members != [])), do: result
+      end
+
+    socket
+    |> assign(:council_explanation, explanation)
+    |> assign(:show_council_breakdown, !!explanation && socket.assigns.show_council_breakdown)
   end
 end

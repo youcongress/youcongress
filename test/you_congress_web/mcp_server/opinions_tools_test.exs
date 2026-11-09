@@ -446,6 +446,34 @@ defmodule YouCongressWeb.MCPServer.OpinionsToolsTest do
         assert payload.attached
       end)
 
+      refute Votes.get_by(%{statement_id: statement.id, author_id: deleguee.author_id})
+
+      {:ok, _} =
+        YouCongress.Verifications.create_verification(admin, %{
+          opinion_id: opinion.id,
+          status: :verified,
+          comment: "Source checked"
+        })
+
+      relation = OpinionsStatements.get_opinion_statement(opinion.id, statement.id)
+
+      {:ok, _} =
+        YouCongress.OpinionStatementVerifications.create_verification(admin, %{
+          opinion_statement_id: relation.id,
+          status: :verified,
+          comment: "Full statement covered"
+        })
+
+      canonical = Votes.get_by(%{statement_id: statement.id, author_id: opinion.author_id})
+
+      {:ok, _} =
+        YouCongress.VoteVerifications.create_verification(admin, %{
+          vote_id: canonical.id,
+          opinion_id: opinion.id,
+          status: :verified,
+          comment: "For supported"
+        })
+
       delegated_vote = Votes.get_by(%{statement_id: statement.id, author_id: deleguee.author_id})
       assert delegated_vote
       assert delegated_vote.answer == :for

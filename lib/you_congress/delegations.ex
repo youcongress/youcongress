@@ -72,6 +72,8 @@ defmodule YouCongress.Delegations do
 
     case result do
       {:ok, delegation} ->
+        sync_council(delegation, :add)
+
         DelegationVotes.update_delegated_votes(%{
           deleguee_id: delegation.deleguee_id,
           delegate_id: delegation.delegate_id
@@ -129,6 +131,8 @@ defmodule YouCongress.Delegations do
 
     case result do
       {:ok, delegation} ->
+        sync_council(delegation, :remove)
+
         DelegationVotes.update_delegated_votes(%{
           deleguee_id: delegation.deleguee_id,
           delegate_id: delegation.delegate_id
@@ -171,5 +175,28 @@ defmodule YouCongress.Delegations do
 
   def get_delegation(%User{} = user, delegate_id) do
     Repo.get_by(Delegation, deleguee_id: user.author_id, delegate_id: delegate_id)
+  end
+
+  defp sync_council(delegation, action) do
+    user = %User{author_id: delegation.deleguee_id}
+    {:ok, council} = YouCongress.Councils.ensure(user.author_id)
+
+    if action == :add do
+      YouCongress.Councils.add_member(user, delegation.delegate_id)
+    else
+      attrs = YouCongress.Councils.editable(council)
+
+      lists =
+        Enum.map(attrs.lists, fn list ->
+          if list.list_owner_id == user.author_id,
+            do: %{
+              list
+              | members: Enum.reject(list.members, &(&1.author_id == delegation.delegate_id))
+            },
+            else: list
+        end)
+
+      YouCongress.Councils.save(user, %{attrs | lists: lists})
+    end
   end
 end

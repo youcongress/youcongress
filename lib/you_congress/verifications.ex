@@ -58,10 +58,12 @@ defmodule YouCongress.Verifications do
   def update_opinion_verification_status(opinion_id) do
     cached_status =
       from(v in Verification, where: v.opinion_id == ^opinion_id)
+      |> VerificationStatus.current_evidence(opinion_id)
       |> VerificationStatus.resolve()
 
     from(o in Opinion, where: o.id == ^opinion_id)
     |> Repo.update_all(set: [verification_status: cached_status])
+    |> tap(fn _ -> YouCongress.DelegationVotes.refresh_opinion(opinion_id) end)
   end
 
   defp authorize_human_verification(_actor, _opinion, status)
@@ -98,6 +100,8 @@ defmodule YouCongress.Verifications do
   end
 
   defp insert_verification(attrs, opinion_id) do
+    attrs = Map.put(attrs, :evidence_revision, VerificationStatus.evidence_revision(opinion_id))
+
     %Verification{}
     |> Verification.changeset(attrs)
     |> Repo.insert()

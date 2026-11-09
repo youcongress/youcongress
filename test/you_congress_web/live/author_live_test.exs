@@ -135,7 +135,7 @@ defmodule YouCongressWeb.AuthorLiveTest do
 
       assert has_element?(
                show_live,
-               "img[src='#{stale_image_url}'][data-fallback-src='/images/human-avatar.svg']"
+               "img[src='#{stale_image_url}'][data-person-image]"
              )
     end
 
