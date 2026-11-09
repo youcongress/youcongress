@@ -6,6 +6,7 @@ defmodule YouCongressWeb.SEOMetaTest do
   """
   use YouCongressWeb.ConnCase
 
+  import YouCongress.AccountsFixtures
   import YouCongress.AuthorsFixtures
   import YouCongress.OpinionsFixtures
   import YouCongress.StatementsFixtures
@@ -62,6 +63,77 @@ defmodule YouCongressWeb.SEOMetaTest do
 
       assert html =~ ~s(<meta name="robots" content="noindex")
       refute html =~ ~s("@type":"Person")
+    end
+  end
+
+  describe "public people list" do
+    test "serves sharing metadata to crawlers on username and author-ID URLs", %{conn: conn} do
+      for username <- ["listwriter", nil] do
+        user = user_fixture(%{}, %{name: "Jane Expert", username: username})
+
+        {:ok, list} =
+          YouCongress.PeopleLists.create(user, %{
+            name: "AI & society",
+            public: true,
+            members: []
+          })
+
+        path = YouCongressWeb.PeopleListPaths.public_path(list)
+        html = conn |> get(path) |> html_response(200)
+        document = Floki.parse_document!(html)
+        canonical_url = YouCongressWeb.Endpoint.url() <> path
+
+        assert Floki.attribute(document, ~s(link[rel="canonical"]), "href") == [canonical_url]
+
+        for selector <- [~s(meta[property="og:url"]), ~s(meta[name="twitter:url"])] do
+          assert Floki.attribute(document, selector, "content") == [canonical_url]
+        end
+
+        for selector <- [~s(meta[property="og:title"]), ~s(meta[name="twitter:title"])] do
+          assert Floki.attribute(document, selector, "content") ==
+                   ["AI & society / YouCongress"]
+        end
+
+        for selector <- [
+              ~s(meta[name="description"]),
+              ~s(meta[property="og:description"]),
+              ~s(meta[name="twitter:description"])
+            ] do
+          assert Floki.attribute(document, selector, "content") ==
+                   [
+                     "Explore AI & society, a public people list by Jane Expert. See who they recommend and why."
+                   ]
+        end
+
+        assert_social_card(
+          html,
+          "/images/social-home.png",
+          "YouCongress: people connected through their views on AI and public policy"
+        )
+
+        refute html =~ ~s(<meta name="robots" content="noindex")
+      end
+    end
+
+    test "private lists expose no list details to unauthenticated crawlers", %{conn: conn} do
+      user = user_fixture()
+
+      {:ok, list} =
+        YouCongress.PeopleLists.create(user, %{
+          name: "Private recommendations",
+          public: false,
+          members: []
+        })
+
+      path = YouCongressWeb.PeopleListPaths.public_path(list)
+      response = get(conn, path)
+      assert redirected_to(response) == "/lists"
+      refute response.resp_body =~ list.name
+
+      html = conn |> log_in_user(user) |> get(path) |> html_response(200)
+      assert html =~ ~s(<meta name="robots" content="noindex")
+      refute html =~ ~s(property="og:description")
+      refute html =~ ~s(property="og:url")
     end
   end
 

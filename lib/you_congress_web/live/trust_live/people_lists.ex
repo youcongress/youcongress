@@ -156,6 +156,9 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
   end
 
   defp render_list(socket, list, _user, own, _source) do
+    owner = Repo.get!(YouCongress.Authors.Author, list.author_id)
+    owner_name = owner.name || owner.username || "a YouCongress member"
+
     draft = %{
       name: list.name,
       public: list.public,
@@ -175,12 +178,26 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
        matches: if(socket.assigns.live_action == :edit, do: Discovery.search(""), else: []),
        query: "",
        list: list,
-       owner: Repo.get!(YouCongress.Authors.Author, list.author_id),
+       owner: owner,
        own: own,
        draft: draft,
        slug_custom: true,
        slug_error: nil,
-       page_title: list.name
+       page_title: list.name,
+       page_description:
+         if(list.public,
+           do:
+             "Explore #{list.name}, a public people list by #{owner_name}. See who they recommend and why."
+         ),
+       canonical_url: if(list.public, do: PeopleListPaths.public_url(owner, list.slug)),
+       page_image: if(list.public, do: url(~p"/images/social-home.png")),
+       page_image_alt:
+         if(list.public,
+           do: "YouCongress: people connected through their views on AI and public policy"
+         ),
+       page_image_width: if(list.public, do: 1731),
+       page_image_height: if(list.public, do: 909),
+       noindex: !list.public || socket.assigns.live_action == :edit
      )
      |> load_people()}
   end
