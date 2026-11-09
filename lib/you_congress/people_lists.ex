@@ -311,8 +311,9 @@ defmodule YouCongress.PeopleLists do
     end)
   end
 
+  # Serialize edits without blocking foreign keys that reference this author.
   defp lock_owner!(author_id),
-    do: Repo.one!(from a in Author, where: a.id == ^author_id, lock: "FOR UPDATE")
+    do: Repo.one!(from a in Author, where: a.id == ^author_id, lock: "FOR NO KEY UPDATE")
 
   def slugify(name) do
     slug =
@@ -374,7 +375,9 @@ defmodule YouCongress.PeopleLists do
     case Repo.one(
            from l in PeopleList,
              where: l.id == ^id and l.author_id == ^user.author_id,
-             lock: "FOR UPDATE"
+             # Membership edits do not change the list ID. Allow Council assignments
+             # to reference it while we wait to invalidate their Council versions.
+             lock: "FOR NO KEY UPDATE"
          ) do
       nil -> Repo.rollback(:forbidden)
       list -> list

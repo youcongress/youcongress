@@ -278,9 +278,10 @@ defmodule YouCongress.CouncilRefreshTest do
 
     assert Enum.count(queries, &String.contains?(&1, ~s(FROM "councils"))) == 1
     assert Enum.count(queries, &String.contains?(&1, ~s(FROM "council_lists"))) == 1
-    locks = Enum.filter(queries, &String.contains?(&1, "FOR UPDATE"))
+    locks = Enum.filter(queries, &String.contains?(&1, ["FOR UPDATE", "FOR NO KEY UPDATE"]))
     assert [author_lock, council_lock] = locks
     assert author_lock =~ ~s(FROM "authors")
+    assert author_lock =~ "FOR NO KEY UPDATE"
     assert council_lock =~ ~s(FROM "councils")
     assert Votes.get_by(author_id: user.author_id, statement_id: statement.id).answer == :for
   end

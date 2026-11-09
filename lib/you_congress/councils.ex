@@ -38,7 +38,9 @@ defmodule YouCongress.Councils do
 
   def ensure(author_id) do
     Repo.transaction(fn ->
-      Repo.one!(from a in Authors.Author, where: a.id == ^author_id, lock: "FOR UPDATE")
+      # Keep saves serialized without blocking references to this author from
+      # other Councils (memberships, delegations, and votes).
+      Repo.one!(from a in Authors.Author, where: a.id == ^author_id, lock: "FOR NO KEY UPDATE")
 
       # Use the same lock order for saves and vote refreshes. When called inside
       # another transaction, both locks stay held until that transaction commits.
