@@ -18,7 +18,19 @@ defmodule YouCongressWeb.TrustLive.Council do
     {:ok,
      socket
      |> assign(
-       page_title: "My Council",
+       page_title:
+         if(socket.assigns.current_user,
+           do: "My Council",
+           else: "Who would you choose to oversee AI?"
+         ),
+       page_description:
+         "Choose people you trust on AI governance and its impact on labor. Let your Council vote on your behalf, by topic. Your own vote always comes first.",
+       canonical_url: url(~p"/council"),
+       page_image: url(~p"/images/social-home.png"),
+       page_image_alt:
+         "YouCongress: people connected through their views on AI and public policy",
+       page_image_width: 1731,
+       page_image_height: 909,
        return_to: ~p"/council",
        full_width: true,
        draft: draft,
