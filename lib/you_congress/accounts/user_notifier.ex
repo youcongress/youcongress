@@ -141,9 +141,6 @@ defmodule YouCongress.Accounts.UserNotifier do
           #{button_markup}
           <p style=\"margin: 32px 0 0; font-size: 13px; color: #64748b;\">— The YouCongress Team</p>
         </div>
-        <p style=\"max-width: 520px; margin: 18px auto 0; text-align: center; font-size: 12px; color: #94a3b8;\">
-          © #{Date.utc_today().year} YouCongress. All rights reserved.
-        </p>
       </body>
     </html>
     """
