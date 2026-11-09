@@ -102,7 +102,7 @@ defmodule YouCongress.TrustNetwork do
         on:
           v.author_id == m.author_id and v.statement_id == s.id and v.direct and
             v.origin != "inferred" and not v.twin,
-        left_join: d in YouCongress.Councils.Decision,
+        left_join: d in subquery(YouCongress.Councils.Decision.current()),
         on: d.author_id == m.author_id and d.statement_id == s.id,
         where: m.hall_id == ^hall_id and h.community_enabled,
         where: u.role not in ["spam", "blocked", "waiting_list"],

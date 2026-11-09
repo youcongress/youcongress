@@ -80,7 +80,7 @@ defmodule YouCongress.Councils.Discovery do
   def vote_counts(author_id) do
     counts =
       Repo.all(
-        from v in Vote,
+        from v in Vote.current(),
           where: v.author_id == ^author_id,
           group_by: v.direct,
           select: {v.direct, count(v.id)}
@@ -92,7 +92,7 @@ defmodule YouCongress.Councils.Discovery do
 
   def votes(author_id) do
     Repo.all(
-      from v in Vote,
+      from v in Vote.current(),
         join: s in YouCongress.Statements.Statement,
         on: s.id == v.statement_id,
         where: v.author_id == ^author_id,

@@ -76,7 +76,9 @@ defmodule YouCongress.CouncilRefreshTest do
       assert Councils.delegate_ids(follower.author_id) == [replacement.id]
       assert is_nil(Votes.get_by(author_id: user.author_id, statement_id: statement.id))
       assert is_nil(Votes.get_by(author_id: follower.author_id, statement_id: statement.id))
-      assert is_nil(Repo.get_by(Decision, author_id: user.author_id, statement_id: statement.id))
+
+      assert Repo.get_by(Decision, author_id: user.author_id, statement_id: statement.id).council_version ==
+               -1
 
       assert Votes.get_by(author_id: user.author_id, statement_id: direct_statement.id).answer ==
                :abstain
@@ -136,6 +138,136 @@ defmodule YouCongress.CouncilRefreshTest do
       assert hd(List.last(Councils.get(large.author_id).lists).members).reason ==
                "Keep this reason"
     end)
+  end
+
+  test "unchanged Council answers retain their date through synchronous and queued refreshes" do
+    user = user_fixture()
+    person = author_fixture()
+    statement = statement_fixture()
+    vote_fixture(%{author_id: person.id, statement_id: statement.id, answer: :for})
+    {:ok, council} = Councils.add_member(user, person.id)
+    vote = backdate_council_vote(user, statement)
+
+    assert :ok == YouCongress.DelegationVotes.update_author_delegated_votes(user.author_id)
+    assert Repo.get!(YouCongress.Votes.Vote, vote.id).updated_at == vote.updated_at
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      attrs = Councils.editable(council)
+      assert {:ok, _} = Councils.save(user, attrs, refresh: :async)
+      assert Repo.get!(YouCongress.Votes.Vote, vote.id).updated_at == vote.updated_at
+      assert_pending_vote_hidden(user, statement)
+
+      assert :ok == perform_job(RefreshCouncilWorker, %{author_id: user.author_id})
+      refreshed = Votes.get_by(author_id: user.author_id, statement_id: statement.id)
+      assert refreshed.id == vote.id
+      assert refreshed.inserted_at == vote.inserted_at
+      assert refreshed.updated_at == vote.updated_at
+      assert refreshed.answer == :for
+      assert [%{updated_at: date}] = YouCongress.Councils.Discovery.votes(user.author_id)
+      assert date == vote.updated_at
+    end)
+  end
+
+  test "source changes update the date only when the delegated answer changes" do
+    user = user_fixture()
+    person = author_fixture()
+    statement = statement_fixture()
+    source = vote_fixture(%{author_id: person.id, statement_id: statement.id, answer: :for})
+    {:ok, _} = Councils.add_member(user, person.id)
+    vote = backdate_council_vote(user, statement)
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      # A source edit can invalidate the decision without changing its answer.
+      assert :ok ==
+               YouCongress.DelegationVotes.enqueue_deleguees_for_delegate_statement(
+                 person.id,
+                 statement.id
+               )
+
+      assert_pending_vote_hidden(user, statement)
+      assert :ok == YouCongress.DelegationVotes.update_author_delegated_votes(user.author_id)
+      assert Repo.get!(YouCongress.Votes.Vote, vote.id).updated_at == vote.updated_at
+
+      assert {:ok, _} = Votes.update_vote(source, %{answer: :against})
+      assert_pending_vote_hidden(user, statement)
+      assert Repo.get!(YouCongress.Votes.Vote, vote.id).updated_at == vote.updated_at
+
+      assert :ok ==
+               perform_job(YouCongress.Workers.RefreshAuthorStatementDelegatedVotesWorker, %{
+                 author_id: user.author_id,
+                 statement_id: statement.id
+               })
+
+      refreshed = Votes.get_by(author_id: user.author_id, statement_id: statement.id)
+      assert refreshed.id == vote.id
+      assert refreshed.inserted_at == vote.inserted_at
+      assert refreshed.answer == :against
+      assert NaiveDateTime.compare(refreshed.updated_at, vote.updated_at) == :gt
+
+      assert :ok == YouCongress.DelegationVotes.update_author_delegated_votes(user.author_id)
+      assert Repo.get!(YouCongress.Votes.Vote, vote.id).updated_at == refreshed.updated_at
+    end)
+  end
+
+  test "losing a deciding Council answer removes the vote and a later answer starts a new date" do
+    user = user_fixture()
+    person = author_fixture()
+    statement = statement_fixture()
+    vote_fixture(%{author_id: person.id, statement_id: statement.id, answer: :for})
+    {:ok, council} = Councils.add_member(user, person.id)
+    vote = backdate_council_vote(user, statement)
+    attrs = Councils.editable(council)
+    lists = Enum.map(attrs.lists, &%{&1 | members: []})
+
+    assert {:ok, _} = Councils.save(user, %{attrs | lists: lists})
+    refute Repo.get(YouCongress.Votes.Vote, vote.id)
+    assert {:ok, _} = Councils.add_member(user, person.id)
+    replacement = Votes.get_by(author_id: user.author_id, statement_id: statement.id)
+    assert replacement.id != vote.id
+    assert replacement.answer == :for
+    assert NaiveDateTime.compare(replacement.updated_at, vote.updated_at) == :gt
+  end
+
+  test "a direct override remains visible and keeps its date through Council refresh" do
+    user = user_fixture()
+    person = author_fixture()
+    statement = statement_fixture()
+    vote_fixture(%{author_id: person.id, statement_id: statement.id, answer: :for})
+    {:ok, council} = Councils.add_member(user, person.id)
+    delegated = Votes.get_by(author_id: user.author_id, statement_id: statement.id)
+    assert {:ok, _} = Votes.update_vote(delegated, %{direct: true, answer: :against})
+    direct = backdate_council_vote(user, statement)
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      assert {:ok, _} = Councils.save(user, Councils.editable(council), refresh: :async)
+      assert Votes.get_current_user_vote(statement.id, user.author_id).id == direct.id
+      assert :ok == perform_job(RefreshCouncilWorker, %{author_id: user.author_id})
+      assert Repo.get!(YouCongress.Votes.Vote, direct.id) == direct
+    end)
+  end
+
+  defp backdate_council_vote(user, statement) do
+    vote = Votes.get_by(author_id: user.author_id, statement_id: statement.id)
+    old_date = ~N[2020-01-01 12:00:00]
+
+    Repo.update_all(from(v in YouCongress.Votes.Vote, where: v.id == ^vote.id),
+      set: [updated_at: old_date]
+    )
+
+    Repo.get!(YouCongress.Votes.Vote, vote.id)
+  end
+
+  defp assert_pending_vote_hidden(user, statement) do
+    refute Votes.get_by(author_id: user.author_id, statement_id: statement.id)
+    refute Votes.get_current_user_vote(statement.id, user.author_id)
+    assert YouCongress.Councils.Discovery.votes(user.author_id) == []
+    assert YouCongress.Councils.Discovery.vote_counts(user.author_id).council == 0
+    assert Votes.count_by_author_id(user.author_id) == 0
+    assert Votes.count_by_statement(statement.id) == 1
+    assert length(Votes.list_votes(statement.id)) == 1
+    assert length(Votes.country_result_vote_rows(statement.id)) == 1
+    counts = Votes.count_by_response_map_for_statements([statement.id])
+    assert Enum.sum(Map.values(counts[statement.id])) == 1
   end
 
   defp measure_add(user, council, target) do

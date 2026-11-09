@@ -27,14 +27,14 @@ defmodule YouCongress.Votes do
 
   """
   def list_votes do
-    Repo.all(Vote)
+    Repo.all(Vote.current())
   end
 
   def list_votes(opts) when is_list(opts) do
     preload_tables = Keyword.get(opts, :preload, [])
 
     base_query =
-      from(v in Vote,
+      from(v in Vote.current(),
         join: a in assoc(v, :author),
         left_join: o in assoc(v, :opinion),
         select: v
@@ -128,7 +128,7 @@ defmodule YouCongress.Votes do
   def list_votes(statement_id, opts \\ []) do
     include_tables = Keyword.get(opts, :include, [])
 
-    Vote
+    Vote.current()
     |> where([v], v.statement_id == ^statement_id)
     |> preload(^include_tables)
     |> Repo.all()
@@ -220,7 +220,7 @@ defmodule YouCongress.Votes do
   end
 
   defp votes_with_opinion_query(statement_id, exclude_ids, twin_options) do
-    Vote
+    Vote.current()
     |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
     |> join(:inner, [v, a], o in YouCongress.Opinions.Opinion, on: v.opinion_id == o.id)
     |> join(:left, [v, a, o], os in OpinionStatement,
@@ -345,7 +345,7 @@ defmodule YouCongress.Votes do
     author_country = Keyword.get(opts, :author_country)
 
     base_query =
-      Vote
+      Vote.current()
       |> join(:inner, [v], a in YouCongress.Authors.Author, on: v.author_id == a.id)
       |> where(
         [v, a],
@@ -377,7 +377,7 @@ defmodule YouCongress.Votes do
   def list_votes_by_author_id(author_id, opts \\ []) do
     tables = Keyword.get(opts, :preload, [])
 
-    Vote
+    Vote.current()
     |> where([v], v.author_id == ^author_id)
     |> preload(^tables)
     |> order_by(
@@ -420,7 +420,7 @@ defmodule YouCongress.Votes do
     limit = Keyword.get(opts, :limit, 5)
 
     ranking_query =
-      from(v in Vote,
+      from(v in Vote.current(),
         left_join: o in assoc(v, :opinion),
         where: v.author_id in ^author_ids and v.twin == false,
         select: %{
@@ -437,7 +437,7 @@ defmodule YouCongress.Votes do
         }
       )
 
-    from(v in Vote,
+    from(v in Vote.current(),
       join: rv in subquery(ranking_query),
       on: rv.vote_id == v.id,
       where: rv.rank <= ^limit,
@@ -462,14 +462,14 @@ defmodule YouCongress.Votes do
       ** (Ecto.NoResultsError)
 
   """
-  def get_vote!(id), do: Repo.get!(Vote, id)
+  def get_vote!(id), do: Repo.get!(Vote.current(), id)
 
   def get_vote(id) do
-    Repo.get(Vote, id)
+    Repo.get(Vote.current(), id)
   end
 
   def get_vote(id, preload: preload) do
-    Vote
+    Vote.current()
     |> Repo.get(id)
     |> Repo.preload(preload)
   end
@@ -487,7 +487,7 @@ defmodule YouCongress.Votes do
   """
   @spec get_by(map) :: Vote.t() | nil
   def get_by(options) do
-    Repo.get_by(Vote, options)
+    Repo.get_by(Vote.current(), options)
   end
 
   @doc """
@@ -495,7 +495,7 @@ defmodule YouCongress.Votes do
   """
   @spec get_by(Keyword.t(), Keyword.t()) :: Vote.t() | nil
   def get_by(options, preload: tables) do
-    Vote
+    Vote.current()
     |> Repo.get_by(options)
     |> Repo.preload(tables)
   end
@@ -720,11 +720,11 @@ defmodule YouCongress.Votes do
   """
   @spec count() :: integer()
   def count do
-    Repo.aggregate(Vote, :count, :id)
+    Repo.aggregate(Vote.current(), :count, :id)
   end
 
   def count_by_statement(statement_id) do
-    from(v in Vote,
+    from(v in Vote.current(),
       where: v.statement_id == ^statement_id,
       select: count(v.id)
     )
@@ -738,7 +738,7 @@ defmodule YouCongress.Votes do
   def count_by_author_id(nil), do: nil
 
   def count_by_author_id(author_id) do
-    from(v in Vote,
+    from(v in Vote.current(),
       where: v.author_id == ^author_id,
       select: count(v.id)
     )
@@ -758,7 +758,7 @@ defmodule YouCongress.Votes do
     author_country = Keyword.get(opts, :author_country)
 
     query =
-      from(v in Vote,
+      from(v in Vote.current(),
         where: v.statement_id == ^statement_id,
         group_by: v.answer,
         select: {v.answer, count(v.answer)}
@@ -818,7 +818,7 @@ defmodule YouCongress.Votes do
   [{1, "Spain", :for, 4}, {1, "Spain", :against, 2}, {nil, nil, :abstain, 1}]
   """
   def count_by_country_and_response(statement_id) do
-    from(v in Vote,
+    from(v in Vote.current(),
       join: a in assoc(v, :author),
       left_join: c in assoc(a, :country),
       where: v.statement_id == ^statement_id,
@@ -829,7 +829,7 @@ defmodule YouCongress.Votes do
   end
 
   def country_result_vote_rows(statement_id) do
-    from(v in Vote,
+    from(v in Vote.current(),
       join: a in assoc(v, :author),
       left_join: c in assoc(a, :country),
       left_join: o in assoc(v, :opinion),
@@ -863,7 +863,7 @@ defmodule YouCongress.Votes do
     has_opinion_id = Keyword.get(opts, :has_opinion_id, nil)
 
     base_query =
-      from(v in Vote,
+      from(v in Vote.current(),
         where: v.statement_id in ^statement_ids,
         group_by: [v.statement_id, v.answer],
         select: {v.statement_id, v.answer, count(v.id)}
@@ -889,7 +889,7 @@ defmodule YouCongress.Votes do
     author_country = Keyword.get(opts, :author_country)
 
     base_query =
-      from v in Vote,
+      from v in Vote.current(),
         join: o in YouCongress.Opinions.Opinion,
         on: v.opinion_id == o.id,
         where: v.statement_id == ^statement_id and not is_nil(v.opinion_id),
@@ -940,7 +940,7 @@ defmodule YouCongress.Votes do
     author_country = Keyword.get(opts, :author_country)
 
     base_query =
-      from v in Vote,
+      from v in Vote.current(),
         join: o in YouCongress.Opinions.Opinion,
         on: v.opinion_id == o.id,
         where: v.statement_id == ^statement_id and not is_nil(v.opinion_id),
@@ -966,7 +966,7 @@ defmodule YouCongress.Votes do
   end
 
   def count_by(opts) when is_list(opts) do
-    base_query = from(v in Vote, select: count(v.id))
+    base_query = from(v in Vote.current(), select: count(v.id))
 
     Enum.reduce(
       opts,
@@ -1003,11 +1003,11 @@ defmodule YouCongress.Votes do
 
   def get_current_user_vote(statement_id, author_id) do
     vote =
-      Repo.get_by(Vote, author_id: author_id, statement_id: statement_id)
+      Repo.get_by(Vote.current(), author_id: author_id, statement_id: statement_id)
       |> Repo.preload(:opinion)
 
     if vote && vote.origin == "inferred" do
-      case Repo.get_by(YouCongress.Councils.Decision,
+      case Repo.get_by(YouCongress.Councils.Decision.current(),
              author_id: author_id,
              statement_id: statement_id
            ) do
@@ -1033,7 +1033,7 @@ defmodule YouCongress.Votes do
   end
 
   def get_vote_by_opinion_id(opinion_id) do
-    Vote
+    Vote.current()
     |> where([v], v.opinion_id == ^opinion_id)
     |> Repo.one()
   end

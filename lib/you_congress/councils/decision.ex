@@ -12,6 +12,15 @@ defmodule YouCongress.Councils.Decision do
     timestamps()
   end
 
+  def current do
+    import Ecto.Query
+
+    from d in __MODULE__,
+      join: c in YouCongress.Councils.Council,
+      on: c.author_id == d.author_id and c.version == d.council_version,
+      select: d
+  end
+
   def changeset(record, attrs) do
     record
     |> cast(attrs, [:author_id, :statement_id, :answer, :council_version, :explanation])

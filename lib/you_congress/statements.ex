@@ -62,7 +62,7 @@ defmodule YouCongress.Statements do
         preload: [:author]
 
     votes_query =
-      from v in Vote,
+      from v in Vote.current(),
         where: v.author_id in ^author_ids
 
     from(v in Statement)

@@ -538,7 +538,7 @@
               {answer(vote.answer)} · {if vote.direct, do: "direct vote", else: "via your Council"}
             </span>
             <p :if={!vote.direct} class="yc-help">
-              Last calculated:
+              Position changed:
               <time
                 datetime={NaiveDateTime.to_iso8601(vote.updated_at) <> "Z"}
                 title={Calendar.strftime(vote.updated_at, "%d %b %Y, %H:%M UTC")}

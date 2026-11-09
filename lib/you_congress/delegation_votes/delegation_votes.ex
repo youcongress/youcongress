@@ -7,13 +7,18 @@ defmodule YouCongress.DelegationVotes do
   alias YouCongress.Workers.RefreshAuthorStatementDelegatedVotesWorker
 
   # Enqueue in the same transaction as the list change so refresh work cannot be lost.
-  # Remove old projections first; direct votes must remain untouched.
+  # Invalidate decisions while retaining vote rows and their position-change dates.
   def enqueue_council_refresh(author_ids) do
     unless Repo.in_transaction?(),
       do: raise(ArgumentError, "Council refresh requires a transaction")
 
-    Repo.delete_all(from v in Vote, where: v.author_id in ^author_ids and not v.direct)
-    Repo.delete_all(from d in Decision, where: d.author_id in ^author_ids)
+    Repo.all(
+      from c in Council, where: c.author_id in ^author_ids, order_by: c.id, lock: "FOR UPDATE"
+    )
+
+    Repo.update_all(from(d in Decision, where: d.author_id in ^author_ids),
+      set: [council_version: -1]
+    )
 
     Enum.each(Enum.uniq(author_ids), fn id ->
       %{author_id: id}
@@ -95,7 +100,20 @@ defmodule YouCongress.DelegationVotes do
     conflict =
       from v in Vote,
         where: not v.direct,
-        update: [set: [answer: ^answer, origin: "delegated", updated_at: ^now]]
+        update: [
+          set: [
+            answer: ^answer,
+            origin: "delegated",
+            updated_at:
+              fragment(
+                "CASE WHEN ? IS DISTINCT FROM ?::text THEN ? ELSE ? END",
+                fragment("?::text", v.answer),
+                ^to_string(answer),
+                ^now,
+                v.updated_at
+              )
+          ]
+        ]
 
     Repo.insert_all(
       Vote,
@@ -125,26 +143,26 @@ defmodule YouCongress.DelegationVotes do
       )
 
     Enum.each(Enum.uniq(Councils.followers(delegate_id) ++ legacy), fn id ->
-      # Invalidate before asynchronous refresh; never leave a stale counted result.
-      Repo.delete_all(
-        from v in Vote,
-          where: v.author_id == ^id and v.statement_id == ^statement_id and not v.direct
-      )
+      Repo.transaction(fn ->
+        {:ok, _} = Councils.ensure(id)
+        Repo.one!(from c in Council, where: c.author_id == ^id, lock: "FOR UPDATE")
 
-      Repo.delete_all(
-        from d in Decision, where: d.author_id == ^id and d.statement_id == ^statement_id
-      )
+        Repo.update_all(
+          from(d in Decision, where: d.author_id == ^id and d.statement_id == ^statement_id),
+          set: [council_version: -1]
+        )
 
-      YouCongress.TrustNetwork.notify(
-        id,
-        evidence_notice_key(delegate_id, statement_id),
-        "Evidence or a position from one of your council members changed.",
-        "/council?statement=#{statement_id}"
-      )
+        YouCongress.TrustNetwork.notify(
+          id,
+          evidence_notice_key(delegate_id, statement_id),
+          "Evidence or a position from one of your council members changed.",
+          "/council?statement=#{statement_id}"
+        )
 
-      %{author_id: id, statement_id: statement_id}
-      |> RefreshAuthorStatementDelegatedVotesWorker.new()
-      |> Oban.insert()
+        %{author_id: id, statement_id: statement_id}
+        |> RefreshAuthorStatementDelegatedVotesWorker.new()
+        |> Oban.insert!()
+      end)
     end)
 
     :ok
