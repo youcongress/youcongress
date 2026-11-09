@@ -808,7 +808,7 @@ defmodule YouCongressWeb.TrustLive.Council do
     if socket.assigns.current_user do
       draft = %{socket.assigns.draft | lists: lists}
 
-      case Councils.save(socket.assigns.current_user, draft) do
+      case Councils.save(socket.assigns.current_user, draft, refresh: :async) do
         {:ok, council} ->
           socket
           |> assign(
@@ -1171,6 +1171,7 @@ defmodule YouCongressWeb.TrustLive.Council do
                     class="yc-link"
                     phx-click="remove-person"
                     phx-value-id={member.author_id}
+                    phx-disable-with="Removing…"
                     aria-label={"Remove #{@people[member.author_id].name}"}
                   >
                     Remove

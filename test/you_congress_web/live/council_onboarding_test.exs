@@ -3,6 +3,7 @@ defmodule YouCongressWeb.CouncilOnboardingTest do
   import Phoenix.LiveViewTest
   import YouCongress.AccountsFixtures
   import YouCongress.AuthorsFixtures
+  use Oban.Testing, repo: YouCongress.Repo
   alias YouCongress.{Councils, PeopleLists}
 
   test "onboarding suggests people by opinion count and still allows searching anyone", %{
@@ -93,6 +94,75 @@ defmodule YouCongressWeb.CouncilOnboardingTest do
     refute has_element?(returning, "#council-onboarding")
     assert Councils.get(user.author_id).onboarding_completed
     assert List.last(Councils.get(user.author_id).lists).members == []
+  end
+
+  test "removing people from a large list saves immediately and queues vote refresh", %{
+    conn: conn
+  } do
+    user = user_fixture()
+    people = for _ <- 1..55, do: author_fixture()
+    [first, second | remaining] = people
+    statement = YouCongress.StatementsFixtures.statement_fixture()
+
+    YouCongress.VotesFixtures.vote_fixture(%{
+      author_id: first.id,
+      statement_id: statement.id,
+      answer: :for
+    })
+
+    {:ok, council} = Councils.ensure(user.author_id)
+    attrs = Councils.editable(council)
+
+    lists =
+      Enum.map(attrs.lists, fn list ->
+        if list.fallback,
+          do: %{
+            list
+            | members: Enum.map(people, &%{author_id: &1.id, reason: "Keep this reason"})
+          },
+          else: list
+      end)
+
+    {:ok, council} = Councils.save(user, %{attrs | lists: lists})
+    fallback = List.last(council.lists)
+    assert YouCongress.Votes.get_by(author_id: user.author_id, statement_id: statement.id)
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      {:ok, view, _} =
+        live(log_in_user(conn, user), "/council?list=#{fallback.id}&step=people")
+
+      # LiveView handles clicks in its own process; keep its jobs queued too.
+      :sys.replace_state(view.pid, fn state ->
+        Process.put(:oban_testing, :manual)
+        state
+      end)
+
+      for person <- [first, second] do
+        view |> element("#council-member-#{person.id} button", "Remove") |> render_click()
+        refute has_element?(view, "#council-member-#{person.id}")
+      end
+
+      saved = List.last(Councils.get(user.author_id).lists)
+      assert Enum.map(saved.members, & &1.author_id) == Enum.map(remaining, & &1.id)
+      assert Enum.all?(saved.members, &(&1.reason == "Keep this reason"))
+      assert has_element?(view, ".yc-badge", "53 selected")
+
+      # The old projection remains stored until the worker runs, but is hidden from readers.
+      assert YouCongress.Repo.get_by(YouCongress.Votes.Vote,
+               author_id: user.author_id,
+               statement_id: statement.id
+             )
+
+      refute YouCongress.Votes.get_by(author_id: user.author_id, statement_id: statement.id)
+      assert [%{args: args}] = all_enqueued(worker: YouCongress.Workers.RefreshCouncilWorker)
+      assert args == %{"author_id" => user.author_id}
+      assert :ok == perform_job(YouCongress.Workers.RefreshCouncilWorker, args)
+
+      refute YouCongress.Repo.get_by(YouCongress.Votes.Vote,
+               author_id: user.author_id,
+               statement_id: statement.id
+             )
+    end)
   end
 
   test "normal Council edits the chosen topic directly without changing the fallback", %{
