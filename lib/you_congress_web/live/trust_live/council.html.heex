@@ -25,10 +25,10 @@
           <p class="yc-eyebrow">Your Council on YouCongress</p>
           <h1 id="council-welcome-title">
             If you could choose the people overseeing AI,
-            <span>who would you choose—and why?</span>
+            <span>who would you choose, and why?</span>
           </h1>
           <p class="yc-intro">
-            Build a Council of people whose judgment you trust. Give them a voice in your votes on YouCongress—and help others discover who to trust on AI.
+            Build a Council of people whose judgment you trust. Give them a voice in your votes on YouCongress and help others discover who to trust on AI.
           </p>
           <div class="yc-row yc-gap">
             <.link href={signup_path(@ref)} class="yc-btn purple large">
@@ -49,7 +49,7 @@
             </div>
             <h3>Let people you trust vote for you.</h3>
             <p>
-              When you haven’t voted on a statement, your Council’s majority can vote on your behalf. Your own vote always takes priority.
+              When you haven’t voted on a policy proposal or claim, your Council’s majority can vote on your behalf. Your own vote always takes priority.
             </p>
           </div>
           <div class="yc-welcome-benefit">
@@ -77,7 +77,7 @@
             <.icon name="hero-users" class="h-6 w-6" />
             <h3>Choose whose judgment you trust.</h3>
             <p>
-              Search for people you’d turn to for a thoughtful opinion. You can use different lists for AI governance, impact on labor, or all statements.
+              Search for people you’d turn to for a thoughtful opinion. You can use different lists for AI governance and impact on labor, or one list for every policy proposal and claim.
             </p>
           </div>
           <div class="yc-panel">
@@ -203,7 +203,7 @@
         <span class="yc-badge">Private Council</span>
       </div>
       <p class="yc-intro">
-        Choose whose judgment to follow on statements you haven’t voted on. You can choose different people for specific topics later.
+        Choose whose judgment to follow on policy proposals and claims you haven’t voted on. You can choose different people for specific topics later.
       </p>
       <.people_picker state={assigns} />
       <button class="yc-link yc-gap" phx-click="toggle-public-list-picker">
@@ -521,7 +521,9 @@
           <.icon name="hero-lock-closed" class="h-4 w-4" /> Only you can see these choices
         </span>
       </div>
-      <p class="yc-intro">Choose whose judgment to follow when you haven’t voted.</p>
+      <p class="yc-intro">
+        Choose whose judgment to follow on policy proposals and claims you haven’t voted on.
+      </p>
       <.council_tabs
         current_user={@current_user}
         active={if @step == "votes", do: :votes, else: :order}

@@ -8,7 +8,7 @@ defmodule YouCongressWeb.TrustLiveTest do
   test "guest landing starts signup and returns to Council after confirmation", %{conn: conn} do
     {:ok, view, html} = live(conn, "/council")
     assert html =~ "If you could choose the people overseeing AI,"
-    assert html =~ "who would you choose—and why?"
+    assert html =~ "who would you choose, and why?"
     assert html =~ "Coming soon"
     assert html =~ "Your private Council choices contribute anonymously."
     assert html =~ "Your Council is private. Sharing a list is optional."

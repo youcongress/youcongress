@@ -5,7 +5,13 @@ defmodule YouCongressWeb.Components.CouncilHallSelector do
   @impl true
   def update(assigns, socket) do
     options =
-      [%{id: "general", label: "All statements", description: "Applies to every statement"}] ++
+      [
+        %{
+          id: "general",
+          label: "All statements",
+          description: "Applies to every policy proposal and claim"
+        }
+      ] ++
         (assigns.halls
          |> Enum.reject(&(&1.name == "general"))
          |> Enum.sort_by(& &1.name)
