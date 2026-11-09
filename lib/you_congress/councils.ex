@@ -330,39 +330,6 @@ defmodule YouCongress.Councils do
     end
   end
 
-  def set_member_lists(%User{} = user, author_id, list_ids, version) when is_list(list_ids) do
-    {:ok, council} = ensure(user.author_id)
-    owned_ids = Enum.map(council.lists, & &1.id)
-
-    cond do
-      council.version != version ->
-        {:error, :stale}
-
-      not Enum.all?(list_ids, &(&1 in owned_ids)) ->
-        {:error, :invalid_list}
-
-      true ->
-        attrs = editable(council)
-
-        lists =
-          Enum.map(attrs.lists, fn list ->
-            members = select_member(list, author_id, list.id in list_ids)
-            %{list | members: members}
-          end)
-
-        save(user, %{attrs | lists: lists})
-    end
-  end
-
-  defp select_member(list, author_id, false),
-    do: Enum.reject(list.members, &(&1.author_id == author_id))
-
-  defp select_member(list, author_id, true) do
-    if Enum.any?(list.members, &(&1.author_id == author_id)),
-      do: list.members,
-      else: list.members ++ [%{author_id: author_id}]
-  end
-
   def settings(%User{} = user, attrs) do
     {:ok, council} = ensure(user.author_id)
 

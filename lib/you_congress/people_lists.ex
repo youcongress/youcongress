@@ -101,18 +101,6 @@ defmodule YouCongress.PeopleLists do
 
   def linked_list(_, _), do: nil
 
-  def linked_council_list_id(%User{author_id: author_id}, people_list_id) do
-    Repo.one(
-      from l in List,
-        join: c in Council,
-        on: c.id == l.council_id,
-        where: c.author_id == ^author_id and l.people_list_id == ^people_list_id,
-        order_by: l.position,
-        limit: 1,
-        select: l.id
-    )
-  end
-
   def use_for_council(%User{} = user, source_id, target_id, version, copy?) do
     if Permissions.blocked?(user),
       do: {:error, :forbidden},

@@ -11,46 +11,9 @@ defmodule YouCongress.Delegations do
   alias YouCongress.Accounts.User
   alias YouCongress.Track
 
-  @doc """
-  Returns the list of delegations.
-
-  ## Examples
-
-      iex> list_delegations()
-      [%Delegation{}, ...]
-
-  """
-  def list_delegations do
-    Repo.all(Delegation)
-  end
-
-  def list_delegation_ids(deleguee_id: deleguee_id) do
-    Repo.all(from d in Delegation, where: d.deleguee_id == ^deleguee_id, select: d.delegate_id)
-  end
-
   def delegate_ids_by_deleguee_id(deleguee_id) do
     Repo.all(from d in Delegation, where: d.deleguee_id == ^deleguee_id, select: d.delegate_id)
   end
-
-  def deleguee_ids_by_delegate_id(delegate_id) do
-    Repo.all(from d in Delegation, where: d.delegate_id == ^delegate_id, select: d.deleguee_id)
-  end
-
-  @doc """
-  Gets a single delegation.
-
-  Raises `Ecto.NoResultsError` if the Delegation does not exist.
-
-  ## Examples
-
-      iex> get_delegation!(123)
-      %Delegation{}
-
-      iex> get_delegation!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_delegation!(id), do: Repo.get!(Delegation, id)
 
   @doc """
   Creates a delegation.
@@ -95,24 +58,6 @@ defmodule YouCongress.Delegations do
   end
 
   @doc """
-  Updates a delegation.
-
-  ## Examples
-
-      iex> update_delegation(delegation, %{field: new_value})
-      {:ok, %Delegation{}}
-
-      iex> update_delegation(delegation, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_delegation(%Delegation{} = delegation, attrs) do
-    delegation
-    |> Delegation.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
   Deletes a delegation.
 
   ## Examples
@@ -154,27 +99,10 @@ defmodule YouCongress.Delegations do
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking delegation changes.
-
-  ## Examples
-
-      iex> change_delegation(delegation)
-      %Ecto.Changeset{data: %Delegation{}}
-
-  """
-  def change_delegation(%Delegation{} = delegation, attrs \\ %{}) do
-    Delegation.changeset(delegation, attrs)
-  end
-
-  @doc """
   Returns true if the deleguee has delegated to the delegate.
   """
   def delegating?(deleguee_id, delegate_id) do
     !!Repo.get_by(Delegation, deleguee_id: deleguee_id, delegate_id: delegate_id)
-  end
-
-  def get_delegation(%User{} = user, delegate_id) do
-    Repo.get_by(Delegation, deleguee_id: user.author_id, delegate_id: delegate_id)
   end
 
   defp sync_council(delegation, action) do
