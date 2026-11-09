@@ -246,6 +246,49 @@ defmodule YouCongress.CouncilRefreshTest do
     end)
   end
 
+  test "statement refresh loads the Council once and locks its author first" do
+    user = user_fixture()
+    person = author_fixture()
+    statement = statement_fixture()
+    vote_fixture(%{author_id: person.id, statement_id: statement.id, answer: :for})
+    {:ok, _} = Councils.add_member(user, person.id)
+    key = {__MODULE__, make_ref()}
+    Process.put(key, [])
+
+    :telemetry.attach(
+      key,
+      [:you_congress, :repo, :query],
+      &__MODULE__.record_query/4,
+      {self(), key}
+    )
+
+    queries =
+      try do
+        assert :ok ==
+                 YouCongress.DelegationVotes.update_author_statement_delegated_votes(
+                   user.author_id,
+                   statement.id
+                 )
+
+        Enum.reverse(Process.get(key))
+      after
+        :telemetry.detach(key)
+        Process.delete(key)
+      end
+
+    assert Enum.count(queries, &String.contains?(&1, ~s(FROM "councils"))) == 1
+    assert Enum.count(queries, &String.contains?(&1, ~s(FROM "council_lists"))) == 1
+    locks = Enum.filter(queries, &String.contains?(&1, "FOR UPDATE"))
+    assert [author_lock, council_lock] = locks
+    assert author_lock =~ ~s(FROM "authors")
+    assert council_lock =~ ~s(FROM "councils")
+    assert Votes.get_by(author_id: user.author_id, statement_id: statement.id).answer == :for
+  end
+
+  def record_query(_, _, %{query: query}, {pid, key}) do
+    if self() == pid, do: Process.put(key, [query | Process.get(key, [])])
+  end
+
   defp backdate_council_vote(user, statement) do
     vote = Votes.get_by(author_id: user.author_id, statement_id: statement.id)
     old_date = ~N[2020-01-01 12:00:00]

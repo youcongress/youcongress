@@ -51,12 +51,10 @@ defmodule YouCongress.DelegationVotes do
     do: update_author_statement_delegated_votes(a, s)
 
   def update_author_statement_delegated_votes(author_id, statement_id) do
-    {:ok, _} = Councils.ensure(author_id)
-
     {:ok, result} =
       Repo.transaction(fn ->
-        Repo.one!(from c in Council, where: c.author_id == ^author_id, lock: "FOR UPDATE")
-        explanation = Councils.explain(author_id, statement_id)
+        {:ok, council} = Councils.ensure(author_id)
+        explanation = Councils.explain(council, statement_id)
         previous = Repo.get_by(Decision, author_id: author_id, statement_id: statement_id)
 
         attrs = %{
@@ -145,7 +143,6 @@ defmodule YouCongress.DelegationVotes do
     Enum.each(Enum.uniq(Councils.followers(delegate_id) ++ legacy), fn id ->
       Repo.transaction(fn ->
         {:ok, _} = Councils.ensure(id)
-        Repo.one!(from c in Council, where: c.author_id == ^id, lock: "FOR UPDATE")
 
         Repo.update_all(
           from(d in Decision, where: d.author_id == ^id and d.statement_id == ^statement_id),

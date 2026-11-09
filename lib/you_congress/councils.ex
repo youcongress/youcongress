@@ -39,7 +39,13 @@ defmodule YouCongress.Councils do
     Repo.transaction(fn ->
       Repo.one!(from a in Authors.Author, where: a.id == ^author_id, lock: "FOR UPDATE")
 
-      case get(author_id) do
+      # Use the same lock order for saves and vote refreshes. When called inside
+      # another transaction, both locks stay held until that transaction commits.
+      council =
+        Repo.one(from c in Council, where: c.author_id == ^author_id, lock: "FOR UPDATE")
+        |> preload()
+
+      case council do
         nil ->
           council = Repo.insert!(Council.changeset(%Council{}, %{author_id: author_id}))
 
@@ -123,17 +129,9 @@ defmodule YouCongress.Councils do
     if Permissions.blocked?(user) do
       {:error, :forbidden}
     else
-      {:ok, _} = ensure(user.author_id)
-
       result =
         Repo.transaction(fn ->
-          Repo.one!(from a in Authors.Author, where: a.id == ^user.author_id, lock: "FOR UPDATE")
-
-          council =
-            Repo.one!(
-              from c in Council, where: c.author_id == ^user.author_id, lock: "FOR UPDATE"
-            )
-            |> preload()
+          {:ok, council} = ensure(user.author_id)
 
           if value(attrs, :version) != council.version, do: Repo.rollback(:stale)
           lists = value(attrs, :lists) || []
@@ -471,8 +469,10 @@ defmodule YouCongress.Councils do
     end)
   end
 
-  def explain(author_id, statement_id, lists \\ nil) do
-    {:ok, council} = ensure(author_id)
+  def explain(author_or_council, statement_id, lists \\ nil)
+
+  def explain(%Council{} = council, statement_id, lists) do
+    author_id = council.author_id
     lists = lists || council.lists
     ids = lists |> Enum.flat_map(&Enum.map(&1.members, fn m -> m.author_id end)) |> Enum.uniq()
 
@@ -492,5 +492,10 @@ defmodule YouCongress.Councils do
       direct: direct && direct.answer,
       effective: if(direct, do: direct.answer, else: result.answer)
     })
+  end
+
+  def explain(author_id, statement_id, lists) do
+    {:ok, council} = ensure(author_id)
+    explain(council, statement_id, lists)
   end
 end
