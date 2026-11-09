@@ -248,13 +248,13 @@ defmodule YouCongress.PeopleLists do
       from m in PeopleListMember, where: m.people_list_id == ^list.id and m.author_id not in ^ids
     )
 
+    existing_members =
+      Repo.all(from m in PeopleListMember, where: m.people_list_id == ^list.id)
+      |> Map.new(&{&1.author_id, &1})
+
     Enum.with_index(members)
     |> Enum.each(fn {m, position} ->
-      existing =
-        Repo.get_by(PeopleListMember,
-          people_list_id: list.id,
-          author_id: Councils.value(m, :author_id)
-        ) || %PeopleListMember{}
+      existing = existing_members[Councils.value(m, :author_id)] || %PeopleListMember{}
 
       changeset =
         PeopleListMember.changeset(existing, %{

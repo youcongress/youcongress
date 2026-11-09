@@ -98,7 +98,7 @@ defmodule YouCongress.Councils.Discovery do
         where: v.author_id == ^author_id,
         order_by: [desc: v.updated_at, desc: v.id],
         limit: 50,
-        select: %{statement: s, answer: v.answer, direct: v.direct}
+        select: %{statement: s, answer: v.answer, direct: v.direct, updated_at: v.updated_at}
     )
   end
 

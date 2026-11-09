@@ -34,7 +34,8 @@ defmodule YouCongressWeb.Components.CouncilBookmark do
     do: {:noreply, open_picker(socket)}
 
   def handle_event("bookmark", _, socket) do
-    {:ok, council} = Councils.ensure(socket.assigns.current_user.author_id)
+    author_id = socket.assigns.current_user.author_id
+    council = Councils.get(author_id) || elem(Councils.ensure(author_id), 1)
     socket = socket |> load_council(council) |> open_picker()
     last_all = council.lists |> Enum.reverse() |> Enum.find(&is_nil(&1.hall_id))
 
@@ -92,7 +93,10 @@ defmodule YouCongressWeb.Components.CouncilBookmark do
           else: item
       end)
 
-    save_selection(socket, Councils.save(socket.assigns.current_user, %{attrs | lists: lists}))
+    save_selection(
+      socket,
+      Councils.save(socket.assigns.current_user, %{attrs | lists: lists}, refresh: :async)
+    )
   end
 
   defp select_member(members, author_id, false),

@@ -77,7 +77,7 @@
             <.icon name="hero-users" class="h-6 w-6" />
             <h3>Choose whose judgment you trust.</h3>
             <p>
-              Search for people you’d turn to for a thoughtful opinion. You can use different lists for AI governance and impact on labor, or one list for every policy proposal and claim.
+              Search for people you’d turn to for a thoughtful opinion.
             </p>
           </div>
           <div class="yc-panel">
@@ -89,9 +89,9 @@
           </div>
           <div class="yc-panel">
             <.icon name="hero-adjustments-horizontal" class="h-6 w-6" />
-            <h3>Stay in control of your voice.</h3>
+            <h3>Choose who you trust for each topic.</h3>
             <p>
-              Change your lists whenever you like. We check matching lists in your chosen order. If none has a majority, no Council vote is cast for you.
+              Trust one group on AI governance and another on AI’s impact on labor. Start with one list for everything, then add topic-specific lists whenever you like.
             </p>
           </div>
         </div>
@@ -533,9 +533,20 @@
           <.link navigate={~p"/p/#{vote.statement.slug}"} class="yc-name">
             {vote.statement.title}
           </.link>
-          <span class="yc-badge">
-            {answer(vote.answer)} · {if vote.direct, do: "direct vote", else: "via your Council"}
-          </span>
+          <div class="text-right">
+            <span class="yc-badge">
+              {answer(vote.answer)} · {if vote.direct, do: "direct vote", else: "via your Council"}
+            </span>
+            <p :if={!vote.direct} class="yc-help">
+              Last calculated:
+              <time
+                datetime={NaiveDateTime.to_iso8601(vote.updated_at) <> "Z"}
+                title={Calendar.strftime(vote.updated_at, "%d %b %Y, %H:%M UTC")}
+              >
+                {YouCongressWeb.Tools.TimeAgo.short_time(vote.updated_at)}
+              </time>
+            </p>
+          </div>
         </div>
         <p :if={@votes == []} class="yc-list-item">
           No votes yet.

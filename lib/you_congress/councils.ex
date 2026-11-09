@@ -117,7 +117,9 @@ defmodule YouCongress.Councils do
     ) ++ [%{hall_id: nil, name: "All statements", fallback: true}]
   end
 
-  def save(%User{} = user, attrs) do
+  def save(user, attrs, opts \\ [])
+
+  def save(%User{} = user, attrs, opts) do
     if Permissions.blocked?(user) do
       {:error, :forbidden}
     else
@@ -148,19 +150,31 @@ defmodule YouCongress.Councils do
 
           council |> Ecto.Changeset.change(version: council.version + 1) |> Repo.update!()
           sync_legacy(council.author_id)
-          get(user.author_id)
+          saved = get(user.author_id)
+          previous_versions = Map.new(council.lists, &{&1.people_list_id, &1.list_version})
+
+          changed_sources =
+            saved.lists
+            |> Enum.filter(&(previous_versions[&1.people_list_id] != &1.list_version))
+            |> Enum.map(& &1.people_list_id)
+
+          affected_authors =
+            Enum.uniq([user.author_id | PeopleLists.dependent_authors(changed_sources)])
+
+          if Keyword.get(opts, :refresh) == :async do
+            YouCongress.DelegationVotes.enqueue_council_refresh(affected_authors)
+          end
+
+          {saved, affected_authors}
         end)
 
       case result do
-        {:ok, council} ->
-          PeopleLists.refresh_dependents(
-            Enum.map(council.lists, & &1.people_list_id)
-            |> Enum.reject(&is_nil/1)
-          )
+        {:ok, {council, affected_authors}} ->
+          unless Keyword.get(opts, :refresh) == :async,
+            do: PeopleLists.refresh_authors(affected_authors)
 
-          YouCongress.DelegationVotes.update_author_delegated_votes(user.author_id)
           YouCongress.Track.event("Council saved", user)
-          {:ok, get(user.author_id)}
+          {:ok, council}
 
         error ->
           error
@@ -168,7 +182,7 @@ defmodule YouCongress.Councils do
     end
   end
 
-  def save(_, _), do: {:error, :forbidden}
+  def save(_, _, _), do: {:error, :forbidden}
 
   defp validate_lists!(council, lists) do
     unless is_list(lists) and Enum.all?(lists, &is_map/1), do: Repo.rollback(:invalid_lists)
@@ -365,15 +379,19 @@ defmodule YouCongress.Councils do
   def public(_author_id), do: nil
 
   def delegate_ids(author_id) do
-    case get(author_id) do
-      nil ->
-        []
-
-      council ->
-        council.lists
-        |> Enum.flat_map(&Enum.map(&1.members, fn m -> m.author_id end))
-        |> Enum.uniq()
-    end
+    Repo.all(
+      from m in PeopleListMember,
+        join: p in PeopleList,
+        on: p.id == m.people_list_id,
+        join: l in List,
+        on: l.people_list_id == p.id,
+        join: c in Council,
+        on: c.id == l.council_id,
+        where: c.author_id == ^author_id and m.author_id != ^author_id,
+        where: p.public or p.author_id == ^author_id,
+        select: m.author_id,
+        distinct: true
+    )
   end
 
   def followers(author_id) do
