@@ -183,7 +183,7 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
        draft: draft,
        slug_custom: true,
        slug_error: nil,
-       page_title: list.name,
+       page_title: list_title(list, owner),
        page_description:
          if(list.public,
            do:
@@ -201,6 +201,17 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
      )
      |> load_people()}
   end
+
+  defp list_title(%{public: true} = list, owner) do
+    owner_label =
+      if owner.username in [nil, ""],
+        do: owner.name || "a YouCongress member",
+        else: "@#{owner.username}"
+
+    "#{list.name} by #{owner_label}"
+  end
+
+  defp list_title(list, _owner), do: list.name
 
   @impl true
   def handle_event(_, _, %{assigns: %{own: own}} = socket) when own != true,

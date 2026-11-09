@@ -89,9 +89,12 @@ defmodule YouCongressWeb.SEOMetaTest do
           assert Floki.attribute(document, selector, "content") == [canonical_url]
         end
 
+        owner_label = if username, do: "@#{username}", else: "Jane Expert"
+        expected_title = "AI & society by #{owner_label} / YouCongress"
+        assert document |> Floki.find("title") |> Floki.text() =~ "by #{owner_label}"
+
         for selector <- [~s(meta[property="og:title"]), ~s(meta[name="twitter:title"])] do
-          assert Floki.attribute(document, selector, "content") ==
-                   ["AI & society / YouCongress"]
+          assert Floki.attribute(document, selector, "content") == [expected_title]
         end
 
         for selector <- [
