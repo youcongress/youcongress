@@ -5,7 +5,6 @@ defmodule YouCongressWeb.ActivityLive.Index do
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Track
   alias YouCongress.Likes
-  alias YouCongress.Delegations
   alias YouCongress.Votes
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongressWeb.StatementLive.CastVoteComponent
@@ -52,13 +51,10 @@ defmodule YouCongressWeb.ActivityLive.Index do
   end
 
   defp load_opinions_and_votes(socket) do
-    %{assigns: %{current_user: current_user}} = socket
-
     opinions = list_opinions(socket)
 
     assign(socket,
       opinions: opinions,
-      current_user_delegation_ids: current_user_delegation_ids(current_user),
       no_more_opinions?: length(opinions) < @per_page
     )
   end
@@ -98,12 +94,6 @@ defmodule YouCongressWeb.ActivityLive.Index do
       end
 
     Opinions.list_opinions(opts)
-  end
-
-  defp current_user_delegation_ids(nil), do: []
-
-  defp current_user_delegation_ids(%{author_id: current_user_author_id}) do
-    Delegations.list_delegation_ids(deleguee_id: current_user_author_id)
   end
 
   @impl true

@@ -60,7 +60,6 @@
         author_id={@author.id}
         name={@author.name || "this person"}
         current_user={@current_user}
-        saved={@delegating?}
       />
     <% end %>
     <.link
@@ -187,7 +186,6 @@
               show_vote={!@current_user || @author.id != @current_user.author_id || vote.twin}
               show_opinion={true}
               current_user={@current_user}
-              delegating?={false}
               delegable={false}
               liked={vote.opinion_id in @liked_opinion_ids}
               liked_opinion_ids={@liked_opinion_ids}

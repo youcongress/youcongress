@@ -7,7 +7,6 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
   alias YouCongressWeb.OpinionLive.OpinionComponent
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Likes
-  alias YouCongress.Delegations
   alias YouCongressWeb.Tools.TimeAgo
 
   @max_x_length 280
@@ -24,7 +23,6 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
     socket =
       socket
       |> assign(:current_user, current_user)
-      |> assign(:delegating, assigns[:delegating] || false)
       |> assign(:statement, statement)
       |> assign(:opinable, assigns[:opinable] || false)
       |> assign(:delegable, assigns[:delegable] || false)
@@ -87,41 +85,6 @@ defmodule YouCongressWeb.OpinionLive.OpinionComponent do
 
       {:error, _} ->
         send(self(), {:put_flash, :error, "Failed to unlike opinion."})
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("add-delegation", _, %{assigns: %{current_user: nil}} = socket) do
-    send(
-      self(),
-      {:put_flash, :warning, "Log in to choose your Council."}
-    )
-
-    {:noreply, socket}
-  end
-
-  def handle_event("add-delegation", %{"author_id" => delegate_id}, socket) do
-    %{assigns: %{current_user: current_user}} = socket
-
-    case Delegations.create_delegation(current_user, delegate_id) do
-      {:ok, _} ->
-        {:noreply, assign(socket, :delegating, true)}
-
-      {:error, _} ->
-        send(self(), {:put_flash, :error, "Failed to add delegation."})
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("remove-delegation", %{"author_id" => delegate_id}, socket) do
-    %{assigns: %{current_user: current_user}} = socket
-
-    case Delegations.delete_delegation(current_user, delegate_id) do
-      {:ok, _} ->
-        {:noreply, assign(socket, :delegating, false)}
-
-      {:error, _} ->
-        send(self(), {:put_flash, :error, "Failed to remove delegation."})
         {:noreply, socket}
     end
   end

@@ -50,7 +50,6 @@
                 show_vote={true}
                 show_opinion={true}
                 liked={card.vote.opinion && card.vote.opinion.id in @liked_opinion_ids}
-                delegating?={card.vote.author_id in @delegate_ids}
                 delegable={true}
                 regenerating_opinion_id={nil}
                 page={:statements_index}

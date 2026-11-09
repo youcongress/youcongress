@@ -40,7 +40,6 @@
           id={opinion.id}
           opinion={opinion}
           current_user={@current_user}
-          delegating={opinion.author_id in @current_user_delegation_ids}
           statement={Opinion.first_statement(opinion)}
           opinable={true}
           delegable={true}

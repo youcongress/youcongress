@@ -29,7 +29,6 @@
     id={@opinion.id}
     opinion={@opinion}
     current_user={@current_user}
-    delegating={@delegating}
     statement={nil}
     liked={@opinion.id in @liked_opinion_ids}
     page={:opinion_show}
@@ -400,7 +399,6 @@
           id={child_opinion.id}
           opinion={child_opinion}
           current_user={@current_user}
-          delegating={@child_opinions_delegations[child_opinion.author_id]}
           statement={nil}
           opinable={true}
           liked={child_opinion.id in @liked_opinion_ids}
@@ -477,7 +475,6 @@
           show_opinion={true}
           liked={vote.opinion.id in @liked_opinion_ids}
           liked_opinion_ids={@liked_opinion_ids}
-          delegating?={false}
           delegable={false}
           regenerating_opinion_id={nil}
           page={:author_show}

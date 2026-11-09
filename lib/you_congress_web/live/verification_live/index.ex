@@ -8,7 +8,6 @@ defmodule YouCongressWeb.VerificationLive.Index do
   alias YouCongress.Verifications.Verification
   alias YouCongress.Votes
   alias YouCongress.Likes
-  alias YouCongress.Delegations
   alias YouCongressWeb.StatementLive.{CastVoteComponent, VoteComponent}
 
   @per_page 20
@@ -25,7 +24,6 @@ defmodule YouCongressWeb.VerificationLive.Index do
      |> assign(:page, 1)
      |> assign(:has_more, true)
      |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
-     |> assign(:delegate_ids, load_delegate_ids(current_user))
      |> load_cards(1)
      |> assign(:pending_guest_votes, %{})
      |> assign(:pending_vote_prompt, nil)
@@ -177,12 +175,5 @@ defmodule YouCongressWeb.VerificationLive.Index do
     )
     |> Enum.filter(& &1.opinion_id)
     |> Map.new(&{&1.statement_id, &1.opinion})
-  end
-
-  defp load_delegate_ids(nil), do: []
-  defp load_delegate_ids(%{author_id: nil}), do: []
-
-  defp load_delegate_ids(%{author_id: author_id}) do
-    Delegations.list_delegation_ids(deleguee_id: author_id)
   end
 end

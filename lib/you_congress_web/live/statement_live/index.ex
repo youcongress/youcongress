@@ -3,7 +3,6 @@ defmodule YouCongressWeb.StatementLive.Index do
 
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors
-  alias YouCongress.Delegations
   alias YouCongress.Likes
   alias YouCongress.Opinions
   alias YouCongress.OpinionsStatements
@@ -49,7 +48,6 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> assign(:hall_name, hall_name)
       |> assign(:hall_stats, nil)
       |> assign(:new_poll_visible?, false)
-      |> assign(:current_user_delegation_ids, get_current_user_delegation_ids(current_user))
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
       |> assign(:page, 1)
       |> assign(:per_page, 15)
@@ -407,12 +405,6 @@ defmodule YouCongressWeb.StatementLive.Index do
     OpinionsStatements.get_opinions_by_statement_ids(statement_ids, current_user)
   end
 
-  defp load_delegate_ids(nil), do: []
-
-  defp load_delegate_ids(current_user) do
-    Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
-  end
-
   # Quote-date mode uses the quote's stated date. Added mode preserves the
   # previous home feed ordering by most recently added opinion.
   defp assign_cards(socket, page) do
@@ -523,18 +515,11 @@ defmodule YouCongressWeb.StatementLive.Index do
       |> stream(:opinion_cards, cards, reset: page == 1)
       |> assign(:has_more_statements, true)
       |> assign(:page, page)
-      |> assign(:delegate_ids, load_delegate_ids(current_user))
       |> assign(:liked_opinion_ids, liked_opinion_ids)
       |> assign(:votes, votes)
       |> assign(:opinions, opinions)
       |> assign(:cards_by_id, cards_by_id)
     end
-  end
-
-  defp get_current_user_delegation_ids(nil), do: []
-
-  defp get_current_user_delegation_ids(current_user) do
-    Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
   end
 
   defp assign_stats(socket, stats) do

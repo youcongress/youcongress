@@ -1,7 +1,6 @@
 defmodule YouCongressWeb.LatestLive.Index do
   use YouCongressWeb, :live_view
 
-  alias YouCongress.Delegations
   alias YouCongress.Likes
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Statements.QuotesCsv
@@ -31,7 +30,6 @@ defmodule YouCongressWeb.LatestLive.Index do
       |> assign(:cards, [])
       |> assign(:author_votes, %{})
       |> assign(:liked_opinion_ids, Likes.get_liked_opinion_ids(current_user))
-      |> assign(:delegate_ids, current_user_delegation_ids(current_user))
       |> assign(:sourced_position_count, QuotesCsv.dataset_counts().quote_count)
       |> assign_cards(1)
 
@@ -200,12 +198,6 @@ defmodule YouCongressWeb.LatestLive.Index do
   defp answer_label(:against), do: "Against"
   defp answer_label(:abstain), do: "Abstain"
   defp answer_label(answer), do: answer
-
-  defp current_user_delegation_ids(nil), do: []
-
-  defp current_user_delegation_ids(current_user) do
-    Delegations.delegate_ids_by_deleguee_id(current_user.author_id)
-  end
 
   defdelegate author_path(author), to: YouCongressWeb.SEO, as: :author_path
 end

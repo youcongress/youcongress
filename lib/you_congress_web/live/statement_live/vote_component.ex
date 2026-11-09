@@ -1,7 +1,6 @@
 defmodule YouCongressWeb.StatementLive.VoteComponent do
   use YouCongressWeb, :live_component
 
-  alias YouCongress.Delegations
   alias YouCongress.Likes
   alias YouCongress.Opinions.Opinion
   alias YouCongress.VoteVerifications
@@ -118,63 +117,6 @@ defmodule YouCongressWeb.StatementLive.VoteComponent do
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Error unliking opinion.")}
-    end
-  end
-
-  def handle_event("add-delegation", _, %{assigns: %{current_user: nil}} = socket) do
-    send(
-      self(),
-      {:put_flash, :warning, "Log in to choose your Council."}
-    )
-
-    {:noreply, socket}
-  end
-
-  def handle_event("add-delegation", %{"author_id" => author_id}, socket) do
-    %{assigns: %{current_user: current_user}} = socket
-    delegate_id = String.to_integer(author_id)
-
-    case Delegations.create_delegation(current_user, delegate_id) do
-      {:ok, _} ->
-        send(
-          self(),
-          {:put_flash, :info,
-           "Added to your Council. Your vote follows its majority unless you vote directly."}
-        )
-
-        socket =
-          socket
-          |> assign(:delegating?, true)
-          |> assign(:reload, true)
-
-        {:noreply, socket}
-
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Error creating delegation.")}
-    end
-  end
-
-  def handle_event("remove-delegation", _, %{assigns: %{current_user: nil}} = socket) do
-    send(self(), {:put_flash, :warning, "Log in to edit your Council."})
-    socket = assign(socket, :delegating?, false)
-    {:noreply, socket}
-  end
-
-  def handle_event("remove-delegation", %{"author_id" => author_id}, socket) do
-    %{assigns: %{current_user: current_user}} = socket
-    delegate_id = String.to_integer(author_id)
-
-    case Delegations.delete_delegation(current_user, delegate_id) do
-      {:ok, _} ->
-        socket =
-          socket
-          |> assign(:delegating?, false)
-          |> assign(:reload, true)
-
-        {:noreply, socket}
-
-      _ ->
-        {:noreply, put_flash(socket, :error, "Error deleting delegation.")}
     end
   end
 

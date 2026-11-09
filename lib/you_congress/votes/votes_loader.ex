@@ -167,7 +167,6 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
       opinions_page: page + 1,
       has_more_opinions: length(new_votes) == @per_page
     )
-    |> load_delegations(current_user)
   end
 
   defp votes_with_opinion_opts(
@@ -261,35 +260,7 @@ defmodule YouCongressWeb.StatementLive.Show.VotesLoader do
   @spec assign_main_variables(Socket.t(), Statement.t(), User.t() | nil) :: Socket.t()
   def assign_main_variables(socket, statement, current_user) do
     socket
-    |> load_delegations(current_user)
     |> assign_current_user_vote(statement, current_user)
-  end
-
-  defp load_delegations(socket, current_user) do
-    %{
-      assigns: %{
-        votes_from_delegates: votes_from_delegates,
-        votes_from_non_delegates: votes_from_non_delegates,
-        votes_without_opinion: votes_without_opinion
-      }
-    } = socket
-
-    author_ids =
-      Enum.map(votes_from_delegates, & &1.author_id) ++
-        Enum.map(votes_from_non_delegates, & &1.author_id) ++
-        Enum.map(votes_without_opinion, & &1.author_id)
-
-    delegate_ids =
-      if current_user,
-        do: Delegations.delegate_ids_by_deleguee_id(current_user.author_id),
-        else: []
-
-    delegations =
-      Enum.reduce(author_ids, %{}, fn author_id, acc ->
-        Map.put(acc, author_id, !!Enum.find(delegate_ids, &(&1 == author_id)))
-      end)
-
-    assign(socket, delegations: delegations)
   end
 
   @spec get_votes_from_delegates([Vote.t()], User.t() | nil) :: [Vote.t()] | []
