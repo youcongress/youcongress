@@ -58,9 +58,6 @@ defmodule YouCongressWeb.TrustLive.Council do
        matches: [],
        people: %{},
        ranking: ranking,
-       ranks: Map.new(ranking.rows, &{&1.author_id, &1}),
-       dirty: false,
-       last_added_id: nil,
        editing_reason: nil,
        reason_text: "",
        reason_error: nil,
@@ -71,8 +68,7 @@ defmodule YouCongressWeb.TrustLive.Council do
        invite_emails: "",
        invitations: [],
        joined: 0,
-       votes: [],
-       counts: %{direct: 0, council: 0}
+       votes: []
      )
      |> load_people()}
   end
@@ -130,7 +126,6 @@ defmodule YouCongressWeb.TrustLive.Council do
 
     socket =
       assign(socket,
-        counts: Discovery.vote_counts(user.author_id),
         invitations: Invitations.history(user),
         joined: Invitations.joined(user.author_id),
         votes: if(step == "votes", do: Discovery.votes(user.author_id), else: [])
@@ -181,7 +176,6 @@ defmodule YouCongressWeb.TrustLive.Council do
             {:noreply,
              socket
              |> add_person(person)
-             |> assign(last_added_id: person.id)
              |> push_event("council-person-added", %{id: person.id})}
         end
     end
@@ -220,9 +214,6 @@ defmodule YouCongressWeb.TrustLive.Council do
     end
   end
 
-  def handle_event("cancel-reason", _, socket),
-    do: {:noreply, assign(socket, editing_reason: nil, reason_text: "", reason_error: nil)}
-
   def handle_event("change-reason", %{"reason" => reason}, socket) when is_binary(reason) do
     socket = assign(socket, reason_text: reason, reason_error: nil)
 
@@ -242,7 +233,7 @@ defmodule YouCongressWeb.TrustLive.Council do
 
   def handle_event(
         "save-reason",
-        %{"reason" => reason} = params,
+        %{"reason" => reason},
         %{assigns: %{step: step, editing_reason: id}} = socket
       )
       when step in ["pick", "people", "onboarding"] and is_integer(id) and is_binary(reason) do
@@ -259,9 +250,7 @@ defmodule YouCongressWeb.TrustLive.Council do
       else
         socket = assign(socket, editing_reason: nil, reason_text: "", reason_error: nil)
 
-        if params["continue"] == "true",
-          do: handle_event("save", %{}, socket),
-          else: {:noreply, socket}
+        {:noreply, socket}
       end
     else
       {:noreply,
@@ -269,96 +258,6 @@ defmodule YouCongressWeb.TrustLive.Council do
          reason_text: reason,
          reason_error: "Keep your reason under 5,000 characters."
        )}
-    end
-  end
-
-  def handle_event(
-        "save-reason",
-        %{"reason" => reason},
-        %{assigns: %{current_user: user, editing_reason: id, step: "mine"}} = socket
-      )
-      when not is_nil(user) and is_integer(id) and is_binary(reason) do
-    list = current_list(socket.assigns.draft)
-
-    updated =
-      Enum.map(list.members, fn member ->
-        if member.author_id == id, do: Map.put(member, :reason, reason), else: member
-      end)
-
-    draft = put_members(socket.assigns.draft, updated)
-    socket = assign(socket, reason_text: reason)
-
-    case Councils.save(user, draft) do
-      {:ok, council} ->
-        {:noreply,
-         assign(socket,
-           draft: with_selection(Councils.editable(council), socket.assigns.draft),
-           dirty: false,
-           editing_reason: nil,
-           reason_text: "",
-           reason_error: nil
-         )}
-
-      {:error, :stale} ->
-        {:noreply,
-         assign(socket,
-           reason_error: "Your Council changed in another window. Reload before saving."
-         )}
-
-      _ ->
-        {:noreply,
-         assign(socket,
-           reason_error:
-             "Could not save your reason. Keep it under 5,000 characters and try again."
-         )}
-    end
-  end
-
-  def handle_event("reasons", %{"reasons" => reasons}, socket) do
-    updated =
-      Enum.map(members(socket.assigns.draft), fn m ->
-        Map.put(m, :reason, Map.get(reasons, to_string(m.author_id), m[:reason]))
-      end)
-
-    {:noreply, change_members(socket, updated)}
-  end
-
-  def handle_event("save", %{"reasons" => reasons}, socket) when is_map(reasons) do
-    {:noreply, socket} = handle_event("reasons", %{"reasons" => reasons}, socket)
-    handle_event("save", %{}, socket)
-  end
-
-  def handle_event("save", _, socket) do
-    case Councils.save(socket.assigns.current_user, socket.assigns.draft) do
-      {:ok, council} ->
-        Invitations.accept(socket.assigns.current_user, socket.assigns.ref)
-
-        {:noreply,
-         socket
-         |> assign(
-           draft: with_selection(Councils.editable(council), socket.assigns.draft),
-           dirty: false
-         )
-         |> put_flash(:info, "Your Council is saved.")
-         |> push_patch(
-           to: ~p"/council?#{%{step: "publish", list: current_list(socket.assigns.draft).id}}"
-         )}
-
-      {:error, :stale} ->
-        {:noreply,
-         put_flash(
-           socket,
-           :error,
-           "Your Council changed in another window. Reload before saving."
-         )}
-
-      _ ->
-        {:noreply,
-         put_flash(
-           socket,
-           :error,
-           "Could not save your Council. Check your picks and keep reasons under 5,000 characters."
-         )}
     end
   end
 
@@ -439,36 +338,6 @@ defmodule YouCongressWeb.TrustLive.Council do
            :error,
            "Enter up to 10 valid email addresses and a note under 2,000 characters."
          )}
-    end
-  end
-
-  def handle_event("select-topic", %{"index" => raw}, socket) do
-    case Integer.parse(raw) do
-      {index, ""} when index >= 0 and index < length(socket.assigns.draft.lists) ->
-        socket =
-          socket
-          |> assign(
-            draft: Map.put(socket.assigns.draft, :active_index, index),
-            editing_reason: nil,
-            last_added_id: nil,
-            query: ""
-          )
-          |> load_people()
-          |> load_matches()
-          |> load_link()
-
-        socket =
-          if socket.assigns.current_user,
-            do:
-              push_patch(socket,
-                to: ~p"/council?#{%{step: "pick", list: current_list(socket.assigns.draft).id}}"
-              ),
-            else: socket
-
-        {:noreply, socket}
-
-      _ ->
-        {:noreply, socket}
     end
   end
 
@@ -569,12 +438,10 @@ defmodule YouCongressWeb.TrustLive.Council do
             socket
             |> assign(
               draft: updated,
-              dirty: false,
               save_error: nil,
               selected_public_list: nil,
               show_public_list_picker: false,
-              editing_reason: nil,
-              last_added_id: nil
+              editing_reason: nil
             )
             |> load_people()
             |> load_link()
@@ -648,12 +515,6 @@ defmodule YouCongressWeb.TrustLive.Council do
     {:noreply, save_topic_lists(socket, lists)}
   end
 
-  def handle_event("rename-list", %{"name" => name}, socket) do
-    index = active_index(socket.assigns.draft)
-    lists = List.update_at(socket.assigns.draft.lists, index, &%{&1 | name: name})
-    {:noreply, save_topic_lists(socket, lists)}
-  end
-
   def handle_event(_, _, socket), do: {:noreply, socket}
 
   @impl true
@@ -719,7 +580,7 @@ defmodule YouCongressWeb.TrustLive.Council do
        when step in ~w(mine votes publish invite pick people onboarding),
        do:
          socket
-         |> assign(draft: with_selection(own_council(user), socket.assigns.draft), dirty: false)
+         |> assign(draft: with_selection(own_council(user), socket.assigns.draft))
          |> load_people()
 
   defp load_saved_view(socket, _user, _step), do: socket
@@ -813,7 +674,6 @@ defmodule YouCongressWeb.TrustLive.Council do
           socket
           |> assign(
             draft: with_selection(Councils.editable(council), draft),
-            dirty: false,
             save_error: nil
           )
           |> load_people()
@@ -885,7 +745,7 @@ defmodule YouCongressWeb.TrustLive.Council do
 
   defp change_members(socket, members) do
     draft = put_members(socket.assigns.draft, members)
-    socket = socket |> assign(draft: draft, dirty: true) |> load_people()
+    socket = socket |> assign(draft: draft) |> load_people()
 
     save_topic_lists(socket, draft.lists)
   end
