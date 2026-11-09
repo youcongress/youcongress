@@ -4,6 +4,7 @@ defmodule YouCongress.Councils do
   alias YouCongress.{Repo, Halls, Authors, PeopleLists}
   alias YouCongress.Accounts.{User, Permissions}
   alias YouCongress.Councils.{Council, List, PeopleListMember, PeopleList, Evaluator}
+  alias YouCongress.OpinionsStatements.OpinionStatement
   alias YouCongress.Votes.Vote
 
   def get(author_id), do: Repo.get_by(Council, author_id: author_id) |> preload()
@@ -399,18 +400,23 @@ defmodule YouCongress.Councils do
     votes =
       Repo.all(
         from v in Vote,
+          left_join: relation in OpinionStatement,
+          on: relation.opinion_id == v.opinion_id and relation.statement_id == v.statement_id,
           where: v.author_id in ^ids and v.statement_id == ^statement_id and v.direct,
-          preload: [:author, :opinion]
+          preload: [:author, :opinion],
+          select: {v, relation.verification_status}
       )
 
-    Map.new(votes, fn v -> {v.author_id, position(v)} end)
+    Map.new(votes, fn {vote, relevance_status} ->
+      {vote.author_id, position(vote, relevance_status)}
+    end)
   end
 
-  def position(vote) do
+  defp position(vote, relevance_status) do
     opinion = vote.opinion
 
     inferred = inferred?(vote)
-    status = position_status(vote, inferred)
+    status = position_status(vote, inferred, relevance_status)
 
     eligible = status in ["self_cast", "verified", "endorsed", "ai_verified"]
 
@@ -431,27 +437,19 @@ defmodule YouCongress.Councils do
   def inferred?(%{origin: "inferred"}), do: true
   def inferred?(%{opinion: opinion}), do: YouCongress.Opinions.Opinion.quote?(opinion)
 
-  defp position_status(vote, true) do
+  defp position_status(vote, true, relevance_status) do
     opinion = vote.opinion
-
-    relation =
-      if opinion,
-        do:
-          Repo.get_by(YouCongress.OpinionsStatements.OpinionStatement,
-            opinion_id: opinion.id,
-            statement_id: vote.statement_id
-          )
 
     YouCongress.VerificationStatus.aggregate(
       opinion && opinion.verification_status,
-      relation && relation.verification_status,
+      relevance_status,
       vote.verification_status
     )
     |> to_string()
   end
 
-  defp position_status(%{twin: true}, false), do: "unverified"
-  defp position_status(_, false), do: "self_cast"
+  defp position_status(%{twin: true}, false, _), do: "unverified"
+  defp position_status(_, false, _), do: "self_cast"
 
   def refresh_for_halls(statement_id, hall_ids) do
     Repo.all(
