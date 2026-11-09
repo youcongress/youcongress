@@ -55,12 +55,7 @@
 .council-ui small {
   font-size:12px;
   color:var(--yc-muted)}
-.council-ui .yc-sr {
-  position:absolute;
-  width:1px;
-  height:1px;
-  overflow:hidden;
-  clip-path:inset(50%)}
+
 #yc-preview-note {
   padding:10px 3px;
   font-size:12px}
@@ -116,8 +111,7 @@
   align-items:center;
   justify-content:space-between;
   gap:16px}
-.council-ui .yc-top {
-  align-items:flex-start}
+
 .council-ui .yc-stack {
   display:flex;
   flex-direction:column;
@@ -192,12 +186,7 @@
   width:32px;
   height:32px;
   font-size:11px}
-.council-ui .yc-avatar-group {
-  display:flex;
-  padding-left:7px}
-.council-ui .yc-avatar-group .yc-avatar {
-  margin-left:-7px;
-  border:3px solid var(--yc-bg)}
+
 .council-ui .yc-badge {
   display:inline-flex;
   align-items:center;
@@ -293,11 +282,7 @@
 .council-ui .yc-help {
   font-size:12px;
   margin-top:8px}
-.council-ui .yc-check-label {
-  display:flex;
-  align-items:flex-start;
-  gap:12px;
-  font-size:14px}
+
 .council-ui input[type=checkbox],.council-ui input[type=radio] {
   accent-color:var(--yc-purple);
   width:17px;
@@ -343,11 +328,7 @@
 .council-ui .yc-step.done b {
   background:var(--yc-green-bg);
   color:var(--yc-green)}
-.council-ui .yc-step-line {
-  height:1px;
-  background:var(--yc-line);
-  flex:1;
-  min-width:8px}
+
 .council-ui .yc-tabs {
   display:flex;
   gap:28px;
@@ -397,51 +378,17 @@
   padding-top:30px;
   margin-top:35px;
   border-top:1px solid var(--yc-line)}
-.council-ui .yc-number {
-  color:var(--yc-purple);
-  font-size:12px;
-  font-weight:750;
-  letter-spacing:1px;
-  margin-bottom:10px}
+
 .council-ui .yc-how p {
   font-size:13px;
   margin-top:8px}
-.council-ui .yc-rank {
-  width:27px;
-  color:var(--yc-muted);
-  font-size:14px;
-  flex:none;
-  font-variant-numeric:tabular-nums}
+
 .council-ui .yc-stat {
   font-size:26px;
   font-weight:750;
   letter-spacing:-.7px;
   color:var(--yc-ink)}
-.council-ui .yc-stat-grid {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px}
-.council-ui .yc-stat-grid>div {
-  background:var(--yc-soft);
-  padding:17px 10px;
-  border-radius:8px;
-  text-align:center}
-.council-ui .yc-stat-grid p {
-  font-size:12px}
-.council-ui .yc-choice {
-  padding:20px;
-  border:1px solid var(--yc-line);
-  border-radius:10px;
-  display:flex;
-  gap:12px;
-  align-items:flex-start;
-  background:var(--yc-bg)}
-.council-ui .yc-choice:has(input:checked) {
-  border-color:var(--yc-purple);
-  background:var(--yc-tint)}
-.council-ui .yc-choice p {
-  font-size:13px;
-  margin-top:5px}
+
 .council-ui .yc-table {
   width:100%;
   border-collapse:collapse;
@@ -481,10 +428,7 @@
   background:var(--yc-red)}
 .council-ui .yc-vote-bar .other {
   background:light-dark(#c9cfdb,#596175)}
-.council-ui .yc-vote-buttons {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:8px}
+
 .council-ui .yc-btn.yes {
   color:var(--yc-green);
   border-color:var(--yc-green)}
@@ -494,24 +438,12 @@
 .council-ui .yc-btn.no.selected {
   background:var(--yc-red);
   color:var(--yc-bg)}
-.council-ui .yc-micro {
-  font-size:12px}
+
 .council-ui .yc-breadcrumb {
   font-size:12px;
   color:var(--yc-muted);
   margin-bottom:26px}
-.council-ui .yc-voter {
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:12px 0;
-  border-top:1px solid var(--yc-line)}
-.council-ui .yc-voter .yc-badge {
-  margin-left:auto}
-.council-ui .yc-source {
-  font-size:12px;
-  color:var(--yc-muted);
-  margin-top:6px}
+
 .council-ui .yc-statement-link {
   font-size:17px;
   line-height:1.45;
@@ -521,22 +453,7 @@
   border:0;
   padding:0;
   text-align:left}
-.council-ui .yc-empty {
-  border:1px dashed var(--yc-line);
-  border-radius:10px;
-  padding:19px 22px;
-  font-size:13px}
-.council-ui .yc-toast {
-  background:var(--yc-tint);
-  color:var(--yc-purple);
-  padding:12px 16px;
-  margin-top:15px;
-  border-radius:8px;
-  font-size:13px}
-.council-ui .yc-ellipsis {
-  font-size:25px;
-  letter-spacing:3px;
-  color:var(--yc-muted)}
+
 @media(min-width:1250px) {
   .council-ui .yc-hero {
   padding-top:45px;
@@ -558,8 +475,7 @@
   font-size:15px}
 .council-ui .yc-table td,.council-ui .yc-table th {
   padding:12px 9px}
-.council-ui .yc-table .yc-role {
-  display:none}
+
 }
 @media(max-width:640px) {
   .council-ui h1 {
@@ -590,8 +506,7 @@
   width:21px;
   height:21px;
   flex:none}
-.council-ui .yc-step-line {
-  min-width:4px}
+
 .council-ui .yc-between {
   flex-wrap:wrap;
   gap:12px}
@@ -608,8 +523,7 @@
   gap:20px}
 .council-ui .yc-tabs button {
   font-size:12px}
-.council-ui .yc-table .yc-role,.council-ui .yc-table .yc-rank-change {
-  display:none}
+
 .council-ui .yc-table td,.council-ui .yc-table th {
   padding:11px 7px}
 .council-ui .yc-table .yc-person {
@@ -628,8 +542,7 @@
   font-size:10px}
 .council-ui .yc-table td {
   font-size:12px}
-.council-ui .yc-table .yc-rank {
-  width:auto}
+
 .council-ui .yc-actions {
   align-items:flex-start}
 .council-ui .yc-actions .yc-btn {
@@ -642,10 +555,7 @@
 .council-ui button.yc-avatar {
   border:0;
   padding:0}
-@media(max-width:640px) {
-  .council-ui .yc-statement-grid>aside {
-  order:-1}
-}
+
 /* App integration: content uses the shared YouCongress header and footer. */
 .council-ui .yc-content {
   max-width:1180px;
@@ -686,9 +596,7 @@
   background:var(--yc-line);
   flex:1;
   margin-left:8px}
-.council-ui .yc-stat-grid strong {
-  font-size:28px;
-  color:var(--yc-ink)}
+
 .council-ui .yc-copy-row {
   display:flex;
   gap:12px}
@@ -744,16 +652,9 @@
 .council-ui form.phx-submit-loading .yc-save-pending { display: inline; }
 .council-ui form.phx-change-loading .yc-save-idle,
 .council-ui form.phx-submit-loading .yc-save-idle { display: none; }
-
 /* Ordered topic Councils. */
-.council-ui .yc-topic-row { display:grid; grid-template-columns:2rem minmax(12rem,1fr) 6rem auto; gap:1rem; align-items:center; }
-.council-ui .yc-topic-number { color:#5145e8; font-size:1.25rem; }
+
 .council-ui .yc-btn:disabled { opacity:.35; cursor:default; }
-@media(max-width:700px) {
- .council-ui .yc-topic-row { grid-template-columns:1.5rem 1fr; gap:.75rem; }
- .council-ui .yc-topic-row > :nth-child(3), .council-ui .yc-topic-row > :nth-child(4) { grid-column:2; }
- .council-ui .yc-topic-row .yc-row { flex-wrap:wrap; }
-}
 
 .council-ui .yc-hall-selector { margin-top:.5rem; min-width:0; }
 .council-ui .yc-hall-choices { margin-top:.75rem; max-width:28rem; }
