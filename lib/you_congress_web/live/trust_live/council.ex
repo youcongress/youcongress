@@ -8,12 +8,6 @@ defmodule YouCongressWeb.TrustLive.Council do
   @impl true
   def mount(_params, session, socket) do
     socket = assign_current_user(socket, session["user_token"])
-    draft = own_council(socket.assigns.current_user)
-
-    ranking =
-      if YouCongress.Accounts.admin?(socket.assigns.current_user),
-        do: Discovery.trust30(),
-        else: %{rows: []}
 
     {:ok,
      socket
@@ -33,8 +27,8 @@ defmodule YouCongressWeb.TrustLive.Council do
        page_image_height: 909,
        return_to: ~p"/council",
        full_width: true,
-       draft: draft,
-       halls: YouCongress.Halls.list_halls(),
+       draft: nil,
+       halls: [],
        show_add_hall: false,
        new_hall_id: nil,
        show_public_list_picker: false,
@@ -57,7 +51,7 @@ defmodule YouCongressWeb.TrustLive.Council do
        query: "",
        matches: [],
        people: %{},
-       ranking: ranking,
+       ranking: nil,
        editing_reason: nil,
        reason_text: "",
        reason_error: nil,
@@ -69,8 +63,7 @@ defmodule YouCongressWeb.TrustLive.Council do
        invitations: [],
        joined: 0,
        votes: []
-     )
-     |> load_people()}
+     )}
   end
 
   @impl true
@@ -88,8 +81,8 @@ defmodule YouCongressWeb.TrustLive.Council do
   def handle_params(params, _, socket) do
     user = socket.assigns.current_user
     ref = params["ref"] || socket.assigns.ref
-    referrer = Invitations.referrer(ref)
-    default = if Councils.get(user.author_id).onboarding_completed, do: "mine", else: "onboarding"
+    {:ok, council} = Councils.ensure(user.author_id)
+    default = if council.onboarding_completed, do: "mine", else: "onboarding"
     step = requested_step(params["step"], default)
 
     allowed = ~w(landing pick people publish invite mine votes onboarding)
@@ -102,8 +95,7 @@ defmodule YouCongressWeb.TrustLive.Council do
       |> assign(
         step: step,
         ref: ref,
-        referrer: referrer,
-        page_title: if(step == "pick", do: "Edit Council entry", else: "My Council"),
+        referrer: nil,
         show_public_list_picker: false,
         selected_public_list: nil
       )
@@ -111,7 +103,8 @@ defmodule YouCongressWeb.TrustLive.Council do
     socket =
       socket
       |> assign(editing_reason: nil, reason_text: "", reason_error: nil)
-      |> load_saved_view(user, step)
+      |> assign_council(council)
+      |> reset_step_data()
 
     socket =
       if step == "onboarding",
@@ -124,14 +117,12 @@ defmodule YouCongressWeb.TrustLive.Council do
 
     socket = socket |> use_list(params["use_list"]) |> add_from_link(params["add"])
 
-    socket =
-      assign(socket,
-        invitations: Invitations.history(user),
-        joined: Invitations.joined(user.author_id),
-        votes: if(step == "votes", do: Discovery.votes(user.author_id), else: [])
-      )
-
-    {:noreply, socket |> load_link() |> load_matches()}
+    {:noreply,
+     socket
+     |> assign(
+       page_title: if(socket.assigns.step == "pick", do: "Edit Council entry", else: "My Council")
+     )
+     |> load_step_data()}
   end
 
   @impl true
@@ -358,7 +349,7 @@ defmodule YouCongressWeb.TrustLive.Council do
          }) do
       {:ok, source} ->
         if socket.assigns.step == "onboarding" do
-          {:noreply, socket |> load_saved_view(user, "onboarding") |> load_link()}
+          {:noreply, socket |> reload_council() |> load_people() |> load_link()}
         else
           {:noreply, push_navigate(socket, to: edit_list_path(source.id, target.id))}
         end
@@ -437,12 +428,12 @@ defmodule YouCongressWeb.TrustLive.Council do
           socket =
             socket
             |> assign(
-              draft: updated,
               save_error: nil,
               selected_public_list: nil,
               show_public_list_picker: false,
               editing_reason: nil
             )
+            |> assign_council(council)
             |> load_people()
             |> load_link()
 
@@ -576,14 +567,59 @@ defmodule YouCongressWeb.TrustLive.Council do
   defp requested_step(nil, default), do: default
   defp requested_step(step, _default), do: step
 
-  defp load_saved_view(socket, user, step)
-       when step in ~w(mine votes publish invite pick people onboarding),
-       do:
-         socket
-         |> assign(draft: with_selection(own_council(user), socket.assigns.draft))
-         |> load_people()
+  defp assign_council(socket, council) do
+    links =
+      council.lists
+      |> Enum.filter(& &1.available)
+      |> Map.new(&{&1.id, &1.people_list})
 
-  defp load_saved_view(socket, _user, _step), do: socket
+    assign(socket,
+      draft: with_selection(Councils.editable(council), socket.assigns.draft),
+      linked_lists: links
+    )
+  end
+
+  defp reload_council(socket) do
+    {:ok, council} = Councils.ensure(socket.assigns.current_user.author_id)
+    assign_council(socket, council)
+  end
+
+  defp reset_step_data(socket) do
+    assign(socket,
+      halls: [],
+      people: %{},
+      matches: [],
+      votes: [],
+      invitations: [],
+      joined: 0,
+      linked_list: nil,
+      list_owner: nil,
+      list_owners: %{},
+      preview_people: %{}
+    )
+  end
+
+  defp load_step_data(%{assigns: %{step: "invite", current_user: user}} = socket),
+    do:
+      assign(socket,
+        invitations: Invitations.history(user),
+        joined: Invitations.joined(user.author_id)
+      )
+
+  defp load_step_data(%{assigns: %{step: "votes", current_user: user}} = socket),
+    do: assign(socket, votes: Discovery.votes(user.author_id))
+
+  defp load_step_data(%{assigns: %{step: "landing", ref: ref}} = socket),
+    do: socket |> assign(referrer: Invitations.referrer(ref)) |> load_matches()
+
+  defp load_step_data(socket) do
+    socket =
+      if socket.assigns.step in ["mine", "pick", "people"],
+        do: assign(socket, halls: YouCongress.Halls.list_halls()),
+        else: socket
+
+    socket |> load_people() |> load_link() |> load_matches()
+  end
 
   defp use_list(socket, nil), do: socket
 
@@ -602,17 +638,10 @@ defmodule YouCongressWeb.TrustLive.Council do
   defp add_from_link(socket, raw) do
     with id when is_integer(id) <- TrustRankings.parse_id(raw),
          %Author{} = person <- Repo.get(Author, id) do
-      add_person(socket, person) |> assign(step: "pick")
+      socket |> assign(step: "pick") |> add_person(person)
     else
       _ -> socket
     end
-  end
-
-  defp own_council(nil), do: nil
-
-  defp own_council(user) do
-    {:ok, council} = Councils.ensure(user.author_id)
-    Councils.editable(council)
   end
 
   def active_index(draft),
@@ -623,6 +652,8 @@ defmodule YouCongressWeb.TrustLive.Council do
   def hall_label(%{name: "ai-governance"}), do: "AI governance"
   def hall_label(%{name: "impact-on-labor"}), do: "Impact on labor"
   def hall_label(hall), do: YouCongress.Tools.StringUtils.titleize_hall(hall.name)
+
+  defp with_selection(draft, nil), do: draft
 
   defp with_selection(draft, previous),
     do: Map.put(draft, :active_index, min(active_index(previous), length(draft.lists) - 1))
@@ -644,22 +675,22 @@ defmodule YouCongressWeb.TrustLive.Council do
   end
 
   defp load_link(socket) do
-    source =
-      PeopleLists.linked_list(socket.assigns.current_user, current_list(socket.assigns.draft).id)
+    source = socket.assigns.linked_lists[current_list(socket.assigns.draft).id]
+    socket = assign(socket, linked_list: source)
 
-    links = PeopleLists.linked_lists(socket.assigns.current_user)
+    case socket.assigns.step do
+      "mine" ->
+        ids = Enum.map(Map.values(socket.assigns.linked_lists), & &1.author_id)
+        assign(socket, list_owners: people_by_ids(ids))
 
-    assign(socket,
-      linked_lists: links,
-      list_owners: Discovery.people(Enum.map(Map.values(links), & &1.author_id)),
-      linked_list: source,
-      list_owner: if(source, do: Repo.get(Author, source.author_id)),
-      preview_people:
-        if(source,
-          do: Discovery.people(Enum.map(Enum.take(source.members, 5), & &1.author_id)),
-          else: %{}
-        )
-    )
+      "pick" when not is_nil(source) ->
+        ids = Enum.map(Enum.take(source.members, 5), & &1.author_id)
+        people = people_by_ids([source.author_id | ids])
+        assign(socket, list_owner: people[source.author_id], preview_people: people)
+
+      _ ->
+        socket
+    end
   end
 
   defp edit_list_path(source_id, entry_id),
@@ -672,10 +703,9 @@ defmodule YouCongressWeb.TrustLive.Council do
       case Councils.save(socket.assigns.current_user, draft, refresh: :async) do
         {:ok, council} ->
           socket
-          |> assign(
-            draft: with_selection(Councils.editable(council), draft),
-            save_error: nil
-          )
+          |> assign(save_error: nil)
+          |> assign(draft: draft)
+          |> assign_council(council)
           |> load_people()
           |> load_link()
 
@@ -750,18 +780,19 @@ defmodule YouCongressWeb.TrustLive.Council do
     save_topic_lists(socket, draft.lists)
   end
 
-  defp load_people(%{assigns: %{draft: nil}} = socket), do: socket
+  defp load_people(socket) do
+    selected_members =
+      case socket.assigns.step do
+        "mine" -> Enum.flat_map(socket.assigns.draft.lists, &Enum.take(&1.members, 5))
+        step when step in ["people", "onboarding", "publish"] -> members(socket.assigns.draft)
+        _ -> []
+      end
 
-  defp load_people(socket),
-    do:
-      assign(socket,
-        people:
-          Discovery.people(
-            Enum.flat_map(socket.assigns.draft.lists, fn l ->
-              Enum.map(l.members, & &1.author_id)
-            end)
-          )
-      )
+    assign(socket, people: people_by_ids(Enum.map(selected_members, & &1.author_id)))
+  end
+
+  defp people_by_ids([]), do: %{}
+  defp people_by_ids(ids), do: Discovery.people(Enum.uniq(ids))
 
   defp load_public_lists(socket) do
     user = socket.assigns.current_user
@@ -780,7 +811,10 @@ defmodule YouCongressWeb.TrustLive.Council do
     assign(socket, public_list_results: results)
   end
 
-  defp load_matches(socket) do
+  defp load_matches(%{assigns: %{step: step}} = socket)
+       when step in ["landing", "people", "onboarding"] do
+    socket = load_ranking(socket)
+
     matches =
       if String.trim(socket.assigns.query) == "" do
         cond do
@@ -808,6 +842,16 @@ defmodule YouCongressWeb.TrustLive.Council do
         else: matches
 
     assign(socket, matches: matches)
+  end
+
+  defp load_matches(socket), do: assign(socket, matches: [])
+
+  defp load_ranking(socket) do
+    if socket.assigns.step != "onboarding" && String.trim(socket.assigns.query) == "" &&
+         is_nil(socket.assigns.ranking) &&
+         YouCongress.Accounts.admin?(socket.assigns.current_user),
+       do: assign(socket, ranking: Discovery.trust30()),
+       else: socket
   end
 
   def list_picker(%{state: assigns}) do
