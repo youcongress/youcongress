@@ -799,6 +799,36 @@
     flex-basis:calc(100% - 44px)}
 }
 
+.council-ui .yc-topic-example {
+  margin-top:48px;
+  padding-top:40px;
+  border-top:1px solid var(--yc-line)}
+.council-ui .yc-topic-example-figure {
+  margin:28px 0 32px}
+.council-ui .yc-topic-example-figure a {
+  display:block;
+  overflow:hidden;
+  border:1px solid var(--yc-line);
+  border-radius:14px}
+.council-ui .yc-topic-example-figure a:focus-visible {
+  outline:3px solid var(--yc-purple);
+  outline-offset:4px}
+.council-ui .yc-topic-example-figure img {
+  display:block;
+  width:100%;
+  height:auto}
+.council-ui .yc-topic-example-figure figcaption {
+  margin-top:12px;
+  font-size:13px;
+  color:var(--yc-muted)}
+@media(max-width:800px) {
+  .council-ui .yc-topic-example {
+    margin-top:32px;
+    padding-top:28px}
+  .council-ui .yc-topic-example-steps {
+    grid-template-columns:1fr}
+}
+
 .council-ui #council-candidates { max-height: 540px; overflow-y: auto; }
 .council-ui #council-people-picker .yc-stack { max-height: 600px; overflow-y: auto; }
 .council-ui #council-people-picker button { flex-shrink: 0; white-space: nowrap; }

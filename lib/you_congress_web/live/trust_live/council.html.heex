@@ -752,6 +752,73 @@
         </p>
       </div>
     </section>
+    <section
+      :if={@step in ["landing", "mine"]}
+      id="council-topic-example"
+      class="yc-topic-example"
+      aria-labelledby="council-topic-example-title"
+    >
+      <p class="yc-eyebrow">Topic-based delegation · An example</p>
+      <h2 id="council-topic-example-title">Different topics. Different people you trust.</h2>
+      <p class="yc-intro">
+        You might trust one group on AI governance and another on AI’s impact on labor.
+        Topics on YouCongress are called halls. Give each hall its own list, and choose the order
+        those lists are checked. You can start with just All statements and add topics later.
+      </p>
+      <figure class="yc-topic-example-figure">
+        <a
+          href={~p"/images/council-topic-delegation.png"}
+          target="_blank"
+          rel="noopener"
+          aria-label="Open the example Council screenshot at full size in a new tab"
+        >
+          <img
+            src={~p"/images/council-topic-delegation.png"}
+            alt="Example Council order: AI council for ai-governance first, an empty Impact on labor list second, and General council for All statements last."
+            width="2096"
+            height="1564"
+            loading="lazy"
+            decoding="async"
+          />
+        </a>
+        <figcaption>
+          An example setup, not your saved choices. Select the screenshot to view it at full size.
+        </figcaption>
+      </figure>
+      <div class="yc-three yc-topic-example-steps">
+        <div>
+          <p class="yc-eyebrow">01 / Match the topic</p>
+          <h3>AI governance goes to your AI council.</h3>
+          <p class="yc-gap-sm">
+            For a statement tagged ai-governance, the AI council is checked first. A statement
+            tagged only impact-on-labor skips that list and goes to Impact on labor.
+          </p>
+        </div>
+        <div>
+          <p class="yc-eyebrow">02 / Follow your order</p>
+          <h3>The first list that decides casts your vote.</h3>
+          <p class="yc-gap-sm">
+            Matching lists are checked from top to bottom, even when a statement has multiple
+            topics. More For than Against means For; more Against than For means Against.
+            A tie or no For or Against votes moves to the next matching list.
+          </p>
+        </div>
+        <div>
+          <p class="yc-eyebrow">03 / Fall back to your general list</p>
+          <h3>All statements is your final fallback.</h3>
+          <p class="yc-gap-sm">
+            In this example, Impact on labor is empty, so a labor-only statement goes to
+            General council. That final All statements list also covers other topics when no
+            earlier list decides. If no list decides, no Council vote is cast.
+          </p>
+        </div>
+      </div>
+      <p class="yc-panel tint yc-gap">
+        <strong>Your own vote always takes priority.</strong>
+        Delegation only applies when you haven’t voted. Abstentions and missing positions
+        don’t count toward a list’s decision.
+      </p>
+    </section>
     <p id="council-copy-status" class="yc-help" role="status" phx-update="ignore"></p>
   </div>
 </div>
