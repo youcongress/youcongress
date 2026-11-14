@@ -610,30 +610,18 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
             </div>
           </fieldset>
 
-          <div :if={@council_lists != []} class="my-4">
-            <label>
-              Council list for these selections
-              <select name="response[council_list_id]" class="block rounded border-gray-300">
-                <option :for={list <- @council_lists} value={list.id} selected={list.fallback}>
-                  {list.name}{if list.fallback, do: " (final fallback)"}
-                </option>
-              </select>
-            </label>
-            <.link href={~p"/council"} class="text-sm text-indigo-700">
-              Build or compare your council
-            </.link>
-          </div>
           <fieldset
             :if={available_delegates(@reconsideration, @current_user) != []}
+            id="reconsider-delegates"
             class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
           >
             <legend class="px-1 text-base font-semibold text-gray-900">
               Who would you trust to represent you?
             </legend>
             <p class="mt-2 text-sm text-gray-600">
-              Optional. These are global delegations. When you have not voted directly on an issue,
-              The first council list with more For than Against determines delegation. Saving includes your nominations in rankings. Your own votes always
-              take priority.
+              Optional. When you have not voted directly on an issue, the first council list with more
+              For than Against determines delegation. Your own votes always take priority. Your
+              selections also help identify the most trusted people.
             </p>
 
             <div class="mt-4 space-y-3">
@@ -673,6 +661,20 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                   Already a delegate
                 </span>
               </label>
+            </div>
+
+            <div :if={@council_lists != []} id="delegate-council-list" class="mt-5">
+              <label>
+                Council list for these selections
+                <select name="response[council_list_id]" class="block rounded border-gray-300">
+                  <option :for={list <- @council_lists} value={list.id} selected={list.fallback}>
+                    {list.name}{if list.fallback, do: " (final fallback)"}
+                  </option>
+                </select>
+              </label>
+              <.link href={~p"/council"} class="text-sm text-indigo-700">
+                Build or compare your council
+              </.link>
             </div>
           </fieldset>
 

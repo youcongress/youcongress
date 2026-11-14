@@ -318,7 +318,21 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
 
     participant = user_fixture()
     conn = log_in_user(conn, participant)
-    {:ok, view, _html} = live(conn, reconsideration_path(context))
+    {:ok, view, html} = live(conn, reconsideration_path(context))
+
+    assert has_element?(
+             view,
+             "#reconsider-delegates #delegate-council-list select[name='response[council_list_id]']"
+           )
+
+    assert has_element?(
+             view,
+             "#reconsider-delegates",
+             "Your selections also help identify the most trusted people."
+           )
+
+    refute html =~ "These are global delegations."
+    refute html =~ "Saving includes your nominations in rankings."
 
     params = %{
       "response" => %{
