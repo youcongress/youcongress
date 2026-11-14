@@ -8,7 +8,9 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
 
   alias YouCongress.Accounts
   alias YouCongress.Authors
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Reconsiderations
+  alias YouCongress.Repo
   alias YouCongressWeb.SEO
 
   setup do
@@ -62,6 +64,36 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     assert html =~ URI.encode_www_form(reconsideration_path(context))
     refute html =~ "Log in with email/password"
     refute html =~ "Community result"
+  end
+
+  test "delegate names open their profiles in a new tab and show sourced quote counts",
+       %{
+         conn: conn
+       } = context do
+    for number <- 1..2 do
+      Repo.insert!(%Opinion{
+        author_id: context.delegate.id,
+        content: "Sourced quote #{number}",
+        source_url: "https://example.com/quotes/#{number}",
+        twin: false
+      })
+    end
+
+    # AI-generated sourced opinions are not real quotes and should not be counted.
+    Repo.insert!(%Opinion{
+      author_id: context.delegate.id,
+      content: "Generated opinion",
+      source_url: "https://example.com/generated",
+      twin: true
+    })
+
+    {:ok, view, _html} = live(conn, reconsideration_path(context))
+
+    assert has_element?(
+             view,
+             "a[href='#{SEO.author_path(context.delegate)}'][target='_blank'][rel='noopener noreferrer']",
+             "Featured guest (2 quotes)"
+           )
   end
 
   test "a visitor is directed to sign up before creating a Reconsider page", %{conn: conn} do
@@ -329,13 +361,13 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     assert has_element?(
              view,
              "#delegate-result-#{context.delegate.id}",
-             "Featured guest 1 participant (50%)"
+             "Featured guest (0 quotes) 1 participant (50%)"
            )
 
     assert has_element?(
              view,
-             "#delegate-result-#{context.delegate.id} a[href='#{SEO.author_path(context.delegate)}']",
-             "Featured guest"
+             "#delegate-result-#{context.delegate.id} a[href='#{SEO.author_path(context.delegate)}'][target='_blank'][rel='noopener noreferrer']",
+             "Featured guest (0 quotes)"
            )
 
     assert html =~ "self-reported result"

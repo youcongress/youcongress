@@ -11,6 +11,7 @@ defmodule YouCongress.Reconsiderations do
   alias YouCongress.Accounts.User
   alias YouCongress.Authors.Author
   alias YouCongress.Councils
+  alias YouCongress.Opinions.Opinion
 
   alias YouCongress.Reconsiderations.{
     Delegate,
@@ -473,11 +474,43 @@ defmodule YouCongress.Reconsiderations do
 
     delegate_query = from d in Delegate, order_by: d.position, preload: [:author]
 
-    Repo.preload(reconsideration,
-      creator: [],
-      reconsideration_statements: statement_query,
-      delegates: delegate_query
+    reconsideration =
+      Repo.preload(reconsideration,
+        creator: [],
+        reconsideration_statements: statement_query,
+        delegates: delegate_query
+      )
+
+    quote_counts = delegate_quote_counts(reconsideration.delegates)
+
+    delegates =
+      Enum.map(reconsideration.delegates, fn delegate ->
+        author = %{
+          delegate.author
+          | quotes_count: Map.get(quote_counts, delegate.author_id, 0)
+        }
+
+        %{delegate | author: author}
+      end)
+
+    %{reconsideration | delegates: delegates}
+  end
+
+  defp delegate_quote_counts([]), do: %{}
+
+  defp delegate_quote_counts(delegates) do
+    author_ids = Enum.map(delegates, & &1.author_id)
+
+    from(opinion in Opinion,
+      where:
+        opinion.author_id in ^author_ids and
+          not (is_nil(opinion.source_url) and is_nil(opinion.source_text)) and
+          opinion.twin == false,
+      group_by: opinion.author_id,
+      select: {opinion.author_id, count(opinion.id)}
     )
+    |> Repo.all()
+    |> Map.new()
   end
 
   defp resolve_statement_refs(value) do

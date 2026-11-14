@@ -33,6 +33,7 @@ defmodule YouCongress.Authors.Author do
     field :twin_origin, :boolean, default: true
     field :twin_enabled, :boolean, default: true
     field :public_figure, :boolean, default: false
+    field :quotes_count, :integer, virtual: true, default: 0
 
     has_many :votes, YouCongress.Votes.Vote
     belongs_to :country, YouCongress.Countries.Country

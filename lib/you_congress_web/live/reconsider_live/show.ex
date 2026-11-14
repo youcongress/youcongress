@@ -236,6 +236,9 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
 
   defp author_name(author), do: author.name || author.twitter_username || "YouCongress author"
 
+  defp plural(1, word), do: word
+  defp plural(_count, word), do: word <> "s"
+
   defp content_label(%{content_type: :video}), do: "video"
   defp content_label(_), do: "article"
 
@@ -501,6 +504,8 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
               >
                 <.link
                   href={SEO.author_path(delegate.author)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   class="flex min-w-0 items-center gap-3 hover:text-indigo-600"
                 >
                   <.profile_avatar
@@ -508,7 +513,12 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                     image_url={delegate.author.profile_image_url}
                     class="h-9 w-9 text-sm"
                   />
-                  <span class="truncate font-medium">{author_name(delegate.author)}</span>
+                  <span class="truncate font-medium">
+                    {author_name(delegate.author)}
+                    <span class="font-normal text-gray-500">
+                      ({delegate.author.quotes_count} {plural(delegate.author.quotes_count, "quote")})
+                    </span>
+                  </span>
                 </.link>
                 <span class="ml-auto text-sm text-gray-600">
                   {delegate.count} {if delegate.count == 1, do: "participant", else: "participants"} ({delegate.percent}%)
@@ -638,12 +648,24 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                   checked={to_string(delegate.author_id) in @form_params["delegate_ids"]}
                   class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                 />
-                <.profile_avatar
-                  name={delegate.author.name}
-                  image_url={delegate.author.profile_image_url}
-                  class="h-9 w-9 text-sm"
-                />
-                <span class="font-medium text-gray-900">{author_name(delegate.author)}</span>
+                <.link
+                  href={SEO.author_path(delegate.author)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex min-w-0 items-center gap-3 text-gray-900 hover:text-indigo-600"
+                >
+                  <.profile_avatar
+                    name={delegate.author.name}
+                    image_url={delegate.author.profile_image_url}
+                    class="h-9 w-9 text-sm"
+                  />
+                  <span class="truncate font-medium">
+                    {author_name(delegate.author)}
+                    <span class="font-normal text-gray-500">
+                      ({delegate.author.quotes_count} {plural(delegate.author.quotes_count, "quote")})
+                    </span>
+                  </span>
+                </.link>
                 <span
                   :if={already_delegating?(delegate.author_id, @existing_delegate_ids)}
                   class="ml-auto text-xs font-medium text-green-700"
