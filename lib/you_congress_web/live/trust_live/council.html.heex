@@ -743,8 +743,20 @@
               placeholder="For example: My most trusted people"
               maxlength="120"
             />
-            <button class="yc-btn purple yc-gap-sm">Add list</button>
+            <button class="yc-btn purple yc-gap-sm">Create and add list</button>
           </form>
+          <div :if={!@show_public_list_picker} class="yc-row yc-gap-sm">
+            <span class="yc-help">or</span>
+            <button
+              id="choose-existing-council-list"
+              type="button"
+              phx-click="toggle-public-list-picker"
+              class="yc-btn"
+            >
+              Choose an existing list
+            </button>
+          </div>
+          <.list_picker state={assigns} />
         </div>
         <p class="yc-help yc-gap">
           <.icon name="hero-lock-closed" class="h-4 w-4" />

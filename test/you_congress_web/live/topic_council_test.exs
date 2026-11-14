@@ -62,6 +62,67 @@ defmodule YouCongressWeb.TopicCouncilTest do
     refute Enum.any?(Councils.get(user.author_id).lists, &(&1.id == inner.id))
   end
 
+  test "adding another hall can use an owned list or someone else's public list", %{conn: conn} do
+    user = user_fixture()
+    other = user_fixture()
+    person = author_fixture()
+
+    {:ok, own} =
+      PeopleLists.create(user, %{
+        public: false,
+        name: "My private specialists",
+        members: [%{author_id: person.id}]
+      })
+
+    {:ok, public} =
+      PeopleLists.create(other, %{
+        public: true,
+        name: "Public specialists",
+        members: [%{author_id: person.id}]
+      })
+
+    {:ok, private} =
+      PeopleLists.create(other, %{
+        public: false,
+        name: "Hidden specialists",
+        members: [%{author_id: person.id}]
+      })
+
+    {:ok, view, _} = live(log_in_user(conn, user), "/council?step=mine")
+    view |> element("button", "+ Add another hall") |> render_click()
+    view |> element("#choose-existing-council-list") |> render_click()
+
+    assert has_element?(view, "#public-list-option-#{own.id}", "My private specialists")
+    refute has_element?(view, "#public-list-option-#{public.id}")
+    refute has_element?(view, "#public-list-option-#{private.id}")
+
+    view |> element("#public-list-option-#{own.id} button", "Select") |> render_click()
+    view |> form("#use-public-list") |> render_submit()
+
+    assert Enum.any?(Councils.get(user.author_id).lists, fn list ->
+             list.people_list_id == own.id && !list.fallback && is_nil(list.hall_id)
+           end)
+
+    view |> element("button", "+ Add another hall") |> render_click()
+    view |> element("#choose-existing-council-list") |> render_click()
+
+    view
+    |> form("#search-public-lists", %{scope: "all", q: "specialists"})
+    |> render_change()
+
+    assert has_element?(view, "#public-list-option-#{public.id}", "Public specialists")
+    refute has_element?(view, "#public-list-option-#{private.id}")
+
+    view |> element("#public-list-option-#{public.id} button", "Select") |> render_click()
+    assert has_element?(view, "#use-public-list button", "Add this list")
+    refute has_element?(view, "#use-public-list input[name=copy]")
+    view |> form("#use-public-list") |> render_submit()
+
+    assert Enum.any?(Councils.get(user.author_id).lists, fn list ->
+             list.people_list_id == public.id && !list.fallback && is_nil(list.hall_id)
+           end)
+  end
+
   test "entry editing shows a preview and opens the list editor with a working return link", %{
     conn: conn
   } do

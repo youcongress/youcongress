@@ -409,6 +409,47 @@ defmodule YouCongressWeb.TrustLive.Council do
     handle_event("apply-public-list", %{"copy" => "true"}, socket)
   end
 
+  def handle_event(
+        "apply-public-list",
+        _,
+        %{
+          assigns: %{
+            current_user: user,
+            step: "mine",
+            show_add_hall: true,
+            selected_public_list: source
+          }
+        } = socket
+      )
+      when not is_nil(user) and not is_nil(source) do
+    list = %{
+      id: nil,
+      people_list_id: source.id,
+      hall_id: socket.assigns.new_hall_id,
+      name: source.name,
+      fallback: false,
+      members: []
+    }
+
+    socket = save_topic_lists(socket, List.insert_at(socket.assigns.draft.lists, -2, list))
+
+    if socket.assigns.save_error do
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> assign(
+         show_add_hall: false,
+         show_public_list_picker: false,
+         selected_public_list: nil
+       )
+       |> put_flash(
+         :info,
+         "#{source.name} was added to your Council. Updates to the list will apply here."
+       )}
+    end
+  end
+
   def handle_event("apply-public-list", params, %{assigns: %{current_user: user}} = socket)
       when not is_nil(user) do
     source = socket.assigns.selected_public_list
@@ -465,8 +506,17 @@ defmodule YouCongressWeb.TrustLive.Council do
     end
   end
 
-  def handle_event("toggle-add-hall", _, socket),
-    do: {:noreply, assign(socket, show_add_hall: !socket.assigns.show_add_hall)}
+  def handle_event("toggle-add-hall", _, socket) do
+    {:noreply,
+     assign(socket,
+       show_add_hall: !socket.assigns.show_add_hall,
+       show_public_list_picker: false,
+       selected_public_list: nil,
+       public_list_query: "",
+       public_list_scope: "mine",
+       public_list_limit: 30
+     )}
+  end
 
   def handle_event("add-hall", params, %{assigns: %{current_user: user}} = socket)
       when not is_nil(user) do
@@ -855,6 +905,8 @@ defmodule YouCongressWeb.TrustLive.Council do
   end
 
   def list_picker(%{state: assigns}) do
+    assigns = assign(assigns, :adding_entry, assigns.step == "mine" && assigns.show_add_hall)
+
     ~H"""
     <div
       :if={@show_public_list_picker}
@@ -862,7 +914,7 @@ defmodule YouCongressWeb.TrustLive.Council do
       class="yc-entry-picker"
     >
       <div class="yc-between">
-        <h3>{if @linked_list, do: "Change list", else: "Choose a list"}</h3>
+        <h3>{if @adding_entry || !@linked_list, do: "Choose a list", else: "Change list"}</h3>
         <button type="button" class="yc-link" phx-click="toggle-public-list-picker">
           Cancel
         </button>
@@ -898,6 +950,7 @@ defmodule YouCongressWeb.TrustLive.Council do
             !Enum.any?(@public_list_results, &(&1.id == @selected_public_list.id))
         }
         selected_public_list={@selected_public_list}
+        adding_entry={@adding_entry}
       />
       <div class="yc-list yc-gap-sm">
         <div
@@ -934,6 +987,7 @@ defmodule YouCongressWeb.TrustLive.Council do
           <.selected_list_confirmation
             :if={@selected_public_list && @selected_public_list.id == list.id}
             selected_public_list={@selected_public_list}
+            adding_entry={@adding_entry}
           />
         </div>
         <p :if={@public_list_results == []} class="yc-list-item yc-help">
@@ -949,6 +1003,7 @@ defmodule YouCongressWeb.TrustLive.Council do
       </button>
 
       <form
+        :if={!@adding_entry}
         id="create-council-private-list"
         phx-submit="create-private-list"
         class="yc-panel yc-gap-sm"
@@ -977,10 +1032,20 @@ defmodule YouCongressWeb.TrustLive.Council do
       phx-submit="apply-public-list"
       class="yc-panel yc-gap-sm"
     >
-      <h3>Use {@selected_public_list.name}?</h3>
-      <p class="yc-help">
-        Uses this list for this Council entry. The hall and order stay the same. The previously selected list is kept.
-      </p>
+      <h3>
+        {if @adding_entry,
+          do: "Add #{@selected_public_list.name}?",
+          else: "Use #{@selected_public_list.name}?"}
+      </h3>
+      <%= if @adding_entry do %>
+        <p class="yc-help">
+          Adds a new Council entry for the hall selected above, using this existing list.
+        </p>
+      <% else %>
+        <p class="yc-help">
+          Uses this list for this Council entry. The hall and order stay the same. The previously selected list is kept.
+        </p>
+      <% end %>
       <.link
         href={~p"/lists/#{@selected_public_list.id}"}
         target="_blank"
@@ -992,13 +1057,15 @@ defmodule YouCongressWeb.TrustLive.Council do
       <p class="yc-help yc-gap-sm">
         This uses the actual list. Membership updates by its owner affect your Council. The owner cannot see who uses it.
       </p>
-      <label class="block yc-gap-sm">
+      <label :if={!@adding_entry} class="block yc-gap-sm">
         <input type="checkbox" name="copy" value="true" /> Make a private copy instead
         <span class="block yc-help">
           A copy belongs to you and changes independently.
         </span>
       </label>
-      <button class="yc-btn purple yc-gap-sm">Use this list</button>
+      <button class="yc-btn purple yc-gap-sm">
+        {if @adding_entry, do: "Add this list", else: "Use this list"}
+      </button>
     </form>
     """
   end
