@@ -4,6 +4,7 @@ defmodule YouCongress.Councils.Discovery do
   alias YouCongress.{Repo, Councils, TrustRankings}
   alias YouCongress.Councils.{PeopleList, PeopleListMember}
   alias YouCongress.Authors.Author
+  alias YouCongress.Opinions.Opinion
   alias YouCongress.Votes.Vote
 
   def trust30 do
@@ -12,6 +13,22 @@ defmodule YouCongress.Councils.Discovery do
   end
 
   def people(ids), do: Repo.all(from a in Author, where: a.id in ^ids) |> Map.new(&{&1.id, &1})
+
+  def people_with_quote_counts(ids) do
+    Repo.all(
+      from a in Author,
+        left_join: o in Opinion,
+        on:
+          o.author_id == a.id and not (is_nil(o.source_url) and is_nil(o.source_text)) and
+            o.twin == false,
+        where: a.id in ^ids,
+        group_by: a.id,
+        select: {a, count(o.id)}
+    )
+    |> Map.new(fn {author, quotes_count} ->
+      {author.id, %{author | quotes_count: quotes_count}}
+    end)
+  end
 
   def search(query, owner_id \\ nil) do
     term =

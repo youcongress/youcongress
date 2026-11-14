@@ -337,7 +337,7 @@
                   <span>{member.reason}</span>
                 </blockquote>
                 <.link navigate={~p"/a/#{member.author_id}"} class="yc-link yc-gap-sm">
-                  View positions →
+                  View {quote_count(@people[member.author_id].quotes_count)} →
                 </.link>
               </article>
               <p :if={@list.members == []} class="yc-list-item">No people added yet.</p>

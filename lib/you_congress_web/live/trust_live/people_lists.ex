@@ -476,11 +476,19 @@ defmodule YouCongressWeb.TrustLive.PeopleLists do
     )
   end
 
-  defp load_people(socket),
-    do:
-      assign(socket,
-        people: Discovery.people(Enum.map(socket.assigns.draft.members, & &1.author_id))
-      )
+  defp load_people(socket) do
+    ids = Enum.map(socket.assigns.draft.members, & &1.author_id)
+
+    people =
+      if socket.assigns.live_action == :show,
+        do: Discovery.people_with_quote_counts(ids),
+        else: Discovery.people(ids)
+
+    assign(socket, people: people)
+  end
+
+  defp quote_count(1), do: "1 quote"
+  defp quote_count(count), do: "#{count} quotes"
 
   defp council_members(user, list_id) do
     {:ok, council} = Councils.ensure(user.author_id)

@@ -5,6 +5,38 @@ defmodule YouCongressWeb.PeopleListsTest do
   import YouCongress.AuthorsFixtures
   alias YouCongress.{PeopleLists, Councils}
 
+  test "public lists show each person's sourced quote count", %{conn: conn} do
+    owner = user_fixture()
+    one_quote = author_fixture(%{name: "One Quote Author"})
+    two_quotes = author_fixture(%{name: "Two Quote Author"})
+
+    one_quote_user = user_fixture(%{author_id: one_quote.id})
+    two_quotes_user = user_fixture(%{author_id: two_quotes.id})
+
+    create_opinion!(one_quote, one_quote_user, %{source_url: "https://example.com/one"})
+    create_opinion!(two_quotes, two_quotes_user, %{source_url: "https://example.com/two"})
+    create_opinion!(two_quotes, two_quotes_user, %{source_text: "A sourced book passage"})
+
+    create_opinion!(two_quotes, two_quotes_user, %{
+      source_url: "https://example.com/twin",
+      twin: true
+    })
+
+    create_opinion!(two_quotes, two_quotes_user, %{})
+
+    {:ok, list} =
+      PeopleLists.create(owner, %{
+        public: true,
+        name: "Quoted people",
+        members: [%{author_id: one_quote.id}, %{author_id: two_quotes.id}]
+      })
+
+    {:ok, view, _html} = live(conn, YouCongressWeb.PeopleListPaths.public_path(list))
+
+    assert has_element?(view, "a[href='/a/#{one_quote.id}']", "View 1 quote →")
+    assert has_element?(view, "a[href='/a/#{two_quotes.id}']", "View 2 quotes →")
+  end
+
   test "owner creates, edits, and deletes a named list without changing their Council", %{
     conn: conn
   } do
@@ -382,5 +414,21 @@ defmodule YouCongressWeb.PeopleListsTest do
     [list] = PeopleLists.for_author(user.author_id)
     assert hd(list.members).reason == "Early note"
     assert list.slug == "mobile-picks"
+  end
+
+  defp create_opinion!(author, user, attrs) do
+    attrs =
+      Map.merge(
+        %{
+          author_id: author.id,
+          user_id: user.id,
+          content: "Quote count test content",
+          twin: false
+        },
+        attrs
+      )
+
+    assert {:ok, %{opinion: opinion}} = YouCongress.Opinions.create_opinion(attrs)
+    opinion
   end
 end
