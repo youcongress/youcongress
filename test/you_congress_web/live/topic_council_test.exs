@@ -20,6 +20,7 @@ defmodule YouCongressWeb.TopicCouncilTest do
     refute has_element?(view, "a", "Publish a list")
     assert has_element?(view, "a", "Edit entry")
     assert has_element?(view, "details summary", "See an example")
+    refute has_element?(view, "#council-topic-example")
     council = Councils.get(user.author_id)
     general = List.last(council.lists)
     refute has_element?(view, ".yc-topic-row h3")

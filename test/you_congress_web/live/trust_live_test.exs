@@ -12,6 +12,7 @@ defmodule YouCongressWeb.TrustLiveTest do
     assert html =~ "Coming soon"
     assert html =~ "Your private Council choices contribute anonymously."
     assert html =~ "Your Council is private. Sharing a list is optional."
+    assert has_element?(view, "#council-topic-example")
     signup = "/sign_up?return_to=%2Fcouncil"
     assert has_element?(view, "a[href='#{signup}']", "Start choosing →")
     assert has_element?(view, "a[href='#{signup}']", "Pick my Council →")
