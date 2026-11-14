@@ -1,7 +1,7 @@
 defmodule YouCongress.PeopleLists do
   @moduledoc "Owned private or public lists, referenced directly by private Council assignments."
   import Ecto.Query
-  alias YouCongress.{Repo, Councils, TrustRankings}
+  alias YouCongress.{Repo, Councils, DelegationVotes, TrustRankings}
   alias YouCongress.Accounts.{User, Permissions}
   alias YouCongress.Councils.{PeopleList, PeopleListMember, Council, List}
   alias YouCongress.Authors.Author
@@ -160,13 +160,13 @@ defmodule YouCongress.PeopleLists do
           lock_owner!(user.author_id)
           list = write!(user, id, attrs)
           attach_to_council!(user, list, attrs)
+          DelegationVotes.enqueue_council_refresh(dependent_authors([list.id]))
 
           list
         end)
 
       case result do
         {:ok, list} ->
-          refresh_dependents([list.id])
           {:ok, list}
 
         error ->

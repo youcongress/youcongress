@@ -105,6 +105,37 @@ defmodule YouCongress.CouncilRefreshTest do
     end)
   end
 
+  test "people list edits queue dependent Council refreshes" do
+    user = user_fixture()
+    person = author_fixture()
+    replacement = author_fixture()
+    statement = statement_fixture()
+    vote_fixture(%{author_id: person.id, statement_id: statement.id, answer: :for})
+    vote_fixture(%{author_id: replacement.id, statement_id: statement.id, answer: :against})
+    {:ok, council} = Councils.add_member(user, person.id)
+    list = List.last(council.lists)
+
+    assert Votes.get_by(author_id: user.author_id, statement_id: statement.id).answer == :for
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      assert {:ok, _} =
+               PeopleLists.update(user, list.people_list_id, %{
+                 version: list.list_version,
+                 members: [%{author_id: replacement.id}]
+               })
+
+      assert Councils.delegate_ids(user.author_id) == [replacement.id]
+      assert is_nil(Votes.get_by(author_id: user.author_id, statement_id: statement.id))
+
+      assert [%{args: args}] = all_enqueued(worker: RefreshCouncilWorker)
+      assert args == %{"author_id" => user.author_id}
+      assert :ok == perform_job(RefreshCouncilWorker, args)
+
+      assert Votes.get_by(author_id: user.author_id, statement_id: statement.id).answer ==
+               :against
+    end)
+  end
+
   test "adding one person uses a bounded number of queries even with a large Council" do
     Oban.Testing.with_testing_mode(:manual, fn ->
       small = user_fixture()
