@@ -112,6 +112,8 @@ defmodule YouCongressWeb.PageControllerTest do
     assert html =~ ">Hector Perez</a>"
     assert html =~ ~s(href="/contact")
     assert html =~ "Contact us"
+    assert html =~ ~s(href="https://opencollective.com/youcongress")
+    assert html =~ "Donate to YouCongress"
     assert html =~ ~s(href="/future-of-life-foundation-epistack-award")
 
     image_url = YouCongressWeb.Endpoint.url() <> "/images/social-home.png"
