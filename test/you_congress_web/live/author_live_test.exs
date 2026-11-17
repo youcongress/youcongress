@@ -445,6 +445,94 @@ defmodule YouCongressWeb.AuthorLiveTest do
       refute has_element?(view, "img[src='/images/filled-heart.svg']")
     end
 
+    test "lets a user edit their comment from their profile", %{conn: conn} do
+      user = user_fixture()
+      author = Authors.get_author!(user.author_id)
+      statement = statement_fixture(title: "Editable profile comment statement")
+
+      opinion =
+        opinion_fixture(%{
+          author_id: user.author_id,
+          user_id: user.id,
+          content: "Original profile comment",
+          source_url: nil,
+          twin: false
+        })
+
+      vote_fixture(%{
+        statement_id: statement.id,
+        author_id: user.author_id,
+        opinion_id: opinion.id,
+        user_id: user.id,
+        twin: false
+      })
+
+      {:ok, view, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/x/#{author.twitter_username}")
+
+      assert html =~ "Original profile comment"
+      assert has_element?(view, "a", "Edit comment")
+
+      view
+      |> element("a", "Edit comment")
+      |> render_click()
+
+      view
+      |> form("#edit-comment-#{opinion.id}", content: "Updated profile comment")
+      |> render_submit()
+
+      html = render(view)
+      assert html =~ "Comment updated"
+      assert html =~ "Updated profile comment"
+      refute html =~ "Original profile comment"
+      assert Opinions.get_opinion!(opinion.id).content == "Updated profile comment"
+    end
+
+    test "lets a user delete their comment from their profile while preserving their vote", %{
+      conn: conn
+    } do
+      user = user_fixture()
+      author = Authors.get_author!(user.author_id)
+      statement = statement_fixture(title: "Deletable profile comment statement")
+
+      opinion =
+        opinion_fixture(%{
+          author_id: user.author_id,
+          user_id: user.id,
+          content: "Delete this profile comment",
+          source_url: nil,
+          twin: false
+        })
+
+      vote =
+        vote_fixture(%{
+          statement_id: statement.id,
+          author_id: user.author_id,
+          opinion_id: opinion.id,
+          user_id: user.id,
+          twin: false
+        })
+
+      {:ok, view, _html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/x/#{author.twitter_username}")
+
+      assert has_element?(view, "a", "Delete comment")
+
+      view
+      |> element("a", "Delete comment")
+      |> render_click()
+
+      html = render(view)
+      assert html =~ "Comment deleted"
+      refute html =~ "Delete this profile comment"
+      assert Opinions.get_opinion(opinion.id) == nil
+      assert YouCongress.Votes.get_vote!(vote.id).opinion_id == nil
+    end
+
     test "casts a vote from voting buttons", %{conn: conn} do
       current_user = user_fixture()
       conn = log_in_user(conn, current_user)

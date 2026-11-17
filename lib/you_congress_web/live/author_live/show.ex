@@ -4,9 +4,10 @@ defmodule YouCongressWeb.AuthorLive.Show do
   alias YouCongress.Accounts
   alias YouCongress.Accounts.Permissions
   alias YouCongress.Authors
-  alias YouCongress.Votes
   alias YouCongress.Likes
+  alias YouCongress.Opinions
   alias YouCongress.Track
+  alias YouCongress.Votes
   alias YouCongressWeb.AuthorLive.FormComponent
   alias YouCongressWeb.StatementLive.VoteComponent
   alias YouCongressWeb.Tools.Tooltip
@@ -23,6 +24,7 @@ defmodule YouCongressWeb.AuthorLive.Show do
       socket
       |> assign_current_user(session["user_token"])
       |> assign(:order_by_date, true)
+      |> assign(:editing_opinion_id, nil)
       |> assign(:pending_guest_votes, %{})
       |> assign(:pending_vote_prompt, nil)
       |> assign(:vote_auth_return_to, nil)
@@ -123,6 +125,67 @@ defmodule YouCongressWeb.AuthorLive.Show do
     {:noreply, socket}
   end
 
+  def handle_event("edit", %{"opinion_id" => opinion_id}, socket) do
+    opinion = Opinions.get_opinion!(opinion_id)
+
+    if owns_opinion?(socket, opinion) do
+      {:noreply, assign(socket, :editing_opinion_id, opinion.id)}
+    else
+      {:noreply, put_flash(socket, :error, "You can only edit your own comments")}
+    end
+  end
+
+  def handle_event("cancel-edit", _, socket) do
+    {:noreply, assign(socket, :editing_opinion_id, nil)}
+  end
+
+  def handle_event(
+        "update-opinion",
+        %{"opinion_id" => opinion_id, "content" => content},
+        socket
+      ) do
+    opinion = Opinions.get_opinion!(opinion_id)
+
+    if owns_opinion?(socket, opinion) do
+      case Opinions.update_opinion_from_user(opinion, %{content: content, twin: false},
+             actor_user: socket.assigns.current_user
+           ) do
+        {:ok, _opinion} ->
+          {:noreply,
+           socket
+           |> assign(:editing_opinion_id, nil)
+           |> reload_votes()
+           |> put_flash(:info, "Comment updated")}
+
+        {:error, _changeset} ->
+          {:noreply, put_flash(socket, :error, "Error updating comment")}
+      end
+    else
+      {:noreply, put_flash(socket, :error, "You can only edit your own comments")}
+    end
+  end
+
+  def handle_event("delete-comment", %{"opinion_id" => opinion_id}, socket) do
+    opinion = Opinions.get_opinion!(opinion_id)
+
+    if owns_opinion?(socket, opinion) do
+      case Votes.get_vote_by_opinion_id(opinion.id) do
+        nil -> :ok
+        vote -> Votes.update_vote(vote, %{opinion_id: nil})
+      end
+
+      {_count, nil} = Opinions.delete_opinion_and_descendants(opinion)
+
+      {:noreply,
+       socket
+       |> assign(:editing_opinion_id, nil)
+       |> reload_votes()
+       |> put_flash(:info, "Comment deleted")}
+    else
+      {:noreply, put_flash(socket, :error, "You can only delete your own comments")}
+    end
+  end
+
   def handle_event("close-vote-auth-modal", _, socket) do
     socket =
       socket
@@ -150,6 +213,23 @@ defmodule YouCongressWeb.AuthorLive.Show do
   def handle_info(_, socket), do: {:noreply, socket}
 
   defdelegate author_path(author), to: SEO
+
+  defp owns_opinion?(%{assigns: %{current_user: current_user}}, opinion) do
+    current_user && current_user.author_id == opinion.author_id
+  end
+
+  defp reload_votes(socket) do
+    %{author: author, order_by_date: order_by_date, hall_name: hall_name} = socket.assigns
+    assign(socket, :votes, load_votes(author.id, order_by_date, hall_name))
+  end
+
+  defp editing_opinion_for_vote(_vote, nil), do: nil
+
+  defp editing_opinion_for_vote(vote, opinion_id) do
+    [vote.opinion | Map.get(vote, :alternate_opinions, [])]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.find(&(&1.id == opinion_id))
+  end
 
   # Question-format title/description so author pages rank for
   # "what does {name} say about {topic}" queries. Authors without a real

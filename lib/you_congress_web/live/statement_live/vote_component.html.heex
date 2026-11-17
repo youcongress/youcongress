@@ -95,6 +95,17 @@
       <% end %>
     </div>
   <% end %>
+  <div :if={@page == :author_show && !@show_vote && @visible_opinion} class="flex justify-end">
+    <QuoteMenu.render
+      author={@author}
+      id={@vote.id}
+      opinion={@visible_opinion}
+      current_user={@current_user}
+      statement={@statement}
+      page={@page}
+      myself={@myself}
+    />
+  </div>
   <%= if @show_opinion && @visible_opinion do %>
     <div>
       <% citable_quote? =
