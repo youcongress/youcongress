@@ -95,19 +95,19 @@
       <% end %>
     </div>
   <% end %>
-  <div :if={@page == :author_show && !@show_vote && @visible_opinion} class="flex justify-end">
-    <QuoteMenu.render
-      author={@author}
-      id={@vote.id}
-      opinion={@visible_opinion}
-      current_user={@current_user}
-      statement={@statement}
-      page={@page}
-      myself={@myself}
-    />
-  </div>
   <%= if @show_opinion && @visible_opinion do %>
-    <div>
+    <div data-testid={"opinion-content-#{@vote.id}"}>
+      <div :if={@page == :author_show && !@show_vote} class="float-right ml-2">
+        <QuoteMenu.render
+          author={@author}
+          id={@vote.id}
+          opinion={@visible_opinion}
+          current_user={@current_user}
+          statement={@statement}
+          page={@page}
+          myself={@myself}
+        />
+      </div>
       <% citable_quote? =
         Opinion.quote?(@visible_opinion) && !@vote.twin && !@visible_opinion.twin %>
       <%= if @current_user && @current_user.author_id == @author.id do %>

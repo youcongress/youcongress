@@ -525,6 +525,11 @@ defmodule YouCongressWeb.AuthorLiveTest do
                "[data-testid='profile-vote-card-#{vote.id}'].overflow-visible"
              )
 
+      assert has_element?(
+               view,
+               "[data-testid='opinion-content-#{vote.id}'] #ai-menu-#{vote.id}"
+             )
+
       assert has_element?(view, "a", "Delete comment")
 
       view
