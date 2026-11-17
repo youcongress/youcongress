@@ -520,6 +520,11 @@ defmodule YouCongressWeb.AuthorLiveTest do
         |> log_in_user(user)
         |> live(~p"/x/#{author.twitter_username}")
 
+      assert has_element?(
+               view,
+               "[data-testid='profile-vote-card-#{vote.id}'].overflow-visible"
+             )
+
       assert has_element?(view, "a", "Delete comment")
 
       view
