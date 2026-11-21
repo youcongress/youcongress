@@ -16,7 +16,12 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
   setup do
     creator = creator_fixture()
     statement = statement_fixture(%{title: "Cities should remove private cars from downtown"})
-    delegate = author_fixture(%{name: "Featured guest"})
+
+    delegate =
+      author_fixture(%{
+        name: "Featured guest",
+        bio: "Explains better ways to design city streets"
+      })
 
     {:ok, reconsideration} =
       Reconsiderations.create_reconsideration(
@@ -66,7 +71,7 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     refute html =~ "Community result"
   end
 
-  test "delegate names open their profiles in a new tab and show sourced quote counts",
+  test "delegate names and pictures select them while quote counts link to their profiles",
        %{
          conn: conn
        } = context do
@@ -89,11 +94,28 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
 
     {:ok, view, _html} = live(conn, reconsideration_path(context))
 
+    checkbox_id = "suggested-delegate-#{context.delegate.id}"
+
     assert has_element?(
              view,
-             "a[href='#{SEO.author_path(context.delegate)}'][target='_blank'][rel='noopener noreferrer']",
-             "Featured guest (2 quotes)"
+             "#suggested-delegates label[for='#{checkbox_id}']",
+             "Featured guest"
            )
+
+    assert has_element?(
+             view,
+             "#suggested-delegate-name-row-#{context.delegate.id} > #delegate-quotes-#{context.delegate.id}[href='#{SEO.author_path(context.delegate)}'][target='_blank'][rel='noopener noreferrer'].underline",
+             "(2 quotes)"
+           )
+
+    assert has_element?(
+             view,
+             "#suggested-delegate-bio-#{context.delegate.id}",
+             "Explains better ways to design city streets"
+           )
+
+    view |> element("##{checkbox_id}") |> render_click()
+    assert has_element?(view, "##{checkbox_id}[checked]")
   end
 
   test "participants can search and select any existing YouCongress author",
@@ -108,6 +130,15 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
         username: "trust_expert",
         bio: "Researches community decision making"
       })
+
+    for number <- 1..7 do
+      Repo.insert!(%Opinion{
+        author_id: searchable_author.id,
+        content: "Independent sourced quote #{number}",
+        source_url: "https://example.com/independent-quotes/#{number}",
+        twin: false
+      })
+    end
 
     conn = log_in_user(conn, participant)
     {:ok, view, _html} = live(conn, reconsideration_path(context))
@@ -134,6 +165,21 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     |> render_click()
 
     assert has_element?(view, "#selected-extra-delegate-#{searchable_author.id}")
+
+    assert has_element?(
+             view,
+             "#selected-delegate-name-row-#{searchable_author.id} > #selected-delegate-quotes-#{searchable_author.id}[href='#{SEO.author_path(searchable_author)}'].underline",
+             "(7 quotes)"
+           )
+
+    assert has_element?(
+             view,
+             "#selected-delegate-bio-#{searchable_author.id}",
+             "Researches community decision making"
+           )
+
+    refute has_element?(view, "#selected-extra-delegate-#{searchable_author.id}", "@trust_expert")
+
     refute has_element?(view, "#reconsider-delegate-results")
 
     view
@@ -195,6 +241,15 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
     view
     |> element("#new-reconsider-person button")
     |> render_click()
+
+    assert has_element?(
+             view,
+             "#new-reconsider-person label[for='new_person_bio']",
+             "One-line biography"
+           )
+
+    assert has_element?(view, "#new-reconsider-person input[name='new_person[bio]']")
+    refute has_element?(view, "#new-reconsider-person textarea[name='new_person[bio]']")
 
     render_change(view, "new-person-change", %{
       "new_person" => %{"name" => name, "bio" => "Knows the issue well."}

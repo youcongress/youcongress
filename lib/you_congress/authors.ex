@@ -66,6 +66,29 @@ defmodule YouCongress.Authors do
     |> Repo.preload(preload)
   end
 
+  @doc "Adds each author's number of non-generated sourced quotes."
+  def with_quote_counts([]), do: []
+
+  def with_quote_counts(authors) when is_list(authors) do
+    author_ids = Enum.map(authors, & &1.id)
+
+    quote_counts =
+      from(opinion in Opinion,
+        where:
+          opinion.author_id in ^author_ids and
+            not (is_nil(opinion.source_url) and is_nil(opinion.source_text)) and
+            opinion.twin == false,
+        group_by: opinion.author_id,
+        select: {opinion.author_id, count(opinion.id)}
+      )
+      |> Repo.all()
+      |> Map.new()
+
+    Enum.map(authors, fn author ->
+      %{author | quotes_count: Map.get(quote_counts, author.id, 0)}
+    end)
+  end
+
   def count(opts \\ []) do
     opts
     |> build_list_query()

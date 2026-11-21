@@ -142,6 +142,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
           order_by_search_relevance: query,
           limit: @search_limit
         )
+        |> Authors.with_quote_counts()
         |> Enum.reject(&(&1.id in excluded_ids))
       else
         []
@@ -946,11 +947,12 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
               id="suggested-delegates"
               class="mt-4 space-y-3"
             >
-              <label
+              <div
                 :for={delegate <- available_delegates(@reconsideration, @current_user)}
                 class="flex items-center gap-3 rounded-lg border border-gray-200 p-3"
               >
                 <input
+                  id={"suggested-delegate-#{delegate.author_id}"}
                   type="checkbox"
                   name="response[delegate_ids][]"
                   value={delegate.author_id}
@@ -959,31 +961,49 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                   checked={to_string(delegate.author_id) in @form_params["delegate_ids"]}
                   class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                 />
-                <.link
-                  href={SEO.author_path(delegate.author)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="flex min-w-0 items-center gap-3 text-gray-900 hover:text-indigo-600"
-                >
+                <label for={"suggested-delegate-#{delegate.author_id}"} class="cursor-pointer">
                   <.profile_avatar
                     name={delegate.author.name}
                     image_url={delegate.author.profile_image_url}
                     class="h-9 w-9 text-sm"
                   />
-                  <span class="truncate font-medium">
-                    {author_name(delegate.author)}
-                    <span class="font-normal text-gray-500">
+                </label>
+                <div class="min-w-0 flex-1">
+                  <div
+                    id={"suggested-delegate-name-row-#{delegate.author_id}"}
+                    class="flex min-w-0 items-baseline gap-1"
+                  >
+                    <label
+                      for={"suggested-delegate-#{delegate.author_id}"}
+                      class="min-w-0 cursor-pointer truncate font-medium text-gray-900 hover:text-indigo-600"
+                    >
+                      {author_name(delegate.author)}
+                    </label>
+                    <.link
+                      id={"delegate-quotes-#{delegate.author_id}"}
+                      href={SEO.author_path(delegate.author)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="shrink-0 text-sm text-gray-500 underline hover:text-indigo-600"
+                    >
                       ({delegate.author.quotes_count} {plural(delegate.author.quotes_count, "quote")})
-                    </span>
-                  </span>
-                </.link>
+                    </.link>
+                  </div>
+                  <p
+                    :if={delegate.author.bio}
+                    id={"suggested-delegate-bio-#{delegate.author_id}"}
+                    class="truncate text-xs text-gray-500"
+                  >
+                    {delegate.author.bio}
+                  </p>
+                </div>
                 <span
                   :if={already_delegating?(delegate.author_id, @existing_delegate_ids)}
-                  class="ml-auto text-xs font-medium text-green-700"
+                  class="shrink-0 text-xs font-medium text-green-700"
                 >
                   Already a delegate
                 </span>
-              </label>
+              </div>
             </div>
 
             <div
@@ -1003,17 +1023,37 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                   image_url={delegate.profile_image_url}
                   class="h-9 w-9 text-sm"
                 />
-                <.link
-                  href={SEO.author_path(delegate)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="min-w-0 flex-1 text-gray-900 hover:text-indigo-600"
-                >
-                  <span class="block truncate text-sm font-medium">{author_name(delegate)}</span>
-                  <span :if={author_username(delegate)} class="block truncate text-xs text-gray-500">
-                    {author_username(delegate)}
-                  </span>
-                </.link>
+                <div class="min-w-0 flex-1">
+                  <div
+                    id={"selected-delegate-name-row-#{delegate.id}"}
+                    class="flex min-w-0 items-baseline gap-1"
+                  >
+                    <.link
+                      href={SEO.author_path(delegate)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="min-w-0 truncate text-sm font-medium text-gray-900 hover:text-indigo-600"
+                    >
+                      {author_name(delegate)}
+                    </.link>
+                    <.link
+                      id={"selected-delegate-quotes-#{delegate.id}"}
+                      href={SEO.author_path(delegate)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="shrink-0 text-sm text-gray-500 underline hover:text-indigo-600"
+                    >
+                      ({delegate.quotes_count} {plural(delegate.quotes_count, "quote")})
+                    </.link>
+                  </div>
+                  <p
+                    :if={delegate.bio}
+                    id={"selected-delegate-bio-#{delegate.id}"}
+                    class="truncate text-xs text-gray-500"
+                  >
+                    {delegate.bio}
+                  </p>
+                </div>
                 <button
                   type="button"
                   phx-click="remove-extra-delegate"
@@ -1168,8 +1208,8 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                 />
                 <.input
                   field={@new_person_form[:bio]}
-                  type="textarea"
-                  label="Bio"
+                  type="text"
+                  label="One-line biography"
                   phx-change="new-person-change"
                 />
                 <p :if={@new_person_error} id="new-person-error" class="text-sm text-red-700">
