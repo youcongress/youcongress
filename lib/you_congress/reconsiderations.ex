@@ -9,6 +9,8 @@ defmodule YouCongress.Reconsiderations do
   import Ecto.Query, warn: false
 
   alias YouCongress.Accounts.User
+  alias YouCongress.Accounts.Permissions
+  alias YouCongress.Authors
   alias YouCongress.Authors.Author
   alias YouCongress.Councils
   alias YouCongress.Opinions.Opinion
@@ -24,6 +26,7 @@ defmodule YouCongress.Reconsiderations do
   alias YouCongress.Repo
   alias YouCongress.Statements.Statement
   alias YouCongress.Votes
+  alias YouCongress.WikipediaUrl
   alias YouCongress.Workers.ReconsiderationCreatedNotificationWorker
   alias YouCongressWeb.Endpoint
 
@@ -149,17 +152,34 @@ defmodule YouCongress.Reconsiderations do
         delegate_ids,
         council_list_id \\ nil
       ) do
+    submit_response(reconsideration, user, responses, delegate_ids, council_list_id, [])
+  end
+
+  def submit_response(
+        %Reconsideration{} = reconsideration,
+        %User{} = user,
+        responses,
+        delegate_ids,
+        council_list_id,
+        new_people
+      ) do
     statement_ids = Enum.map(reconsideration.reconsideration_statements, & &1.statement_id)
-    allowed_delegate_ids = Enum.map(reconsideration.delegates, & &1.author_id)
 
     with {:ok, normalized_responses} <- normalize_responses(responses),
          :ok <- validate_response_statements(normalized_responses, statement_ids),
          {:ok, normalized_delegate_ids} <- normalize_delegate_ids(delegate_ids),
-         :ok <- validate_delegates(normalized_delegate_ids, allowed_delegate_ids),
+         :ok <- validate_delegates(normalized_delegate_ids),
+         {:ok, normalized_new_people} <- normalize_new_people(new_people),
+         :ok <- authorize_new_people(user, normalized_new_people),
          false <- participated?(reconsideration.id, user.author_id) do
-      normalized_delegate_ids = Enum.reject(normalized_delegate_ids, &(&1 == user.author_id))
-
       Repo.transaction(fn ->
+        created_delegate_ids = resolve_new_people(normalized_new_people)
+
+        normalized_delegate_ids =
+          (normalized_delegate_ids ++ created_delegate_ids)
+          |> Enum.uniq()
+          |> Enum.reject(&(&1 == user.author_id))
+
         persist_response(
           reconsideration,
           user,
@@ -352,7 +372,8 @@ defmodule YouCongress.Reconsiderations do
       user,
       payload["responses"] || %{},
       payload["delegate_ids"] || [],
-      payload["council_list_id"]
+      payload["council_list_id"],
+      payload["new_people"] || []
     )
   rescue
     Ecto.NoResultsError -> {:error, :not_found}
@@ -439,23 +460,61 @@ defmodule YouCongress.Reconsiderations do
         }
       end)
 
+    delegate_rows = delegate_stats(reconsideration, delegate_counts, total_participants)
+
     %{
       total_participants: total_participants,
       changed_participants: changed_participants,
       unchanged_participants: total_participants - changed_participants,
       changed_percent: percent(changed_participants, total_participants),
       statements: statement_stats,
-      delegates:
-        Enum.map(reconsideration.delegates, fn delegate ->
-          count = Map.get(delegate_counts, delegate.author_id, 0)
+      delegates: delegate_rows
+    }
+  end
 
-          %{
-            author_id: delegate.author_id,
-            author: delegate.author,
-            count: count,
-            percent: percent(count, total_participants)
-          }
-        end)
+  defp delegate_stats(reconsideration, delegate_counts, total_participants) do
+    curated_ids = Enum.map(reconsideration.delegates, & &1.author_id)
+    added_ids = Map.keys(delegate_counts) -- curated_ids
+    all_ids = curated_ids ++ added_ids
+    quote_counts = delegate_quote_counts_by_ids(all_ids)
+
+    authors_by_id =
+      Author
+      |> where([author], author.id in ^all_ids)
+      |> Repo.all()
+      |> Map.new(fn author ->
+        {author.id, %{author | quotes_count: Map.get(quote_counts, author.id, 0)}}
+      end)
+
+    curated_rows =
+      Enum.map(reconsideration.delegates, fn delegate ->
+        delegate_stat(
+          Map.fetch!(authors_by_id, delegate.author_id),
+          delegate_counts,
+          total_participants
+        )
+      end)
+
+    added_rows =
+      added_ids
+      |> Enum.map(&Map.fetch!(authors_by_id, &1))
+      |> Enum.sort_by(fn author ->
+        {-Map.get(delegate_counts, author.id, 0),
+         String.downcase(author.name || author.twitter_username || "")}
+      end)
+      |> Enum.map(&delegate_stat(&1, delegate_counts, total_participants))
+
+    curated_rows ++ added_rows
+  end
+
+  defp delegate_stat(author, counts, total_participants) do
+    count = Map.get(counts, author.id, 0)
+
+    %{
+      author_id: author.id,
+      author: author,
+      count: count,
+      percent: percent(count, total_participants)
     }
   end
 
@@ -481,7 +540,8 @@ defmodule YouCongress.Reconsiderations do
         delegates: delegate_query
       )
 
-    quote_counts = delegate_quote_counts(reconsideration.delegates)
+    quote_counts =
+      delegate_quote_counts_by_ids(Enum.map(reconsideration.delegates, & &1.author_id))
 
     delegates =
       Enum.map(reconsideration.delegates, fn delegate ->
@@ -496,11 +556,9 @@ defmodule YouCongress.Reconsiderations do
     %{reconsideration | delegates: delegates}
   end
 
-  defp delegate_quote_counts([]), do: %{}
+  defp delegate_quote_counts_by_ids([]), do: %{}
 
-  defp delegate_quote_counts(delegates) do
-    author_ids = Enum.map(delegates, & &1.author_id)
-
+  defp delegate_quote_counts_by_ids(author_ids) do
     from(opinion in Opinion,
       where:
         opinion.author_id in ^author_ids and
@@ -628,10 +686,158 @@ defmodule YouCongress.Reconsiderations do
   defp normalize_delegate_ids(nil), do: {:ok, []}
   defp normalize_delegate_ids(_), do: {:error, :invalid_delegates}
 
-  defp validate_delegates(ids, allowed_ids) do
-    if Enum.all?(ids, &(&1 in allowed_ids)),
+  defp validate_delegates([]), do: :ok
+
+  defp validate_delegates(ids) do
+    if Repo.aggregate(from(author in Author, where: author.id in ^ids), :count) == length(ids),
       do: :ok,
       else: {:error, :invalid_delegates}
+  end
+
+  defp normalize_new_people(nil), do: {:ok, []}
+
+  defp normalize_new_people(people) when is_list(people) do
+    people
+    |> Enum.reduce_while({:ok, []}, fn person, {:ok, acc} ->
+      case normalize_new_person(person) do
+        {:ok, normalized} -> {:cont, {:ok, [normalized | acc]}}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, normalized} -> {:ok, Enum.reverse(normalized)}
+      error -> error
+    end
+  end
+
+  defp normalize_new_people(_), do: {:error, {:invalid_person, "Invalid person data."}}
+
+  defp normalize_new_person(person) when is_map(person) do
+    name = present_value(person["name"] || person[:name])
+    bio = present_value(person["bio"] || person[:bio])
+    wikipedia_url = present_value(person["wikipedia_url"] || person[:wikipedia_url])
+
+    raw_x =
+      present_value(
+        person["x"] || person[:x] || person["twitter_username"] || person[:twitter_username]
+      )
+
+    with {:ok, twitter_username} <- normalize_x_username(raw_x),
+         {:ok, wikipedia_url, wikipedia_title} <- normalize_wikipedia_url(wikipedia_url),
+         :ok <- validate_person_route(twitter_username, wikipedia_url, name, bio) do
+      {:ok,
+       %{
+         name: name || wikipedia_title,
+         bio: bio,
+         wikipedia_url: wikipedia_url,
+         twitter_username: twitter_username,
+         twin_origin: false
+       }}
+    end
+  end
+
+  defp normalize_new_person(_), do: {:error, {:invalid_person, "Invalid person data."}}
+
+  defp present_value(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      value -> value
+    end
+  end
+
+  defp present_value(_), do: nil
+
+  defp normalize_x_username(nil), do: {:ok, nil}
+
+  defp normalize_x_username(value) do
+    username =
+      value
+      |> String.trim()
+      |> String.replace(~r{\Ahttps?://(?:www\.)?(?:x\.com|twitter\.com)/}i, "")
+      |> String.trim_leading("@")
+      |> String.trim_trailing("/")
+
+    if Regex.match?(~r/\A[A-Za-z0-9_]{1,15}\z/, username) do
+      {:ok, username}
+    else
+      {:error, {:invalid_person, "Enter a valid X handle or profile URL."}}
+    end
+  end
+
+  defp normalize_wikipedia_url(nil), do: {:ok, nil, nil}
+
+  defp normalize_wikipedia_url(value) do
+    case WikipediaUrl.parse(value) do
+      {:ok, %{title: title}} ->
+        {:ok, value, title |> String.replace("_", " ") |> String.trim()}
+
+      {:error, :invalid_url} ->
+        {:error, {:invalid_person, "Enter a valid HTTPS Wikipedia article URL."}}
+    end
+  end
+
+  defp validate_person_route(x, wikipedia_url, _name, _bio)
+       when not is_nil(x) or not is_nil(wikipedia_url),
+       do: :ok
+
+  defp validate_person_route(nil, nil, name, bio) when not is_nil(name) and not is_nil(bio),
+    do: :ok
+
+  defp validate_person_route(_, _, _, _) do
+    {:error,
+     {:invalid_person, "Provide an X profile, a Wikipedia article, or both name and bio."}}
+  end
+
+  defp authorize_new_people(_user, []), do: :ok
+
+  defp authorize_new_people(user, _people) do
+    if Permissions.blocked?(user),
+      do: {:error, :forbidden},
+      else: :ok
+  end
+
+  defp resolve_new_people(people) do
+    Enum.map(people, fn person ->
+      lock_person_identities(person)
+
+      x_author =
+        person.twitter_username &&
+          Authors.find_by(:twitter_username, person.twitter_username)
+
+      wikipedia_author =
+        person.wikipedia_url && Authors.find_by(:wikipedia_url, person.wikipedia_url)
+
+      case {x_author, wikipedia_author} do
+        {%Author{id: x_id}, %Author{id: wikipedia_id}} when x_id != wikipedia_id ->
+          Repo.rollback(
+            {:invalid_person, "That X profile and Wikipedia article belong to different people."}
+          )
+
+        {%Author{} = author, _} ->
+          author.id
+
+        {_, %Author{} = author} ->
+          author.id
+
+        {nil, nil} ->
+          case Authors.create_author(person) do
+            {:ok, author} -> author.id
+            {:error, %Ecto.Changeset{} = changeset} -> Repo.rollback(changeset)
+          end
+      end
+    end)
+  end
+
+  defp lock_person_identities(person) do
+    [
+      person.twitter_username && "x:" <> String.downcase(person.twitter_username),
+      person.wikipedia_url && "wikipedia:" <> String.downcase(person.wikipedia_url)
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.sort()
+    |> Enum.each(fn identity ->
+      Repo.query!("SELECT pg_advisory_xact_lock(hashtext($1))", [identity])
+    end)
   end
 
   defp normalize_answer(answer) when answer in @answers, do: {:ok, answer}

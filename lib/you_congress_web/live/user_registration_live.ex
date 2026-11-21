@@ -393,6 +393,9 @@ defmodule YouCongressWeb.UserRegistrationLive do
       {:ok, %{"council_ref" => ref}} when is_binary(ref) ->
         {[], %{}, pending_actions}
 
+      {:ok, %{"reconsideration" => reconsideration}} when is_map(reconsideration) ->
+        {[], %{}, pending_actions}
+
       {:ok, %{"delegate_ids" => delegate_ids, "votes" => votes}}
       when is_list(delegate_ids) and is_map(votes) ->
         {delegate_ids, votes, pending_actions}

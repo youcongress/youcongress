@@ -1,13 +1,16 @@
 defmodule YouCongressWeb.ReconsiderLive.Show do
   use YouCongressWeb, :live_view
 
-  alias YouCongress.Delegations
   alias YouCongress.Accounts
+  alias YouCongress.Authors
+  alias YouCongress.Delegations
   alias YouCongress.Reconsiderations
   alias YouCongressWeb.Components.LoginButtons
   alias YouCongressWeb.SEO
 
   @answers [:for, :abstain, :against]
+  @search_limit 8
+  @minimum_query_length 2
 
   @impl true
   def mount(%{"username" => username, "slug" => slug}, session, socket) do
@@ -27,6 +30,14 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
       |> assign(:return_to, return_to)
       |> assign(:answers, @answers)
       |> assign(:form_params, %{"answers" => %{}, "delegate_ids" => []})
+      |> assign(:delegate_query, "")
+      |> assign(:delegate_results, [])
+      |> assign(:delegate_selected_index, 0)
+      |> assign(:selected_extra_delegates, [])
+      |> assign(:new_people, [])
+      |> assign(:show_new_person_form, false)
+      |> assign(:new_person_form, new_person_form())
+      |> assign(:new_person_error, nil)
       |> assign(:show_auth, false)
       |> assign(:pending_actions, nil)
       |> assign(:page_title, reconsideration.title)
@@ -67,7 +78,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
 
   @impl true
   def handle_event("submit", %{"response" => params}, socket) do
-    params = normalize_form_params(params)
+    params = normalize_form_params(params, socket)
 
     if complete?(params, socket.assigns.reconsideration) do
       submit_or_authenticate(socket, params)
@@ -82,6 +93,151 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
 
   def handle_event("submit", _params, socket) do
     {:noreply, put_flash(socket, :error, "Choose a before and now answer for every statement.")}
+  end
+
+  def handle_event(
+        "select-answer",
+        %{"statement-id" => statement_id, "moment" => moment, "answer" => answer},
+        socket
+      )
+      when moment in ["before", "after"] and answer in ["for", "against", "abstain"] do
+    answers =
+      socket.assigns.form_params
+      |> Map.get("answers", %{})
+      |> Map.update(statement_id, %{moment => answer}, &Map.put(&1, moment, answer))
+
+    {:noreply, update(socket, :form_params, &Map.put(&1, "answers", answers))}
+  end
+
+  def handle_event("toggle-delegate", %{"id" => id}, socket) do
+    ids = List.wrap(socket.assigns.form_params["delegate_ids"])
+    id = to_string(id)
+    ids = if id in ids, do: List.delete(ids, id), else: ids ++ [id]
+
+    {:noreply, update(socket, :form_params, &Map.put(&1, "delegate_ids", ids))}
+  end
+
+  def handle_event("select-council-list", %{"response" => %{"council_list_id" => id}}, socket) do
+    {:noreply, update(socket, :form_params, &Map.put(&1, "council_list_id", id))}
+  end
+
+  def handle_event("new-person-change", %{"new_person" => person_params}, socket) do
+    merged_params = Map.merge(socket.assigns.new_person_form.params, person_params)
+
+    {:noreply,
+     socket
+     |> assign(:new_person_form, new_person_form(merged_params))
+     |> assign(:new_person_error, nil)}
+  end
+
+  def handle_event("search-delegates", %{"delegate_search" => query}, socket) do
+    results =
+      if searchable?(query) do
+        excluded_ids =
+          creator_delegate_ids(socket) ++
+            selected_extra_delegate_ids(socket) ++ current_author_ids(socket)
+
+        Authors.list_authors(
+          search: String.trim(query),
+          order_by_search_relevance: query,
+          limit: @search_limit
+        )
+        |> Enum.reject(&(&1.id in excluded_ids))
+      else
+        []
+      end
+
+    {:noreply,
+     socket
+     |> assign(:delegate_query, query)
+     |> assign(:delegate_results, results)
+     |> assign(:delegate_selected_index, 0)}
+  end
+
+  def handle_event("add-delegate", %{"id" => id}, socket) do
+    with {:ok, id} <- parse_id(id),
+         delegate when not is_nil(delegate) <-
+           Enum.find(socket.assigns.delegate_results, &(&1.id == id)) do
+      {:noreply, select_extra_delegate(socket, delegate)}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("remove-extra-delegate", %{"id" => id}, socket) do
+    case parse_id(id) do
+      {:ok, id} ->
+        form_params =
+          Map.update(socket.assigns.form_params, "delegate_ids", [], fn ids ->
+            Enum.reject(ids || [], &(&1 == to_string(id)))
+          end)
+
+        {:noreply,
+         socket
+         |> assign(:form_params, form_params)
+         |> update(:selected_extra_delegates, &Enum.reject(&1, fn author -> author.id == id end))}
+
+      :error ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("delegate-keydown", %{"key" => "ArrowDown"}, socket) do
+    {:noreply, update_delegate_selected_index(socket, 1)}
+  end
+
+  def handle_event("delegate-keydown", %{"key" => "ArrowUp"}, socket) do
+    {:noreply, update_delegate_selected_index(socket, -1)}
+  end
+
+  def handle_event("delegate-keydown", %{"key" => "Enter"}, socket) do
+    case Enum.at(socket.assigns.delegate_results, socket.assigns.delegate_selected_index) do
+      nil -> {:noreply, socket}
+      delegate -> {:noreply, select_extra_delegate(socket, delegate)}
+    end
+  end
+
+  def handle_event("delegate-keydown", %{"key" => "Escape"}, socket) do
+    {:noreply, assign(socket, :delegate_results, [])}
+  end
+
+  def handle_event("delegate-keydown", _params, socket), do: {:noreply, socket}
+
+  def handle_event("toggle-new-person", _params, socket) do
+    {:noreply,
+     socket
+     |> update(:show_new_person_form, &(!&1))
+     |> assign(:new_person_error, nil)}
+  end
+
+  def handle_event("add-new-person", _params, socket) do
+    params = socket.assigns.new_person_form.params
+
+    case validate_new_person(params) do
+      {:ok, person} ->
+        person = Map.put(person, "key", System.unique_integer([:positive]))
+
+        {:noreply,
+         socket
+         |> update(:new_people, &(&1 ++ [person]))
+         |> assign(:new_person_form, new_person_form())
+         |> assign(:new_person_error, nil)
+         |> assign(:show_new_person_form, false)}
+
+      {:error, message} ->
+        {:noreply, assign(socket, :new_person_error, message)}
+    end
+  end
+
+  def handle_event("remove-new-person", %{"key" => key}, socket) do
+    case parse_id(key) do
+      {:ok, key} ->
+        {:noreply,
+         update(socket, :new_people, &Enum.reject(&1, fn person -> person["key"] == key end))}
+
+      :error ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("remove-response", _params, %{assigns: %{current_user: nil}} = socket) do
@@ -116,7 +272,8 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
         slug: socket.assigns.reconsideration.slug,
         responses: params["answers"],
         council_list_id: params["council_list_id"],
-        delegate_ids: params["delegate_ids"]
+        delegate_ids: params["delegate_ids"],
+        new_people: new_people_payload(socket)
       }
     }
 
@@ -133,7 +290,8 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
            socket.assigns.current_user,
            params["answers"],
            params["delegate_ids"],
-           params["council_list_id"]
+           params["council_list_id"],
+           new_people_payload(socket)
          ) do
       {:ok, _responses} ->
         {:noreply,
@@ -150,6 +308,18 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
          socket
          |> assign(:form_params, params)
          |> put_flash(:error, "Choose a before and now answer for every statement.")}
+
+      {:error, {:invalid_person, message}} ->
+        {:noreply,
+         socket
+         |> assign(:form_params, params)
+         |> assign(:new_person_error, message)}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply,
+         socket
+         |> assign(:form_params, params)
+         |> assign(:new_person_error, changeset_error(changeset))}
 
       {:error, _reason} ->
         {:noreply,
@@ -183,12 +353,129 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
     |> assign(:existing_delegate_ids, Delegations.delegate_ids_by_deleguee_id(author_id))
   end
 
-  defp normalize_form_params(params) do
+  defp normalize_form_params(params, socket) do
+    extra_ids = Enum.map(socket.assigns.selected_extra_delegates, &to_string(&1.id))
+
     %{
       "answers" => params["answers"] || %{},
       "council_list_id" => params["council_list_id"],
-      "delegate_ids" => List.wrap(params["delegate_ids"])
+      "delegate_ids" => Enum.uniq(List.wrap(params["delegate_ids"]) ++ extra_ids)
     }
+  end
+
+  defp new_person_form(params \\ %{}) do
+    defaults = %{"x" => "", "wikipedia_url" => "", "name" => "", "bio" => ""}
+    to_form(Map.merge(defaults, params), as: :new_person)
+  end
+
+  defp validate_new_person(params) do
+    person =
+      Map.new(~w(x wikipedia_url name bio), fn field ->
+        {field, params |> Map.get(field, "") |> String.trim()}
+      end)
+
+    x = normalize_x_for_validation(person["x"])
+    wikipedia_url = person["wikipedia_url"]
+    name = person["name"]
+    bio = person["bio"]
+
+    cond do
+      person["x"] != "" and is_nil(x) ->
+        {:error, "Enter a valid X handle or profile URL."}
+
+      wikipedia_url != "" and not YouCongress.WikipediaUrl.valid?(wikipedia_url) ->
+        {:error, "Enter a valid HTTPS Wikipedia article URL."}
+
+      x || wikipedia_url != "" || (name != "" and bio != "") ->
+        {:ok, person}
+
+      true ->
+        {:error, "Provide an X profile, a Wikipedia article, or both name and bio."}
+    end
+  end
+
+  defp normalize_x_for_validation(""), do: nil
+
+  defp normalize_x_for_validation(value) do
+    username =
+      value
+      |> String.replace(~r{\Ahttps?://(?:www\.)?(?:x\.com|twitter\.com)/}i, "")
+      |> String.trim_leading("@")
+      |> String.trim_trailing("/")
+
+    if Regex.match?(~r/\A[A-Za-z0-9_]{1,15}\z/, username), do: username
+  end
+
+  defp new_people_payload(socket) do
+    Enum.map(socket.assigns.new_people, &Map.drop(&1, ["key"]))
+  end
+
+  defp changeset_error(changeset) do
+    changeset
+    |> Ecto.Changeset.traverse_errors(&translate_error/1)
+    |> Map.values()
+    |> List.flatten()
+    |> List.first()
+    |> Kernel.||("Check the person's information and try again.")
+  end
+
+  defp searchable?(query), do: String.length(String.trim(query)) >= @minimum_query_length
+
+  defp parse_id(id) when is_integer(id), do: {:ok, id}
+
+  defp parse_id(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {id, ""} -> {:ok, id}
+      _ -> :error
+    end
+  end
+
+  defp parse_id(_id), do: :error
+
+  defp creator_delegate_ids(socket) do
+    Enum.map(socket.assigns.reconsideration.delegates, & &1.author_id)
+  end
+
+  defp selected_extra_delegate_ids(socket) do
+    Enum.map(socket.assigns.selected_extra_delegates, & &1.id)
+  end
+
+  defp current_author_ids(%{assigns: %{current_user: nil}}), do: []
+  defp current_author_ids(socket), do: [socket.assigns.current_user.author_id]
+
+  defp select_extra_delegate(socket, delegate) do
+    ids =
+      socket.assigns.form_params["delegate_ids"]
+      |> List.wrap()
+      |> Kernel.++([to_string(delegate.id)])
+      |> Enum.uniq()
+
+    socket
+    |> update(:selected_extra_delegates, &(&1 ++ [delegate]))
+    |> update(:form_params, &Map.put(&1, "delegate_ids", ids))
+    |> assign(:delegate_query, "")
+    |> assign(:delegate_results, [])
+    |> assign(:delegate_selected_index, 0)
+    |> push_event("clear-autocomplete", %{id: "reconsider-delegate-search"})
+  end
+
+  defp update_delegate_selected_index(%{assigns: %{delegate_results: []}} = socket, _change),
+    do: assign(socket, :delegate_selected_index, 0)
+
+  defp update_delegate_selected_index(socket, change) do
+    next_index =
+      (socket.assigns.delegate_selected_index + change)
+      |> max(0)
+      |> min(length(socket.assigns.delegate_results) - 1)
+
+    assign(socket, :delegate_selected_index, next_index)
+  end
+
+  defp active_delegate_option_id(results, selected_index) do
+    case Enum.at(results, selected_index) do
+      nil -> nil
+      delegate -> "reconsider-delegate-result-#{delegate.id}"
+    end
   end
 
   defp complete?(params, reconsideration) do
@@ -235,6 +522,29 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
     do: "peer-checked:border-gray-600 peer-checked:bg-gray-100 peer-checked:text-gray-800"
 
   defp author_name(author), do: author.name || author.twitter_username || "YouCongress author"
+
+  defp author_username(%{username: username}) when is_binary(username), do: "@#{username}"
+
+  defp author_username(%{twitter_username: username}) when is_binary(username),
+    do: "@#{username}"
+
+  defp author_username(_author), do: nil
+
+  defp new_person_name(person) do
+    cond do
+      person["name"] != "" -> person["name"]
+      person["x"] != "" -> "@#{normalize_x_for_validation(person["x"])}"
+      person["wikipedia_url"] != "" -> wikipedia_title(person["wikipedia_url"])
+      true -> "New person"
+    end
+  end
+
+  defp wikipedia_title(url) do
+    case YouCongress.WikipediaUrl.parse(url) do
+      {:ok, %{title: title}} -> String.replace(title, "_", " ")
+      _ -> "Wikipedia profile"
+    end
+  end
 
   defp plural(1, word), do: word
   defp plural(_count, word), do: word <> "s"
@@ -569,6 +879,10 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                       type="radio"
                       name={"response[answers][#{item.statement_id}][before]"}
                       value={answer}
+                      phx-click="select-answer"
+                      phx-value-statement-id={item.statement_id}
+                      phx-value-moment="before"
+                      phx-value-answer={answer}
                       checked={
                         selected_answer(@form_params, item.statement_id, :before) == to_string(answer)
                       }
@@ -593,6 +907,10 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                       type="radio"
                       name={"response[answers][#{item.statement_id}][after]"}
                       value={answer}
+                      phx-click="select-answer"
+                      phx-value-statement-id={item.statement_id}
+                      phx-value-moment="after"
+                      phx-value-answer={answer}
                       checked={
                         selected_answer(@form_params, item.statement_id, :after) == to_string(answer)
                       }
@@ -611,7 +929,6 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
           </fieldset>
 
           <fieldset
-            :if={available_delegates(@reconsideration, @current_user) != []}
             id="reconsider-delegates"
             class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
           >
@@ -624,7 +941,11 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
               selections also help identify the most trusted people.
             </p>
 
-            <div class="mt-4 space-y-3">
+            <div
+              :if={available_delegates(@reconsideration, @current_user) != []}
+              id="suggested-delegates"
+              class="mt-4 space-y-3"
+            >
               <label
                 :for={delegate <- available_delegates(@reconsideration, @current_user)}
                 class="flex items-center gap-3 rounded-lg border border-gray-200 p-3"
@@ -633,6 +954,8 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
                   type="checkbox"
                   name="response[delegate_ids][]"
                   value={delegate.author_id}
+                  phx-click="toggle-delegate"
+                  phx-value-id={delegate.author_id}
                   checked={to_string(delegate.author_id) in @form_params["delegate_ids"]}
                   class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                 />
@@ -663,11 +986,228 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
               </label>
             </div>
 
+            <div
+              :if={@selected_extra_delegates != []}
+              id="selected-extra-delegates"
+              class="mt-4 space-y-2"
+            >
+              <p class="text-sm font-semibold text-gray-700">People you added</p>
+              <div
+                :for={delegate <- @selected_extra_delegates}
+                id={"selected-extra-delegate-#{delegate.id}"}
+                class="flex items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 p-3"
+              >
+                <input type="hidden" name="response[delegate_ids][]" value={delegate.id} />
+                <.profile_avatar
+                  name={delegate.name}
+                  image_url={delegate.profile_image_url}
+                  class="h-9 w-9 text-sm"
+                />
+                <.link
+                  href={SEO.author_path(delegate)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="min-w-0 flex-1 text-gray-900 hover:text-indigo-600"
+                >
+                  <span class="block truncate text-sm font-medium">{author_name(delegate)}</span>
+                  <span :if={author_username(delegate)} class="block truncate text-xs text-gray-500">
+                    {author_username(delegate)}
+                  </span>
+                </.link>
+                <button
+                  type="button"
+                  phx-click="remove-extra-delegate"
+                  phx-value-id={delegate.id}
+                  aria-label={"Remove #{author_name(delegate)}"}
+                  class="text-xl leading-5 text-indigo-700 hover:text-indigo-900"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div :if={@new_people != []} id="selected-new-people" class="mt-4 space-y-2">
+              <p class="text-sm font-semibold text-gray-700">New people you added</p>
+              <div
+                :for={person <- @new_people}
+                id={"selected-new-person-#{person["key"]}"}
+                class="flex items-start gap-3 rounded-lg border border-indigo-200 bg-indigo-50 p-3"
+              >
+                <div class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-medium text-gray-900">
+                    {new_person_name(person)}
+                  </span>
+                  <span
+                    :if={person["bio"] != ""}
+                    class="mt-0.5 line-clamp-2 block text-xs text-gray-500"
+                  >
+                    {person["bio"]}
+                  </span>
+                  <span class="block text-xs text-indigo-700">
+                    {if @current_user,
+                      do: "Profile will be created when you save your response.",
+                      else: "Profile will be created after sign-in."}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  phx-click="remove-new-person"
+                  phx-value-key={person["key"]}
+                  aria-label={"Remove #{new_person_name(person)}"}
+                  class="text-xl leading-5 text-indigo-700 hover:text-indigo-900"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div id="reconsider-delegate-picker" class="mt-5 space-y-2">
+              <label
+                for="reconsider-delegate-search"
+                class="block text-sm font-semibold text-gray-700"
+              >
+                Search anyone on YouCongress
+              </label>
+              <div class="relative">
+                <input
+                  id="reconsider-delegate-search"
+                  name="delegate_search"
+                  type="search"
+                  value={@delegate_query}
+                  placeholder="Search by name, username, or bio…"
+                  autocomplete="off"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-controls="reconsider-delegate-results"
+                  aria-expanded={to_string(@delegate_results != [])}
+                  aria-activedescendant={
+                    active_delegate_option_id(@delegate_results, @delegate_selected_index)
+                  }
+                  phx-change="search-delegates"
+                  phx-keydown="delegate-keydown"
+                  phx-debounce="250"
+                  onkeydown="if(['ArrowDown','ArrowUp','Enter','Escape'].includes(event.key)) event.preventDefault()"
+                  class="block w-full rounded-lg border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                />
+
+                <div
+                  :if={@delegate_results != []}
+                  id="reconsider-delegate-results"
+                  role="listbox"
+                  class="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
+                >
+                  <button
+                    :for={{delegate, index} <- Enum.with_index(@delegate_results)}
+                    id={"reconsider-delegate-result-#{delegate.id}"}
+                    type="button"
+                    role="option"
+                    aria-selected={to_string(index == @delegate_selected_index)}
+                    phx-click="add-delegate"
+                    phx-value-id={delegate.id}
+                    class={[
+                      "block w-full rounded-md px-3 py-2 text-left hover:bg-indigo-50 focus:bg-indigo-50 focus:outline-none",
+                      index == @delegate_selected_index && "bg-indigo-50"
+                    ]}
+                  >
+                    <span class="flex items-baseline gap-2">
+                      <span class="text-sm font-medium text-gray-900">{author_name(delegate)}</span>
+                      <span :if={author_username(delegate)} class="text-xs text-gray-500">
+                        {author_username(delegate)}
+                      </span>
+                    </span>
+                    <span :if={delegate.bio} class="mt-0.5 line-clamp-2 block text-xs text-gray-500">
+                      {delegate.bio}
+                    </span>
+                  </button>
+                </div>
+              </div>
+              <p
+                :if={searchable?(@delegate_query) && @delegate_results == []}
+                id="no-reconsider-delegate-results"
+                class="text-xs text-gray-500"
+              >
+                No matching people found. You can add a new person below.
+              </p>
+            </div>
+
+            <div id="new-reconsider-person" class="mt-5 border-t border-gray-200 pt-4">
+              <button
+                type="button"
+                phx-click="toggle-new-person"
+                aria-expanded={to_string(@show_new_person_form)}
+                class="text-sm font-semibold text-indigo-700 hover:text-indigo-600"
+              >
+                {if @show_new_person_form,
+                  do: "Cancel adding a new person",
+                  else: "Can’t find someone? Add them"}
+              </button>
+
+              <div :if={@show_new_person_form} class="mt-4 space-y-3 rounded-lg bg-gray-50 p-4">
+                <p class="text-xs text-gray-600">
+                  Provide an X profile, a Wikipedia article, or both a name and bio.
+                </p>
+                <.input
+                  field={@new_person_form[:x]}
+                  type="text"
+                  label="X handle or profile URL"
+                  placeholder="@username or https://x.com/username"
+                  phx-change="new-person-change"
+                />
+                <.input
+                  field={@new_person_form[:wikipedia_url]}
+                  type="url"
+                  label="Wikipedia article URL"
+                  placeholder="https://en.wikipedia.org/wiki/..."
+                  phx-change="new-person-change"
+                />
+                <.input
+                  field={@new_person_form[:name]}
+                  type="text"
+                  label="Name"
+                  phx-change="new-person-change"
+                />
+                <.input
+                  field={@new_person_form[:bio]}
+                  type="textarea"
+                  label="Bio"
+                  phx-change="new-person-change"
+                />
+                <p :if={@new_person_error} id="new-person-error" class="text-sm text-red-700">
+                  {@new_person_error}
+                </p>
+                <button
+                  type="button"
+                  phx-click="add-new-person"
+                  class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+                >
+                  Add this person
+                </button>
+              </div>
+              <p
+                :if={@new_person_error && !@show_new_person_form}
+                id="new-person-error"
+                class="mt-2 text-sm text-red-700"
+              >
+                {@new_person_error}
+              </p>
+            </div>
+
             <div :if={@council_lists != []} id="delegate-council-list" class="mt-5">
               <label>
                 Council list for these selections
-                <select name="response[council_list_id]" class="block rounded border-gray-300">
-                  <option :for={list <- @council_lists} value={list.id} selected={list.fallback}>
+                <select
+                  name="response[council_list_id]"
+                  phx-change="select-council-list"
+                  class="block rounded border-gray-300"
+                >
+                  <option
+                    :for={list <- @council_lists}
+                    value={list.id}
+                    selected={
+                      to_string(list.id) == @form_params["council_list_id"] or
+                        (is_nil(@form_params["council_list_id"]) and list.fallback)
+                    }
+                  >
                     {list.name}{if list.fallback, do: " (final fallback)"}
                   </option>
                 </select>

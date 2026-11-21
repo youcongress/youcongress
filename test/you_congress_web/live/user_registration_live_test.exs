@@ -149,6 +149,35 @@ defmodule YouCongressWeb.UserRegistrationLiveTest do
       refute Repo.get_by(PendingRegistrationAction, user_id: user.id)
     end
 
+    test "preserves a pending Reconsider response with staged people", %{conn: conn} do
+      email = unique_user_email()
+
+      pending_actions =
+        Jason.encode!(%{
+          delegate_ids: [],
+          votes: %{},
+          reconsideration: %{
+            slug: "pending-reconsideration",
+            responses: %{},
+            delegate_ids: [],
+            new_people: [%{name: "Pending expert", bio: "Added before registration."}]
+          }
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/sign_up?pending_actions=#{pending_actions}")
+
+      lv
+      |> form("#registration_form", user: %{name: "Pending participant", email: email})
+      |> render_submit()
+
+      user = Accounts.get_user_by_email(email)
+      pending = Repo.get_by(PendingRegistrationAction, user_id: user.id)
+
+      assert pending.payload["reconsideration"]["new_people"] == [
+               %{"name" => "Pending expert", "bio" => "Added before registration."}
+             ]
+    end
+
     test "preserves return_to in OAuth links", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/sign_up?return_to=/p/test-statement")
 

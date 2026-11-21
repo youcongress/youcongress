@@ -302,7 +302,7 @@ defmodule YouCongress.ReconsiderationsTest do
              )
   end
 
-  test "rejects incomplete answers and delegates not offered by the creator", context do
+  test "rejects incomplete answers and accepts any existing author as a delegate", context do
     incomplete = %{
       to_string(context.first_statement.id) => %{"before" => "for", "after" => "against"}
     }
@@ -322,13 +322,175 @@ defmodule YouCongress.ReconsiderationsTest do
 
     unlisted_author = author_fixture()
 
-    assert {:error, :invalid_delegates} =
+    assert {:ok, _responses} =
              Reconsiderations.submit_response(
                context.reconsideration,
                context.participant,
                complete,
                [unlisted_author.id]
              )
+
+    assert Delegations.delegating?(context.participant.author_id, unlisted_author.id)
+
+    assert Enum.any?(
+             Reconsiderations.stats(context.reconsideration).delegates,
+             &(&1.author_id == unlisted_author.id and &1.count == 1)
+           )
+  end
+
+  test "rejects delegate IDs that do not identify an author", context do
+    responses = %{
+      to_string(context.first_statement.id) => %{"before" => "for", "after" => "against"},
+      to_string(context.second_statement.id) => %{"before" => "for", "after" => "for"}
+    }
+
+    assert {:error, :invalid_delegates} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               context.participant,
+               responses,
+               [-1]
+             )
+  end
+
+  test "creates new delegate profiles from X, Wikipedia, or name and bio", context do
+    responses = %{
+      to_string(context.first_statement.id) => %{"before" => "for", "after" => "against"},
+      to_string(context.second_statement.id) => %{"before" => "for", "after" => "for"}
+    }
+
+    x_username = "trust_#{System.unique_integer([:positive])}" |> String.slice(0, 15)
+    wiki_name = "Trust_Person_#{System.unique_integer([:positive])}"
+    named_person = "Community expert #{System.unique_integer([:positive])}"
+
+    new_people = [
+      %{"x" => "https://x.com/#{x_username}"},
+      %{"wikipedia_url" => "https://en.wikipedia.org/wiki/#{wiki_name}"},
+      %{"name" => named_person, "bio" => "A trusted local subject-matter expert."}
+    ]
+
+    assert {:ok, _responses} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               context.participant,
+               responses,
+               [],
+               nil,
+               new_people
+             )
+
+    x_author = Authors.get_author_by(twitter_username: x_username)
+
+    wiki_author =
+      Authors.get_author_by(wikipedia_url: "https://en.wikipedia.org/wiki/#{wiki_name}")
+
+    named_author = Authors.get_author_by(name: named_person)
+
+    assert x_author.twin_origin == false
+    assert wiki_author.name == String.replace(wiki_name, "_", " ")
+    assert named_author.bio == "A trusted local subject-matter expert."
+
+    stats = Reconsiderations.stats(context.reconsideration)
+
+    assert Enum.all?([x_author.id, wiki_author.id, named_author.id], fn author_id ->
+             Enum.any?(stats.delegates, &(&1.author_id == author_id and &1.count == 1))
+           end)
+  end
+
+  test "reuses identity matches and rejects conflicting X and Wikipedia identities", context do
+    responses = %{
+      to_string(context.first_statement.id) => %{"before" => "for", "after" => "against"},
+      to_string(context.second_statement.id) => %{"before" => "for", "after" => "for"}
+    }
+
+    x_author = author_fixture(twitter_username: "existing_trust")
+
+    assert {:ok, _responses} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               context.participant,
+               responses,
+               [],
+               nil,
+               [%{"x" => "@EXISTING_TRUST"}]
+             )
+
+    assert Delegations.delegating?(context.participant.author_id, x_author.id)
+
+    other_participant = user_fixture()
+
+    wikipedia_author =
+      author_fixture(wikipedia_url: "https://en.wikipedia.org/wiki/Other_Trust_Person")
+
+    assert {:error, {:invalid_person, message}} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               other_participant,
+               responses,
+               [],
+               nil,
+               [
+                 %{
+                   "x" => "existing_trust",
+                   "wikipedia_url" => wikipedia_author.wikipedia_url
+                 }
+               ]
+             )
+
+    assert message =~ "different people"
+    refute Reconsiderations.participated?(context.reconsideration.id, other_participant.author_id)
+  end
+
+  test "validates new-person routes and rolls profile creation back with the response", context do
+    responses = %{
+      to_string(context.first_statement.id) => %{"before" => "for", "after" => "against"},
+      to_string(context.second_statement.id) => %{"before" => "for", "after" => "for"}
+    }
+
+    assert {:error, {:invalid_person, _message}} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               context.participant,
+               responses,
+               [],
+               nil,
+               [%{"name" => "Missing bio"}]
+             )
+
+    rolled_back_name = "Rolled back #{System.unique_integer([:positive])}"
+
+    assert {:error, :invalid_list} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               context.participant,
+               responses,
+               [],
+               999_999_999,
+               [%{"name" => rolled_back_name, "bio" => "Should not remain in the database."}]
+             )
+
+    assert Authors.get_author_by(name: rolled_back_name) == nil
+  end
+
+  test "blocked users cannot create people through a Reconsider response", context do
+    {:ok, blocked_participant} = Accounts.update_role(context.participant, "blocked")
+
+    responses = %{
+      to_string(context.first_statement.id) => %{"before" => "for", "after" => "against"},
+      to_string(context.second_statement.id) => %{"before" => "for", "after" => "for"}
+    }
+
+    assert {:error, :forbidden} =
+             Reconsiderations.submit_response(
+               context.reconsideration,
+               blocked_participant,
+               responses,
+               [],
+               nil,
+               [%{"name" => "Blocked creation", "bio" => "Must not be created."}]
+             )
+
+    assert Authors.get_author_by(name: "Blocked creation") == nil
   end
 
   test "creates a page from shareable statement and author references", context do
@@ -420,6 +582,31 @@ defmodule YouCongress.ReconsiderationsTest do
            )
 
     assert Delegations.delegating?(context.participant.author_id, context.delegate.id)
+  end
+
+  test "pending authenticated actions create a staged person", context do
+    new_name = "Pending expert #{System.unique_integer([:positive])}"
+
+    pending =
+      Jason.encode!(%{
+        delegate_ids: [],
+        votes: %{},
+        reconsideration: %{
+          slug: context.reconsideration.slug,
+          responses: %{
+            context.first_statement.id => %{before: "against", after: "for"},
+            context.second_statement.id => %{before: "for", after: "for"}
+          },
+          delegate_ids: [],
+          new_people: [%{name: new_name, bio: "Added before authentication."}]
+        }
+      })
+
+    assert :ok = YouCongress.PendingActions.process(context.participant, pending)
+
+    author = Authors.get_author_by(name: new_name)
+    assert author
+    assert Delegations.delegating?(context.participant.author_id, author.id)
   end
 
   test "silently ignores a self-delegation selected before login", context do

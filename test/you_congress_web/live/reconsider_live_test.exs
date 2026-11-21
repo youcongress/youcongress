@@ -96,6 +96,163 @@ defmodule YouCongressWeb.ReconsiderLiveTest do
            )
   end
 
+  test "participants can search and select any existing YouCongress author",
+       %{
+         conn: conn
+       } = context do
+    participant = user_fixture()
+
+    searchable_author =
+      author_fixture(%{
+        name: "Independent trust expert",
+        username: "trust_expert",
+        bio: "Researches community decision making"
+      })
+
+    conn = log_in_user(conn, participant)
+    {:ok, view, _html} = live(conn, reconsideration_path(context))
+
+    before_selector =
+      "input[name='response[answers][#{context.statement.id}][before]'][value='against']"
+
+    view |> element(before_selector) |> render_click()
+
+    view
+    |> element("#reconsider-delegate-search")
+    |> render_change(%{"delegate_search" => "Independent trust"})
+
+    assert has_element?(
+             view,
+             "#reconsider-delegate-result-#{searchable_author.id}",
+             "Independent trust expert"
+           )
+
+    assert has_element?(view, before_selector <> "[checked]")
+
+    view
+    |> element("#reconsider-delegate-result-#{searchable_author.id}")
+    |> render_click()
+
+    assert has_element?(view, "#selected-extra-delegate-#{searchable_author.id}")
+    refute has_element?(view, "#reconsider-delegate-results")
+
+    view
+    |> element("#selected-extra-delegate-#{searchable_author.id} button")
+    |> render_click()
+
+    refute has_element?(view, "#selected-extra-delegate-#{searchable_author.id}")
+    assert has_element?(view, before_selector <> "[checked]")
+
+    view
+    |> element("#reconsider-delegate-search")
+    |> render_change(%{"delegate_search" => "Independent trust"})
+
+    view
+    |> element("#reconsider-delegate-result-#{searchable_author.id}")
+    |> render_click()
+
+    render_submit(view, "submit", %{
+      "response" => %{
+        "answers" => %{
+          to_string(context.statement.id) => %{"before" => "against", "after" => "for"}
+        },
+        "delegate_ids" => [to_string(searchable_author.id)]
+      }
+    })
+
+    assert has_element?(view, "#delegate-result-#{searchable_author.id}", "1 participant")
+  end
+
+  test "the trust picker is available without creator-suggested people",
+       %{conn: conn} = context do
+    {:ok, reconsideration} =
+      Reconsiderations.create_reconsideration(
+        context.creator,
+        %{
+          "title" => "Trust anyone",
+          "content_url" => "https://example.com/anyone",
+          "content_type" => "article"
+        },
+        [context.statement.id],
+        []
+      )
+
+    {:ok, view, _html} =
+      live(conn, "/@#{context.creator.author.username}/r/#{reconsideration.slug}")
+
+    assert has_element?(view, "#reconsider-delegates", "Who would you trust to represent you?")
+    assert has_element?(view, "#reconsider-delegate-search")
+    assert has_element?(view, "#new-reconsider-person", "Can’t find someone? Add them")
+  end
+
+  test "a guest can stage a new person without creating it before authentication",
+       %{
+         conn: conn
+       } = context do
+    name = "Guest staged expert #{System.unique_integer([:positive])}"
+    {:ok, view, _html} = live(conn, reconsideration_path(context))
+
+    view
+    |> element("#new-reconsider-person button")
+    |> render_click()
+
+    render_change(view, "new-person-change", %{
+      "new_person" => %{"name" => name, "bio" => "Knows the issue well."}
+    })
+
+    view
+    |> element("#new-reconsider-person button", "Add this person")
+    |> render_click()
+
+    assert has_element?(view, "#selected-new-people", name)
+    assert Authors.get_author_by(name: name) == nil
+
+    render_submit(view, "submit", %{
+      "response" => %{
+        "answers" => %{
+          to_string(context.statement.id) => %{"before" => "against", "after" => "for"}
+        }
+      }
+    })
+
+    assert has_element?(view, "#reconsider-auth", "Sign in to record your response")
+    assert Authors.get_author_by(name: name) == nil
+  end
+
+  test "an authenticated participant creates a staged person with the response",
+       %{
+         conn: conn
+       } = context do
+    participant = user_fixture()
+    name = "Authenticated expert #{System.unique_integer([:positive])}"
+    conn = log_in_user(conn, participant)
+    {:ok, view, _html} = live(conn, reconsideration_path(context))
+
+    view
+    |> element("#new-reconsider-person button")
+    |> render_click()
+
+    render_change(view, "new-person-change", %{
+      "new_person" => %{"name" => name, "bio" => "A trusted specialist."}
+    })
+
+    view
+    |> element("#new-reconsider-person button", "Add this person")
+    |> render_click()
+
+    render_submit(view, "submit", %{
+      "response" => %{
+        "answers" => %{
+          to_string(context.statement.id) => %{"before" => "against", "after" => "for"}
+        }
+      }
+    })
+
+    author = Authors.get_author_by(name: name)
+    assert author
+    assert has_element?(view, "#delegate-result-#{author.id}", "1 participant")
+  end
+
   test "a visitor is directed to sign up before creating a Reconsider page", %{conn: conn} do
     assert {:error,
             {:redirect,
