@@ -117,13 +117,16 @@ defmodule YouCongress.Opinions do
       case Embeddings.embed(text) do
         {:ok, embedding} when is_list(embedding) ->
           query_embedding = Pgvector.new(embedding)
+          limit = Keyword.get(opts, :limit, 100)
+          offset = Keyword.get(opts, :offset, 0)
 
           from(o in Opinion,
             where:
               not (is_nil(o.source_url) and is_nil(o.source_text)) and
                 not is_nil(o.content_embedding),
-            order_by: cosine_distance(o.content_embedding, ^query_embedding),
-            limit: 100,
+            order_by: [asc: cosine_distance(o.content_embedding, ^query_embedding), desc: o.id],
+            limit: ^limit,
+            offset: ^offset,
             select_merge: %{
               similarity: 1.0 - cosine_distance(o.content_embedding, ^query_embedding)
             }
@@ -582,15 +585,19 @@ defmodule YouCongress.Opinions do
         from q in query, where: ilike(q.content, ^"%#{content}%")
 
       {:search, search}, query ->
-        terms = YouCongress.SearchParser.parse(search)
+        from q in query,
+          join: a in assoc(q, :author),
+          as: :search_author,
+          where: ^search_filter(search)
 
-        Enum.reduce(terms, query, fn term, query_acc ->
-          term_pattern = "%#{term}%"
+      {:exclude_search, search}, query ->
+        filter = search_filter(search)
+        negated_filter = dynamic([search_author: _author], not (^filter))
 
-          from q in query_acc,
-            join: a in assoc(q, :author),
-            where: ilike(q.content, ^term_pattern) or ilike(a.name, ^term_pattern)
-        end)
+        from q in query,
+          join: a in assoc(q, :author),
+          as: :search_author,
+          where: ^negated_filter
 
       {:initial_ancestry, ancestry}, query ->
         from q in query, where: fragment("? LIKE ?", q.ancestry, ^"#{ancestry}/%")
@@ -767,6 +774,20 @@ defmodule YouCongress.Opinions do
   end
 
   defp filter_by_statuses(query, _statuses), do: query
+
+  defp search_filter(search) do
+    search
+    |> YouCongress.SearchParser.parse()
+    |> Enum.reduce(dynamic(true), fn term, filter ->
+      term_pattern = "%#{term}%"
+
+      dynamic(
+        [opinion, search_author: author],
+        ^filter and
+          (ilike(opinion.content, ^term_pattern) or ilike(author.name, ^term_pattern))
+      )
+    end)
+  end
 
   def delete_opinion_and_descendants(%Opinion{} = opinion) do
     subtree_ids = Opinion.subtree_ids(opinion)

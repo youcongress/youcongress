@@ -67,16 +67,16 @@ defmodule YouCongressWeb.MCPServer.QuotesListTest do
       q3 = opinion_fixture(content: "Three")
 
       with_mocked_response(fn ->
-        assert {:reply, {:json, %{quotes: payload, last_id: last_id}}, :frame} =
-                 QuotesList.execute(%{order: "asc"}, :frame)
+        assert {:reply, {:json, %{quotes: payload, last_id: last_id, has_more: true}}, :frame} =
+                 QuotesList.execute(%{order: "asc", count: 2}, :frame)
 
-        assert Enum.map(payload, & &1.opinion_id) == [q1.id, q2.id, q3.id]
-        assert last_id == q3.id
+        assert Enum.map(payload, & &1.opinion_id) == [q1.id, q2.id]
+        assert last_id == q2.id
 
-        assert {:reply, {:json, %{quotes: next_page}}, :frame} =
-                 QuotesList.execute(%{order: "asc", last_id: q1.id}, :frame)
+        assert {:reply, {:json, %{quotes: next_page, has_more: false}}, :frame} =
+                 QuotesList.execute(%{order: "asc", count: 2, last_id: q2.id}, :frame)
 
-        assert Enum.map(next_page, & &1.opinion_id) == [q2.id, q3.id]
+        assert Enum.map(next_page, & &1.opinion_id) == [q3.id]
       end)
     end
 

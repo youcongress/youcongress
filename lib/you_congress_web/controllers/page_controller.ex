@@ -332,10 +332,10 @@ defmodule YouCongressWeb.PageController do
     - opinions_statements_remove: unlink an opinion from a statement
 
     Quotes & verification (sourced opinions):
-    - quotes_search: keyword search within a statement (public), or semantic search across all quotes (requires an API key)
-    - quotes_list: list quotes with author, source, status and vote; order_by can be id (default) or the quote's date
-    - quotes_random_unverified: random quotes needing reviewable verification work, excluding quote-level disputed/unverifiable rows
-    - quotes_recent_unverified: recent quotes needing reviewable verification work, excluding quote-level disputed/unverifiable rows
+    - quotes_search: paginated keyword search within a statement (public), or semantic search across all quotes (requires an API key); continue with next_offset
+    - quotes_list: paginated quote listing with author, source, status and vote; order_by can be id (default) or quote date; continue with last_id while has_more is true
+    - quotes_random_unverified: a random sample of quotes needing reviewable verification work, excluding quote-level disputed/unverifiable rows
+    - quotes_recent_unverified: exhaustive recent-first pagination of quotes needing reviewable verification work, excluding quote-level disputed/unverifiable rows; continue with last_id while has_more is true
     - quotes_verify: verify a quote is authentic (really said, accurately transcribed) (moderator/admin)
     - opinion_statements_verify: verify a quote is relevant to a statement (moderator/admin)
 

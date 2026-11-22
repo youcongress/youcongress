@@ -46,7 +46,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
              assert opts[:needs_quote_review] == true
              refute Keyword.has_key?(opts, :is_verified)
              refute Keyword.has_key?(opts, :needs_verification)
-             assert opts[:limit] == 10
+             assert opts[:limit] == 26
              assert opts[:order_by] == [desc: :id]
              assert opts[:preload] == [:author, :statements, :opinion_statements]
              assert opts[:exclude_source_prefixes] == unsupported_source_prefixes()
@@ -78,7 +78,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
       end
     end
 
-    test "defaults to 10 quotes and clamps count to a maximum of 100" do
+    test "defaults to 25 quotes and clamps count to a maximum of 100" do
       with_mocks([
         {Anubis.Server.Response, [],
          [
@@ -95,16 +95,16 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
          ]}
       ]) do
         QuotesRecentUnverified.execute(%{}, :frame)
-        assert_received {:limit, 10}
+        assert_received {:limit, 26}
 
         QuotesRecentUnverified.execute(%{count: 25}, :frame)
-        assert_received {:limit, 25}
+        assert_received {:limit, 26}
 
         QuotesRecentUnverified.execute(%{count: 500}, :frame)
-        assert_received {:limit, 100}
+        assert_received {:limit, 101}
 
         QuotesRecentUnverified.execute(%{count: 0}, :frame)
-        assert_received {:limit, 1}
+        assert_received {:limit, 2}
       end
     end
 
@@ -165,12 +165,12 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
            end
          ]}
       ]) do
-        assert {:reply, {:error, "No quotes needing verification review available."}, :frame} =
+        assert {:reply, {:json, %{quotes: [], last_id: nil, has_more: false}}, :frame} =
                  QuotesRecentUnverified.execute(%{}, :frame)
       end
     end
 
-    test "returns deterministic error when no unverified quotes exist" do
+    test "returns an empty terminal page when no unverified quotes exist" do
       with_mocks([
         {Anubis.Server.Response, [],
          [
@@ -180,8 +180,29 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverifiedTest do
          ]},
         {YouCongress.Opinions, [], [list_opinions: fn _opts -> [] end]}
       ]) do
-        assert {:reply, {:error, "No quotes needing verification review available."}, :frame} =
+        assert {:reply, {:json, %{quotes: [], last_id: nil, has_more: false}}, :frame} =
                  QuotesRecentUnverified.execute(%{}, :frame)
+      end
+    end
+
+    test "uses last_id as a descending cursor" do
+      with_mocks([
+        {Anubis.Server.Response, [],
+         [
+           tool: fn -> :tool end,
+           json: fn :tool, data -> {:json, data} end,
+           error: fn :tool, message -> {:error, message} end
+         ]},
+        {YouCongress.Opinions, [],
+         [
+           list_opinions: fn opts ->
+             assert opts[:id_less_than] == 42
+             []
+           end
+         ]}
+      ]) do
+        assert {:reply, {:json, %{quotes: [], has_more: false}}, :frame} =
+                 QuotesRecentUnverified.execute(%{last_id: 42}, :frame)
       end
     end
   end

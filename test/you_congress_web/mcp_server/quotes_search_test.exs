@@ -94,7 +94,13 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
            error: fn :tool, message -> {:error, message} end
          ]},
         {Opinions, [:passthrough],
-         [get_by_content_similarity: fn _query, _opts -> [similar_quote] end]}
+         [
+           get_by_content_similarity: fn _query, opts ->
+             assert opts[:offset] == 0
+             assert opts[:limit] == 251
+             [similar_quote]
+           end
+         ]}
       ]) do
         assert {:reply, {:json, %{matches: matches, more_quotes: []}}, ^frame} =
                  QuotesSearch.execute(%{query: "carbon tax"}, frame)
@@ -124,6 +130,39 @@ defmodule YouCongressWeb.MCPServer.QuotesSearchTest do
 
         assert message =~ "API key"
       end
+    end
+
+    test "paginates keyword matches before the remaining statement quotes" do
+      statement = statement_fixture(%{title: "Price carbon emissions"})
+
+      older_match = quote_fixture(statement, "Carbon pricing would cut emissions.")
+      newer_match = quote_fixture(statement, "A carbon fee is overdue.")
+      older_other = quote_fixture(statement, "Nuclear power should expand.")
+      newer_other = quote_fixture(statement, "Solar power is now inexpensive.")
+
+      with_mocked_response(fn ->
+        assert {:reply,
+                {:json,
+                 %{matches: first_matches, more_quotes: [], next_offset: 2, total_count: 4}},
+                :frame} =
+                 QuotesSearch.execute(
+                   %{statement_id: statement.id, query: "carbon", count: 2},
+                   :frame
+                 )
+
+        assert Enum.map(first_matches, & &1.opinion_id) == [newer_match.id, older_match.id]
+
+        assert {:reply,
+                {:json,
+                 %{matches: [], more_quotes: second_page, next_offset: nil, total_count: 4}},
+                :frame} =
+                 QuotesSearch.execute(
+                   %{statement_id: statement.id, query: "carbon", count: 2, offset: 2},
+                   :frame
+                 )
+
+        assert Enum.map(second_page, & &1.opinion_id) == [newer_other.id, older_other.id]
+      end)
     end
   end
 

@@ -1,7 +1,8 @@
 defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
   @moduledoc """
   Return random quotes with pending reviewable verification work plus the statements and votes that already use them.
-  Returns 10 quotes by default; pass `count` to change it (max 100).
+  Returns 25 quotes by default; pass `count` to change it (max 100). This tool
+  samples randomly; use `quotes_recent_unverified` for exhaustive pagination.
   We skip quotes with source_url starting with youtube as AI is not able to access them.
   """
 
@@ -17,14 +18,17 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverified do
   alias YouCongress.MCP.ToolUsageTracker
 
   @no_quote_message "No quotes needing verification review available."
-  @default_count 10
+  @default_count 25
   @max_count 100
   @unsupported_source_prefixes [
     "https://www.youtube.com"
   ]
 
   schema do
-    field :count, :integer, default: @default_count
+    field :count, :integer,
+      default: @default_count,
+      description:
+        "Size of this random sample. Defaults to 25 and is capped at 100; use quotes_recent_unverified for exhaustive pagination."
   end
 
   @impl true

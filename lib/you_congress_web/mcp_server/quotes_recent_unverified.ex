@@ -1,7 +1,8 @@
 defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
   @moduledoc """
   Return the most recent quotes with pending reviewable verification work plus the statements and votes that already use them.
-  Returns 10 quotes by default; pass `count` to change it (max 100).
+  Returns 25 quotes by default; pass `count` to change it (max 100). Pass the
+  `last_id` from a response with `has_more: true` to get the next page.
   We skip quotes with source_url starting with youtube as AI is not able to access them.
   """
 
@@ -12,31 +13,40 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
   alias YouCongress.Opinions
   alias YouCongress.Opinions.Opinion
   alias YouCongress.Votes
+  alias YouCongressWeb.MCPServer.ListPagination
 
-  @no_quote_message "No quotes needing verification review available."
-  @default_count 10
+  @default_count 25
   @max_count 100
   @unsupported_source_prefixes [
     "https://www.youtube.com"
   ]
 
   schema do
-    field :count, :integer, default: @default_count
+    field :count, :integer,
+      default: @default_count,
+      description: "Quotes per page. Defaults to 25 and is capped at 100."
+
+    field :last_id, :integer,
+      description:
+        "Cursor for the next page. When has_more is true, pass the previous response's last_id."
   end
 
   @impl true
   def execute(params, frame) do
     ToolUsageTracker.track(__MODULE__, frame)
 
-    case recent_unverified_quotes(count(params)) do
-      [] ->
-        {:reply, Response.error(Response.tool(), @no_quote_message), frame}
+    count = count(params)
+    results = recent_unverified_quotes(params, count + 1)
+    has_more = length(results) > count
+    opinions = Enum.take(results, count)
 
-      opinions ->
-        data = %{quotes: Enum.map(opinions, &serialize/1)}
+    data = %{
+      quotes: Enum.map(opinions, &serialize/1),
+      last_id: ListPagination.last_id(opinions),
+      has_more: has_more
+    }
 
-        {:reply, Response.json(Response.tool(), data), frame}
-    end
+    {:reply, Response.json(Response.tool(), data), frame}
   end
 
   defp count(params) do
@@ -57,8 +67,8 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
     }
   end
 
-  defp recent_unverified_quotes(count) do
-    opts = [
+  defp recent_unverified_quotes(params, count) do
+    [
       has_statements: true,
       only_quotes: true,
       needs_quote_review: true,
@@ -67,8 +77,8 @@ defmodule YouCongressWeb.MCPServer.QuotesRecentUnverified do
       preload: [:author, :statements, :opinion_statements],
       exclude_source_prefixes: @unsupported_source_prefixes
     ]
-
-    Opinions.list_opinions(opts)
+    |> ListPagination.maybe_paginate(params)
+    |> Opinions.list_opinions()
   end
 
   defp votes_by_statement(%{id: opinion_id, author_id: author_id}) do

@@ -8,6 +8,10 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
   ranked by how closely their meaning matches the query (each with a similarity
   score, 0.0 to 1.0). Cross-statement semantic search requires a valid API key
   (pass `?key=YOUR_KEY` in the MCP request URL).
+
+  Results are paginated with `offset` and `count` (250 by default, maximum 500).
+  Pass `next_offset` from one response as `offset` in the next request until it
+  is null.
   """
 
   use Anubis.Server.Component, type: :tool
@@ -19,7 +23,8 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
   alias YouCongress.Votes
   alias YouCongress.MCP.ToolUsageTracker
 
-  @limit 250
+  @default_count 250
+  @max_count 500
 
   # Accepted values for the `statuses` filter. "unverified" maps to a nil
   # verification_status; the rest mirror the Opinion verification_status enum.
@@ -37,6 +42,15 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
     field :statement_id, :integer
     field :query, :string, required: true
 
+    field :offset, :integer,
+      default: 0,
+      description:
+        "Pagination offset. Pass the previous response's next_offset to fetch the next page."
+
+    field :count, :integer,
+      default: @default_count,
+      description: "Results per page. Defaults to 250 and is capped at 500."
+
     # Optional filter: only return quotes whose verification_status is one of
     # these. Use "unverified" for quotes that have not been verified yet.
     field :statuses, {:list, {:enum, @statuses}},
@@ -49,40 +63,56 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
 
     query = Map.get(params, :query)
     statuses = parse_statuses(Map.get(params, :statuses))
+    offset = offset(params)
+    count = count(params)
 
     case Map.get(params, :statement_id) do
-      nil -> semantic_search(query, statuses, frame, user_result)
-      statement_id -> statement_search(query, statement_id, statuses, frame)
+      nil -> semantic_search(query, statuses, offset, count, frame, user_result)
+      statement_id -> statement_search(query, statement_id, statuses, offset, count, frame)
     end
   end
 
-  defp statement_search(query, statement_id, statuses, frame) do
-    opinions = find_opinions(query, statement_id, statuses)
-    more_opinions = more_opinions(statement_id, opinions, statuses)
+  defp statement_search(query, statement_id, statuses, offset, count, frame) do
+    matching_count = matching_count(query, statement_id, statuses)
+    total_count = total_count(statement_id, statuses)
+
+    {opinions, more_opinions} =
+      statement_page(query, statement_id, statuses, matching_count, offset, count)
+
     all_opinions = opinions ++ more_opinions
     vote_map = votes_by_opinion(all_opinions)
+    returned_count = length(all_opinions)
 
     data = %{
       matches: take_fields(opinions, vote_map),
-      more_quotes: take_fields(more_opinions, vote_map)
+      more_quotes: take_fields(more_opinions, vote_map),
+      total_count: total_count,
+      next_offset: next_offset(offset, returned_count, total_count)
     }
 
     {:reply, Response.json(Response.tool(), data), frame}
   end
 
-  defp semantic_search(query, statuses, frame, user_result) do
+  defp semantic_search(query, statuses, offset, count, frame, user_result) do
     case user_result do
       {:ok, _user} ->
-        opinions =
+        results =
           query
-          |> Opinions.get_by_content_similarity(statuses: statuses)
+          |> Opinions.get_by_content_similarity(
+            statuses: statuses,
+            offset: offset,
+            limit: count + 1
+          )
           |> Repo.preload(:author)
 
+        has_more = length(results) > count
+        opinions = Enum.take(results, count)
         vote_map = votes_by_opinion(opinions)
 
         data = %{
           matches: take_fields(opinions, vote_map),
-          more_quotes: []
+          more_quotes: [],
+          next_offset: if(has_more, do: offset + length(opinions), else: nil)
         }
 
         {:reply, Response.json(Response.tool(), data), frame}
@@ -95,28 +125,75 @@ defmodule YouCongressWeb.MCPServer.QuotesSearch do
     end
   end
 
-  defp find_opinions(query, statement_id, statuses) do
-    [
-      statement_ids: [statement_id],
-      search: query,
-      statuses: statuses,
-      limit: @limit,
-      preload: :author
-    ]
-    |> Opinions.list_opinions()
+  defp statement_page(query, statement_id, statuses, matching_count, offset, count)
+       when offset < matching_count do
+    opinions =
+      Opinions.list_opinions(
+        statement_opts(statement_id, statuses) ++
+          [search: query, order_by: [desc: :id], offset: offset, limit: count, preload: :author]
+      )
+
+    remaining = count - length(opinions)
+
+    more_opinions =
+      if remaining > 0 do
+        find_nonmatching_opinions(query, statement_id, statuses, 0, remaining)
+      else
+        []
+      end
+
+    {opinions, more_opinions}
   end
 
-  defp more_opinions(statement_id, opinions, statuses) do
-    opinions_ids = Enum.map(opinions, & &1.id)
-    opinions_count = length(opinions_ids)
+  defp statement_page(query, statement_id, statuses, matching_count, offset, count) do
+    more_offset = offset - matching_count
+    {[], find_nonmatching_opinions(query, statement_id, statuses, more_offset, count)}
+  end
 
+  defp find_nonmatching_opinions(query, statement_id, statuses, offset, count) do
     Opinions.list_opinions(
-      statement_ids: [statement_id],
-      statuses: statuses,
-      limit: @limit - opinions_count,
-      exclude_ids: opinions_ids,
-      preload: :author
+      statement_opts(statement_id, statuses) ++
+        [
+          exclude_search: query,
+          order_by: [desc: :id],
+          offset: offset,
+          limit: count,
+          preload: :author
+        ]
     )
+  end
+
+  defp matching_count(query, statement_id, statuses) do
+    Opinions.count(statement_opts(statement_id, statuses) ++ [search: query])
+  end
+
+  defp total_count(statement_id, statuses) do
+    Opinions.count(statement_opts(statement_id, statuses))
+  end
+
+  defp statement_opts(statement_id, statuses) do
+    [statement_ids: [statement_id], only_quotes: true, statuses: statuses]
+  end
+
+  defp next_offset(offset, returned_count, total_count)
+       when offset + returned_count < total_count,
+       do: offset + returned_count
+
+  defp next_offset(_offset, _returned_count, _total_count), do: nil
+
+  defp offset(params) do
+    params
+    |> Map.get(:offset, 0)
+    |> Kernel.||(0)
+    |> max(0)
+  end
+
+  defp count(params) do
+    params
+    |> Map.get(:count, @default_count)
+    |> Kernel.||(@default_count)
+    |> max(1)
+    |> min(@max_count)
   end
 
   defp votes_by_opinion([]), do: %{}

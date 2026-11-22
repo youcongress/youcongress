@@ -46,7 +46,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverifiedTest do
              assert opts[:needs_quote_review] == true
              refute Keyword.has_key?(opts, :is_verified)
              refute Keyword.has_key?(opts, :needs_verification)
-             assert opts[:limit] == 10
+             assert opts[:limit] == 25
              assert opts[:preload] == [:author, :statements, :opinion_statements]
              assert opts[:exclude_source_prefixes] == unsupported_source_prefixes()
              assert opts[:order_by] != nil
@@ -78,7 +78,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverifiedTest do
       end
     end
 
-    test "defaults to 10 quotes and clamps count to a maximum of 100" do
+    test "defaults to 25 quotes and clamps count to a maximum of 100" do
       with_mocks([
         {Anubis.Server.Response, [],
          [
@@ -95,7 +95,7 @@ defmodule YouCongressWeb.MCPServer.QuotesRandomUnverifiedTest do
          ]}
       ]) do
         QuotesRandomUnverified.execute(%{}, :frame)
-        assert_received {:limit, 10}
+        assert_received {:limit, 25}
 
         QuotesRandomUnverified.execute(%{count: 25}, :frame)
         assert_received {:limit, 25}

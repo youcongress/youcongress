@@ -549,7 +549,14 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt), and vice versa. --%>
             all quotes by meaning (semantic similarity), with each result ranked by a
             <code class="bg-gray-100 px-1 rounded">similarity</code>
             score. Cross-statement semantic search requires an API key
-            (<code class="bg-gray-100 px-1 rounded">?key=YOUR_KEY</code>).
+            (<code class="bg-gray-100 px-1 rounded">?key=YOUR_KEY</code>). Returns 250
+            results per page by default (maximum 500). Pass the response's
+            <code class="bg-gray-100 px-1 rounded">next_offset</code>
+            as <code class="bg-gray-100 px-1 rounded">offset</code>
+            to continue; a null <code class="bg-gray-100 px-1 rounded">next_offset</code>
+            marks the last page.
+            Use <code class="bg-gray-100 px-1 rounded">count</code>
+            to change the page size.
           </dd>
         </div>
         <div class="pl-4">
@@ -560,13 +567,17 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt), and vice versa. --%>
             </span>
           </dt>
           <dd class="text-gray-700">
-            List quotes (up to 100 per page), each with its author, source, verification status
-            and vote. Optional: <code class="bg-gray-100 px-1 rounded">order_by</code>
+            List quotes (250 per page by default, maximum 500), each with its author, source,
+            verification status and vote. Optional: <code class="bg-gray-100 px-1 rounded">count</code>;
+            <code class="bg-gray-100 px-1 rounded">order_by</code>
             ("id" by default, or "date" for the date of the quote, with undated quotes last);
             <code class="bg-gray-100 px-1 rounded">order</code>
             ("desc" by default, or "asc"); <code class="bg-gray-100 px-1 rounded">last_id</code>
-            (pass the <code class="bg-gray-100 px-1 rounded">last_id</code>
-            from a previous response to get the next page).
+            (when <code class="bg-gray-100 px-1 rounded">has_more</code>
+            is true, pass the
+            response's <code class="bg-gray-100 px-1 rounded">last_id</code>
+            to get the next
+            page).
           </dd>
         </div>
         <div class="pl-4">
@@ -579,8 +590,13 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt), and vice versa. --%>
           <dd class="text-gray-700">
             Get random quotes needing reviewable verification work. This includes quotes with
             no quote verification and quote-verified rows with missing relevance or vote
-            verification, while excluding quote-level disputed/unverifiable rows. No parameters
-            needed. Skips quotes from Twitter/X and YouTube since AI cannot access those sources.
+            verification, while excluding quote-level disputed/unverifiable rows. Returns 25 by
+            default; <code class="bg-gray-100 px-1 rounded">count</code>
+            can request up to 100.
+            This is a random sample; use
+            <code class="bg-gray-100 px-1 rounded">quotes_recent_unverified</code>
+            for exhaustive pagination. Skips quotes from Twitter/X and YouTube since AI cannot
+            access those sources.
           </dd>
         </div>
         <div class="pl-4">
@@ -593,8 +609,11 @@ build_llms_txt/0 (page_controller.ex, served at /llms.txt), and vice versa. --%>
           <dd class="text-gray-700">
             Get the most recent quotes needing reviewable verification work. This includes
             quotes with no quote verification and quote-verified rows with missing relevance
-            or vote verification, while excluding quote-level disputed/unverifiable rows. No
-            parameters needed. Skips quotes from Twitter/X and YouTube since AI cannot access
+            or vote verification, while excluding quote-level disputed/unverifiable rows. Returns
+            25 per page by default; <code class="bg-gray-100 px-1 rounded">count</code> can
+            request up to 100. When <code class="bg-gray-100 px-1 rounded">has_more</code> is
+            true, pass the response's <code class="bg-gray-100 px-1 rounded">last_id</code> to
+            get the next page. Skips quotes from Twitter/X and YouTube since AI cannot access
             those sources.
           </dd>
         </div>
