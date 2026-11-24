@@ -11,7 +11,10 @@ defmodule YouCongressWeb.Plugs.ProductionSSLTest do
   setup do
     config = Config.Reader.read!("config/prod.exs", env: :prod)
     endpoint = config[:you_congress][YouCongressWeb.Endpoint]
-    ssl = Phoenix.Endpoint.__force_ssl__(ProductionEndpoint, endpoint) |> Plug.SSL.init()
+
+    ssl =
+      Phoenix.Endpoint.__force_ssl__(ProductionEndpoint, endpoint[:force_ssl]) |> Plug.SSL.init()
+
     %{ssl: ssl}
   end
 

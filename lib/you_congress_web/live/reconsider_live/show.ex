@@ -686,8 +686,7 @@ defmodule YouCongressWeb.ReconsiderLive.Show do
               referrerpolicy="strict-origin-when-cross-origin"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowfullscreen
-            >
-            </iframe>
+            ></iframe>
           </div>
         <% else %>
           <.link

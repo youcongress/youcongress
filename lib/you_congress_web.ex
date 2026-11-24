@@ -43,7 +43,7 @@ defmodule YouCongressWeb do
         layouts: [html: YouCongressWeb.Layouts]
 
       import Plug.Conn
-      import YouCongressWeb.Gettext
+      use Gettext, backend: YouCongressWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -92,7 +92,7 @@ defmodule YouCongressWeb do
       import YouCongressWeb.Components.McpPromptExamples
       import YouCongressWeb.Components.VerificationHistory
       import YouCongressWeb.Components.VoteAuthModal
-      import YouCongressWeb.Gettext
+      use Gettext, backend: YouCongressWeb.Gettext
       import YouCongressWeb.SEOComponents
 
       # Shortcut for generating JS commands

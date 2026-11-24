@@ -22,50 +22,62 @@
     <form phx-change="filters" class="grid sm:grid-cols-2 gap-4 rounded-lg bg-gray-50 p-4">
       <label>
         Scope<select name="scope" class="block w-full rounded border-gray-300">
-<option
+          <option
             :for={{value, label} <- @scopes}
             value={value}
             selected={value == @scope}
-          >{label}</option>
-</select>
+          >
+            {label}
+          </option>
+        </select>
       </label>
       <label>
         Community<select name="community" class="block w-full rounded border-gray-300">
-<option value="">All YouCongress</option>
-<option
+          <option value="">All YouCongress</option>
+          <option
             :for={community <- @communities}
             value={community.id}
             selected={to_string(community.id) == @filters["community"]}
-          >{community.name}</option>
-</select>
+          >
+            {community.name}
+          </option>
+        </select>
       </label>
       <label>
         Nominators' country<select name="nominators" class="block w-full rounded border-gray-300">
-<option value="">All countries</option>
-<option
+          <option value="">All countries</option>
+          <option
             value="unknown"
             selected={@filters["nominators"] == "unknown"}
-          >Unknown</option>
-<option
+          >
+            Unknown
+          </option>
+          <option
             :for={{name, id} <- @countries}
             value={id}
             selected={to_string(id) == @filters["nominators"]}
-          >{name}</option>
-</select>
+          >
+            {name}
+          </option>
+        </select>
       </label>
       <label>
         Nominees' country<select name="nominees" class="block w-full rounded border-gray-300">
-<option value="">All countries</option>
-<option
+          <option value="">All countries</option>
+          <option
             value="unknown"
             selected={@filters["nominees"] == "unknown"}
-          >Unknown</option>
-<option
+          >
+            Unknown
+          </option>
+          <option
             :for={{name, id} <- @countries}
             value={id}
             selected={to_string(id) == @filters["nominees"]}
-          >{name}</option>
-</select>
+          >
+            {name}
+          </option>
+        </select>
       </label>
     </form>
     <p>
@@ -135,12 +147,14 @@
     <form phx-change="compare" class="space-y-4">
       <label>
         Scope<select name="scope" class="rounded border-gray-300">
-<option
+          <option
             :for={{value, label} <- @scopes}
             value={value}
             selected={value == @scope}
-          >{label}</option>
-</select>
+          >
+            {label}
+          </option>
+        </select>
       </label>
       <div class="grid md:grid-cols-2 gap-4">
         <div
@@ -153,13 +167,15 @@
               name={"groups[#{i}][community]"}
               class="block w-full rounded border-gray-300"
             >
-<option value="">All YouCongress</option>
-<option
+              <option value="">All YouCongress</option>
+              <option
                 :for={c <- @communities}
                 value={c.id}
                 selected={to_string(c.id) == group.filters["community"]}
-              >{c.name}</option>
-</select>
+              >
+                {c.name}
+              </option>
+            </select>
           </label>
           <label :for={
             {key, label} <- [
@@ -167,21 +183,26 @@
               {"nominees", "Nominees' country"}
             ]
           }>
-            {label}<select
+            {label}
+            <select
               name={"groups[#{i}][#{key}]"}
               class="block w-full rounded border-gray-300"
             >
-<option value="">All countries</option>
-<option
+              <option value="">All countries</option>
+              <option
                 value="unknown"
                 selected={group.filters[key] == "unknown"}
-              >Unknown</option>
-<option
+              >
+                Unknown
+              </option>
+              <option
                 :for={{name, id} <- @countries}
                 value={id}
                 selected={to_string(id) == group.filters[key]}
-              >{name}</option>
-</select>
+              >
+                {name}
+              </option>
+            </select>
           </label>
           <p>{group.result.participants} participants</p>
           <ol class="space-y-2">
@@ -297,11 +318,13 @@
       <h2 class="font-semibold">Configure participating community</h2>
       <label>
         Hall<select name="hall_id" class="block rounded border-gray-300">
-<option
+          <option
             :for={hall <- @admin_halls}
             value={hall.id}
-          >{hall.name}</option>
-</select>
+          >
+            {hall.name}
+          </option>
+        </select>
       </label>
       <label>
         Organizer account ID<input
@@ -368,20 +391,24 @@
         <h2 class="text-xl font-semibold">Create or update a recommendation</h2>
         <label>
           Person<select name="nominee_id" required class="block rounded border-gray-300">
-<option value="">Choose a search result</option>
-<option
+            <option value="">Choose a search result</option>
+            <option
               :for={person <- @people}
               value={person.id}
-            >{person.name}</option>
-</select>
+            >
+              {person.name}
+            </option>
+          </select>
         </label>
         <label>
           Scope<select name="scope" class="block rounded border-gray-300">
-<option
+            <option
               :for={{scope, label} <- @scopes}
               value={scope}
-            >{label}</option>
-</select>
+            >
+              {label}
+            </option>
+          </select>
         </label>
         <label class="block">
           Why this person?<textarea

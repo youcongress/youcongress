@@ -2,6 +2,7 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
   @moduledoc false
 
   use Ecto.Schema
+  use Flop.Schema
 
   alias YouCongress.Votes.VoteFrequencies
 
@@ -15,10 +16,7 @@ defmodule YouCongressWeb.StatementLive.Show.Params do
   @simple_fields [:synthesis, :results, :source, :answer, :country, :sort] ++
                    @country_filter_fields ++ @year_filter_fields
 
-  @derive {
-    Flop.Schema,
-    filterable: @simple_fields, sortable: []
-  }
+  @flop_options filterable: @simple_fields, sortable: []
   @primary_key false
   embedded_schema do
     field :synthesis, :boolean

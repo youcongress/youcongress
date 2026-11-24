@@ -13,7 +13,7 @@ defmodule YouCongressWeb.Router do
     plug(:fetch_live_flash)
     plug(:put_root_layout, html: {YouCongressWeb.Layouts, :root})
     plug(:protect_from_forgery)
-    plug(:put_secure_browser_headers)
+    plug(:put_secure_browser_headers, %{"x-frame-options" => "SAMEORIGIN"})
     plug(YouCongressWeb.Plugs.ContentSecurityPolicy)
     plug(:fetch_current_user)
     plug(:reject_blocked_user)

@@ -32,8 +32,7 @@ defmodule YouCongressWeb.Components.SwitchComponent do
             !@is_active && "translate-x-0",
             "pointer-events-none inline-block h-5 w-5 translate-x-0 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
           ]}
-        >
-        </span>
+        ></span>
       </button>
       <span class="leading-6 whitespace-nowrap">{@label2}</span>
     </div>

@@ -113,8 +113,7 @@ defmodule YouCongressWeb.CouncilComponents do
     >
       <span class={["yes", width_class(@summary.for, @summary.total)]}></span>
       <span class={["no", width_class(@summary.against, @summary.total)]}></span>
-      <span class={["other", width_class(@summary.abstain + @summary.missing, @summary.total)]}>
-      </span>
+      <span class={["other", width_class(@summary.abstain + @summary.missing, @summary.total)]}></span>
     </div>
     <p class="yc-help">
       <strong class="yc-for">{@summary.for} For</strong>

@@ -201,8 +201,8 @@ defmodule YouCongressWeb.OpinionEditComponent do
         class="space-y-4"
       >
         <input type="hidden" name="opinion_id" value={@opinion.id} />
-        
-    <!-- Opinion Content -->
+
+        <!-- Opinion Content -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
             {if assigns[:show_content_label], do: assigns[:content_label] || "Quote Content", else: ""}
@@ -214,8 +214,8 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-full"
           />
         </div>
-        
-    <!-- Date -->
+
+        <!-- Date -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
           <.input
@@ -224,8 +224,8 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-44"
           />
         </div>
-        
-    <!-- Date Precision -->
+
+        <!-- Date Precision -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Date precision</label>
           <.input
@@ -235,8 +235,8 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-40"
           />
         </div>
-        
-    <!-- Source URL -->
+
+        <!-- Source URL -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Source URL</label>
           <.input
@@ -246,8 +246,8 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-full"
           />
         </div>
-        
-    <!-- Source passage (non-web sources) -->
+
+        <!-- Source passage (non-web sources) -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
             Source passage (book, PDF, paywalled)
@@ -259,8 +259,8 @@ defmodule YouCongressWeb.OpinionEditComponent do
             class="w-full"
           />
         </div>
-        
-    <!-- Author Selection -->
+
+        <!-- Author Selection -->
         <%= if assigns[:show_author] do %>
           <div class="relative">
             <label class="block text-sm font-medium text-gray-700 mb-1">Author</label>
@@ -318,8 +318,8 @@ defmodule YouCongressWeb.OpinionEditComponent do
             </div>
           </div>
         <% end %>
-        
-    <!-- Voting Positions -->
+
+        <!-- Voting Positions -->
         <%= if assigns[:show_statement_positions] && @opinion.statements && @opinion.statements != [] do %>
           <div class="space-y-3">
             <label class="block text-sm font-medium text-gray-700">Author's Position</label>
@@ -350,8 +350,8 @@ defmodule YouCongressWeb.OpinionEditComponent do
             <% end %>
           </div>
         <% end %>
-        
-    <!-- Form Actions -->
+
+        <!-- Form Actions -->
         <div class="flex gap-2 pt-2">
           <button
             type="submit"

@@ -17,7 +17,7 @@ defmodule YouCongressWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import YouCongressWeb.Gettext
+  use Gettext, backend: YouCongressWeb.Gettext
 
   @doc "A profile photo with name initials underneath as a missing or broken image fallback."
   attr :name, :string, default: nil
