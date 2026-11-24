@@ -189,16 +189,68 @@ defmodule YouCongressWeb.StatementLive.Index.Search do
     if terms == [] do
       ~H"{@text}"
     else
-      pattern = Enum.map_join(terms, "|", &Regex.escape/1)
-      regex = Regex.compile!(pattern, "i")
-      parts = Regex.split(regex, assigns.text, include_captures: true)
-      assigns = assign(assigns, parts: parts, regex: regex)
+      parts = highlight_parts(assigns.text, terms)
+      assigns = assign(assigns, parts: parts)
 
       ~H"""
-      <span phx-no-format><%= for part <- @parts do %><%= if String.match?(part, @regex) do %><b>{part}</b><% else %>{part}<% end %><% end %></span>
+      <span phx-no-format><%= for {part, highlighted?} <- @parts do %><%= if highlighted? do %><b>{part}</b><% else %>{part}<% end %><% end %></span>
       """
     end
   end
+
+  defp highlight_parts(text, terms) do
+    normalized_terms =
+      Enum.map(terms, fn term ->
+        term
+        |> String.downcase()
+        |> String.graphemes()
+      end)
+
+    text
+    |> String.graphemes()
+    |> Enum.map(&{&1, String.downcase(&1)})
+    |> build_highlight_parts(normalized_terms, [], [])
+  end
+
+  defp build_highlight_parts([], _terms, pending, parts) do
+    parts
+    |> prepend_pending(pending)
+    |> Enum.reverse()
+  end
+
+  defp build_highlight_parts(graphemes, terms, pending, parts) do
+    case matching_term_length(graphemes, terms) do
+      nil ->
+        [{grapheme, _normalized} | rest] = graphemes
+        build_highlight_parts(rest, terms, [grapheme | pending], parts)
+
+      length ->
+        {matched, rest} = Enum.split(graphemes, length)
+        matched_text = Enum.map_join(matched, &elem(&1, 0))
+
+        parts =
+          parts
+          |> prepend_pending(pending)
+          |> then(&[{matched_text, true} | &1])
+
+        build_highlight_parts(rest, terms, [], parts)
+    end
+  end
+
+  defp matching_term_length(graphemes, terms) do
+    Enum.find_value(terms, fn term ->
+      length = length(term)
+
+      if Enum.map(Enum.take(graphemes, length), &elem(&1, 1)) == term do
+        length
+      end
+    end)
+  end
+
+  defp prepend_pending(parts, []), do: parts
+
+  defp prepend_pending(parts, pending),
+    do: [{pending |> Enum.reverse() |> Enum.join(), false} | parts]
 
   defp author_bio(%{bio: bio, description: description}) do
     cond do

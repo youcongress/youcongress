@@ -6,6 +6,26 @@ defmodule YouCongressWeb.StatementLiveSearchTest do
   import YouCongress.AuthorsFixtures
   import YouCongress.OpinionsFixtures
 
+  alias YouCongressWeb.StatementLive.Index.Search
+
+  describe "search result highlighting" do
+    test "highlights terms case-insensitively without interpreting regex characters" do
+      html = render_component(&Search.highlight/1, text: "C++ and c++", terms: ["C++"])
+
+      assert html == "<span><b>C++</b> and <b>c++</b></span>"
+    end
+
+    test "preserves the configured term order when terms overlap" do
+      html =
+        render_component(&Search.highlight/1,
+          text: "artificial intelligence",
+          terms: ["art", "artificial"]
+        )
+
+      assert html == "<span><b>art</b>ificial intelligence</span>"
+    end
+  end
+
   describe "StatementLive search via URL params" do
     test "renders search results when search param is present", %{conn: conn} do
       _statement = statement_fixture(title: "AI Safety Bill")
