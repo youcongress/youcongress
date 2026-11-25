@@ -19,7 +19,20 @@ defmodule YouCongressWeb.ReconsiderLandingLiveTest do
            )
 
     assert has_element?(view, "#example-video-link", "Watch the original video")
-    assert has_element?(view, "#example-delegate-energy-expert", "Dr. Maya Chen")
+
+    assert has_element?(
+             view,
+             "#reconsider-voting-example",
+             "The case for mandatory safety evaluations of frontier AI"
+           )
+
+    assert has_element?(
+             view,
+             "#reconsider-voting-example",
+             "Frontier AI systems should pass independent safety evaluations before public release."
+           )
+
+    assert has_element?(view, "#example-delegate-ai-safety-expert", "Dr. Maya Chen")
 
     assert has_element?(
              view,

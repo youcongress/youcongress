@@ -121,9 +121,9 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
                 Example voting page
               </p>
               <h3 class="mt-1 text-xl font-bold text-gray-900">
-                The case for building more nuclear energy
+                The case for mandatory safety evaluations of frontier AI
               </h3>
-              <p class="mt-1 text-sm text-gray-500">Video by Example Climate Review</p>
+              <p class="mt-1 text-sm text-gray-500">Video by Example AI Governance Review</p>
               <span
                 id="example-video-link"
                 class="mt-3 inline-flex rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-semibold text-indigo-700"
@@ -135,7 +135,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
             <div class="space-y-5 p-5">
               <div class="rounded-xl border border-gray-200 p-4">
                 <p class="font-semibold text-gray-900">
-                  Nuclear energy should play a larger role in electricity generation.
+                  Frontier AI systems should pass independent safety evaluations before public release.
                 </p>
 
                 <div class="mt-4 grid gap-4">
@@ -167,7 +167,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
                 <p class="mt-1 text-xs text-gray-500">Optional global delegation</p>
                 <div class="mt-3 space-y-2">
                   <div
-                    id="example-delegate-energy-expert"
+                    id="example-delegate-ai-safety-expert"
                     class="flex items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 p-3"
                   >
                     <span class="flex h-5 w-5 items-center justify-center rounded border border-indigo-600 bg-indigo-600 text-xs font-bold text-white">
@@ -176,7 +176,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
                     <span>
                       <span class="block text-sm font-medium text-gray-900">Dr. Maya Chen</span>
                       <span class="block text-xs text-gray-600">
-                        Energy expert featured in the video
+                        AI safety expert featured in the video
                       </span>
                     </span>
                   </div>
@@ -187,7 +187,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
                     <span class="h-5 w-5 rounded border border-gray-300 bg-white"></span>
                     <span>
                       <span class="block text-sm font-medium text-gray-900">Alex Rivera</span>
-                      <span class="block text-xs text-gray-500">Climate policy researcher</span>
+                      <span class="block text-xs text-gray-500">AI governance researcher</span>
                     </span>
                   </div>
                 </div>
@@ -216,7 +216,7 @@ defmodule YouCongressWeb.ReconsiderLive.Landing do
             <div class="space-y-5 p-5">
               <div>
                 <h3 class="font-semibold text-gray-900">
-                  Nuclear energy should play a larger role in electricity generation.
+                  Frontier AI systems should pass independent safety evaluations before public release.
                 </h3>
                 <p class="mt-3 text-sm font-semibold text-gray-700">Community responses</p>
                 <div class="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200 text-sm">
